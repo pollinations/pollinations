@@ -1,4 +1,4 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
@@ -35,12 +35,12 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
-    "INCEPTION_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
@@ -165,10 +165,19 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
     if (usage === completion.usage) return completion;
 
-    return {
+    const publicCompletion = {
         ...completion,
         usage,
     };
+    if (completion.fallbackTarget !== undefined) {
+        Object.defineProperty(publicCompletion, "fallbackTarget", {
+            value: completion.fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
+    }
+    return publicCompletion;
 }
 
 function sendOpenAIResponse(
@@ -191,7 +200,8 @@ function sendOpenAIResponse(
 
 function sendTextContentResponse(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    fallbackModel: string | undefined,
+    upstreamRequestUrl: URL | undefined,
 ): Response {
     const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
@@ -199,6 +209,7 @@ function sendTextContentResponse(
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
             message: "Unrecognized response format from text model",
+            requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });
     }
@@ -296,22 +307,18 @@ function serializeDetails(details: unknown): string | undefined {
     return typeof details === "string" ? details : JSON.stringify(details);
 }
 
-function throwTextError(error: ServiceError, c: TextContext): never {
+function throwTextError(error: ServiceError): never {
     const status =
         typeof error.status === "number"
             ? error.status
             : typeof error.code === "number"
               ? error.code
               : 500;
-    const upstreamStatus =
-        typeof error.upstreamStatus === "number"
-            ? error.upstreamStatus
-            : status;
 
     throw new UpstreamError(status as ContentfulStatusCode, {
         message: error.message || "Text generation failed",
-        requestUrl: new URL(c.req.url),
-        upstreamStatus,
+        requestUrl: error.requestUrl,
+        upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
         cause: error,
     });
@@ -334,29 +341,15 @@ async function generateTextResponse(
                   c.env.BETTER_AUTH_SECRET,
                   c.env.PORTKEY_GATEWAY_URL,
                   c.var.auth?.apiKey?.rawKey || "",
+                  c.var.auth?.apiKey?.id,
               )
             : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
             gatewayContext,
         );
+        c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-
-        if (completion.error) {
-            const errorObj =
-                typeof completion.error === "string"
-                    ? { message: completion.error }
-                    : completion.error;
-            const error = new Error(
-                errorObj.message || "Text generation failed",
-            ) as ServiceError;
-            if (typeof errorObj.status === "number") {
-                error.status = remapUpstreamStatus(errorObj.status);
-                error.upstreamStatus = errorObj.status;
-            }
-            error.details = errorObj.details;
-            throw error;
-        }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
         const fallbackModel = c.var.model?.resolved;
@@ -366,12 +359,16 @@ async function generateTextResponse(
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
-            return sendTextContentResponse(publicCompletion, fallbackModel);
+            return sendTextContentResponse(
+                publicCompletion,
+                fallbackModel,
+                c.var.upstreamRequestUrl,
+            );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
         return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
-        throwTextError(thrown as ServiceError, c);
+        throwTextError(thrown as ServiceError);
     }
 }
 
@@ -447,7 +444,7 @@ export async function handleCreateResponseLocal(
         if ((thrown as ServiceError).status === 400) {
             return responsesErrorResponse(thrown);
         }
-        throwTextError(thrown as ServiceError, c);
+        throwTextError(thrown as ServiceError);
     }
 }
 

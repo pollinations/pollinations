@@ -31,7 +31,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range totals from generation_usage_hourly for the mutually exclusive Core API stream. Core means a successful authenticated, non-cached generation that is neither attributed to a trusted BYOP client nor served by a community model. Paid is revenue-bearing consumption; Quest is free consumption.",
+      "description": "Selected-range totals from generation_usage_hourly for the mutually exclusive Direct API stream. Direct API means a successful authenticated, non-cached generation that is neither attributed to a trusted BYOP client nor served by a community model. Paid is revenue-bearing consumption; Quest is free consumption.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -59,7 +59,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core calls"
+                "value": "Direct API calls"
               }
             ]
           },
@@ -71,7 +71,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core users"
+                "value": "Direct API users"
               }
             ]
           },
@@ -128,7 +128,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -138,7 +138,7 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": false
       },
       "targets": [
         {
@@ -152,7 +152,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core API overview",
+      "title": "Direct API overview",
       "type": "stat"
     },
     {
@@ -160,11 +160,11 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful Core API calls split by generation_event_v2 workload. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
+      "description": "Daily successful Direct API calls split by generation_event_v2 workload. A workload with a zero total can appear in the legend without a visible bar; that explicitly means no successful calls of that type occurred in the selected range. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -192,7 +192,7 @@
           "calcs": [
             "sum"
           ],
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
@@ -213,7 +213,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core request volume",
+      "title": "Direct API request volume",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -239,7 +239,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily unique authenticated users with successful Core API generations. The HyperLogLog state is merged from generation_usage_hourly; this is not the sum of hourly user counts.",
+      "description": "Daily unique authenticated users with successful Direct API generations. The HyperLogLog state is merged from generation_usage_hourly; this is not the sum of hourly user counts.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -256,6 +256,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -267,7 +268,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core users"
+                "value": "Direct API users"
               }
             ]
           }
@@ -304,7 +305,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core active users",
+      "title": "Direct API active users",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -325,11 +326,11 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily gross billed Core consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
+      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -438,7 +439,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Core successful calls divided by all successful authenticated, non-cached platform generations. BYOP and all community-model traffic are excluded from the numerator but remain in the platform denominator.",
+      "description": "Daily Direct API successful calls divided by all successful authenticated, non-cached platform generations. BYOP and all community-model traffic are excluded from the numerator but remain in the platform denominator.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -469,7 +470,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core share"
+                "value": "Direct API share"
               }
             ]
           }
@@ -506,7 +507,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core share of platform",
+      "title": "Direct API share of platform",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -527,11 +528,11 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful Core calls for the eight official models with the most calls in the selected range; every remaining model is grouped into Other. This is a model-adoption view, not a health or cost diagnostic.",
+      "description": "Daily successful Direct API calls for the eight official models with the most calls in the selected range; every remaining model is grouped into Other. This is a model-adoption view, not a health or cost diagnostic.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "displayName": "${__field.labels.metric}",
           "custom": {
@@ -597,7 +598,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core model mix",
+      "title": "Direct API model mix",
       "type": "timeseries"
     },
     {
@@ -605,7 +606,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Official models ranked over the selected range using successful Core API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
+      "description": "Official models ranked over the selected range using successful Direct API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -778,7 +779,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core model ranking",
+      "title": "Direct API model ranking",
       "type": "table"
     },
     {
@@ -786,11 +787,11 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Core usage from generation_usage_hourly. Token-like units use the left axis; native audio and video seconds use the right axis. The series remain separate and are never added into an artificial combined total.",
+      "description": "Daily Direct API usage from generation_usage_hourly. Token-like units use bars on the left axis; native audio and video duration use lines on the right axis. The unlike units remain separate and are never added into an artificial total.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "axisPlacement": "left",
@@ -815,6 +816,13 @@
               {
                 "id": "displayName",
                 "value": "Text tokens"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -827,18 +835,13 @@
               {
                 "id": "displayName",
                 "value": "Image tokens"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "video_tokens"
-            },
-            "properties": [
+              },
               {
-                "id": "displayName",
-                "value": "Video tokens"
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -850,7 +853,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Audio seconds"
+                "value": "Audio duration"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
               },
               {
                 "id": "unit",
@@ -859,6 +869,22 @@
               {
                 "id": "custom.axisPlacement",
                 "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           },
@@ -870,7 +896,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Video seconds"
+                "value": "Video duration"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
               },
               {
                 "id": "unit",
@@ -879,6 +912,22 @@
               {
                 "id": "custom.axisPlacement",
                 "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           }
@@ -915,7 +964,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core usage units",
+      "title": "Direct API usage units",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -925,7 +974,6 @@
                 "time",
                 "text_tokens",
                 "image_tokens",
-                "video_tokens",
                 "audio_seconds",
                 "video_seconds"
               ]
@@ -940,7 +988,7 @@
   "schemaVersion": 41,
   "tags": [
     "observability-rebuild",
-    "core-api",
+    "direct-api",
     "models"
   ],
   "templating": {
@@ -952,7 +1000,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Core API",
+  "title": "Direct API",
   "uid": "core-api-rebuild",
   "version": 1,
   "weekStart": "monday"

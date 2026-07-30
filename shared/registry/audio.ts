@@ -75,10 +75,16 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs v3 TTS",
-        description: "Expressive speech with emotion control and audio tags",
+        description:
+            "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
@@ -96,10 +102,15 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Flash v2.5",
         description:
-            "Snappy low-latency speech in 32 languages; leaner than the premium voices",
+            "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
@@ -116,10 +127,75 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
-        description: "Lifelike, emotionally rich speech in 29 languages",
+        description:
+            "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
+    "eleven-dialogue": {
+        aliases: ["dialogue", "text-to-dialogue"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Text to Dialogue uses the v3 TTS character rate.
+            completionAudioTokens: 0.1 / 1000,
+        },
+        title: "ElevenLabs Text to Dialogue",
+        description:
+            "Multi-speaker conversations with expressive voices and audio cues",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/v1/audio/dialogue"],
+    },
+    "eleven-voice-changer": {
+        aliases: ["voice-changer", "speech-to-speech"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Voice Changer: $0.12 per input minute.
+            promptAudioSeconds: 0.12 / 60,
+        },
+        title: "ElevenLabs Voice Changer",
+        description:
+            "Preserves delivery and emotion while transforming speaker identity",
+        inputModalities: ["audio"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/v1/audio/voice-changer"],
+    },
+    "eleven-voice-isolator": {
+        aliases: ["voice-isolator", "audio-cleanup"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Voice Isolator: $0.12 per input minute.
+            promptAudioSeconds: 0.12 / 60,
+        },
+        title: "ElevenLabs Voice Isolator",
+        description:
+            "Removes background noise while preserving clear spoken audio",
+        inputModalities: ["audio", "video"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     elevenmusic: {
         aliases: ["music"],
@@ -138,6 +214,24 @@ export const AUDIO_SERVICES = {
         title: "ElevenLabs Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
+    "lyria-3-clip": {
+        aliases: ["lyria", "lyria-3"],
+        provider: "google",
+        brand: "Google",
+        category: "audio",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Vertex bills a fixed $0.04 for each 30-second generated clip.
+            completionAudioTokens: 0.04,
+        },
+        title: "Lyria 3 Clip",
+        description:
+            "30-second music with vocals, lyrics, or instrumental arrangements",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "eleven-sfx": {
@@ -206,8 +300,13 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    "universal-3-pro": {
+    "universal-3.5-pro": {
         aliases: [
+            "universal-3-pro",
+            "universal-3-5-pro",
+            "assemblyai-universal-3.5-pro",
+            "assemblyai-universal-3-5-pro",
+            "assemblyai-u3.5-pro",
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
@@ -218,11 +317,12 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // AssemblyAI Universal-3 Pro: $0.21/hour
+            // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
-        title: "AssemblyAI Universal-3 Pro",
-        description: "Top-accuracy transcription you can steer with prompts",
+        title: "AssemblyAI Universal-3.5 Pro",
+        description:
+            "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },

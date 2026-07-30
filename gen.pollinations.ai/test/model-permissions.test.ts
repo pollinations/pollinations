@@ -1,6 +1,10 @@
 import { SELF } from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
+    getRegistryModelDefinition,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
+import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
     RESTRICTED_TEST_MODELS,
@@ -72,6 +76,47 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
+test("filters OpenRouter text models by paid balance", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const freeResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+
+    expect(freeResponse.status).toBe(200);
+    expect(paidResponse.status).toBe(200);
+
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const openRouterModelNames = getVisibleTextModels().filter(
+        (model) => getRegistryModelDefinition(model).provider === "openrouter",
+    );
+    const freeModelNames = new Set(freeModels.data.map((model) => model.id));
+    const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(
+        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+    ).toBe(true);
+    expect(
+        openRouterModelNames.every((model) => paidModelNames.has(model)),
+    ).toBe(true);
+
+    const generation = await fetchWorker(
+        "/text/paid-only-check?model=mistral",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(generation.status).toBe(402);
+});
+
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
     paidApiKey,
@@ -114,4 +159,37 @@ test("filters paid-only audio models by paid balance", async ({
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
+    expect(freeModels.some((model) => model.name === "universal-3.5-pro")).toBe(
+        true,
+    );
+    expect(paidModels.some((model) => model.name === "universal-3.5-pro")).toBe(
+        true,
+    );
+});
+
+test("requires paid balance for Recraft vector", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const freeCatalog = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidCatalog = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    const freeModels = (await freeCatalog.json()) as { name: string }[];
+    const paidModels = (await paidCatalog.json()) as { name: string }[];
+
+    expect(
+        freeModels.some((model) => model.name === "recraft-v4.1-vector"),
+    ).toBe(false);
+    expect(
+        paidModels.some((model) => model.name === "recraft-v4.1-vector"),
+    ).toBe(true);
+
+    const generation = await fetchWorker(
+        "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(generation.status).toBe(402);
 });

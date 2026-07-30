@@ -55,7 +55,6 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -80,7 +79,6 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
-        username: c.var.auth?.user?.githubUsername || null,
     };
 }
 
@@ -155,8 +153,17 @@ function mediaHeaders(
     });
     const extension = contentType.includes("video")
         ? "mp4"
-        : contentType.split("/")[1] || "jpg";
+        : contentType === "image/svg+xml"
+          ? "svg"
+          : contentType.split("/")[1] || "jpg";
     headers.set("Content-Disposition", contentDisposition(prompt, extension));
+    if (contentType === "image/svg+xml") {
+        headers.set(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
+        headers.set("X-Content-Type-Options", "nosniff");
+    }
 
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
@@ -448,7 +455,7 @@ export async function generateImageOrVideoResponse(
                 originalPrompt,
                 safeParams,
                 result,
-                detectMimeType(result.buffer),
+                result.mimeType || detectMimeType(result.buffer),
             ),
         });
     } catch (error) {

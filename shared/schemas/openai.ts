@@ -125,9 +125,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -394,9 +392,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -685,6 +681,9 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
 });
 

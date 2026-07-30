@@ -13,7 +13,11 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    type CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -162,6 +166,8 @@ export function CommunityEndpointDialog({
                 form.modality === "image"
                     ? (body.imagePricing ?? "request")
                     : form.imagePricing;
+            const supportsImageEdits =
+                form.modality === "image" && body.supportsImageEdits === true;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -178,17 +184,20 @@ export function CommunityEndpointDialog({
                         : "Endpoint responded, but did not return billable usage",
                 );
             }
-            if (detectedImagePricing !== form.imagePricing) {
-                // The detected mode changes what the shared image price keys
-                // mean (per image ↔ per 1M tokens), so stale entries reset.
-                setForm((current) => ({
-                    ...current,
-                    imagePricing: detectedImagePricing,
-                    promptTextPrice: "",
-                    promptImagePrice: "",
-                    completionImagePrice: "",
-                }));
-            }
+            setForm((current) => ({
+                ...current,
+                imagePricing: detectedImagePricing,
+                supportsImageEdits,
+                // Changing pricing mode changes the units of these fields, so
+                // stale values must not carry across modes.
+                ...(detectedImagePricing !== current.imagePricing
+                    ? {
+                          promptTextPrice: "",
+                          promptImagePrice: "",
+                          completionImagePrice: "",
+                      }
+                    : {}),
+            }));
             setTestState({
                 status: "success",
                 message: body.message || "Endpoint responded",
@@ -277,6 +286,7 @@ export function CommunityEndpointDialog({
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
+        form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
         saveRequirementMet;
@@ -367,22 +377,42 @@ export function CommunityEndpointDialog({
                             />
                         </FieldStack>
                         <FieldStack
-                            label="Description"
-                            helper="Shown in the Models list, like registry models."
+                            label="Title"
+                            helper="Display name shown in the Models list."
                             alignLabelRow
                         >
                             <Input
-                                name="community-model-description"
-                                value={form.description}
-                                placeholder="Fast coding model, long context"
+                                name="community-model-title"
+                                value={form.title}
+                                placeholder="My Model"
                                 autoComplete="off"
-                                maxLength={240}
+                                maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
+                                required
                                 onChange={(e) =>
-                                    updateForm("description", e.target.value)
+                                    updateForm("title", e.target.value)
                                 }
                             />
                         </FieldStack>
                     </div>
+
+                    <FieldStack
+                        label="Description"
+                        helper="Optional. One line about what the model is good at."
+                        alignLabelRow
+                    >
+                        <Input
+                            name="community-model-description"
+                            value={form.description}
+                            placeholder="Fast coding model, long context"
+                            autoComplete="off"
+                            maxLength={
+                                COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
+                            }
+                            onChange={(e) =>
+                                updateForm("description", e.target.value)
+                            }
+                        />
+                    </FieldStack>
 
                     <FieldStack
                         label="Visibility"
@@ -425,7 +455,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation/edit URL."
                             alignLabelRow
                         >
                             <Input
@@ -625,6 +655,12 @@ export function CommunityEndpointDialog({
                             {testState.status === "error" &&
                                 testState.message && (
                                     <p className="text-sm text-intent-danger-text">
+                                        {testState.message}
+                                    </p>
+                                )}
+                            {testState.status === "success" &&
+                                testState.message && (
+                                    <p className="text-sm text-theme-text-muted">
                                         {testState.message}
                                     </p>
                                 )}

@@ -181,16 +181,24 @@ export async function generateMistralOcrChatCompletion(
     }
 
     const document = extractDocument(request.messages);
+    if (document.type === "document_url" && request.pages === undefined) {
+        return badRequest(
+            "Mistral OCR document requests require an explicit pages selection of at most 300 pages.",
+        );
+    }
+
     const parameters = {
         document,
         pages: request.pages,
         include_image_base64: request.include_image_base64,
-        image_limit: request.image_limit,
+        image_limit: request.include_image_base64
+            ? (request.image_limit ?? 5)
+            : request.image_limit,
         image_min_size: request.image_min_size,
         table_format: request.table_format,
         extract_header: request.extract_header,
         extract_footer: request.extract_footer,
-        include_blocks: request.include_blocks,
+        include_blocks: request.include_blocks ?? false,
         confidence_scores_granularity: request.confidence_scores_granularity,
         model: MISTRAL_OCR_MODEL_ID,
     };

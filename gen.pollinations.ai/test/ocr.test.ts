@@ -164,26 +164,32 @@ describe("Mistral OCR text adapter", () => {
 
         await generateMistralOcrChatCompletion(
             contextWithKey(),
-            ocrRequest([
-                {
-                    type: "file",
-                    file: {
-                        file_url: "https://example.com/document.pdf",
+            ocrRequest(
+                [
+                    {
+                        type: "file",
+                        file: {
+                            file_url: "https://example.com/document.pdf",
+                        },
                     },
-                },
-            ]),
+                ],
+                { pages: [0] },
+            ),
         );
         await generateMistralOcrChatCompletion(
             contextWithKey(),
-            ocrRequest([
-                {
-                    type: "file",
-                    file: {
-                        file_data: "AAAA",
-                        mime_type: "application/pdf",
+            ocrRequest(
+                [
+                    {
+                        type: "file",
+                        file: {
+                            file_data: "AAAA",
+                            mime_type: "application/pdf",
+                        },
                     },
-                },
-            ]),
+                ],
+                { pages: [0] },
+            ),
         );
 
         expect(
@@ -200,6 +206,35 @@ describe("Mistral OCR text adapter", () => {
         });
     });
 
+    it("defaults block metadata off and limits extracted images to five", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async () => Response.json(OCR_RESPONSE));
+
+        await generateMistralOcrChatCompletion(
+            contextWithKey(),
+            ocrRequest(
+                [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "https://example.com/document.png",
+                        },
+                    },
+                ],
+                { include_image_base64: true },
+            ),
+        );
+
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
+            include_blocks: false,
+            include_image_base64: true,
+            image_limit: 5,
+        });
+    });
+
     it("rejects missing, multiple, and streaming document requests", async () => {
         await expect(
             generateMistralOcrChatCompletion(
@@ -207,6 +242,25 @@ describe("Mistral OCR text adapter", () => {
                 ocrRequest([{ type: "text", text: "No document" }]),
             ),
         ).rejects.toMatchObject({ status: 400 });
+
+        await expect(
+            generateMistralOcrChatCompletion(
+                contextWithKey(),
+                ocrRequest([
+                    {
+                        type: "file",
+                        file: {
+                            file_url: "https://example.com/document.pdf",
+                        },
+                    },
+                ]),
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(
+                "require an explicit pages selection",
+            ),
+        });
 
         await expect(
             generateMistralOcrChatCompletion(
@@ -251,14 +305,17 @@ describe("Mistral OCR text adapter", () => {
         await expect(
             generateMistralOcrChatCompletion(
                 contextWithKey(),
-                ocrRequest([
-                    {
-                        type: "file",
-                        file: {
-                            file_url: "https://example.com/document.pdf",
+                ocrRequest(
+                    [
+                        {
+                            type: "file",
+                            file: {
+                                file_url: "https://example.com/document.pdf",
+                            },
                         },
-                    },
-                ]),
+                    ],
+                    { pages: [0] },
+                ),
             ),
         ).rejects.toMatchObject({ status: 502 });
     });
@@ -276,14 +333,17 @@ describe("Mistral OCR text adapter", () => {
         await expect(
             generateMistralOcrChatCompletion(
                 contextWithKey(),
-                ocrRequest([
-                    {
-                        type: "file",
-                        file: {
-                            file_url: "https://example.com/document.pdf",
+                ocrRequest(
+                    [
+                        {
+                            type: "file",
+                            file: {
+                                file_url: "https://example.com/document.pdf",
+                            },
                         },
-                    },
-                ]),
+                    ],
+                    { pages: [0] },
+                ),
             ),
         ).rejects.toMatchObject({
             status: 502,
@@ -339,7 +399,7 @@ describe("Mistral OCR text adapter", () => {
         ]);
     });
 
-    it("validates page ranges and rejects separately billed annotations", () => {
+    it("validates page and image limits and rejects separately billed annotations", () => {
         const request = {
             model: "mistral-ocr",
             messages: [
@@ -367,6 +427,40 @@ describe("Mistral OCR text adapter", () => {
             CreateChatCompletionRequestSchema.safeParse({
                 ...request,
                 pages: "9-2",
+            }).success,
+        ).toBe(false);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                pages: "0-299",
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                pages: "0-300",
+            }).success,
+        ).toBe(false);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                pages: Array.from({ length: 300 }, (_, index) => index),
+                include_image_base64: true,
+                image_limit: 5,
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                pages: Array.from({ length: 301 }, (_, index) => index),
+            }).success,
+        ).toBe(false);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                pages: [0],
+                include_image_base64: true,
+                image_limit: 6,
             }).success,
         ).toBe(false);
 
@@ -570,6 +664,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: "mistral-ocr-4-0",
+                    pages: [0],
                     messages: [
                         {
                             role: "user",
@@ -590,6 +685,57 @@ fixtureTest(
         expect(textResponse.status).toBe(200);
         expect(textResponse.headers.get("x-cache")).toBeNull();
         expect(await textResponse.text()).toBe("# Invoice\n\nTotal: $12.00");
+
+        for (const body of [
+            {
+                model: "mistral-ocr",
+                pages: "0-300",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_url:
+                                        "https://example.com/document.pdf",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                model: "mistral-ocr",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_url:
+                                        "https://example.com/document.pdf",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ]) {
+            const rejectedResponse = await SELF.fetch(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(rejectedResponse.status).toBe(400);
+        }
 
         expect(
             fetchMock.mock.calls.filter(

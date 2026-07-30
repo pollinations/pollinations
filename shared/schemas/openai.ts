@@ -271,6 +271,22 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const MAX_MISTRAL_OCR_PAGES = 300;
+const MISTRAL_OCR_PAGE_LIMIT_MESSAGE = `Mistral OCR accepts at most ${MAX_MISTRAL_OCR_PAGES} selected pages per request.`;
+
+function countOcrPageSelections(value: string): number {
+    let count = 0;
+    for (const part of value.split(",")) {
+        const [start, end = start] = part.split("-").map(Number);
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)) {
+            return Number.POSITIVE_INFINITY;
+        }
+        count += end - start + 1;
+        if (count > MAX_MISTRAL_OCR_PAGES) return count;
+    }
+    return count;
+}
+
 const OcrPagesSchema = z.union([
     z
         .string()
@@ -282,8 +298,15 @@ const OcrPagesSchema = z.union([
                     return end === undefined || start <= end;
                 }),
             { message: "Page ranges must be in ascending order." },
+        )
+        .refine(
+            (value) => countOcrPageSelections(value) <= MAX_MISTRAL_OCR_PAGES,
+            { message: MISTRAL_OCR_PAGE_LIMIT_MESSAGE },
         ),
-    z.array(z.number().int().nonnegative()).min(1),
+    z
+        .array(z.number().int().nonnegative())
+        .min(1)
+        .max(MAX_MISTRAL_OCR_PAGES, MISTRAL_OCR_PAGE_LIMIT_MESSAGE),
 ]);
 
 const UnsupportedOcrAnnotationSchema = z.unknown().refine(() => false, {
@@ -294,7 +317,7 @@ const UnsupportedOcrAnnotationSchema = z.unknown().refine(() => false, {
 const MistralOcrRequestOptionsSchema = z.object({
     pages: OcrPagesSchema.optional(),
     include_image_base64: z.boolean().optional(),
-    image_limit: z.number().int().nonnegative().optional(),
+    image_limit: z.number().int().min(1).max(5).optional(),
     image_min_size: z.number().int().nonnegative().optional(),
     table_format: z.enum(["markdown", "html"]).optional(),
     extract_header: z.boolean().optional(),
@@ -376,17 +399,24 @@ export const CreateChatCompletionRequestSchema = z
             .optional(), // deprecated, supported
         pages: z.unknown().optional().meta({
             description:
-                "Zero-indexed pages for document OCR, as an array or ranges such as `0,2-4`.",
+                "Required for document OCR. Select up to 300 zero-indexed pages as an array or ranges such as `0,2-4`.",
         }),
         include_image_base64: z.unknown().optional().meta({
-            description: "Include extracted images in document OCR responses.",
+            description:
+                "Include up to five extracted base64 images in document OCR responses.",
         }),
-        image_limit: z.unknown().optional(),
+        image_limit: z.unknown().optional().meta({
+            description:
+                "Maximum extracted base64 images to return, from 1 to 5.",
+        }),
         image_min_size: z.unknown().optional(),
         table_format: z.unknown().optional(),
         extract_header: z.unknown().optional(),
         extract_footer: z.unknown().optional(),
-        include_blocks: z.unknown().optional(),
+        include_blocks: z.unknown().optional().meta({
+            description:
+                "Include paragraph-level OCR block metadata. Defaults to false.",
+        }),
         confidence_scores_granularity: z.unknown().optional(),
         bbox_annotation_format: z.unknown().optional(),
         document_annotation_format: z.unknown().optional(),

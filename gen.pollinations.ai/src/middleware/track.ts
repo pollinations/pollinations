@@ -186,18 +186,16 @@ export const track = (eventType: EventType) =>
         });
 
         /**
-         * One unbilled row per attempt whose upstream failed, including the
-         * last one — every model that was called ends up on the record.
+         * One unbilled row per attempt we moved on from.
          *
          * Without it a model that is always rescued by its fallback looks
          * healthy, because the request's settlement row records whichever model
          * ended up serving. Nothing was generated, so the row carries who asked
          * and what failed, and no usage, price or reward.
          *
-         * A request whose every candidate failed therefore emits one row per
-         * candidate plus the settlement row that carries the response the caller
-         * actually got, so a consumer that counts rows counts more of them than
-         * there were requests.
+         * The attempt that ends the request never gets one: it is the response,
+         * and the settlement row already carries it. So a request emits exactly
+         * one row per upstream call it made.
          */
         const recordFailedAttempt = (
             model: string,

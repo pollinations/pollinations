@@ -94,7 +94,7 @@ describe("withModelFallback", () => {
             upstreamStatus: 429,
         });
 
-    it("reports every model whose upstream failed, the last one included", async () => {
+    it("reports every attempt it moved on from, but not the one that ended the request", async () => {
         const reported: string[] = [];
         const attempt = vi.fn(async () => {
             throw rateLimited();
@@ -108,13 +108,32 @@ describe("withModelFallback", () => {
             ),
         ).rejects.toThrow("429 upstream");
 
-        // Every candidate was tried exactly once, and none of the failures is
-        // missing from the record — the terminal one used to be dropped.
+        // Three calls, three rows: two reported here and the third carried by
+        // the response itself. Reporting the terminal failure as well would
+        // record it twice.
         expect(attempt).toHaveBeenCalledTimes(3);
-        expect(reported).toEqual(["primary", "second", "third"]);
+        expect(reported).toEqual(["primary", "second"]);
     });
 
-    it("reports the failure that stopped the request even when it is not retryable", async () => {
+    it("reports nothing when the only model tried is the one that failed", async () => {
+        const reported: string[] = [];
+        const attempt = vi.fn(async () => {
+            throw rateLimited();
+        });
+
+        await expect(
+            withModelFallback([candidate("primary")], attempt, (failed) =>
+                reported.push(failed.id),
+            ),
+        ).rejects.toThrow("429 upstream");
+
+        // The overwhelmingly common shape: no fallbacks declared. One upstream
+        // call must leave one row, and that row is the response.
+        expect(attempt).toHaveBeenCalledTimes(1);
+        expect(reported).toEqual([]);
+    });
+
+    it("reports nothing when a caller error stops the chain on the first model", async () => {
         const reported: string[] = [];
         const badRequest = Object.assign(new Error("400 upstream"), {
             status: 400,
@@ -131,9 +150,9 @@ describe("withModelFallback", () => {
             ),
         ).rejects.toThrow("400 upstream");
 
-        // A caller error stops the chain, but the model that produced it is
-        // still named rather than left to the requested model's record.
-        expect(reported).toEqual(["primary"]);
+        // Nothing was moved on from, so nothing is reported — the 400 the
+        // caller receives is the whole record of this request.
+        expect(reported).toEqual([]);
     });
 
     it("reports nothing and stops calling once a model serves", async () => {

@@ -854,7 +854,11 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "dreamshaper":
-            return await callSelfHostedServer(prompt, safeParams, "dreamshaper");
+            return await callSelfHostedServer(
+                prompt,
+                safeParams,
+                "dreamshaper",
+            );
 
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);

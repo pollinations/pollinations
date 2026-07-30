@@ -84,6 +84,11 @@ Requires header `x-backend-token: $PLN_GPU_TOKEN`; returns 403 otherwise.
 Dimensions are clamped to `MAX_DIM` and `MAX_PIXELS` and rounded to /32, so a
 1024×1024 request comes back 512×512.
 
+`steps` is accepted but **ignored** — same as the sana worker. The gen worker
+hardcodes `steps: 4` in every request body, and honouring that would drop a
+3090 to 5.06 img/s, below the peak-hour rate this deployment is sized for.
+Step count is set by `NUM_INFERENCE_STEPS` on the worker.
+
 Response is a single-element array with base64 JPEG:
 
 ```json

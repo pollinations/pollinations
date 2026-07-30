@@ -41,6 +41,10 @@ class ImageRequest(BaseModel):
     width: int = Field(default=512)
     height: int = Field(default=512)
     seed: int | None = None
+    # Accepted for contract compatibility but deliberately ignored, exactly as
+    # the sana worker did. The gen worker hardcodes steps=4 in every request
+    # body; honouring that would drop this card below the peak-hour rate it was
+    # sized for. Step count belongs to the model config, not the caller.
     steps: int | None = None
     safety_checker_adj: float | None = None
 
@@ -171,13 +175,12 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token))
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     generator = torch.Generator("cuda").manual_seed(seed)
     gen_w, gen_h = clamp_dims(request.width, request.height)
-    steps = request.steps or NUM_INFERENCE_STEPS
     try:
         t0 = time.time()
         with generate_lock:
             with torch.inference_mode():
                 output = pipe(prompt=request.prompts[0], generator=generator, width=gen_w, height=gen_h,
-                              num_inference_steps=steps, guidance_scale=GUIDANCE_SCALE)
+                              num_inference_steps=NUM_INFERENCE_STEPS, guidance_scale=GUIDANCE_SCALE)
             image = output.images[0]
         logger.info("Generated %dx%d in %.3fs", gen_w, gen_h, time.time() - t0)
         buf = io.BytesIO()

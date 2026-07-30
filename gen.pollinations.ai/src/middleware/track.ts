@@ -37,6 +37,7 @@ import {
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
@@ -930,6 +931,7 @@ async function extractUsageAndContentFilterResultsHeaders(
 
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    servedModelId?: string,
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
@@ -994,7 +996,11 @@ async function extractUsageAndContentFilterResultsStream(
         completionFilterResults,
     });
 
-    if (!model || !usage) {
+    // Our id wins over the name the provider puts in its chunks: for a
+    // community endpoint that name is its upstream's, and after a rescue it
+    // belongs to a different owner's model than the one that served.
+    const servedModel = servedModelId || model;
+    if (!servedModel || !usage) {
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
@@ -1004,7 +1010,7 @@ async function extractUsageAndContentFilterResultsStream(
 
     return {
         modelUsage: {
-            model,
+            model: servedModel,
             usage: openaiUsageToUsage(usage),
             output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
@@ -1028,7 +1034,10 @@ async function extractUsageAndContentFilterResults(
         contentType.includes("text/event-stream")
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            response.headers.get(MODEL_USED_HEADER) ?? undefined,
+        );
     }
     return await extractUsageAndContentFilterResultsHeaders(response);
 }

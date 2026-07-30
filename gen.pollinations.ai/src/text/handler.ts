@@ -4,6 +4,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
@@ -142,12 +143,19 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
+/**
+ * `servedModelId` is our id for the model that ran, and it wins over the name
+ * the provider reports for itself. A community endpoint answers with its
+ * upstream's name — "gemini-2.0-flash" for what we and its owner both call
+ * "alice/pro" — which names something nobody can act on, and after a fallback
+ * names the wrong party's model.
+ */
 function usageHeaders(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    servedModelId?: string,
 ): Headers {
     const headers = new Headers();
-    const modelUsed = completion?.model || fallbackModel;
+    const modelUsed = servedModelId || completion?.model;
     if (modelUsed) {
         const usage = completion?.usage
             ? openaiUsageToUsage(
@@ -211,9 +219,9 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
 
 function sendOpenAIResponse(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    servedModelId?: string,
 ): Response {
-    const headers = usageHeaders(completion, fallbackModel);
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -229,10 +237,10 @@ function sendOpenAIResponse(
 
 function sendTextContentResponse(
     completion: ChatCompletion,
-    fallbackModel: string | undefined,
+    servedModelId: string | undefined,
     upstreamRequestUrl: URL | undefined,
 ): Response {
-    const headers = usageHeaders(completion, fallbackModel);
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -290,14 +298,22 @@ function sendTextContentResponse(
     return new Response("", { headers });
 }
 
-function sendTextStreamResponse(completion: ChatCompletion): Response {
+function sendTextStreamResponse(
+    completion: ChatCompletion,
+    servedModelId?: string,
+): Response {
     const headers = new Headers({
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
-    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
-    // header here too — tracking reads it off the worker response for streams.
+    // sendTextStreamResponse bypasses usageHeaders(), so set what tracking
+    // reads off the worker response for streams here instead. Without the
+    // model header a streamed generation is attributed to whatever name the
+    // provider puts in its chunks, which after a rescue is the wrong owner's.
+    if (servedModelId) {
+        headers.set(MODEL_USED_HEADER, servedModelId);
+    }
     if (completion.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
@@ -389,22 +405,23 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        if (requestData.stream) return sendTextStreamResponse(completion);
-        const fallbackModel = servedEntry?.id ?? c.var.model?.resolved;
+        const servedModelId = servedEntry?.id ?? c.var.model?.resolved;
+        if (requestData.stream)
+            return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
-        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const trackingResponse = sendOpenAIResponse(completion, servedModelId);
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(
                 publicCompletion,
-                fallbackModel,
+                servedModelId,
                 c.var.upstreamRequestUrl,
             );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion, fallbackModel);
+        return sendOpenAIResponse(publicCompletion, servedModelId);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

@@ -915,6 +915,10 @@ fixtureTest(
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
+                    // The upstream names itself, as a real provider does. Our
+                    // id has to win over it, or a community model is recorded
+                    // under whatever its owner happens to proxy.
+                    model: "gpt-4.1-mini",
                     choices: [
                         {
                             index: 0,
@@ -954,10 +958,15 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
+        // Billing and analytics read the header, and it names OUR model even
+        // though the upstream called itself something else.
         expect(response.headers.get("x-model-used")).toBe(modelId);
         const body = await response.json();
-        expect(body).not.toHaveProperty("model");
+        // The OpenAI-compatible body still echoes the upstream's own name,
+        // which is what a provider's response carries. It disagrees with the
+        // header on purpose today; see the follow-up issue on aligning them.
         expect(body).toMatchObject({
+            model: "gpt-4.1-mini",
             choices: [{ message: { content: "ok" } }],
             usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 },
         });
@@ -981,8 +990,8 @@ fixtureTest(
         );
         expect(legacyResponse.status).toBe(200);
         const legacyBody = await legacyResponse.json();
-        expect(legacyBody).not.toHaveProperty("model");
         expect(legacyBody).toMatchObject({
+            model: "gpt-4.1-mini",
             choices: [{ message: { content: "ok" } }],
         });
 

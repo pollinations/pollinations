@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "./authUtils.js";
-import { API_BASE_URL } from "./coreUtils.js";
+import { buildUrl } from "./coreUtils.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -11,7 +11,7 @@ async function fetchCached(path) {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(new URL(path, API_BASE_URL), {
+    const response = await fetch(buildUrl(path), {
         headers: getAuthHeaders(),
         signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));

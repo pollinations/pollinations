@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+import http from "node:http";
 import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
  *
- * Spawns the server over stdio and lists tools without network access.
+ * Spawns the server over stdio and tests tool/model listing without external
+ * network access.
  * With a sk_ key from env, also exercises a small live slice.
  *
  *   POLLINATIONS_API_KEY=sk_xxx npm run test
@@ -16,10 +18,32 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
 const BASE_URL = process.env.POLLINATIONS_BASE_URL;
 
+let offlineRegistryServer;
+let testBaseUrl = BASE_URL;
+if (!KEY) {
+    offlineRegistryServer = http.createServer((req, res) => {
+        if (
+            req.url !== "/api/text/models" ||
+            req.headers.authorization !== undefined
+        ) {
+            res.writeHead(404);
+            res.end();
+            return;
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify([{ name: "offline-test" }]));
+    });
+    await new Promise((resolve) =>
+        offlineRegistryServer.listen(0, "127.0.0.1", resolve),
+    );
+    const address = offlineRegistryServer.address();
+    testBaseUrl = `http://127.0.0.1:${address.port}/api`;
+}
+
 const transport = new StdioClientTransport({
     command: "node",
     args: [path.join(__dirname, "pollinations-mcp.js")],
-    env: BASE_URL ? { POLLINATIONS_BASE_URL: BASE_URL } : undefined,
+    env: testBaseUrl ? { POLLINATIONS_BASE_URL: testBaseUrl } : undefined,
 });
 const client = new Client(
     { name: "mcp-smoke-test", version: "0.0.1" },
@@ -59,12 +83,13 @@ await step("listTools", async () => {
     return `${tools.length} tools`;
 });
 
+await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+
 if (!KEY) {
     console.log(
         "\nSkipping live calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
 } else {
-    await step("listTextModels", () => call("listTextModels"));
     await step("setApiKey", () => call("setApiKey", { key: KEY }));
     await step("getKeyInfo", () => call("getKeyInfo"));
     await step("generateText", async () => {
@@ -91,6 +116,9 @@ if (!KEY) {
 }
 
 await client.close();
+if (offlineRegistryServer) {
+    await new Promise((resolve) => offlineRegistryServer.close(resolve));
+}
 
 const passed = results.filter(Boolean).length;
 console.log(`\n${passed}/${results.length} passed`);

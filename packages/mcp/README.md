@@ -132,7 +132,7 @@ Say "Hello, welcome to pollinations.ai!" using the nova voice.
 POLLINATIONS_API_KEY=sk_… npm run test
 ```
 
-Without an API key, this runs an offline smoke test of the stdio connection and tool registration. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, text, image URL, balance).
+Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, text, image URL, balance).
 
 ## System Requirements
 

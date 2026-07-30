@@ -1,8 +1,38 @@
 import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 
+const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
+const configuredApiBaseUrl = process.env.POLLINATIONS_BASE_URL?.trim();
+
 export const API_BASE_URL = (
-    process.env.POLLINATIONS_BASE_URL ?? "https://gen.pollinations.ai"
+    configuredApiBaseUrl || DEFAULT_API_BASE_URL
 ).replace(/\/+$/, "");
+
+export function validateApiBaseUrl() {
+    let url;
+    try {
+        url = new URL(API_BASE_URL);
+    } catch {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
+        );
+    }
+    if (!["http:", "https:"].includes(url.protocol)) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
+        );
+    }
+    if (url.search || url.hash) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: query strings and fragments are not supported.",
+        );
+    }
+    return url;
+}
+
+function createApiUrl(path) {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return new URL(`${API_BASE_URL}${normalizedPath}`);
+}
 
 /**
  * @param {Array} content - Array of content objects (text, image, etc.)
@@ -57,7 +87,7 @@ export function createAudioContent(data, mimeType) {
  * @returns {string} - Complete URL
  */
 export function buildUrl(path, params = {}, includeAuth = false) {
-    const url = new URL(path, API_BASE_URL);
+    const url = createApiUrl(path);
     const allParams = includeAuth
         ? { ...params, ...getAuthQueryParam() }
         : params;
@@ -75,7 +105,7 @@ export function buildUrl(path, params = {}, includeAuth = false) {
  * @returns {string} - Complete URL without auth
  */
 export function buildShareableUrl(path, params = {}) {
-    const url = new URL(path, API_BASE_URL);
+    const url = createApiUrl(path);
     Object.entries(params).forEach(([key, value]) => {
         if (
             value !== undefined &&
@@ -144,22 +174,19 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
             ? { type: "input_audio", input_audio: { url: mediaUrl } }
             : { type: mediaType, [mediaType]: { url: mediaUrl } };
 
-    const response = await fetchWithAuth(
-        `${API_BASE_URL}/v1/chat/completions`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model,
-                messages: [
-                    {
-                        role: "user",
-                        content: [{ type: "text", text: prompt }, mediaBlock],
-                    },
-                ],
-            }),
-        },
-    );
+    const response = await fetchWithAuth(buildUrl("/v1/chat/completions"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model,
+            messages: [
+                {
+                    role: "user",
+                    content: [{ type: "text", text: prompt }, mediaBlock],
+                },
+            ],
+        }),
+    });
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
@@ -190,15 +217,12 @@ export async function postChatCompletion(body) {
         }
     }
 
-    const response = await fetchWithAuth(
-        `${API_BASE_URL}/v1/chat/completions`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cleanedBody),
-            timeoutMs: 30000,
-        },
-    );
+    const response = await fetchWithAuth(buildUrl("/v1/chat/completions"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleanedBody),
+        timeoutMs: 30000,
+    });
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");

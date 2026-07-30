@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
+    buildUrl,
     createMCPResponse,
     createTextContent,
     parseApiError,
@@ -351,7 +351,7 @@ async function webSearch(params) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+        const response = await fetch(buildUrl("/v1/chat/completions"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

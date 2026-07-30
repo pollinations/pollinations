@@ -1,0 +1,34 @@
+{
+  "pr_number": 12876,
+  "title": "fix: confine polli-agent file serving to temp storage",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12876",
+  "merged_at": "2026-07-30T12:30:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes the two high-severity CodeQL path-injection alerts in `apps/polli-agent/src/polli_agent/api.py`.\n- Rejects path separators, resolves paths against the canonical temp-files root, enforces containment, and rejects files/symlinks outside that root.\n- Adds regression coverage for valid files, traversal attempts, and escaping symlinks.\n- Validation: full polli-agent suite passes (48 passed, 8 skipped); `git diff --check` is clean. Ruff reports only pre-existing app-wide issues.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Files stay in the garden",
+    "blurb": "Polli-agent now keeps served files neatly inside its temporary storage patch. Even adventurous paths and wandering symlinks get gently redirected to nowhere.",
+    "summary": "polli-agent file serving now accepts only files contained within its canonical temporary-files root, rejecting path separators, traversal attempts, and symlinks that resolve outside it.",
+    "impact": "Users of polli-agent can serve valid temporary output files as before, with stronger guarantees that file requests remain inside the app's intended workspace.",
+    "keywords": [
+      "polli-agent",
+      "file-serving",
+      "path-validation",
+      "temporary-storage",
+      "security",
+      "community-app"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper at a cozy temporary-file garden, placing labeled file sprouts inside a small fenced planter while a retro terminal safely turns away tangled path vines trying to grow beyond the fence. The fence and planter represent canonical-root containment; include code-plants and a small lock-shaped garden gate to convey safe file access.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully tending a fenced temporary-file garden where neat code-plants grow from prominent lime green (#ecf874) pots; a retro terminal beside her politely blocks tangled path-vines from escaping the garden gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and subtle pixel-font text reading \"TEMP FILES\"; nostalgic, safe, and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12876.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully tending a fenced temporary-file garden where neat code-plants grow from prominent lime green (#ecf874) pots; a retro terminal beside her politely blocks tangled path-vines from escaping the garden gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and subtle pixel-font text reading \"TEMP FILES\"; nostalgic, safe, and emotionally warm."
+  },
+  "generated_at": "2026-07-30T12:33:37.419163+00:00"
+}

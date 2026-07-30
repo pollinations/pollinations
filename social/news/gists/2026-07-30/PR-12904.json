@@ -1,0 +1,34 @@
+{
+  "pr_number": 12904,
+  "title": "fix: move Pruna image models to DeepInfra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12904",
+  "merged_at": "2026-07-30T21:12:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `p-image` and `p-image-edit` through the exact DeepInfra Pruna endpoints.\n- Preserves canonical names, aliases, parameters, paid-only access, multiplier 1, and `$0.005`/`$0.01` image prices.\n- Keeps `p-video-720p` and `p-video-1080p` unchanged on Replicate pending canonical resolution-aware billing.\n- Adds focused route tests; full Gen suite passes 752/752 and both workers type-check.\n- Paid local E2E passed generation, JPEG/PNG editing, five references, every alias, validation, media inspection, and exact `$0.015` combined wallet deduction.\n\nNo fallback, GPU deployment, or secret mutation.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pruna found a new greenhouse",
+    "blurb": "The Pruna image models have moved their rendering nest to DeepInfra without changing the names, knobs, or prices anyone already knows. Image generation and editing keep buzzing along, now through the exact provider routes.",
+    "summary": "Routed `p-image` and `p-image-edit` to DeepInfra's Pruna endpoints while preserving canonical names, aliases, parameters, paid-only access, multiplier 1, and $0.005/$0.01 image pricing; Pruna video models remain on Replicate.",
+    "impact": "Paid users can continue generating and editing Pruna images through every existing alias, including JPEG/PNG edits and up to five references, with the same validated behavior and exact wallet deductions.",
+    "keywords": [
+      "pruna",
+      "deepinfra",
+      "image-generation",
+      "image-editing",
+      "providers",
+      "billing"
+    ],
+    "visual_concept": "Depict Polli carefully moving two labeled Pruna image jars from an old Replicate garden shed to a cozy DeepInfra greenhouse, with a retro terminal confirming that image and edit routes still preserve their familiar labels and prices. Show thriving code-plants, five small reference-photo frames, and a tiny receipt reading \"$0.015\" to represent tested multi-step billing continuity.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries glowing jars labeled \"p-image\" and \"p-image-edit\" into a friendly DeepInfra greenhouse beside code-plants, five little reference frames, and a retro terminal with a tiny \"$0.015\" receipt. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12904.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries glowing jars labeled \"p-image\" and \"p-image-edit\" into a friendly DeepInfra greenhouse beside code-plants, five little reference frames, and a retro terminal with a tiny \"$0.015\" receipt. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-30T21:13:56.289281+00:00"
+}

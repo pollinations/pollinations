@@ -1,0 +1,35 @@
+{
+  "pr_number": 12875,
+  "title": "feat: update AssemblyAI to Universal-3.5 Pro",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12875",
+  "merged_at": "2026-07-30T12:36:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the canonical AssemblyAI service with `universal-3.5-pro` while preserving every Universal-3 Pro ID as an alias.\n- Pins direct async inference to `universal-3-5-pro` with no fallback; keeps the $0.21/audio-hour base rate, multiplier 1, and existing Quest-Pollen access.\n- Updates the public catalog, SDK/CLI/agent surfaces, returns bad-audio transcoding failures as client errors, and fixes pre-existing missing billing for plain-text/SRT/VTT speech-to-text responses.\n- Live E2E passed MP3/WAV/M4A/WebM, all output formats, code switching, prompting, temperature, diarization, every alias, exact wallet deductions, errors, and 5/15/30-request bursts in about 3–4.5 seconds.\n- Gen passed 735/735 plus build/typecheck; focused access/model tests pass 11/11; Enter focused tests passed 308/308; SDK passed 30/30 plus typecheck. The CLI JavaScript bundle succeeds, while its unchanged Commander help typings still fail the existing declaration build.\n\nAssemblyAI separately prices prompting (+$0.05/audio-hour) and diarization (+$0.02/audio-hour), but completed responses expose duration without usage/cost or add-on fields. That pre-existing request-aware billing limitation is documented locally as BILL-012; this PR preserves the current base-duration calculation.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive hears sharper",
+    "blurb": "AssemblyAI’s transcription worker got a fresh pair of ears: Universal-3.5 Pro is now the canonical model. Every old Universal-3 Pro name still finds its way back to the same flower.",
+    "summary": "Replaced the canonical AssemblyAI transcription model with universal-3.5-pro across the public catalog, SDK, CLI, and agent surfaces, while retaining all Universal-3 Pro IDs as aliases and returning invalid-audio transcoding failures as client errors.",
+    "impact": "Speech-to-text requests now use Universal-3.5 Pro at the existing $0.21/audio-hour base rate with Quest-Pollen access, old model IDs continue working, and plain-text, SRT, and VTT responses now receive billing tracking.",
+    "keywords": [
+      "AssemblyAI",
+      "transcription",
+      "audio",
+      "universal-3.5-pro",
+      "SDK",
+      "CLI",
+      "billing"
+    ],
+    "visual_concept": "A cozy transcription garden upgrade: Polli tends a retro audio terminal whose waveform blooms into labeled text flowers, while a small sign shows old Universal-3 Pro paths merging into a new Universal-3.5 Pro hive. The scene represents improved speech recognition with backward-compatible aliases; scattered music notes, waveform vines, and a tiny receipt ledger nod to audio formats and accurate wallet deductions.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones while tending a garden of waveform vines that bloom into transcription text beside a retro CRT terminal labeled \"UNIVERSAL-3.5 PRO\"; old path signs labeled \"Universal-3 Pro\" merge warmly into the new terminal, with lime green (#ecf874) glowing prominently and small pixel flowers around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12875.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones while tending a garden of waveform vines that bloom into transcription text beside a retro CRT terminal labeled \"UNIVERSAL-3.5 PRO\"; old path signs labeled \"Universal-3 Pro\" merge warmly into the new terminal, with lime green (#ecf874) glowing prominently and small pixel flowers around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T12:39:41.114597+00:00"
+}

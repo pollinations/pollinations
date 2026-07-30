@@ -4,6 +4,7 @@ import { PRICE_ICON } from "./model-icons.tsx";
 import type {
     ModelPrice,
     ModelPriceLine,
+    ModelPriceVariant,
     PriceDirection,
     PriceKind,
 } from "./types.ts";
@@ -112,4 +113,39 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     );
 
     return typeLabel ? <Tooltip content={typeLabel}>{badge}</Tooltip> : badge;
+};
+
+export const PriceVariantDetails: FC<{
+    variants: ModelPriceVariant[];
+}> = ({ variants }) => (
+    <div className="flex max-w-[360px] flex-col gap-3 text-left">
+        {variants.map((variant) => (
+            <div key={variant.name} className="flex flex-col gap-1.5">
+                <span className="font-medium text-theme-text-strong">
+                    {variant.label}
+                </span>
+                <span className="text-xs leading-relaxed text-theme-text-muted">
+                    {variant.description}
+                </span>
+                <PriceBadgeList
+                    badges={groupPriceBadges(variant.prices)}
+                    className="flex flex-wrap gap-1"
+                />
+            </div>
+        ))}
+    </div>
+);
+
+export const PriceVariantDisclosure: FC<{
+    variants?: ModelPriceVariant[];
+}> = ({ variants }) => {
+    if (!variants?.length) return null;
+
+    return (
+        <Tooltip content={<PriceVariantDetails variants={variants} />}>
+            <Chip intent="neutral" size="sm" className="whitespace-nowrap">
+                Tiered pricing
+            </Chip>
+        </Tooltip>
+    );
 };

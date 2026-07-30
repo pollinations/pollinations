@@ -1,0 +1,33 @@
+{
+  "pr_number": 12864,
+  "title": "chore: update app metrics 2026-07-30",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12864",
+  "merged_at": "2026-07-30T05:06:04Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Garden ledger refreshed",
+    "blurb": "The greenhouse clipboard got its daily once-over. App metrics and health checks are now wearing today's date.",
+    "summary": "Updated the daily app metrics, health checks, and greenhouse records in apps/APPS.md and apps/GREENHOUSE.md for 2026-07-30.",
+    "impact": "Community maintainers have a current snapshot of app status and greenhouse activity to reference.",
+    "keywords": [
+      "community",
+      "app-metrics",
+      "health-checks",
+      "greenhouse",
+      "automation"
+    ],
+    "visual_concept": "A cozy community garden noticeboard represents the refreshed app directory and greenhouse health records. Polli, wearing a tiny gardener visor and holding a clipboard, updates a lime-green status chart beside healthy code-plants and labeled seed packets.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny gardener visor and updating a greenhouse noticeboard full of simple app health checkmarks, beside blooming code-plants in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'DAILY CHECK'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12864.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny gardener visor and updating a greenhouse noticeboard full of simple app health checkmarks, beside blooming code-plants in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'DAILY CHECK'."
+  },
+  "generated_at": "2026-07-30T05:09:10.822982+00:00"
+}

@@ -477,7 +477,7 @@ describe("tracking observability", () => {
             totalCost: 0,
             totalPrice: 0,
         });
-        expect(event).not.toHaveProperty("modelUsed");
+        expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 

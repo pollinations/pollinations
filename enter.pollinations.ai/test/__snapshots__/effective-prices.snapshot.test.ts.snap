@@ -1482,7 +1482,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000416666666666667,
     },
   },
-  "universal-3-pro": {
+  "universal-3.5-pro": {
     "cost": {
       "promptAudioSeconds": 0.0000583333333333333,
     },

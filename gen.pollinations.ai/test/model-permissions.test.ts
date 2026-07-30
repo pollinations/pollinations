@@ -159,6 +159,12 @@ test("filters paid-only audio models by paid balance", async ({
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
+    expect(freeModels.some((model) => model.name === "universal-3.5-pro")).toBe(
+        false,
+    );
+    expect(
+        paidModels.find((model) => model.name === "universal-3.5-pro"),
+    ).toMatchObject({ paid_only: true });
 });
 
 test("requires paid balance for Recraft vector", async ({

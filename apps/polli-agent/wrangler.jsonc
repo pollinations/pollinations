@@ -1,0 +1,32 @@
+{
+  "name": "polli-agent",
+  "main": "worker.js",
+  "compatibility_date": "2026-01-01",
+  "containers": [
+    {
+      "class_name": "PolliContainer",
+      "image": "./Dockerfile",
+      "max_instances": 2,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "POLLI", "class_name": "PolliContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PolliContainer"] }],
+  // Worker-backed apps bind their own hostnames; deploy.sh gates on the myceli
+  // origin serving before it verifies the public URL, so both are needed.
+  "routes": [
+    {
+      "pattern": "polli.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "polli.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": { "enabled": true }
+}

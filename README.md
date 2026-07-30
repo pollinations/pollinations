@@ -48,6 +48,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-29** – **🚀 Polli Agent** Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai) <!-- app -->
+- **2026-07-29** – **✨ Agent Run Tokens** Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-28** – **🎬 Wan gets more runway** Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.
 - **2026-07-28** – **✨ Story seeds, illustrated** Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app) <!-- app -->
 - **2026-07-28** – **🎨 Pixels, meet paths** Convert raster artwork into scalable SVG paths for reuse at any size. [Try it](https://vtrace-two.vercel.app) <!-- app -->
@@ -56,8 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-07-27** – **🤖 NVIDIA Nemotron 3 Ultra** `nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)
 - **2026-07-27** – **⚡ More reliable Z-Image capacity** New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50.
 - **2026-07-26** – **🎵 ElevenLabs dialogue** Generate multi-speaker scenes with up to 10 voices and 25 turns through `POST /v1/audio/dialogue`. The hive has learned to hold a conversation. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **✨ Voice isolation** Send audio or video to `POST /v1/audio/voice-isolator` and get the speech back as a clean MP3. Useful when the background has opinions. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **🚀 GPT Realtime 2.1 Mini** `gpt-realtime-2.1-mini` is now available for large-context realtime text, image, and voice sessions—with tools, PCM audio, caching, and ten voices. [API Docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

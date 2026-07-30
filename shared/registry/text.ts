@@ -289,6 +289,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
@@ -315,6 +316,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
@@ -561,6 +563,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
@@ -585,7 +588,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         brand: "Google",
         category: "text",
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -1183,12 +1186,13 @@ export const TEXT_SERVICES = {
     },
     "kimi-k3": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-07-30).
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
@@ -1287,7 +1291,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
@@ -1310,7 +1314,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.435),
@@ -1489,6 +1493,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
@@ -1633,7 +1638,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // OpenRouter triples token rates above 256K prompt tokens. Pollinations
         // keeps the full context window and absorbs that higher tier.
@@ -1690,6 +1695,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
@@ -1716,6 +1722,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
@@ -1739,6 +1746,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
@@ -1766,6 +1774,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):

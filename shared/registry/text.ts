@@ -1183,12 +1183,13 @@ export const TEXT_SERVICES = {
     },
     "kimi-k3": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-07-30).
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),

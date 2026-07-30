@@ -335,8 +335,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k3",
-        config: portkeyConfig["moonshotai/kimi-k3"],
-        transform: stripCacheControl,
+        config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "laguna",

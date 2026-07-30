@@ -1,0 +1,33 @@
+{
+  "pr_number": 12871,
+  "title": "chore: prune agent scaffolding written for older models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12871",
+  "merged_at": "2026-07-30T08:50:21Z",
+  "labels": [],
+  "pr_body_excerpt": "Trims `AGENTS.md` instructions that Anthropic's current Opus 5 / Fable 5 prompting guides identify as counterproductive.\n\n- Replaces \"use subagents liberally\" with explicit delegation limits — Opus 5 delegates more readily than prior models, and the docs recommend capping it\n- Drops \"never mark complete without proving it works\" and the \"is there a more elegant way?\" self-critique prompt — [the Opus 5 guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5) says explicit verification instructions cause over-verification with no quality gain\n- Drops **Task Management** and **Core Principles** — both duplicate instructions the built-in system prompt already carries\n- No behavioural/code change; instructions only\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less scaffolding, more signal",
+    "blurb": "The agent garden got a light pruning. AGENTS.md now leaves modern models room to work instead of asking them to inspect every leaf twice.",
+    "summary": "Trimmed AGENTS.md by removing redundant task-management, self-critique, and explicit verification instructions while adding clearer limits on subagent delegation for current Opus 5 and Fable 5 guidance.",
+    "impact": "Contributors using coding agents get leaner repository guidance that avoids unnecessary delegation and over-verification without changing application behavior.",
+    "keywords": [
+      "agents",
+      "prompting",
+      "claude-code",
+      "repository-guidance",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli, wearing tiny gardener glasses, prunes a code-plant labeled AGENTS.md while a friendly CRT monitor robot holds a short, tidy instruction sheet; clipped duplicate leaves fall into a compost bin, with fresh flowers and a lime-green terminal glow signaling clearer guidance.",
+    "image_prompt": "Cozy pixel art garden-shed scene where the cute pollinations bee mascot, with yellow body, dark brown stripes, pink blush, light blue wings, and tiny gardener glasses, gently prunes an AGENTS.md code-plant while a cheerful CRT monitor robot holds a neatly shortened instruction page. Lime green (#ecf874) glows from a retro terminal amid pastel flowers and vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'LESS, BUT BETTER'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12871.jpg",
+    "prompt": "Cozy pixel art garden-shed scene where the cute pollinations bee mascot, with yellow body, dark brown stripes, pink blush, light blue wings, and tiny gardener glasses, gently prunes an AGENTS.md code-plant while a cheerful CRT monitor robot holds a neatly shortened instruction page. Lime green (#ecf874) glows from a retro terminal amid pastel flowers and vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'LESS, BUT BETTER'."
+  },
+  "generated_at": "2026-07-30T08:51:17.659915+00:00"
+}

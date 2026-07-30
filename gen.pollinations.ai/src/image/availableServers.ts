@@ -3,7 +3,7 @@ import { HttpError } from "./httpError.ts";
 
 const logServer = debug("pollinations:server");
 
-export const VALID_TYPES = ["flux", "zimage", "sana"] as const;
+export const VALID_TYPES = ["flux", "zimage", "dreamshaper"] as const;
 export type ServerType = (typeof VALID_TYPES)[number];
 
 type ServerEntry = {

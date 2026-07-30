@@ -55,8 +55,6 @@ import {
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
-const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
-
 // Loggers
 const logError = debug("pollinations:error");
 const logPerf = debug("pollinations:perf");
@@ -224,10 +222,7 @@ export const callSelfHostedServer = async (
                 },
                 body: JSON.stringify(body),
             };
-            response =
-                poolType === "sana"
-                    ? await fetch(SANA_BACKEND_URL, requestInit)
-                    : await fetchFromWeightedServer(poolType, requestInit);
+            response = await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -858,8 +853,8 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "sana":
-            return await callSelfHostedServer(prompt, safeParams, "sana");
+        case "dreamshaper":
+            return await callSelfHostedServer(prompt, safeParams, "dreamshaper");
 
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);

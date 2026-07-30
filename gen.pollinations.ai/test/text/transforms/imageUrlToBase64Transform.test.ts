@@ -26,7 +26,10 @@ describe("imageUrlToBase64Transform", () => {
 
         await expect(
             transform(imageMessage(["not-a-url"]), bedrockOptions),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
 
         expect(fetchSpy).not.toHaveBeenCalled();
     });
@@ -39,13 +42,19 @@ describe("imageUrlToBase64Transform", () => {
                 imageMessage(["http://127.0.0.1/image.png"]),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
         await expect(
             transform(
                 imageMessage(["http://93.184.216.34/image.png"]),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
         await expect(
             transform(
                 imageMessage([
@@ -53,13 +62,19 @@ describe("imageUrlToBase64Transform", () => {
                 ]),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
         await expect(
             transform(
                 imageMessage(["http://localhost/image.png"]),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
@@ -76,7 +91,10 @@ describe("imageUrlToBase64Transform", () => {
                 imageMessage(["https://example.com/redirect.png"]),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
 
         expect(fetchSpy).toHaveBeenCalledWith(
             new URL("https://example.com/redirect.png"),
@@ -101,6 +119,67 @@ describe("imageUrlToBase64Transform", () => {
                 ),
                 bedrockOptions,
             ),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "image_too_large",
+        });
+    });
+
+    it.each([
+        401, 403, 404, 429, 500,
+    ])("returns 400 failed_to_download_image when the image host answers %i", async (upstreamStatus) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("nope", { status: upstreamStatus }),
+        );
+
+        await expect(
+            transform(
+                imageMessage(["https://example.com/image.png"]),
+                bedrockOptions,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "failed_to_download_image",
+            upstreamStatus,
+        });
+    });
+
+    it("rejects a non-image content type", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("<html></html>", {
+                headers: { "content-type": "text/html" },
+            }),
+        );
+
+        await expect(
+            transform(
+                imageMessage(["https://example.com/page.html"]),
+                bedrockOptions,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_image_media_type",
+        });
+    });
+
+    it("rejects an image larger than the request budget", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: {
+                    "content-type": "image/png",
+                    "content-length": String(21 * 1024 * 1024),
+                },
+            }),
+        );
+
+        await expect(
+            transform(
+                imageMessage(["https://example.com/huge.png"]),
+                bedrockOptions,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "image_too_large",
+        });
     });
 });

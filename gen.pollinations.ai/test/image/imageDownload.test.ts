@@ -28,6 +28,7 @@ describe("downloadUserImage", () => {
         expect(error).toMatchObject({
             status: 400,
             details: { validation: true },
+            errorCode: "unsupported_image_media_type",
             message: `Failed to read image ${imageUrl}: Network connection lost`,
         });
     });
@@ -42,7 +43,32 @@ describe("downloadUserImage", () => {
             name: "HttpError",
             status: 400,
             details: { validation: true },
+            errorCode: "unsupported_image_media_type",
             message: `Unsupported image format from ${imageUrl}`,
+        });
+    });
+
+    it("codes an unreachable image host as failed_to_download_image", async () => {
+        const imageUrl = "https://example.com/gone.png";
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("fetch failed"),
+        );
+
+        await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "failed_to_download_image",
+        });
+    });
+
+    it("codes a non-2xx image host response as failed_to_download_image", async () => {
+        const imageUrl = "https://example.com/missing.png";
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("nope", { status: 404, statusText: "Not Found" }),
+        );
+
+        await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "failed_to_download_image",
         });
     });
 });

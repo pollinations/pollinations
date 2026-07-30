@@ -1,3 +1,4 @@
+import type { ImageInputErrorCode } from "@shared/error.ts";
 import debug from "debug";
 import { arrayBufferToBase64 } from "@/util.ts";
 import type { TransformFn } from "../types.js";
@@ -15,20 +16,29 @@ const MIME_TYPES: Record<string, string> = {
     svg: "image/svg+xml",
 };
 
+/**
+ * A user-supplied image URL we could not turn into inline image data.
+ *
+ * Always 400: the caller gave us a URL we cannot use, so the failure is theirs,
+ * not ours. The image host's status is kept in `upstreamStatus` for
+ * observability only — never surfaced as our own status, otherwise a dead link
+ * makes us return 404 and a rate-limiting image CDN makes us return 429.
+ */
 class ImageFetchError extends Error {
-    status: number;
+    readonly status = 400;
+    readonly errorCode: ImageInputErrorCode;
     upstreamStatus?: number;
     requestUrl?: URL;
 
     constructor(
         message: string,
-        statusCode: number,
+        errorCode: ImageInputErrorCode,
         requestUrl?: URL,
         upstreamStatus?: number,
     ) {
         super(message);
         this.name = "ImageFetchError";
-        this.status = statusCode;
+        this.errorCode = errorCode;
         this.requestUrl = requestUrl;
         this.upstreamStatus = upstreamStatus;
     }
@@ -72,21 +82,21 @@ function assertAllowedImageUrl(value: string): URL {
     } catch {
         throw new ImageFetchError(
             `Invalid image URL ${value}: expected a valid HTTP(S) URL.`,
-            400,
+            "invalid_image_url",
         );
     }
 
     if (url.protocol !== "http:" && url.protocol !== "https:") {
         throw new ImageFetchError(
             `Invalid image URL ${value}: only HTTP(S) image URLs can be fetched.`,
-            400,
+            "invalid_image_url",
         );
     }
 
     if (url.username || url.password || isBlockedImageHost(url.hostname)) {
         throw new ImageFetchError(
             `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
-            400,
+            "invalid_image_url",
         );
     }
 
@@ -118,7 +128,7 @@ async function readImageBytes(
     if (maxBytes <= 0) {
         throw new ImageFetchError(
             `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
-            400,
+            "image_too_large",
         );
     }
 
@@ -128,7 +138,7 @@ async function readImageBytes(
         if (arrayBuffer.byteLength > maxBytes) {
             throw new ImageFetchError(
                 `Image too large: ${arrayBuffer.byteLength} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
-                400,
+                "image_too_large",
             );
         }
         return arrayBuffer;
@@ -144,7 +154,7 @@ async function readImageBytes(
             if (total > maxBytes) {
                 throw new ImageFetchError(
                     `Image too large: ${total} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
-                    400,
+                    "image_too_large",
                 );
             }
             chunks.push(value);
@@ -178,7 +188,7 @@ async function fetchImageAsBase64(
         if (response.status >= 300 && response.status < 400) {
             throw new ImageFetchError(
                 `Image URL ${url} redirects. Please provide a direct public image URL.`,
-                400,
+                "invalid_image_url",
                 validatedUrl,
                 response.status,
             );
@@ -205,7 +215,7 @@ async function fetchImageAsBase64(
 
             throw new ImageFetchError(
                 errorMessage,
-                response.status,
+                "failed_to_download_image",
                 validatedUrl,
                 response.status,
             );
@@ -215,7 +225,7 @@ async function fetchImageAsBase64(
         if (contentType && !contentType.startsWith("image/")) {
             throw new ImageFetchError(
                 `Invalid content type for ${url}: received ${contentType}, expected image/*. Please provide a direct link to an image file.`,
-                400,
+                "unsupported_image_media_type",
             );
         }
 
@@ -224,7 +234,7 @@ async function fetchImageAsBase64(
         if (contentLength && parseInt(contentLength, 10) > maxAllowedBytes) {
             throw new ImageFetchError(
                 `Image too large: ${contentLength} bytes (max ${maxAllowedBytes} bytes remaining). Please use a smaller image.`,
-                400,
+                "image_too_large",
             );
         }
 
@@ -234,7 +244,7 @@ async function fetchImageAsBase64(
         if (arrayBuffer.byteLength > MAX_IMAGE_SIZE) {
             throw new ImageFetchError(
                 `Image too large: ${arrayBuffer.byteLength} bytes (max ${MAX_IMAGE_SIZE} bytes). Please use a smaller image.`,
-                400,
+                "image_too_large",
             );
         }
 
@@ -266,7 +276,11 @@ async function fetchImageAsBase64(
         }
 
         errorLog(`Failed to fetch image ${url}: ${message}`);
-        throw new ImageFetchError(errorMessage, 400, validatedUrl);
+        throw new ImageFetchError(
+            errorMessage,
+            "failed_to_download_image",
+            validatedUrl,
+        );
     }
 }
 
@@ -305,7 +319,7 @@ async function processContentPart(
     if (context.imageCount > MAX_IMAGES_PER_REQUEST) {
         throw new ImageFetchError(
             `Too many image URLs in request (max ${MAX_IMAGES_PER_REQUEST}).`,
-            400,
+            "image_too_large",
         );
     }
 

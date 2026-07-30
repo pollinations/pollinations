@@ -1,6 +1,21 @@
 import { Buffer } from "node:buffer";
+import type { ImageInputErrorCode } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "../httpError.ts";
+
+/** A user-supplied image we could not use — always 400, always coded. */
+function userImageError(
+    message: string,
+    errorCode: ImageInputErrorCode,
+): HttpError {
+    return new HttpError(
+        message,
+        400,
+        { validation: true },
+        undefined,
+        errorCode,
+    );
+}
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return new Uint8Array(buffer);
@@ -133,18 +148,16 @@ export async function downloadUserImage(
         imageResponse = await fetch(imageUrl, { signal });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
+        throw userImageError(
             `Failed to fetch image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
+            "failed_to_download_image",
         );
     }
 
     if (!imageResponse.ok) {
-        throw new HttpError(
+        throw userImageError(
             `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
-            400,
-            { validation: true },
+            "failed_to_download_image",
         );
     }
 
@@ -153,18 +166,18 @@ export async function downloadUserImage(
         buffer = Buffer.from(await imageResponse.arrayBuffer());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
+        throw userImageError(
             `Failed to read image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
+            "unsupported_image_media_type",
         );
     }
 
     const mimeType = detectImageMimeType(buffer);
     if (!mimeType) {
-        throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
-            validation: true,
-        });
+        throw userImageError(
+            `Unsupported image format from ${imageUrl}`,
+            "unsupported_image_media_type",
+        );
     }
     return { buffer, mimeType };
 }

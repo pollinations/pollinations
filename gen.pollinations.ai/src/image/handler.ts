@@ -220,6 +220,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),

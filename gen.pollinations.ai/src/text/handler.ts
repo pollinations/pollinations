@@ -418,7 +418,15 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        const servedModelId = servedEntry?.id ?? c.var.model?.resolved;
+        // Only override the provider's own name where it is misleading. A
+        // community endpoint reports its upstream — "gemini-2.0-flash" for what
+        // everyone calls "alice/pro" — and after a rescue that upstream belongs
+        // to a different owner's model. A static model's name is our id with
+        // the exact version attached ("mistral-ocr-4-0" for "mistral-ocr"),
+        // which is strictly more information, so leave it alone.
+        const servedModelId =
+            servedEntry?.id ??
+            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
         if (requestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert

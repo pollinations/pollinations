@@ -379,12 +379,12 @@ describe("Mistral OCR text adapter", () => {
                 usage_info: { pages_processed: 3 },
             },
         };
-        const billing = calculateUsageBilling(
-            "mistral-ocr",
-            {},
-            definition,
+        const billing = calculateUsageBilling({
+            model: "mistral-ocr",
+            usage: {},
+            servedBy: definition,
             output,
-        );
+        });
 
         expect(countMistralOcrPages(output)).toBe(3);
         expect(billing.cost.totalCost).toBe(0.012);

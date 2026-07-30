@@ -88,7 +88,7 @@ const baseParams: ImageParams = {
 };
 
 const inputOf = (req: ProviderRequest) =>
-    req.url.includes("api.replicate.com")
+    new URL(req.url).hostname === "api.replicate.com"
         ? (req.body as { input: Record<string, unknown> }).input
         : req.body;
 

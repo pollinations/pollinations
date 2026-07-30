@@ -348,7 +348,7 @@ export const IMAGE_SERVICES = {
     },
     "veo": {
         aliases: ["veo-3.1-fast", "veo-720p", "video"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
@@ -367,7 +367,7 @@ export const IMAGE_SERVICES = {
     },
     "veo-1080p": {
         aliases: ["veo-3.1-fast-1080p", "veo-1080"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "video",
         addedDate: new Date("2026-07-15").getTime(),

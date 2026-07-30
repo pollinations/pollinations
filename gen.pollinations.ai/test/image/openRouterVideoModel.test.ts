@@ -3,6 +3,8 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterVeo1080pAPI,
+    callOpenRouterVeoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -11,6 +13,16 @@ const POLL_URL = "https://openrouter.ai/api/v1/videos/job-happyhorse-test";
 const VIDEO_URL = "https://video.example.com/happyhorse-output.mp4";
 const GROK_POLL_URL = "https://openrouter.ai/api/v1/videos/job-grok-test";
 const GROK_VIDEO_URL = "https://video.example.com/grok-output.mp4";
+const VEO_POLL_URL = "https://openrouter.ai/api/v1/videos/job-veo-test";
+const VEO_VIDEO_URL =
+    "https://openrouter.ai/api/v1/videos/job-veo-test/content";
+const START_FRAME_URL = "https://example.com/start.png";
+const END_FRAME_URL = "https://example.com/end.png";
+const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+);
+const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "happyhorse-1.1",
@@ -367,5 +379,242 @@ describe("OpenRouter Grok Video Pro", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+function mockVeoFetch(
+    requests: Record<string, unknown>[],
+    onDownload?: (authorization: string | null) => void,
+    pollResult: Record<string, unknown> = {
+        id: "job-veo-test",
+        polling_url: VEO_POLL_URL,
+        status: "completed",
+        unsigned_urls: [VEO_VIDEO_URL],
+        usage: { cost: 0.48 },
+    },
+) {
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+
+            if (href === START_FRAME_URL || href === END_FRAME_URL) {
+                return new Response(PNG, {
+                    status: 200,
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+
+            if (href === SUBMIT_URL) {
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    id: "job-veo-test",
+                    polling_url: VEO_POLL_URL,
+                    status: "pending",
+                });
+            }
+
+            if (href === VEO_POLL_URL) {
+                return Response.json(pollResult);
+            }
+
+            if (href === VEO_VIDEO_URL) {
+                onDownload?.(new Headers(init?.headers).get("Authorization"));
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    status: 200,
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+
+            return new Response("unexpected URL", { status: 404 });
+        });
+}
+
+describe("OpenRouter Veo 3.1 Fast", () => {
+    it("submits the exact 720p route without audio and preserves tracking", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        let downloadAuthorization: string | null = null;
+        mockVeoFetch(requests, (authorization) => {
+            downloadAuthorization = authorization;
+        });
+
+        const result = await callOpenRouterVeoAPI("a calm ocean at sunrise", {
+            ...baseParams,
+            model: "veo",
+            duration: 4,
+            audio: false,
+        });
+
+        expect(requests).toEqual([
+            {
+                model: "google/veo-3.1-fast",
+                prompt: "a calm ocean at sunrise",
+                resolution: "720p",
+                aspect_ratio: "16:9",
+                duration: 4,
+                generate_audio: false,
+                provider: {
+                    options: {
+                        "google-vertex": {
+                            parameters: {
+                                personGeneration: "allow_all",
+                            },
+                        },
+                    },
+                },
+            },
+        ]);
+        expect(downloadAuthorization).toBe("Bearer openrouter-test-key");
+        expect(result).toMatchObject({
+            buffer: Buffer.from([0, 0, 0, 24]),
+            mimeType: "video/mp4",
+            durationSeconds: 4,
+            trackingData: {
+                actualModel: "veo",
+                usage: { completionVideoSeconds: 4 },
+            },
+        });
+    });
+
+    it("submits 1080p with audio and validated start and end frames", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockVeoFetch(requests);
+
+        const result = await callOpenRouterVeo1080pAPI(
+            "animate between these frames",
+            {
+                ...baseParams,
+                model: "veo-1080p",
+                width: 720,
+                height: 1280,
+                duration: 4,
+                audio: true,
+                image: [START_FRAME_URL, END_FRAME_URL],
+            },
+        );
+
+        expect(requests).toEqual([
+            {
+                model: "google/veo-3.1-fast",
+                prompt: "animate between these frames",
+                resolution: "1080p",
+                aspect_ratio: "9:16",
+                duration: 4,
+                generate_audio: true,
+                provider: {
+                    options: {
+                        "google-vertex": {
+                            parameters: {
+                                personGeneration: "allow_all",
+                            },
+                        },
+                    },
+                },
+                frame_images: [
+                    {
+                        type: "image_url",
+                        image_url: { url: PNG_DATA_URI },
+                        frame_type: "first_frame",
+                    },
+                    {
+                        type: "image_url",
+                        image_url: { url: PNG_DATA_URI },
+                        frame_type: "last_frame",
+                    },
+                ],
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "veo-1080p",
+            usage: {
+                completionVideoSeconds: 4,
+                completionAudioSeconds: 4,
+            },
+        });
+    });
+
+    it.each([
+        4, 6, 8,
+    ])("accepts the supported %s-second duration", async (duration) => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockVeoFetch(requests);
+
+        const result = await callOpenRouterVeoAPI("a calm ocean at sunrise", {
+            ...baseParams,
+            model: "veo",
+            duration,
+            audio: false,
+        });
+
+        expect(requests[0].duration).toBe(duration);
+        expect(result.durationSeconds).toBe(duration);
+    });
+
+    it.each([
+        3, 4.5, 5, 9,
+    ])("rejects unsupported duration %s before submitting a job", async (duration) => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callOpenRouterVeoAPI("a calm ocean at sunrise", {
+                ...baseParams,
+                model: "veo",
+                duration,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects an invalid frame before submitting a paid job", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (href === START_FRAME_URL) {
+                    return new Response("not an image", { status: 200 });
+                }
+                return new Response("unexpected URL", { status: 404 });
+            });
+
+        await expect(
+            callOpenRouterVeoAPI("animate this frame", {
+                ...baseParams,
+                model: "veo",
+                duration: 4,
+                image: [START_FRAME_URL],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(requests).toHaveLength(0);
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves content-policy failures as client errors", async () => {
+        setOpenRouterEnv();
+        mockVeoFetch([], undefined, {
+            id: "job-veo-test",
+            polling_url: VEO_POLL_URL,
+            status: "failed",
+            error: "Generation failed due to content policy violation",
+        });
+
+        await expect(
+            callOpenRouterVeoAPI("a rejected prompt", {
+                ...baseParams,
+                model: "veo",
+                duration: 4,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "OpenRouter video generation failed: Generation failed due to content policy violation",
+        });
     });
 });

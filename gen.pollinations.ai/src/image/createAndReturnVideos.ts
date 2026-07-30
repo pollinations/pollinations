@@ -9,6 +9,8 @@ import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterVeo1080pAPI,
+    callOpenRouterVeoAPI,
 } from "./models/openRouterVideoModel.ts";
 import {
     callPrunaVideo720API,
@@ -17,11 +19,6 @@ import {
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
-    callVeo1080pAPI,
-    callVeoAPI,
-    type VideoGenerationResult,
-} from "./models/veoVideoModel.ts";
-import {
     callWanAPI,
     callWanFastAPI,
     callWanPro1080pAPI,
@@ -29,7 +26,20 @@ import {
 } from "./models/wanVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
-export type { VideoGenerationResult };
+export interface VideoGenerationResult {
+    buffer: Buffer;
+    mimeType: string;
+    durationSeconds: number;
+    trackingData: {
+        actualModel: string;
+        usage: {
+            completionVideoSeconds?: number;
+            completionVideoTokens?: number;
+            completionAudioSeconds?: number;
+            totalTokenCount?: number;
+        };
+    };
+}
 
 const logOps = debug("pollinations:video:ops");
 const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
@@ -44,10 +54,10 @@ export async function createAndReturnVideo(
     let result: VideoGenerationResult;
     switch (safeParams.model) {
         case "veo":
-            result = await callVeoAPI(prompt, safeParams);
+            result = await callOpenRouterVeoAPI(prompt, safeParams);
             break;
         case "veo-1080p":
-            result = await callVeo1080pAPI(prompt, safeParams);
+            result = await callOpenRouterVeo1080pAPI(prompt, safeParams);
             break;
         case "seedance-pro":
             result = await callSeedanceProAPI(prompt, safeParams);

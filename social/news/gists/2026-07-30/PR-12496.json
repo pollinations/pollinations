@@ -1,0 +1,36 @@
+{
+  "pr_number": 12496,
+  "title": "fix: use stable user IDs across the repository",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12496",
+  "merged_at": "2026-07-30T15:08:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Uses immutable GitHub account IDs for GitHub workflow authorization, Polly admins, project routing, app registration, duplicate checks, and app-directory attribution.\n- Uses Better Auth `user.id` for generation telemetry, observability, debugging queries, developer aggregation, BYOP ownership, and app-key grouping.\n- Stops emitting duplicated GitHub identity in new generation events; legacy Tinybird columns remain only to avoid a destructive schema migration.\n- Keeps GitHub usernames where they are display labels, required GitHub API inputs, or part of the public `owner/model` namespace.\n- Refreshes stored usernames from GitHub while preserving the internal Pollinations identity.\n\n## Validation\n\n- `npm run typecheck` in `gen.pollinations.ai`\n- Focused image routing and realtime tests: 21 passed\n- Actionlint, Python AST, shell syntax, JSON parsing, Biome, and Tinybird formatting passed\n- All 143 changed Grafana queries parsed against production Tinybird; both changed endpoint queries returned expected columns and rows\n\n## Rollout\n\n- Deploy `app_request_counts.pipe` and `app_top_weekly.pipe` to Tinybird staging, verify, then production. No Tinybird deployment was performed from this branch.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Names change, IDs don’t",
+    "blurb": "The hive stopped treating a rename like a new person. App registration, project routing, and attribution now follow the durable identity underneath the display name.",
+    "summary": "Reworked repository identity handling so GitHub authorization, Polly admin access, app registration, duplicate detection, routing, and app-directory attribution use immutable GitHub account IDs, while telemetry and developer aggregation use Better Auth user.id.",
+    "impact": "Developers can change their GitHub username without losing continuity for registered apps, ownership, routing, attribution, or account-level activity.",
+    "keywords": [
+      "identity",
+      "github",
+      "app-registration",
+      "authentication",
+      "telemetry",
+      "routing"
+    ],
+    "visual_concept": "Depict identity as a sturdy engraved hive tag that remains attached while a smaller handwritten username label is refreshed. Polli, wearing tiny librarian glasses, carefully files an immutable ID tag into a cozy app-directory cabinet beside code-plants; a CRT monitor robot can display a username label changing while the underlying ID stays constant.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files a glowing permanent ID tag into an app-directory cabinet while a cute CRT monitor robot refreshes a small username label; code-plants and flowers grow around the desk, with prominent lime green (#ecf874) light. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: \"STABLE ID\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12496.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files a glowing permanent ID tag into an app-directory cabinet while a cute CRT monitor robot refreshes a small username label; code-plants and flowers grow around the desk, with prominent lime green (#ecf874) light. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: \"STABLE ID\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-30T15:09:26.726829+00:00"
+}

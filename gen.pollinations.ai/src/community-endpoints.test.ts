@@ -1182,6 +1182,107 @@ fixtureTest(
 );
 
 fixtureTest(
+    "adapts Responses requests through a registered community endpoint",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `responses-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Responses community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    await expectCommunityPortkeyRequest(input, init, {
+                        customHost: "https://api.example.com/v1",
+                        bearerToken: "sk_saved_token",
+                        upstreamModel: "gpt-4.1-mini",
+                        body: {
+                            messages: [{ role: "user", content: "hello" }],
+                            max_tokens: 5,
+                            stream: false,
+                        },
+                    });
+                    return Response.json({
+                        id: "chatcmpl_responses",
+                        object: "chat.completion",
+                        created: 1,
+                        model: "gpt-4.1-mini",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "responses ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/responses", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    input: "hello",
+                    max_output_tokens: 5,
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            object: "response",
+            model: "gpt-4.1-mini",
+            output_text: "responses ok",
+            usage: {
+                input_tokens: 2,
+                output_tokens: 3,
+                total_tokens: 5,
+            },
+        });
+    },
+);
+
+fixtureTest(
     "routes simple text requests through a registered community endpoint",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -1368,6 +1469,7 @@ fixtureTest(
                     id: modelId,
                     supported_endpoints: expect.arrayContaining([
                         "/v1/chat/completions",
+                        "/v1/responses",
                     ]),
                 }),
             ]),

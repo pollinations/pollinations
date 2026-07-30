@@ -177,6 +177,7 @@ async function fakePortkeyResponse(request: Request) {
         stream?: boolean;
     };
     const model = body.model || "openai-fast";
+
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
 
@@ -285,6 +286,16 @@ async function fakePortkeyResponse(request: Request) {
                 cost: {
                     request_cost: "not-a-number",
                 },
+            },
+        },
+        {
+            matches: prompt.includes("vcr responses summary"),
+            content: "snapshot final answer",
+            promptTokens: 54,
+            completionTokens: 96,
+            usageExtras: {
+                prompt_tokens_details: { cached_tokens: 10 },
+                completion_tokens_details: { reasoning_tokens: 89 },
             },
         },
         {
@@ -623,6 +634,117 @@ test("non-stream chat completions keep moderation telemetry in generation events
         moderationCompletionViolenceSeverity: "medium",
         isBilledUsage: true,
     });
+});
+
+test("responses API adapts the shared Chat stack", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vcr");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "vcr responses summary",
+            reasoning: { effort: "high" },
+            max_output_tokens: 400,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("44");
+    expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("10");
+    expect(response.headers.get("x-usage-completion-text-tokens")).toBe("7");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "89",
+    );
+    await expect(response.json()).resolves.toMatchObject({
+        object: "response",
+        output: [{ type: "message" }],
+        output_text: "snapshot final answer",
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "openai-large",
+        tokenCountPromptText: 44,
+        tokenCountPromptCached: 10,
+        tokenCountCompletionText: 7,
+        tokenCountCompletionReasoning: 89,
+        isBilledUsage: true,
+    });
+});
+
+test("responses API streams events and bills completed usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "vcr responses stream",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    const stream = await response.text();
+    expect(stream).toContain('"type":"response.output_text.delta"');
+    expect(stream).toContain('"type":"response.completed"');
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "openai-large",
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+        isBilledUsage: true,
+    });
+});
+
+test("responses API rejects stateful fields with an OpenAI error", async ({
+    paidApiKey,
+}) => {
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "stateful responses request",
+            previous_response_id: "resp_previous",
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            type: "invalid_request_error",
+            param: "previous_response_id",
+            code: "invalid_request_error",
+        },
+    });
+    await wait();
 });
 
 test("streaming chat completions replay through VCR", async ({

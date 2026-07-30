@@ -331,6 +331,13 @@ describe("gen worker routing", () => {
         const textModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/v1/chat/completions"),
         );
+        const responsesModel = models.data.find(
+            (model) => model.id === "openai-large",
+        );
+        const gemmaModel = models.data.find((model) => model.id === "gemma");
+        const mistralModel = models.data.find(
+            (model) => model.id === "mistral",
+        );
         const imageModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/v1/images/generations"),
         );
@@ -347,6 +354,11 @@ describe("gen worker routing", () => {
             output_modalities: expect.any(Array),
             supported_endpoints: expect.arrayContaining(["/text/{prompt}"]),
         });
+        expect(responsesModel?.supported_endpoints).toContain("/v1/responses");
+        expect(gemmaModel).toBeDefined();
+        expect(gemmaModel?.supported_endpoints).toContain("/v1/responses");
+        expect(mistralModel).toBeDefined();
+        expect(mistralModel?.supported_endpoints).toContain("/v1/responses");
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();

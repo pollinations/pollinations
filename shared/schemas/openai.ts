@@ -267,6 +267,17 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const ReasoningConfigSchema = z
+    .object({
+        effort: z
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .optional(),
+        // Native reasoning summaries and reusable encrypted reasoning state
+        // require provider Responses support and are deferred from V1.
+        summary: z.null().optional(),
+        generate_summary: z.null().optional(),
+    })
+    .strict();
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -341,6 +352,41 @@ export const CreateChatCompletionRequestSchema = z
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
 >;
+
+export const CreateResponseRequestSchema = z
+    .object({
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+            description:
+                "AI model for response generation. See /v1/models for models that list /v1/responses.",
+        }),
+        input: z.union([z.string(), z.array(z.unknown()).min(1)]),
+        instructions: z.string().nullish(),
+        reasoning: ReasoningConfigSchema.nullish(),
+        max_output_tokens: z.number().int().min(0).nullish(),
+        stream: z.boolean().optional().default(false),
+        // V1 is deliberately stateless. Null/false are accepted because OpenAI
+        // SDKs commonly serialize optional fields that way.
+        store: z.literal(false).optional().default(false),
+        previous_response_id: z.null().optional(),
+        conversation: z.null().optional(),
+        background: z.literal(false).nullish(),
+        include: z.array(z.string()).max(0).nullish(),
+        text: z.record(z.string(), z.any()).optional(),
+        tools: z.array(z.record(z.string(), z.any())).optional(),
+        tool_choice: z.any().optional(),
+        parallel_tool_calls: z.boolean().optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
+        user: z.string().optional(),
+        temperature: z.number().min(0).max(2).nullish(),
+        top_p: z.number().min(0).max(1).nullish(),
+        frequency_penalty: z.number().min(-2).max(2).nullish(),
+        presence_penalty: z.number().min(-2).max(2).nullish(),
+        truncation: z.literal("disabled").nullish(),
+        safe: SafeSchema,
+    })
+    .strict();
+
+export type CreateResponseRequest = z.infer<typeof CreateResponseRequestSchema>;
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
@@ -431,6 +477,51 @@ export const CompletionUsageSchema = z
     .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
+
+export const ResponseUsageSchema = z
+    .object({
+        input_tokens: z.number().int().nonnegative(),
+        input_tokens_details: z
+            .object({
+                cached_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .nullish(),
+        output_tokens: z.number().int().nonnegative(),
+        output_tokens_details: z
+            .object({
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .passthrough();
+
+export type ResponseUsage = z.infer<typeof ResponseUsageSchema>;
+
+const ResponseOutputItemSchema = z
+    .object({
+        type: z.string(),
+    })
+    .passthrough();
+
+export const CreateResponseResponseSchema = z
+    .object({
+        id: z.string(),
+        object: z.literal("response"),
+        created_at: z.number().optional(),
+        model: z.string(),
+        output: z.array(ResponseOutputItemSchema),
+        output_text: z.string().optional(),
+        status: z.string().optional(),
+        error: z.any().nullish(),
+        usage: ResponseUsageSchema.optional(),
+    })
+    .passthrough()
+    .meta({ $id: "CreateResponseResponse" });
+
+export type CreateResponseResponse = z.infer<
+    typeof CreateResponseResponseSchema
+>;
 
 export const ContentFilterSeveritySchema = z
     .enum(["safe", "low", "medium", "high"])

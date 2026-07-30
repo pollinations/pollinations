@@ -6,6 +6,10 @@ import {
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import {
+    CreateChatCompletionResponseSchema,
+    type CreateResponseRequest,
+} from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -13,6 +17,12 @@ import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
+import {
+    chatCompletionToResponse,
+    responseRequestToChatRequest,
+    responsesErrorResponse,
+    responsesStreamResponse,
+} from "./responses.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 type TextContext = Context<Env>;
@@ -369,6 +379,73 @@ export async function handleChatCompletionLocal(
     const req = createExpressLikeRequest(c, body, "/openai");
     const requestData = getRequestData(req);
     return generateTextResponse(c, requestData, false);
+}
+
+export async function handleCreateResponseLocal(
+    c: TextContext,
+    body: CreateResponseRequest & Record<string, unknown>,
+    chatRequest = responseRequestToChatRequest(body),
+): Promise<Response> {
+    try {
+        const agentId = (
+            c.var.model?.communityEndpoint as
+                | ({ agentId?: unknown } & Record<string, unknown>)
+                | undefined
+        )?.agentId;
+        if (agentId && body.tools?.length) {
+            const error = new Error(
+                "tools: managed prompt agents use only their configured MCP tools",
+            ) as ServiceError;
+            error.status = 400;
+            error.code = "unsupported_parameter";
+            (error as ServiceError & { param: string }).param = "tools";
+            error.details = {
+                error: {
+                    type: "invalid_request_error",
+                    code: "unsupported_parameter",
+                    param: "tools",
+                    message:
+                        "Managed prompt agents do not accept request-supplied tools",
+                },
+            };
+            throw error;
+        }
+        const chatResponse = await handleChatCompletionLocal(c, chatRequest);
+        if (body.stream === true) {
+            // Tracking and billing understand the canonical Chat stream. Keep
+            // one clone for them while adapting the client-facing stream.
+            c.var.track?.overrideResponseTracking(chatResponse.clone());
+            return responsesStreamResponse(chatResponse, body);
+        }
+
+        const responseText = await chatResponse.text();
+        let completion: ChatCompletion;
+        try {
+            completion = CreateChatCompletionResponseSchema.parse(
+                JSON.parse(responseText),
+                { reportInput: true },
+            );
+        } catch (error) {
+            const invalidResponse = new Error(
+                `Upstream returned invalid Chat Completions JSON: ${error instanceof Error ? error.message : String(error)}`,
+            ) as ServiceError;
+            invalidResponse.status = 502;
+            invalidResponse.upstreamStatus = chatResponse.status;
+            invalidResponse.details = responseText;
+            throw invalidResponse;
+        }
+        const headers = new Headers(chatResponse.headers);
+        headers.set("Content-Type", "application/json; charset=utf-8");
+        return new Response(
+            JSON.stringify(chatCompletionToResponse(completion, body)),
+            { status: chatResponse.status, headers },
+        );
+    } catch (thrown: unknown) {
+        if ((thrown as ServiceError).status === 400) {
+            return responsesErrorResponse(thrown);
+        }
+        throwTextError(thrown as ServiceError);
+    }
 }
 
 export async function handleTextContentLocal(

@@ -112,7 +112,7 @@
     "title": "SlidePainter",
     "description": "AI-powered slide image generator by Pollinations"
   },
-  "polli-agent": {
+  "weaver": {
     "subdomain": "weaver",
     "deployTarget": "worker",
     "workerEntrypoint": "worker.js",

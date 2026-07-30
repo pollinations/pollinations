@@ -86,25 +86,3 @@ export async function communityEndpointGatewayContext(
         userApiKey,
     };
 }
-
-/**
- * Community endpoint as one entry of a Portkey `{strategy, targets}` config.
- * Target JSON is snake_case (`custom_host`, `override_params`), unlike the
- * hyphenated `custom-host` header form used by the single-endpoint path;
- * `authKey` is turned into the per-target `api_key` by generatePortkeyHeaders.
- */
-export async function communityEndpointPortkeyTarget(
-    endpoint: CommunityEndpointRuntime,
-    secret: string,
-): Promise<Record<string, unknown>> {
-    const bearerToken = await decryptSecret(
-        endpoint.bearerTokenCiphertext,
-        secret,
-    );
-    return {
-        provider: "openai",
-        custom_host: communityOpenAIBaseUrl(endpoint.baseUrl),
-        authKey: normalizeCommunityEndpointBearerToken(bearerToken),
-        override_params: { model: endpoint.upstreamModel },
-    };
-}

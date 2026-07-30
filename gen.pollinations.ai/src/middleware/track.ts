@@ -19,6 +19,7 @@ import type { ErrorVariables } from "@shared/error.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
+    remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
@@ -110,6 +111,11 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
+        /**
+         * Report a generation attempt that failed and will be retried on another
+         * model. Handlers report the fact; this middleware owns the event shape.
+         */
+        recordFailedAttempt: (model: string, error: unknown) => void;
     };
 };
 
@@ -164,6 +170,72 @@ export const track = (eventType: EventType) =>
 
         let responseOverride: Response | null = null;
 
+        // Read at emit time: balanceCheckResult is only set once the balance
+        // middleware has run.
+        const balanceTracking = (): BalanceData => ({
+            selectedMeterId: c.var.balance.balanceCheckResult?.selectedMeterId,
+            selectedMeterSlug:
+                c.var.balance.balanceCheckResult?.selectedMeterSlug,
+            balances: c.var.balance.balanceCheckResult?.balances || {},
+        });
+
+        /**
+         * One unbilled row for an attempt that failed and was retried on another
+         * model.
+         *
+         * Without it a model that is always rescued by its fallback looks
+         * healthy, because the request's single row records whichever model
+         * ended up serving. Nothing was generated, so the row carries who asked
+         * and what failed, and no usage, price or reward.
+         */
+        const recordFailedAttempt = (model: string, error: unknown): void => {
+            const endTime = new Date();
+            const responseStatus = failedAttemptStatus(error);
+            c.executionCtx.waitUntil(
+                (async () => {
+                    if (!userTracking.userId) return;
+                    await sendToTinybird(
+                        createTrackingEvent({
+                            id: generateRandomId(),
+                            requestId: c.get("requestId"),
+                            requestPath: getRoutePath(c),
+                            startTime,
+                            endTime,
+                            environment: c.env.ENVIRONMENT,
+                            eventType,
+                            ipSubnet,
+                            ipHash: await hashIp(
+                                clientIp,
+                                c.env.BETTER_AUTH_SECRET,
+                            ),
+                            userTracking,
+                            balanceTracking: balanceTracking(),
+                            requestTracking,
+                            responseTracking: {
+                                responseStatus,
+                                cacheHit: false,
+                                isBilledUsage: false,
+                                fallbackUsed:
+                                    model !==
+                                    requestTracking.resolvedModelRequested,
+                                modelUsed: model,
+                            },
+                            markup: null,
+                            communityModelReward: null,
+                            billedPrice: 0,
+                            errorTracking: collectErrorData(
+                                responseStatus,
+                                error instanceof Error ? error : undefined,
+                            ),
+                        }),
+                        c.env.TINYBIRD_INGEST_URL,
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                })(),
+            );
+        };
+
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
             resolvedModelRequested: requestTracking.resolvedModelRequested,
@@ -171,6 +243,7 @@ export const track = (eventType: EventType) =>
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
             },
+            recordFailedAttempt,
         });
 
         await next();
@@ -207,15 +280,6 @@ export const track = (eventType: EventType) =>
                 // time-to-first-byte. Binary bodies (image/audio) are never
                 // read by tracking, so their endTime stays ~header arrival.
                 const endTime = new Date();
-
-                // Capture balance tracking AFTER next() so balanceCheckResult is set
-                const balanceTracking = {
-                    selectedMeterId:
-                        c.var.balance.balanceCheckResult?.selectedMeterId,
-                    selectedMeterSlug:
-                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
-                    balances: c.var.balance.balanceCheckResult?.balances || {},
-                } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
@@ -284,10 +348,10 @@ export const track = (eventType: EventType) =>
                 }
                 const committedBalanceTracking = payerBucket
                     ? {
-                          ...balanceTracking,
+                          ...balanceTracking(),
                           ...payerBucketToMeter(payerBucket),
                       }
-                    : balanceTracking;
+                    : balanceTracking();
 
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
@@ -306,7 +370,10 @@ export const track = (eventType: EventType) =>
                     markup,
                     communityModelReward,
                     billedPrice,
-                    errorTracking: collectErrorData(response, c.get("error")),
+                    errorTracking: collectErrorData(
+                        response.status,
+                        c.get("error"),
+                    ),
                 });
 
                 await c.var.frontendKeyRateLimit?.consumePollen(
@@ -1023,8 +1090,8 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-export function collectErrorData(response: Response, error?: Error): ErrorData {
-    if (response.ok && !error) return {};
+export function collectErrorData(status: number, error?: Error): ErrorData {
+    if (status < 400 && !error) return {};
     let source: string | undefined;
     let explicitCode: string | undefined;
     if (error instanceof UpstreamError) {
@@ -1036,8 +1103,24 @@ export function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         // Prefer the error's explicit code (e.g. content_policy_violation) so
         // analytics can distinguish it from a generic status-derived code.
-        errorResponseCode: explicitCode ?? getErrorCode(response.status),
+        errorResponseCode: explicitCode ?? getErrorCode(status),
         errorSource: source,
-        errorMessage: error?.message || getDefaultErrorMessage(response.status),
+        errorMessage: error?.message || getDefaultErrorMessage(status),
     };
+}
+
+/**
+ * The status the request would have returned had this failed attempt been the
+ * last one, so an attempt row reads like any other error row on the dashboards:
+ * upstream 4xx that are our own concern (auth, quota) arrive as 502 on the
+ * served path too, and counting them as client errors would hide a model whose
+ * every request is rate limited.
+ */
+function failedAttemptStatus(error: unknown): number {
+    const failure = error as
+        | { status?: unknown; upstreamStatus?: unknown }
+        | null
+        | undefined;
+    const status = failure?.upstreamStatus ?? failure?.status;
+    return typeof status === "number" ? remapUpstreamStatus(status) : 500;
 }

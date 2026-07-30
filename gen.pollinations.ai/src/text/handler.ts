@@ -9,13 +9,13 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
-import type { GenerationModelEntry } from "../model-registry.ts";
-import { fixWavHeader } from "../routes/audio.js";
 import {
-    communityEndpointGatewayContext,
-    communityEndpointPortkeyTarget,
-} from "./communityEndpoint.ts";
+    type FallbackCandidate,
+    fallbackCandidates,
+    withModelFallback,
+} from "../fallback.ts";
+import { fixWavHeader } from "../routes/audio.js";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type {
@@ -104,79 +104,32 @@ function prepareRequestParameters(
 }
 
 /**
- * Portkey fallback config over the model and its declared fallbacks, one target
- * each.
+ * How to reach one candidate's provider.
  *
- * Target 0 is built from the primary's gateway config rather than its endpoint
- * row, so it keeps the auth key the single-endpoint path would have used —
- * including the run token a delegating endpoint gets instead of its saved
- * bearer.
- *
- * Returns null when no fallback target could be built, in which case the
- * request runs against the primary alone. The list stops at the first target
- * that cannot be built, so one Portkey could not reach never shifts the ones
- * behind it forward.
+ * Built per attempt rather than once up front, so a delegating fallback mints
+ * its own run token and no attempt ever carries another endpoint's credential.
  */
-async function buildFallbackModelConfig(
-    primaryConfig: Record<string, unknown>,
-    fallbacks: GenerationModelEntry[],
-    secret: string,
-): Promise<{
-    config: Record<string, unknown>;
-    entries: GenerationModelEntry[];
-} | null> {
-    // Target JSON is snake_case, unlike the hyphenated `custom-host` header
-    // form the single-endpoint config uses.
-    const targets: Record<string, unknown>[] = [
-        {
-            provider: primaryConfig.provider,
-            custom_host: primaryConfig["custom-host"],
-            authKey: primaryConfig.authKey,
-            override_params: { model: primaryConfig.model },
-        },
-    ];
-    const entries: GenerationModelEntry[] = [];
-    for (const entry of fallbacks) {
-        if (!entry.communityEndpoint) break;
-        targets.push(
-            await communityEndpointPortkeyTarget(
-                entry.communityEndpoint,
-                secret,
-            ),
-        );
-        entries.push(entry);
+function gatewayContext(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<TransformOptions> | TransformOptions {
+    const { communityEndpoint, definition } = candidate;
+    // Paired by fallbackCandidates: a community endpoint always arrives with the
+    // definition that prices it. Anything else is a static model, whose provider
+    // config the gateway resolves from the request itself.
+    if (!communityEndpoint || !definition) {
+        return withGatewayContext(c, requestData);
     }
-    if (entries.length === 0) return null;
-
-    return {
-        config: {
-            // resolveModelConfig() derives the request-body model from
-            // config.model (utils/modelResolver.ts); a strategy/targets config
-            // has none at provider level, so it must be set explicitly. Each
-            // target overrides it anyway through override_params.
-            model: primaryConfig.model,
-            strategy: {
-                mode: "fallback",
-                on_status_codes: FALLBACK_ON_STATUS_CODES,
-            },
-            targets,
-        },
-        entries,
-    };
-}
-
-// Portkey reports the served target as "config.targets[N]". Index 0 is the
-// model the caller asked for, so index N names the Nth declared fallback; a
-// missing or unparseable value means the primary served. Read before the
-// stream is returned, so this works for streaming too.
-function servedFallbackEntry(
-    fallbackTarget: string | undefined,
-    entries: GenerationModelEntry[],
-): GenerationModelEntry | undefined {
-    if (!fallbackTarget) return undefined;
-    const index = Number(fallbackTarget.match(/\[(\d+)\]/)?.[1]);
-    if (!Number.isInteger(index) || index < 1) return undefined;
-    return entries[index - 1];
+    return communityEndpointGatewayContext(
+        communityEndpoint,
+        definition,
+        requestData,
+        c.env.BETTER_AUTH_SECRET,
+        c.env.PORTKEY_GATEWAY_URL,
+        c.var.auth?.apiKey?.rawKey || "",
+        c.var.auth?.apiKey?.id,
+    );
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -408,44 +361,31 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext: TransformOptions = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
-                  c.var.model.definition,
-                  requestData,
-                  c.env.BETTER_AUTH_SECRET,
-                  c.env.PORTKEY_GATEWAY_URL,
-                  c.var.auth?.apiKey?.rawKey || "",
-                  c.var.auth?.apiKey?.id,
-              )
-            : withGatewayContext(c, requestData);
-        // Only community models declare fallbacks, so the primary always has
-        // the gateway modelConfig that target 0 is built from.
-        const declaredFallbacks = c.var.model?.fallbackEntries ?? [];
-        const fallback =
-            declaredFallbacks.length > 0 && gatewayContext.modelConfig
-                ? await buildFallbackModelConfig(
-                      gatewayContext.modelConfig,
-                      declaredFallbacks,
-                      c.env.BETTER_AUTH_SECRET,
-                  )
-                : null;
-        const completion = await generateTextPortkey(
-            requestData.messages,
-            fallback
-                ? { ...gatewayContext, modelConfig: fallback.config }
-                : gatewayContext,
+        const {
+            result: completion,
+            candidate,
+            index,
+        } = await withModelFallback(
+            fallbackCandidates(c.var.model),
+            async (attempt) =>
+                generateTextPortkey(
+                    requestData.messages,
+                    await gatewayContext(c, requestData, attempt),
+                ),
+            (attempt, error) =>
+                c.var.track?.recordFailedAttempt(attempt.id, error),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
+        if (index > 0) {
+            // Same "config.targets[N]" shape a Portkey strategy would report, so
+            // the response header and tracking's parsing cover both.
+            completion.fallbackTarget = `config.targets[${index}]`;
+        }
 
         // Billing follows what actually served, so record the serving entry
         // before the response (streaming included) leaves the handler.
-        const servedEntry = servedFallbackEntry(
-            completion.fallbackTarget,
-            fallback?.entries ?? [],
-        );
+        const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
         if (requestData.stream) return sendTextStreamResponse(completion);

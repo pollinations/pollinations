@@ -1,11 +1,15 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
+import type { GenerationModelEntry } from "./model-registry.ts";
+
 /**
- * Upstream statuses that make a request move on to the model's fallback target.
- * Portkey gets this as `strategy.on_status_codes` for text; the buffered image
- * path applies the same list in-worker before retrying.
+ * Upstream statuses that make a request move on to the model's next fallback
+ * target.
  *
- * 400 and 422 are left out on purpose: those are caller errors and replaying
- * them cannot succeed. 401/402/403/404 are included because they mean the
- * primary's credentials or upstream model are broken, which the fallback may
+ * 400 and 422 are left out on purpose: those are caller errors and retrying
+ * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
+ * the primary's credentials or upstream model are broken, which the fallback may
  * survive.
  */
 export const FALLBACK_ON_STATUS_CODES = [
@@ -24,4 +28,152 @@ export function isNetworkFailure(error: unknown): boolean {
         error instanceof TypeError &&
         /fetch failed|network|connection|socket/i.test(error.message)
     );
+}
+
+/**
+ * The upstream failure shapes the generation clients throw. The image client
+ * throws the provider's status as-is; the text client remaps it before throwing
+ * (429 → 502, see remapUpstreamStatus) and keeps the original in
+ * `upstreamStatus`, so the unremapped one is preferred and the list above can
+ * name the statuses providers actually send.
+ */
+type UpstreamFailure = {
+    status?: unknown;
+    upstreamStatus?: unknown;
+    details?: unknown;
+    message?: string;
+};
+
+function upstreamStatus(failure: UpstreamFailure): number | undefined {
+    const status = failure.upstreamStatus ?? failure.status;
+    return typeof status === "number" ? status : undefined;
+}
+
+/**
+ * Every place a provider might have put its reason. Content-policy detection is
+ * a case-insensitive substring match, so the whole details bag is worth handing
+ * over rather than the one field each client happens to parse out — the image
+ * client nests the raw body under `details.body`, the text client puts the
+ * parsed body in `details` itself.
+ */
+function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
+    const { details } = failure;
+    let detailsText: string | null = null;
+    if (typeof details === "string") {
+        detailsText = details;
+    } else if (details) {
+        try {
+            detailsText = JSON.stringify(details);
+        } catch {
+            // A details bag we cannot serialize still leaves error.message.
+        }
+    }
+    return [detailsText, failure.message ?? null];
+}
+
+/**
+ * Only a broken upstream is worth another attempt.
+ *
+ * Content-policy refusals are excluded at any status — routing a moderation
+ * rejection to a possibly more permissive endpoint would turn an unbilled 422
+ * into a billed generation and bypass the primary's moderation.
+ *
+ * An error with no upstream status is never retried, which is what keeps our own
+ * bugs from being blamed on a fallback: a handler's TypeError, a misconfigured
+ * delegating endpoint, a failed secret decryption all reach here as a plain
+ * Error and are rethrown untouched.
+ */
+export function isRetryableFallbackError(error: unknown): boolean {
+    if (isNetworkFailure(error)) return true;
+    if (!(error instanceof Error)) return false;
+    const failure = error as UpstreamFailure;
+    const status = upstreamStatus(failure);
+    if (!status || !FALLBACK_ON_STATUS_CODES.includes(status)) return false;
+    return !firstContentPolicyMessage(upstreamFailureText(failure));
+}
+
+/**
+ * One model to generate with. The minimal shape every modality needs, so the
+ * seam below does not depend on how any one handler reaches its provider.
+ */
+export type FallbackCandidate = {
+    id: string;
+    /** Always present alongside `communityEndpoint`: it is what prices it. */
+    definition?: ModelDefinition;
+    communityEndpoint?: CommunityEndpointRuntime;
+    /**
+     * Registry entry to bill when this candidate serves. Absent on the model the
+     * caller asked for, which bills as itself.
+     */
+    entry?: GenerationModelEntry;
+};
+
+type PrimaryModel = {
+    resolved: string;
+    definition: ModelDefinition;
+    communityEndpoint?: CommunityEndpointRuntime;
+    fallbackEntries?: GenerationModelEntry[];
+};
+
+/**
+ * The model the caller asked for, then each fallback its owner declared, in
+ * order.
+ *
+ * An absent model means generation was reached without the model middleware, so
+ * there is no registry entry and nothing to fall back to — the one attempt still
+ * runs against whatever the provider config resolves.
+ */
+export function fallbackCandidates(
+    model: PrimaryModel | undefined,
+): FallbackCandidate[] {
+    const candidates: FallbackCandidate[] = [
+        {
+            id: model?.resolved ?? "",
+            definition: model?.definition,
+            communityEndpoint: model?.communityEndpoint,
+        },
+    ];
+    for (const entry of model?.fallbackEntries ?? []) {
+        // Only community endpoints are routable today. Stop at the first one
+        // that is not, so a gap never shifts the targets behind it forward.
+        if (!entry.communityEndpoint) break;
+        candidates.push({
+            id: entry.id,
+            definition: entry.definition,
+            communityEndpoint: entry.communityEndpoint,
+            entry,
+        });
+    }
+    return candidates;
+}
+
+/**
+ * Runs `attempt` against each candidate until one succeeds.
+ *
+ * Placed around the upstream call itself rather than around the request, so
+ * authentication, balance, rate limiting and moderation run exactly once no
+ * matter how many models are tried. Every candidate is tried at most once: the
+ * dominant failure is an exhausted quota, and asking the same endpoint again
+ * would only spend more of a budget that is already gone.
+ *
+ * Safe for streaming: the clients throw before returning a body, so a failed
+ * attempt has sent the caller nothing.
+ */
+export async function withModelFallback<T>(
+    candidates: FallbackCandidate[],
+    attempt: (candidate: FallbackCandidate) => Promise<T>,
+    onFailedAttempt?: (candidate: FallbackCandidate, error: unknown) => void,
+): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    for (const [index, candidate] of candidates.entries()) {
+        try {
+            return { result: await attempt(candidate), candidate, index };
+        } catch (error) {
+            const isLast = index === candidates.length - 1;
+            if (isLast || !isRetryableFallbackError(error)) throw error;
+            onFailedAttempt?.(candidate, error);
+        }
+    }
+    // Unreachable: the loop either returns or rethrows for a non-empty list, and
+    // the primary is always the first candidate.
+    throw new Error("Model fallback needs at least one candidate");
 }

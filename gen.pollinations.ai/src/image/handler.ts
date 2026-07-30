@@ -6,7 +6,7 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { FALLBACK_ON_STATUS_CODES, isNetworkFailure } from "../fallback.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
@@ -395,29 +395,7 @@ async function generateImageResult(
     return result;
 }
 
-// Only a broken primary is worth retrying, so the image path gates on the same
-// statuses Portkey gets for text: caller errors (400/422) cannot succeed on a
-// replay. Content-policy refusals are excluded at any status — routing a
-// moderation rejection to a possibly more permissive endpoint would turn an
-// unbilled 422 into a billed generation and bypass the primary's moderation.
-function isRetryableFallbackError(error: unknown): boolean {
-    if (isNetworkFailure(error)) return true;
-    if (!(error instanceof HttpError)) return false;
-    if (!FALLBACK_ON_STATUS_CODES.includes(error.status)) return false;
-    return !firstContentPolicyMessage([
-        parseUpstreamErrorBody(error).text,
-        error.message,
-    ]);
-}
-
-/**
- * Tries the model, then each fallback it declared, until one returns an image.
- *
- * The image response is fully buffered before any bytes reach the client, so a
- * plain in-worker retry against the next model is safe — no streaming caveat,
- * and a failed attempt is never billed. Each model is tried at most once; the
- * same endpoint is never called twice.
- */
+/** Tries the model, then each fallback it declared, until one returns an image. */
 async function callCommunityImageWithFallback(
     c: ImageContext,
     endpoint: CommunityEndpointRuntime,
@@ -428,37 +406,25 @@ async function callCommunityImageWithFallback(
     servedEntry?: GenerationModelEntry;
     servedIndex: number;
 }> {
-    // Attempt 0 is the model the caller asked for, so it has no served entry to
-    // report; the rest are its declared fallbacks, in order.
-    const attempts: {
-        endpoint: CommunityEndpointRuntime;
-        entry?: GenerationModelEntry;
-    }[] = [{ endpoint }];
-    for (const entry of c.var.model.fallbackEntries ?? []) {
-        if (!entry.communityEndpoint) break;
-        attempts.push({ endpoint: entry.communityEndpoint, entry });
-    }
-
-    for (const [index, attempt] of attempts.entries()) {
-        try {
-            return {
-                result: await callCommunityImageEndpoint(
-                    attempt.endpoint,
-                    prompt,
-                    safeParams,
-                    c.env.BETTER_AUTH_SECRET,
-                ),
-                servedEntry: attempt.entry,
-                servedIndex: index,
-            };
-        } catch (error) {
-            const isLast = index === attempts.length - 1;
-            if (isLast || !isRetryableFallbackError(error)) throw error;
-        }
-    }
-    // Unreachable: attempts always holds the primary, which either returns or
-    // rethrows above.
-    throw new Error("Image fallback list is empty");
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const generated = await callCommunityImageEndpoint(
+                // Only the primary can reach here without its own endpoint, and
+                // this path runs only once it has one.
+                attempt.communityEndpoint ?? endpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            // Checked inside the attempt so an endpoint that answers 200 with an
+            // empty body fails over like any other broken response.
+            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
+            return generated;
+        },
+        (attempt, error) => c.var.track?.recordFailedAttempt(attempt.id, error),
+    );
+    return { result, servedEntry: candidate.entry, servedIndex: index };
 }
 
 async function generateVideoResult(
@@ -492,7 +458,6 @@ export async function generateImageOrVideoResponse(
                     originalPrompt,
                     safeParams,
                 );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
             const headers = mediaHeaders(
                 originalPrompt,
                 servedEntry

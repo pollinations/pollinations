@@ -204,6 +204,14 @@ function isBillingFetch(request: Request): boolean {
     );
 }
 
+/** Tinybird ingest bodies are newline-delimited JSON, one row per event. */
+function parseIngestedEvents(body: string): Record<string, unknown>[] {
+    return body
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+}
+
 describe("community endpoint helpers", () => {
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         expect(
@@ -3395,45 +3403,53 @@ fixtureTest(
 
         // Read inside the mock: request bodies cannot cross isolates.
         const gatewayCalls: {
-            config: string | null;
-            provider: string | null;
-            body: unknown;
+            customHost: string | null;
+            bearerToken: string | null;
+            upstreamModel: string | null;
         }[] = [];
+        const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (isPortkeyChatCompletionsRequest(request)) {
+                const customHost = request.headers.get("x-portkey-custom-host");
                 gatewayCalls.push({
-                    config: request.headers.get("x-portkey-config"),
-                    provider: request.headers.get("x-portkey-provider"),
-                    body: await request.json(),
+                    customHost,
+                    bearerToken: request.headers.get("authorization"),
+                    upstreamModel: request.headers.get("x-portkey-model"),
                 });
-                // Portkey answers from the second target and says so.
-                return Response.json(
-                    {
-                        id: "chatcmpl_fallback",
-                        object: "chat.completion",
-                        choices: [
-                            {
-                                index: 0,
-                                message: { role: "assistant", content: "ok" },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage: {
-                            prompt_tokens: 2,
-                            completion_tokens: 3,
-                            total_tokens: 5,
+                // The primary is rate limited — the failure the fallback exists
+                // for.
+                if (customHost === "https://primary.example.com/v1") {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json({
+                    id: "chatcmpl_fallback",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
                         },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
                     },
-                    {
-                        headers: {
-                            "x-portkey-last-used-option-index":
-                                "config.targets[1]",
-                        },
-                    },
-                );
+                });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -3459,32 +3475,44 @@ fixtureTest(
         // The served model, not the requested one, is reported as used.
         expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
 
-        expect(gatewayCalls).toHaveLength(1);
-        const gatewayCall = gatewayCalls[0];
-        // A strategy/targets config travels as one JSON blob, not as flattened
-        // x-portkey-* provider headers.
-        expect(gatewayCall.provider).toBeNull();
-        const config = JSON.parse(gatewayCall.config ?? "{}");
-        expect(config.strategy.mode).toBe("fallback");
-        expect(config.strategy.on_status_codes).toContain(429);
-        expect(config.strategy.on_status_codes).toContain(502);
-        expect(config.strategy.on_status_codes).not.toContain(400);
-        expect(config.targets).toHaveLength(2);
-        expect(config.targets[0]).toMatchObject({
-            provider: "openai",
-            custom_host: "https://primary.example.com/v1",
-            api_key: "sk_primary_token",
-            override_params: { model: "primary-upstream" },
-        });
-        expect(config.targets[1]).toMatchObject({
-            provider: "openai",
-            custom_host: "https://fallback.example.com/v1",
-            api_key: "sk_fallback_token",
-            override_params: { model: "cheap-upstream" },
-        });
-        // The strategy config has no provider-level model, so the request body
-        // model comes from the config's explicit top-level model.
-        expect(gatewayCall.body).toMatchObject({ model: "primary-upstream" });
+        // Each endpoint is called once, in the order the owner declared, and
+        // each attempt carries only its own endpoint's credential.
+        expect(gatewayCalls).toEqual([
+            {
+                customHost: "https://primary.example.com/v1",
+                bearerToken: "Bearer sk_primary_token",
+                upstreamModel: "primary-upstream",
+            },
+            {
+                customHost: "https://fallback.example.com/v1",
+                bearerToken: "Bearer sk_fallback_token",
+                upstreamModel: "cheap-upstream",
+            },
+        ]);
+
+        // Two rows for the one request: the primary's failure, unbilled, and the
+        // model that served. Without the first, a model rescued on every request
+        // reads as healthy. The 429 is recorded as the 502 the caller would have
+        // seen, so it counts as a server error rather than the caller's fault.
+        await vi.waitFor(() => expect(ingestedEvents).toHaveLength(2));
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.responseStatus,
+                event.isBilledUsage,
+            ]),
+        ).toContainEqual([primaryModelId, 502, false]);
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.responseStatus,
+                event.isBilledUsage,
+            ]),
+        ).toContainEqual([fallbackModelId, 200, true]);
+        // Both rows belong to the same request, so the pair can be joined.
+        expect(
+            new Set(ingestedEvents.map((event) => event.requestId)).size,
+        ).toBe(1);
     },
 );
 

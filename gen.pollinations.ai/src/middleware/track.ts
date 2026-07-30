@@ -112,8 +112,9 @@ export type TrackVariables = {
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
         /**
-         * Report a generation attempt that failed and will be retried on another
-         * model. Handlers report the fact; this middleware owns the event shape.
+         * Report a generation attempt whose upstream failed, whether or not
+         * another model is tried after it. Handlers report the fact; this
+         * middleware owns the event shape.
          */
         recordFailedAttempt: (model: string, error: unknown) => void;
     };
@@ -180,13 +181,18 @@ export const track = (eventType: EventType) =>
         });
 
         /**
-         * One unbilled row for an attempt that failed and was retried on another
-         * model.
+         * One unbilled row per attempt whose upstream failed, including the
+         * last one — every model that was called ends up on the record.
          *
          * Without it a model that is always rescued by its fallback looks
-         * healthy, because the request's single row records whichever model
+         * healthy, because the request's settlement row records whichever model
          * ended up serving. Nothing was generated, so the row carries who asked
          * and what failed, and no usage, price or reward.
+         *
+         * A request whose every candidate failed therefore emits one row per
+         * candidate plus the settlement row that carries the response the caller
+         * actually got, so a consumer that counts rows counts more of them than
+         * there were requests.
          */
         const recordFailedAttempt = (model: string, error: unknown): void => {
             const endTime = new Date();

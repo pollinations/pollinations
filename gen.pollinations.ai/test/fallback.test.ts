@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { isRetryableFallbackError } from "../src/fallback.ts";
+import { describe, expect, it, vi } from "vitest";
+import {
+    type FallbackCandidate,
+    isRetryableFallbackError,
+    withModelFallback,
+} from "../src/fallback.ts";
 import { HttpError } from "../src/image/httpError.ts";
 
 /**
@@ -79,5 +83,80 @@ describe("isRetryableFallbackError", () => {
             false,
         );
         expect(isRetryableFallbackError("not an error")).toBe(false);
+    });
+});
+
+describe("withModelFallback", () => {
+    const candidate = (id: string): FallbackCandidate => ({ id });
+    const rateLimited = () =>
+        Object.assign(new Error("429 upstream"), {
+            status: 502,
+            upstreamStatus: 429,
+        });
+
+    it("reports every model whose upstream failed, the last one included", async () => {
+        const reported: string[] = [];
+        const attempt = vi.fn(async () => {
+            throw rateLimited();
+        });
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second"), candidate("third")],
+                attempt,
+                (failed) => reported.push(failed.id),
+            ),
+        ).rejects.toThrow("429 upstream");
+
+        // Every candidate was tried exactly once, and none of the failures is
+        // missing from the record — the terminal one used to be dropped.
+        expect(attempt).toHaveBeenCalledTimes(3);
+        expect(reported).toEqual(["primary", "second", "third"]);
+    });
+
+    it("reports the failure that stopped the request even when it is not retryable", async () => {
+        const reported: string[] = [];
+        const badRequest = Object.assign(new Error("400 upstream"), {
+            status: 400,
+            upstreamStatus: 400,
+        });
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second")],
+                async () => {
+                    throw badRequest;
+                },
+                (failed) => reported.push(failed.id),
+            ),
+        ).rejects.toThrow("400 upstream");
+
+        // A caller error stops the chain, but the model that produced it is
+        // still named rather than left to the requested model's record.
+        expect(reported).toEqual(["primary"]);
+    });
+
+    it("reports nothing and stops calling once a model serves", async () => {
+        const reported: string[] = [];
+        const attempt = vi
+            .fn<(c: FallbackCandidate) => Promise<string>>()
+            .mockRejectedValueOnce(rateLimited())
+            .mockResolvedValueOnce("served");
+
+        const {
+            result,
+            candidate: served,
+            index,
+        } = await withModelFallback(
+            [candidate("primary"), candidate("second"), candidate("third")],
+            attempt,
+            (failed) => reported.push(failed.id),
+        );
+
+        expect(result).toBe("served");
+        expect(served.id).toBe("second");
+        expect(index).toBe(1);
+        expect(reported).toEqual(["primary"]);
+        expect(attempt).toHaveBeenCalledTimes(2);
     });
 });

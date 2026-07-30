@@ -168,9 +168,13 @@ export async function withModelFallback<T>(
         try {
             return { result: await attempt(candidate), candidate, index };
         } catch (error) {
+            // Reported before deciding whether to move on, so the model that
+            // failed last is on the record too. Reporting only the attempts we
+            // recovered from would leave the final failure attributed to
+            // whichever model the caller asked for.
+            onFailedAttempt?.(candidate, error);
             const isLast = index === candidates.length - 1;
             if (isLast || !isRetryableFallbackError(error)) throw error;
-            onFailedAttempt?.(candidate, error);
         }
     }
     // Unreachable: the loop either returns or rethrows for a non-empty list, and

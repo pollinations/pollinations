@@ -46,20 +46,85 @@ describe("sanitizeCohereResponse", () => {
         });
     });
 
-    it("removes framing split across streaming chunks", async () => {
+    it("removes every documented response framing token at boundaries", () => {
+        const completion: ChatCompletion = {
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content:
+                            "<|START_THINKING|><|END_THINKING|>" +
+                            "<|START_RESPONSE|>Hello<|END_RESPONSE|>",
+                    },
+                },
+            ],
+        };
+
+        sanitizeCohereResponse(completion);
+
+        expect(completion.choices?.[0].message?.content).toBe("Hello");
+    });
+
+    it("preserves literal control tokens inside legitimate content", () => {
+        const completion: ChatCompletion = {
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content:
+                            "<|START_TEXT|>Print <|END_TEXT|> literally." +
+                            "<|END_TEXT|>",
+                    },
+                },
+            ],
+        };
+
+        sanitizeCohereResponse(completion);
+
+        expect(completion.choices?.[0].message?.content).toBe(
+            "Print <|END_TEXT|> literally.",
+        );
+    });
+
+    it("removes framing split across network chunks and SSE events", async () => {
         const result = await streamText({ stream: true }, [
-            'data: {"choices":[{"delta":{"content":"<|STA',
-            'RT_TEXT|>Hello"}}]}\n\n',
-            'data: {"choices":[{"delta":{"content":" world<|END_',
+            'data: {"id":"one","choices":[{"index":0,"delta":{"content":"<|STA',
+            'RT_"},"finish_reason":null}]}\n\n',
+            'data: {"id":"one","choices":[{"index":0,"delta":{"content":"TEXT|>Hello"}}]}\n\n',
+            'data: {"id":"one","choices":[{"index":0,"delta":{"content":" world<|END_',
             'TEXT|>"}}]}\n\n',
+            'data: {"id":"one","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n',
             "data: [DONE]\n\n",
         ]);
 
         expect(result).toBe(
-            'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n' +
-                'data: {"choices":[{"delta":{"content":" world"}}]}\n\n' +
+            'data: {"id":"one","choices":[{"index":0,"delta":{"content":""},"finish_reason":null}]}\n\n' +
+                'data: {"id":"one","choices":[{"index":0,"delta":{"content":"Hello"}}]}\n\n' +
+                'data: {"id":"one","choices":[{"index":0,"delta":{"content":" world"}}]}\n\n' +
+                'data: {"id":"one","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
                 "data: [DONE]\n\n",
         );
+    });
+
+    it("scrubs only content deltas, not reasoning or tool arguments", async () => {
+        const result = await streamText({ stream: true }, [
+            'data: {"choices":[{"index":0,"delta":{"reasoning_content":"<|START_THINKING|>reason","tool_calls":[{"function":{"arguments":"{\\"value\\":\\"<|END_TEXT|>\\"}"}}],"content":"<|START_TEXT|>answer<|END_TEXT|>"},"finish_reason":"stop"}]}\n\n',
+            "data: [DONE]\n\n",
+        ]);
+
+        const firstEvent = result.split("\n\n")[0].slice("data: ".length);
+        const firstChunk = JSON.parse(firstEvent);
+        expect(firstChunk.choices[0].delta).toEqual({
+            reasoning_content: "<|START_THINKING|>reason",
+            tool_calls: [
+                {
+                    function: {
+                        arguments: '{"value":"<|END_TEXT|>"}',
+                    },
+                },
+            ],
+            content: "answer",
+        });
     });
 });
 
@@ -72,6 +137,26 @@ describe("validateCohereRequest", () => {
         ).toEqual({
             messages: [{ role: "user", content: "hi" }],
             options: { tool_choice: "auto" },
+        });
+    });
+
+    it("honors tool_choice none by removing tools before Azure", () => {
+        expect(
+            validateCohereRequest([{ role: "user", content: "hi" }], {
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "lookup",
+                            parameters: { type: "object", properties: {} },
+                        },
+                    },
+                ],
+                tool_choice: "none",
+            }),
+        ).toEqual({
+            messages: [{ role: "user", content: "hi" }],
+            options: {},
         });
     });
 
@@ -109,7 +194,7 @@ describe("validateCohereRequest", () => {
             expect.objectContaining({
                 status: 400,
                 message:
-                    'Cohere Command A+ on Azure supports tool_choice "auto" only',
+                    'Cohere Command A+ on Azure supports tool_choice "auto" or "none" only',
             }),
         );
     });

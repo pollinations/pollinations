@@ -1,0 +1,34 @@
+{
+  "pr_number": 12880,
+  "title": "docs: define parallel Vast canary coordination",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12880",
+  "merged_at": "2026-07-30T13:26:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Defines one atomic canary lease per production GPU slot\n- Allows one scheduled run to prepare multiple unlocked targets in parallel\n- Keeps volatile thresholds, budgets, and temporary machine cooldowns in the scheduled task\n- Removes transient machine exclusions from the fleet inventory\n- Keeps promotion human-approved and serialized per workload\n\nChecks: skill validator; `git diff --check`; live automation policy assertions",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Canaries get their own nests",
+    "blurb": "The Vast fleet playbook now gives every production GPU slot its own atomic canary lease. Several unlocked targets can prepare together, while human-approved promotions stay politely single-file.",
+    "summary": "Documented per-production-slot atomic canary leases for Vast GPU operations, allowing scheduled runs to prepare multiple unlocked targets in parallel while keeping promotion human-approved and serialized per workload.",
+    "impact": "Fleet operators gain clearer coordination rules: parallel preparation is safe across unlocked GPU targets, while volatile thresholds, budgets, cooldowns, and final promotions remain controlled in the scheduled workflow.",
+    "keywords": [
+      "vast",
+      "gpu-fleet",
+      "canary",
+      "coordination",
+      "operations",
+      "documentation"
+    ],
+    "visual_concept": "A cozy GPU garden with several separate canary nests beside retro server plants: Polli, wearing a tiny operations headset, places individual lease tags on each nest while multiple code-plants are prepared in parallel. A calm human approval gate and a single orderly path to a blooming production flower represent serialized promotion.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny operations headset, carefully attaching separate lease tags to several small canary nests beside chunky retro GPU server plants, while multiple code-plants prepare in parallel behind a gentle human approval gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12880.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny operations headset, carefully attaching separate lease tags to several small canary nests beside chunky retro GPU server plants, while multiple code-plants prepare in parallel behind a gentle human approval gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-07-30T13:27:45.035848+00:00"
+}

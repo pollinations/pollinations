@@ -12,7 +12,6 @@ import type { Env } from "@/env.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateMistralOcrChatCompletion } from "./mistralOcr.ts";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
@@ -323,27 +322,22 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        let completion: ChatCompletion;
-        if (requestData.model === "mistral-ocr") {
-            completion = await generateMistralOcrChatCompletion(c, requestData);
-        } else {
-            const communityEndpoint = c.var.model?.communityEndpoint;
-            const gatewayContext = communityEndpoint
-                ? await communityEndpointGatewayContext(
-                      communityEndpoint,
-                      c.var.model.definition,
-                      requestData,
-                      c.env.BETTER_AUTH_SECRET,
-                      c.env.PORTKEY_GATEWAY_URL,
-                      c.var.auth?.apiKey?.rawKey || "",
-                      c.var.auth?.apiKey?.id,
-                  )
-                : withGatewayContext(c, requestData);
-            completion = await generateTextPortkey(
-                requestData.messages,
-                gatewayContext,
-            );
-        }
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
+                  c.var.model.definition,
+                  requestData,
+                  c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
+                  c.var.auth?.apiKey?.id,
+              )
+            : withGatewayContext(c, requestData);
+        const completion = await generateTextPortkey(
+            requestData.messages,
+            gatewayContext,
+        );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 

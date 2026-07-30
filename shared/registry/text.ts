@@ -5,7 +5,6 @@ import {
     withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
 } from "./gemini-billing";
-import { MISTRAL_OCR_4_BILLING } from "./mistral-ocr-billing";
 import {
     PERPLEXITY_FAST_BILLING,
     PERPLEXITY_HIGH_BILLING,
@@ -33,11 +32,6 @@ export const AUDIO_VOICES = [
 ] as const;
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
-export const MISTRAL_OCR_MODEL_NAMES = [
-    "mistral-ocr",
-    "mistral-ocr-4",
-    "mistral-ocr-4-0",
-] as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 export const TEXT_SERVICES = {
@@ -364,24 +358,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-    },
-    "mistral-ocr": {
-        aliases: MISTRAL_OCR_MODEL_NAMES.slice(1),
-        provider: "mistral",
-        brand: "Mistral",
-        category: "text",
-        addedDate: new Date("2026-07-26").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {},
-        billing: MISTRAL_OCR_4_BILLING,
-        title: "Mistral OCR 4",
-        description:
-            "Extracts structured Markdown, tables, layout blocks and confidence scores",
-        inputModalities: ["document", "image"],
-        outputModalities: ["text"],
-        supportedEndpoints: ["/v1/chat/completions", "/text"],
-        isSpecialized: true,
     },
     "openai-audio": {
         aliases: [

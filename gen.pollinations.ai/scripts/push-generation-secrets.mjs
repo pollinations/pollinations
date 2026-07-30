@@ -53,7 +53,6 @@ const OPTIONAL_SECRET_KEYS = [
     "AIRFORCE_API_KEY",
     "AI_GATEWAY_API_KEY",
     "ASSEMBLYAI_API_KEY",
-    "MISTRAL_API_KEY",
 ];
 
 const [sourcePath, environment] = process.argv.slice(2);

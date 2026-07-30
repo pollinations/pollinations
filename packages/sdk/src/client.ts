@@ -841,15 +841,6 @@ export class Pollinations {
             top_logprobs: options.topLogprobs,
             functions: options.functions,
             function_call: options.functionCall,
-            pages: options.ocrPages,
-            include_image_base64: options.ocrIncludeImages,
-            image_limit: options.ocrImageLimit,
-            image_min_size: options.ocrImageMinSize,
-            table_format: options.ocrTableFormat,
-            extract_header: options.ocrExtractHeader,
-            extract_footer: options.ocrExtractFooter,
-            include_blocks: options.ocrIncludeBlocks,
-            confidence_scores_granularity: options.ocrConfidenceScores,
         });
     }
 

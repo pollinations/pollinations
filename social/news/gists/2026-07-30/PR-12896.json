@@ -1,0 +1,35 @@
+{
+  "pr_number": 12896,
+  "title": "feat: add Qwen3.7 Flash and move Step to DeepInfra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12896",
+  "merged_at": "2026-07-30T17:41:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `qwen3.7-flash` through OpenRouter, pinned to Alibaba with fallbacks disabled; paid-only, multiplier 1.\n- Moves the existing `step-flash` public model from OpenRouter to direct DeepInfra without changing aliases, capabilities, access, multiplier, or prices.\n- Registers Qwen’s posted base rates ($0.03/M input, $0.006/M cache read, $0.038/M cache write, $0.13/M output); higher long-context tiers remain an explicitly documented absorbed cost.\n- Live E2E covered text, image, video, tools, reasoning controls, streaming, cache writes/reads, usage headers, error handling, and five-way bursts for both routes.\n- Validation: gen/enter typechecks; 29 reasoning-transform tests; 68 billing/permissions/cache/observability tests; 42 VCR/safety tests; 317 registry/alias/pricing tests.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fast new flower",
+    "blurb": "Qwen3.7 Flash has landed in the hive with its bags packed for speed. Meanwhile, Step Flash quietly moved to a new, direct route without making anyone relearn its name.",
+    "summary": "Added the paid-only `qwen3.7-flash` model through OpenRouter, pinned to Alibaba at multiplier 1 with documented $0.03/M input and $0.13/M output base rates, while moving `step-flash` from OpenRouter to direct DeepInfra with its aliases, capabilities, access, and prices unchanged.",
+    "impact": "Developers can call Qwen3.7 Flash for text, image, video, tools, reasoning, streaming, and cache-aware workloads, while existing Step Flash integrations continue using the same model name on a direct DeepInfra route.",
+    "keywords": [
+      "qwen3.7-flash",
+      "step-flash",
+      "openrouter",
+      "deepinfra",
+      "text-models",
+      "api",
+      "streaming"
+    ],
+    "visual_concept": "A cozy model-routing garden: Polli welcomes a quick Qwen seedling arriving through an OpenRouter signpost, while a sturdy Step Flash code-plant is gently replanted from an OpenRouter pot into a DeepInfra pot without disturbing its familiar nameplate. A CRT Monitor Robot can inspect two glowing terminal routes, emphasizing that one new model has joined while an existing route changed underneath the API.",
+    "image_prompt": "A cozy pixel-art garden hackerspace where Polli, a cute yellow-and-dark-brown striped bee with pink rectangular cheek blush, light-blue translucent wings, black antennae, oval eyes, and a small smile, wears a tiny courier cap while guiding a glowing Qwen seedling from an \"OpenRouter\" signpost; beside her, a familiar \"step-flash\" code-plant is carefully moved into a \"DeepInfra\" flower pot as a chunky CRT Monitor Robot watches two tidy terminal routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and flowers, warm lighting, retro gaming vibes, subtle pixel-font text: \"NEW ROUTE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12896.jpg",
+    "prompt": "A cozy pixel-art garden hackerspace where Polli, a cute yellow-and-dark-brown striped bee with pink rectangular cheek blush, light-blue translucent wings, black antennae, oval eyes, and a small smile, wears a tiny courier cap while guiding a glowing Qwen seedling from an \"OpenRouter\" signpost; beside her, a familiar \"step-flash\" code-plant is carefully moved into a \"DeepInfra\" flower pot as a chunky CRT Monitor Robot watches two tidy terminal routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and flowers, warm lighting, retro gaming vibes, subtle pixel-font text: \"NEW ROUTE\"."
+  },
+  "generated_at": "2026-07-30T17:42:26.752015+00:00"
+}

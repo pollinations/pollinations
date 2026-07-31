@@ -19,6 +19,10 @@ export function setImagesBinding(binding: ImagesBinding | undefined): void {
     imagesBinding = binding || null;
 }
 
+export function getImagesBinding(): ImagesBinding | null {
+    return imagesBinding;
+}
+
 export async function transformImage(
     inputBuffer: ArrayBuffer | Buffer,
     options: TransformOptions = {},

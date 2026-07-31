@@ -568,7 +568,9 @@ export async function trackResponse(
     // Which model that was: the one the request resolved to, unless the
     // fallback loop moved on and stopped on a different one. Only the loop
     // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // it. Portkey's multi-target config (see fallbackUsed /
+    // x-portkey-last-used-option-index) only changes which upstream provider
+    // target served a single model id, so it needs no such reporting.
     if (cacheHit) {
         return notBilled();
     }
@@ -643,8 +645,9 @@ export async function trackResponse(
     };
 }
 
-// The fallback loop reports the served candidate as "config.targets[N]" via
-// x-fallback-target. A fallback fired whenever N is not the primary index 0.
+// Portkey reports the served target as "config.targets[N]" via the
+// x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
+// A fallback fired whenever the served target is not the primary (index 0).
 function parseFallbackUsed(response: Response): boolean {
     const target = response.headers.get(FALLBACK_TARGET_HEADER);
     if (!target) return false;

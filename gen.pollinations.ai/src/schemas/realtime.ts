@@ -20,6 +20,10 @@ export const RealtimeRequestQueryParamsSchema = z
     })
     .strict();
 
+export type RealtimeRequestQueryParams = z.infer<
+    typeof RealtimeRequestQueryParamsSchema
+>;
+
 // Shape of `response.usage` in the Realtime `response.done` event. Only the
 // fields used for billing are declared; everything else is ignored.
 const tokenCount = z.number().nonnegative().nullish();
@@ -58,3 +62,5 @@ export const RealtimeUsageSchema = z
     })
     .partial()
     .passthrough();
+
+export type RealtimeUsage = z.infer<typeof RealtimeUsageSchema>;

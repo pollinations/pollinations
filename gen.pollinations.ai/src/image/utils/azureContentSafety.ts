@@ -10,16 +10,16 @@ const logError = debug("pollinations:error");
 const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 const SEVERITY_THRESHOLD = 4;
 
-type ContentSafetyResults = {
+export type ContentSafetyResults = {
     safe: boolean;
     violations: ContentViolation[];
     formattedViolations: string;
 };
 
-type ContentViolationCategory = (typeof CATEGORIES)[number];
-type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type ContentViolationCategory = (typeof CATEGORIES)[number];
+export type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-type ContentViolation = {
+export type ContentViolation = {
     category: ContentViolationCategory;
     severity: ContentViolationSeverity;
 };
@@ -132,6 +132,14 @@ export async function analyzeImageSafety(
         image: { content },
     });
 }
+
+export const config = {
+    SEVERITY_THRESHOLD,
+    CATEGORIES,
+    get isConfigured() {
+        return !!getConfig();
+    },
+};
 
 /**
  * Checks prompt safety with Azure Content Safety, logs the result, and throws

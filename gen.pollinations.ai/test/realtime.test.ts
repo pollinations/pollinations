@@ -5,14 +5,11 @@ import {
 } from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 import worker from "../src/index.ts";
-import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
@@ -228,76 +225,6 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     client.close();
     upstream.server.close();
     await waitOnExecutionContext(ctx);
-});
-
-test("uses the shared fallback loop for realtime connections", async ({
-    paidApiKey,
-}) => {
-    const source = getRegistryModelDefinition("gpt-realtime-2.1");
-    const previousFallbacks = source.fallbacks;
-    let upstreamServer: WebSocket | undefined;
-    try {
-        source.fallbacks = ["gpt-realtime-2"];
-        resetGenerationModelRegistryCache();
-        const upstreamRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url.includes("public_model_stats.json")) {
-                    return Response.json({ data: [] });
-                }
-                upstreamRequests.push(request);
-                if (upstreamRequests.length === 1) {
-                    return Response.json(
-                        { error: { message: "rate limited" } },
-                        { status: 429 },
-                    );
-                }
-                const pair = new WebSocketPair();
-                const [client, server] = Object.values(pair) as [
-                    WebSocket,
-                    WebSocket,
-                ];
-                upstreamServer = server;
-                return new Response(null, {
-                    status: 101,
-                    webSocket: client,
-                } as WebSocketResponseInit);
-            },
-        );
-
-        const { response, ctx } = await fetchWorkerWithContext(
-            "/v1/realtime?model=gpt-realtime-2.1",
-            {
-                headers: {
-                    Authorization: `Bearer ${paidApiKey}`,
-                    Upgrade: "websocket",
-                },
-            },
-        );
-
-        expect(response.status).toBe(101);
-        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
-            "config.targets[1]",
-        );
-        expect(upstreamRequests.map((request) => request.url)).toEqual([
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime?model=gpt-realtime-2-1",
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime?model=gpt-realtime-2",
-        ]);
-
-        const client = response.webSocket;
-        if (!client || !upstreamServer) {
-            throw new Error("Expected realtime fallback WebSockets");
-        }
-        client.accept();
-        upstreamServer.accept();
-        client.close();
-        upstreamServer.close();
-        await waitOnExecutionContext(ctx);
-    } finally {
-        source.fallbacks = previousFallbacks;
-        resetGenerationModelRegistryCache();
-    }
 });
 
 test("routes the mini model through the working East US 2 deployment", async ({

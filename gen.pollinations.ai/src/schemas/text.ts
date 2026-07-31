@@ -36,3 +36,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     }),
     safe: SafeSchema,
 });
+
+export type GenerateTextRequestQueryParams = z.infer<
+    typeof GenerateTextRequestQueryParamsSchema
+>;

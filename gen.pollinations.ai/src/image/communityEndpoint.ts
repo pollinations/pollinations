@@ -1,7 +1,6 @@
 import { Buffer } from "node:buffer";
 import {
     type CommunityEndpointRuntime,
-    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     normalizeCommunityAssetUrl,
@@ -303,8 +302,26 @@ function parseJson(text: string): unknown {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message = communityEndpointErrorDetail(body);
+    const message = endpointBodyMessage(body);
     return message
         ? `Community image endpoint responded ${status}: ${message}`
         : `Community image endpoint responded ${status}`;
+}
+
+function endpointBodyMessage(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
+        "error" in body &&
+        body.error &&
+        typeof body.error === "object" &&
+        "message" in body.error &&
+        typeof body.error.message === "string"
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
 }

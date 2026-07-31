@@ -322,13 +322,24 @@ function sendTextStreamResponse(
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
 
-    if (!completion.responseStream) {
-        throw new UpstreamError(502, {
-            message: "Text model returned an empty stream",
-            requestUrl: completion.upstreamRequestUrl,
-        });
+    if (completion.responseStream instanceof ReadableStream) {
+        return new Response(completion.responseStream, { headers });
     }
-    return new Response(completion.responseStream, { headers });
+
+    // Defensive: upstream produced a null stream body.
+    const encoder = new TextEncoder();
+    const fallbackStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(
+                encoder.encode(
+                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+                ),
+            );
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+        },
+    });
+    return new Response(fallbackStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {

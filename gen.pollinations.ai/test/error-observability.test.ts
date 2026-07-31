@@ -613,23 +613,30 @@ describe("error observability", () => {
 
     it("retains request metadata after public usage filtering", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                id: "chatcmpl_test",
-                object: "chat.completion",
-                model: "provider-model",
-                choices: [
-                    {
-                        index: 0,
-                        message: { role: "assistant", content: "ok" },
-                        finish_reason: "stop",
+            Response.json(
+                {
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        cost: 0.001,
                     },
-                ],
-                usage: {
-                    prompt_tokens: 1,
-                    completion_tokens: 1,
-                    cost: 0.001,
                 },
-            }),
+                {
+                    headers: {
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            ),
         );
 
         let upstreamRequestUrl: URL | undefined;
@@ -669,6 +676,9 @@ describe("error observability", () => {
         expect(response.status).toBe(200);
         expect(upstreamRequestUrl?.href).toBe(
             "https://portkey.test/v1/chat/completions",
+        );
+        expect(response.headers.get("x-fallback-target")).toBe(
+            "config.targets[1]",
         );
         const responseText = await response.text();
         expect(responseText).not.toContain("upstreamRequestUrl");

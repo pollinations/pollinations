@@ -34,10 +34,6 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
-import {
-    type FallbackCandidate,
-    withModelFallbackResponse,
-} from "../fallback.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
 
@@ -160,19 +156,6 @@ const CreateDialogueRequestSchema = z
     .meta({ $id: "CreateDialogueRequest" });
 
 type AudioContext = Context<Env>;
-
-async function withAudioFallback(
-    c: AudioContext,
-    attempt: (candidate: FallbackCandidate) => Promise<Response>,
-): Promise<Response> {
-    const { response, servedEntry } = await withModelFallbackResponse(
-        c.var.model,
-        attempt,
-        c.var.track?.failedCalls,
-    );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
-}
 type SimpleAudioQuery = {
     safe?: SafeValue;
     duration?: number;
@@ -2028,7 +2011,6 @@ export async function generateStableAudio3Large(opts: {
 
 async function dispatchAudioGeneration(
     c: AudioContext,
-    model: string,
     opts: {
         text: string;
         voice: string;
@@ -2081,7 +2063,7 @@ async function dispatchAudioGeneration(
         log,
     } = opts;
 
-    if (model === "elevenmusic") {
+    if (c.var.model.resolved === "elevenmusic") {
         return withSafetyHeaders(
             c,
             await generateMusic({
@@ -2100,7 +2082,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "lyria-3-clip") {
+    if (c.var.model.resolved === "lyria-3-clip") {
         const googleEnvKeys = [
             "GOOGLE_PRIVATE_KEY",
             "GOOGLE_PRIVATE_KEY_ID",
@@ -2125,7 +2107,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "stable-audio-3-medium") {
+    if (c.var.model.resolved === "stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Medium({
@@ -2140,7 +2122,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "stable-audio-3-large") {
+    if (c.var.model.resolved === "stable-audio-3-large") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Large({
@@ -2157,7 +2139,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "eleven-sfx") {
+    if (c.var.model.resolved === "eleven-sfx") {
         return withSafetyHeaders(
             c,
             await generateSoundEffect({
@@ -2172,14 +2154,14 @@ async function dispatchAudioGeneration(
         );
     }
 
-    switch (model) {
+    switch (c.var.model.resolved) {
         case "elevenlabs":
         case "elevenflash":
         case "eleven-multilingual-v2":
             return withSafetyHeaders(
                 c,
                 await generateElevenLabsSpeech({
-                    modelName: model,
+                    modelName: c.var.model.resolved,
                     text,
                     voice,
                     responseFormat,
@@ -2193,7 +2175,7 @@ async function dispatchAudioGeneration(
             return withSafetyHeaders(
                 c,
                 await generateQwenTts({
-                    modelName: model,
+                    modelName: c.var.model.resolved,
                     text,
                     voice,
                     instruct,
@@ -2214,7 +2196,7 @@ async function dispatchAudioGeneration(
             );
         default:
             throw new UpstreamError(500 as ContentfulStatusCode, {
-                message: `No audio provider route configured for model: ${model}`,
+                message: `No audio provider route configured for model: ${c.var.model.resolved}`,
             });
     }
 }
@@ -2242,28 +2224,26 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
 
     // Only the GET query schema permits the -1 "random seed" sentinel; map it to
     // undefined here so the generators only ever see a real seed or none.
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text,
-            voice: query.voice,
-            responseFormat: query.response_format,
-            seed: query.seed === -1 ? undefined : query.seed,
-            duration: query.duration,
-            seconds: query.seconds,
-            steps: query.steps,
-            negativePrompt: query.negative_prompt,
-            instrumental: query.instrumental,
-            instruct: query.instruct,
-            loop: query.loop,
-            promptInfluence: query.prompt_influence,
-            apiKey,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
-    );
+    return dispatchAudioGeneration(c, {
+        text,
+        voice: query.voice,
+        responseFormat: query.response_format,
+        seed: query.seed === -1 ? undefined : query.seed,
+        duration: query.duration,
+        seconds: query.seconds,
+        steps: query.steps,
+        negativePrompt: query.negative_prompt,
+        instrumental: query.instrumental,
+        instruct: query.instruct,
+        loop: query.loop,
+        promptInfluence: query.prompt_influence,
+        apiKey,
+        dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+        falKey: c.env.FAL_KEY,
+        stabilityApiKey: c.env.STABILITY_API_KEY,
+        log,
+    });
 }
 
 export const audioRoutes = new Hono<Env>()
@@ -2377,18 +2357,14 @@ export const audioRoutes = new Hono<Env>()
                 ...input,
                 text: safeTexts[index],
             }));
-            return withAudioFallback(c, async () =>
-                withSafetyHeaders(
-                    c,
-                    await generateElevenLabsDialogue({
-                        inputs,
-                        responseFormat: request.response_format,
-                        seed: request.seed,
-                        apiKey: c.env.ELEVENLABS_API_KEY,
-                        log,
-                    }),
-                ),
-            );
+            const response = await generateElevenLabsDialogue({
+                inputs,
+                responseFormat: request.response_format,
+                seed: request.seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+            return withSafetyHeaders(c, response);
         },
     )
     .post(
@@ -2495,18 +2471,14 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            return withAudioFallback(c, () =>
-                changeVoiceWithElevenLabs({
-                    audio,
-                    voice:
-                        typeof voice === "string" && voice !== ""
-                            ? voice
-                            : "alloy",
-                    responseFormat: resolvedFormat,
-                    apiKey: c.env.ELEVENLABS_API_KEY,
-                    log,
-                }),
-            );
+            return changeVoiceWithElevenLabs({
+                audio,
+                voice:
+                    typeof voice === "string" && voice !== "" ? voice : "alloy",
+                responseFormat: resolvedFormat,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -2577,13 +2549,11 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            return withAudioFallback(c, () =>
-                isolateVoiceWithElevenLabs({
-                    audio,
-                    apiKey: c.env.ELEVENLABS_API_KEY,
-                    log,
-                }),
-            );
+            return isolateVoiceWithElevenLabs({
+                audio,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -2666,30 +2636,28 @@ export const audioRoutes = new Hono<Env>()
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
-            return withAudioFallback(c, async (candidate) => {
-                const upload = await uploadMusicReference({
-                    file,
-                    extractCompositionPlan:
-                        parseOptionalBoolean(
-                            formData.get("extract_composition_plan"),
-                            "extract_composition_plan",
-                        ) || false,
-                    apiKey,
-                    log,
-                });
-                const usageHeaders = buildUsageHeaders(
-                    candidate.id,
-                    createCompletionAudioSecondsUsage(file.size / 16000),
-                );
+            const upload = await uploadMusicReference({
+                file,
+                extractCompositionPlan:
+                    parseOptionalBoolean(
+                        formData.get("extract_composition_plan"),
+                        "extract_composition_plan",
+                    ) || false,
+                apiKey,
+                log,
+            });
+            const usageHeaders = buildUsageHeaders(
+                "elevenmusic",
+                createCompletionAudioSecondsUsage(file.size / 16000),
+            );
 
-                return Response.json(upload, {
-                    headers: {
-                        ...usageHeaders,
-                        ...(upload.song_id
-                            ? { "x-elevenlabs-song-id": upload.song_id }
-                            : {}),
-                    },
-                });
+            return Response.json(upload, {
+                headers: {
+                    ...usageHeaders,
+                    ...(upload.song_id
+                        ? { "x-elevenlabs-song-id": upload.song_id }
+                        : {}),
+                },
             });
         },
     )
@@ -2779,33 +2747,31 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
-            return withAudioFallback(c, (candidate) =>
-                dispatchAudioGeneration(c, candidate.id, {
-                    text: safeInput,
-                    voice,
-                    responseFormat: response_format,
-                    seed,
-                    duration,
-                    seconds,
-                    steps,
-                    negativePrompt: negative_prompt,
-                    instrumental,
-                    storeForInpainting: store_for_inpainting,
-                    extractCompositionPlan: extract_composition_plan,
-                    conditioningRef: conditioning_ref,
-                    compositionPlan: composition_plan,
-                    referenceAudio: reference_audio,
-                    instruct,
-                    loop,
-                    promptInfluence: prompt_influence,
-                    apiKey,
-                    dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-                    deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-                    falKey: c.env.FAL_KEY,
-                    stabilityApiKey: c.env.STABILITY_API_KEY,
-                    log,
-                }),
-            );
+            return dispatchAudioGeneration(c, {
+                text: safeInput,
+                voice,
+                responseFormat: response_format,
+                seed,
+                duration,
+                seconds,
+                steps,
+                negativePrompt: negative_prompt,
+                instrumental,
+                storeForInpainting: store_for_inpainting,
+                extractCompositionPlan: extract_composition_plan,
+                conditioningRef: conditioning_ref,
+                compositionPlan: composition_plan,
+                referenceAudio: reference_audio,
+                instruct,
+                loop,
+                promptInfluence: prompt_influence,
+                apiKey,
+                dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+                falKey: c.env.FAL_KEY,
+                stabilityApiKey: c.env.STABILITY_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -2944,17 +2910,15 @@ export const audioRoutes = new Hono<Env>()
             }
             const safeInput = await applySafety(c, input, safe);
 
-            return withAudioFallback(c, (candidate) =>
-                generateElevenLabsSpeechWithTimestamps({
-                    modelName: candidate.id as ElevenLabsTtsModelName,
-                    text: safeInput,
-                    voice,
-                    responseFormat: response_format,
-                    seed,
-                    apiKey: c.env.ELEVENLABS_API_KEY,
-                    log,
-                }),
-            );
+            return generateElevenLabsSpeechWithTimestamps({
+                modelName: modelName as ElevenLabsTtsModelName,
+                text: safeInput,
+                voice,
+                responseFormat: response_format,
+                seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -3124,89 +3088,110 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            const result = await withAudioFallback(c, async (candidate) => {
-                if (candidate.id === "scribe") {
-                    return transcribeWithElevenLabs({
-                        file,
-                        language: language || undefined,
-                        responseFormat: responseFormat || undefined,
-                        apiKey: c.env.ELEVENLABS_API_KEY,
-                        log,
-                        numSpeakers: speakersExpected,
-                    });
-                }
+            // Route to ElevenLabs Scribe or Whisper based on model
+            if (c.var.model.resolved === "scribe") {
+                const elevenLabsApiKey = (
+                    c.env as unknown as { ELEVENLABS_API_KEY: string }
+                ).ELEVENLABS_API_KEY;
+                const response = await transcribeWithElevenLabs({
+                    file,
+                    language: language || undefined,
+                    responseFormat: responseFormat || undefined,
+                    apiKey: elevenLabsApiKey,
+                    log,
+                    numSpeakers: speakersExpected,
+                });
 
-                if (
-                    candidate.id === "universal-2" ||
-                    candidate.id === "universal-3.5-pro"
-                ) {
-                    return transcribeWithAssemblyAi({
-                        file,
-                        language: language || undefined,
-                        prompt: prompt || undefined,
-                        responseFormat: responseFormat || undefined,
-                        temperature,
-                        model: candidate.id,
-                        apiKey: (
-                            c.env as unknown as {
-                                ASSEMBLYAI_API_KEY: string;
-                            }
-                        ).ASSEMBLYAI_API_KEY,
-                        log,
-                        speakersExpected,
-                    });
-                }
+                // Override tracking with final response
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
 
-                const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-                if (!ovhApiKey) {
-                    throw new UpstreamError(500 as ContentfulStatusCode, {
-                        message:
-                            "Transcription service is not configured (missing API key)",
-                    });
-                }
-                validateWhisperResponseFormat(responseFormat);
+            if (
+                c.var.model.resolved === "universal-2" ||
+                c.var.model.resolved === "universal-3.5-pro"
+            ) {
+                const assemblyAiApiKey = (
+                    c.env as unknown as { ASSEMBLYAI_API_KEY: string }
+                ).ASSEMBLYAI_API_KEY;
+                const response = await transcribeWithAssemblyAi({
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                    model: c.var.model.resolved,
+                    apiKey: assemblyAiApiKey,
+                    log,
+                    speakersExpected,
+                });
 
-                // Rebuild the consumed multipart body for each upstream attempt.
-                const whisperFormData = new FormData();
-                const filename =
-                    file.name && file.name !== "blob" ? file.name : "audio.mp3";
-                whisperFormData.append("file", file, filename);
-                if (language) whisperFormData.append("language", language);
-                whisperFormData.append("response_format", "verbose_json");
-                whisperFormData.append("model", "whisper-large-v3");
-                whisperFormData.append("timestamp_granularities[]", "word");
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
 
-                const whisperUrl =
-                    "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
-                const response = await ensureUpstreamOk(
-                    await fetch(whisperUrl, {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${ovhApiKey}` },
-                        body: whisperFormData,
-                    }),
-                    whisperUrl,
-                );
+            // Default: Whisper (OVHcloud)
+            const ovhApiKey = c.env.OVHCLOUD_API_KEY;
+            if (!ovhApiKey) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message:
+                        "Transcription service is not configured (missing API key)",
+                });
+            }
+            validateWhisperResponseFormat(responseFormat);
 
-                let whisper: WhisperVerboseJson;
-                try {
-                    whisper = JSON.parse(await response.text());
-                } catch {
-                    throw new UpstreamError(502 as ContentfulStatusCode, {
-                        message:
-                            "Whisper returned an unexpected (non-JSON) response",
-                    });
-                }
-                const usageHeaders = buildUsageHeaders(
-                    candidate.id,
-                    createAudioSecondsUsage(extractWhisperUsage(whisper, log)),
-                );
-                return formatWhisperResponse(
-                    whisper,
-                    responseFormat,
-                    usageHeaders,
-                );
+            // Re-build formData for Whisper (Hono consumed the original body stream).
+            // Preserve filename — OVH needs the extension to detect format/duration.
+            const whisperFormData = new FormData();
+            const filename =
+                file.name && file.name !== "blob" ? file.name : "audio.mp3";
+            whisperFormData.append("file", file, filename);
+            if (language) whisperFormData.append("language", language);
+            // Always request verbose_json from OVH so usage.seconds (billing) and
+            // segments (srt/vtt) are present; reformat locally to the caller's
+            // requested response_format below. Forwarding e.g. `text` upstream
+            // would return a plain-text body and lose the usage object.
+            whisperFormData.append("response_format", "verbose_json");
+            whisperFormData.append("model", "whisper-large-v3");
+            whisperFormData.append("timestamp_granularities[]", "word");
+
+            // Thin proxy to OVHcloud Whisper
+            const whisperUrl =
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+            const rawResponse = await fetch(whisperUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${ovhApiKey}`,
+                },
+                body: whisperFormData,
             });
+            const response = await ensureUpstreamOk(rawResponse, whisperUrl);
+
+            // OVH always returns verbose_json now; parse once, bill from it, then
+            // reformat to the caller's requested format.
+            const responseBody = await response.text();
+            let whisper: WhisperVerboseJson;
+            try {
+                whisper = JSON.parse(responseBody);
+            } catch {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message:
+                        "Whisper returned an unexpected (non-JSON) response",
+                });
+            }
+            const duration = extractWhisperUsage(whisper, log);
+            const usageHeaders = buildUsageHeaders(
+                c.var.model.resolved,
+                createAudioSecondsUsage(duration),
+            );
+
+            const result = formatWhisperResponse(
+                whisper,
+                responseFormat,
+                usageHeaders,
+            );
             c.var.track.overrideResponseTracking(result.clone());
+
             return result;
         },
     );

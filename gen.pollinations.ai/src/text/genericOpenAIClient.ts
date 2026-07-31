@@ -18,10 +18,10 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-function isUnsupportedInputError(details: unknown): boolean {
+function isClientInputError(details: unknown): boolean {
     const serialized =
         typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input/i.test(
+    return /no endpoints found that support (?:image|audio|video) input|image URL must be a valid and downloadable URL or look like data:/i.test(
         serialized,
     );
 }
@@ -111,7 +111,7 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = isUnsupportedInputError(details)
+    error.status = isClientInputError(details)
         ? 400
         : remapUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
@@ -283,10 +283,11 @@ export async function genericOpenAIClient(
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;
-            error.status =
-                typeof errorDetails.status === "number"
-                    ? remapUpstreamStatus(errorDetails.status)
-                    : 502;
+            error.status = isClientInputError(errorDetails)
+                ? 400
+                : typeof errorDetails.status === "number"
+                  ? remapUpstreamStatus(errorDetails.status)
+                  : 502;
             error.upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status

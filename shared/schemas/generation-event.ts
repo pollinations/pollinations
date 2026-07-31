@@ -64,13 +64,18 @@ export type TinybirdEvent = {
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     /**
-     * True on a row that records ONE upstream attempt rather than the request's
-     * outcome. A request that failed over emits one of these per model it
-     * called, plus the settlement row that carries what the caller received —
-     * so anything counting requests must exclude them, and anything measuring
-     * whether a model's own upstream works wants exactly them.
+     * True on the row that says how the request ENDED; false on a row recording
+     * one upstream call that was moved on from.
+     *
+     * About grain, not about fallback. This table used to be exactly one row per
+     * request and every consumer relies on that, so counting requests means
+     * counting these. A request that failed over emits one row per call it made,
+     * and only the last of them is the outcome. Rows where this is false carry
+     * the per-call detail: which model was tried, and how it failed.
+     *
+     * Defaults to true, matching every row written before fallback existed.
      */
-    isAttemptRow?: boolean;
+    isFinal?: boolean;
     isBilledUsage: boolean;
 
     // Pricing

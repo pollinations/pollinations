@@ -54,12 +54,18 @@ SCHEMA >
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
--- One upstream attempt rather than the request's outcome. A request that
--- failed over emits one per model it called plus the settlement row, so count
--- requests with `is_attempt_row = 0` and judge a model's own upstream with the
--- attempt rows. Every row written before fallback existed is a settlement row,
--- which is why the DEFAULT reads history correctly under both meanings.
-`is_attempt_row`            Bool                   `json:$.isAttemptRow` DEFAULT false,
+-- This row says how the request ENDED, rather than recording one upstream call
+-- that was moved on from.
+--
+-- About grain, not about fallback: this table used to be exactly one row per
+-- request and every consumer relies on that, so `countIf(is_final)`
+-- is what still means "requests" now that a request can make several calls.
+-- Rows where it is false carry the per-call detail instead — which model was
+-- tried, and how it failed.
+--
+-- DEFAULT true because every row written before fallback existed is the whole
+-- story of its request, so history reads correctly with no backfill.
+`is_final`        Bool                   `json:$.isFinal` DEFAULT true,
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing

@@ -3628,13 +3628,13 @@ fixtureTest(
         expect(
             generationRows().map((event) => [
                 event.modelUsed,
-                event.isAttemptRow,
+                event.isFinal,
                 event.isBilledUsage,
             ]),
         ).toEqual(
             expect.arrayContaining([
-                [primaryModelId, true, false],
-                [fallbackModelId, false, false],
+                [primaryModelId, false, false],
+                [fallbackModelId, true, false],
             ]),
         );
         // Both rows belong to the same request, so the pair can be joined.

@@ -97,8 +97,8 @@ type ResponseTrackingData = {
     cacheHit: boolean;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
-    /** Set only by recordFailedAttempt; the settlement row leaves it false. */
-    isAttemptRow?: boolean;
+    /** False only on a call that was moved on from; the outcome row leaves it true. */
+    isFinal?: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -285,7 +285,7 @@ export const track = (eventType: EventType) =>
                             responseStatus: status,
                             cacheHit: false,
                             isBilledUsage: false,
-                            isAttemptRow: true,
+                            isFinal: false,
                             fallbackUsed:
                                 model !==
                                 requestTracking.resolvedModelRequested,
@@ -835,7 +835,7 @@ function createTrackingEvent({
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
         fallbackUsed: responseTracking.fallbackUsed,
-        isAttemptRow: responseTracking.isAttemptRow ?? false,
+        isFinal: responseTracking.isFinal ?? true,
 
         isBilledUsage: responseTracking.isBilledUsage,
 

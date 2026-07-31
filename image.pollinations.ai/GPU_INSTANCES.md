@@ -9,8 +9,8 @@ Last updated: 2026-07-31
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 1 | RTX 3090 | Vast.ai | $0.1756/hr | **ACTIVE — production, sharing the pool with the GH200** |
-| LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana still load-bearing, see below** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
+| LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -22,21 +22,25 @@ exists after the routing change deploys.
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
 | dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
+| dreamshaper-vast-02 | 46387155 | RTX 3090 | $0.1200/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
-tiny decoder, guidance 0.0, 512x512. Worker code in `dreamshaper-lcm/`.
+tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
+`dreamshaper-lcm/`; each host runs `supervise.sh` under `screen`, relaunched on
+reboot by `/workspace/onstart.sh`.
 
-**Capacity reality check.** Bench numbers overstate this worker. A 3090 measured
-6.18 img/s single-client but plateaued at **~4.3 img/s under real production
-load, with the GPU only 26-45% busy** — the ceiling is the worker's Python path
-(one uvicorn process, a global lock, JPEG + base64 per response), not the GPU or
-the step count. Dropping 3 steps to 2 changed nothing, which confirms it. Size
-from measured production throughput, never from a single-client benchmark.
+**Run several uvicorn workers per card.** A single process plateaued at
+**~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path
+(global lock, JPEG + base64 per response), not the GPU or the step count.
+Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3` each
+3090 sustains **~8 img/s** at concurrency 8 (GPU still only ~36%, so there is
+more left). The model is ~2.5 GB, so three copies fit easily in 24 GB.
 
-**The GH200 Sana backend is therefore still in the pool** as a second member and
-must not be switched off until this worker has enough headroom alone. It is kept
-registered by `gh200_keepalive.sh` on the Vast host, because gen used to reach it
-through a hardcoded URL and nothing ever heartbeated it.
+Measured capacity is ~16 img/s across both cards against a 5.72 img/s peak, so
+either card can carry production alone. **Never size this from a single-client
+benchmark** — the first rollout did, sized one card at 6.18 img/s, and produced
+a latency climb to 57s in production before the GH200 was put back in the pool
+as emergency capacity.
 
 Two traps that fail silently:
 

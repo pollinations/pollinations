@@ -244,13 +244,14 @@ The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s T
 
 ### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090) + Sana Sprint (GH200)
 
-Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model. Two
-members are registered and load-balanced by observed latency:
+Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model, on two
+Vast 3090s load-balanced by observed latency. The GH200 Sana backend has been
+drained out of the pool.
 
 | Backend | Model | Host | Registered URL |
 |---------|-------|------|----------------|
 | dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46307858` | `https://dreamshaper-vast-01.pollinations.ai` |
-| GH200 | SANA-Sprint | Lambda `192.222.51.105` | `https://ltx2-backend.pollinations.ai` |
+| dreamshaper-vast-02 | DreamShaper 8 LCM | Vast 3090 `46387155` | `https://dreamshaper-vast-02.pollinations.ai` |
 
 ```bash
 # both members must be present, and the Vast one must show the HOSTNAME,
@@ -261,12 +262,14 @@ curl -s https://gen.pollinations.ai/register -H "authorization: Bearer $PLN_GPU_
 curl -s --max-time 10 https://dreamshaper-vast-01.pollinations.ai/health
 ```
 
-**The GH200 is load-bearing.** One 3090 plateaus at ~4.3 img/s in production
-(GPU only 26-45% busy — the limit is the worker's Python path, not the GPU), so
-it cannot carry peak alone. Do not switch off `sana.service` until the Vast side
-has real headroom. The GH200's pool entry is refreshed by
-`gh200_keepalive.sh` on the Vast host; nothing else heartbeats it, so if that
-loop dies the entry expires after 180s and latency spikes.
+Each host runs `WORKERS=3` uvicorn processes and sustains ~8 img/s; a single
+process plateaus at ~4.3 img/s with the GPU 26-45% idle, because the limit is
+the Python path (global lock, JPEG + base64), not the GPU. Combined ~16 img/s
+against a 5.72 img/s peak, so either card can carry production alone.
+
+If latency climbs steadily rather than spiking, that is a queue building because
+arrival exceeds service rate — check `WORKERS` is really >1 (`ps` shows
+`spawn_main` children) before adding hardware.
 
 Cloudflare bot protection 403s `User-Agent: Python-urllib/*` on these tunnel
 hostnames. Use curl or set a UA, or health checks will look broken when they

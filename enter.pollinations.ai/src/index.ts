@@ -85,8 +85,6 @@ app.notFound(async (c: Context<Env>) => {
 
 app.onError(handleError);
 
-export type AppRoutes = typeof app;
-
 export default {
     fetch: app.fetch,
 } satisfies ExportedHandler<CloudflareBindings>;

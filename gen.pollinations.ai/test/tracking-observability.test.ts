@@ -248,6 +248,7 @@ function createHeaderApp(
     user: AuthUser | null = trackingUser,
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
+    model: ModelName = "openai",
 ) {
     const app = new Hono<Env>();
 
@@ -268,9 +269,9 @@ function createHeaderApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: model,
+            resolved: model,
+            definition: getRegistryModelDefinition(model),
         });
         await next();
     });
@@ -479,6 +480,69 @@ describe("tracking observability", () => {
         });
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("still bills a flat request fee when token usage is missing", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            { "x-usage-missing": "true" },
+            trackingUser,
+            200,
+            consumePollen,
+            "perplexity-fast",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "perplexity-fast",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: true,
+            modelUsed: "perplexity-fast",
+            totalCost: 0.005,
+            totalPrice: 0.005,
+            adjustmentCosts: {
+                "perplexity.sonar_low.search_request.v1": 0.005,
+            },
+            adjustmentUnits: {
+                "perplexity.sonar_low.search_request.v1": 1,
+            },
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0.005);
     });
 
     it("records and deducts the effective long-context price sheet", async () => {

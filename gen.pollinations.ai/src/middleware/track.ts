@@ -534,7 +534,7 @@ export async function trackResponse(
         return notBilled({ modelUsed: resolvedModelRequested });
     }
 
-    const { modelUsage, contentFilterResults } =
+    const { modelUsage, output, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
@@ -544,6 +544,28 @@ export async function trackResponse(
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
+        // Missing token usage must never fabricate token charges, but some
+        // provider fees are independently knowable from the request/response
+        // (for example, Perplexity's flat per-request search fee).
+        const adjustmentOnlyBilling = calculateUsageBilling(
+            resolvedModelRequested,
+            {},
+            requestTracking.modelDefinition,
+            output,
+            pricingInput,
+        );
+        if (adjustmentOnlyBilling.adjustments.length > 0) {
+            return {
+                responseStatus: response.status,
+                cacheHit,
+                isBilledUsage: true,
+                fallbackUsed,
+                ...adjustmentOnlyBilling,
+                modelUsed: resolvedModelRequested,
+                usage: {},
+                contentFilterResults,
+            };
+        }
         return notBilled({
             contentFilterResults,
             modelUsed: resolvedModelRequested,
@@ -928,14 +950,17 @@ async function extractUsageAndContentFilterResultsHeaders(
     response: Response,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const modelUsage = extractUsageHeaders(response);
+    const output = await extractResponseJsonOutput(response);
     if (modelUsage) {
-        modelUsage.output = await extractResponseJsonOutput(response);
+        modelUsage.output = output;
     }
     return {
         modelUsage,
+        output,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
@@ -944,6 +969,7 @@ async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
@@ -1020,17 +1046,20 @@ async function extractUsageAndContentFilterResultsStream(
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
             contentFilterResults,
         };
     }
 
+    const output = streamEvents.length > 0 ? { streamEvents } : undefined;
     return {
         modelUsage: {
             model,
             usage: openaiUsageToUsage(usage),
-            output: streamEvents.length > 0 ? { streamEvents } : undefined,
+            output,
             providerReportedCost,
         },
+        output,
         contentFilterResults,
     };
 }
@@ -1041,6 +1070,7 @@ async function extractUsageAndContentFilterResults(
     response: Response,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const contentType = response.headers.get("content-type") || "";

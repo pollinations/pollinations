@@ -1,4 +1,6 @@
+import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     type FailedCall,
@@ -7,6 +9,7 @@ import {
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
+    withModelFallbackResponse,
 } from "../src/fallback.ts";
 import { HttpError } from "../src/image/httpError.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
@@ -36,6 +39,30 @@ function registryEntry(
         info: {} as GenerationModelEntry["info"],
         visible: true,
     };
+}
+
+function communityEntry(
+    id: string,
+    ownerUserId: string,
+    visibility: "private" | "public" = "public",
+    disabledAt: number | null = null,
+    fallbackModelIds: string[] = [],
+    rate = 10,
+): GenerationModelEntry {
+    const entry = registryEntry(id, [], rate);
+    entry.visible = visibility === "public" && disabledAt === null;
+    entry.communityEndpoint = {
+        ownerUserId,
+        visibility,
+        disabledAt,
+        imagePricing: "request",
+        fallbackModelIds,
+        ...communityEndpointPrices({
+            promptTextPrice: rate,
+            completionTextPrice: rate,
+        }),
+    } as GenerationModelEntry["communityEndpoint"];
+    return entry;
 }
 
 describe("registry fallback linking", () => {
@@ -68,6 +95,54 @@ describe("registry fallback linking", () => {
                 fallbackEntries: primary.fallbackEntries,
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
+    });
+
+    it("keeps community targets active and owner-accessible", () => {
+        const ownPrimary = communityEntry(
+            "owner/primary",
+            "owner",
+            "public",
+            null,
+            ["owner/private", "other/private", "owner/disabled"],
+            20,
+        );
+
+        const ownPrivate = communityEntry("owner/private", "owner", "private");
+        const otherPrivate = communityEntry(
+            "other/private",
+            "other",
+            "private",
+        );
+        const disabled = communityEntry(
+            "owner/disabled",
+            "owner",
+            "public",
+            Date.now(),
+        );
+        const registryPrimary = registryEntry("registry", [
+            "public",
+            "owner/private",
+            "owner/disabled",
+        ]);
+        const publicTarget = communityEntry("public", "other");
+        const entries = [
+            ownPrimary,
+            ownPrivate,
+            otherPrivate,
+            disabled,
+            registryPrimary,
+            publicTarget,
+        ];
+        const byId = new Map(entries.map((entry) => [entry.id, entry]));
+
+        linkFallbackEntries(entries, byId);
+
+        expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "owner/private",
+        ]);
+        expect(
+            registryPrimary.fallbackEntries?.map((entry) => entry.id),
+        ).toEqual(["public"]);
     });
 });
 
@@ -285,5 +360,35 @@ describe("withModelFallback", () => {
         expect(index).toBe(1);
         expect(seen(failures)).toEqual(["primary"]);
         expect(attempt).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("withModelFallbackResponse", () => {
+    it("marks a response served by the shared fallback loop", async () => {
+        const primary = registryEntry("primary", ["target"]);
+        const target = registryEntry("target");
+        primary.fallbackEntries = [target];
+
+        const { response, servedEntry } = await withModelFallbackResponse(
+            {
+                resolved: primary.id,
+                definition: primary.definition,
+                fallbackEntries: primary.fallbackEntries,
+            },
+            async (candidate) => {
+                if (candidate.id === "primary") {
+                    throw Object.assign(new Error("rate limited"), {
+                        status: 429,
+                    });
+                }
+                return Response.json({ model: candidate.id });
+            },
+        );
+
+        expect(servedEntry?.id).toBe("target");
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        await expect(response.json()).resolves.toEqual({ model: "target" });
     });
 });

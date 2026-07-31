@@ -4,6 +4,7 @@ import {
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
@@ -196,10 +197,9 @@ export function fallbackCandidates(
 
 function isUsableCommunityFallback(
     from: GenerationModelEntry,
-    target: GenerationModelEntry | undefined,
+    target: GenerationModelEntry,
 ): target is GenerationModelEntry {
-    if (!target || target === from) return false;
-    if (!target.visible || target.eventType !== from.eventType) return false;
+    if (target.eventType !== from.eventType) return false;
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
@@ -224,6 +224,15 @@ export function linkFallbackEntries(
         for (const targetId of declared) {
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
+            const targetEndpoint = target.communityEndpoint;
+            if (targetEndpoint?.disabledAt != null) continue;
+            if (
+                targetEndpoint?.visibility === "private" &&
+                entry.communityEndpoint?.ownerUserId !==
+                    targetEndpoint.ownerUserId
+            ) {
+                continue;
+            }
             // Community owners can change prices or visibility after saving.
             // Bundled registry declarations are trusted and need no price rule.
             if (
@@ -301,4 +310,21 @@ export async function withModelFallback<T>(
     // Unreachable: the loop either returns or rethrows for a non-empty list, and
     // the primary is always the first candidate.
     throw new Error("Model fallback needs at least one candidate");
+}
+
+/** Runs a response-producing handler and marks which model actually served. */
+export async function withModelFallbackResponse(
+    model: PrimaryModel,
+    attempt: (candidate: FallbackCandidate) => Promise<Response>,
+    failures?: FailedCall[],
+): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(model),
+        attempt,
+        failures,
+    );
+    if (index > 0) {
+        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+    }
+    return { response: result, servedEntry: candidate.entry };
 }

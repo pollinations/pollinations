@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-07-30
+Last updated: 2026-07-31
 
 ## Capacity Summary
 
@@ -9,7 +9,42 @@ Last updated: 2026-07-30
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 1 | RTX 3090 | Vast.ai | $0.1756/hr | **ACTIVE — production, sharing the pool with the GH200** |
+| LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana still load-bearing, see below** |
+
+## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
+
+Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
+`sana` kept as an alias; the **registry pool key is still `sana`** because
+`/register` rejects unknown types, so a worker cannot join a pool that only
+exists after the routing change deploys.
+
+| Worker | Vast instance | GPU | Listed rate | Status |
+|--------|---------------|-----|-------------|--------|
+| dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
+
+Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
+tiny decoder, guidance 0.0, 512x512. Worker code in `dreamshaper-lcm/`.
+
+**Capacity reality check.** Bench numbers overstate this worker. A 3090 measured
+6.18 img/s single-client but plateaued at **~4.3 img/s under real production
+load, with the GPU only 26-45% busy** — the ceiling is the worker's Python path
+(one uvicorn process, a global lock, JPEG + base64 per response), not the GPU or
+the step count. Dropping 3 steps to 2 changed nothing, which confirms it. Size
+from measured production throughput, never from a single-client benchmark.
+
+**The GH200 Sana backend is therefore still in the pool** as a second member and
+must not be switched off until this worker has enough headroom alone. It is kept
+registered by `gh200_keepalive.sh` on the Vast host, because gen used to reach it
+through a hardcoded URL and nothing ever heartbeated it.
+
+Two traps that fail silently:
+
+- gen hardcodes `steps: 4` into every self-hosted request body, so the worker
+  **ignores caller-supplied steps**. Honouring them overrides the 3-step config.
+- Without `PUBLIC_HOSTNAME` the worker registers its raw Vast `IP:port`, which
+  the gen Worker cannot fetch — while the heartbeat still reports healthy. This
+  happened during rollout; always confirm the registered URL is the hostname.
 
 ## Vast replacement operations
 

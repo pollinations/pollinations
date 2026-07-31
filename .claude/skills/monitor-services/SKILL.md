@@ -242,9 +242,37 @@ The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s T
 
 ---
 
-### 6. Sana Sprint 1.6B Worker (GH200 - same host as LTX-2)
+### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090) + Sana Sprint (GH200)
 
-One worker registered as `sana` type with OVH legacy service via heartbeat.
+Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model. Two
+members are registered and load-balanced by observed latency:
+
+| Backend | Model | Host | Registered URL |
+|---------|-------|------|----------------|
+| dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46307858` | `https://dreamshaper-vast-01.pollinations.ai` |
+| GH200 | SANA-Sprint | Lambda `192.222.51.105` | `https://ltx2-backend.pollinations.ai` |
+
+```bash
+# both members must be present, and the Vast one must show the HOSTNAME,
+# never a raw IP:port — gen cannot fetch a Vast IP:port, and the heartbeat
+# stays green while every request through it fails
+curl -s https://gen.pollinations.ai/register -H "authorization: Bearer $PLN_GPU_TOKEN" \
+  | python3 -c "import json,sys;[print(s['type'],s['url'],s.get('lastMs')) for s in json.load(sys.stdin)]"
+curl -s --max-time 10 https://dreamshaper-vast-01.pollinations.ai/health
+```
+
+**The GH200 is load-bearing.** One 3090 plateaus at ~4.3 img/s in production
+(GPU only 26-45% busy — the limit is the worker's Python path, not the GPU), so
+it cannot carry peak alone. Do not switch off `sana.service` until the Vast side
+has real headroom. The GH200's pool entry is refreshed by
+`gh200_keepalive.sh` on the Vast host; nothing else heartbeats it, so if that
+loop dies the entry expires after 180s and latency spikes.
+
+Cloudflare bot protection 403s `User-Agent: Python-urllib/*` on these tunnel
+hostnames. Use curl or set a UA, or health checks will look broken when they
+are fine.
+
+Sana on the GH200, for reference:
 
 | Instance | GPU | Host | Port | SSH |
 |----------|-----|------|------|-----|

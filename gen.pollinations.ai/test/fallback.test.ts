@@ -43,6 +43,7 @@ describe("registry fallback linking", () => {
         const primary = registryEntry("primary", ["target-alias", "target"]);
         const target = registryEntry("target", ["primary"], 10);
         target.aliases = ["target-alias"];
+        target.visible = false;
         const entries = [primary, target];
         const byIdOrAlias = new Map<string, GenerationModelEntry>([
             [primary.id, primary],
@@ -52,9 +53,10 @@ describe("registry fallback linking", () => {
 
         linkFallbackEntries(entries, byIdOrAlias);
 
-        // The target costs more than the primary and is still linked: bundled
-        // fallbacks are maintained by us, while the caller keeps the primary's
-        // quoted price. Alias duplication is collapsed and chains stay depth 1.
+        // The target costs more than the primary and is hidden, but is still
+        // linked: bundled fallbacks are maintained by us, while the caller keeps
+        // the primary's quoted price. Alias duplication is collapsed and chains
+        // stay depth 1.
         expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "target",
         ]);

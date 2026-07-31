@@ -33,7 +33,10 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import {
+    calculateUsageBilling,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -3354,6 +3357,115 @@ fixtureTest(
             id("valid-target"),
             id("second-target"),
         ]);
+    },
+);
+
+fixtureTest(
+    "uses the served model's transform for a registry fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const ownerGithubUsername = `transform-owner-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const fallbackModelId = communityModelId(
+            ownerGithubUsername,
+            `plain-${suffix}`,
+        );
+
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: `plain-${suffix}`,
+            baseUrl: "https://plain.example.com/v1",
+            upstreamModel: "plain-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_plain_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const source = getRegistryModelDefinition("qwen-coder");
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = [fallbackModelId];
+            resetGenerationModelRegistryCache();
+
+            const messageRoles: string[][] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (isPortkeyChatCompletionsRequest(request)) {
+                        const body = (await request.json()) as {
+                            messages: { role: string }[];
+                        };
+                        messageRoles.push(
+                            body.messages.map((message) => message.role),
+                        );
+                        if (
+                            request.headers.get("x-portkey-custom-host") !==
+                            "https://plain.example.com/v1"
+                        ) {
+                            return Response.json(
+                                { error: { message: "rate limited" } },
+                                { status: 429 },
+                            );
+                        }
+                        return Response.json({
+                            id: "chatcmpl_fallback_transform",
+                            object: "chat.completion",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "ok",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage: {
+                                prompt_tokens: 1,
+                                completion_tokens: 1,
+                                total_tokens: 2,
+                            },
+                        });
+                    }
+                    if (isBillingFetch(request)) {
+                        return Response.json({ data: [] });
+                    }
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }),
+            );
+
+            const response = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-coder",
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+            expect(messageRoles).toEqual([["system", "user"], ["user"]]);
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
     },
 );
 

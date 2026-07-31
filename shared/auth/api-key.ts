@@ -10,7 +10,7 @@ import {
     type AgentRunClaims,
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
-import { parseMetadata } from "./api-key-creation.ts";
+import { parseMetadata } from "./api-key-metadata.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";

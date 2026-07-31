@@ -1,3 +1,7 @@
+import {
+    type EventSourceMessage,
+    EventSourceParserStream,
+} from "eventsource-parser/stream";
 import type { ChatCompletion, ServiceError, TransformFn } from "./types.js";
 
 const COHERE_CONTROL_TOKENS = [
@@ -102,13 +106,21 @@ function sanitizeContent(text: string): string {
     return sanitizer.push(text) + sanitizer.finish();
 }
 
+function serializeSseEvent(event: EventSourceMessage): string {
+    return [
+        ...(event.id !== undefined ? [`id: ${event.id}`] : []),
+        ...(event.event !== undefined ? [`event: ${event.event}`] : []),
+        ...event.data.split("\n").map((line) => `data: ${line}`),
+        "",
+        "",
+    ].join("\n");
+}
+
 function sanitizeStream(
-    source: ReadableStream<Uint8Array>,
+    source: ReadableStream<BufferSource>,
 ): ReadableStream<Uint8Array> {
-    const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     const contentSanitizers = new Map<number, CohereContentSanitizer>();
-    let pendingSse = "";
     let lastChunkMetadata: Record<string, unknown> = {};
 
     function sanitizerFor(index: number): CohereContentSanitizer {
@@ -124,36 +136,33 @@ function sanitizeStream(
         for (const [index, sanitizer] of contentSanitizers) {
             const content = sanitizer.finish();
             if (!content) continue;
-            output += `data: ${JSON.stringify({
-                ...lastChunkMetadata,
-                choices: [
-                    {
-                        index,
-                        delta: { content },
-                        finish_reason: null,
-                    },
-                ],
-            })}\n\n`;
+            output += serializeSseEvent({
+                data: JSON.stringify({
+                    ...lastChunkMetadata,
+                    choices: [
+                        {
+                            index,
+                            delta: { content },
+                            finish_reason: null,
+                        },
+                    ],
+                }),
+            });
         }
         contentSanitizers.clear();
         return output;
     }
 
-    function sanitizeEvent(event: string): string {
-        const lines = event.split(/\r?\n/);
-        const dataIndex = lines.findIndex((line) => line.startsWith("data:"));
-        if (dataIndex < 0) return `${event}\n\n`;
-
-        const data = lines[dataIndex].slice("data:".length).trimStart();
-        if (data === "[DONE]") {
-            return `${flushPendingContent()}${event}\n\n`;
+    function sanitizeEvent(event: EventSourceMessage): string {
+        if (event.data === "[DONE]") {
+            return flushPendingContent() + serializeSseEvent(event);
         }
 
         let chunk: Record<string, unknown>;
         try {
-            chunk = JSON.parse(data) as Record<string, unknown>;
+            chunk = JSON.parse(event.data) as Record<string, unknown>;
         } catch {
-            return `${event}\n\n`;
+            return serializeSseEvent(event);
         }
 
         const choices = Array.isArray(chunk.choices) ? chunk.choices : [];
@@ -196,43 +205,24 @@ function sanitizeStream(
             }
         }
 
-        lines[dataIndex] = `data: ${JSON.stringify(chunk)}`;
-        return `${lines.join("\n")}\n\n`;
+        return serializeSseEvent({ ...event, data: JSON.stringify(chunk) });
     }
 
-    function emitReadyEvents(
-        controller: TransformStreamDefaultController<Uint8Array>,
-    ): void {
-        while (true) {
-            const boundary = pendingSse.match(/\r?\n\r?\n/);
-            if (!boundary || boundary.index === undefined) return;
-            const event = pendingSse.slice(0, boundary.index);
-            pendingSse = pendingSse.slice(boundary.index + boundary[0].length);
-            controller.enqueue(encoder.encode(sanitizeEvent(event)));
-        }
-    }
-
-    return source.pipeThrough(
-        new TransformStream<Uint8Array, Uint8Array>({
-            transform(chunk, controller) {
-                pendingSse += decoder.decode(chunk, { stream: true });
-                emitReadyEvents(controller);
-            },
-            flush(controller) {
-                pendingSse += decoder.decode();
-                emitReadyEvents(controller);
-                if (pendingSse) {
-                    controller.enqueue(
-                        encoder.encode(sanitizeEvent(pendingSse)),
-                    );
-                } else {
+    return source
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new EventSourceParserStream())
+        .pipeThrough(
+            new TransformStream<EventSourceMessage, Uint8Array>({
+                transform(event, controller) {
+                    controller.enqueue(encoder.encode(sanitizeEvent(event)));
+                },
+                flush(controller) {
                     const remaining = flushPendingContent();
                     if (remaining)
                         controller.enqueue(encoder.encode(remaining));
-                }
-            },
-        }),
-    );
+                },
+            }),
+        );
 }
 
 export function sanitizeCohereResponse(
@@ -240,7 +230,7 @@ export function sanitizeCohereResponse(
 ): ChatCompletion {
     if (completion.stream && completion.responseStream) {
         completion.responseStream = sanitizeStream(
-            completion.responseStream as ReadableStream<Uint8Array>,
+            completion.responseStream as ReadableStream<BufferSource>,
         );
         return completion;
     }

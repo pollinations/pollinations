@@ -116,16 +116,24 @@ function gatewayContext(
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> | TransformOptions {
     const { communityEndpoint, definition } = candidate;
+    // Point the request at this candidate. A static model's provider config,
+    // transform, headers and parameter clamps are all resolved from
+    // `options.model` and nothing else, so without this a catalog target would
+    // re-run the model that just failed, byte for byte. Only the primary can
+    // reach here with no id, having been resolved without the model middleware.
+    const candidateRequest = candidate.id
+        ? { ...requestData, model: candidate.id }
+        : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the request itself.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, requestData);
+        return withGatewayContext(c, candidateRequest);
     }
     return communityEndpointGatewayContext(
         communityEndpoint,
         definition,
-        requestData,
+        candidateRequest,
         c.env.BETTER_AUTH_SECRET,
         c.env.PORTKEY_GATEWAY_URL,
         c.var.auth?.apiKey?.rawKey || "",

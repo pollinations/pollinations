@@ -102,11 +102,22 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
-    // Optional secondary provider for binary-asset models with provider-level
-    // fallback (3D only, as of this field). Purely descriptive metadata for
-    // /models transparency — does not drive fallback logic, which lives in
-    // the handler dispatch code.
-    fallbackProvider?: string;
+    /**
+     * Registry ids tried in order when this model's upstream fails, the
+     * first-party twin of a community endpoint's `fallbackModelIds`. Both
+     * converge in `linkFallbackEntries` and nothing downstream can tell them
+     * apart.
+     *
+     * No price rule applies to these: we declare both sides in a reviewed PR
+     * and no owner is paid for serving, so a rescue that costs more than it
+     * charged is a deliberate choice. The caller is billed the listing they
+     * asked for either way.
+     *
+     * Declare pairs that are actually interchangeable — matching input
+     * modalities, and tool/reasoning support if the primary advertises it.
+     * Nothing checks this, because the pairs are ours to get right.
+     */
+    fallbackModels?: string[];
     brand: string;
     category: Category;
     cost: CostDefinition;

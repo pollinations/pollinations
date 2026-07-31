@@ -1,13 +1,18 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import {
+    DEFAULT_IMAGE_MODEL,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { fallbackCandidates, withModelFallback } from "../fallback.ts";
-import type { GenerationModelEntry } from "../model-registry.ts";
+import {
+    type FallbackCandidate,
+    fallbackCandidates,
+    withModelFallback,
+} from "../fallback.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -30,7 +35,11 @@ import {
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { type ImageParams, ImageParamsSchema } from "./params.ts";
+import {
+    adjustImageSizeForModel,
+    type ImageParams,
+    ImageParamsSchema,
+} from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -397,36 +406,55 @@ async function generateImageResult(
     return result;
 }
 
-/** Tries the model, then each fallback it declared, until one returns an image. */
-async function callCommunityImageWithFallback(
-    c: ImageContext,
-    endpoint: CommunityEndpointRuntime,
-    prompt: string,
+/**
+ * Point the params at one candidate.
+ *
+ * The primary is already what the caller asked for, and a community endpoint
+ * takes its target from the endpoint row rather than from these params, so
+ * both pass through untouched — a community rescue behaves exactly as it did
+ * before catalog models joined the loop.
+ *
+ * A catalog target does dispatch on `model`, and its dimensions are re-derived
+ * from its own default unless the caller asked for a size: `parseImageParams`
+ * filled those in from the primary, so without this a rescue renders at
+ * whatever the model that failed happened to default to.
+ */
+function paramsForCandidate(
     safeParams: RuntimeImageParams,
-): Promise<{
-    result: ImageGenerationResult;
-    servedEntry?: GenerationModelEntry;
-    servedIndex: number;
-}> {
-    const { result, candidate, index } = await withModelFallback(
-        fallbackCandidates(c.var.model),
-        async (attempt) => {
-            const generated = await callCommunityImageEndpoint(
-                // Only the primary can reach here without its own endpoint, and
-                // this path runs only once it has one.
-                attempt.communityEndpoint ?? endpoint,
-                prompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            // Checked inside the attempt so an endpoint that answers 200 with an
-            // empty body fails over like any other broken response.
-            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
-            return generated;
-        },
-        c.var.track?.failedCalls,
-    );
-    return { result, servedEntry: candidate.entry, servedIndex: index };
+    candidate: FallbackCandidate,
+): RuntimeImageParams {
+    if (!candidate.entry || candidate.communityEndpoint) return safeParams;
+    const params = { ...safeParams, model: candidate.id };
+    if (safeParams.dimensionsExplicit) return params;
+    return {
+        ...params,
+        ...adjustImageSizeForModel(candidate.id as ImageModelName),
+    };
+}
+
+/** One attempt against one candidate, whichever kind of image model it is. */
+async function generateImageForCandidate(
+    c: ImageContext,
+    originalPrompt: string,
+    safeParams: RuntimeImageParams,
+    candidate: FallbackCandidate,
+): Promise<ImageGenerationResult> {
+    const params = paramsForCandidate(safeParams, candidate);
+    if (candidate.communityEndpoint) {
+        const generated = await callCommunityImageEndpoint(
+            candidate.communityEndpoint,
+            originalPrompt,
+            params,
+            c.env.BETTER_AUTH_SECRET,
+        );
+        // Checked inside the attempt so an endpoint that answers 200 with an
+        // empty body fails over like any other broken response.
+        assertNonEmptyMedia(generated.buffer, "Community image endpoint");
+        return generated;
+    }
+    const result = await generateImageResult(c, originalPrompt, params);
+    assertNonEmptyMedia(result.buffer, "Image provider");
+    return result;
 }
 
 async function generateVideoResult(
@@ -451,35 +479,9 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const { result, servedEntry, servedIndex } =
-                await callCommunityImageWithFallback(
-                    c,
-                    communityEndpoint,
-                    originalPrompt,
-                    safeParams,
-                );
-            const headers = mediaHeaders(
-                originalPrompt,
-                servedEntry
-                    ? { ...safeParams, model: servedEntry.id }
-                    : safeParams,
-                result,
-                detectMimeType(result.buffer),
-            );
-            if (servedEntry) {
-                c.set("servedModelEntry", servedEntry);
-                // Same "config.targets[N]" shape the Portkey text path emits,
-                // so tracking's fallback parsing covers both.
-                headers.set(
-                    FALLBACK_TARGET_HEADER,
-                    `config.targets[${servedIndex}]`,
-                );
-            }
-            return new Response(bufferToUint8Array(result.buffer), { headers });
-        }
-
+        // Video dispatches on its own provider set and declares no fallbacks,
+        // so it stays outside the loop — which leaves exactly one seam here,
+        // covering community and catalog image models alike.
         if (isVideoModel(safeParams.model)) {
             const result = await generateVideoResult(
                 c,
@@ -497,16 +499,34 @@ export async function generateImageOrVideoResponse(
             });
         }
 
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                result.mimeType || detectMimeType(result.buffer),
-            ),
-        });
+        const { result, candidate, index } = await withModelFallback(
+            fallbackCandidates(c.var.model),
+            (attempt) =>
+                generateImageForCandidate(
+                    c,
+                    originalPrompt,
+                    safeParams,
+                    attempt,
+                ),
+            c.var.track?.failedCalls,
+        );
+
+        // Cost and the owner reward follow what actually served. Absent on the
+        // primary, which is the model the caller is charged for either way.
+        const servedEntry = candidate.entry;
+        const headers = mediaHeaders(
+            originalPrompt,
+            servedEntry ? { ...safeParams, model: servedEntry.id } : safeParams,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedEntry) {
+            c.set("servedModelEntry", servedEntry);
+            // Same "config.targets[N]" shape the Portkey text path emits, so
+            // tracking's fallback parsing covers both.
+            headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        }
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

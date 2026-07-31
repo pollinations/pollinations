@@ -34,9 +34,9 @@ describe("OpenRouter Gemini routing", () => {
             allow_fallbacks: false,
         });
         expect(options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
         });
+        expect(options.modelConfig).not.toHaveProperty("custom-host");
     });
 
     it.each([

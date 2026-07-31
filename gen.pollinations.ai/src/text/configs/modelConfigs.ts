@@ -38,16 +38,18 @@ function createPinnedOpenRouterGeminiConfig(
     modelId: string,
     providerTag: string,
 ): PortkeyConfigFactory {
-    return () =>
-        createOpenRouterModelConfig({
-            model: `google/${modelId}`,
-            defaultOptions: {
-                provider: {
-                    only: [providerTag],
-                    allow_fallbacks: false,
-                },
+    // Portkey's generic OpenAI adapter strips OpenRouter's `provider` body field.
+    return () => ({
+        provider: "openrouter",
+        authKey: process.env.OPENROUTER_API_KEY,
+        model: `google/${modelId}`,
+        defaultOptions: {
+            provider: {
+                only: [providerTag],
+                allow_fallbacks: false,
             },
-        });
+        },
+    });
 }
 
 // =============================================================================

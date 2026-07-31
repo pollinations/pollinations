@@ -840,9 +840,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Staging billing probes on 2026-07-31 confirmed that OpenRouter's
-        // current route doubles the whole request inclusively at 200K prompt
-        // tokens, including cached tokens in the threshold.
+        // Staging probes on 2026-07-31 confirmed that our billing selector is
+        // inclusive at 200K and counts provider-reported cached tokens toward
+        // the threshold. OpenRouter's billed boundary remains invoice-unverified.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.3),
@@ -1895,9 +1895,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Staging billing probes on 2026-07-31 confirmed that the pinned
-        // Alibaba endpoint reprices the whole request inclusively at its 32K
-        // and 256K prompt-token boundaries.
+        // Staging probes on 2026-07-31 confirmed that our billing selector
+        // applies the inclusive 32K and 256K sheets. OpenRouter did not surface
+        // provider cost, so the upstream boundaries remain invoice-unverified.
         cost: {
             promptTextTokens: perMillion(0.03),
             promptCachedTokens: perMillion(0.006),

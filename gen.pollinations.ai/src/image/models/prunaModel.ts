@@ -16,8 +16,8 @@ import { closestByRatio, closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
@@ -126,7 +126,7 @@ async function runDeepInfraPrediction(
 
 /**
  * Run a Pruna video prediction on Replicate.
- * ReplicateError (already status-classified) is remapped to HttpError so the
+ * Replicate failures are remapped to HttpError so the
  * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
  */
 async function runPrunaPrediction<TInput>(
@@ -152,16 +152,7 @@ async function runPrunaPrediction<TInput>(
         };
     } catch (err) {
         logError(`${displayName} prediction failed:`, err);
-        if (err instanceof HttpError) throw err;
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(err, `${displayName} generation failed`);
     }
 }
 

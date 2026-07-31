@@ -88,7 +88,10 @@ async def send_heartbeat():
             return
         url = f"http://{public_ip}:{int(os.getenv('PORT', '8766'))}"
     register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
-    service_type = os.getenv("SERVICE_TYPE", "dreamshaper")
+    # Pool key is "sana", not "dreamshaper": /register rejects unknown types, so
+    # keeping the old key lets this worker join the pool before the gen routing
+    # change deploys. See VALID_TYPES in gen's availableServers.ts.
+    service_type = os.getenv("SERVICE_TYPE", "sana")
     token = os.getenv("PLN_GPU_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:

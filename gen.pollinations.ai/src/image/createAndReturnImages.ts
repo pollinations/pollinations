@@ -854,11 +854,8 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "dreamshaper":
-            return await callSelfHostedServer(
-                prompt,
-                safeParams,
-                "dreamshaper",
-            );
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
+            return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);

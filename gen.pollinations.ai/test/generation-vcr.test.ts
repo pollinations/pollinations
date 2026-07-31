@@ -978,11 +978,10 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
     paidApiKey,
     mocks,
 }) => {
-    const existing = await env.KV.list({
-        prefix: "image:server:test:dreamshaper:",
-    });
+    const existing = await env.KV.list({ prefix: "image:server:test:sana:" });
     await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
 
+    // pool key is still "sana" so workers can register before this deploys
     const { response: registerResponse } = await fetchWorker("/register", {
         method: "POST",
         headers: {
@@ -991,7 +990,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
         },
         body: JSON.stringify({
             url: `https://${imageBackendHost}`,
-            type: "dreamshaper",
+            type: "sana",
         }),
     });
     expect(registerResponse.status).toBe(200);

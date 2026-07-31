@@ -362,6 +362,8 @@ function throwTextError(error: ServiceError): never {
 
     throw new UpstreamError(status as ContentfulStatusCode, {
         message: error.message || "Text generation failed",
+        // Propagate only — the code is decided at the throw site.
+        errorCode: error.errorCode,
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),

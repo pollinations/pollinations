@@ -59,6 +59,7 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -224,6 +225,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),

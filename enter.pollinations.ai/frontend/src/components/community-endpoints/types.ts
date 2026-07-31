@@ -10,6 +10,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
@@ -336,10 +337,15 @@ export function nextFormState(
 ): EndpointFormState {
     if (key === "supportsImageEdits") return current;
     if (key === "modality") {
+        const modality = value === "image" ? "image" : "text";
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
+            modality,
             supportsImageEdits: false,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                current.inputModalities,
+                modality,
+            ),
             // Targets must match the modality; the old choices no longer can.
             fallbackModelIds: [],
         };

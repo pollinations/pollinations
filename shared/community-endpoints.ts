@@ -42,6 +42,14 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
 
+export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
+    text: MODEL_INPUT_MODALITIES,
+    image: ["text", "image"],
+} as const satisfies Record<
+    CommunityEndpointModality,
+    readonly ModelInputModality[]
+>;
+
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
 
@@ -253,10 +261,14 @@ export function normalizeCommunityEndpointImagePricing(
 
 export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
+    endpointModality: CommunityEndpointModality = "text",
 ): ModelInputModality[] {
     if (!value?.length) return ["text"];
     const declared = new Set(value);
-    return MODEL_INPUT_MODALITIES.filter((modality) => declared.has(modality));
+    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+        endpointModality
+    ].filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : ["text"];
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -476,13 +488,14 @@ export function communityModelDefinition(
     const isFlatRateImage = isImage && imagePricing === "request";
     const declaredInputModalities = normalizeCommunityEndpointInputModalities(
         endpoint.inputModalities,
+        modality,
     );
     const inputModalities =
         isImage && endpoint.supportsImageEdits
-            ? normalizeCommunityEndpointInputModalities([
-                  ...declaredInputModalities,
-                  "image",
-              ])
+            ? normalizeCommunityEndpointInputModalities(
+                  [...declaredInputModalities, "image"],
+                  modality,
+              )
             : declaredInputModalities;
     return {
         aliases,

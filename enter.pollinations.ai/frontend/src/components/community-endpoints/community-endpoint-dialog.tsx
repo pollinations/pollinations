@@ -15,14 +15,12 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
-import {
-    MODEL_INPUT_MODALITIES,
-    type ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -167,9 +165,9 @@ export function CommunityEndpointDialog({
             else next.add(modality);
             return {
                 ...current,
-                inputModalities: MODEL_INPUT_MODALITIES.filter((value) =>
-                    next.has(value),
-                ),
+                inputModalities: COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                    current.modality
+                ].filter((value) => next.has(value)),
             };
         });
     }
@@ -454,7 +452,9 @@ export function CommunityEndpointDialog({
                         alignLabelRow
                     >
                         <ButtonGroup aria-label="Accepted input modalities">
-                            {MODEL_INPUT_MODALITIES.map((modality) => {
+                            {COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                                form.modality
+                            ].map((modality) => {
                                 const selected =
                                     form.inputModalities.includes(modality);
                                 return (

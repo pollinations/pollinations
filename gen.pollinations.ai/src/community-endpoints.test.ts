@@ -504,7 +504,7 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["image", "video"]);
     });
 
-    it("adds image input for image endpoints that support edits", () => {
+    it("limits image endpoints to text and image inputs", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
             description: "Image model",
@@ -517,7 +517,7 @@ describe("community endpoint helpers", () => {
             }),
         });
 
-        expect(definition.inputModalities).toEqual(["text", "image", "audio"]);
+        expect(definition.inputModalities).toEqual(["text", "image"]);
     });
 
     describe("fallback target pricing", () => {
@@ -2167,7 +2167,21 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const registerResponse = await fetchEnterApi(
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Image Endpoint",
+            description: "OpenAI-compatible image endpoint",
+            modality: "image",
+            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1/images/generations",
+            upstreamModel: "gpt-image-1",
+            bearerToken: "Bearer sk_image_upstream",
+            promptTextPrice: 0.000002,
+            completionImagePrice: 0.03,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
                 method: "POST",
@@ -2176,19 +2190,23 @@ fixtureTest(
                     Cookie: await signedSessionCookie(sessionToken),
                 },
                 body: JSON.stringify({
-                    name: modelName,
-                    title: "Community Image Endpoint",
-                    description: "OpenAI-compatible image endpoint",
-                    modality: "image",
-                    supportsImageEdits: true,
-                    inputModalities: ["text", "image", "audio"],
-                    visibility: "public",
-                    baseUrl: "https://api.example.com/v1/images/generations",
-                    upstreamModel: "gpt-image-1",
-                    bearerToken: "Bearer sk_image_upstream",
-                    promptTextPrice: 0.000002,
-                    completionImagePrice: 0.03,
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text", "audio"],
                 }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
             }),
         );
 
@@ -2208,7 +2226,7 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
             supportsImageEdits: true,
-            inputModalities: ["text", "image", "audio"],
+            inputModalities: ["text", "image"],
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
@@ -2428,7 +2446,7 @@ fixtureTest(
             name: registered.modelId,
             category: "image",
             community: true,
-            input_modalities: ["text", "image", "audio"],
+            input_modalities: ["text", "image"],
             flat_rate: true,
             pricing: {
                 currency: "pollen",
@@ -2445,11 +2463,7 @@ fixtureTest(
         const openaiModel = openaiModels.data.find(
             (model) => model.id === registered.modelId,
         );
-        expect(openaiModel?.input_modalities).toEqual([
-            "text",
-            "image",
-            "audio",
-        ]);
+        expect(openaiModel?.input_modalities).toEqual(["text", "image"]);
         expect(openaiModel?.supported_endpoints).toEqual(
             expect.arrayContaining([
                 "/v1/images/generations",

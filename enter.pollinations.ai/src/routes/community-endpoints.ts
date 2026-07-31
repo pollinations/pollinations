@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
@@ -111,6 +112,20 @@ function enforceCommunityEndpointPriceLimits(
             message: `${field.label} price must not exceed ${limit}`,
         });
     }
+}
+
+function enforceCommunityEndpointInputModalities(
+    modality: CommunityEndpointModality,
+    inputModalities: readonly string[],
+): void {
+    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
+    const unsupported = inputModalities.find(
+        (input) => !(permitted as readonly string[]).includes(input),
+    );
+    if (!unsupported) return;
+    throw new HTTPException(400, {
+        message: `${unsupported} input is not supported for ${modality} models`,
+    });
 }
 
 // Community fallback targets are restricted to other public community models.
@@ -457,6 +472,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         supportsImageEdits: row.supportsImageEdits,
         inputModalities: normalizeCommunityEndpointInputModalities(
             row.inputModalities,
+            modality,
         ),
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
@@ -712,6 +728,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(db, user.id, input.name);
             const imagePricing =
                 input.modality === "image" ? input.imagePricing : "request";
+            enforceCommunityEndpointInputModalities(
+                input.modality,
+                input.inputModalities,
+            );
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
@@ -906,6 +926,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            if (input.inputModalities !== undefined) {
+                enforceCommunityEndpointInputModalities(
+                    modality,
+                    input.inputModalities,
+                );
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,

@@ -478,6 +478,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.000001,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000009,
+        "promptCacheWriteTokens": 0.0000025,
+        "promptCachedTokens": 0.0000002,
+        "promptTextTokens": 0.000002,
+      },
+    },
     "price": {
       "completionTextTokens": 0.000003,
       "promptCacheWriteTokens": 0.000000625,
@@ -492,6 +500,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000005,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000045,
+        "promptCacheWriteTokens": 0.0000125,
+        "promptCachedTokens": 0.000001,
+        "promptTextTokens": 0.00001,
+      },
+    },
     "price": {
       "completionTextTokens": 0.000015,
       "promptCacheWriteTokens": 0.000003125,
@@ -505,6 +521,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.000003125,
       "promptCachedTokens": 0.00000025,
       "promptTextTokens": 0.0000025,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000225,
+        "promptCacheWriteTokens": 0.00000625,
+        "promptCachedTokens": 0.0000005,
+        "promptTextTokens": 0.000005,
+      },
     },
     "price": {
       "completionTextTokens": 0.0000075,

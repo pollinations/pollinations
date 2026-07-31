@@ -227,6 +227,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(30.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    promptCacheWriteTokens: perMillion(12.5),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
         inputModalities: ["text", "image"],
@@ -250,6 +268,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(3.125),
             completionTextTokens: perMillion(15.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(5.0),
+                    promptCachedTokens: perMillion(0.5),
+                    promptCacheWriteTokens: perMillion(6.25),
+                    completionTextTokens: perMillion(22.5),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
         inputModalities: ["text", "image"],
@@ -273,6 +309,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(1.25),
             completionTextTokens: perMillion(6.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(2.0),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(2.5),
+                    completionTextTokens: perMillion(9.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
         inputModalities: ["text", "image"],

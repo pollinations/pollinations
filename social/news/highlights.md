@@ -1,3 +1,7 @@
+- **2026-07-30** – **🎵 Sharper speech-to-text** Transcription now runs on AssemblyAI Universal-3.5 Pro at the same base rate, with plain text, SRT, and VTT output still available. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-30** – **🤖 Cohere Command A+** Call `command-a-plus` for 128K-context chat, reasoning, JSON, streaming, and automatic tool use—with Quest Pollen access. [Available models](https://gen.pollinations.ai/v1/models)
+- **2026-07-30** – **🚀 Qwen3.7 Flash** A fast paid model for text, images, video, tools, reasoning, streaming, and prompt-cache-aware workloads is now available as `qwen3.7-flash`. [Try the playground](https://pollinations.ai/play)
+- **2026-07-30** – **✨ Weaver joins the model catalog** The Polli media agent is now `weaver`: discover it via `/v1/models` and invoke it through `voodoohop/weaver`.
 - **2026-07-29** – **🚀 Polli Agent** Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai) <!-- app -->
 - **2026-07-29** – **✨ Agent Run Tokens** Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-28** – **🎬 Wan gets more runway** Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.

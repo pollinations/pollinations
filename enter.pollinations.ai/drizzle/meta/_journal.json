@@ -288,6 +288,13 @@
       "when": 1785331128707,
       "tag": "0040_fearless_carnage",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1785349614100,
+      "tag": "0041_material_centennial",
+      "breakpoints": true
     }
   ]
 }

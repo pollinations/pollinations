@@ -209,6 +209,31 @@ export function communityEndpointPricesForModality(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * Bounds how much latency one request can spend failing before it gives up:
+ * every extra target is another upstream timeout the caller waits through.
+ * Enforced on write and re-applied when the generation registry links entries.
+ */
+export const MAX_FALLBACK_TARGETS = 3;
+
+/**
+ * True when `target` costs no more than `primary` on every price field.
+ *
+ * The caller is charged the primary's price whichever endpoint serves, so this
+ * bounds the PAYOUT rather than the invoice: a rescuer is paid on their own
+ * listing, and this rule is what guarantees that stays at or below what was
+ * charged. It also stops an owner routing traffic to a pricier model whose
+ * owner would then earn more than the caller was quoted.
+ */
+export function isCommunityFallbackPricingAllowed(
+    primary: CommunityEndpointPrices,
+    target: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => target[field.key] <= primary[field.key],
+    );
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -248,6 +273,9 @@ export type CommunityEndpointRuntime = {
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
+    // Community model ids tried in order when this endpoint's upstream fails.
+    // A target's own list is never followed: the owner declares the full order.
+    fallbackModelIds: string[];
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;

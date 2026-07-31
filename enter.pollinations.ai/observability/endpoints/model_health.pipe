@@ -13,17 +13,26 @@ SQL >
     SELECT
         resolved_model_requested as model,
         event_type,
-        topK(1)(model_provider_used)[1] as provider,
-        topK(1)(model_used)[1] as model_used,
-        count() as total_requests,
-        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
-        countIf(response_status >= 400 AND response_status < 500) as errors_4xx,
-        countIf(response_status >= 500) as errors_5xx,
-        maxIf(start_time, response_status >= 500) as last_error_at,
+        topKIf(1)(model_provider_used, is_attempt_row = 0)[1] as provider,
+        topKIf(1)(model_used, is_attempt_row = 0)[1] as model_used,
+        -- What a caller asking for this model experiences. A request that was
+        -- rescued by a fallback succeeded, and says so here.
+        countIf(is_attempt_row = 0) as total_requests,
+        countIf(is_attempt_row = 0 AND response_status >= 200 AND response_status < 300) as status_2xx,
+        countIf(is_attempt_row = 0 AND response_status >= 400 AND response_status < 500) as errors_4xx,
+        countIf(is_attempt_row = 0 AND response_status >= 500) as errors_5xx,
+        -- Whether this model's OWN upstream works, which the columns above
+        -- cannot show: a model rescued on every request reads 100% healthy up
+        -- there and 0% here. Restricted to rows where the model called is also
+        -- the one asked for, so a primary's group never absorbs the health of
+        -- the fallbacks it borrowed.
+        countIf(model_used = resolved_model_requested) as own_calls,
+        countIf(model_used = resolved_model_requested AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        maxIf(start_time, is_attempt_row = 0 AND response_status >= 500) as last_error_at,
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
-        max(start_time) as last_request_at,
+        maxIf(start_time, is_attempt_row = 0) as last_request_at,
         -- Completion tokens per second of full request duration. response_time
         -- now covers the whole streamed response (see #12378), so no separate
         -- generation-only column is needed. generation_event_v2 contains no
@@ -56,8 +65,10 @@ SQL >
             NULL
         ) as tokens_per_second
     FROM generation_event_v2
+    -- No is_attempt_row filter here: the per-request columns carry their own,
+    -- and own_calls needs the attempt rows this PR started emitting. Latency
+    -- and throughput gate on 2xx, which an attempt row never is.
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
-    AND is_attempt_row = 0  -- one row per request; attempts counted separately
     GROUP BY model, event_type
     ORDER BY total_requests DESC
 

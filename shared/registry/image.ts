@@ -6,17 +6,19 @@ export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
-    "sana": {
-        aliases: [],
-        provider: "lambda",
-        brand: "NVIDIA",
+    "dreamshaper": {
+        // "sana" is kept as an alias so existing callers and the legacy image
+        // proxy worker keep working unchanged.
+        aliases: ["sana"],
+        provider: "vast",
+        brand: "Lykon",
         category: "image",
-        addedDate: new Date("2026-07-17").getTime(),
+        addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
-        title: "Sana Sprint 1.6B",
+        title: "DreamShaper 8 LCM",
         description:
             "Near-instant images at rock-bottom cost; simpler detail than premium models",
         inputModalities: ["text"],

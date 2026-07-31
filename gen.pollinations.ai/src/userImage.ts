@@ -333,6 +333,9 @@ export async function fetchUserImage(
     }
 
     const cap = Math.min(MAX_IMAGE_SIZE, maxBytes);
+    // Not redundant with the streaming cap below, which catches the same images
+    // only after transferring `cap` bytes of them. An honest host declaring
+    // something far too big is turned away here having sent nothing.
     const contentLength = response.headers.get("content-length");
     if (contentLength && Number.parseInt(contentLength, 10) > cap) {
         throw new UserImageError(

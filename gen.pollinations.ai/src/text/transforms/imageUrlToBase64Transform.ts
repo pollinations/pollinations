@@ -4,7 +4,6 @@ import { arrayBufferToBase64 } from "@/util.ts";
 import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");
-const errorLog = debug("pollinations:transforms:imageUrl:error");
 
 const MAX_IMAGES_PER_REQUEST = 8;
 
@@ -19,28 +18,16 @@ async function fetchImageAsBase64(
     url: string,
     maxBytes: number,
 ): Promise<{ dataUrl: string; byteLength: number }> {
-    try {
-        const { bytes, mimeType } = await fetchUserImage(url, {
-            maxBytes,
-            redirect: "manual",
-        });
-        const base64 = arrayBufferToBase64(
-            bytes.buffer.slice(
-                bytes.byteOffset,
-                bytes.byteOffset + bytes.byteLength,
-            ) as ArrayBuffer,
-        );
-        log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
-        return {
-            dataUrl: `data:${mimeType};base64,${base64}`,
-            byteLength: bytes.byteLength,
-        };
-    } catch (thrown: unknown) {
-        if (thrown instanceof UserImageError) {
-            errorLog(`Image fetch error for ${url}: ${thrown.message}`);
-        }
-        throw thrown;
-    }
+    const { bytes, mimeType } = await fetchUserImage(url, {
+        maxBytes,
+        redirect: "manual",
+    });
+    const base64 = arrayBufferToBase64(bytes);
+    log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
+    return {
+        dataUrl: `data:${mimeType};base64,${base64}`,
+        byteLength: bytes.byteLength,
+    };
 }
 
 /**

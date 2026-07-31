@@ -3,6 +3,7 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
@@ -213,6 +214,101 @@ function parseIngestedEvents(body: string): Record<string, unknown>[] {
         .split("\n")
         .filter((line) => line.trim().length > 0)
         .map((line) => JSON.parse(line) as Record<string, unknown>);
+}
+
+async function createCommunityFallbackPair({
+    prefix,
+    modality = "text",
+    primaryName = "primary",
+    fallbackName = "cheap",
+}: {
+    prefix: string;
+    modality?: CommunityEndpointModality;
+    primaryName?: string;
+    fallbackName?: string;
+}) {
+    const primaryToken = "sk_primary_token";
+    const fallbackToken = "sk_fallback_token";
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const primaryOwner = `${prefix}-primary-${suffix}`;
+    const fallbackOwner = `${prefix}-fallback-${suffix}`;
+    const primaryUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: primaryOwner,
+    });
+    const fallbackUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: fallbackOwner,
+    });
+    const primaryModelId = communityModelId(primaryOwner, primaryName);
+    const fallbackModelId = communityModelId(fallbackOwner, fallbackName);
+    const primaryHostname = `${prefix}-primary.example.com`;
+    const fallbackHostname = `${prefix}-fallback.example.com`;
+    const primaryHost = `https://${primaryHostname}/v1`;
+    const fallbackHost = `https://${fallbackHostname}/v1`;
+    const primaryUpstreamModel = `${primaryName}-upstream`;
+    const fallbackUpstreamModel = `${fallbackName}-upstream`;
+    const priceFields = (price: number) =>
+        modality === "image"
+            ? {
+                  promptTextPrice: 0,
+                  completionTextPrice: 0,
+                  completionImagePrice: price,
+              }
+            : { promptTextPrice: price, completionTextPrice: price };
+    const [primaryPrice, fallbackPrice] =
+        modality === "image"
+            ? [0.02, 0.01]
+            : [0.2 / 1_000_000, 0.1 / 1_000_000];
+
+    await db.insert(communityEndpointTable).values([
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: primaryUserId,
+            visibility: "public",
+            name: primaryName,
+            modality,
+            baseUrl: primaryHost,
+            upstreamModel: primaryUpstreamModel,
+            bearerTokenCiphertext: await encryptSecret(
+                primaryToken,
+                env.BETTER_AUTH_SECRET,
+            ),
+            ...priceFields(primaryPrice),
+            fallbackModelIds: [fallbackModelId],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: fallbackUserId,
+            visibility: "public",
+            name: fallbackName,
+            modality,
+            baseUrl: fallbackHost,
+            upstreamModel: fallbackUpstreamModel,
+            bearerTokenCiphertext: await encryptSecret(
+                fallbackToken,
+                env.BETTER_AUTH_SECRET,
+            ),
+            ...priceFields(fallbackPrice),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]);
+
+    return {
+        primaryModelId,
+        fallbackModelId,
+        primaryHost,
+        fallbackHost,
+        primaryHostname,
+        fallbackHostname,
+        primaryUpstreamModel,
+        fallbackUpstreamModel,
+        primaryToken,
+        fallbackToken,
+    };
 }
 
 describe("community endpoint helpers", () => {
@@ -3472,55 +3568,18 @@ fixtureTest(
 fixtureTest(
     "serves a failed community model from its fallback and bills the fallback",
     async ({ apiKey }) => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const primaryOwner = `primary-owner-${suffix}`;
-        const fallbackOwner = `fallback-owner-${suffix}`;
-        const primaryUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: primaryOwner,
+        const {
+            primaryModelId,
+            fallbackModelId,
+            primaryHost,
+            fallbackHost,
+            primaryUpstreamModel,
+            fallbackUpstreamModel,
+            primaryToken,
+            fallbackToken,
+        } = await createCommunityFallbackPair({
+            prefix: "text-success",
         });
-        const fallbackUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: fallbackOwner,
-        });
-        const primaryModelId = communityModelId(primaryOwner, "primary");
-        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
-
-        await db.insert(communityEndpointTable).values([
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: primaryUserId,
-                visibility: "public",
-                name: "primary",
-                baseUrl: "https://primary.example.com/v1",
-                upstreamModel: "primary-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_primary_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.2 / 1_000_000,
-                completionTextPrice: 0.2 / 1_000_000,
-                fallbackModelIds: [fallbackModelId],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: fallbackUserId,
-                visibility: "public",
-                name: "cheap",
-                baseUrl: "https://fallback.example.com/v1",
-                upstreamModel: "cheap-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_fallback_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.1 / 1_000_000,
-                completionTextPrice: 0.1 / 1_000_000,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]);
 
         // Read inside the mock: request bodies cannot cross isolates.
         const gatewayCalls: {
@@ -3540,7 +3599,7 @@ fixtureTest(
                 });
                 // The primary is rate limited — the failure the fallback exists
                 // for.
-                if (customHost === "https://primary.example.com/v1") {
+                if (customHost === primaryHost) {
                     return Response.json(
                         { error: { message: "rate limited" } },
                         { status: 429 },
@@ -3600,14 +3659,14 @@ fixtureTest(
         // each attempt carries only its own endpoint's credential.
         expect(gatewayCalls).toEqual([
             {
-                customHost: "https://primary.example.com/v1",
-                bearerToken: "Bearer sk_primary_token",
-                upstreamModel: "primary-upstream",
+                customHost: primaryHost,
+                bearerToken: `Bearer ${primaryToken}`,
+                upstreamModel: primaryUpstreamModel,
             },
             {
-                customHost: "https://fallback.example.com/v1",
-                bearerToken: "Bearer sk_fallback_token",
-                upstreamModel: "cheap-upstream",
+                customHost: fallbackHost,
+                bearerToken: `Bearer ${fallbackToken}`,
+                upstreamModel: fallbackUpstreamModel,
             },
         ]);
 
@@ -3640,55 +3699,10 @@ fixtureTest(
 fixtureTest(
     "names the model that failed last when every candidate fails",
     async ({ apiKey }) => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const primaryOwner = `allfail-primary-${suffix}`;
-        const fallbackOwner = `allfail-fallback-${suffix}`;
-        const primaryUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: primaryOwner,
-        });
-        const fallbackUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: fallbackOwner,
-        });
-        const primaryModelId = communityModelId(primaryOwner, "primary");
-        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
-
-        await db.insert(communityEndpointTable).values([
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: primaryUserId,
-                visibility: "public",
-                name: "primary",
-                baseUrl: "https://primary.example.com/v1",
-                upstreamModel: "primary-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_primary_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.2 / 1_000_000,
-                completionTextPrice: 0.2 / 1_000_000,
-                fallbackModelIds: [fallbackModelId],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: fallbackUserId,
-                visibility: "public",
-                name: "cheap",
-                baseUrl: "https://fallback.example.com/v1",
-                upstreamModel: "cheap-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_fallback_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.1 / 1_000_000,
-                completionTextPrice: 0.1 / 1_000_000,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]);
+        const { primaryModelId, fallbackModelId } =
+            await createCommunityFallbackPair({
+                prefix: "text-all-fail",
+            });
 
         const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
@@ -3759,59 +3773,17 @@ fixtureTest(
 fixtureTest(
     "retries a failed community image endpoint against its fallback",
     async ({ apiKey }) => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const primaryOwner = `img-primary-${suffix}`;
-        const fallbackOwner = `img-fallback-${suffix}`;
-        const primaryUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: primaryOwner,
+        const {
+            primaryModelId,
+            fallbackModelId,
+            primaryHostname,
+            fallbackHostname,
+        } = await createCommunityFallbackPair({
+            prefix: "image-retry",
+            modality: "image",
+            primaryName: "primary-image",
+            fallbackName: "cheap-image",
         });
-        const fallbackUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: fallbackOwner,
-        });
-        const primaryModelId = communityModelId(primaryOwner, "primary-image");
-        const fallbackModelId = communityModelId(fallbackOwner, "cheap-image");
-        const bearerTokenCiphertext = await encryptSecret(
-            "sk_image_upstream",
-            env.BETTER_AUTH_SECRET,
-        );
-
-        for (const row of [
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: primaryUserId,
-                visibility: "public" as const,
-                name: "primary-image",
-                modality: "image",
-                baseUrl: "https://primary-image.example.com/v1",
-                upstreamModel: "primary-image-upstream",
-                bearerTokenCiphertext,
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                completionImagePrice: 0.02,
-                fallbackModelIds: [fallbackModelId],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: fallbackUserId,
-                visibility: "public" as const,
-                name: "cheap-image",
-                modality: "image",
-                baseUrl: "https://fallback-image.example.com/v1",
-                upstreamModel: "cheap-image-upstream",
-                bearerTokenCiphertext,
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                completionImagePrice: 0.01,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]) {
-            await db.insert(communityEndpointTable).values(row);
-        }
 
         const upstreamHosts: string[] = [];
         const fetchMock = vi.fn(async (input, init) => {
@@ -3819,7 +3791,7 @@ fixtureTest(
             if (isCommunityImageGenerationsRequest(request)) {
                 const host = new URL(request.url).host;
                 upstreamHosts.push(host);
-                if (host === "primary-image.example.com") {
+                if (host === primaryHostname) {
                     return Response.json(
                         { error: "upstream down" },
                         {
@@ -3846,10 +3818,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("image/png");
-        expect(upstreamHosts).toEqual([
-            "primary-image.example.com",
-            "fallback-image.example.com",
-        ]);
+        expect(upstreamHosts).toEqual([primaryHostname, fallbackHostname]);
         expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
@@ -3983,60 +3952,13 @@ fixtureTest(
 fixtureTest(
     "does not replay image caller errors or moderation refusals on the fallback",
     async ({ apiKey }) => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const primaryOwner = `img-strict-primary-${suffix}`;
-        const fallbackOwner = `img-strict-fallback-${suffix}`;
-        const primaryUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: primaryOwner,
-        });
-        const fallbackUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: fallbackOwner,
-        });
-        const primaryModelId = communityModelId(primaryOwner, "strict-image");
-        const fallbackModelId = communityModelId(fallbackOwner, "loose-image");
-        const bearerTokenCiphertext = await encryptSecret(
-            "sk_image_upstream",
-            env.BETTER_AUTH_SECRET,
-        );
-
-        for (const row of [
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: primaryUserId,
-                visibility: "public" as const,
-                name: "strict-image",
+        const { primaryModelId, primaryHostname } =
+            await createCommunityFallbackPair({
+                prefix: "image-strict",
                 modality: "image",
-                baseUrl: "https://strict-image.example.com/v1",
-                upstreamModel: "strict-image-upstream",
-                bearerTokenCiphertext,
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                completionImagePrice: 0.02,
-                fallbackModelIds: [fallbackModelId],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: fallbackUserId,
-                visibility: "public" as const,
-                name: "loose-image",
-                modality: "image",
-                baseUrl: "https://loose-image.example.com/v1",
-                upstreamModel: "loose-image-upstream",
-                bearerTokenCiphertext,
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                completionImagePrice: 0.01,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]) {
-            await db.insert(communityEndpointTable).values(row);
-        }
-
+                primaryName: "strict-image",
+                fallbackName: "loose-image",
+            });
         let upstreamHosts: string[] = [];
         let primaryFailure = {
             status: 400,
@@ -4047,7 +3969,7 @@ fixtureTest(
             if (isCommunityImageGenerationsRequest(request)) {
                 const host = new URL(request.url).host;
                 upstreamHosts.push(host);
-                if (host === "strict-image.example.com") {
+                if (host === primaryHostname) {
                     return Response.json(primaryFailure.body, {
                         status: primaryFailure.status,
                     });
@@ -4078,7 +4000,7 @@ fixtureTest(
         // called and the primary's own 400 reaches the client.
         const callerError = await generate();
         expect(callerError.status).toBe(400);
-        expect(upstreamHosts).toEqual(["strict-image.example.com"]);
+        expect(upstreamHosts).toEqual([primaryHostname]);
 
         // A moderation refusal must not be routed around, whatever status the
         // provider wrapped it in — it stays a 422 content-policy rejection.
@@ -4091,62 +4013,17 @@ fixtureTest(
         };
         const moderationRefusal = await generate();
         expect(moderationRefusal.status).toBe(422);
-        expect(upstreamHosts).toEqual(["strict-image.example.com"]);
+        expect(upstreamHosts).toEqual([primaryHostname]);
     },
 );
 
 fixtureTest(
     "does not serve a fallback the API key is not allowed to use",
     async () => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const primaryOwner = `scoped-primary-${suffix}`;
-        const fallbackOwner = `scoped-fallback-${suffix}`;
-        const primaryUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: primaryOwner,
-        });
-        const fallbackUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: fallbackOwner,
-        });
-        const primaryModelId = communityModelId(primaryOwner, "primary");
-        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
-
-        await db.insert(communityEndpointTable).values([
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: primaryUserId,
-                visibility: "public",
-                name: "primary",
-                baseUrl: "https://scoped-primary.example.com/v1",
-                upstreamModel: "primary-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_primary_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.2 / 1_000_000,
-                completionTextPrice: 0.2 / 1_000_000,
-                fallbackModelIds: [fallbackModelId],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: fallbackUserId,
-                visibility: "public",
-                name: "cheap",
-                baseUrl: "https://scoped-fallback.example.com/v1",
-                upstreamModel: "cheap-upstream",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_fallback_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0.1 / 1_000_000,
-                completionTextPrice: 0.1 / 1_000_000,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]);
+        const { primaryModelId, fallbackModelId, primaryHost } =
+            await createCommunityFallbackPair({
+                prefix: "scoped",
+            });
 
         // Scoped to the primary only — calling the fallback directly is a 403.
         const { key } = await createTestApiKey({
@@ -4209,9 +4086,7 @@ fixtureTest(
         // alone, so the key can never be served the model it cannot call.
         expect(gatewayCalls[0].config).toBeNull();
         expect(gatewayCalls[0].provider).toBe("openai");
-        expect(gatewayCalls[0].customHost).toBe(
-            "https://scoped-primary.example.com/v1",
-        );
+        expect(gatewayCalls[0].customHost).toBe(primaryHost);
 
         // The same key calling the fallback directly is refused.
         const direct = await SELF.fetch(

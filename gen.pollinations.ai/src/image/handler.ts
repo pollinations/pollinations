@@ -421,8 +421,7 @@ async function callCommunityImageWithFallback(
             assertNonEmptyMedia(generated.buffer, "Community image endpoint");
             return generated;
         },
-        (attempt, error, startedAt) =>
-            c.var.track?.recordFailedAttempt(attempt.id, error, startedAt),
+        c.var.track?.failedCalls,
     );
     return { result, servedEntry: candidate.entry, servedIndex: index };
 }

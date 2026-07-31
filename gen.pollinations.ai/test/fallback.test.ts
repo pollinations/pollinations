@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+    type FailedCall,
     type FallbackCandidate,
     isRetryableFallbackError,
     withModelFallback,
@@ -94,8 +95,14 @@ describe("withModelFallback", () => {
             upstreamStatus: 429,
         });
 
-    it("reports every attempt it moved on from, but not the one that ended the request", async () => {
-        const reported: string[] = [];
+    /** How the loop's own record of a failure reads, most compactly. */
+    const seen = (failures: FailedCall[]) =>
+        failures.map((f) =>
+            f.terminal ? `${f.candidate.id}!` : f.candidate.id,
+        );
+
+    it("reports every failure, marking the one that ended the request", async () => {
+        const failures: FailedCall[] = [];
         const attempt = vi.fn(async () => {
             throw rateLimited();
         });
@@ -104,37 +111,36 @@ describe("withModelFallback", () => {
             withModelFallback(
                 [candidate("primary"), candidate("second"), candidate("third")],
                 attempt,
-                (failed) => reported.push(failed.id),
+                failures,
             ),
         ).rejects.toThrow("429 upstream");
 
-        // Three calls, three rows: two reported here and the third carried by
-        // the response itself. Reporting the terminal failure as well would
-        // record it twice.
+        // Three calls, three failures reported. Only the terminal one is
+        // flagged, because it is the request's outcome rather than an attempt
+        // that was moved on from — tracking turns that flag into one row per
+        // upstream call.
         expect(attempt).toHaveBeenCalledTimes(3);
-        expect(reported).toEqual(["primary", "second"]);
+        expect(seen(failures)).toEqual(["primary", "second", "third!"]);
     });
 
-    it("reports nothing when the only model tried is the one that failed", async () => {
-        const reported: string[] = [];
+    it("reports the only model tried when it is the one that failed", async () => {
+        const failures: FailedCall[] = [];
         const attempt = vi.fn(async () => {
             throw rateLimited();
         });
 
         await expect(
-            withModelFallback([candidate("primary")], attempt, (failed) =>
-                reported.push(failed.id),
-            ),
+            withModelFallback([candidate("primary")], attempt, failures),
         ).rejects.toThrow("429 upstream");
 
-        // The overwhelmingly common shape: no fallbacks declared. One upstream
-        // call must leave one row, and that row is the response.
+        // The overwhelmingly common shape: no fallbacks declared. The failure
+        // is terminal, so it is named but produces no row of its own.
         expect(attempt).toHaveBeenCalledTimes(1);
-        expect(reported).toEqual([]);
+        expect(seen(failures)).toEqual(["primary!"]);
     });
 
-    it("reports nothing when a caller error stops the chain on the first model", async () => {
-        const reported: string[] = [];
+    it("stops the chain on a caller error and reports it as terminal", async () => {
+        const failures: FailedCall[] = [];
         const badRequest = Object.assign(new Error("400 upstream"), {
             status: 400,
             upstreamStatus: 400,
@@ -146,17 +152,17 @@ describe("withModelFallback", () => {
                 async () => {
                     throw badRequest;
                 },
-                (failed) => reported.push(failed.id),
+                failures,
             ),
         ).rejects.toThrow("400 upstream");
 
-        // Nothing was moved on from, so nothing is reported — the 400 the
-        // caller receives is the whole record of this request.
-        expect(reported).toEqual([]);
+        // Nothing was moved on from, but the 400 still came from a named
+        // model, and that name is the only thing the response cannot carry.
+        expect(seen(failures)).toEqual(["primary!"]);
     });
 
-    it("reports nothing and stops calling once a model serves", async () => {
-        const reported: string[] = [];
+    it("reports only the failures it moved on from once a model serves", async () => {
+        const failures: FailedCall[] = [];
         const attempt = vi
             .fn<(c: FallbackCandidate) => Promise<string>>()
             .mockRejectedValueOnce(rateLimited())
@@ -169,13 +175,13 @@ describe("withModelFallback", () => {
         } = await withModelFallback(
             [candidate("primary"), candidate("second"), candidate("third")],
             attempt,
-            (failed) => reported.push(failed.id),
+            failures,
         );
 
         expect(result).toBe("served");
         expect(served.id).toBe("second");
         expect(index).toBe(1);
-        expect(reported).toEqual(["primary"]);
+        expect(seen(failures)).toEqual(["primary"]);
         expect(attempt).toHaveBeenCalledTimes(2);
     });
 });

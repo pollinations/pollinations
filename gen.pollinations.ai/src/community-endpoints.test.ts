@@ -3526,6 +3526,125 @@ fixtureTest(
 );
 
 fixtureTest(
+    "names the model that failed last when every candidate fails",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `allfail-primary-${suffix}`;
+        const fallbackOwner = `allfail-fallback-${suffix}`;
+        const primaryUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: primaryOwner,
+        });
+        const fallbackUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: fallbackOwner,
+        });
+        const primaryModelId = communityModelId(primaryOwner, "primary");
+        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
+
+        await db.insert(communityEndpointTable).values([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: primaryUserId,
+                visibility: "public",
+                name: "primary",
+                baseUrl: "https://primary.example.com/v1",
+                upstreamModel: "primary-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_primary_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.2 / 1_000_000,
+                completionTextPrice: 0.2 / 1_000_000,
+                fallbackModelIds: [fallbackModelId],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: fallbackUserId,
+                visibility: "public",
+                name: "cheap",
+                baseUrl: "https://fallback.example.com/v1",
+                upstreamModel: "cheap-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_fallback_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        const ingestedEvents: Record<string, unknown>[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                // Nothing rescues this request: every endpoint is rate limited.
+                return Response.json(
+                    { error: { message: "rate limited" } },
+                    { status: 429 },
+                );
+            }
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(502);
+
+        // Two upstream calls, two rows, and each names the model it reached.
+        // The row that records how the request ended must name the fallback:
+        // naming the primary would count it twice and leave a permanently
+        // broken fallback invisible in every per-model view.
+        // A 5xx also emits an unrelated server-error event to Tinybird, so
+        // narrow to the generation rows.
+        const generationRows = () =>
+            ingestedEvents.filter((event) => "requestId" in event);
+        await vi.waitFor(() => expect(generationRows()).toHaveLength(2));
+        expect(
+            generationRows().map((event) => [
+                event.modelUsed,
+                event.isAttemptRow,
+                event.isBilledUsage,
+            ]),
+        ).toEqual(
+            expect.arrayContaining([
+                [primaryModelId, true, false],
+                [fallbackModelId, false, false],
+            ]),
+        );
+        // Both rows belong to the same request, so the pair can be joined.
+        expect(
+            new Set(generationRows().map((event) => event.requestId)).size,
+        ).toBe(1);
+    },
+);
+
+fixtureTest(
     "retries a failed community image endpoint against its fallback",
     async ({ apiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);

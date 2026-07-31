@@ -73,6 +73,7 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
+import type { FailedCall } from "../fallback.ts";
 
 export type ModelUsage = {
     model: string;
@@ -117,15 +118,11 @@ export type TrackVariables = {
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
         /**
-         * Report a generation attempt whose upstream failed, whether or not
-         * another model is tried after it. Handlers report the fact; this
-         * middleware owns the event shape.
+         * Handed to the fallback loop to append to. Nothing is written as the
+         * calls fail: the block after next() owns every row this request
+         * emits, so it can see the whole sequence at once.
          */
-        recordFailedAttempt: (
-            model: string,
-            error: unknown,
-            startedAt?: Date,
-        ) => void;
+        failedCalls: FailedCall[];
     };
 };
 
@@ -175,6 +172,13 @@ export const track = (eventType: EventType) =>
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
+        /**
+         * Every upstream call that failed, in the order they were tried.
+         *
+         * Filled by the fallback loop, which knows only how to retry; this
+         * middleware is what turns the list into rows.
+         */
+        const failedCalls: FailedCall[] = [];
 
         // Read at emit time: balanceCheckResult is only set once the balance
         // middleware has run.
@@ -186,68 +190,48 @@ export const track = (eventType: EventType) =>
         });
 
         /**
-         * One unbilled row per attempt we moved on from.
+         * The one place a generation row is built and sent.
          *
-         * Without it a model that is always rescued by its fallback looks
-         * healthy, because the request's settlement row records whichever model
-         * ended up serving. Nothing was generated, so the row carries who asked
-         * and what failed, and no usage, price or reward.
-         *
-         * The attempt that ends the request never gets one: it is the response,
-         * and the settlement row already carries it. So a request emits exactly
-         * one row per upstream call it made.
+         * Everything that identifies the request is captured here; callers pass
+         * only what differs between a call that failed and the call that
+         * settled.
          */
-        const recordFailedAttempt = (
-            model: string,
-            error: unknown,
-            startedAt?: Date,
-        ): void => {
-            const endTime = new Date();
-            const responseStatus = failedAttemptStatus(error);
-            c.executionCtx.waitUntil(
-                (async () => {
-                    if (!userTracking.userId) return;
-                    await sendToTinybird(
-                        createTrackingEvent({
-                            id: generateRandomId(),
-                            requestId: c.get("requestId"),
-                            requestPath: getRoutePath(c),
-                            startTime: startedAt ?? startTime,
-                            endTime,
-                            environment: c.env.ENVIRONMENT,
-                            eventType,
-                            ipSubnet,
-                            ipHash: await hashIp(
-                                clientIp,
-                                c.env.BETTER_AUTH_SECRET,
-                            ),
-                            userTracking,
-                            balanceTracking: balanceTracking(),
-                            requestTracking,
-                            responseTracking: {
-                                responseStatus,
-                                cacheHit: false,
-                                isBilledUsage: false,
-                                isAttemptRow: true,
-                                fallbackUsed:
-                                    model !==
-                                    requestTracking.resolvedModelRequested,
-                                modelUsed: model,
-                            },
-                            markup: null,
-                            communityModelReward: null,
-                            billedPrice: 0,
-                            errorTracking: collectErrorData(
-                                responseStatus,
-                                error instanceof Error ? error : undefined,
-                            ),
-                        }),
-                        c.env.TINYBIRD_INGEST_URL,
-                        c.env.TINYBIRD_INGEST_TOKEN,
-                        log,
-                    );
-                })(),
+        const emitRow = async (row: {
+            startTime: Date;
+            endTime: Date;
+            balanceTracking: BalanceData;
+            responseTracking: ResponseTrackingData;
+            errorTracking: ErrorData;
+            markup?: MarkupResolution | null;
+            communityModelReward?: CommunityModelRewardResolution | null;
+            billedPrice?: number;
+        }): Promise<InsertGenerationEvent> => {
+            const event = createTrackingEvent({
+                id: generateRandomId(),
+                requestId: c.get("requestId"),
+                requestPath: getRoutePath(c),
+                environment: c.env.ENVIRONMENT,
+                eventType,
+                ipSubnet,
+                ipHash: await hashIp(clientIp, c.env.BETTER_AUTH_SECRET),
+                userTracking,
+                requestTracking,
+                startTime: row.startTime,
+                endTime: row.endTime,
+                balanceTracking: row.balanceTracking,
+                responseTracking: row.responseTracking,
+                errorTracking: row.errorTracking,
+                markup: row.markup ?? null,
+                communityModelReward: row.communityModelReward ?? null,
+                billedPrice: row.billedPrice ?? 0,
+            });
+            await sendToTinybird(
+                event,
+                c.env.TINYBIRD_INGEST_URL,
+                c.env.TINYBIRD_INGEST_TOKEN,
+                log,
             );
+            return event;
         };
 
         c.set("track", {
@@ -257,7 +241,7 @@ export const track = (eventType: EventType) =>
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
             },
-            recordFailedAttempt,
+            failedCalls,
         });
 
         await next();
@@ -266,6 +250,10 @@ export const track = (eventType: EventType) =>
             (async () => {
                 const userId = userTracking.userId;
                 if (!userId) return;
+
+                const terminalAttemptModel = failedCalls.find(
+                    (call) => call.terminal,
+                )?.candidate.id;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -278,12 +266,46 @@ export const track = (eventType: EventType) =>
                 // What a rescue changes: the generation's cost, and which owner
                 // earns the reward. Not the price — the caller is charged the
                 // listing they asked for either way.
+                // Emitted only after the response above is captured: any
+                // await before that clone lets the body start streaming, and
+                // cloning a locked stream throws.
+                // One row per call that was moved on from. The failure that
+                // ended the request is not among them: it is the response, and
+                // the settlement row below carries it — under the name only the
+                // loop can supply. So a request emits one row per upstream call.
+                for (const call of failedCalls) {
+                    if (call.terminal) continue;
+                    const model = call.candidate.id;
+                    const status = failedAttemptStatus(call.error);
+                    await emitRow({
+                        startTime: call.startedAt,
+                        endTime: call.endedAt,
+                        balanceTracking: balanceTracking(),
+                        responseTracking: {
+                            responseStatus: status,
+                            cacheHit: false,
+                            isBilledUsage: false,
+                            isAttemptRow: true,
+                            fallbackUsed:
+                                model !==
+                                requestTracking.resolvedModelRequested,
+                            modelUsed: model,
+                        },
+                        errorTracking: collectErrorData(
+                            status,
+                            call.error instanceof Error
+                                ? call.error
+                                : undefined,
+                        ),
+                    });
+                }
                 const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
                     servedEntry?.definition,
+                    terminalAttemptModel,
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
@@ -294,8 +316,6 @@ export const track = (eventType: EventType) =>
                 // time-to-first-byte. Binary bodies (image/audio) are never
                 // read by tracking, so their endTime stays ~header arrival.
                 const endTime = new Date();
-
-                const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
                 // Deduct payer + credit dev before emitting the event so billing
                 // telemetry reflects the committed ledger state.
@@ -370,19 +390,14 @@ export const track = (eventType: EventType) =>
                       }
                     : balanceTracking();
 
-                const finalEvent = createTrackingEvent({
-                    id: generateRandomId(),
-                    requestId: c.get("requestId"),
-                    requestPath: getRoutePath(c),
+                await c.var.frontendKeyRateLimit?.consumePollen(
+                    responseTracking.price?.totalPrice || 0,
+                );
+
+                const finalEvent = await emitRow({
                     startTime,
                     endTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    ipSubnet,
-                    ipHash,
-                    userTracking,
                     balanceTracking: committedBalanceTracking,
-                    requestTracking,
                     responseTracking,
                     markup,
                     communityModelReward,
@@ -392,10 +407,6 @@ export const track = (eventType: EventType) =>
                         c.get("error"),
                     ),
                 });
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
 
                 log.trace(
                     [
@@ -411,13 +422,6 @@ export const track = (eventType: EventType) =>
                         "  communityModelRewardAmount={event.communityModelRewardAmount}",
                     ].join("\n"),
                     { event: finalEvent },
-                );
-
-                await sendToTinybird(
-                    finalEvent,
-                    c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
-                    log,
                 );
 
                 if (shouldRunAutoTopUp) {
@@ -537,9 +541,13 @@ export async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
     servedModelDefinition?: ModelDefinition,
+    terminalAttemptModel?: string,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
+    // The model this row is actually about. Defaults to the one asked for,
+    // which is right until a fallback moves the request to a different id.
+    const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
@@ -557,16 +565,21 @@ export async function trackResponse(
     // say what failed — otherwise model_used falls back to the datasource
     // DEFAULT 'undefined' and per-model upstream health is unqueryable.
     //
-    // resolvedModelRequested is the model that was called: the model is
-    // resolved once per request and no path re-dispatches to a different
-    // Pollinations model id. Portkey's multi-target config (see fallbackUsed /
+    // Which model that was: the one the request resolved to, unless the
+    // fallback loop moved on and stopped on a different one. Only the loop
+    // knows that, so it reports the id it stopped on and modelCalled prefers
+    // it. Portkey's multi-target config (see fallbackUsed /
     // x-portkey-last-used-option-index) only changes which upstream provider
-    // target served a single model id, not the id itself.
+    // target served a single model id, so it needs no such reporting.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return notBilled({
+            modelUsed: modelCalled,
+            fallbackUsed:
+                fallbackUsed || modelCalled !== resolvedModelRequested,
+        });
     }
 
     // Verify the response content-type matches the expected output before

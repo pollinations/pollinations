@@ -149,6 +149,21 @@ export function fallbackCandidates(
 }
 
 /**
+ * One upstream call that failed, as the loop saw it.
+ *
+ * `terminal` marks the failure that ended the request — the only thing about a
+ * failed generation that the error response cannot say for itself, since it
+ * carries no candidate name.
+ */
+export type FailedCall = {
+    candidate: FallbackCandidate;
+    error: unknown;
+    startedAt: Date;
+    endedAt: Date;
+    terminal: boolean;
+};
+
+/**
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
@@ -157,17 +172,18 @@ export function fallbackCandidates(
  * dominant failure is an exhausted quota, and asking the same endpoint again
  * would only spend more of a budget that is already gone.
  *
+ * Every failed call is appended to `failures`, including the one that ends the
+ * request. Recording is not the same as retrying: this loop decides only which
+ * candidate to try next, and leaves what any of it means to whoever reads the
+ * list.
+ *
  * Safe for streaming: the clients throw before returning a body, so a failed
  * attempt has sent the caller nothing.
  */
 export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
-    onFailedAttempt?: (
-        candidate: FallbackCandidate,
-        error: unknown,
-        startedAt: Date,
-    ) => void,
+    failures?: FailedCall[],
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
         // Timed from this attempt's own start. Measured from the request's, a
@@ -177,13 +193,17 @@ export async function withModelFallback<T>(
         try {
             return { result: await attempt(candidate), candidate, index };
         } catch (error) {
-            const isLast = index === candidates.length - 1;
-            // The failure that ends the request IS the request's outcome, and
-            // tracking already records that as the response. Only an attempt we
-            // moved on from needs a row of its own — which leaves exactly one
-            // row per upstream call, however the request ends.
-            if (isLast || !isRetryableFallbackError(error)) throw error;
-            onFailedAttempt?.(candidate, error, startedAt);
+            const terminal =
+                index === candidates.length - 1 ||
+                !isRetryableFallbackError(error);
+            failures?.push({
+                candidate,
+                error,
+                startedAt,
+                endedAt: new Date(),
+                terminal,
+            });
+            if (terminal) throw error;
         }
     }
     // Unreachable: the loop either returns or rethrows for a non-empty list, and

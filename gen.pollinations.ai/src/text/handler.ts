@@ -388,8 +388,7 @@ async function generateTextResponse(
                     requestData.messages,
                     await gatewayContext(c, requestData, attempt),
                 ),
-            (attempt, error, startedAt) =>
-                c.var.track?.recordFailedAttempt(attempt.id, error, startedAt),
+            c.var.track?.failedCalls,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();

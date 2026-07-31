@@ -293,6 +293,25 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     return token;
 }
 
+export function communityEndpointErrorBodyMessage(
+    body: unknown,
+): string | null {
+    if (!body || typeof body !== "object") return null;
+    const { error, message } = body as {
+        error?: string | { message?: unknown };
+        message?: unknown;
+    };
+    if (
+        error &&
+        typeof error === "object" &&
+        typeof error.message === "string"
+    ) {
+        return error.message;
+    }
+    if (typeof error === "string") return error;
+    return typeof message === "string" ? message : null;
+}
+
 export function isCommunityEndpointOwnerAllowed(
     owner: CommunityEndpointOwnerLike | null | undefined,
 ): boolean {

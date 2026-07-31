@@ -15,9 +15,13 @@ SQL >
         ((api_key_type = 'secret' AND position(api_key_name, '.') > 0) OR api_key_created_via = 'redirect-auth') AS is_byop,
         uniq(user_id) AS users,
         sum(total_price) AS pollen,
-        countIf(is_attempt_row = 0) AS requests  -- attempts are not requests
+        count() AS requests
     FROM generation_event_v2
     WHERE
+        -- One row per request: a fallback attempt is part of a request, not
+        -- another one, and it carries no user, price or tokens of its own.
+        is_attempt_row = 0
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

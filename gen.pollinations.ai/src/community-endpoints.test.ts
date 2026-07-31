@@ -3842,6 +3842,29 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await response.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
+
+        // The OpenAI-compatible route replaces the generated response with
+        // JSON, so it has to carry the fallback marker across itself —
+        // otherwise tracking reads the rescue as a plain first-try success.
+        const openaiResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelIds[0],
+                    prompt: "green sprout",
+                }),
+            }),
+        );
+
+        expect(openaiResponse.status).toBe(200);
+        expect(openaiResponse.headers.get("x-model-used")).toBe(modelIds[2]);
+        expect(openaiResponse.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[2]",
+        );
     },
 );
 

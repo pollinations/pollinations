@@ -1053,7 +1053,10 @@ describe("POST /v1/embeddings", () => {
         const body = await response.text();
 
         expect(response.status).toBe(400);
-        expect(body).toContain("Failed to fetch image");
+        // Refused by the URL guard before any fetch, and coded so a caller can
+        // branch on it rather than on the prose.
+        expect(body).toContain("Invalid image URL");
+        expect(body).toContain("invalid_image_url");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

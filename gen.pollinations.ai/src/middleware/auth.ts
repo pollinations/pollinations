@@ -1,3 +1,4 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     type AuthUser,
@@ -5,6 +6,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { LoggerVariables } from "./logger.ts";
@@ -13,6 +15,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
 };
 
@@ -23,6 +26,7 @@ export type AuthVariables = {
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
+        agentRun?: AgentRunClaims;
     };
 };
 
@@ -51,7 +55,7 @@ export const auth = () =>
             }
         })();
 
-        const { user, apiKey } = authResult || {};
+        const { user, apiKey, agentRun } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -69,10 +73,16 @@ export const auth = () =>
         };
 
         function requireModelAccess(): void {
-            if (!apiKey?.permissions?.models) return;
-
             const model = c.var.model;
             if (!model) return;
+
+            if (agentRun && model.communityEndpoint) {
+                throw new HTTPException(403, {
+                    message: "Agent run tokens cannot call community models",
+                });
+            }
+
+            if (!apiKey?.permissions?.models) return;
 
             if (!apiKey.permissions.models.includes(model.resolved)) {
                 throw new HTTPException(403, {
@@ -87,6 +97,7 @@ export const auth = () =>
             requireAuthorization,
             requireUser,
             requireModelAccess,
+            ...(agentRun && { agentRun }),
         });
 
         await next();

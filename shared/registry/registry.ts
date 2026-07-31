@@ -15,6 +15,15 @@ export type Category =
     | "embedding"
     | "realtime";
 
+export const MODEL_INPUT_MODALITIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+] as const;
+
+export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
+
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
@@ -121,7 +130,7 @@ export type ModelDefinition = {
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
-    inputModalities?: string[];
+    inputModalities?: ModelInputModality[];
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
@@ -233,14 +242,42 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
+    /**
+     * What the model that actually ran would have been charged for this usage.
+     * Equal to `price.totalPrice` unless a fallback served, where it is what
+     * bounds the serving owner's reward — they are paid on their own listing,
+     * not on the (higher) one the caller bought.
+     */
+    servedPrice: number;
 };
 
-export function calculateUsageBilling(
+export type UsageBillingInput = {
+    model: string;
+    usage: Usage;
+    /** Whose upstream ran — decides what the generation cost us. */
+    servedBy: ModelDefinition;
+    /**
+     * Whose listing the caller bought — decides what they are charged. Defaults
+     * to the model that served, which is every case except a fallback.
+     */
+    quotedBy?: ModelDefinition;
+    output?: unknown;
+};
+
+/**
+ * Rates one usage against one model definition.
+ *
+ * Price is the cost scaled by that definition's multiplier, so it cannot be
+ * borrowed across definitions: community endpoints carry per-usage-type rate
+ * vectors their owners set, and rescaling one owner's cost by another's
+ * multiplier would invent a price neither of them published.
+ */
+function rateAgainst(
     model: string,
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
-): UsageBilling {
+): Omit<UsageBilling, "servedPrice"> {
     const adjustments = calculateBillingAdjustments(svc, output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
@@ -275,6 +312,35 @@ export function calculateUsageBilling(
     };
 
     return { cost, price, adjustments };
+}
+
+/**
+ * What the generation cost us, and what the caller pays for it.
+ *
+ * These come apart exactly when a fallback served: the caller is charged the
+ * listing they asked for, while cost — and the serving owner's reward — follow
+ * the model that actually ran. Charging the server's price instead would let
+ * the amount on the invoice depend on which upstream happened to be up.
+ */
+export function calculateUsageBilling({
+    model,
+    usage,
+    servedBy,
+    quotedBy = servedBy,
+    output,
+}: UsageBillingInput): UsageBilling {
+    const served = rateAgainst(model, usage, servedBy, output);
+    if (quotedBy === servedBy) {
+        return { ...served, servedPrice: served.price.totalPrice };
+    }
+    // Rated independently rather than rescaled: see rateAgainst.
+    const quoted = rateAgainst(model, usage, quotedBy, output);
+    return {
+        cost: served.cost,
+        adjustments: served.adjustments,
+        price: quoted.price,
+        servedPrice: served.price.totalPrice,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -415,7 +481,7 @@ export function calculateCostForModelDefinition(
     svc: ModelDefinition,
     output?: unknown,
 ): UsageCost {
-    return calculateUsageBilling(model, usage, svc, output).cost;
+    return calculateUsageBilling({ model, usage, servedBy: svc, output }).cost;
 }
 
 /**
@@ -451,7 +517,7 @@ export function calculatePriceForModelDefinition(
     svc: ModelDefinition,
     output?: unknown,
 ): UsagePrice {
-    return calculateUsageBilling(model, usage, svc, output).price;
+    return calculateUsageBilling({ model, usage, servedBy: svc, output }).price;
 }
 
 /**

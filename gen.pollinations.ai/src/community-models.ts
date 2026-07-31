@@ -64,6 +64,7 @@ export async function getCommunityModelRegistryEntries(
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -75,6 +76,7 @@ export async function getCommunityModelRegistryEntries(
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
+            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
         })
@@ -105,6 +107,8 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
+            delegatesGeneration: row.delegatesGeneration,
+            fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

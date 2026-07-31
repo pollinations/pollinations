@@ -259,6 +259,31 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "command-a-plus": {
+        aliases: [
+            "cohere-command-a-plus",
+            "command-a-plus-05-2026",
+            "cohere-command-a-plus-05-2026",
+        ],
+        provider: "azure",
+        brand: "Cohere",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(0.8),
+            completionTextTokens: perMillion(3.2),
+        },
+        title: "Cohere Command A+",
+        description:
+            "Multilingual agentic reasoning with tools and long context",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         provider: "ovhcloud",
@@ -289,6 +314,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
@@ -315,6 +341,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
@@ -561,6 +588,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
@@ -585,7 +613,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         brand: "Google",
         category: "text",
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -1183,12 +1211,13 @@ export const TEXT_SERVICES = {
     },
     "kimi-k3": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-07-30).
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
@@ -1287,7 +1316,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
@@ -1310,7 +1339,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.435),
@@ -1489,6 +1518,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
@@ -1633,7 +1663,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // OpenRouter triples token rates above 256K prompt tokens. Pollinations
         // keeps the full context window and absorbs that higher tier.
@@ -1678,6 +1708,34 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "qwen3.7-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter raises rates above 32K and 256K prompt tokens.
+        // Pollinations charges the base tier and absorbs the higher tiers.
+        cost: {
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.006),
+            promptCacheWriteTokens: perMillion(0.038),
+            completionTextTokens: perMillion(0.13),
+        },
+        title: "Qwen3.7 Flash",
+        description:
+            "Ultra-low-cost multimodal reasoning for agents and visual tasks",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "qwen-vision": {
         aliases: [
             "qwen3-vl",
@@ -1690,6 +1748,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
@@ -1716,6 +1775,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
@@ -1735,13 +1795,14 @@ export const TEXT_SERVICES = {
     },
     "step-flash": {
         aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
-        provider: "openrouter",
+        provider: "deepinfra",
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
+            // DeepInfra stepfun-ai/Step-3.7-Flash posted rates (2026-07-30):
             // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.04),
@@ -1766,6 +1827,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):

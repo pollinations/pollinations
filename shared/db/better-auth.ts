@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
   sqliteTable,
@@ -214,10 +215,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
     .default(false)
     .notNull(),
-  // Owner-declared input modalities as a JSON string (e.g. '["text","image"]').
-  // Null for rows created before this column existed; read paths normalize via
-  // normalizeCommunityEndpointInputModalities() which falls back to ["text"].
-  inputModalities: text("input_modalities"),
+  // Null for rows created before this column existed; read paths default to text.
+  inputModalities: text("input_modalities", { mode: "json" }).$type<
+    ModelInputModality[]
+  >(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
@@ -235,6 +236,19 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   completionImagePrice: real("completion_image_price").default(0).notNull(),
+  // Admin-only, off by default: it hands a third party spend authority over
+  // whoever called the model. See mintDelegatedToken in
+  // gen.pollinations.ai/src/text/communityEndpoint.ts.
+  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  // Ordered community model ids ("<github_username>/<name>") tried, one after
+  // the other, when this endpoint's upstream fails. The owner declares the
+  // whole list, so no other owner's choice can change where this model's
+  // traffic goes.
+  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
+    string[]
+  >(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

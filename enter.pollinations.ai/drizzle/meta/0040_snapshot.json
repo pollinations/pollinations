@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1c65aa7f-0457-4095-aa65-9d99f66c12f0",
+  "id": "5cd7a5ed-3946-4277-bf00-41f70c7b6f9d",
   "prevId": "97c2bc54-b780-4e1a-99a4-8dc4afb8cb60",
   "tables": {
     "account": {
@@ -409,13 +409,6 @@
           "autoincrement": false,
           "default": false
         },
-        "input_modalities": {
-          "name": "input_modalities",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "base_url": {
           "name": "base_url",
           "type": "text",
@@ -514,6 +507,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "delegates_generation": {
+          "name": "delegates_generation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "disabled_at": {
           "name": "disabled_at",

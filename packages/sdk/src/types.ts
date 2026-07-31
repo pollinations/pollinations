@@ -473,6 +473,7 @@ export type TranscriptionModel =
     | "whisper-1"
     | "scribe"
     | "universal-2"
+    | "universal-3.5-pro"
     | "universal-3-pro"
     | string;
 

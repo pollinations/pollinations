@@ -117,11 +117,7 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     };
 }
 
-/**
- * Internal worker header carrying Portkey's served fallback target (e.g.
- * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
- * tracking can read it off the worker response like the other usage headers.
- */
+/** Internal worker header carrying the served fallback candidate index. */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
 
 /**

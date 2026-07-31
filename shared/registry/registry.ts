@@ -102,11 +102,6 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
-    // Optional secondary provider for binary-asset models with provider-level
-    // fallback (3D only, as of this field). Purely descriptive metadata for
-    // /models transparency — does not drive fallback logic, which lives in
-    // the handler dispatch code.
-    fallbackProvider?: string;
     brand: string;
     category: Category;
     cost: CostDefinition;

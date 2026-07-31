@@ -97,7 +97,7 @@ describe("registry fallback linking", () => {
         ).toEqual(["primary", "target"]);
     });
 
-    it("keeps community targets active and owner-accessible", () => {
+    it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
             "owner/primary",
             "owner",
@@ -142,7 +142,7 @@ describe("registry fallback linking", () => {
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
-        ).toEqual(["public"]);
+        ).toEqual(["public", "owner/private", "owner/disabled"]);
     });
 });
 

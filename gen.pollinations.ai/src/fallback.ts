@@ -224,22 +224,17 @@ export function linkFallbackEntries(
         for (const targetId of declared) {
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
-            const targetEndpoint = target.communityEndpoint;
-            if (targetEndpoint?.disabledAt != null) continue;
-            if (
-                targetEndpoint?.visibility === "private" &&
-                entry.communityEndpoint?.ownerUserId !==
-                    targetEndpoint.ownerUserId
-            ) {
-                continue;
-            }
-            // Community owners can change prices or visibility after saving.
-            // Bundled registry declarations are trusted and need no price rule.
-            if (
-                entry.communityEndpoint &&
-                !isUsableCommunityFallback(entry, target)
-            ) {
-                continue;
+            if (entry.communityEndpoint) {
+                const targetEndpoint = target.communityEndpoint;
+                if (targetEndpoint?.disabledAt != null) continue;
+                if (
+                    targetEndpoint?.visibility === "private" &&
+                    entry.communityEndpoint.ownerUserId !==
+                        targetEndpoint.ownerUserId
+                ) {
+                    continue;
+                }
+                if (!isUsableCommunityFallback(entry, target)) continue;
             }
             if (targets.some((linked) => linked.id === target.id)) continue;
             targets.push({ ...target, fallbackEntries: undefined });

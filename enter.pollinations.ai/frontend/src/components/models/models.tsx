@@ -21,7 +21,10 @@ import {
     useRef,
     useState,
 } from "react";
-import { CommunityEndpoints } from "../community-endpoints";
+import {
+    CommunityEndpoints,
+    publicCommunityFallbackOptions,
+} from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -350,6 +353,7 @@ export const Models: FC<ModelsProps> = ({
             {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
+                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

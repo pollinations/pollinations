@@ -237,6 +237,13 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // Ordered community model ids ("<github_username>/<name>") tried, one after
+  // the other, when this endpoint's upstream fails. The owner declares the
+  // whole list, so no other owner's choice can change where this model's
+  // traffic goes.
+  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
+    string[]
+  >(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

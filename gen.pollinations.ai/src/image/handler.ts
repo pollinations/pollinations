@@ -1,9 +1,13 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -393,6 +397,38 @@ async function generateImageResult(
     return result;
 }
 
+/** Tries the model, then each fallback it declared, until one returns an image. */
+async function callCommunityImageWithFallback(
+    c: ImageContext,
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult;
+    servedEntry?: GenerationModelEntry;
+    servedIndex: number;
+}> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const generated = await callCommunityImageEndpoint(
+                // Only the primary can reach here without its own endpoint, and
+                // this path runs only once it has one.
+                attempt.communityEndpoint ?? endpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            // Checked inside the attempt so an endpoint that answers 200 with an
+            // empty body fails over like any other broken response.
+            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
+            return generated;
+        },
+        c.var.track?.failedCalls,
+    );
+    return { result, servedEntry: candidate.entry, servedIndex: index };
+}
+
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
@@ -417,21 +453,31 @@ export async function generateImageOrVideoResponse(
     try {
         const communityEndpoint = c.var.model.communityEndpoint;
         if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
+            const { result, servedEntry, servedIndex } =
+                await callCommunityImageWithFallback(
+                    c,
+                    communityEndpoint,
                     originalPrompt,
                     safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
+                );
+            const headers = mediaHeaders(
+                originalPrompt,
+                servedEntry
+                    ? { ...safeParams, model: servedEntry.id }
+                    : safeParams,
+                result,
+                detectMimeType(result.buffer),
+            );
+            if (servedEntry) {
+                c.set("servedModelEntry", servedEntry);
+                // Same "config.targets[N]" shape the Portkey text path emits,
+                // so tracking's fallback parsing covers both.
+                headers.set(
+                    FALLBACK_TARGET_HEADER,
+                    `config.targets[${servedIndex}]`,
+                );
+            }
+            return new Response(bufferToUint8Array(result.buffer), { headers });
         }
 
         if (isVideoModel(safeParams.model)) {

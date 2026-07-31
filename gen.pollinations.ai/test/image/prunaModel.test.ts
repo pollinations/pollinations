@@ -10,7 +10,7 @@ import {
 } from "../../src/image/models/prunaModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
-interface ReplicateRequest {
+interface ProviderRequest {
     url: string;
     body: Record<string, unknown>;
 }
@@ -20,30 +20,46 @@ interface ReplicateRequest {
 // resolves to image/png.
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
-// prunaai/* models return a single URI string as output (not an array). The
-// mock records only the Replicate predictions POST; every other URL (the user
-// reference image, the output download) returns image bytes.
-function mockReplicateFetch(
-    requests: ReplicateRequest[],
+// Records DeepInfra and Replicate API calls; user-image and provider-output
+// downloads return minimal image bytes.
+function mockPrunaFetch(
+    requests: ProviderRequest[],
     metrics: Record<string, number> = { predict_time: 1 },
 ) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
-            let isReplicateApi = false;
+            let hostname = "";
             try {
-                isReplicateApi = new URL(href).hostname === "api.replicate.com";
+                hostname = new URL(href).hostname;
             } catch {
-                isReplicateApi = false;
+                hostname = "";
             }
-            if (!isReplicateApi) {
+            if (
+                hostname !== "api.deepinfra.com" &&
+                hostname !== "api.replicate.com"
+            ) {
                 return new Response(PNG_BYTES, { status: 200 });
             }
             const body = init?.body
                 ? (JSON.parse(init.body as string) as Record<string, unknown>)
                 : {};
             requests.push({ url: href, body });
+            if (hostname === "api.deepinfra.com") {
+                return new Response(
+                    JSON.stringify({
+                        images: ["data:image/png;base64,iVBORw0KGgo="],
+                        inference_status: {
+                            cost: href.endsWith("/PrunaAI/p-image-Edit")
+                                ? 0.01
+                                : 0.005,
+                            runtime_ms: 1000,
+                        },
+                    }),
+                    { status: 200 },
+                );
+            }
             return new Response(
                 JSON.stringify({
                     id: "pred_pruna_test",
@@ -71,14 +87,17 @@ const baseParams: ImageParams = {
     duration: 0,
 };
 
-const inputOf = (req: ReplicateRequest) =>
-    (req.body as { input: Record<string, unknown> }).input;
+const inputOf = (req: ProviderRequest) =>
+    new URL(req.url).hostname === "api.replicate.com"
+        ? (req.body as { input: Record<string, unknown> }).input
+        : req.body;
 
 const DATA_URI = /^data:[^;]+;base64,/;
 
 beforeEach(() => {
     syncImageEnvironment({
         ...env,
+        DEEPINFRA_API_KEY: "test-deepinfra-key",
         REPLICATE_API_TOKEN: "r8_test_token",
     } as CloudflareBindings);
 });
@@ -89,14 +108,14 @@ afterEach(() => {
 
 describe("prunaModel - p-image", () => {
     it("posts to prunaai/p-image with custom dimensions", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests);
 
         const result = await callPrunaImageAPI("a red apple", baseParams);
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
-            "https://api.replicate.com/v1/models/prunaai/p-image/predictions",
+            "https://api.deepinfra.com/v1/inference/PrunaAI/p-image",
         );
         const input = inputOf(requests[0]);
         expect(input.prompt).toBe("a red apple");
@@ -110,7 +129,7 @@ describe("prunaModel - p-image", () => {
 
 describe("prunaModel - p-image-edit", () => {
     it("rejects a request with no input image (400)", async () => {
-        mockReplicateFetch([]);
+        mockPrunaFetch([]);
 
         await expect(
             callPrunaImageEditAPI("make it green", {
@@ -121,7 +140,7 @@ describe("prunaModel - p-image-edit", () => {
     });
 
     it("rejects more than five input images (400)", async () => {
-        mockReplicateFetch([]);
+        mockPrunaFetch([]);
 
         await expect(
             callPrunaImageEditAPI("make it green", {
@@ -134,9 +153,9 @@ describe("prunaModel - p-image-edit", () => {
         ).rejects.toMatchObject({ status: 400 });
     });
 
-    it("posts images as data URIs to prunaai/p-image-edit", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
+    it("posts image references to PrunaAI/p-image-Edit", async () => {
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests);
 
         const result = await callPrunaImageEditAPI("make it green", {
             ...baseParams,
@@ -145,24 +164,23 @@ describe("prunaModel - p-image-edit", () => {
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
-            "https://api.replicate.com/v1/models/prunaai/p-image-edit/predictions",
+            "https://api.deepinfra.com/v1/inference/PrunaAI/p-image-Edit",
         );
         const input = inputOf(requests[0]);
         expect(input.prompt).toBe("make it green");
         const images = input.images as string[];
         expect(images).toHaveLength(1);
-        // Replicate's URL fetcher chokes on query strings — we inline as data URIs.
-        expect(images[0]).toMatch(DATA_URI);
+        expect(images[0]).toBe("https://example.com/apple.jpg");
         expect(result.trackingData?.actualModel).toBe("p-image-edit");
     });
 });
 
 describe("prunaModel - p-video", () => {
     it("posts a text-to-video request and bills the reported output duration", async () => {
-        const requests: ReplicateRequest[] = [];
+        const requests: ProviderRequest[] = [];
         // Request 8s but Replicate reports a 5s output — billing must follow
         // the reported metric, not the request.
-        mockReplicateFetch(requests, {
+        mockPrunaFetch(requests, {
             predict_time: 6,
             video_output_duration_seconds: 5,
         });
@@ -191,8 +209,8 @@ describe("prunaModel - p-video", () => {
     });
 
     it("locks resolution to 1080p and tags the 1080p model", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests, {
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests, {
             predict_time: 8,
             video_output_duration_seconds: 5,
         });
@@ -212,8 +230,8 @@ describe("prunaModel - p-video", () => {
     });
 
     it("uses the input image (data URI) for image-to-video", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests);
 
         await callPrunaVideo720API("animate this", {
             ...baseParams,

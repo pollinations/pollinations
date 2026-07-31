@@ -91,14 +91,13 @@ export const getModelBrandLogoPath = (
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
-export type InputModality = "text" | "document" | "image" | "video" | "audio";
+export type InputModality = "text" | "image" | "video" | "audio";
 
 export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
     const modalities = getModalities(model);
     const keys: InputModality[] = [];
 
     if (modalities.input.includes("text")) keys.push("text");
-    if (modalities.input.includes("document")) keys.push("document");
     if (modalities.input.includes("image")) keys.push("image");
     if (modalities.input.includes("video")) keys.push("video");
     if (modalities.input.includes("audio")) keys.push("audio");
@@ -111,7 +110,6 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
     if (modalities.input.includes("text")) labels.push("text");
-    if (modalities.input.includes("document")) labels.push("document");
     if (modalities.input.includes("image")) labels.push("image");
     if (modalities.input.includes("video")) labels.push("video");
     if (modalities.input.includes("audio")) labels.push("audio");

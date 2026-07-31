@@ -19,8 +19,6 @@ const genAliases = [
     "events.ts",
     "logger",
     "logger.ts",
-    "index.ts",
-    "model-registry.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
     "middleware/logger.ts",
@@ -37,6 +35,7 @@ const genAliases = [
     "schemas/model3d.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
+    "userImage.ts",
     "util",
     "util.ts",
     "utils/api-docs.ts",
@@ -108,7 +107,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
-                            MISTRAL_API_KEY: "test-mistral-api-key",
                         },
                         serviceBindings: {
                             ENTER: async (request: Request) => {

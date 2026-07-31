@@ -93,6 +93,11 @@ export interface ServiceError extends Error {
     upstreamStatus?: number;
     requestUrl?: URL;
     code?: number | string;
+    /**
+     * Stable, machine-readable error code (mirrors `UpstreamError.errorCode`),
+     * propagated into the response envelope by the text error funnel.
+     */
+    errorCode?: string;
     details?: unknown;
     model?: string;
     provider?: string;
@@ -130,15 +135,6 @@ export interface RequestData {
     top_logprobs?: unknown;
     logit_bias?: unknown;
     user?: unknown;
-    pages?: string | number[];
-    include_image_base64?: boolean;
-    image_limit?: number;
-    image_min_size?: number;
-    table_format?: "markdown" | "html";
-    extract_header?: boolean;
-    extract_footer?: boolean;
-    include_blocks?: boolean;
-    confidence_scores_granularity?: "word" | "page";
     [key: string]: unknown;
 }
 

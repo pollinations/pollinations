@@ -755,7 +755,7 @@ test("redacts credential query parameters from realtime referrer telemetry", asy
     const session = await openPaidRealtimeSession({
         name: "referrer-redaction-realtime-key",
         referrer:
-            "https://app.example/call?key=pk_secret&token=t&api_key=a&access_token=b&ok=1",
+            "https://app.example/call?key=pk_secret&token=t&api_key=a&access_token=b&apikey=c&bearerToken=d&ok=1",
     });
 
     session.upstream.server.send(
@@ -768,7 +768,7 @@ test("redacts credential query parameters from realtime referrer telemetry", asy
     const telemetry = await closeAndReadTelemetry(session);
     expect(telemetry.referrerDomain).toBe("app.example");
     expect(telemetry.referrerUrl).toBe(
-        "https://app.example/call?key=%5Bredacted%5D&token=%5Bredacted%5D&api_key=%5Bredacted%5D&access_token=%5Bredacted%5D&ok=1",
+        "https://app.example/call?key=%5Bredacted%5D&token=%5Bredacted%5D&api_key=%5Bredacted%5D&access_token=%5Bredacted%5D&apikey=%5Bredacted%5D&bearerToken=%5Bredacted%5D&ok=1",
     );
 });
 

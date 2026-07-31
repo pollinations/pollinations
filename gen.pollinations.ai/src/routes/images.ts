@@ -4,6 +4,7 @@
  * POST /v1/images/edits — edit images with text prompts + source images
  */
 
+import { communityModelEndpoints } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
@@ -200,7 +201,10 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
-    if (body.response_format === "url" && c.var.model.communityEndpoint) {
+    if (
+        body.response_format === "url" &&
+        communityModelEndpoints(c.var.model).length > 0
+    ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 'Community image models support response_format "b64_json" only',

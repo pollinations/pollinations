@@ -28,6 +28,8 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** Interchangeable endpoints backing a pooled `group/<name>` model. */
+        communityGroupMembers?: CommunityEndpointRuntime[];
     };
     formData?: FormData;
 };
@@ -106,6 +108,9 @@ export async function resolveModelDefinition(
         definition: entry.definition,
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
+        }),
+        ...(entry.communityGroupMembers && {
+            communityGroupMembers: entry.communityGroupMembers,
         }),
     };
 }

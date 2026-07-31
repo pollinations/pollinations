@@ -122,6 +122,11 @@ export type TrackVariables = {
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
+    /**
+     * The pooled-model member that actually served the request, set by the text
+     * and image handlers so the reward follows the endpoint that did the work.
+     */
+    servedCommunityEndpoint?: CommunityEndpointRuntime;
 };
 
 export type TrackEnv = {
@@ -235,7 +240,13 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const communityEndpoint = c.var.model?.communityEndpoint;
+                    // Only the reward recipient varies for a pooled model:
+                    // members have identical prices by construction
+                    // (communityGroupKey), so the group definition's cost
+                    // already equals the serving member's.
+                    const communityEndpoint =
+                        c.var.servedCommunityEndpoint ??
+                        c.var.model?.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,

@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityGroupSupportsImageEdits,
+} from "@shared/community-endpoints.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
@@ -11,7 +14,9 @@ import {
 } from "@shared/registry/registry.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
+    type CommunityGroupRegistryEntry,
     type CommunityModelRegistryEntry,
+    communityGroupEntries,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
@@ -37,6 +42,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    communityGroupMembers?: CommunityEndpointRuntime[];
     visible: boolean;
 };
 
@@ -118,6 +124,28 @@ function communityEntryToGenerationEntry(
     };
 }
 
+function communityGroupEntryToGenerationEntry(
+    entry: CommunityGroupRegistryEntry,
+): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
+    return {
+        id: entry.id,
+        aliases: [],
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints(
+                      communityGroupSupportsImageEdits(entry.members),
+                  )
+                : communityTextSupportedEndpoints(),
+        definition: entry.definition,
+        info: entry.info,
+        communityGroupMembers: entry.members,
+        // Every member is public and active by construction.
+        visible: true,
+    };
+}
+
 function buildRegistry(
     entries: GenerationModelEntry[],
 ): GenerationModelRegistry {
@@ -161,10 +189,23 @@ function buildRegistry(
 async function loadGenerationModelRegistry(
     dbBinding: CloudflareBindings["DB"] | undefined,
 ): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
-    ).map(communityEntryToGenerationEntry);
-    return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
+    const communityEntries = await getCommunityModelRegistryEntries(dbBinding);
+    const namedEntries = [
+        ...STATIC_ENTRIES,
+        ...communityEntries.map(communityEntryToGenerationEntry),
+    ];
+    const takenIds = new Set(namedEntries.map((entry) => entry.id));
+    const groupEntries = communityGroupEntries(
+        communityEntries.map((entry) => entry.communityEndpoint),
+    )
+        // A pool never shadows a real id: a GitHub user literally named `group`
+        // who registers `group/<name>` keeps it and the pool is not created at
+        // all. Dropping it here rather than relying on buildRegistry being
+        // first-wins matters because visibleEntries() lists every entry, so an
+        // unroutable duplicate would still show up in /models.
+        .filter((entry) => !takenIds.has(entry.id))
+        .map(communityGroupEntryToGenerationEntry);
+    return buildRegistry([...namedEntries, ...groupEntries]);
 }
 
 export async function getGenerationModelRegistry(

@@ -1,3 +1,4 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -10,10 +11,18 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import {
+    communityEndpointGatewayContext,
+    communityGroupGatewayContext,
+} from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
+import type {
+    ChatCompletion,
+    RequestData,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 
 type TextContext = Context<Env>;
 
@@ -316,6 +325,18 @@ function throwTextError(error: ServiceError): never {
     });
 }
 
+// Portkey reports the served target as "config.targets[N]" via
+// x-portkey-last-used-option-index, which genericOpenAIClient reads before
+// returning the body — so the serving member is known up front for streams too.
+// A missing or unparseable value means the primary target served.
+function servedGroupMember(
+    targets: CommunityEndpointRuntime[],
+    fallbackTarget: string | undefined,
+): CommunityEndpointRuntime {
+    const index = Number(fallbackTarget?.match(/\[(\d+)\]/)?.[1]);
+    return targets.at(index) ?? targets[0];
+}
+
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -324,22 +345,48 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const groupMembers = c.var.model?.communityGroupMembers;
         const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
-                  c.var.model.definition,
-                  requestData,
-                  c.env.BETTER_AUTH_SECRET,
-                  c.env.PORTKEY_GATEWAY_URL,
-                  c.var.auth?.apiKey?.rawKey || "",
-                  c.var.auth?.apiKey?.id,
-              )
-            : withGatewayContext(c, requestData);
+        let groupTargets: CommunityEndpointRuntime[] | null = null;
+        let gatewayContext: TransformOptions;
+        if (groupMembers) {
+            const group = await communityGroupGatewayContext(
+                groupMembers,
+                c.var.model.definition,
+                requestData,
+                c.env.BETTER_AUTH_SECRET,
+                c.env.PORTKEY_GATEWAY_URL,
+                c.var.auth?.apiKey?.rawKey || "",
+                // A random start is the load-spreading mechanism: it needs no
+                // persisted counter, and a per-isolate counter would not
+                // distribute across Cloudflare isolates anyway.
+                Math.floor(Math.random() * groupMembers.length),
+            );
+            gatewayContext = group.options;
+            groupTargets = group.targets;
+        } else if (communityEndpoint) {
+            gatewayContext = await communityEndpointGatewayContext(
+                communityEndpoint,
+                c.var.model.definition,
+                requestData,
+                c.env.BETTER_AUTH_SECRET,
+                c.env.PORTKEY_GATEWAY_URL,
+                c.var.auth?.apiKey?.rawKey || "",
+                c.var.auth?.apiKey?.id,
+            );
+        } else {
+            gatewayContext = withGatewayContext(c, requestData);
+        }
         const completion = await generateTextPortkey(
             requestData.messages,
             gatewayContext,
         );
+        if (groupTargets) {
+            c.set(
+                "servedCommunityEndpoint",
+                servedGroupMember(groupTargets, completion.fallbackTarget),
+            );
+        }
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 

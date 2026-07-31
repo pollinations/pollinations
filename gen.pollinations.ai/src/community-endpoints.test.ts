@@ -1,12 +1,17 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointTitle,
+    communityGroupKey,
+    communityGroupModelDefinition,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
@@ -18,6 +23,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_GROUP_MEMBERS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
@@ -43,10 +49,21 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { communityImageSupportedEndpoints } from "./community-models.ts";
+import { checkBalance } from "@/utils/generation-access.ts";
+import {
+    type CommunityGroupRegistryEntry,
+    communityGroupEntries,
+    communityImageSupportedEndpoints,
+} from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
-import { resetGenerationModelRegistryCache } from "./model-registry.ts";
-import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
+import {
+    getGenerationModelRegistry,
+    resetGenerationModelRegistryCache,
+} from "./model-registry.ts";
+import {
+    communityEndpointGatewayContext,
+    communityGroupGatewayContext,
+} from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
 const testLog = { getChild: () => testLog } as unknown as Logger;
@@ -196,6 +213,40 @@ function isBillingFetch(request: Request): boolean {
         request.url.startsWith("https://api.europe-west2.gcp.tinybird.co/") ||
         request.url.startsWith("http://localhost:7181/")
     );
+}
+
+// Model stats drive the estimated price; an empty set makes it 0, which is
+// exactly the case where only the free-model bypass can let a request through.
+function emptyStatsEnv(): CloudflareBindings {
+    return {
+        DB: env.DB,
+        KV: {
+            get: async () => ({ value: { data: [] }, ttl: 3600 }),
+            put: async () => undefined,
+        } as unknown as KVNamespace,
+    } as CloudflareBindings;
+}
+
+function emptyBalanceVars(
+    model: Record<string, unknown>,
+): Parameters<typeof checkBalance>[0] {
+    return {
+        auth: {
+            user: { id: `caller-${crypto.randomUUID()}` },
+            apiKey: { id: "sk-test", pollenBalance: 0 },
+        },
+        balance: {
+            getBalance: async () => ({ tierBalance: 0, packBalance: 0 }),
+        },
+        model,
+        log: {
+            trace: () => undefined,
+            debug: () => undefined,
+            info: () => undefined,
+            warn: () => undefined,
+            error: () => undefined,
+        },
+    } as unknown as Parameters<typeof checkBalance>[0];
 }
 
 describe("community endpoint helpers", () => {
@@ -805,6 +856,429 @@ describe("community endpoint helpers", () => {
             await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
                 "is not free",
             );
+        });
+    });
+
+    describe("community model groups", () => {
+        const secret = "test-secret";
+
+        async function groupMember(
+            overrides: Partial<CommunityEndpointRuntime> & { modelId: string },
+        ): Promise<CommunityEndpointRuntime> {
+            const owner = overrides.modelId.split("/")[0];
+            return {
+                id: `endpoint-${overrides.modelId}`,
+                ownerUserId: `${owner}-user`,
+                name: "laguna",
+                title: "Laguna",
+                description: null,
+                modality: "text",
+                imagePricing: "request",
+                supportsImageEdits: false,
+                baseUrl: `https://${owner}.example.com/v1`,
+                upstreamModel: `${owner}-upstream`,
+                visibility: "public",
+                disabledAt: null,
+                disabledReason: null,
+                delegatesGeneration: false,
+                bearerTokenCiphertext: await encryptSecret(
+                    `sk_${owner}`,
+                    secret,
+                ),
+                ...communityEndpointPrices({
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.2,
+                }),
+                ...overrides,
+            };
+        }
+
+        function groupGatewayContext(
+            members: CommunityEndpointRuntime[],
+            startIndex: number,
+        ) {
+            return communityGroupGatewayContext(
+                members,
+                communityGroupModelDefinition(members),
+                { messages: [{ role: "user", content: "hello" }] },
+                secret,
+                "https://portkey.test",
+                "sk_user_key",
+                startIndex,
+            );
+        }
+
+        it("pools identically priced endpoints sharing a model name", async () => {
+            const groups = communityGroupEntries([
+                await groupMember({ modelId: "bob/laguna" }),
+                await groupMember({ modelId: "alice/laguna" }),
+            ]);
+
+            expect(groups).toHaveLength(1);
+            expect(groups[0].id).toBe("group/laguna");
+            // Sorted by model id so the derived config is stable.
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+            ]);
+            expect(groups[0].info).toMatchObject({
+                name: "group/laguna",
+                category: "text",
+                community: true,
+                pricing: {
+                    currency: "pollen",
+                    promptTextTokens: "0.1",
+                    completionTextTokens: "0.2",
+                },
+            });
+        });
+
+        it("does not pool endpoints whose prices differ at all", async () => {
+            const groups = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({
+                    modelId: "bob/laguna",
+                    completionTextPrice: 0.2 + MIN_COMMUNITY_PRICE_PER_TOKEN,
+                }),
+            ]);
+
+            expect(groups).toEqual([]);
+        });
+
+        it("does not pool across modalities or image billing modes", async () => {
+            const acrossModalities = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({
+                    modelId: "bob/laguna",
+                    modality: "image",
+                }),
+            ]);
+            const acrossImagePricing = communityGroupEntries([
+                await groupMember({
+                    modelId: "alice/laguna",
+                    modality: "image",
+                    imagePricing: "request",
+                }),
+                await groupMember({
+                    modelId: "bob/laguna",
+                    modality: "image",
+                    imagePricing: "tokens",
+                }),
+            ]);
+
+            expect(acrossModalities).toEqual([]);
+            expect(acrossImagePricing).toEqual([]);
+        });
+
+        it("needs at least MIN_COMMUNITY_GROUP_MEMBERS endpoints", async () => {
+            const members = await Promise.all(
+                Array.from(
+                    { length: MIN_COMMUNITY_GROUP_MEMBERS },
+                    (_unused, index) =>
+                        groupMember({ modelId: `owner${index}/laguna` }),
+                ),
+            );
+
+            expect(communityGroupEntries(members.slice(0, -1))).toEqual([]);
+            expect(communityGroupEntries(members)).toHaveLength(1);
+        });
+
+        it("excludes private and disabled endpoints from membership", async () => {
+            const alice = await groupMember({ modelId: "alice/laguna" });
+            const bob = await groupMember({ modelId: "bob/laguna" });
+            const carol = await groupMember({ modelId: "carol/laguna" });
+
+            const groups = communityGroupEntries([
+                alice,
+                bob,
+                { ...carol, visibility: "private" },
+            ]);
+            expect(groups).toHaveLength(1);
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+            ]);
+
+            // Dropping below two eligible members removes the group entirely.
+            expect(
+                communityGroupEntries([
+                    alice,
+                    { ...bob, disabledAt: Date.now() },
+                    { ...carol, visibility: "private" },
+                ]),
+            ).toEqual([]);
+        });
+
+        it("keys the group on every stored price field", async () => {
+            const endpoint = await groupMember({ modelId: "alice/laguna" });
+            const key = communityGroupKey(endpoint);
+
+            for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+                expect(
+                    communityGroupKey({
+                        ...endpoint,
+                        [field.key]: endpoint[field.key] + 0.5,
+                    }),
+                ).not.toBe(key);
+            }
+            expect(communityGroupKey({ ...endpoint, name: "other" })).not.toBe(
+                key,
+            );
+            // Owner-specific fields don't split an otherwise identical pool.
+            const otherOwner: CommunityEndpointRuntime = {
+                ...endpoint,
+                modelId: "bob/laguna",
+                baseUrl: "https://bob.example.com/v1",
+                upstreamModel: "bob-upstream",
+            };
+            expect(communityGroupKey(otherOwner)).toBe(key);
+        });
+
+        it("builds a Portkey fallback config across every member", async () => {
+            const members = [
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ];
+
+            const { options, targets } = await groupGatewayContext(members, 0);
+
+            expect(targets).toEqual(members);
+            expect(options).toMatchObject({
+                requestedModel: "group/laguna",
+                portkeyGatewayUrl: "https://portkey.test",
+                userApiKey: "sk_user_key",
+            });
+            expect(options).not.toHaveProperty("messages");
+
+            const modelConfig = options.modelConfig as {
+                model: string;
+                strategy: { mode: string; on_status_codes: number[] };
+                targets: Record<string, unknown>[];
+            };
+            // resolveModelConfig() derives the request-body model from
+            // config.model, so a strategy/targets config must still carry one.
+            expect(modelConfig.model).toBe("alice-upstream");
+            expect(modelConfig.strategy.mode).toBe("fallback");
+            expect(modelConfig.strategy.on_status_codes).toContain(429);
+            expect(modelConfig.strategy.on_status_codes).toContain(502);
+            // A malformed request fails on every member, so don't replay it.
+            expect(modelConfig.strategy.on_status_codes).not.toContain(400);
+            expect(modelConfig.targets).toEqual([
+                {
+                    provider: "openai",
+                    custom_host: "https://alice.example.com/v1",
+                    authKey: "sk_alice",
+                    override_params: { model: "alice-upstream" },
+                },
+                {
+                    provider: "openai",
+                    custom_host: "https://bob.example.com/v1",
+                    authKey: "sk_bob",
+                    override_params: { model: "bob-upstream" },
+                },
+            ]);
+        });
+
+        it("rotates the targets so any member can go first", async () => {
+            const members = [
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+                await groupMember({ modelId: "carol/laguna" }),
+            ];
+
+            const { options, targets } = await groupGatewayContext(members, 1);
+
+            expect(targets.map((target) => target.modelId)).toEqual([
+                "bob/laguna",
+                "carol/laguna",
+                "alice/laguna",
+            ]);
+            expect((options.modelConfig as { model: string }).model).toBe(
+                "bob-upstream",
+            );
+        });
+
+        it("describes the pool without repeating the model name", async () => {
+            const members = [
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ];
+
+            const definition = communityGroupModelDefinition(members);
+
+            expect(definition.aliases).toEqual([]);
+            expect(definition.title).toBe("laguna");
+            expect(definition.description).not.toContain("laguna");
+            expect(definition.description).toContain("2 community providers");
+            expect(definition).toMatchObject({
+                provider: "community",
+                category: "text",
+                priceMultiplier: 1,
+                alpha: true,
+                cost: { promptTextTokens: 0.1, completionTextTokens: 0.2 },
+            });
+        });
+
+        it("publishes the biggest cohort when a name is contested", async () => {
+            const groups = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+                // Cheaper, but fewer people converged on it.
+                await groupMember({
+                    modelId: "carol/laguna",
+                    promptTextPrice: 0.01,
+                    completionTextPrice: 0.02,
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    promptTextPrice: 0.01,
+                    completionTextPrice: 0.02,
+                }),
+                await groupMember({ modelId: "erin/laguna" }),
+            ]);
+
+            expect(groups).toHaveLength(1);
+            expect(groups[0].id).toBe("group/laguna");
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+                "erin/laguna",
+            ]);
+        });
+
+        it("breaks an equal-sized contest by price", async () => {
+            const groups = communityGroupEntries([
+                await groupMember({
+                    modelId: "carol/laguna",
+                    promptTextPrice: 0.3,
+                    completionTextPrice: 0.4,
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    promptTextPrice: 0.3,
+                    completionTextPrice: 0.4,
+                }),
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ]);
+
+            // Same size, so the cheaper cohort (0.1/0.2) takes the id even
+            // though the dearer one was seen first.
+            expect(groups).toHaveLength(1);
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+            ]);
+            expect(groups[0].definition.cost).toMatchObject({
+                promptTextTokens: 0.1,
+                completionTextTokens: 0.2,
+            });
+        });
+
+        it("publishes one pool per name when modalities collide", async () => {
+            const textFirst = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+                await groupMember({
+                    modelId: "carol/laguna",
+                    modality: "image",
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    modality: "image",
+                }),
+            ]);
+            const imageFirst = communityGroupEntries([
+                await groupMember({
+                    modelId: "carol/laguna",
+                    modality: "image",
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    modality: "image",
+                }),
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ]);
+
+            // Same size and same prices, so only the modality tiebreaker
+            // decides — and it must decide the same way regardless of the
+            // order D1 happened to return the rows in. Compare ids, not whole
+            // members: each groupMember() call re-encrypts its bearer token
+            // with a fresh nonce, so the ciphertexts never match.
+            const memberIds = (groups: CommunityGroupRegistryEntry[]) =>
+                groups.map((group) =>
+                    group.members.map((member) => member.modelId),
+                );
+            expect(textFirst).toHaveLength(1);
+            expect(memberIds(imageFirst)).toEqual(memberIds(textFirst));
+        });
+
+        it("pools a contested name alongside an uncontested one", async () => {
+            const groups = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+                await groupMember({
+                    modelId: "carol/laguna",
+                    completionTextPrice: 0.4,
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    completionTextPrice: 0.4,
+                }),
+                await groupMember({ modelId: "alice/kimi", name: "kimi" }),
+                await groupMember({ modelId: "bob/kimi", name: "kimi" }),
+            ]);
+
+            expect(groups.map((group) => group.id).sort()).toEqual([
+                "group/kimi",
+                "group/laguna",
+            ]);
+        });
+
+        it("lets a caller with no balance use a free pool", async () => {
+            const freePrices = communityEndpointPrices({});
+            const [freeGroup] = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna", ...freePrices }),
+                await groupMember({ modelId: "bob/laguna", ...freePrices }),
+            ]);
+            const [pricedGroup] = communityGroupEntries([
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ]);
+
+            // A free pool must behave exactly like the free `owner/name`
+            // endpoints backing it, including for a drained key.
+            await checkBalance(
+                emptyBalanceVars({
+                    requested: freeGroup.id,
+                    resolved: freeGroup.id,
+                    definition: freeGroup.definition,
+                    communityGroupMembers: freeGroup.members,
+                }),
+                emptyStatsEnv(),
+            );
+            await checkBalance(
+                emptyBalanceVars({
+                    requested: freeGroup.members[0].modelId,
+                    resolved: freeGroup.members[0].modelId,
+                    definition: communityModelDefinition(freeGroup.members[0]),
+                    communityEndpoint: freeGroup.members[0],
+                }),
+                emptyStatsEnv(),
+            );
+
+            await expect(
+                checkBalance(
+                    emptyBalanceVars({
+                        requested: pricedGroup.id,
+                        resolved: pricedGroup.id,
+                        definition: pricedGroup.definition,
+                        communityGroupMembers: pricedGroup.members,
+                    }),
+                    emptyStatsEnv(),
+                ),
+            ).rejects.toMatchObject({ status: 402 });
         });
     });
 });
@@ -2845,6 +3319,396 @@ fixtureTest(
         expect(testResponse.status).toBe(400);
         expect(await testResponse.text()).toContain("redirect");
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+);
+
+fixtureTest(
+    "pools two published endpoints into one group model and calls every member",
+    async ({ apiKey }) => {
+        const modelName = `pool-${crypto.randomUUID().slice(0, 8)}`;
+        const groupModelId = `group/${modelName}`;
+        for (const owner of ["alice", "bob"]) {
+            const ownerUserId = await createTestUser({
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `${owner}-${crypto.randomUUID().slice(0, 8)}`,
+            });
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                description: `${owner} pooled endpoint`,
+                baseUrl: `https://${owner}.example.com/v1`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext: await encryptSecret(
+                    `sk_${owner}`,
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.2,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const portkeyConfigs: {
+            strategy: { mode: string; on_status_codes: number[] };
+            targets: {
+                custom_host: string;
+                api_key: string;
+                override_params: { model: string };
+            }[];
+        }[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    portkeyConfigs.push(
+                        JSON.parse(
+                            request.headers.get("x-portkey-config") || "null",
+                        ),
+                    );
+                    return Response.json({
+                        id: "chatcmpl_pooled",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const modelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        expect(modelsResponse.status).toBe(200);
+        const models = (await modelsResponse.json()) as {
+            name: string;
+            title?: string;
+            aliases?: string[];
+            community?: boolean;
+        }[];
+        expect(
+            models.find((model) => model.name === groupModelId),
+        ).toMatchObject({
+            name: groupModelId,
+            title: modelName,
+            aliases: [],
+            community: true,
+        });
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: groupModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(groupModelId);
+        await expect(response.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+
+        expect(portkeyConfigs).toHaveLength(1);
+        const config = portkeyConfigs[0];
+        expect(config.strategy.mode).toBe("fallback");
+        expect(config.strategy.on_status_codes).toContain(429);
+        // Both owners are reachable, each with their own credentials and
+        // upstream model name, in whichever rotation this request started at.
+        expect(
+            config.targets.map((target) => target.custom_host).sort(),
+        ).toEqual([
+            "https://alice.example.com/v1",
+            "https://bob.example.com/v1",
+        ]);
+        expect(config.targets.map((target) => target.api_key).sort()).toEqual([
+            "sk_alice",
+            "sk_bob",
+        ]);
+        expect(
+            config.targets.map((target) => target.override_params.model).sort(),
+        ).toEqual(["alice-upstream", "bob-upstream"]);
+    },
+);
+
+fixtureTest(
+    "serves an image pool from the next member when the first one fails",
+    async ({ apiKey }) => {
+        const modelName = `imgpool-${crypto.randomUUID().slice(0, 8)}`;
+        const groupModelId = `group/${modelName}`;
+        const ownerUserIds: Record<string, string> = {};
+        for (const owner of ["alice", "bob"]) {
+            const ownerUserId = await createTestUser({
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `${owner}-${crypto.randomUUID().slice(0, 8)}`,
+            });
+            ownerUserIds[owner] = ownerUserId;
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                description: `${owner} pooled image endpoint`,
+                modality: "image",
+                baseUrl: `https://${owner}.example.com/v1/images/generations`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext: await encryptSecret(
+                    `sk_${owner}`,
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.03,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const attempted: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+
+                if (isCommunityImageGenerationsRequest(request)) {
+                    const owner = new URL(request.url).hostname.split(".")[0];
+                    attempted.push(owner);
+                    // Whichever member the random rotation picked first fails,
+                    // so a 200 can only come from the failover to the other.
+                    if (attempted.length === 1) {
+                        return new Response("upstream exploded", {
+                            status: 500,
+                        });
+                    }
+                    expect(request.headers.get("authorization")).toBe(
+                        `Bearer sk_${owner}`,
+                    );
+                    return Response.json({
+                        created: 1,
+                        data: [{ b64_json: TEST_PNG_BASE64 }],
+                    });
+                }
+
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const modelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/image/models",
+        );
+        expect(modelsResponse.status).toBe(200);
+        const models = (await modelsResponse.json()) as { name: string }[];
+        expect(
+            models.find((model) => model.name === groupModelId),
+        ).toMatchObject({ name: groupModelId, community: true });
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/a%20cat?model=${encodeURIComponent(groupModelId)}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("image/png");
+        expect(response.headers.get("x-model-used")).toBe(groupModelId);
+        expect(
+            Array.from(new Uint8Array(await response.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+        expect(attempted).toHaveLength(2);
+        expect([...attempted].sort()).toEqual(["alice", "bob"]);
+
+        // The reward follows the member that actually returned bytes, not the
+        // one the rotation happened to try first. Billing runs in the
+        // request's waitUntil, which SELF.fetch does not await, so poll the
+        // ledger instead of racing it.
+        await vi.waitFor(async () => {
+            expect(
+                (await getUserBalance(db, ownerUserIds[attempted[1]]))
+                    .tierBalance,
+            ).toBeCloseTo(0.03 * COMMUNITY_MODEL_REWARD_RATE, 10);
+        });
+        expect(
+            (await getUserBalance(db, ownerUserIds[attempted[0]])).tierBalance,
+        ).toBe(0);
+
+        // A pool is a community image model, so it rejects the URL response
+        // format for the same reason a single-owner one does — before any
+        // member is contacted.
+        const urlResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: groupModelId,
+                    prompt: "a cat",
+                    response_format: "url",
+                }),
+            }),
+        );
+        expect(urlResponse.status).toBe(400);
+        await expect(urlResponse.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    'Community image models support response_format "b64_json" only',
+            },
+        });
+        expect(attempted).toHaveLength(2);
+    },
+);
+
+fixtureTest.for([
+    {
+        label: "caller errors",
+        status: 400,
+        message: "prompt is too long",
+        expectedStatus: 400,
+    },
+    {
+        label: "moderation refusals",
+        // A retryable status still must not be replayed when the body is a
+        // content refusal: a more permissive member would turn an unbilled
+        // rejection into a billed generation.
+        status: 500,
+        message: "Content policy violation: the prompt was rejected",
+        expectedStatus: 422,
+    },
+])(
+    "does not replay image pool $label on the next member",
+    async ({ status, message, expectedStatus }, { apiKey }) => {
+        const modelName = `imgpool-${crypto.randomUUID().slice(0, 8)}`;
+        const groupModelId = `group/${modelName}`;
+        for (const owner of ["alice", "bob"]) {
+            const ownerUserId = await createTestUser({
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `${owner}-${crypto.randomUUID().slice(0, 8)}`,
+            });
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                description: `${owner} pooled image endpoint`,
+                modality: "image",
+                baseUrl: `https://${owner}.example.com/v1/images/generations`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext: await encryptSecret(
+                    `sk_${owner}`,
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.03,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const attempted: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isCommunityImageGenerationsRequest(request)) {
+                    attempted.push(new URL(request.url).hostname.split(".")[0]);
+                    return Response.json({ error: { message } }, { status });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/a%20cat?model=${encodeURIComponent(groupModelId)}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(expectedStatus);
+        // The whole point: one attempt, not one per member.
+        expect(attempted).toHaveLength(1);
+    },
+);
+
+fixtureTest(
+    "leaves a real `group` owner's model id alone instead of pooling over it",
+    async () => {
+        const modelName = `collide-${crypto.randomUUID().slice(0, 8)}`;
+        const collidingId = `group/${modelName}`;
+        // A GitHub user is literally named `group`, so their own model already
+        // owns the id a pool of the same name would want.
+        const ownerUserIds = await Promise.all(
+            ["group", "alice", "bob"].map((owner) =>
+                createTestUser({
+                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubUsername:
+                        owner === "group"
+                            ? "group"
+                            : `${owner}-${crypto.randomUUID().slice(0, 8)}`,
+                }),
+            ),
+        );
+        for (const ownerUserId of ownerUserIds) {
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                description: "colliding endpoint",
+                baseUrl: `https://${ownerUserId}.example.com/v1`,
+                upstreamModel: "upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_upstream",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.2,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        resetGenerationModelRegistryCache();
+        const registry = await getGenerationModelRegistry(env);
+
+        // The pool is not created at all — not merely unroutable while still
+        // being advertised next to the real owner's model.
+        expect(
+            registry
+                .visibleEntries(undefined)
+                .filter((entry) => entry.id === collidingId),
+        ).toHaveLength(1);
+        expect(
+            registry.resolve(collidingId)?.communityEndpoint?.ownerUserId,
+        ).toBe(ownerUserIds[0]);
     },
 );
 

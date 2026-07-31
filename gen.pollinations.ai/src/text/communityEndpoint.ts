@@ -1,12 +1,15 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
+    communityGroupModelId,
     communityOpenAIBaseUrl,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
+    rotateCommunityGroupMembers,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import type { RequestData, TransformOptions } from "./types.js";
 
 /**
@@ -84,5 +87,59 @@ export async function communityEndpointGatewayContext(
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,
         userApiKey,
+    };
+}
+
+/**
+ * Portkey fallback config across the members of a pooled model. `targets` is
+ * returned so the caller can map Portkey's served-target index back to the
+ * member that did the work.
+ */
+export async function communityGroupGatewayContext(
+    members: readonly CommunityEndpointRuntime[],
+    modelDefinition: ModelDefinition,
+    requestData: RequestData,
+    secret: string,
+    portkeyGatewayUrl: string,
+    userApiKey: string,
+    startIndex: number,
+): Promise<{ options: TransformOptions; targets: CommunityEndpointRuntime[] }> {
+    const targets = rotateCommunityGroupMembers(members, startIndex);
+    const tokens = await Promise.all(
+        targets.map((member) =>
+            decryptSecret(member.bearerTokenCiphertext, secret),
+        ),
+    );
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+
+    return {
+        options: {
+            ...requestDataWithoutMessages,
+            modelConfig: {
+                // resolveModelConfig() derives the request-body model from
+                // config.model (utils/modelResolver.ts). A strategy/targets
+                // config has no provider-level model, so this must be set
+                // explicitly or the body ships model: undefined. Each target
+                // overrides it with its own upstream name anyway.
+                model: targets[0].upstreamModel,
+                strategy: {
+                    mode: "fallback",
+                    on_status_codes: FALLBACK_ON_STATUS_CODES,
+                },
+                targets: targets.map((member, index) => ({
+                    provider: "openai",
+                    custom_host: communityOpenAIBaseUrl(member.baseUrl),
+                    authKey: normalizeCommunityEndpointBearerToken(
+                        tokens[index],
+                    ),
+                    override_params: { model: member.upstreamModel },
+                })),
+            },
+            modelDef: modelDefinition,
+            requestedModel: communityGroupModelId(targets[0].name),
+            portkeyGatewayUrl,
+            userApiKey,
+        },
+        targets,
     };
 }

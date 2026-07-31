@@ -7,6 +7,7 @@ import {
 } from "./registry/usage-headers.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const MIN_COMMUNITY_GROUP_MEMBERS = 2;
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -287,6 +288,11 @@ export function legacyCommunityModelId(
     )}`;
 }
 
+/** Pooled model id for a set of interchangeable community endpoints. */
+export function communityGroupModelId(modelName: string): string {
+    return `group/${modelName}`;
+}
+
 export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
@@ -452,6 +458,160 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
+    };
+}
+
+/**
+ * Everything that decides whether two endpoints can serve the same pooled
+ * request — a subset of the runtime, so the API-key permission catalog can
+ * derive group ids from a few columns instead of loading full endpoints.
+ */
+export type CommunityGroupCandidate = {
+    name: string;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    visibility: CommunityEndpointVisibility;
+    disabledAt: number | null;
+    delegatesGeneration: boolean;
+} & CommunityEndpointPrices;
+
+/**
+ * Endpoints group only when they are interchangeable: same callable name, same
+ * modality, same image billing mode, and every price field equal. Price
+ * equality is what makes the group's advertised price unambiguous and lets any
+ * member be billed identically, so the key is derived from
+ * COMMUNITY_ENDPOINT_PRICE_FIELDS rather than a hand-listed subset.
+ */
+export function communityGroupKey(endpoint: CommunityGroupCandidate): string {
+    return JSON.stringify([
+        endpoint.name,
+        endpoint.modality,
+        endpoint.imagePricing,
+        ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => endpoint[field.key]),
+    ]);
+}
+
+/**
+ * Orders two cohorts competing for one `group/<name>` id: the one with more
+ * members wins, and an equal-sized tie goes to the cheaper one. Prices compare
+ * field by field in COMMUNITY_ENDPOINT_PRICE_FIELDS order, so a new price
+ * column joins the comparison automatically.
+ *
+ * Modality and image-pricing mode are the final tiebreakers. They never decide
+ * anything a human would notice, but cohorts differing only in those fields
+ * would otherwise compare equal and the winner would fall out of unordered D1
+ * row order — the published pool has to be the same on every registry rebuild.
+ */
+function compareCommunityGroupPools(
+    a: readonly CommunityGroupCandidate[],
+    b: readonly CommunityGroupCandidate[],
+): number {
+    if (a.length !== b.length) return b.length - a.length;
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        const difference = a[0][field.key] - b[0][field.key];
+        if (difference !== 0) return difference;
+    }
+    return (
+        a[0].modality.localeCompare(b[0].modality) ||
+        a[0].imagePricing.localeCompare(b[0].imagePricing)
+    );
+}
+
+/**
+ * Buckets endpoints into pools of interchangeable members.
+ *
+ * One name publishes at most one pool, because every cohort under a name would
+ * otherwise want the same `group/<name>` id. When a name is contested the
+ * biggest cohort wins — the pool people actually converged on — and an
+ * equal-sized tie goes to the cheaper one. Losing cohorts publish nothing;
+ * their members stay individually callable as `owner/name`, so nothing they
+ * already had breaks.
+ */
+export function communityGroupBuckets<T extends CommunityGroupCandidate>(
+    endpoints: readonly T[],
+): T[][] {
+    const buckets = new Map<string, T[]>();
+    for (const endpoint of endpoints) {
+        // A private endpoint is owner-only and a disabled one is broken, so
+        // neither can take its turn serving a pooled request. A delegating one
+        // must be sent a minted run token rather than its saved bearer (see
+        // mintDelegatedToken), which the pooled gateway context has no way to
+        // build — pooling it would silently move the caller's cost onto the
+        // endpoint owner.
+        if (endpoint.visibility !== "public") continue;
+        if (endpoint.disabledAt !== null) continue;
+        if (endpoint.delegatesGeneration) continue;
+        const key = communityGroupKey(endpoint);
+        const bucket = buckets.get(key);
+        if (bucket) bucket.push(endpoint);
+        else buckets.set(key, [endpoint]);
+    }
+
+    const winnerByName = new Map<string, T[]>();
+    for (const members of buckets.values()) {
+        if (members.length < MIN_COMMUNITY_GROUP_MEMBERS) continue;
+        const name = members[0].name;
+        const incumbent = winnerByName.get(name);
+        if (!incumbent || compareCommunityGroupPools(members, incumbent) < 0) {
+            winnerByName.set(name, members);
+        }
+    }
+    return [...winnerByName.values()];
+}
+
+/**
+ * The endpoints backing a model: one for `owner/name`, every member for a
+ * pooled `group/<name>`, none for a static model. Read this instead of
+ * `communityEndpoint` — that field alone is unset for a pool, so testing it
+ * silently treats a pooled model as a static one.
+ */
+export function communityModelEndpoints(model: {
+    communityEndpoint?: CommunityEndpointRuntime;
+    communityGroupMembers?: CommunityEndpointRuntime[];
+}): readonly CommunityEndpointRuntime[] {
+    return (
+        model.communityGroupMembers ??
+        (model.communityEndpoint ? [model.communityEndpoint] : [])
+    );
+}
+
+/** Members rotated left so a request can start at any member of the group. */
+export function rotateCommunityGroupMembers(
+    members: readonly CommunityEndpointRuntime[],
+    startIndex: number,
+): CommunityEndpointRuntime[] {
+    const offset = startIndex % members.length;
+    return [...members.slice(offset), ...members.slice(0, offset)];
+}
+
+/**
+ * Only advertise image edits when every member can serve one — any member may
+ * take the request after a failover.
+ */
+export function communityGroupSupportsImageEdits(
+    members: readonly CommunityEndpointRuntime[],
+): boolean {
+    return members.every((member) => member.supportsImageEdits);
+}
+
+/**
+ * Pooled definition for a set of interchangeable endpoints. Prices are equal by
+ * construction (communityGroupKey), so the first member carries every
+ * price-bearing field. The legacy `community/...` alias is deliberately not
+ * emitted: it names one owner and means nothing for a pool.
+ */
+export function communityGroupModelDefinition(
+    members: readonly CommunityEndpointRuntime[],
+): ModelDefinition {
+    const first = members[0];
+    return {
+        ...communityModelDefinition({
+            ...first,
+            supportsImageEdits: communityGroupSupportsImageEdits(members),
+        }),
+        aliases: [],
+        title: first.name,
+        description: `Pooled across ${members.length} community providers, with automatic failover between them.`,
     };
 }
 

@@ -1,6 +1,9 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { isFreeCommunityEndpoint } from "@shared/community-endpoints.ts";
+import {
+    communityModelEndpoints,
+    isFreeCommunityEndpoint,
+} from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -32,10 +35,13 @@ export async function checkBalance(
         await getModelStats(env.KV, log),
         model.resolved,
     );
-    const communityEndpoint = model.communityEndpoint;
+    // A pooled `group/<name>` is backed by its members, so read the endpoints
+    // rather than `communityEndpoint`: otherwise a free pool is billed like a
+    // paid model and 402s the zero-balance users it exists to serve.
+    const communityEndpoints = communityModelEndpoints(model);
     const isFreeCommunityModel =
-        communityEndpoint !== undefined &&
-        isFreeCommunityEndpoint(communityEndpoint);
+        communityEndpoints.length > 0 &&
+        communityEndpoints.every(isFreeCommunityEndpoint);
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

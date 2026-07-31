@@ -1,6 +1,9 @@
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
+    communityGroupBuckets,
+    communityGroupModelDefinition,
+    communityGroupModelId,
     communityModelDefinition,
     communityModelId,
     normalizeCommunityEndpointImagePricing,
@@ -41,6 +44,39 @@ export type CommunityModelRegistryEntry = {
     definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
 };
+
+export type CommunityGroupRegistryEntry = {
+    id: string;
+    info: ModelInfo;
+    definition: ModelDefinition;
+    members: CommunityEndpointRuntime[];
+};
+
+/**
+ * Pools every set of two or more interchangeable endpoints (same callable name,
+ * same modality, identical prices) into one `group/<name>` model. Publishing
+ * under that name at those prices is the only way to join: no membership state
+ * is stored anywhere.
+ */
+export function communityGroupEntries(
+    endpoints: readonly CommunityEndpointRuntime[],
+): CommunityGroupRegistryEntry[] {
+    return communityGroupBuckets(endpoints).map((members) => {
+        // Deterministic member order keeps the derived config stable across
+        // registry rebuilds.
+        members.sort((a, b) => a.modelId.localeCompare(b.modelId));
+        const definition = communityGroupModelDefinition(members);
+        const id = communityGroupModelId(members[0].name);
+        return {
+            id,
+            info: modelInfoFromDefinition(id, definition, {
+                community: true,
+            }),
+            definition,
+            members,
+        };
+    });
+}
 
 export async function getCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"] | undefined,

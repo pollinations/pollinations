@@ -51,9 +51,9 @@ export function longContextAbove(minPromptTokens: number) {
         totalPromptTokens(usage) > minPromptTokens ? "long_context" : undefined;
 }
 
-// Some provider endpoint metadata defines the long-context tier inclusively
-// with min_prompt_tokens. Keep that boundary explicit rather than disguising
-// it as a threshold-minus-one call to longContextAbove.
+// Some provider billing tiers are empirically inclusive at their published
+// boundary. Keep that observation explicit rather than disguising it as a
+// threshold-minus-one call to longContextAbove.
 export function longContextAtLeast(minPromptTokens: number) {
     return ({ usage }: CostVariantContext): "long_context" | undefined =>
         totalPromptTokens(usage) >= minPromptTokens

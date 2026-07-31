@@ -22,13 +22,6 @@ export function processParameters(
     const config = options.modelConfig as Record<string, unknown>;
     const updatedOptions = { ...options };
 
-    // Ask OpenRouter for detailed token/cost accounting. Force it after user
-    // options are resolved so callers cannot disable billing metadata for an
-    // otherwise billable generation.
-    if (config["custom-host"] === "https://openrouter.ai/api/v1") {
-        updatedOptions.usage = { include: true };
-    }
-
     if (updatedOptions.stream) {
         log("Adding stream_options to include usage data in stream");
         updatedOptions.stream_options = { include_usage: true };

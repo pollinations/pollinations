@@ -126,6 +126,9 @@ function usageHeaders(
     if (completion?.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
+    // Reconciliation is optional: forward a numeric provider cost when the
+    // upstream wrapper exposes one. Portkey may omit it even when OpenRouter
+    // returns token usage, in which case the telemetry remains absent.
     const providerReportedCost = (
         completion?.usage as { cost?: unknown } | undefined
     )?.cost;

@@ -840,8 +840,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's current price-sorted standard route doubles token rates
-        // from 200K prompt tokens.
+        // Staging billing probes on 2026-07-31 confirmed that OpenRouter's
+        // current route doubles the whole request inclusively at 200K prompt
+        // tokens, including cached tokens in the threshold.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.3),
@@ -1894,8 +1895,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // The pinned Alibaba endpoint reprices the whole request at its
-        // inclusive 32K and 256K prompt-token boundaries.
+        // Staging billing probes on 2026-07-31 confirmed that the pinned
+        // Alibaba endpoint reprices the whole request inclusively at its 32K
+        // and 256K prompt-token boundaries.
         cost: {
             promptTextTokens: perMillion(0.03),
             promptCachedTokens: perMillion(0.006),

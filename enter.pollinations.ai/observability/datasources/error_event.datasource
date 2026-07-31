@@ -22,6 +22,7 @@ SCHEMA >
 `upstream_host`            LowCardinality(String) `json:$.upstream_host` DEFAULT 'undefined',
 `upstream_status`          Nullable(UInt16)       `json:$.upstream_status`,
 `upstream_body`            String                 `json:$.upstream_body` DEFAULT '',
+`diagnostic_metadata`      String                 `json:$.diagnostic_metadata` DEFAULT '{}',
 `model_requested`          LowCardinality(String) `json:$.model_requested` DEFAULT 'undefined',
 `resolved_model_requested` LowCardinality(String) `json:$.resolved_model_requested` DEFAULT 'undefined',
 `request_inputs`           String                 `json:$.request_inputs` DEFAULT '{}',

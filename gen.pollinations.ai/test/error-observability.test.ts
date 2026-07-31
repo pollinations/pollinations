@@ -424,21 +424,40 @@ describe("error observability", () => {
                 }
                 return Response.json(
                     { error: { message: "provider rate limited" } },
-                    { status: 429 },
+                    {
+                        status: 429,
+                        headers: {
+                            authorization: "Bearer must-not-be-recorded",
+                            "set-cookie": "session=must-not-be-recorded",
+                            "x-generation-id": "gen-openrouter-test",
+                            "x-portkey-last-used-option-index":
+                                "config.targets[1]",
+                            "x-portkey-provider": "openrouter",
+                            "x-portkey-retry-attempt-count": "2",
+                            "x-portkey-trace-id": "portkey-trace-test",
+                        },
+                    },
                 );
             },
         );
 
         const ctx = createExecutionContext();
-        const response = await createTextTestApp().fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+        const incomingRequest = new Request(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
                     model: "openai-fast",
                     messages: [{ role: "user", content: "test" }],
                 }),
-            }),
+            },
+        );
+        Object.defineProperty(incomingRequest, "cf", {
+            value: { colo: "FRA" },
+        });
+        const response = await createTextTestApp().fetch(
+            incomingRequest,
             {
                 AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
                 ENVIRONMENT: "test",
@@ -465,13 +484,34 @@ describe("error observability", () => {
             },
         });
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             status: 502,
             error_code: "BAD_GATEWAY",
             upstream_host: "portkey.test",
             upstream_status: 429,
         });
+        expect(
+            JSON.parse(tinybirdPayload.diagnostic_metadata as string),
+        ).toEqual({
+            edge_colo: "FRA",
+            gateway_provider: "openrouter",
+            gateway_retry_attempt_count: 2,
+            gateway_route: "config.targets[1]",
+            gateway_trace_id: "portkey-trace-test",
+            upstream_generation_id: "gen-openrouter-test",
+        });
+        expect(tinybirdPayload.diagnostic_metadata).not.toContain(
+            "must-not-be-recorded",
+        );
+        expect(tinybirdPayload.diagnostic_metadata).not.toContain(
+            "authorization",
+        );
+        expect(tinybirdPayload.diagnostic_metadata).not.toContain("set-cookie");
     });
 
     it("attributes provider error envelopes to the gateway", async () => {

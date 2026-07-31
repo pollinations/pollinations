@@ -21,6 +21,7 @@ SQL >
         upstream_host,
         upstream_status,
         upstream_body,
+        diagnostic_metadata,
         model_requested,
         resolved_model_requested,
         request_inputs,

@@ -31,6 +31,15 @@ type ErrorHandlerEnv = {
     Variables: RequestIdVariables & ErrorVariables;
 };
 
+export type ErrorDiagnosticMetadata = {
+    edge_colo?: string;
+    gateway_provider?: string;
+    gateway_retry_attempt_count?: number;
+    gateway_route?: string;
+    gateway_trace_id?: string;
+    upstream_generation_id?: string;
+};
+
 type UpstreamErrorOptions = {
     res?: Response;
     message?: string;
@@ -39,6 +48,7 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
+    diagnosticMetadata?: ErrorDiagnosticMetadata;
     /**
      * Overrides the status-derived error code in the response envelope. Used to
      * surface a stable, machine-readable code (e.g. `content_policy_violation`)
@@ -53,6 +63,7 @@ export class UpstreamError extends HTTPException {
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
+    public readonly diagnosticMetadata?: ErrorDiagnosticMetadata;
     public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
@@ -61,8 +72,51 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
+        this.diagnosticMetadata = options?.diagnosticMetadata;
         this.errorCode = options?.errorCode;
     }
+}
+
+const MAX_DIAGNOSTIC_VALUE_LENGTH = 512;
+
+function getDiagnosticHeader(
+    headers: Headers,
+    name: string,
+): string | undefined {
+    return truncateString(
+        headers.get(name)?.trim(),
+        MAX_DIAGNOSTIC_VALUE_LENGTH,
+    );
+}
+
+/** Extracts only explicitly allowlisted, non-secret upstream response headers. */
+export function extractErrorDiagnosticMetadata(
+    headers: Headers,
+): ErrorDiagnosticMetadata | undefined {
+    const retryAttemptValue = getDiagnosticHeader(
+        headers,
+        "x-portkey-retry-attempt-count",
+    );
+    const retryAttemptCount =
+        retryAttemptValue && /^\d+$/.test(retryAttemptValue)
+            ? Number(retryAttemptValue)
+            : undefined;
+    const metadata: ErrorDiagnosticMetadata = {
+        gateway_provider: getDiagnosticHeader(headers, "x-portkey-provider"),
+        gateway_retry_attempt_count: Number.isSafeInteger(retryAttemptCount)
+            ? retryAttemptCount
+            : undefined,
+        gateway_route: getDiagnosticHeader(
+            headers,
+            "x-portkey-last-used-option-index",
+        ),
+        gateway_trace_id: getDiagnosticHeader(headers, "x-portkey-trace-id"),
+        upstream_generation_id: getDiagnosticHeader(headers, "x-generation-id"),
+    };
+
+    return Object.values(metadata).some((value) => value !== undefined)
+        ? metadata
+        : undefined;
 }
 
 export async function ensureUpstreamOk(
@@ -80,6 +134,7 @@ export async function ensureUpstreamOk(
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
         upstreamStatus: response.status,
         responseBody,
+        diagnosticMetadata: extractErrorDiagnosticMetadata(response.headers),
     });
 }
 
@@ -205,6 +260,7 @@ type ServerErrorEnvelope = {
     upstreamHost?: string;
     upstreamStatus?: number;
     upstreamBody?: string;
+    diagnosticMetadata?: ErrorDiagnosticMetadata;
     modelRequested?: string;
     resolvedModelRequested?: string;
     requestInputs?: RequestInputs;
@@ -453,6 +509,20 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         ) || getDefaultErrorMessage(status);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
     const resolvedRoutePath = getRoutePath(c);
+    const upstreamDiagnosticMetadata =
+        error instanceof UpstreamError ? error.diagnosticMetadata : undefined;
+    const edgeColo = truncateString(
+        (
+            c.req.raw as Request & {
+                cf?: { colo?: string };
+            }
+        ).cf?.colo,
+        MAX_DIAGNOSTIC_VALUE_LENGTH,
+    );
+    const diagnosticMetadata: ErrorDiagnosticMetadata = {
+        ...upstreamDiagnosticMetadata,
+        ...(edgeColo ? { edge_colo: edgeColo } : {}),
+    };
 
     return {
         kind: "server_error",
@@ -481,6 +551,11 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError
                 ? truncateString(error.responseBody, MAX_UPSTREAM_BODY_LENGTH)
                 : undefined,
+        diagnosticMetadata: Object.values(diagnosticMetadata).some(
+            (value) => value !== undefined,
+        )
+            ? diagnosticMetadata
+            : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
         requestInputs: await collectRequestInputs(c),
@@ -510,6 +585,9 @@ function toTinybirdErrorEvent(
         upstream_host: envelope.upstreamHost,
         upstream_status: envelope.upstreamStatus,
         upstream_body: envelope.upstreamBody,
+        diagnostic_metadata: envelope.diagnosticMetadata
+            ? JSON.stringify(envelope.diagnosticMetadata)
+            : undefined,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,
         request_inputs: stringifyRequestInputs(envelope.requestInputs),

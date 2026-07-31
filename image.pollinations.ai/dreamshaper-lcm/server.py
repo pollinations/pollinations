@@ -73,6 +73,10 @@ def get_public_ip():
 
 
 async def send_heartbeat():
+    # Registering puts this worker into the live pool immediately. Keep it off
+    # while validating a new host so a half-checked box cannot take traffic.
+    if os.getenv("HEARTBEAT_ENABLED", "true").lower() not in ("1", "true", "yes"):
+        return
     public_hostname = os.getenv("PUBLIC_HOSTNAME")
     if public_hostname:
         url = f"https://{public_hostname}"

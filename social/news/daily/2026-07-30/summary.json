@@ -1,0 +1,55 @@
+{
+  "date": "2026-07-30",
+  "period_start": "2026-07-30",
+  "period_end": "2026-07-30",
+  "title": "OCR, transcription, and long-context chat got new machinery",
+  "summary": "A crowded model day: new OCR, transcription, chat, and multimodal options, plus quieter upgrades to identity, routing, and the newly named Weaver agent.\n\nMistral OCR 4 is now available on the existing text and chat routes for extracting Markdown and structured content from images and selected PDF pages. AssemblyAI transcription now defaults to Universal-3.5 Pro while keeping older model IDs alive, and Cohere Command A+ joins the catalog with long context, streaming, JSON, and automatic tools.\n\nQwen3.7 Flash joined the API for multimodal, reasoning, tool, streaming, and cache-aware work. Meanwhile, Kimi K3 moved to Fireworks, Step Flash moved to DeepInfra, and Pruna image generation and editing moved to DeepInfra without asking existing integrations to learn new names or parameters. Software has once again relocated the plumbing rather than the kitchen.\n\nThe former polli-agent is now discoverable as `weaver`, available through `voodoohop/weaver`, and served from weaver.pollinations.ai. Its file serving is now constrained to its temporary workspace, so valid generated files still work while traversal paths and wandering symlinks do not.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 12496,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12776,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12869,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12873,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12875,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12876,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12879,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12883,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12884,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12896,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12904,
+      "date": "2026-07-30"
+    }
+  ],
+  "generated_at": "2026-07-31T07:08:56.250456+00:00"
+}

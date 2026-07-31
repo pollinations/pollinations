@@ -135,7 +135,11 @@ function isUsableFallbackTarget(
     target: GenerationModelEntry | undefined,
 ): target is GenerationModelEntry {
     if (!target || target === from) return false;
-    if (!target.visible || target.eventType !== from.eventType) return false;
+    if (target.eventType !== from.eventType) return false;
+    // A community endpoint that is disabled or private must never serve,
+    // whoever named it. A catalog model marked `hidden` is only unlisted, not
+    // unavailable — it stays callable, so it stays a usable target.
+    if (target.communityEndpoint && !target.visible) return false;
     const primary = from.communityEndpoint;
     // The price rule below constrains what a THIRD PARTY may declare. Our own
     // catalog fallbacks are reviewed on both sides in one PR and pay no owner,

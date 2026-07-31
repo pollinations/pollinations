@@ -1,9 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import {
-    DEFAULT_IMAGE_MODEL,
-    type ImageModelName,
-} from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -35,11 +32,7 @@ import {
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import {
-    adjustImageSizeForModel,
-    type ImageParams,
-    ImageParamsSchema,
-} from "./params.ts";
+import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -407,39 +400,20 @@ async function generateImageResult(
 }
 
 /**
- * Point the params at one candidate.
+ * One attempt against one candidate, whichever kind of image model it is.
  *
- * The primary is already what the caller asked for, and a community endpoint
- * takes its target from the endpoint row rather than from these params, so
- * both pass through untouched — a community rescue behaves exactly as it did
- * before catalog models joined the loop.
- *
- * A catalog target does dispatch on `model`, and its dimensions are re-derived
- * from its own default unless the caller asked for a size: `parseImageParams`
- * filled those in from the primary, so without this a rescue renders at
- * whatever the model that failed happened to default to.
+ * A candidate is called exactly the way the requested model was — same params,
+ * only the id swapped. Nothing is re-derived per candidate: the pairs are ours
+ * to declare, so a target that needs different parameters is one we should not
+ * have paired in the first place.
  */
-function paramsForCandidate(
-    safeParams: RuntimeImageParams,
-    candidate: FallbackCandidate,
-): RuntimeImageParams {
-    if (!candidate.entry || candidate.communityEndpoint) return safeParams;
-    const params = { ...safeParams, model: candidate.id };
-    if (safeParams.dimensionsExplicit) return params;
-    return {
-        ...params,
-        ...adjustImageSizeForModel(candidate.id as ImageModelName),
-    };
-}
-
-/** One attempt against one candidate, whichever kind of image model it is. */
 async function generateImageForCandidate(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
     candidate: FallbackCandidate,
 ): Promise<ImageGenerationResult> {
-    const params = paramsForCandidate(safeParams, candidate);
+    const params = { ...safeParams, model: candidate.id };
     if (candidate.communityEndpoint) {
         const generated = await callCommunityImageEndpoint(
             candidate.communityEndpoint,

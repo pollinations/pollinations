@@ -70,9 +70,7 @@ def models_summary(kind: str | None = None) -> str:
 
 def _best_at_block() -> str:
     return "\n".join(
-        f"  - {m}: {why}"
-        for m, why in BEST_AT.items()
-        if m in get_model_catalog() or True
+        f"  - {model}: {description}" for model, description in BEST_AT.items()
     )
 
 

@@ -284,9 +284,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     token = _api_key_override.set(api_key or None)
     try:
         result = await run_agent(_to_openai_messages(request.messages))
-        markdown, content_parts = await _build_content(
-            result["text"], result["artifacts"]
-        )
+        _, content_parts = await _build_content(result["text"], result["artifacts"])
         content_block: Any = (
             content_parts[0]["text"] if len(content_parts) == 1 else content_parts
         )

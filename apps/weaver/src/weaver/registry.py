@@ -267,23 +267,6 @@ def get_model_catalog() -> dict[str, dict[str, Any]]:
     return reg.get("models", {})
 
 
-def get_modalities_for_model(model_id: str) -> list[str]:
-    reg = _registry_cache or {}
-    model = reg.get("models", {}).get(model_id, {})
-    return model.get("modalities", [])
-
-
-def get_model_params(model_id: str) -> dict[str, Any]:
-    reg = _registry_cache or {}
-    model = reg.get("models", {}).get(model_id, {})
-    return dict(model.get("params", {}))
-
-
-def get_model_meta(model_id: str) -> dict[str, Any]:
-    reg = _registry_cache or {}
-    return reg.get("models", {}).get(model_id, {})
-
-
 def get_voices() -> list[str]:
     reg = _registry_cache or {}
     audio_models = reg.get("by_modality", {}).get("audio", {})

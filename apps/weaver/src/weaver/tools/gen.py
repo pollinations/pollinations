@@ -16,7 +16,6 @@ import urllib.parse
 from typing import Any
 
 import httpx
-from openai import AsyncOpenAI
 
 from weaver.config import resolve_api_key, settings
 
@@ -53,10 +52,6 @@ def _base() -> str:
 def _v1() -> str:
     """Chat/completions live under /v1; the bare host 404s."""
     return f"{_base()}/v1"
-
-
-def _client() -> AsyncOpenAI:
-    return AsyncOpenAI(base_url=_v1(), api_key=_key())
 
 
 def _encode(text: str) -> str:

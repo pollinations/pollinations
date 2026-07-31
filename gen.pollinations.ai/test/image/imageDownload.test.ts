@@ -33,13 +33,27 @@ describe("downloadUserImage", () => {
         });
     });
 
-    it("rejects a response that is neither a known image nor typed as one", async () => {
-        const imageUrl = "https://example.com/input.jpg";
+    // Whether a type is usable is the provider's answer to give. Relaying it
+    // gets a better error than guessing from here would.
+    it("relays a declared type even when it is not an image type", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("<html>not an image</html>", {
                 status: 200,
                 headers: { "content-type": "text/html" },
             }),
+        );
+
+        const { mimeType } = await downloadUserImage(
+            "https://example.com/page.html",
+        );
+
+        expect(mimeType).toBe("text/html");
+    });
+
+    it("rejects only when nothing is declared and nothing is recognisable", async () => {
+        const imageUrl = "https://example.com/mystery";
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array([1, 2, 3, 4]), { status: 200 }),
         );
 
         await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
@@ -71,18 +85,16 @@ describe("downloadUserImage", () => {
         expect(mimeType).toBe("image/heic");
     });
 
-    // Misconfigured buckets serve images as octet-stream often enough to be
-    // worth sniffing for, which is the only job the detector has left.
-    it("falls back to the bytes when the host declares no image type", async () => {
+    // Reading the bytes is the last resort, for hosts that declare nothing at
+    // all — something has to be sent, since inlineData and data: URIs both
+    // require a type.
+    it("reads the bytes only when the host declares no type at all", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 new Uint8Array([
                     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
                 ]),
-                {
-                    status: 200,
-                    headers: { "content-type": "application/octet-stream" },
-                },
+                { status: 200 },
             ),
         );
 
@@ -169,9 +181,9 @@ describe("downloadUserImage", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("rejects an upload that is neither a known image nor typed as one", async () => {
+    it("rejects an upload that declares no type and is not recognisable", async () => {
         await expect(
-            downloadUserImage("data:application/pdf;base64,bm90LWFuLWltYWdl"),
+            downloadUserImage("data:;base64,bm90LWFuLWltYWdl"),
         ).rejects.toMatchObject({
             status: 400,
             errorCode: "unsupported_image_media_type",

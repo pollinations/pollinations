@@ -75,7 +75,7 @@ function isBlockedImageHost(hostname: string): boolean {
  * The one gate every user-supplied image URL passes before we fetch it, so a
  * URL one path refuses can never be reachable through the other instead.
  */
-export function assertAllowedImageUrl(value: string): URL {
+function assertAllowedImageUrl(value: string): URL {
     let url: URL;
     try {
         url = new URL(value);
@@ -200,26 +200,25 @@ export type FetchUserImageOptions = {
 };
 
 /**
- * The media type to forward upstream: what it says it is, or failing that what
- * the bytes look like.
+ * The media type to forward upstream: whatever it says it is.
  *
- * This only ever labels the bytes for the provider — it is not a judgement that
- * the image is usable, which is the provider's call. So a declared image type
- * is passed straight through, including formats the detector has never heard of
- * (Gemini takes HEIC and HEIF). Sniffing is the fallback for hosts that send no
- * type or a generic one, which misconfigured buckets do often enough to be
- * worth the five formats it knows.
+ * This only labels the bytes for the provider, so it makes no judgement about
+ * them. A declared type is relayed as-is even when it is not an image type —
+ * whether the provider can use it is the provider's answer to give, and it
+ * gives a better one than a guess from here would.
  *
- * Refused only when neither says anything, because the remaining option is to
- * invent a type — which is what the old `image/jpeg` default did.
+ * The bytes are only consulted when nothing was declared, since something has
+ * to be sent: `inlineData` and the `data:` URI format both require a type. If
+ * that finds nothing either there is genuinely nothing to relay, and the
+ * remaining option would be to invent one — which is what the old `image/jpeg`
+ * default did.
  */
 function resolveMimeType(
     bytes: Uint8Array,
     declared: string | null,
 ): string | null {
     const claimed = declared?.split(";")[0].trim().toLowerCase();
-    if (claimed?.startsWith("image/")) return claimed;
-    return detectImageMimeType(bytes);
+    return claimed || detectImageMimeType(bytes);
 }
 
 /**
@@ -285,7 +284,7 @@ export async function fetchUserImage(
         );
         if (!mimeType) {
             throw new UserImageError(
-                "Unsupported image format in data URI: the payload is not a recognised image and no image media type was declared.",
+                "Invalid image data URI: it declares no media type and its payload is not a recognised image.",
                 "unsupported_image_media_type",
             );
         }
@@ -365,7 +364,7 @@ export async function fetchUserImage(
     );
     if (!mimeType) {
         throw new UserImageError(
-            `Unsupported image format from ${imageUrl}: the response is not a recognised image and its content-type is not an image type.`,
+            `Unsupported image format from ${imageUrl}: the response carries no content-type and its body is not a recognised image.`,
             "unsupported_image_media_type",
             url,
         );

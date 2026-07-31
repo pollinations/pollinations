@@ -154,22 +154,24 @@ describe("imageUrlToBase64Transform", () => {
         });
     });
 
-    it("rejects a non-image content type", async () => {
+    // Not our call to make: the type is relayed and the provider answers. It
+    // gives a better error about its own accepted formats than a guess here.
+    it("relays a non-image content type instead of refusing it", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("<html></html>", {
                 headers: { "content-type": "text/html" },
             }),
         );
 
-        await expect(
-            transform(
-                imageMessage(["https://example.com/page.html"]),
-                bedrockOptions,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            errorCode: "unsupported_image_media_type",
-        });
+        const { messages } = await transform(
+            imageMessage(["https://example.com/page.html"]),
+            bedrockOptions,
+        );
+
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toMatch(/^data:text\/html;base64,/);
     });
 
     it("rejects an image larger than the request budget", async () => {

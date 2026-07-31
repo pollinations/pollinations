@@ -1,4 +1,3 @@
-import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
@@ -13,8 +12,6 @@ import type {
     TransformResult,
 } from "./types.js";
 import { resolveModelConfig } from "./utils/modelResolver.js";
-
-export const log = debug("pollinations:portkey");
 
 const clientConfig = {
     defaultOptions: {

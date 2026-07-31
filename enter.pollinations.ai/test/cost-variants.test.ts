@@ -33,20 +33,20 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],
-    ] satisfies [ModelName, number][])(
-        "%s uses a strict greater-than boundary",
-        (model, threshold) => {
-            expect(
-                bill(model, { promptTextTokens: threshold - 1 }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold + 1 }).costVariant,
-            ).toBe("long_context");
-        },
-    );
+    ] satisfies [
+        ModelName,
+        number,
+    ][])("%s uses a strict greater-than boundary", (model, threshold) => {
+        expect(
+            bill(model, { promptTextTokens: threshold - 1 }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold + 1 }).costVariant,
+        ).toBe("long_context");
+    });
 
     it("Gemini uses Google's strict greater-than 200K boundary", () => {
         expect(
@@ -109,14 +109,11 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_256k"],
         [256_001, "context_256k"],
-    ] as const)(
-        "Qwen3.7 Flash selects the expected sheet at %s prompt tokens",
-        (promptTextTokens, expectedVariant) => {
-            expect(
-                bill("qwen3.7-flash", { promptTextTokens }).costVariant,
-            ).toBe(expectedVariant);
-        },
-    );
+    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
+            expectedVariant,
+        );
+    });
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
@@ -215,32 +212,35 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 10, 1, 12.5, 45],
         ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
         ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
-    ] satisfies [ModelName, number, number, number, number][])(
-        "%s applies every Azure long-context meter to the full request",
-        (model, input, cached, cacheWrite, output) => {
-            const billing = bill(model, {
-                promptTextTokens: 272_001,
-                promptCachedTokens: 1_000,
-                promptCacheWriteTokens: 1_000,
-                completionTextTokens: 1_000,
-            });
+    ] satisfies [
+        ModelName,
+        number,
+        number,
+        number,
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        const billing = bill(model, {
+            promptTextTokens: 272_001,
+            promptCachedTokens: 1_000,
+            promptCacheWriteTokens: 1_000,
+            completionTextTokens: 1_000,
+        });
 
-            expect(billing.costVariant).toBe("long_context");
-            expect(billing.priceDefinition).toMatchObject({
-                promptTextTokens: (input * 0.5) / 1e6,
-                promptCachedTokens: (cached * 0.5) / 1e6,
-                promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-                completionTextTokens: (output * 0.5) / 1e6,
-            });
-            expect(billing.cost.totalCost).toBeCloseTo(
-                272_001 * (input / 1e6) +
-                    1_000 * (cached / 1e6) +
-                    1_000 * (cacheWrite / 1e6) +
-                    1_000 * (output / 1e6),
-                12,
-            );
-        },
-    );
+        expect(billing.costVariant).toBe("long_context");
+        expect(billing.priceDefinition).toMatchObject({
+            promptTextTokens: (input * 0.5) / 1e6,
+            promptCachedTokens: (cached * 0.5) / 1e6,
+            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
+            completionTextTokens: (output * 0.5) / 1e6,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            272_001 * (input / 1e6) +
+                1_000 * (cached / 1e6) +
+                1_000 * (cacheWrite / 1e6) +
+                1_000 * (output / 1e6),
+            12,
+        );
+    });
 
     it("counts every prompt token modality, but not audio seconds", () => {
         expect(

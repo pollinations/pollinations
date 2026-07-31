@@ -10,11 +10,11 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type BillingAdjustment,
-    type CostDefinition,
     calculateUsageBilling,
     getPriceDefinitionForModel,
     type ModelDefinition,
@@ -33,11 +33,13 @@ import { getRoutePath } from "@shared/util.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -98,8 +100,9 @@ type RealtimeBillingContext = {
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
+    modelUsed: string;
     modelDefinition: ModelDefinition;
-    modelCostDefinition: CostDefinition;
+    servedModelDefinition: ModelDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;
     requestPath: string;
@@ -147,7 +150,7 @@ async function connectAzureRealtime(
     c: Context<Env>,
     userId: string,
     model: RealtimeModelName,
-): Promise<WebSocket | Response> {
+): Promise<WebSocket> {
     const route = REALTIME_ROUTES[model];
     const apiKey = c.env[route.apiKeyEnv];
     if (!apiKey) {
@@ -174,13 +177,12 @@ async function connectAzureRealtime(
         return upstreamSocket;
     }
 
-    return new Response(await response.text(), {
-        status: response.status,
-        headers: {
-            "Content-Type":
-                response.headers.get("Content-Type") || "application/json",
-            "Cache-Control": "no-store",
-        },
+    const responseBody = await response.text();
+    const status = response.ok ? 502 : response.status;
+    throw new UpstreamError(status as ContentfulStatusCode, {
+        message: responseBody || "Realtime provider connection failed",
+        upstreamStatus: status,
+        responseBody,
     });
 }
 
@@ -480,8 +482,10 @@ function createRealtimeTrackingEvent(args: {
         referrerDomain: args.tracking.referrerDomain,
         modelRequested: args.tracking.modelRequested,
         resolvedModelRequested: args.tracking.resolvedModelRequested,
-        modelUsed: args.tracking.resolvedModelRequested,
-        modelProviderUsed: args.tracking.modelDefinition.provider,
+        modelUsed: args.tracking.modelUsed,
+        modelProviderUsed: args.tracking.servedModelDefinition.provider,
+        fallbackUsed:
+            args.tracking.modelUsed !== args.tracking.resolvedModelRequested,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
@@ -510,7 +514,8 @@ async function settleRealtimeSession(
     const { cost, price, adjustments } = calculateUsageBilling({
         model: tracking.resolvedModelRequested,
         usage,
-        servedBy: tracking.modelDefinition,
+        servedBy: tracking.servedModelDefinition,
+        quotedBy: tracking.modelDefinition,
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
@@ -686,6 +691,8 @@ function proxyRealtimeWebSockets(
 
 async function createRealtimeBillingContext(
     c: Context<Env>,
+    modelUsed: string,
+    servedModelDefinition: ModelDefinition,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
     const apiKeyMetadata = c.var.auth.apiKey?.metadata as
@@ -720,8 +727,9 @@ async function createRealtimeBillingContext(
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
+        modelUsed,
         modelDefinition: modelInfo.definition,
-        modelCostDefinition: modelInfo.definition.cost,
+        servedModelDefinition,
         modelPriceDefinition,
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
@@ -761,16 +769,26 @@ export async function handleRealtimeWebSocket(
     // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
 
-    const upstream = await connectAzureRealtime(
-        c,
-        user.id,
-        c.var.model.resolved as RealtimeModelName,
+    const { response, servedEntry } = await withModelFallbackResponse(
+        c.var.model,
+        async (candidate) => {
+            const upstream = await connectAzureRealtime(
+                c,
+                user.id,
+                candidate.id as RealtimeModelName,
+            );
+            return proxyRealtimeWebSockets(
+                c,
+                upstream,
+                await createRealtimeBillingContext(
+                    c,
+                    candidate.id,
+                    candidate.definition ?? c.var.model.definition,
+                ),
+            );
+        },
+        c.var.track?.failedCalls,
     );
-    if (upstream instanceof Response) return upstream;
-
-    return proxyRealtimeWebSockets(
-        c,
-        upstream,
-        await createRealtimeBillingContext(c),
-    );
+    if (servedEntry) c.set("servedModelEntry", servedEntry);
+    return response;
 }

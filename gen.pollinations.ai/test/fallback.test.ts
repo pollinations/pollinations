@@ -1,5 +1,6 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     type FailedCall,
@@ -8,6 +9,7 @@ import {
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
+    withModelFallbackResponse,
 } from "../src/fallback.ts";
 import { HttpError } from "../src/image/httpError.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
@@ -94,6 +96,7 @@ describe("registry fallback linking", () => {
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
     });
+
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
             "owner/primary",
@@ -357,5 +360,35 @@ describe("withModelFallback", () => {
         expect(index).toBe(1);
         expect(seen(failures)).toEqual(["primary"]);
         expect(attempt).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("withModelFallbackResponse", () => {
+    it("marks a response served by the shared fallback loop", async () => {
+        const primary = registryEntry("primary", ["target"]);
+        const target = registryEntry("target");
+        primary.fallbackEntries = [target];
+
+        const { response, servedEntry } = await withModelFallbackResponse(
+            {
+                resolved: primary.id,
+                definition: primary.definition,
+                fallbackEntries: primary.fallbackEntries,
+            },
+            async (candidate) => {
+                if (candidate.id === "primary") {
+                    throw Object.assign(new Error("rate limited"), {
+                        status: 429,
+                    });
+                }
+                return Response.json({ model: candidate.id });
+            },
+        );
+
+        expect(servedEntry?.id).toBe("target");
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        await expect(response.json()).resolves.toEqual({ model: "target" });
     });
 });

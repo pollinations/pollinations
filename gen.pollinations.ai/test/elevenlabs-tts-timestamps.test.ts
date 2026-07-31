@@ -1,6 +1,9 @@
 import { env, SELF } from "cloudflare:test";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
 
 const log = {
@@ -130,6 +133,66 @@ workerTest(
                 ),
             },
         });
+    },
+);
+
+workerTest(
+    "uses the shared fallback loop for audio",
+    async ({ paidApiKey }) => {
+        const source = getRegistryModelDefinition("elevenlabs");
+        const previousFallbacks = source.fallbacks;
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        try {
+            source.fallbacks = ["elevenflash"];
+            resetGenerationModelRegistryCache();
+            const providerModels: string[] = [];
+            fetchMock.mockImplementation(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("public_model_stats.json")) {
+                    return Response.json({ data: [] });
+                }
+                if (
+                    request.url.includes("/v0/events?name=generation_event_v2")
+                ) {
+                    return new Response("", { status: 202 });
+                }
+                const body = (await request.json()) as { model_id: string };
+                providerModels.push(body.model_id);
+                if (body.model_id === "eleven_v3") {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json(providerResponse);
+            });
+
+            const response = await SELF.fetch(
+                "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "elevenlabs",
+                        input: "Fallback speech",
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
+        } finally {
+            fetchMock.mockRestore();
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
     },
 );
 

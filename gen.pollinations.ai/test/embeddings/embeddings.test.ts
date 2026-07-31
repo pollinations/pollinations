@@ -3,6 +3,8 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as baseTest } from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
@@ -14,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 import { applyGeminiTaskInstruction } from "../../src/embeddings/input.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
+import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-2";
@@ -137,8 +140,16 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
-    const state: { requests: unknown[]; urls: string[] } = {
+function createOpenAIMock(): MockAPI<{
+    requests: unknown[];
+    urls: string[];
+    failModel?: string;
+}> {
+    const state: {
+        requests: unknown[];
+        urls: string[];
+        failModel?: string;
+    } = {
         requests: [],
         urls: [],
     };
@@ -153,6 +164,12 @@ function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                 };
                 state.urls.push(request.url);
                 state.requests.push(body);
+                if (body.model === state.failModel) {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
 
                 const inputs = body.input ?? [];
                 const dimensions =
@@ -182,6 +199,7 @@ function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
         reset: () => {
             state.requests = [];
             state.urls = [];
+            state.failModel = undefined;
         },
     };
 }
@@ -356,6 +374,45 @@ describe("POST /v1/embeddings", () => {
             isBilledUsage: true,
         });
         expect(events[0].totalPrice).toBeGreaterThan(0);
+    });
+
+    test("uses the shared fallback loop for embeddings", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        const source = getRegistryModelDefinition(TEST_OPENAI_SMALL_MODEL);
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = [TEST_OPENAI_LARGE_MODEL];
+            resetGenerationModelRegistryCache();
+            await mocks.enable("tinybird", "tinybirdStats", "openai");
+            mocks.openai.state.failModel = TEST_OPENAI_SMALL_PROVIDER_MODEL;
+
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({ model: TEST_OPENAI_SMALL_MODEL }),
+            });
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            expect(response.headers.get("x-model-used")).toBe(
+                TEST_OPENAI_LARGE_MODEL,
+            );
+            expect(mocks.openai.state.requests).toMatchObject([
+                { model: TEST_OPENAI_SMALL_PROVIDER_MODEL },
+                { model: TEST_OPENAI_LARGE_PROVIDER_MODEL },
+            ]);
+            await wait();
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
     });
 
     test("uses the provider model id and supports custom dimensions", async ({

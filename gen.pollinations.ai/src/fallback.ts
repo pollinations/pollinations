@@ -4,6 +4,7 @@ import {
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
@@ -304,4 +305,21 @@ export async function withModelFallback<T>(
     // Unreachable: the loop either returns or rethrows for a non-empty list, and
     // the primary is always the first candidate.
     throw new Error("Model fallback needs at least one candidate");
+}
+
+/** Runs a response-producing handler and marks which model actually served. */
+export async function withModelFallbackResponse(
+    model: PrimaryModel,
+    attempt: (candidate: FallbackCandidate) => Promise<Response>,
+    failures?: FailedCall[],
+): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(model),
+        attempt,
+        failures,
+    );
+    if (index > 0) {
+        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+    }
+    return { response: result, servedEntry: candidate.entry };
 }

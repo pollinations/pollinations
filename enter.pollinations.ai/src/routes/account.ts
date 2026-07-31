@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -35,7 +36,6 @@ import {
     hasDirectAccountPermission,
 } from "./account-permissions.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
-import { parseMetadata } from "./metadata-utils.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;

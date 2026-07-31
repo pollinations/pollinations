@@ -144,6 +144,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
+    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
+    "Cohere-command-a-plus-05-2026": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
+            "Cohere-command-a-plus-05-2026",
+        ),
+
     // -- OpenRouter (frontier models) ----------------------------------------
     "x-ai/grok-4.5": () =>
         createOpenRouterModelConfig({
@@ -169,6 +177,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
+        }),
+    "qwen/qwen3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-flash",
+            defaultOptions: {
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
@@ -416,9 +434,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
-    "stepfun/step-3.7-flash": () =>
-        createOpenRouterModelConfig({
-            model: "stepfun/step-3.7-flash",
+
+    // -- DeepInfra (StepFun) --------------------------------------------------
+    "stepfun-ai/Step-3.7-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "stepfun-ai/Step-3.7-Flash",
         }),
 
     // -- OVHcloud -------------------------------------------------------------

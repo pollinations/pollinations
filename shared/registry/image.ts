@@ -690,7 +690,7 @@ export const IMAGE_SERVICES = {
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -706,7 +706,7 @@ export const IMAGE_SERVICES = {
     },
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),

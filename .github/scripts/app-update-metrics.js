@@ -65,6 +65,7 @@ function parseAppsMarkdown() {
             currentStars: row.stars,
             webUrlHostname: extractHostname(row.webUrl),
             githubUsername: row.githubUsername.replace(/^@/, ""),
+            githubUserId: row.githubUserId,
             currentBYOP: row.byop,
             currentRequests: row.requests24h,
         };
@@ -217,8 +218,8 @@ async function fetchBYOPHostnames() {
 }
 
 /**
- * Fetch request counts by GitHub username from Tinybird pipe — last 24 hours.
- * Returns Map<string, number> mapping github_username -> request count.
+ * Fetch request counts by GitHub user ID from Tinybird pipe — last 24 hours.
+ * Returns Map<string, number> mapping github_user_id -> request count.
  */
 async function fetchRequestCounts() {
     const result = await fetchTinybirdPipe("app_request_counts");
@@ -226,9 +227,9 @@ async function fetchRequestCounts() {
 
     const counts = new Map();
     for (const row of result.data) {
-        const username = row.github_username;
-        if (username) {
-            counts.set(username, row.requests);
+        const githubUserId = row.github_user_id;
+        if (githubUserId) {
+            counts.set(String(githubUserId), row.requests);
         }
     }
     return counts;
@@ -378,7 +379,7 @@ async function main() {
 
         // --- Requests ---
         // BYOP apps: count ALL requests through the app's API key (by hostname)
-        // Non-BYOP apps: count requests by the developer's GitHub username
+        // Non-BYOP apps: count requests by the developer's GitHub user ID
         if (hasTinybird) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
             let count = 0;
@@ -386,8 +387,8 @@ async function main() {
             if (isBYOP && app.webUrlHostname) {
                 count = byopRequestCounts.get(app.webUrlHostname) || 0;
                 label = app.webUrlHostname;
-            } else if (app.githubUsername) {
-                count = requestCounts.get(app.githubUsername) || 0;
+            } else if (app.githubUserId) {
+                count = requestCounts.get(app.githubUserId) || 0;
                 label = app.githubUsername;
             }
             const newRequests = count > 0 ? String(count) : "";

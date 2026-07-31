@@ -1,4 +1,5 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
+import { validateCohereRequest } from "./cohereCommandAPlus.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -81,6 +82,12 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "command-a-plus",
+        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
+        // Azure runs automatic reasoning but rejects/ignores effort controls.
+        transform: pipe(validateCohereRequest, stripReasoning),
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
@@ -104,6 +111,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.7-flash",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -122,7 +134,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "step-flash",
-        config: portkeyConfig["stepfun/step-3.7-flash"],
+        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
         transform: mandatoryReasoning,
     },
     {

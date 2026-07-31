@@ -17,6 +17,7 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
+    MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -38,6 +39,7 @@ import {
     type EndpointPayload,
     emptyForm,
     endpointToForm,
+    type FallbackModelOption,
     idleAction,
     nextFormState,
     providerModelHelper,
@@ -51,6 +53,8 @@ type CommunityEndpointDialogProps = {
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
+    /** Public community models offered as fallback targets. */
+    fallbackOptions: FallbackModelOption[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -61,6 +65,7 @@ type CommunityEndpointDialogProps = {
 export function CommunityEndpointDialog({
     endpoint,
     canPublish,
+    fallbackOptions,
     open,
     onOpenChange,
     onSubmit,
@@ -75,6 +80,11 @@ export function CommunityEndpointDialog({
     const [testState, setTestState] = useState<ActionState>(idleAction);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // null until the server answers, so the dropdown can fall back to the
+    // catalog while it loads instead of briefly looking empty.
+    const [fallbackCandidates, setFallbackCandidates] = useState<
+        string[] | null
+    >(null);
     const savedPriceKeys = savedEndpointPriceKeys(endpoint);
 
     // Reset the form on open and clear local state on close so unsaved values
@@ -87,7 +97,32 @@ export function CommunityEndpointDialog({
         setTestState(idleAction);
         setError(null);
         setIsSubmitting(false);
+        setFallbackCandidates(null);
     }, [open, endpoint]);
+
+    // Ask which models this one may fall back to. Only a saved model has an id
+    // to ask about; a failure leaves the catalog list in place rather than
+    // blocking the dialog on a feature the server re-validates on save anyway.
+    const endpointId = endpoint?.id;
+    useEffect(() => {
+        if (!open || !endpointId) return;
+        let active = true;
+        void (async () => {
+            try {
+                const response = await apiClient.account["my-models"][":id"][
+                    "fallback-candidates"
+                ].$get({ param: { id: endpointId } });
+                if (!response.ok) return;
+                const { data } = await response.json();
+                if (active) setFallbackCandidates(data);
+            } catch {
+                // Leave the catalog list in place.
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [open, endpointId]);
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
@@ -276,6 +311,41 @@ export function CommunityEndpointDialog({
     const saveRequirementMet = needsTest
         ? testRequirementMet && (isEdit || hasToken)
         : isEdit || hasToken;
+    // A saved model's eligible targets are computed server-side with the same
+    // rule the update endpoint validates against, so every id offered can be
+    // saved. Creating a model has no id to ask about yet, so it falls back to
+    // the catalog filtered by modality alone and relies on the save error.
+    const visibleFallbackOptions = [
+        ...new Set([
+            ...(fallbackCandidates ??
+                fallbackOptions
+                    .filter(
+                        (option) =>
+                            option.modality === form.modality &&
+                            option.modelId !== endpoint?.modelId,
+                    )
+                    .map((option) => option.modelId)),
+            // A target that has since become ineligible stays listed so editing
+            // something else does not silently drop it.
+            ...form.fallbackModelIds,
+        ]),
+    ].sort();
+    // One row per chosen target plus an empty row to add the next, so the
+    // order on screen is the order they are tried.
+    const fallbackRows =
+        form.fallbackModelIds.length < MAX_FALLBACK_TARGETS
+            ? [...form.fallbackModelIds, ""]
+            : form.fallbackModelIds;
+
+    // Setting a row to "None" removes it and closes the gap.
+    function setFallbackAt(index: number, modelId: string): void {
+        setForm((current) => {
+            const next = [...current.fallbackModelIds];
+            if (modelId === "") next.splice(index, 1);
+            else next[index] = modelId;
+            return { ...current, fallbackModelIds: next };
+        });
+    }
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -676,6 +746,52 @@ export function CommunityEndpointDialog({
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}
                         />
+                    )}
+                    {isShared && (
+                        <FieldStack
+                            label="Fallback models"
+                            helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                            alignLabelRow
+                        >
+                            <div className="flex flex-col gap-2">
+                                {fallbackRows.map((selected, index) => (
+                                    <select
+                                        // Rows are positional: the same slot
+                                        // keeps its identity as targets change.
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: positional by design
+                                        key={index}
+                                        name={`community-fallback-model-${index}`}
+                                        value={selected}
+                                        className="rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
+                                        onChange={(e) =>
+                                            setFallbackAt(index, e.target.value)
+                                        }
+                                    >
+                                        <option value="">
+                                            {index === 0
+                                                ? "None"
+                                                : "None (remove)"}
+                                        </option>
+                                        {visibleFallbackOptions
+                                            .filter(
+                                                (modelId) =>
+                                                    modelId === selected ||
+                                                    !form.fallbackModelIds.includes(
+                                                        modelId,
+                                                    ),
+                                            )
+                                            .map((modelId) => (
+                                                <option
+                                                    key={modelId}
+                                                    value={modelId}
+                                                >
+                                                    {modelId}
+                                                </option>
+                                            ))}
+                                    </select>
+                                ))}
+                            </div>
+                        </FieldStack>
                     )}
                 </ScrollArea>
 

@@ -82,6 +82,7 @@ describe("reasoning_effort model wiring", () => {
         "kimi-k3",
         "deepseek",
         "qwen-large",
+        "qwen3.7-flash",
         "longcat",
         "nemotron",
         "minimax",
@@ -119,6 +120,17 @@ describe("reasoning_effort model wiring", () => {
         const { options } = await transform([{ role: "user", content: "hi" }], {
             reasoning_effort: "high",
         });
+        expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it("strips unsupported effort controls while Command A+ reasons automatically", async () => {
+        const transform = findModelByName("command-a-plus")?.transform;
+        if (!transform) throw new Error("command-a-plus transform missing");
+
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: "high",
+        });
+
         expect(options.reasoning_effort).toBeUndefined();
     });
 });

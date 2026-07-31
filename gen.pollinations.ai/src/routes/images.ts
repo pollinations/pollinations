@@ -8,6 +8,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
     type OpenAIImageUsage,
     parseUsageHeaders,
     usageToOpenAIImageUsage,
@@ -56,6 +57,11 @@ function responseImageUsage(
     )) {
         c.header(name, value);
     }
+    // Tracking reads this off the final response, and these routes replace the
+    // generated response with JSON — so without carrying it over, a rescue on
+    // /v1/images/* records fallback_used = false.
+    const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
     return usageToOpenAIImageUsage(usage);
 }
 

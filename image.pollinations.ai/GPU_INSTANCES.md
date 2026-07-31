@@ -19,10 +19,6 @@ is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.
 
-Machines `137831` and `137833` are temporarily excluded from automatic
-selection after repeated Docker Hub pull timeouts on 2026-07-30. Requalify them
-with a successful image-pull preflight before removing the exclusion.
-
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
 One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first

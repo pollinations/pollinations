@@ -210,4 +210,16 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8766")))
+    port = int(os.getenv("PORT", "8766"))
+    # One process serialises on generate_lock and leaves the GPU idle ~60% of
+    # the time: at 512x512 the per-request cost is mostly Python (JPEG encode,
+    # base64, HTTP) and the GIL caps how much of that overlaps. Measured on a
+    # 3090 in production, a single process plateaued at ~4.3 img/s with the GPU
+    # at 26-45%. Each worker is a separate process with its own pipeline and
+    # lock, so both the GPU work and the Python overhead actually overlap.
+    # The model is only ~3 GB of the card's 24 GB, so several copies fit.
+    workers = int(os.getenv("WORKERS", "1"))
+    if workers > 1:
+        uvicorn.run("server:app", host="0.0.0.0", port=port, workers=workers)
+    else:
+        uvicorn.run(app, host="0.0.0.0", port=port)

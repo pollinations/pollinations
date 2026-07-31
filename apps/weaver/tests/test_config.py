@@ -9,14 +9,12 @@ def test_polli_prefixed_env_vars_are_honored(monkeypatch):
     monkeypatch.setenv("POLLI_MAX_CONCURRENCY", "99")
     monkeypatch.setenv("POLLI_TIER", "fast")
     monkeypatch.setenv("POLLI_TEMP_DIR", "/custom")
-    monkeypatch.setenv("POLLI_PAID", "false")
 
     s = Settings()
 
     assert s.max_concurrency == 99
     assert s.default_tier == "fast"
     assert s.temp_dir == "/custom"
-    assert s.paid is False
 
 
 def test_unprefixed_openai_vars_still_work(monkeypatch):

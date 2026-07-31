@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import contextvars
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_api_key_override: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+_api_key_override: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "api_key_override", default=None
 )
 
@@ -32,7 +31,6 @@ class Settings(BaseSettings):
     max_iters: int = Field(100, validation_alias="POLLI_MAX_ITERS")
     default_voice: str = Field("nova", validation_alias="POLLI_DEFAULT_VOICE")
     public_base_url: str = Field("", validation_alias="POLLI_PUBLIC_BASE_URL")
-    paid: bool = Field(True, validation_alias="POLLI_PAID")
     sse_keepalive_seconds: float = Field(
         15.0, validation_alias="POLLI_SSE_KEEPALIVE_SECONDS"
     )
@@ -42,9 +40,7 @@ class Settings(BaseSettings):
     # Local/dev convenience only. When false (the default) a request without a
     # per-request credential fails instead of silently spending the operator's
     # own key — which for a hosted deployment is the whole point.
-    allow_operator_key: bool = Field(
-        False, validation_alias="POLLI_ALLOW_OPERATOR_KEY"
-    )
+    allow_operator_key: bool = Field(False, validation_alias="POLLI_ALLOW_OPERATOR_KEY")
 
 
 settings = Settings()

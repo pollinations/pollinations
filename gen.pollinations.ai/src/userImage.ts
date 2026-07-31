@@ -200,24 +200,26 @@ export type FetchUserImageOptions = {
 };
 
 /**
- * The media type to forward upstream.
+ * The media type to forward upstream: what it says it is, or failing that what
+ * the bytes look like.
  *
- * Magic bytes win where they identify the format: they cannot be spoofed by a
- * mislabelling host, and the bytes are already in hand. Where they do not, the
- * declared type is forwarded as-is rather than refused — the detector knows
- * five formats, while providers accept more (Gemini takes HEIC and HEIF), and
- * deciding an image is unusable on our side is the provider's call to make, not
- * ours. Only when neither says anything is it refused, because the remaining
- * option is to invent a type, which is what the old `image/jpeg` default did.
+ * This only ever labels the bytes for the provider — it is not a judgement that
+ * the image is usable, which is the provider's call. So a declared image type
+ * is passed straight through, including formats the detector has never heard of
+ * (Gemini takes HEIC and HEIF). Sniffing is the fallback for hosts that send no
+ * type or a generic one, which misconfigured buckets do often enough to be
+ * worth the five formats it knows.
+ *
+ * Refused only when neither says anything, because the remaining option is to
+ * invent a type — which is what the old `image/jpeg` default did.
  */
 function resolveMimeType(
     bytes: Uint8Array,
     declared: string | null,
 ): string | null {
-    const detected = detectImageMimeType(bytes);
-    if (detected) return detected;
     const claimed = declared?.split(";")[0].trim().toLowerCase();
-    return claimed?.startsWith("image/") ? claimed : null;
+    if (claimed?.startsWith("image/")) return claimed;
+    return detectImageMimeType(bytes);
 }
 
 /**

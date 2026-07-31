@@ -71,18 +71,23 @@ describe("downloadUserImage", () => {
         expect(mimeType).toBe("image/heic");
     });
 
-    it("prefers the bytes over a host that mislabels them", async () => {
+    // Misconfigured buckets serve images as octet-stream often enough to be
+    // worth sniffing for, which is the only job the detector has left.
+    it("falls back to the bytes when the host declares no image type", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 new Uint8Array([
                     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
                 ]),
-                { status: 200, headers: { "content-type": "image/gif" } },
+                {
+                    status: 200,
+                    headers: { "content-type": "application/octet-stream" },
+                },
             ),
         );
 
         const { mimeType } = await downloadUserImage(
-            "https://example.com/actually-a-png.gif",
+            "https://example.com/untyped",
         );
 
         expect(mimeType).toBe("image/png");

@@ -1,8 +1,14 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
 
@@ -141,10 +147,8 @@ workerTest(
     async ({ paidApiKey }) => {
         const source = getRegistryModelDefinition("elevenlabs");
         const previousFallbacks = source.fallbacks;
-        const previousApiKey = env.ELEVENLABS_API_KEY;
         const fetchMock = vi.spyOn(globalThis, "fetch");
         try {
-            env.ELEVENLABS_API_KEY = "test-eleven-key";
             source.fallbacks = ["elevenflash"];
             resetGenerationModelRegistryCache();
             const providerModels: string[] = [];
@@ -169,19 +173,27 @@ workerTest(
                 return Response.json(providerResponse);
             });
 
-            const response = await SELF.fetch(
-                "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${paidApiKey}`,
-                        "Content-Type": "application/json",
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "elevenlabs",
+                            input: "Fallback speech",
+                        }),
                     },
-                    body: JSON.stringify({
-                        model: "elevenlabs",
-                        input: "Fallback speech",
-                    }),
-                },
+                ),
+                {
+                    ...env,
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings,
+                ctx,
             );
 
             expect(response.status).toBe(200);
@@ -189,10 +201,11 @@ workerTest(
                 "config.targets[1]",
             );
             expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            await response.arrayBuffer();
+            await waitOnExecutionContext(ctx);
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
         } finally {
             fetchMock.mockRestore();
-            env.ELEVENLABS_API_KEY = previousApiKey;
             source.fallbacks = previousFallbacks;
             resetGenerationModelRegistryCache();
         }

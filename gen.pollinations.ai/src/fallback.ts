@@ -42,7 +42,49 @@ type UpstreamFailure = {
     upstreamStatus?: unknown;
     details?: unknown;
     message?: string;
+    responseBody?: unknown;
 };
+
+/**
+ * A gateway that could not route to the endpoint at all, as opposed to an
+ * upstream that answered.
+ *
+ * Portkey rejects an endpoint whose host is unreachable, unresolvable or
+ * malformed with a 400 carrying its own envelope:
+ *
+ *     {"status":"failure","message":"Invalid custom host"}
+ *
+ * A provider's own 400 is proxied through instead and arrives under an `error`
+ * key. So the envelope, not the status, is what separates "this endpoint is
+ * dead" from "the caller sent a bad request" — and only the former is worth
+ * trying the next candidate for. Without this, a community endpoint whose
+ * domain lapses never fails over, because the gateway reports it as a 400 and
+ * 400 is deliberately excluded above.
+ */
+function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
+    // The text client attaches the parsed body as `details`, the image client
+    // keeps the raw string as `responseBody`. Either can carry the envelope.
+    for (const candidate of [failure.details, failure.responseBody]) {
+        let body: unknown = candidate;
+        if (typeof body === "string") {
+            try {
+                body = JSON.parse(body);
+            } catch {
+                // A body we cannot parse is not a shape we can claim to know.
+                continue;
+            }
+        }
+        if (
+            !!body &&
+            typeof body === "object" &&
+            !("error" in body) &&
+            (body as { status?: unknown }).status === "failure"
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
 
 function upstreamStatus(failure: UpstreamFailure): number | undefined {
     const status = failure.upstreamStatus ?? failure.status;
@@ -88,7 +130,15 @@ export function isRetryableFallbackError(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
-    if (!status || !FALLBACK_ON_STATUS_CODES.includes(status)) return false;
+    if (!status) return false;
+    // A dead endpoint reaches us as the gateway's own 400 rather than as a
+    // network error, because the gateway is the one that could not connect.
+    if (
+        !FALLBACK_ON_STATUS_CODES.includes(status) &&
+        !isGatewayRoutingFailure(failure)
+    ) {
+        return false;
+    }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
 }
 

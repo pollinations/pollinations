@@ -39,6 +39,44 @@ describe("isRetryableFallbackError", () => {
         );
     });
 
+    // Verified against staging: a community endpoint whose host is unreachable
+    // never reaches the provider, so the gateway answers for it — with a 400,
+    // which is otherwise the one status that must not fail over.
+    it("fails over when the gateway could not reach the endpoint at all", () => {
+        // The text client attaches the parsed body...
+        expect(
+            isRetryableFallbackError(
+                textFailure(400, {
+                    status: "failure",
+                    message: "Invalid custom host",
+                }),
+            ),
+        ).toBe(true);
+        // ...the image client keeps the raw string.
+        const rawBody = Object.assign(new Error("400 Invalid custom host"), {
+            status: 400,
+            upstreamStatus: 400,
+            responseBody: JSON.stringify({
+                status: "failure",
+                message: "Invalid custom host",
+            }),
+        });
+        expect(isRetryableFallbackError(rawBody)).toBe(true);
+    });
+
+    it("still refuses a provider's own 400 proxied through the gateway", () => {
+        // Same status and same hop, told apart only by the envelope: a proxied
+        // provider error keeps its `error` key, so retrying it elsewhere would
+        // fail identically.
+        expect(
+            isRetryableFallbackError(
+                textFailure(400, {
+                    error: { message: "openai error: Invalid model or alias" },
+                }),
+            ),
+        ).toBe(false);
+    });
+
     it("does not shop a content-policy refusal to a laxer endpoint", () => {
         expect(
             isRetryableFallbackError(

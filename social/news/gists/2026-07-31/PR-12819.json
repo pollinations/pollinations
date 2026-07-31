@@ -1,0 +1,35 @@
+{
+  "pr_number": 12819,
+  "title": "feat: add per-model fallback routing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12819",
+  "merged_at": "2026-07-31T03:39:57Z",
+  "labels": [],
+  "pr_body_excerpt": "Lets a community model owner declare an ordered list of models to try when its upstream fails.\n\n- **One nullable column** — `fallback_model_ids` (migration `0041`), a JSON array of community model ids.\n- **The owner declares the whole list.** A target's own list is never followed, so no other owner's choice can redirect this model's traffic — and a routing cycle is structurally impossible. Capped at 3.\n- **Same-or-lower pricing, enforced twice.** Each target must be a public, active community model of the same modality and image-pricing mode, priced at or below the declaring model on every price field. Checked on write, and re-checked when the generation registry links entries — a target can be repriced or unpublished after the fact.\n- **Text** hands Portkey one target per entry (`strategy.mode=fallback`). **Image** walks the same list in-worker; the response is fully buffered before any bytes reach the client, so a retry is safe. Each model is tried at most once.\n- **Billing follows what served.** The reward goes to the serving owner and the caller is charged that model's price, which the pricing rule keeps at or below what they were quoted. Failed attempts are never billed.\n- **Not retried:** 400/422 caller errors, and content-policy refusals at any status — replaying a moderation rejection against a more permissive model would turn an unbilled refusal into a billed generation.\n- **Scoped API keys** drop targets they are not allowed to be served, so a key can never be billed for a model it would get a 403 for directly.\n- **UI** — ordered selects in the model dialog, only offering same-modality models priced at or below.\n- **CLI** — `polli my-models create/update --fallback-models a/x,b/y`; empty string clears.\n\nCompare with #12818 (automatic pooling by name + price equality). Remaining CLI drift tracked in #12853.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The fallback garden blooms",
+    "blurb": "Community model owners can now plant up to three backup routes for when an upstream decides to take a little nap. The request keeps moving, the price never climbs above the quote, and the pollen goes to whichever flower actually blooms.",
+    "summary": "Added owner-configured fallback routing for community models: owners can declare up to three same-modality, public active models priced at or below their own, with text routed through Portkey fallback entries and images retried safely in-worker.",
+    "impact": "When an upstream model fails, eligible requests can continue on an approved fallback model while callers are charged only for the model that served the generation and scoped API keys never receive a target they cannot use.",
+    "keywords": [
+      "community-models",
+      "fallback-routing",
+      "reliability",
+      "billing",
+      "image-generation",
+      "text-generation",
+      "polli-cli"
+    ],
+    "visual_concept": "A cozy garden path represents an ordered fallback list: Polli, wearing a tiny routing-cap, guides a glowing request from a sleepy first code-flower toward healthy backup code-flowers. A cheerful CRT monitor robot points at three clearly ordered signposts, while small pollen coins land only beneath the flower that successfully produces a pixel image, representing serving-model billing and safe failover.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mail-carrier routing cap as she guides a glowing request along three numbered garden signposts from a sleepy code-flower to a blooming backup code-flower; a cute chunky CRT-monitor robot eagerly points at the route, with pixel flowers, vines, and pollen coins beneath only the successful flower. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FALLBACK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-31/PR-12819.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mail-carrier routing cap as she guides a glowing request along three numbered garden signposts from a sleepy code-flower to a blooming backup code-flower; a cute chunky CRT-monitor robot eagerly points at the route, with pixel flowers, vines, and pollen coins beneath only the successful flower. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FALLBACK\"."
+  },
+  "generated_at": "2026-07-31T03:40:54.871986+00:00"
+}

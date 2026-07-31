@@ -1,4 +1,8 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    isCommunityFallbackPricingAllowed,
+    MAX_FALLBACK_TARGETS,
+} from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
@@ -75,7 +79,7 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
             }
         }
         if (
-            !!body &&
+            body &&
             typeof body === "object" &&
             !("error" in body) &&
             (body as { status?: unknown }).status === "failure"
@@ -151,11 +155,7 @@ export type FallbackCandidate = {
     /** Always present alongside `communityEndpoint`: it is what prices it. */
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
-    /**
-     * Registry entry whose owner is paid when this candidate serves. Absent on
-     * the model the caller asked for, which is also the one they are charged
-     * for however the request is eventually served.
-     */
+    /** Serving registry entry. Absent on the model the caller asked for. */
     entry?: GenerationModelEntry;
 };
 
@@ -167,8 +167,7 @@ type PrimaryModel = {
 };
 
 /**
- * The model the caller asked for, then each fallback its owner declared, in
- * order.
+ * The model the caller asked for, then each declared fallback in order.
  *
  * An absent model means generation was reached without the model middleware, so
  * there is no registry entry and nothing to fall back to — the one attempt still
@@ -185,9 +184,6 @@ export function fallbackCandidates(
         },
     ];
     for (const entry of model?.fallbackEntries ?? []) {
-        // Only community endpoints are routable today. Stop at the first one
-        // that is not, so a gap never shifts the targets behind it forward.
-        if (!entry.communityEndpoint) break;
         candidates.push({
             id: entry.id,
             definition: entry.definition,
@@ -196,6 +192,52 @@ export function fallbackCandidates(
         });
     }
     return candidates;
+}
+
+function isUsableCommunityFallback(
+    from: GenerationModelEntry,
+    target: GenerationModelEntry | undefined,
+): target is GenerationModelEntry {
+    if (!target || target === from) return false;
+    if (!target.visible || target.eventType !== from.eventType) return false;
+    const primary = from.communityEndpoint;
+    const candidate = target.communityEndpoint;
+    if (!primary || !candidate) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    return isCommunityFallbackPricingAllowed(primary, candidate);
+}
+
+/** Resolves every model's declared ids once, before the request hot path. */
+export function linkFallbackEntries(
+    entries: GenerationModelEntry[],
+    byIdOrAlias: Map<string, GenerationModelEntry>,
+): void {
+    for (const entry of entries) {
+        const declared = entry.communityEndpoint
+            ? entry.communityEndpoint.fallbackModelIds.slice(
+                  0,
+                  MAX_FALLBACK_TARGETS,
+              )
+            : (entry.definition.fallbacks ?? []);
+        const targets: GenerationModelEntry[] = [];
+
+        for (const targetId of declared) {
+            const target = byIdOrAlias.get(targetId);
+            if (!target || target === entry) continue;
+            // Community owners can change prices or visibility after saving.
+            // Bundled registry declarations are trusted and need no price rule.
+            if (
+                entry.communityEndpoint &&
+                !isUsableCommunityFallback(entry, target)
+            ) {
+                continue;
+            }
+            if (targets.some((linked) => linked.id === target.id)) continue;
+            targets.push({ ...target, fallbackEntries: undefined });
+        }
+
+        entry.fallbackEntries = targets.length > 0 ? targets : undefined;
+    }
 }
 
 /**

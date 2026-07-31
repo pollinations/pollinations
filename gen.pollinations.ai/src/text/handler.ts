@@ -118,9 +118,12 @@ function gatewayContext(
     const { communityEndpoint, definition } = candidate;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
-    // config the gateway resolves from the request itself.
+    // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, requestData);
+        return withGatewayContext(c, {
+            ...requestData,
+            model: candidate.entry?.id ?? requestData.model,
+        });
     }
     return communityEndpointGatewayContext(
         communityEndpoint,

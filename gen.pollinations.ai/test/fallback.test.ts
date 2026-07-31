@@ -1,11 +1,73 @@
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     type FailedCall,
     type FallbackCandidate,
+    fallbackCandidates,
     isRetryableFallbackError,
+    linkFallbackEntries,
     withModelFallback,
 } from "../src/fallback.ts";
 import { HttpError } from "../src/image/httpError.ts";
+import type { GenerationModelEntry } from "../src/model-registry.ts";
+
+function registryEntry(
+    id: string,
+    fallbacks: string[] = [],
+    rate = 1,
+): GenerationModelEntry {
+    const definition: ModelDefinition = {
+        aliases: [],
+        provider: "test",
+        fallbacks,
+        brand: "Test",
+        category: "text",
+        cost: { completionTextTokens: rate },
+        priceMultiplier: 1,
+        addedDate: 0,
+        title: id,
+    };
+    return {
+        id,
+        aliases: [],
+        eventType: "generate.text",
+        supportedEndpoints: ["/v1/chat/completions"],
+        definition,
+        info: {} as GenerationModelEntry["info"],
+        visible: true,
+    };
+}
+
+describe("registry fallback linking", () => {
+    it("uses registry declarations without applying community price rules", () => {
+        const primary = registryEntry("primary", ["target-alias", "target"]);
+        const target = registryEntry("target", ["primary"], 10);
+        target.aliases = ["target-alias"];
+        const entries = [primary, target];
+        const byIdOrAlias = new Map<string, GenerationModelEntry>([
+            [primary.id, primary],
+            [target.id, target],
+            [target.aliases[0], target],
+        ]);
+
+        linkFallbackEntries(entries, byIdOrAlias);
+
+        // The target costs more than the primary and is still linked: bundled
+        // fallbacks are maintained by us, while the caller keeps the primary's
+        // quoted price. Alias duplication is collapsed and chains stay depth 1.
+        expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "target",
+        ]);
+        expect(primary.fallbackEntries?.[0].fallbackEntries).toBeUndefined();
+        expect(
+            fallbackCandidates({
+                resolved: primary.id,
+                definition: primary.definition,
+                fallbackEntries: primary.fallbackEntries,
+            }).map((candidate) => candidate.id),
+        ).toEqual(["primary", "target"]);
+    });
+});
 
 /**
  * The single decision point every modality shares, so the cases that must never

@@ -476,17 +476,6 @@ export function calculateCostForModelDefinition(
 }
 
 /**
- * Calculate cost from an explicit cost definition.
- */
-export function calculateCostWithDefinition(
-    model: string,
-    usage: Usage,
-    costDefinition: CostDefinition,
-): UsageCost {
-    return calculateLinearCost(model, usage, costDefinition);
-}
-
-/**
  * Calculate price for a model based on usage
  */
 export function calculatePrice(
@@ -509,22 +498,4 @@ export function calculatePriceForModelDefinition(
     output?: unknown,
 ): UsagePrice {
     return calculateUsageBilling({ model, usage, servedBy: svc, output }).price;
-}
-
-/**
- * Calculate price from an explicit price definition.
- */
-export function calculatePriceWithDefinition(
-    model: string,
-    usage: Usage,
-    priceDefinition: PriceDefinition,
-): UsagePrice {
-    const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = roundPollenLedgerAmount(
-        Object.values(usagePrice).reduce((total, price) => total + price, 0),
-    );
-    return {
-        ...usagePrice,
-        totalPrice,
-    };
 }

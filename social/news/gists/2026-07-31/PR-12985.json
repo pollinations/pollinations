@@ -1,0 +1,35 @@
+{
+  "pr_number": 12985,
+  "title": "docs: record the DreamShaper deployment and add a WORKERS knob",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12985",
+  "merged_at": "2026-07-31T13:39:05Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #12900, documenting the deployment as it actually ended up.\n\n**Two Vast RTX 3090s now serve the `sana` pool** (`dreamshaper-vast-01/02`). The GH200 Sana backend has been drained out — `sana.service` can be stopped, freeing the **$1,672/mo** GH200 for LTX-2 + ACE-Step only. New image cost is **$0.2956/hr (~$216/mo)**.\n\n### The throughput fix\n\nA single uvicorn process plateaued at **~4.3 img/s with the GPU only 26–45% busy** — the ceiling was the worker's Python path (global lock, JPEG + base64 per response), not the GPU or the step count. Dropping 3 steps to 2 changed nothing, which proved it.\n\nAdds `WORKERS`, so each card runs 3 uvicorn processes with their own pipeline and lock:\n\n| | img/s @ conc 8 | GPU |\n|---|---|---|\n| 1 process | ~4.3 | 26–45% |\n| 3 processes | **~8** | ~36% |\n\nModel is ~2.5 GB, so three copies fit easily in 24 GB. Combined ~16 img/s against a 5.72 img/s peak — either card can carry production alone.\n\n### Why this matters\n\nThe first rollout sized one card from a **single-client** benchmark (6.18 img/s). Under real concurrent load it did 4.3, the queue grew, and production latency climbed to 57s before the GH200 was put back in the pool as emergency capacity. The docs now say to size from measured production throughput.\n\nAlso records two traps that fail silently:\n\n- gen hardcodes `steps: 4` into every self-hosted request body, so the worker must ignore caller-supplied steps\n- without `PUBLIC_HOSTNAME` a worker registers its raw Vast `IP:port`, which gen cannot fetch — while the heartbeat still reports healthy\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Three workers, one less queue",
+    "blurb": "DreamShaper’s Vast workers now run in threes, because one Python process was apparently the real bottleneck. The sana pool gets more room to buzz under concurrent image requests.",
+    "summary": "Documented the two-RTX-3090 DreamShaper sana deployment and added a WORKERS setting so each GPU can run three independent uvicorn pipelines, raising measured concurrent throughput from about 4.3 to about 8 images per second per card.",
+    "impact": "Image requests to the sana pool can move through substantially faster under concurrency, with deployment guidance covering production throughput sizing, fixed self-hosted steps handling, and PUBLIC_HOSTNAME registration.",
+    "keywords": [
+      "dreamshaper",
+      "sana",
+      "image-generation",
+      "workers",
+      "uvicorn",
+      "gpu",
+      "throughput"
+    ],
+    "visual_concept": "A cozy garden-server shed contains two chunky RTX 3090-style pixel machines, each growing three little worker sprouts from a shared DreamShaper image plant. Polli, wearing a tiny mechanic tool belt, adjusts a three-position WORKERS dial while a small queue of picture tiles flows smoothly into a glowing lime-green terminal; flowers and vines reinforce the scaling-and-growth metaphor.",
+    "image_prompt": "Cozy pixel art scene in a warm garden server shed: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny mechanic tool belt, turns a chunky three-notch dial labeled \"WORKERS\" beside two friendly RTX 3090-style pixel servers, each tending three small code-plants that produce image tiles; lime green (#ecf874) glows prominently from the terminal while flowers and vines curl around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-31/PR-12985.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden server shed: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny mechanic tool belt, turns a chunky three-notch dial labeled \"WORKERS\" beside two friendly RTX 3090-style pixel servers, each tending three small code-plants that produce image tiles; lime green (#ecf874) glows prominently from the terminal while flowers and vines curl around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-31T13:40:12.221206+00:00"
+}

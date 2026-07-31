@@ -1,5 +1,5 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
-import { detectImageMimeType, type ImageMimeType } from "@shared/image-mime.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "./image/httpError.ts";
 
 /**
@@ -200,6 +200,27 @@ export type FetchUserImageOptions = {
 };
 
 /**
+ * The media type to forward upstream.
+ *
+ * Magic bytes win where they identify the format: they cannot be spoofed by a
+ * mislabelling host, and the bytes are already in hand. Where they do not, the
+ * declared type is forwarded as-is rather than refused — the detector knows
+ * five formats, while providers accept more (Gemini takes HEIC and HEIF), and
+ * deciding an image is unusable on our side is the provider's call to make, not
+ * ours. Only when neither says anything is it refused, because the remaining
+ * option is to invent a type, which is what the old `image/jpeg` default did.
+ */
+function resolveMimeType(
+    bytes: Uint8Array,
+    declared: string | null,
+): string | null {
+    const detected = detectImageMimeType(bytes);
+    if (detected) return detected;
+    const claimed = declared?.split(";")[0].trim().toLowerCase();
+    return claimed?.startsWith("image/") ? claimed : null;
+}
+
+/**
  * Decodes a `data:` image, which is what a multipart upload becomes before it
  * reaches here (see the `/v1/images/edits` form parser). The bytes are already
  * in hand, so only the size cap and the media type apply.
@@ -237,21 +258,18 @@ function decodeDataUri(imageUrl: string, maxBytes: number): Uint8Array {
 }
 
 /**
- * Fetches one user-supplied image: guarded, size-capped, and typed by its own
- * bytes. Takes either a remote URL or a `data:` URI, so an uploaded file and a
- * linked one are held to the same limits.
+ * Fetches one user-supplied image: guarded, size-capped, and labelled with a
+ * media type to forward. Takes either a remote URL or a `data:` URI, so an
+ * uploaded file and a linked one are held to the same limits.
  *
- * The media type comes from magic bytes alone. A `Content-Type` header — or the
- * type declared in a data URI — is the caller's claim about content we are
- * about to read anyway, and trusting it let a host mislabel arbitrary bytes as
- * an image; guessing from the URL extension was worse still, since it defaulted
- * unrecognised bytes to `image/jpeg` and forwarded them to a provider as if
- * they were a photo.
+ * The type is only ever forwarded — it names the bytes for `inlineData`, a data
+ * URI, or a multipart part — so this resolves one rather than judging whether
+ * the image is usable. See `resolveMimeType`.
  */
 export async function fetchUserImage(
     imageUrl: string,
     options: FetchUserImageOptions = {},
-): Promise<{ bytes: Uint8Array; mimeType: ImageMimeType }> {
+): Promise<{ bytes: Uint8Array; mimeType: string }> {
     const { maxBytes = MAX_IMAGE_SIZE, redirect, signal } = options;
 
     if (imageUrl.startsWith("data:")) {
@@ -259,10 +277,13 @@ export async function fetchUserImage(
             imageUrl,
             Math.min(MAX_IMAGE_SIZE, maxBytes),
         );
-        const mimeType = detectImageMimeType(bytes);
+        const mimeType = resolveMimeType(
+            bytes,
+            imageUrl.slice(5, imageUrl.indexOf(",")).replace(/;base64$/i, ""),
+        );
         if (!mimeType) {
             throw new UserImageError(
-                "Unsupported image format in data URI. Supported formats: PNG, JPEG, WebP, GIF, BMP.",
+                "Unsupported image format in data URI: the payload is not a recognised image and no image media type was declared.",
                 "unsupported_image_media_type",
             );
         }
@@ -336,10 +357,13 @@ export async function fetchUserImage(
         );
     }
 
-    const mimeType = detectImageMimeType(bytes);
+    const mimeType = resolveMimeType(
+        bytes,
+        response.headers.get("content-type"),
+    );
     if (!mimeType) {
         throw new UserImageError(
-            `Unsupported image format from ${imageUrl}. Supported formats: PNG, JPEG, WebP, GIF, BMP.`,
+            `Unsupported image format from ${imageUrl}: the response is not a recognised image and its content-type is not an image type.`,
             "unsupported_image_media_type",
             url,
         );

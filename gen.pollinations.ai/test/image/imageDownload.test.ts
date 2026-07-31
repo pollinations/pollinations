@@ -33,10 +33,13 @@ describe("downloadUserImage", () => {
         });
     });
 
-    it("rejects a successful response whose body is not an image", async () => {
+    it("rejects a response that is neither a known image nor typed as one", async () => {
         const imageUrl = "https://example.com/input.jpg";
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response("<html>not an image</html>", { status: 200 }),
+            new Response("<html>not an image</html>", {
+                status: 200,
+                headers: { "content-type": "text/html" },
+            }),
         );
 
         await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
@@ -44,8 +47,45 @@ describe("downloadUserImage", () => {
             status: 400,
             details: { validation: true },
             errorCode: "unsupported_image_media_type",
-            message: `Unsupported image format from ${imageUrl}. Supported formats: PNG, JPEG, WebP, GIF, BMP.`,
         });
+    });
+
+    // The detector knows five formats; providers accept more. Whether an image
+    // in some other format is usable is the provider's call, so a declared
+    // image type is forwarded rather than refused here.
+    it("forwards a declared image type the detector does not recognise", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                new Uint8Array([0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70]),
+                {
+                    status: 200,
+                    headers: { "content-type": "image/heic" },
+                },
+            ),
+        );
+
+        const { mimeType } = await downloadUserImage(
+            "https://example.com/photo.heic",
+        );
+
+        expect(mimeType).toBe("image/heic");
+    });
+
+    it("prefers the bytes over a host that mislabels them", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                new Uint8Array([
+                    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+                ]),
+                { status: 200, headers: { "content-type": "image/gif" } },
+            ),
+        );
+
+        const { mimeType } = await downloadUserImage(
+            "https://example.com/actually-a-png.gif",
+        );
+
+        expect(mimeType).toBe("image/png");
     });
 
     it("codes an unreachable image host as failed_to_download_image", async () => {
@@ -124,9 +164,9 @@ describe("downloadUserImage", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("types an upload by its bytes, not by the type it declares", async () => {
+    it("rejects an upload that is neither a known image nor typed as one", async () => {
         await expect(
-            downloadUserImage("data:image/png;base64,bm90LWFuLWltYWdl"),
+            downloadUserImage("data:application/pdf;base64,bm90LWFuLWltYWdl"),
         ).rejects.toMatchObject({
             status: 400,
             errorCode: "unsupported_image_media_type",

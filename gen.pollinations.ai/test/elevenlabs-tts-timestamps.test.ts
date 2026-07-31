@@ -141,8 +141,10 @@ workerTest(
     async ({ paidApiKey }) => {
         const source = getRegistryModelDefinition("elevenlabs");
         const previousFallbacks = source.fallbacks;
+        const previousApiKey = env.ELEVENLABS_API_KEY;
         const fetchMock = vi.spyOn(globalThis, "fetch");
         try {
+            env.ELEVENLABS_API_KEY = "test-eleven-key";
             source.fallbacks = ["elevenflash"];
             resetGenerationModelRegistryCache();
             const providerModels: string[] = [];
@@ -190,6 +192,7 @@ workerTest(
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
         } finally {
             fetchMock.mockRestore();
+            env.ELEVENLABS_API_KEY = previousApiKey;
             source.fallbacks = previousFallbacks;
             resetGenerationModelRegistryCache();
         }

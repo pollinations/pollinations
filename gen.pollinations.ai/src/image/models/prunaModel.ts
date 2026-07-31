@@ -26,6 +26,10 @@ const logOps = debug("pollinations:pruna:ops");
 const logError = debug("pollinations:pruna:error");
 const DEEPINFRA_INFERENCE_BASE = "https://api.deepinfra.com/v1/inference";
 const DEEPINFRA_TIMEOUT_MS = 120_000;
+const DEEPINFRA_IMAGE_MODELS = {
+    "p-image": "PrunaAI/p-image",
+    "p-image-edit": "PrunaAI/p-image-Edit",
+} as const;
 
 // p-image-edit / p-video accept up to this many reference images.
 const MAX_EDIT_IMAGES = 5;
@@ -87,11 +91,11 @@ interface DeepInfraImageOutput {
     inference_status?: DeepInfraInferenceStatus;
 }
 
-async function runDeepInfraPrediction(
-    model: string,
+async function generatePrunaImage(
+    actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
     input: PImageInput | PImageEditInput,
-    displayName: string,
-): Promise<DeepInfraImageOutput> {
+): Promise<ImageGenerationResult> {
+    const displayName = `Pruna ${actualModel}`;
     const apiKey = getImageEnv("DEEPINFRA_API_KEY");
     if (!apiKey) {
         throw new HttpError(
@@ -100,7 +104,7 @@ async function runDeepInfraPrediction(
         );
     }
 
-    const url = `${DEEPINFRA_INFERENCE_BASE}/${model}`;
+    const url = `${DEEPINFRA_INFERENCE_BASE}/${DEEPINFRA_IMAGE_MODELS[actualModel]}`;
     const response = await fetchUpstream(url, {
         method: "POST",
         headers: {
@@ -112,8 +116,9 @@ async function runDeepInfraPrediction(
         errorLabel: `${displayName} generation failed`,
     });
 
+    let result: DeepInfraImageOutput;
     try {
-        return (await response.json()) as DeepInfraImageOutput;
+        result = (await response.json()) as DeepInfraImageOutput;
     } catch {
         throw new HttpError(
             `${displayName} returned invalid JSON`,
@@ -122,6 +127,27 @@ async function runDeepInfraPrediction(
             url,
         );
     }
+    const image = result.images?.[0];
+    if (!image) throw new HttpError(`${displayName} returned no image`, 502);
+
+    const buffer = base64ToBuffer(image);
+    logOps(`Generated ${actualModel}:`, {
+        bytes: buffer.length,
+        providerCost: result.inference_status?.cost,
+        runtimeMs: result.inference_status?.runtime_ms,
+    });
+    return {
+        buffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel,
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
 }
 
 /**
@@ -191,34 +217,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    const result = await runDeepInfraPrediction(
-        "PrunaAI/p-image",
-        input,
-        "Pruna p-image",
-    );
-    const image = result.images?.[0];
-    if (!image) {
-        throw new HttpError("Pruna p-image returned no image", 502);
-    }
-    const buffer = base64ToBuffer(image);
-    logOps("Generated image:", {
-        bytes: buffer.length,
-        providerCost: result.inference_status?.cost,
-        runtimeMs: result.inference_status?.runtime_ms,
-    });
-
-    return {
-        buffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "p-image",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
+    return generatePrunaImage("p-image", input);
 }
 
 // =============================================================================
@@ -255,34 +254,7 @@ export async function callPrunaImageEditAPI(
         images: `[${images.length} image references]`,
     });
 
-    const result = await runDeepInfraPrediction(
-        "PrunaAI/p-image-Edit",
-        input,
-        "Pruna p-image-edit",
-    );
-    const image = result.images?.[0];
-    if (!image) {
-        throw new HttpError("Pruna p-image-edit returned no image", 502);
-    }
-    const buffer = base64ToBuffer(image);
-    logOps("Generated edited image:", {
-        bytes: buffer.length,
-        providerCost: result.inference_status?.cost,
-        runtimeMs: result.inference_status?.runtime_ms,
-    });
-
-    return {
-        buffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "p-image-edit",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
+    return generatePrunaImage("p-image-edit", input);
 }
 
 // =============================================================================

@@ -10,33 +10,26 @@ Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env va
 See social/PIPELINE.md for full architecture.
 """
 
-import base64
-import io
 import json
 import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Dict
 
 import requests
 from buffer_publish import (
     publish_instagram_post,
     publish_linkedin_post,
     publish_twitter_post,
+    stage_buffer_posts,
 )
 from common import (
     DISCORD_CHUNK_SIZE,
-    deploy_reddit_post,
+    deploy_reddit_news_post,
     get_env,
     get_post_image_urls,
     read_news_file,
 )
-
-# ── Constants ────────────────────────────────────────────────────────
-
-WEEKLY_REL_DIR = "social/news/weekly"
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -128,8 +121,6 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
             try:
                 data = resp.json()
                 channel_id, msg_id = data.get("channel_id"), data.get("id")
-                import os
-
                 token = os.environ.get("DISCORD_TOKEN")
                 if token and channel_id and msg_id:
                     requests.post(
@@ -158,34 +149,6 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
     return True
 
 
-def stage_buffer_posts(
-    weekly_dir: str, buffer_token: str, github_token: str, owner: str, repo: str
-) -> Dict[str, bool]:
-    """Stage Twitter + LinkedIn + Instagram to Buffer. Returns {platform: success}."""
-    results = {}
-
-    for platform, filename, publish_fn in [
-        ("twitter", "twitter.json", publish_twitter_post),
-        ("linkedin", "linkedin.json", publish_linkedin_post),
-        ("instagram", "instagram.json", publish_instagram_post),
-    ]:
-        post_path = os.path.join(weekly_dir, filename)
-        post_data = read_news_file(post_path, github_token, owner, repo)
-
-        if not post_data:
-            print(f"  No {filename} found — skipping {platform}")
-            continue
-
-        print(f"\n  Staging {platform}...")
-        try:
-            results[platform] = publish_fn(post_data, buffer_token)
-        except Exception as e:
-            print(f"  Error staging {platform}: {e}")
-            results[platform] = False
-
-    return results
-
-
 # ── Main ─────────────────────────────────────────────────────────────
 
 
@@ -210,7 +173,16 @@ def main():
         buffer_token = get_env("BUFFER_ACCESS_TOKEN")
         print("\n[Buffer] Staging to Buffer...")
         buffer_results = stage_buffer_posts(
-            weekly_dir, buffer_token, github_token, owner, repo
+            weekly_dir,
+            {
+                "twitter": publish_twitter_post,
+                "linkedin": publish_linkedin_post,
+                "instagram": publish_instagram_post,
+            },
+            buffer_token,
+            github_token,
+            owner,
+            repo,
         )
         results.update(buffer_results)
         for platform, success in buffer_results.items():
@@ -221,31 +193,11 @@ def main():
     if publish_mode in ("direct", "all"):
         print("\n[Direct] Publishing direct channels...")
 
-        # Reddit (VPS deployment)
-        vps_host = get_env("REDDIT_VPS_HOST", required=False)
-        vps_user = get_env("REDDIT_VPS_USER", required=False)
-        vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
-        vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
-
-        if vps_host and vps_user and vps_ssh_key:
-            import paramiko
-
-            private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
-            key_file = io.StringIO(private_key_str)
-            pkey = paramiko.Ed25519Key.from_private_key(key_file)
-
-            reddit_path = os.path.join(weekly_dir, "reddit.json")
-            reddit_data = read_news_file(reddit_path, github_token, owner, repo)
-
-            if reddit_data:
-                print("  Reddit...")
-                results["reddit"] = deploy_reddit_post(
-                    reddit_data, vps_host, vps_user, pkey
-                )
-            else:
-                print("  No reddit.json — skipping")
-        else:
-            print("  Reddit VPS credentials not configured — skipping")
+        reddit_result = deploy_reddit_news_post(
+            weekly_dir, github_token, owner, repo
+        )
+        if reddit_result is not None:
+            results["reddit"] = reddit_result
 
         # Discord
         discord_webhook = get_env("DISCORD_WEEKLY_WEBHOOK_URL", required=False)

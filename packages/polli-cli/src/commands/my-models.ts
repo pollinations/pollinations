@@ -2,8 +2,8 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printResult,
     printSuccess,
     printTable,
@@ -64,10 +64,9 @@ function readPriceOptions(opts: Record<string, unknown>) {
         if (opts[key] === undefined) continue;
         const value = Number(opts[key]);
         if (!Number.isFinite(value) || value < 0) {
-            printError(
+            fail(
                 `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} must be a non-negative number`,
             );
-            process.exit(1);
         }
         prices[key] = value;
     }
@@ -93,8 +92,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
 
     if (opts.visibility !== undefined) {
         if (opts.visibility !== "private" && opts.visibility !== "public") {
-            printError("--visibility must be 'private' or 'public'");
-            process.exit(1);
+            fail("--visibility must be 'private' or 'public'");
         }
         body.visibility = opts.visibility;
     }
@@ -111,10 +109,9 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     if (includeRequired) {
         for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
-                printError(
+                fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
-                process.exit(1);
             }
         }
     }
@@ -161,10 +158,7 @@ const list = new Command("list")
             });
             printModels(res.data ?? []);
         } catch (err) {
-            printError(
-                `Failed to list my models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to list my models", err);
         }
     });
 
@@ -199,10 +193,7 @@ const create = addPriceOptions(
             printModels([created]);
         }
     } catch (err) {
-        printError(
-            `Failed to create model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to create model", err);
     }
 });
 
@@ -241,10 +232,7 @@ const update = addPriceOptions(
             printModels([updated]);
         }
     } catch (err) {
-        printError(
-            `Failed to update model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to update model", err);
     }
 });
 
@@ -264,10 +252,7 @@ const remove = new Command("delete")
             printSuccess(`Model deleted: ${id}`);
             if (getOutputMode() === "json") printResult({ id });
         } catch (err) {
-            printError(
-                `Failed to delete model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to delete model", err);
         }
     });
 
@@ -297,10 +282,7 @@ const models = new Command("models")
                     ["model"],
                 );
         } catch (err) {
-            printError(
-                `Failed to fetch upstream models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch upstream models", err);
         }
     });
 
@@ -326,10 +308,7 @@ const test = new Command("test")
             );
             printResult(res);
         } catch (err) {
-            printError(
-                `Failed to test model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to test model", err);
         }
     });
 

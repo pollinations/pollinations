@@ -63,6 +63,40 @@ export type OpenAIImageUsage = {
     };
 };
 
+export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (!usage || typeof usage !== "object") return null;
+    const details =
+        "input_tokens_details" in usage
+            ? usage.input_tokens_details
+            : undefined;
+    if (!details || typeof details !== "object") return null;
+    if (
+        !("input_tokens" in usage) ||
+        !isTokenCount(usage.input_tokens) ||
+        !("output_tokens" in usage) ||
+        !isTokenCount(usage.output_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        !("text_tokens" in details) ||
+        !isTokenCount(details.text_tokens) ||
+        !("image_tokens" in details) ||
+        !isTokenCount(details.image_tokens)
+    ) {
+        return null;
+    }
+    if (
+        usage.input_tokens !== details.text_tokens + details.image_tokens ||
+        usage.total_tokens !== usage.input_tokens + usage.output_tokens
+    ) {
+        return null;
+    }
+    return usage as OpenAIImageUsage;
+}
+
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +
@@ -89,6 +123,13 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
  * tracking can read it off the worker response like the other usage headers.
  */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
+ * Our id for the model that served the request. Authoritative over any name a
+ * provider reports for itself, which for a community endpoint is its upstream's
+ * name rather than the listing anyone can act on.
+ */
+export const MODEL_USED_HEADER = "x-model-used";
 
 /**
  * Convert OpenAI usage format to Usage format.
@@ -212,6 +253,20 @@ export function openaiUsageToUsage(openaiUsage: {
     };
 }
 
+export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
+    return {
+        promptTextTokens: usage.input_tokens_details.text_tokens,
+        promptImageTokens: usage.input_tokens_details.image_tokens,
+        completionImageTokens: usage.output_tokens,
+    };
+}
+
+function isTokenCount(value: unknown): value is number {
+    return (
+        typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    );
+}
+
 function sumTokens(tokens: readonly number[]): number {
     return tokens.reduce((sum, token) => sum + token, 0);
 }
@@ -289,7 +344,7 @@ export function buildUsageHeaders(
     usage: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
-        "x-model-used": modelUsed,
+        [MODEL_USED_HEADER]: modelUsed,
     };
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {

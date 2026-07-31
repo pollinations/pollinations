@@ -8,6 +8,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
     type OpenAIImageUsage,
     parseUsageHeaders,
     usageToOpenAIImageUsage,
@@ -32,7 +33,7 @@ const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
 
 function imageResponse(
-    data: { url?: string; b64_json?: string },
+    data: { url?: string; b64_json?: string; media_type?: string },
     prompt: string,
     usage: OpenAIImageUsage,
 ) {
@@ -56,6 +57,11 @@ function responseImageUsage(
     )) {
         c.header(name, value);
     }
+    // Tracking reads this off the final response, and these routes replace the
+    // generated response with JSON — so without carrying it over, a rescue on
+    // /v1/images/* records fallback_used = false.
+    const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
     return usageToOpenAIImageUsage(usage);
 }
 
@@ -200,6 +206,12 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
+    if (body.response_format === "url" && c.var.model.communityEndpoint) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                'Community image models support response_format "b64_json" only',
+        });
+    }
     const resolved = resolveParams(body);
     const safePrompt = await applySafety(
         c,
@@ -216,6 +228,9 @@ export async function handleImageGeneration(c: Context<Env>) {
     });
     c.var.track.overrideResponseTracking(response.clone());
     const usage = responseImageUsage(c, response);
+    const mediaType = response.headers.get("content-type") || undefined;
+    const mediaData =
+        mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
 
     if (body.response_format === "url") {
         const origin = getPublicOrigin(c);
@@ -235,7 +250,11 @@ export async function handleImageGeneration(c: Context<Env>) {
         return withSafetyHeaders(
             c,
             c.json(
-                imageResponse({ url: imageUrl.toString() }, safePrompt, usage),
+                imageResponse(
+                    { url: imageUrl.toString(), ...mediaData },
+                    safePrompt,
+                    usage,
+                ),
             ),
         );
     }
@@ -243,7 +262,13 @@ export async function handleImageGeneration(c: Context<Env>) {
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
+        c.json(
+            imageResponse(
+                { b64_json: base64, ...mediaData },
+                safePrompt,
+                usage,
+            ),
+        ),
     );
 }
 
@@ -264,10 +289,22 @@ export async function handleImageEdit(c: Context<Env>) {
     });
     c.var.track.overrideResponseTracking(response.clone());
     const usage = responseImageUsage(c, response);
+    const mediaType = response.headers.get("content-type") || undefined;
 
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
+        c.json(
+            imageResponse(
+                {
+                    b64_json: base64,
+                    ...(mediaType === "image/svg+xml"
+                        ? { media_type: mediaType }
+                        : {}),
+                },
+                safePrompt,
+                usage,
+            ),
+        ),
     );
 }

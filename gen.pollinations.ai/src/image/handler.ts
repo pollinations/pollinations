@@ -1,8 +1,13 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -11,6 +16,7 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
+import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -37,6 +43,7 @@ import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
+type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -52,7 +59,7 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
+    "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -77,7 +84,6 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
-        username: c.var.auth?.user?.githubUsername || null,
     };
 }
 
@@ -103,12 +109,15 @@ function decodePrompt(rawPrompt: string): string {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
-): ImageParams {
+): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    const resolvedModel = c.var.model.resolved;
     const mergedParams = {
         ...queryParams,
         ...body,
-        model: c.var.model.resolved,
+        model: c.var.model.communityEndpoint
+            ? DEFAULT_IMAGE_MODEL
+            : resolvedModel,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
     delete (mergedParams as Record<string, unknown>).key;
@@ -120,7 +129,10 @@ function parseImageParams(
             cause: parseResult.error.issues,
         });
     }
-    return parseResult.data;
+    return {
+        ...parseResult.data,
+        model: resolvedModel,
+    };
 }
 
 function contentDisposition(prompt: string, extension: string): string {
@@ -136,7 +148,7 @@ function contentDisposition(prompt: string, extension: string): string {
 
 function mediaHeaders(
     prompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
     result: ImageGenerationResult | VideoGenerationResult,
     contentType: string,
 ): Headers {
@@ -146,8 +158,17 @@ function mediaHeaders(
     });
     const extension = contentType.includes("video")
         ? "mp4"
-        : contentType.split("/")[1] || "jpg";
+        : contentType === "image/svg+xml"
+          ? "svg"
+          : contentType.split("/")[1] || "jpg";
     headers.set("Content-Disposition", contentDisposition(prompt, extension));
+    if (contentType === "image/svg+xml") {
+        headers.set(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
+        headers.set("X-Content-Type-Options", "nosniff");
+    }
 
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
@@ -204,6 +225,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
@@ -356,13 +379,13 @@ function assertNonEmptyMedia(buffer: Buffer, label: string): void {
 async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
-        safeParams,
+        safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
@@ -374,12 +397,48 @@ async function generateImageResult(
     return result;
 }
 
+/** Tries the model, then each fallback it declared, until one returns an image. */
+async function callCommunityImageWithFallback(
+    c: ImageContext,
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult;
+    servedEntry?: GenerationModelEntry;
+    servedIndex: number;
+}> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const generated = await callCommunityImageEndpoint(
+                // Only the primary can reach here without its own endpoint, and
+                // this path runs only once it has one.
+                attempt.communityEndpoint ?? endpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            // Checked inside the attempt so an endpoint that answers 200 with an
+            // empty body fails over like any other broken response.
+            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
+            return generated;
+        },
+        c.var.track?.failedCalls,
+    );
+    return { result, servedEntry: candidate.entry, servedIndex: index };
+}
+
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
+    return createAndReturnVideo(
+        originalPrompt,
+        safeParams as ImageParams,
+        c.get("requestId"),
+    );
 }
 
 export async function generateImageOrVideoResponse(
@@ -392,6 +451,35 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
+        const communityEndpoint = c.var.model.communityEndpoint;
+        if (communityEndpoint) {
+            const { result, servedEntry, servedIndex } =
+                await callCommunityImageWithFallback(
+                    c,
+                    communityEndpoint,
+                    originalPrompt,
+                    safeParams,
+                );
+            const headers = mediaHeaders(
+                originalPrompt,
+                servedEntry
+                    ? { ...safeParams, model: servedEntry.id }
+                    : safeParams,
+                result,
+                detectMimeType(result.buffer),
+            );
+            if (servedEntry) {
+                c.set("servedModelEntry", servedEntry);
+                // Same "config.targets[N]" shape the Portkey text path emits,
+                // so tracking's fallback parsing covers both.
+                headers.set(
+                    FALLBACK_TARGET_HEADER,
+                    `config.targets[${servedIndex}]`,
+                );
+            }
+            return new Response(bufferToUint8Array(result.buffer), { headers });
+        }
+
         if (isVideoModel(safeParams.model)) {
             const result = await generateVideoResult(
                 c,
@@ -416,7 +504,7 @@ export async function generateImageOrVideoResponse(
                 originalPrompt,
                 safeParams,
                 result,
-                detectMimeType(result.buffer),
+                result.mimeType || detectMimeType(result.buffer),
             ),
         });
     } catch (error) {

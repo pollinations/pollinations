@@ -23,9 +23,10 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS server_errors
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_final
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
                     AND response_status < 600
                     AND resolved_model_requested != ''
@@ -37,9 +38,10 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS total_requests
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_final
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
                   GROUP BY model, provider
@@ -109,9 +111,10 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS server_errors
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_final
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
                     AND response_status < 600
                     AND resolved_model_requested != ''
@@ -123,9 +126,10 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS total_requests
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_final
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
                   GROUP BY model, provider

@@ -1,0 +1,1 @@
+ALTER TABLE `community_endpoint` ADD `fallback_model_ids` text;

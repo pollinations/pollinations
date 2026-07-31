@@ -54,7 +54,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             const eventName = c.req.query("name");
             const body = await c.req.text();
 
-            if (eventName === "generation_event") {
+            if (eventName === "generation_event_v2") {
                 const events = parseNdjson<TinybirdGenerationEvent>(body);
                 if (
                     events.find((event) =>

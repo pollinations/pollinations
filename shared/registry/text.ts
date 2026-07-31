@@ -1,6 +1,8 @@
 import {
     GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
+    OPENROUTER_GEMINI_SEARCH_BILLING,
+    withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
@@ -237,7 +239,7 @@ export const TEXT_SERVICES = {
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
-        provider: "inception",
+        provider: "openrouter",
         brand: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
@@ -254,6 +256,31 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "command-a-plus": {
+        aliases: [
+            "cohere-command-a-plus",
+            "command-a-plus-05-2026",
+            "cohere-command-a-plus-05-2026",
+        ],
+        provider: "azure",
+        brand: "Cohere",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(0.8),
+            completionTextTokens: perMillion(3.2),
+        },
+        title: "Cohere Command A+",
+        description:
+            "Multilingual agentic reasoning with tools and long context",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
         contextLength: 128000,
         isSpecialized: false,
     },
@@ -287,6 +314,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
@@ -313,6 +341,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
@@ -383,7 +412,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-3-flash": {
         aliases: ["gemini-3-flash-preview"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
@@ -394,9 +423,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.05),
             promptCacheWriteTokens: perMillion(0.5),
             promptAudioTokens: perMillion(1.0),
+            promptImageTokens: perMillion(0.5),
+            promptVideoTokens: perMillion(0.5),
             completionTextTokens: perMillion(3.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3 Flash",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -406,13 +440,12 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini": {
-        aliases: ["gemini-3.5-flash"],
-        provider: "google",
+        aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
@@ -425,10 +458,15 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
-            completionTextTokens: perMillion(9.0),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash",
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
+        title: "Gemini 3.6 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
         inputModalities: ["text", "image", "audio", "video"],
@@ -437,46 +475,51 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-flash-lite-3.1": {
+    "gemini-flash-lite-3.5": {
         aliases: [
+            "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
+            "gemini-3.5-flash-lite",
         ],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.025),
-            promptCacheWriteTokens: perMillion(0.25),
-            promptAudioTokens: perMillion(0.5),
-            completionTextTokens: perMillion(1.5),
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.1 Flash Lite",
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
+        title: "Gemini 3.5 Flash Lite",
         description:
-            "Quick, low-cost answers across text, images, audio and video",
+            "Fast multimodal reasoning for high-throughput agents and data processing",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
@@ -487,9 +530,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.01), // per 1M tokens
             promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
             promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.1), // per 1M tokens
+            promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -499,7 +547,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -541,6 +588,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
@@ -565,7 +613,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         brand: "Google",
         category: "text",
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -717,13 +765,14 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
-        // calculateCost when the response includes web search metadata.
+        // Vertex base rates for Gemini 2.5 Flash Lite.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             promptCacheWriteTokens: perMillion(0.1),
             promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.4),
         },
         billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
@@ -736,61 +785,62 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-search-fast": {
-        aliases: ["gemini-3.1-flash-lite-search"],
+        aliases: [
+            "gemini-3.1-flash-lite-search",
+            "gemini-3.5-flash-lite-search",
+        ],
         provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.1-flash-lite. Grounding fee
-        // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
-        // free queries/month shared across all Gemini 3 models; absorbed by
-        // Pollinations.
+        // Vertex base rates for Gemini 3.5 Flash Lite.
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.025),
-            promptCacheWriteTokens: perMillion(0.25),
-            promptAudioTokens: perMillion(0.5),
-            completionTextTokens: perMillion(1.5),
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.1 Flash Lite Search",
-        description: "Low-cost answers grounded in live web search results",
+        title: "Gemini 3.5 Flash Lite Search",
+        description: "Fast multimodal answers grounded in live web results",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-search-large": {
-        aliases: ["gemini-3.5-flash-search"],
+        aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
         provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
-        // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
+        // Vertex base rates for Gemini 3.6 Flash.
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5),
-            completionTextTokens: perMillion(9.0),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash Search",
+        title: "Gemini 3.6 Flash Search",
         description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -798,7 +848,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -967,7 +1016,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.8", "claude-opus"],
+        aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -975,15 +1024,15 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            // Bedrock global.anthropic.claude-opus-5 global standard rates.
             promptTextTokens: perMillion(5),
             promptCachedTokens: perMillion(0.5),
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(25),
         },
-        title: "Claude Opus 4.8",
+        title: "Claude Opus 5",
         description:
-            "Top-shelf reasoning, writing and coding; premium price per token",
+            "Frontier reasoning for coding, complex analysis and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -1162,12 +1211,13 @@ export const TEXT_SERVICES = {
     },
     "kimi-k3": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-07-30).
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
@@ -1183,13 +1233,90 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "laguna": {
+        aliases: ["laguna-s-2.1", "laguna-s2.1", "poolside-laguna-s-2.1"],
+        provider: "openrouter",
+        brand: "Poolside",
+        category: "text",
+        addedDate: new Date("2026-07-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Poolside route rates (2026-07-22).
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.2),
+        },
+        title: "Laguna S 2.1",
+        description:
+            "Long-context reasoning for coding agents and complex software tasks",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "longcat": {
+        aliases: ["longcat-2.0", "longcat-2"],
+        provider: "openrouter",
+        brand: "Meituan",
+        category: "text",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter AtlasCloud FP8 route rates (2026-07-23).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "LongCat 2.0",
+        description:
+            "Long-context reasoning for coding agents and repository-scale tasks",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "nemotron": {
+        aliases: [
+            "nemotron-3-ultra",
+            "nvidia-nemotron-3-ultra",
+            "nemotron-3-ultra-550b-a55b",
+        ],
+        provider: "deepinfra",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-07-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra standard-tier rates (2026-07-27). Flex is deliberately
+            // excluded because requests may wait up to ten minutes.
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(2.2),
+        },
+        title: "NVIDIA Nemotron 3 Ultra",
+        description:
+            "Frontier reasoning for coding agents, deep research and complex workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
@@ -1212,7 +1339,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.435),
@@ -1230,7 +1357,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
@@ -1245,7 +1372,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            4.5,
+        ),
         title: "Gemini 3.1 Pro",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
@@ -1256,7 +1386,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         search: true,
-        codeExecution: false, // Disabled - was breaking gemini-large
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1389,6 +1518,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
@@ -1496,29 +1626,6 @@ export const TEXT_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
-    "polly": {
-        aliases: ["pollinations-ai", "polly-ai"],
-        provider: "community",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2026-02-24").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
-        },
-        title: "Polly by @Itachi-1824",
-        description:
-            "Community-built assistant with GitHub, code search and web tools (alpha)",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3, // Pollinations community model cap.
-        tools: true,
-        reasoning: true,
-        codeExecution: true,
-        search: true,
-        isSpecialized: false,
-    },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
         provider: "openrouter",
@@ -1556,7 +1663,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // OpenRouter triples token rates above 256K prompt tokens. Pollinations
         // keeps the full context window and absorbs that higher tier.
@@ -1601,6 +1708,34 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "qwen3.7-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter raises rates above 32K and 256K prompt tokens.
+        // Pollinations charges the base tier and absorbs the higher tiers.
+        cost: {
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.006),
+            promptCacheWriteTokens: perMillion(0.038),
+            completionTextTokens: perMillion(0.13),
+        },
+        title: "Qwen3.7 Flash",
+        description:
+            "Ultra-low-cost multimodal reasoning for agents and visual tasks",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "qwen-vision": {
         aliases: [
             "qwen3-vl",
@@ -1613,6 +1748,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
@@ -1639,6 +1775,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
@@ -1658,13 +1795,14 @@ export const TEXT_SERVICES = {
     },
     "step-flash": {
         aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
-        provider: "openrouter",
+        provider: "deepinfra",
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
+            // DeepInfra stepfun-ai/Step-3.7-Flash posted rates (2026-07-30):
             // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.04),
@@ -1689,6 +1827,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):

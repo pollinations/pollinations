@@ -16,6 +16,11 @@ import type { Context } from "hono";
 export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
+const CACHED_HEADER_NAMES = [
+    "content-disposition",
+    "content-security-policy",
+    "x-content-type-options",
+];
 
 function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
@@ -91,6 +96,7 @@ function prepareCustomMetadata(response: Response): Record<string, string> {
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
         if (
+            CACHED_HEADER_NAMES.includes(lowerName) ||
             CACHED_HEADER_PREFIXES.some((prefix) =>
                 lowerName.startsWith(prefix),
             )

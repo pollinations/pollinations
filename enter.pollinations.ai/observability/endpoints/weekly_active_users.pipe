@@ -16,16 +16,18 @@ SQL >
         count() AS total_requests,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS total_revenue
-    FROM generation_event
+    FROM generation_event_v2
     WHERE
+        -- One row per request: a fallback attempt is part of a request, not
+        -- another one, and it carries no user, price or tokens of its own.
+        is_final
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND user_id != 'undefined'
-    AND user_id != ''
     GROUP BY week_start
     ORDER BY week_start ASC
 

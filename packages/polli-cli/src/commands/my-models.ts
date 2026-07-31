@@ -40,10 +40,12 @@ interface MyModel {
     id: string;
     modelId: string;
     name: string;
+    title: string;
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
+    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -78,6 +80,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     };
     const fields = [
         ["name", "name"],
+        ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
@@ -96,8 +99,17 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
+    // An empty string clears the list, which is why this checks for the flag
+    // being present rather than for a truthy value.
+    if (opts.fallbackModels !== undefined) {
+        body.fallbackModelIds = String(opts.fallbackModels)
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
+    }
+
     if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
                 printError(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
@@ -119,12 +131,23 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            title: model.title,
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
+            fallbacks: model.fallbackModelIds?.join(", ") || "-",
             description: model.description ?? "-",
         })),
-        ["id", "model", "visibility", "upstream", "base_url", "description"],
+        [
+            "id",
+            "model",
+            "title",
+            "visibility",
+            "upstream",
+            "base_url",
+            "fallbacks",
+            "description",
+        ],
     );
 }
 
@@ -149,6 +172,7 @@ const create = addPriceOptions(
     new Command("create")
         .description("Register an OpenAI-compatible model endpoint")
         .requiredOption("--name <name>", "Model name")
+        .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
@@ -156,6 +180,10 @@ const create = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -183,6 +211,7 @@ const update = addPriceOptions(
         .description("Update one of your models")
         .argument("<id>", "Model id")
         .option("--name <name>", "Model name")
+        .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
@@ -190,6 +219,10 @@ const update = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();

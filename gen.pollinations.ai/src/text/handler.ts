@@ -1,19 +1,30 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import {
+    type FallbackCandidate,
+    fallbackCandidates,
+    withModelFallback,
+} from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
+import type {
+    ChatCompletion,
+    RequestData,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 
 type TextContext = Context<Env>;
 
@@ -25,12 +36,12 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
-    "INCEPTION_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
@@ -93,6 +104,35 @@ function prepareRequestParameters(
     };
 }
 
+/**
+ * How to reach one candidate's provider.
+ *
+ * Built per attempt rather than once up front, so a delegating fallback mints
+ * its own run token and no attempt ever carries another endpoint's credential.
+ */
+function gatewayContext(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<TransformOptions> | TransformOptions {
+    const { communityEndpoint, definition } = candidate;
+    // Paired by fallbackCandidates: a community endpoint always arrives with the
+    // definition that prices it. Anything else is a static model, whose provider
+    // config the gateway resolves from the request itself.
+    if (!communityEndpoint || !definition) {
+        return withGatewayContext(c, requestData);
+    }
+    return communityEndpointGatewayContext(
+        communityEndpoint,
+        definition,
+        requestData,
+        c.env.BETTER_AUTH_SECRET,
+        c.env.PORTKEY_GATEWAY_URL,
+        c.var.auth?.apiKey?.rawKey || "",
+        c.var.auth?.apiKey?.id,
+    );
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -103,18 +143,27 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
+/**
+ * `servedModelId` is our id for the model that ran, and it wins over the name
+ * the provider reports for itself. A community endpoint answers with its
+ * upstream's name — "gemini-2.0-flash" for what we and its owner both call
+ * "alice/pro" — which names something nobody can act on, and after a fallback
+ * names the wrong party's model.
+ */
 function usageHeaders(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    servedModelId?: string,
 ): Headers {
     const headers = new Headers();
-    const modelUsed = completion?.model || fallbackModel;
-    if (completion?.usage && modelUsed) {
-        const usage = openaiUsageToUsage(
-            completion.usage as unknown as Parameters<
-                typeof openaiUsageToUsage
-            >[0],
-        );
+    const modelUsed = servedModelId || completion?.model;
+    if (modelUsed) {
+        const usage = completion?.usage
+            ? openaiUsageToUsage(
+                  completion.usage as unknown as Parameters<
+                      typeof openaiUsageToUsage
+                  >[0],
+              )
+            : {};
         for (const [key, value] of Object.entries(
             buildUsageHeaders(modelUsed, usage),
         )) {
@@ -153,17 +202,26 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
     if (usage === completion.usage) return completion;
 
-    return {
+    const publicCompletion = {
         ...completion,
         usage,
     };
+    if (completion.fallbackTarget !== undefined) {
+        Object.defineProperty(publicCompletion, "fallbackTarget", {
+            value: completion.fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
+    }
+    return publicCompletion;
 }
 
 function sendOpenAIResponse(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    servedModelId?: string,
 ): Response {
-    const headers = usageHeaders(completion, fallbackModel);
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -179,14 +237,16 @@ function sendOpenAIResponse(
 
 function sendTextContentResponse(
     completion: ChatCompletion,
-    fallbackModel?: string,
+    servedModelId: string | undefined,
+    upstreamRequestUrl: URL | undefined,
 ): Response {
-    const headers = usageHeaders(completion, fallbackModel);
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
             message: "Unrecognized response format from text model",
+            requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });
     }
@@ -238,14 +298,22 @@ function sendTextContentResponse(
     return new Response("", { headers });
 }
 
-function sendTextStreamResponse(completion: ChatCompletion): Response {
+function sendTextStreamResponse(
+    completion: ChatCompletion,
+    servedModelId?: string,
+): Response {
     const headers = new Headers({
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
-    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
-    // header here too — tracking reads it off the worker response for streams.
+    // sendTextStreamResponse bypasses usageHeaders(), so set what tracking
+    // reads off the worker response for streams here instead. Without the
+    // model header a streamed generation is attributed to whatever name the
+    // provider puts in its chunks, which after a rescue is the wrong owner's.
+    if (servedModelId) {
+        headers.set(MODEL_USED_HEADER, servedModelId);
+    }
     if (completion.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
@@ -284,22 +352,20 @@ function serializeDetails(details: unknown): string | undefined {
     return typeof details === "string" ? details : JSON.stringify(details);
 }
 
-function throwTextError(error: ServiceError, c: TextContext): never {
+function throwTextError(error: ServiceError): never {
     const status =
         typeof error.status === "number"
             ? error.status
             : typeof error.code === "number"
               ? error.code
               : 500;
-    const upstreamStatus =
-        typeof error.upstreamStatus === "number"
-            ? error.upstreamStatus
-            : status;
 
     throw new UpstreamError(status as ContentfulStatusCode, {
         message: error.message || "Text generation failed",
-        requestUrl: new URL(c.req.url),
-        upstreamStatus,
+        // Propagate only — the code is decided at the throw site.
+        errorCode: error.errorCode,
+        requestUrl: error.requestUrl,
+        upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
         cause: error,
     });
@@ -313,53 +379,60 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
-                  c.var.model.definition,
-                  requestData,
-                  c.env.BETTER_AUTH_SECRET,
-                  c.env.PORTKEY_GATEWAY_URL,
-                  c.var.auth?.apiKey?.rawKey || "",
-              )
-            : withGatewayContext(c, requestData);
-        const completion = await generateTextPortkey(
-            requestData.messages,
-            gatewayContext,
+        const {
+            result: completion,
+            candidate,
+            index,
+        } = await withModelFallback(
+            fallbackCandidates(c.var.model),
+            async (attempt) =>
+                generateTextPortkey(
+                    requestData.messages,
+                    await gatewayContext(c, requestData, attempt),
+                ),
+            c.var.track?.failedCalls,
         );
+        c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-
-        if (completion.error) {
-            const errorObj =
-                typeof completion.error === "string"
-                    ? { message: completion.error }
-                    : completion.error;
-            const error = new Error(
-                errorObj.message || "Text generation failed",
-            ) as ServiceError;
-            if (typeof errorObj.status === "number") {
-                error.status = remapUpstreamStatus(errorObj.status);
-                error.upstreamStatus = errorObj.status;
-            }
-            error.details = errorObj.details;
-            throw error;
+        if (index > 0) {
+            // Same "config.targets[N]" shape a Portkey strategy would report, so
+            // the response header and tracking's parsing cover both.
+            completion.fallbackTarget = `config.targets[${index}]`;
         }
 
-        if (requestData.stream) return sendTextStreamResponse(completion);
-        const fallbackModel = c.var.model?.resolved;
+        // Cost and the owner reward follow what actually served, so record the
+        // serving entry before the response (streaming included) leaves the
+        // handler.
+        const servedEntry = candidate.entry;
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+
+        // Only override the provider's own name where it is misleading. A
+        // community endpoint reports its upstream — "gemini-2.0-flash" for what
+        // everyone calls "alice/pro" — and after a rescue that upstream belongs
+        // to a different owner's model. A static model instead reports the
+        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
+        // which is strictly more information, so leave it alone.
+        const servedModelId =
+            servedEntry?.id ??
+            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
+        if (requestData.stream)
+            return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
-        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const trackingResponse = sendOpenAIResponse(completion, servedModelId);
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
-            return sendTextContentResponse(publicCompletion, fallbackModel);
+            return sendTextContentResponse(
+                publicCompletion,
+                servedModelId,
+                c.var.upstreamRequestUrl,
+            );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion, fallbackModel);
+        return sendOpenAIResponse(publicCompletion, servedModelId);
     } catch (thrown: unknown) {
-        throwTextError(thrown as ServiceError, c);
+        throwTextError(thrown as ServiceError);
     }
 }
 

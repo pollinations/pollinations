@@ -41,7 +41,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -63,7 +63,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2": {
         aliases: ["nanobanana2"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
@@ -85,7 +85,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2-lite": {
         aliases: ["nanobanana2lite", "nanobanana-lite"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
@@ -107,7 +107,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-pro": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
@@ -183,7 +183,7 @@ export const IMAGE_SERVICES = {
     },
     "seedream-pro": {
         aliases: [],
-        provider: "replicate",
+        provider: "openrouter",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
@@ -196,7 +196,7 @@ export const IMAGE_SERVICES = {
         description: "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+        maxReferenceImages: 14, // Pollinations route cap from OpenRouter schema.
     },
     // Ideogram 4.0 (turbo/balanced/quality) via Replicate. These are official
     // Replicate models (is_official=true) → billed a FLAT price per output
@@ -598,7 +598,7 @@ export const IMAGE_SERVICES = {
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
         ],
-        provider: "xai",
+        provider: "openrouter",
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -613,11 +613,29 @@ export const IMAGE_SERVICES = {
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+        maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+    },
+    "recraft-v4.1-vector": {
+        aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+        provider: "openrouter",
+        brand: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.08, // fixed per output SVG
+        },
+        title: "Recraft V4.1 Vector",
+        description:
+            "Editable SVG generation and reference-guided vector design",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
     },
     "grok-video-pro": {
         aliases: ["grok-imagine-video"],
-        provider: "xai",
+        provider: "openrouter",
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
@@ -663,15 +681,14 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.005,
         },
         title: "FLUX.2 Klein 4B",
-        description:
-            "Quick image generation and editing with solid quality per dollar",
+        description: "Fast image generation and editing up to 2.4 megapixels",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -687,7 +704,7 @@ export const IMAGE_SERVICES = {
     },
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -744,7 +761,7 @@ export const IMAGE_SERVICES = {
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
-        provider: "aws",
+        provider: "bedrock",
         brand: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -760,7 +777,7 @@ export const IMAGE_SERVICES = {
     },
     "nova-reel": {
         aliases: ["amazon-nova-reel"],
-        provider: "aws",
+        provider: "bedrock",
         brand: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

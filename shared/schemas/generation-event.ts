@@ -26,8 +26,6 @@ export type TinybirdEvent = {
     // User
     userId?: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
 
     // API Key
     apiKeyId?: string;
@@ -65,6 +63,19 @@ export type TinybirdEvent = {
     modelProviderUsed?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
+    /**
+     * True on the row that says how the request ENDED; false on a row recording
+     * one upstream call that was moved on from.
+     *
+     * About grain, not about fallback. This table used to be exactly one row per
+     * request and every consumer relies on that, so counting requests means
+     * counting these. A request that failed over emits one row per call it made,
+     * and only the last of them is the outcome. Rows where this is false carry
+     * the per-call detail: which model was tried, and how it failed.
+     *
+     * Defaults to true, matching every row written before fallback existed.
+     */
+    isFinal?: boolean;
     isBilledUsage: boolean;
 
     // Pricing
@@ -122,10 +133,6 @@ export type TinybirdEvent = {
     moderationCompletionViolenceSeverity?: string;
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
     moderationCompletionProtectedMaterialTextDetected?: boolean;
-
-    // Cache
-    cacheHit?: boolean;
-    cacheKey?: string;
 
     // Error
     errorResponseCode?: string;

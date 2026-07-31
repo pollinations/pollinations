@@ -91,40 +91,35 @@ CONFIG = {
             "internal_only": False,
         },
     },
-    "org_members": [
-        "voodoohop",
-        "ElliotEtag",
-        "Circuit-Overtime",
-        "Itachi-1824",
-        "fisventurous"
-    ],
+    "discord_relay_bot_id": 247793354,
+    "org_member_ids": {5099901, 36901823, 74301576, 158852059, 34513273},
     "discord_uid_to_github": {
-        "304378879705874432": "voodoohop",
-        "884468469452656732": "ElliotEtag",
-        "738661669332320287": "Circuit-Overtime",
-        "859708931478388767": "Itachi-1824",
+        "304378879705874432": {"id": 5099901, "login": "voodoohop"},
+        "884468469452656732": {"id": 36901823, "login": "ElliotEtag"},
+        "738661669332320287": {"id": 74301576, "login": "Circuit-Overtime"},
+        "859708931478388767": {"id": 158852059, "login": "Itachi-1824"},
     },
 }
 
-def get_real_author() -> str:
-    if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
+def get_real_author() -> tuple[str, Optional[int]]:
+    if ISSUE_AUTHOR_ID == CONFIG["discord_relay_bot_id"]:
         uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
         if uid_match:
             discord_uid = uid_match.group(1)
             log_debug(f"Extracted Discord UID: {discord_uid}")
             github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
-                return github_user
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user['login']} (id={github_user['id']})")
+                return github_user["login"], github_user["id"]
             log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
-    return ISSUE_AUTHOR
+    return ISSUE_AUTHOR, ISSUE_AUTHOR_ID
 
 
-def is_org_member(username: str) -> bool:
-    if not username:
+def is_org_member(github_id: Optional[int]) -> bool:
+    if github_id is None:
         return False
-    is_member = username.lower() in [m.lower() for m in CONFIG["org_members"]]
-    log_debug(f"Checked {username} org membership: {is_member}")
+    is_member = github_id in CONFIG["org_member_ids"]
+    log_debug(f"Checked GitHub ID {github_id} org membership: {is_member}")
     return is_member
 
 
@@ -184,12 +179,12 @@ VALID_LABELS = {
     "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-APP", "DEV-UI-UX"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
-        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER",
+        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
 }
 
 SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
-SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER"}
+SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
 
 PROTECTED_LABELS = {
     "dev": {"DEV-TRACKING", "DEV-VOTING"},
@@ -531,9 +526,8 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
-    if tier_labels:
-        log_debug(f"Found TIER labels: {tier_labels}, routing to Apps project")
+    if "APP-SUBMISSION" in existing_labels:
+        log_debug("Found APP-SUBMISSION label, routing to Apps project")
         project = CONFIG["projects"].get("apps")
         if project:
             item_id = add_to_project(project["id"])
@@ -551,7 +545,7 @@ def main():
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
         return
 
-    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+-", PR_HEAD_REF):
+    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+(?:-|$)", PR_HEAD_REF):
         log_debug(f"App-submission PR (branch {PR_HEAD_REF}), routing to Apps project")
         project = CONFIG["projects"].get("apps")
         if project:
@@ -562,9 +556,9 @@ def main():
             log_error("Apps project not configured")
         return
 
-    real_author = get_real_author()
-    is_internal = is_org_member(real_author)
-    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
+    real_author, real_author_id = get_real_author()
+    is_internal = is_org_member(real_author_id)
+    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
     
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
@@ -601,8 +595,8 @@ def main():
         project_key = "support"
     
     priority = classification.get("priority", "Low")
-    if project_key == "support" and is_paid_customer(ISSUE_AUTHOR_ID):
-        log_debug(f"Author {ISSUE_AUTHOR} (id={ISSUE_AUTHOR_ID}) is a paid customer; overriding priority to Urgent")
+    if project_key == "support" and is_paid_customer(real_author_id):
+        log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent")
         priority = "Urgent"
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)

@@ -48,10 +48,10 @@ function validateNovaReelRequest({
 }: {
     prompt: string;
     duration?: number;
-    image?: string | string[];
+    image: string[];
 }): void {
     const durationSeconds = getNovaReelDurationSeconds(duration);
-    const hasImage = Boolean(image && image.length > 0);
+    const hasImage = image.length > 0;
     const isMultiShot = durationSeconds > 6;
 
     if (hasImage && isMultiShot) {
@@ -104,14 +104,13 @@ export async function callNovaReelAPI(
 ): Promise<VideoGenerationResult> {
     // Duration must be a multiple of 6. TEXT_VIDEO = 6s only. MULTI_SHOT_AUTOMATED = 12-120s.
     const durationSeconds = getNovaReelDurationSeconds(safeParams.duration);
-    const imageParam = safeParams.image as string | string[] | undefined;
-    const hasImage = Boolean(imageParam && imageParam.length > 0);
+    const hasImage = safeParams.image.length > 0;
     const isMultiShot = durationSeconds > 6;
 
     validateNovaReelRequest({
         prompt,
         duration: safeParams.duration,
-        image: imageParam,
+        image: safeParams.image,
     });
 
     const accessKeyId = getImageEnv("AWS_ACCESS_KEY_ID");
@@ -158,10 +157,7 @@ export async function callNovaReelAPI(
 
     // Support image-to-video if an input image is provided
     if (hasImage) {
-        const imageUrl = Array.isArray(imageParam) ? imageParam[0] : imageParam;
-        if (!imageUrl) {
-            throw new HttpError("Nova Reel reference image is missing", 400);
-        }
+        const imageUrl = safeParams.image[0];
         logOps("Adding reference image for I2V:", imageUrl);
         const buffer = await normalizeReferenceImage(imageUrl);
         textToVideoParams.images = [

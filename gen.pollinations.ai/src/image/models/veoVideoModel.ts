@@ -115,11 +115,10 @@ const generateVeoVideo = async (
     });
 
     // Check for input image (image-to-video)
-    const hasImage = safeParams.image && safeParams.image.length > 0;
+    const hasImage = safeParams.image.length > 0;
 
     // Check if we have a second image for last frame interpolation
-    const hasLastFrame =
-        Array.isArray(safeParams.image) && safeParams.image.length > 1;
+    const hasLastFrame = safeParams.image.length > 1;
 
     logOps("Video params:", {
         durationSeconds,
@@ -141,9 +140,7 @@ const generateVeoVideo = async (
 
     // Add image for I2V generation (Veo supports 1 reference image as first frame)
     if (hasImage) {
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
+        const imageUrl = safeParams.image[0];
         logOps("Adding first frame image for I2V:", imageUrl);
         instance.image = await processImageForVeo(imageUrl, "first frame");
     }

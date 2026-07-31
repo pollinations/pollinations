@@ -210,15 +210,13 @@ export async function callVertexAIGemini(
             width: safeParams.width,
             height: safeParams.height,
             model: safeParams.model,
-            hasReferenceImages: !!(
-                safeParams.image && safeParams.image.length > 0
-            ),
+            hasReferenceImages: safeParams.image.length > 0,
         });
 
         // Process reference image URLs into base64 format
         const processedImages: VertexAIImageData[] = [];
 
-        if (safeParams.image && safeParams.image.length > 0) {
+        if (safeParams.image.length > 0) {
             log(`Processing ${safeParams.image.length} reference image URLs`);
 
             for (let i = 0; i < safeParams.image.length; i++) {

@@ -73,11 +73,7 @@ export async function callNovaCanvasAPI(
     );
 
     // Check if image input is provided for editing mode
-    const rawImageUrl = safeParams.image
-        ? Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image
-        : undefined;
+    const rawImageUrl = safeParams.image[0];
     const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
 
     logOps(`Calling Nova Canvas API (${mode}):`, {

@@ -420,7 +420,7 @@ const callGPTImageWithEndpoint = async (
         );
     }
 
-    const isEditMode = safeParams.image && safeParams.image.length > 0;
+    const isEditMode = safeParams.image.length > 0;
     const path = isEditMode ? "images/edits" : "images/generations";
     const endpoint = `${config.baseUrl}/${path}?api-version=${AZURE_API_VERSION}`;
     logCloudflare(
@@ -512,18 +512,7 @@ const callGPTImageWithEndpoint = async (
 
         // Handle images based on their type
         try {
-            // Convert to array if it's a string (backward compatible)
-            const imageUrls = Array.isArray(safeParams.image)
-                ? safeParams.image
-                : [safeParams.image];
-
-            if (imageUrls.length === 0) {
-                // Handle errors for missing image
-                throw new HttpError(
-                    "Image URL is required for GPT Image edit mode but was not provided",
-                    400,
-                );
-            }
+            const imageUrls = safeParams.image;
 
             // Process each image in the array
             for (let i = 0; i < imageUrls.length; i++) {

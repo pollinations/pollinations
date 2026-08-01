@@ -1,0 +1,35 @@
+{
+  "pr_number": 13007,
+  "title": "feat: update DeepSeek V4 Flash to 0731",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13007",
+  "merged_at": "2026-08-01T12:32:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `deepseek` and its existing aliases to Fireworks’ exact `deepseek-v4-flash-0731` checkpoint.\n- Updates the catalog title while preserving provider, free access, multiplier, capabilities, aliases, and no-fallback behavior.\n- Aligns cached-input billing with Fireworks’ posted `$0.028/M` rate; input/output remain `$0.14/M` and `$0.28/M`.\n- Adds an exact-route resolver regression test and updates the effective-price snapshot.\n\nTesting:\n- Direct Fireworks: basic, reasoning, tools, JSON, streaming, cache, invalid input, and 5/15/30-request bursts.\n- Local gateway E2E: all aliases, reasoning, tools, JSON, streaming, usage headers, billing deduction, errors, and 5/15/30-request bursts.\n- 84 gen tests, 320 applicable enter tests, and both TypeScript checks pass.\n\nKnown main-branch issue: the unrelated DreamShaper catalog entry is missing its Lykon brand logo, so that single existing logo assertion remains red.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "DeepSeek gets its July pollen",
+    "blurb": "The deepseek route now lands on Fireworks’ exact DeepSeek V4 Flash 0731 checkpoint. Same familiar aliases, freshly pinned model petals, and billing that matches the provider’s cache math.",
+    "summary": "Updated the `deepseek` route and its existing aliases to Fireworks’ exact `deepseek-v4-flash-0731` checkpoint, with cached-input pricing aligned to $0.028/M while input and output remain $0.14/M and $0.28/M.",
+    "impact": "Developers keep the same free DeepSeek aliases, capabilities, and no-fallback behavior while receiving the 0731 checkpoint with accurate cached-input billing and verified support for reasoning, tools, JSON, streaming, and burst traffic.",
+    "keywords": [
+      "DeepSeek",
+      "Fireworks",
+      "text models",
+      "model routing",
+      "pricing",
+      "cached input",
+      "API"
+    ],
+    "visual_concept": "A cozy model-routing garden: Polli tends a labeled DeepSeek V4 Flash 0731 code-plant whose roots split into familiar alias signposts before converging on one glowing Fireworks-style terminal checkpoint. Small coin-like cache leaves marked “$0.028/M” represent corrected cached-input billing, while flowers and terminal output suggest reasoning, tools, JSON, and streaming support.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny engineer goggles as she waters a code-plant labeled “DeepSeek V4 Flash 0731”; its branches from several small alias signposts converge into one warm Fireworks-style retro terminal, with a cache leaf tag reading “$0.028/M” and little flowers around the pot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-13007.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny engineer goggles as she waters a code-plant labeled “DeepSeek V4 Flash 0731”; its branches from several small alias signposts converge into one warm Fireworks-style retro terminal, with a cache leaf tag reading “$0.028/M” and little flowers around the pot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-01T12:33:24.934278+00:00"
+}

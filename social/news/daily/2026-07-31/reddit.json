@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-31",
+  "period_start": "2026-07-31",
+  "period_end": "2026-07-31",
+  "generated_at": "2026-08-01T06:58:21.390602+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-31/images/reddit.jpg"
+    }
+  ],
+  "title": "Per-model fallbacks and DreamShaper worker controls merged",
+  "text": "Three PRs merged today.\n\n#12819 adds per-model fallback routing. The important bit is that fallbacks can now be selected for an individual model rather than treating every failure as permission to send a request to whatever is available. That should make image generation behave better under load while keeping incompatible or unsuitable fallback paths out of the request flow.\n\n#12985 records the DreamShaper deployment and adds a `WORKERS` knob. The deployment notes are now in the repo, and the worker count can be adjusted without editing the surrounding setup. DreamShaper has been useful enough to deserve fewer tribal-knowledge deployment steps.\n\n#12962 updates the README through 2026-07-31, so the repository front page is no longer describing a slightly older universe.\n\nCode and docs are in the main repo: https://github.com/pollinations/pollinations\n\nMerged PRs:\n- https://github.com/pollinations/pollinations/pull/12819\n- https://github.com/pollinations/pollinations/pull/12962\n- https://github.com/pollinations/pollinations/pull/12985\n\nThe fallback behavior is the change most likely to surface edge cases. If you run community models or have a workload that is sensitive to model choice, reports with the requested model, fallback result, and approximate time window are useful."
+}

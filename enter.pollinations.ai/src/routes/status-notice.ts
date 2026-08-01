@@ -3,53 +3,55 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 
 const KV_KEY = "status_notice";
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_LINK_LABEL_LENGTH = 100;
 
 interface StatusNotice {
     message: string;
     link?: string;
     linkLabel?: string;
-    createdAt: string;
-    createdBy: string;
 }
 
-const noticeSchema = {
-    message: (v: unknown) =>
-        typeof v === "string" && v.trim().length > 0 && v.length <= 500,
-    link: (v: unknown) => v === undefined || typeof v === "string",
-    linkLabel: (v: unknown) => v === undefined || typeof v === "string",
-} as const;
-
-function validateUrl(s: string): boolean {
+function isHttpUrl(value: string): boolean {
     try {
-        const u = new URL(s);
-        return u.protocol === "https:" || u.protocol === "http:";
+        const url = new URL(value);
+        return url.protocol === "https:" || url.protocol === "http:";
     } catch {
         return false;
     }
 }
 
 async function getNotice(kv: KVNamespace): Promise<StatusNotice | null> {
-    const raw = await kv.get(KV_KEY);
-    if (!raw) return null;
-    try {
-        return JSON.parse(raw);
-    } catch {
+    const notice = await kv.get<unknown>(KV_KEY, "json");
+    if (!notice || typeof notice !== "object") return null;
+
+    const { message, link, linkLabel } = notice as Record<string, unknown>;
+    if (
+        typeof message !== "string" ||
+        message.length === 0 ||
+        message.length > MAX_MESSAGE_LENGTH ||
+        (link !== undefined &&
+            (typeof link !== "string" || !isHttpUrl(link))) ||
+        (linkLabel !== undefined &&
+            (typeof linkLabel !== "string" ||
+                linkLabel.length > MAX_LINK_LABEL_LENGTH))
+    ) {
         return null;
     }
+
+    return {
+        message,
+        ...(typeof link === "string" && { link }),
+        ...(typeof linkLabel === "string" && { linkLabel }),
+    };
 }
 
-export const statusNoticeRoutes = new Hono<Env>()
-    .get("/", async (c) => {
-        const notice = await getNotice(c.env.KV);
-        return c.json({ notice });
-    })
-    .put("/", async (c) => {
-        const auth = c.req.header("Authorization");
-        const key = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
-        if (!key || key !== c.env.PLN_ENTER_TOKEN) {
-            throw new HTTPException(401, { message: "Unauthorized" });
-        }
+export const statusNoticeRoutes = new Hono<Env>().get("/", async (c) => {
+    return c.json({ notice: await getNotice(c.env.KV) });
+});
 
+export const statusNoticeAdminRoutes = new Hono<Env>()
+    .put("/", async (c) => {
         let body: Record<string, unknown>;
         try {
             body = await c.req.json();
@@ -57,18 +59,25 @@ export const statusNoticeRoutes = new Hono<Env>()
             throw new HTTPException(400, { message: "Invalid JSON body" });
         }
 
-        if (!noticeSchema.message(body.message)) {
+        const message =
+            typeof body.message === "string" ? body.message.trim() : "";
+        if (message.length === 0 || message.length > MAX_MESSAGE_LENGTH) {
             throw new HTTPException(400, {
-                message: "Message is required (1-500 chars)",
+                message: `Message is required (1-${MAX_MESSAGE_LENGTH} chars)`,
             });
         }
 
-        if (body.link !== undefined) {
-            if (typeof body.link !== "string" || !validateUrl(body.link)) {
-                throw new HTTPException(400, {
-                    message: "Link must be a valid HTTP(S) URL",
-                });
-            }
+        if (body.link !== undefined && typeof body.link !== "string") {
+            throw new HTTPException(400, {
+                message: "Link must be a valid HTTP(S) URL",
+            });
+        }
+        const link =
+            typeof body.link === "string" ? body.link.trim() : undefined;
+        if (link !== undefined && !isHttpUrl(link)) {
+            throw new HTTPException(400, {
+                message: "Link must be a valid HTTP(S) URL",
+            });
         }
 
         if (
@@ -79,28 +88,26 @@ export const statusNoticeRoutes = new Hono<Env>()
                 message: "Link label must be a string",
             });
         }
+        const linkLabel =
+            typeof body.linkLabel === "string"
+                ? body.linkLabel.trim()
+                : undefined;
+        if (linkLabel && linkLabel.length > MAX_LINK_LABEL_LENGTH) {
+            throw new HTTPException(400, {
+                message: `Link label must be at most ${MAX_LINK_LABEL_LENGTH} chars`,
+            });
+        }
 
         const notice: StatusNotice = {
-            message: (body.message as string).trim(),
-            link: typeof body.link === "string" ? body.link.trim() : undefined,
-            linkLabel:
-                typeof body.linkLabel === "string"
-                    ? body.linkLabel.trim()
-                    : undefined,
-            createdAt: new Date().toISOString(),
-            createdBy: "admin",
+            message,
+            ...(link && { link }),
+            ...(link && linkLabel && { linkLabel }),
         };
 
         await c.env.KV.put(KV_KEY, JSON.stringify(notice));
-        return c.json({ success: true, notice });
+        return c.json({ notice });
     })
     .delete("/", async (c) => {
-        const auth = c.req.header("Authorization");
-        const key = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
-        if (!key || key !== c.env.PLN_ENTER_TOKEN) {
-            throw new HTTPException(401, { message: "Unauthorized" });
-        }
-
         await c.env.KV.delete(KV_KEY);
-        return c.json({ success: true, notice: null });
+        return c.json({ notice: null });
     });

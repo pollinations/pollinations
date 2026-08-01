@@ -3,10 +3,7 @@ import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
-import {
-    isModelNameAllowed,
-    type ModelDefinition,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
@@ -203,8 +200,7 @@ export function resolveModel(
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) =>
-                    isModelNameAllowed(allowedModels, entry.id, entry.aliases),
+                (entry) => allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);

@@ -55,20 +55,6 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
-test("treats an allowed alias as permission for its canonical model", async () => {
-    const { key } = await createTestApiKey({
-        allowedModels: ["p-video-1080p"],
-        user: { packBalance: 100 },
-    });
-
-    const response = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${key}` },
-    });
-    expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.map(({ name }) => name)).toEqual(["p-video"]);
-});
-
 test("empty model permissions deny access and return an empty catalog", async () => {
     const { key } = await createTestApiKey({
         allowedModels: [],

@@ -486,18 +486,6 @@ export function resolveModelName(model: string): ModelName {
     );
 }
 
-/** Whether a canonical model or any of its aliases appears in an allowlist. */
-export function isModelNameAllowed(
-    allowedNames: readonly string[],
-    canonicalName: string,
-    aliases: readonly string[],
-): boolean {
-    return (
-        allowedNames.includes(canonicalName) ||
-        aliases.some((alias) => allowedNames.includes(alias))
-    );
-}
-
 /**
  * Get all public model names
  */

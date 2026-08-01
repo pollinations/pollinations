@@ -13,7 +13,6 @@ import {
     type UsageType,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
-import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids";
 import { expect, test } from "vitest";
 
 function serviceAliasTestCases(
@@ -58,15 +57,6 @@ test.for(serviceAliasTestCases(AUDIO_SERVICES))(
         expect(resolved).toBe(shouldResolveTo);
     },
 );
-
-test("model permissions normalize visible aliases to their canonical ID", () => {
-    expect(
-        filterPermissionsToVisibleModels(
-            { models: ["p-video-1080p", "retired-model"] },
-            new Set(["p-video"]),
-        ),
-    ).toEqual({ models: ["p-video"] });
-});
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {
     const usage = {

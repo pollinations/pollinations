@@ -42,7 +42,6 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
-import { isModelNameAllowed } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -215,11 +214,7 @@ function filterEntriesByPermissions(
     hasPaidBalance?: boolean,
 ): GenerationModelEntry[] {
     return entries.filter((entry) => {
-        if (
-            allowedModels &&
-            !isModelNameAllowed(allowedModels, entry.id, entry.aliases)
-        )
-            return false;
+        if (allowedModels && !allowedModels.includes(entry.id)) return false;
         if (entry.info.paid_only && hasPaidBalance === false) return false;
         return true;
     });

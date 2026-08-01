@@ -379,6 +379,7 @@ async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
+    metadataModel: ImageParams["model"] = safeParams.model as ImageParams["model"],
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
@@ -387,6 +388,7 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
+        metadataModel,
     );
 
     if (result.isChild && result.isMature) {
@@ -429,9 +431,23 @@ async function generateMediaWithFallback(
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
-            const generated = await generateImageResult(c, prompt, params);
+            const hiddenFallback = attempt.entry?.definition.hidden === true;
+            const generated = await generateImageResult(
+                c,
+                prompt,
+                params,
+                (hiddenFallback
+                    ? safeParams.model
+                    : params.model) as ImageParams["model"],
+            );
             assertNonEmptyMedia(generated.buffer, "Image provider");
-            return { result: generated, params };
+            // Hidden static fallbacks are internal routes for the same public
+            // service. Keep their id out of filenames and EXIF metadata while
+            // servedEntry still carries their provider and cost to tracking.
+            return {
+                result: generated,
+                params: hiddenFallback ? safeParams : params,
+            };
         },
         c.var.track?.failedCalls,
     );

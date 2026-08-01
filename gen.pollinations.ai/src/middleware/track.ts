@@ -100,6 +100,7 @@ type ResponseTrackingData = {
     /** False only on a call that was moved on from; the outcome row leaves it true. */
     isFinal?: boolean;
     modelUsed?: string;
+    modelProviderUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -251,9 +252,10 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
-                const terminalAttemptModel = failedCalls.find(
+                const terminalAttempt = failedCalls.find(
                     (call) => call.terminal,
-                )?.candidate.id;
+                );
+                const terminalAttemptModel = terminalAttempt?.candidate.id;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -290,6 +292,9 @@ export const track = (eventType: EventType) =>
                                 model !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
+                            modelProviderUsed:
+                                call.candidate.definition?.provider ??
+                                requestTracking.modelProvider,
                         },
                         errorTracking: collectErrorData(
                             status,
@@ -304,7 +309,8 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition,
+                    servedEntry?.definition ??
+                        terminalAttempt?.candidate.definition,
                     terminalAttemptModel,
                 );
                 if (responseTracking.cacheHit) {
@@ -548,6 +554,8 @@ export async function trackResponse(
     // The model this row is actually about. Defaults to the one asked for,
     // which is right until a fallback moves the request to a different id.
     const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
+    const modelProviderUsed =
+        servedModelDefinition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
@@ -557,6 +565,7 @@ export async function trackResponse(
         cacheHit,
         isBilledUsage: false,
         fallbackUsed,
+        modelProviderUsed,
         ...extra,
     });
 
@@ -640,6 +649,7 @@ export async function trackResponse(
         servedPrice,
         adjustments,
         modelUsed: modelUsage.model,
+        modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
@@ -833,7 +843,8 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed: requestTracking.modelProvider,
+        modelProviderUsed:
+            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,
 

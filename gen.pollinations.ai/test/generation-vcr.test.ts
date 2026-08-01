@@ -3,7 +3,10 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest } from "@shared/test/fixtures/index.ts";
+import {
+    test as baseTest,
+    createTestApiKey,
+} from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
     teardownFetchMock,
@@ -849,15 +852,21 @@ test("simple text prompts can include slashes", async ({
 });
 
 test("flux image generation uses Replicate fallback from gen", async ({
-    paidApiKey,
     mocks,
 }) => {
     await mocks.enable("tinybird", "replicate");
+    const { key } = await createTestApiKey({
+        allowedModels: ["flux"],
+        user: { tierBalance: 100 },
+    });
 
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
-            headers: { authorization: `Bearer ${paidApiKey}` },
+            // The key allows only public `flux` (and one unrelated text model).
+            // Its hidden provider route must remain available as an internal
+            // implementation detail of that permitted public model.
+            headers: { authorization: `Bearer ${key}` },
         },
     );
 
@@ -865,6 +874,7 @@ test("flux image generation uses Replicate fallback from gen", async ({
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("content-type")).toMatch(/^image\//);
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
@@ -890,11 +900,30 @@ test("flux image generation uses Replicate fallback from gen", async ({
             prefer: "wait=60",
         },
     });
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux",
+        modelProviderUsed: "vast",
+        responseStatus: 503,
+        fallbackUsed: false,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux",
+        modelProviderUsed: "replicate",
         tokenCountCompletionImage: 1,
+        totalCost: 0.003,
+        totalPrice: 0.002,
+        devPrice: 0.002,
+        fallbackUsed: true,
+        isFinal: true,
         isBilledUsage: true,
     });
 });

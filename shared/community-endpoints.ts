@@ -261,7 +261,7 @@ export function normalizeCommunityEndpointImagePricing(
 
 export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
-    endpointModality: CommunityEndpointModality = "text",
+    endpointModality: CommunityEndpointModality,
 ): ModelInputModality[] {
     if (!value?.length) return ["text"];
     const declared = new Set(value);
@@ -486,17 +486,10 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
-    const declaredInputModalities = normalizeCommunityEndpointInputModalities(
+    const inputModalities = normalizeCommunityEndpointInputModalities(
         endpoint.inputModalities,
         modality,
     );
-    const inputModalities =
-        isImage && endpoint.supportsImageEdits
-            ? normalizeCommunityEndpointInputModalities(
-                  [...declaredInputModalities, "image"],
-                  modality,
-              )
-            : declaredInputModalities;
     return {
         aliases,
         provider: "community",

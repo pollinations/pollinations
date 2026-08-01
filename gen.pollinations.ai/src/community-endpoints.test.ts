@@ -432,6 +432,7 @@ describe("community endpoint helpers", () => {
             modality: "image",
             imagePricing: "tokens",
             supportsImageEdits: true,
+            inputModalities: ["text", "image"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.000005,
                 promptImagePrice: 0.00001,
@@ -504,7 +505,7 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["image", "video"]);
     });
 
-    it("limits image endpoints to text and image inputs", () => {
+    it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
             description: "Image model",
@@ -517,7 +518,7 @@ describe("community endpoint helpers", () => {
             }),
         });
 
-        expect(definition.inputModalities).toEqual(["text", "image"]);
+        expect(definition.inputModalities).toEqual(["text"]);
     });
 
     describe("fallback target pricing", () => {

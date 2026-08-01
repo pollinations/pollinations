@@ -113,7 +113,7 @@ function communityEntryToGenerationEntry(
         supportedEndpoints:
             eventType === "generate.image"
                 ? communityImageSupportedEndpoints(
-                      entry.communityEndpoint.supportsImageEdits,
+                      entry.definition.inputModalities,
                   )
                 : communityTextSupportedEndpoints(),
         definition: entry.definition,

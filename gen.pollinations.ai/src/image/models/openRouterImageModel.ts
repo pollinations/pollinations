@@ -134,6 +134,34 @@ interface OpenRouterImageUsage {
     };
 }
 
+function requireOpenRouterImageApiKey(): string {
+    const apiKey = getImageEnv("OPENROUTER_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "OPENROUTER_API_KEY environment variable is required",
+            500,
+        );
+    }
+    return apiKey;
+}
+
+async function postOpenRouterImage(
+    apiKey: string,
+    requestBody: Record<string, unknown>,
+    errorLabel: string,
+): Promise<OpenRouterImageResponse> {
+    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        errorLabel,
+    });
+    return (await response.json()) as OpenRouterImageResponse;
+}
+
 function isTokenCount(value: unknown): value is number {
     return Number.isSafeInteger(value) && (value as number) >= 0;
 }
@@ -308,13 +336,7 @@ export async function callOpenRouterSeedreamProAPI(
         );
     }
 
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
+    const apiKey = requireOpenRouterImageApiKey();
 
     const downloadedImages = await Promise.all(
         safeParams.image.map((image) => downloadUserImage(image)),
@@ -356,16 +378,11 @@ export async function callOpenRouterSeedreamProAPI(
         requestBody.input_references = inputReferences;
     }
 
-    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "OpenRouter Seedream image generation request failed",
-    });
-    const data = (await response.json()) as OpenRouterImageResponse;
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Seedream image generation request failed",
+    );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         throw buildOpenRouterNoImageError(data);
@@ -395,14 +412,7 @@ export async function callOpenRouterGrokImagineProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
-
+    const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
@@ -423,16 +433,11 @@ export async function callOpenRouterGrokImagineProAPI(
         ];
     }
 
-    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "OpenRouter image generation request failed",
-    });
-    const data = (await response.json()) as OpenRouterImageResponse;
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter image generation request failed",
+    );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         throw new HttpError(
@@ -484,13 +489,7 @@ export async function callOpenRouterGeminiImageAPI(
         );
     }
 
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
+    const apiKey = requireOpenRouterImageApiKey();
 
     const requestBody: Record<string, unknown> = {
         model: config.upstreamModel,
@@ -523,16 +522,11 @@ export async function callOpenRouterGeminiImageAPI(
         requestBody.input_references = inputReferences;
     }
 
-    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "OpenRouter Gemini image generation request failed",
-    });
-    const data = (await response.json()) as OpenRouterImageResponse;
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Gemini image generation request failed",
+    );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         throw buildOpenRouterNoImageError(data);
@@ -581,14 +575,7 @@ export async function callOpenRouterRecraftVectorAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
-
+    const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
         model: RECRAFT_VECTOR_MODEL,
@@ -612,17 +599,13 @@ export async function callOpenRouterRecraftVectorAPI(
         ];
     }
 
-    let response: Response;
+    let data: OpenRouterImageResponse;
     try {
-        response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-            errorLabel: "OpenRouter vector generation request failed",
-        });
+        data = await postOpenRouterImage(
+            apiKey,
+            requestBody,
+            "OpenRouter vector generation request failed",
+        );
     } catch (error) {
         if (error instanceof HttpError && error.status === 429) {
             throw new UpstreamError(429, {
@@ -635,8 +618,6 @@ export async function callOpenRouterRecraftVectorAPI(
         }
         throw error;
     }
-
-    const data = (await response.json()) as OpenRouterImageResponse;
     const generatedImage = data.data?.[0];
     if (!generatedImage?.b64_json) {
         throw new HttpError(

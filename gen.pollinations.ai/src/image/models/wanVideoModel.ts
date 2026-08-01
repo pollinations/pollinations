@@ -23,8 +23,8 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -248,15 +248,10 @@ async function generateWanVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${config.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(
+            err,
+            `${config.displayName} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

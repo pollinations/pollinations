@@ -115,3 +115,151 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+export function readImageDimensions(
+    buffer: Uint8Array,
+    mimeType = detectMimeType(buffer),
+): { width: number; height: number } | null {
+    if (mimeType === "image/png" && buffer.length >= 24) {
+        const view = new DataView(
+            buffer.buffer,
+            buffer.byteOffset,
+            buffer.byteLength,
+        );
+        const width = view.getUint32(16);
+        const height = view.getUint32(20);
+        return width > 0 && height > 0 ? { width, height } : null;
+    }
+    if (mimeType === "image/gif" && buffer.length >= 10) {
+        const width = buffer[6] | (buffer[7] << 8);
+        const height = buffer[8] | (buffer[9] << 8);
+        return width > 0 && height > 0 ? { width, height } : null;
+    }
+    if (mimeType === "image/jpeg") {
+        for (let offset = 2; offset + 9 < buffer.length; ) {
+            if (buffer[offset] !== 0xff) {
+                offset += 1;
+                continue;
+            }
+            const marker = buffer[offset + 1];
+            offset += 2;
+            if (
+                marker === 0xd8 ||
+                marker === 0xd9 ||
+                (marker >= 0xd0 && marker <= 0xd7)
+            ) {
+                continue;
+            }
+            if (offset + 2 > buffer.length) break;
+            const segmentLength = (buffer[offset] << 8) | buffer[offset + 1];
+            if (segmentLength < 2 || offset + segmentLength > buffer.length)
+                break;
+            if (
+                (marker >= 0xc0 && marker <= 0xc3) ||
+                (marker >= 0xc5 && marker <= 0xc7) ||
+                (marker >= 0xc9 && marker <= 0xcb) ||
+                (marker >= 0xcd && marker <= 0xcf)
+            ) {
+                if (segmentLength >= 7) {
+                    const height =
+                        (buffer[offset + 3] << 8) | buffer[offset + 4];
+                    const width =
+                        (buffer[offset + 5] << 8) | buffer[offset + 6];
+                    return width > 0 && height > 0 ? { width, height } : null;
+                }
+                break;
+            }
+            offset += segmentLength;
+        }
+    }
+    if (mimeType === "image/webp" && buffer.length >= 30) {
+        const subtype = String.fromCharCode(
+            buffer[12],
+            buffer[13],
+            buffer[14],
+            buffer[15],
+        );
+        if (subtype === "VP8X") {
+            const width =
+                1 + buffer[24] + (buffer[25] << 8) + (buffer[26] << 16);
+            const height =
+                1 + buffer[27] + (buffer[28] << 8) + (buffer[29] << 16);
+            return width > 0 && height > 0 ? { width, height } : null;
+        }
+    }
+    return null;
+}
+
+const DIMENSIONS_CACHE_TTL_SECONDS = 86_400;
+const DIMENSIONS_CACHE_PREFIX = "image:dimensions:v1:";
+
+type ImageDimensions = { width: number; height: number };
+
+async function dimensionsCacheKey(imageUrl: string): Promise<string> {
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(imageUrl),
+    );
+    const bytes = new Uint8Array(digest);
+    return `${DIMENSIONS_CACHE_PREFIX}${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function cachedDimensions(value: unknown): ImageDimensions | null {
+    if (!value || typeof value !== "object") return null;
+    const { width, height } = value as Record<string, unknown>;
+    return typeof width === "number" &&
+        typeof height === "number" &&
+        Number.isInteger(width) &&
+        Number.isInteger(height) &&
+        width > 0 &&
+        height > 0
+        ? { width, height }
+        : null;
+}
+
+function decodeDataUri(
+    dataUri: string,
+): { buffer: Buffer; mimeType: string } | null {
+    const match = dataUri.match(/^data:([^;,]+)[^,]*,(.*)$/s);
+    if (!match || !match[1].startsWith("image/")) return null;
+    try {
+        const encoded = match[2];
+        const buffer = dataUri.includes(";base64,")
+            ? base64ToBuffer(`data:${match[1]};base64,${encoded}`)
+            : Buffer.from(decodeURIComponent(encoded));
+        return { buffer, mimeType: match[1] };
+    } catch {
+        return null;
+    }
+}
+
+export async function getSourceImageDimensions(
+    imageUrl: string,
+    kv?: KVNamespace,
+): Promise<ImageDimensions | null> {
+    const inlineImage = imageUrl.startsWith("data:")
+        ? decodeDataUri(imageUrl)
+        : null;
+    if (inlineImage) {
+        return readImageDimensions(inlineImage.buffer, inlineImage.mimeType);
+    }
+
+    const cacheKey = kv ? await dimensionsCacheKey(imageUrl) : undefined;
+    if (kv && cacheKey) {
+        const cached = cachedDimensions(await kv.get(cacheKey, "json"));
+        if (cached) return cached;
+    }
+
+    try {
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
+        const dimensions = readImageDimensions(buffer, mimeType);
+        if (kv && cacheKey && dimensions) {
+            await kv.put(cacheKey, JSON.stringify(dimensions), {
+                expirationTtl: DIMENSIONS_CACHE_TTL_SECONDS,
+            });
+        }
+        return dimensions;
+    } catch {
+        return null;
+    }
+}

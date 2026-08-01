@@ -1,0 +1,35 @@
+{
+  "pr_number": 13008,
+  "title": "fix: harden Flux Vast maintenance cutovers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13008",
+  "merged_at": "2026-08-01T12:28:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records the production cutover from maintenance-bound Vast instance `44731147` to `46491202`.\n- Makes fresh Flux deployments isolated canaries by default; heartbeat and the production tunnel require explicit promotion.\n- Hardens setup for CUDA compatibility paths, Hugging Face downloads, DNS fallback, and model-health gating.\n- Adds direct canary verification through `CANARY_URL` before registry promotion.\n\nValidation:\n- `bash -n image.pollinations.ai/nunchaku/setup-vast.sh`\n- `bash -n image.pollinations.ai/nunchaku/verify-vast.sh`\n- `python3 -m py_compile image.pollinations.ai/nunchaku/server.py`\n- Live production: 47 requests after cutover, all successful; four tunnel connections; old instance destroyed.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Canaries get their own nest",
+    "blurb": "Flux maintenance cutovers now send fresh GPU deployments through a proper little canary garden before they join production. The bees checked the tunnel, the model, and 47 live requests; nothing caught fire.",
+    "summary": "Hardened Flux Vast maintenance cutovers by moving production from instance 44731147 to 46491202, making new deployments isolated canaries by default, and requiring CANARY_URL verification plus explicit tunnel and registry promotion.",
+    "impact": "Flux image generation gains safer GPU maintenance transitions, with CUDA and Hugging Face setup fallbacks, model-health gates, and direct canary checks catching deployment trouble before traffic reaches a new instance.",
+    "keywords": [
+      "flux",
+      "image-generation",
+      "vast",
+      "canary",
+      "gpu",
+      "reliability",
+      "deployment"
+    ],
+    "visual_concept": "A cozy GPU garden cutover: Polli guides a small newly planted canary server toward a glowing production greenhouse only after it passes a heartbeat monitor, tunnel cable, and model-health check. Show the old server resting in the background, a new CRT-backed GPU node being verified, and code-plants/flowers to represent the hardened deployment path.",
+    "image_prompt": "A cozy pixel-art garden workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt while checking a small canary GPU server beside a glowing production greenhouse; a CRT monitor robot holds a checklist reading “CANARY OK,” with code-plants, flowers, a tunnel cable, and lime green (#ecf874) light guiding the safe promotion path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-13008.jpg",
+    "prompt": "A cozy pixel-art garden workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt while checking a small canary GPU server beside a glowing production greenhouse; a CRT monitor robot holds a checklist reading “CANARY OK,” with code-plants, flowers, a tunnel cable, and lime green (#ecf874) light guiding the safe promotion path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-01T12:29:35.343311+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13004,
+  "title": "fix: move OpenAI embeddings to Azure",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13004",
+  "merged_at": "2026-08-01T10:24:43Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Routes `openai-3-small` and `openai-3-large` through their exact existing Azure Global Standard deployments.\n- Keeps canonical names, aliases, model IDs, capabilities, free access, and provider base costs unchanged; no fallback and no secret change.\n- Applies the standard Azure `0.75` price multiplier: `$0.015/M` for Small and `$0.0975/M` for Large.\n- Uses Azure's `api-key` authentication while preserving the existing OpenAI-compatible response and usage mapping.\n\n## Why\n\nThe direct OpenAI routes currently return `429 credit_balance_exhausted`. Both Azure deployments are healthy, already funded, and have 100K TPM / about 600 RPM deployed capacity each, with 45M TPM subscription quota available per model family.\n\n## Validation\n\n- Direct Azure probes: both exact deployments, batch input, custom dimensions, and usage.\n- Local E2E: canonical names and aliases, default/custom dimensions, float/base64, catalog prices, billing headers, auth and validation errors, 8192-token rejection, and 5/15/30-request bursts with zero failures.\n- Gen: typecheck, 26 embedding tests, and full suite (803/803).\n- Enter: typecheck, alias tests, and effective-price snapshot passed. The broader targeted run has one unrelated existing DreamShaper/Lykon logo failure.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Embeddings found a new hive",
+    "blurb": "The OpenAI embedding routes have moved to healthy Azure deployments without changing their names, formats, or familiar API behavior. Same pollen, different flower patch.",
+    "summary": "Routed `openai-3-small` and `openai-3-large` embeddings through their existing Azure Global Standard deployments, preserving canonical names, aliases, dimensions, response mapping, free access, and OpenAI-compatible behavior.",
+    "impact": "Developers can keep using the same embedding models and request formats, now backed by Azure capacity with `$0.015/M` pricing for Small and `$0.0975/M` for Large.",
+    "keywords": [
+      "embeddings",
+      "OpenAI",
+      "Azure",
+      "API",
+      "routing",
+      "billing"
+    ],
+    "visual_concept": "A cozy migration scene: Polli helps carry glowing embedding vectors from an OpenAI-style terminal to a sturdy Azure-blue cloud server garden, while matching labels show that the model names and outputs remain unchanged. Small code-plants and two neatly labeled seed packets represent `openai-3-small` and `openai-3-large`; the monitor robot can inspect the arriving vectors happily.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries glowing embedding seed packets labeled `openai-3-small` and `openai-3-large` between two friendly retro cloud terminals; a cute CRT monitor robot watches the vectors bloom into code-plants and says `I CAN SEE!`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-13004.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries glowing embedding seed packets labeled `openai-3-small` and `openai-3-large` between two friendly retro cloud terminals; a cute CRT monitor robot watches the vectors bloom into code-plants and says `I CAN SEE!`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-01T10:25:38.745858+00:00"
+}

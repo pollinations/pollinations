@@ -11,33 +11,11 @@ export function base64ToBuffer(base64: string): Buffer {
     const input = base64
         .replace(/^data:[^,]+,/, "")
         .replace(/\s/g, "")
-        .replace(/-/g, "+")
-        .replace(/_/g, "/")
         .replace(/=+$/, "");
-    const buffer = Buffer.alloc(Math.floor((input.length * 6) / 8));
-    let bits = 0;
-    let value = 0;
-    let index = 0;
-
-    for (const char of input) {
-        const digit =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(
-                char,
-            );
-        if (digit < 0) {
-            throw new HttpError("Invalid base64 image response", 502);
-        }
-        value = (value << 6) | digit;
-        bits += 6;
-
-        if (bits >= 8) {
-            bits -= 8;
-            buffer[index] = (value >> bits) & 0xff;
-            index += 1;
-        }
+    if (!/^[A-Za-z0-9+/_-]*$/.test(input)) {
+        throw new HttpError("Invalid base64 image response", 502);
     }
-
-    return buffer;
+    return Buffer.from(input, "base64");
 }
 
 export function detectMimeType(buffer: Uint8Array): string {

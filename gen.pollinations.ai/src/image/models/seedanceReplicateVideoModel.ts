@@ -22,6 +22,7 @@ import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance:ops");
@@ -175,14 +176,11 @@ async function generateSeedanceVideo(
                 message: err.message,
                 status: err.status,
             });
-            throw new HttpError(
-                `${config.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
         }
-        throw err;
+        throw toReplicateHttpError(
+            err,
+            `${config.displayName} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

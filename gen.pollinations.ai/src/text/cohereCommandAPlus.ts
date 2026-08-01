@@ -4,13 +4,18 @@ import {
 } from "eventsource-parser/stream";
 import type { ChatCompletion, ServiceError, TransformFn } from "./types.js";
 
-const COHERE_CONTROL_TOKENS = [
+const RESPONSE_CONTROL_TOKENS = [
     "<|START_THINKING|>",
     "<|END_THINKING|>",
     "<|START_TEXT|>",
     "<|END_TEXT|>",
     "<|START_RESPONSE|>",
     "<|END_RESPONSE|>",
+    "<|content_text|>",
+    "<|content_thinking|>",
+    "<|content_model_end_sampling|>",
+    "<|end_message|>",
+    "<|endoftext|>",
 ] as const;
 
 function stripBoundaryControlTokens(
@@ -19,7 +24,7 @@ function stripBoundaryControlTokens(
 ): string {
     let cleaned = text;
     while (true) {
-        const token = COHERE_CONTROL_TOKENS.find((value) =>
+        const token = RESPONSE_CONTROL_TOKENS.find((value) =>
             boundary === "start"
                 ? cleaned.startsWith(value)
                 : cleaned.endsWith(value),
@@ -36,7 +41,7 @@ function possibleTrailingControlLength(text: string): number {
     for (let index = 0; index < text.length; index += 1) {
         let remaining = text.slice(index);
         while (remaining) {
-            const token = COHERE_CONTROL_TOKENS.find((value) =>
+            const token = RESPONSE_CONTROL_TOKENS.find((value) =>
                 remaining.startsWith(value),
             );
             if (!token) break;
@@ -44,7 +49,7 @@ function possibleTrailingControlLength(text: string): number {
         }
         if (
             !remaining ||
-            COHERE_CONTROL_TOKENS.some((value) => value.startsWith(remaining))
+            RESPONSE_CONTROL_TOKENS.some((value) => value.startsWith(remaining))
         ) {
             return text.length - index;
         }
@@ -52,7 +57,7 @@ function possibleTrailingControlLength(text: string): number {
     return 0;
 }
 
-class CohereContentSanitizer {
+class FramedContentSanitizer {
     private pending = "";
     private atStart = true;
 
@@ -63,7 +68,7 @@ class CohereContentSanitizer {
             this.pending = stripBoundaryControlTokens(this.pending, "start");
             if (!this.pending) return "";
             if (
-                COHERE_CONTROL_TOKENS.some((token) =>
+                RESPONSE_CONTROL_TOKENS.some((token) =>
                     token.startsWith(this.pending),
                 )
             ) {
@@ -93,7 +98,7 @@ class CohereContentSanitizer {
 }
 
 function sanitizeContent(text: string): string {
-    const sanitizer = new CohereContentSanitizer();
+    const sanitizer = new FramedContentSanitizer();
     return sanitizer.push(text) + sanitizer.finish();
 }
 
@@ -101,13 +106,13 @@ function sanitizeStream(
     source: ReadableStream<Uint8Array<ArrayBuffer>>,
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();
-    const contentSanitizers = new Map<number, CohereContentSanitizer>();
+    const contentSanitizers = new Map<number, FramedContentSanitizer>();
     let lastChunkMetadata: Record<string, unknown> = {};
 
-    function sanitizerFor(index: number): CohereContentSanitizer {
+    function sanitizerFor(index: number): FramedContentSanitizer {
         const existing = contentSanitizers.get(index);
         if (existing) return existing;
-        const sanitizer = new CohereContentSanitizer();
+        const sanitizer = new FramedContentSanitizer();
         contentSanitizers.set(index, sanitizer);
         return sanitizer;
     }
@@ -216,7 +221,7 @@ function sanitizeStream(
         );
 }
 
-export function sanitizeCohereResponse(
+export function sanitizeFramedResponse(
     completion: ChatCompletion,
 ): ChatCompletion {
     if (completion.stream && completion.responseStream) {

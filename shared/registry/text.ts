@@ -1415,6 +1415,32 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "inkling": {
+        aliases: ["inkling-small", "inkling-small-20260730"],
+        provider: "openrouter",
+        brand: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-08-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Together route rates (2026-08-01). Image and audio
+            // inputs are tokenized into promptTextTokens; no separate usage is
+            // reported or billed for either modality.
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "Inkling Small",
+        description:
+            "Multimodal reasoning for agents, coding, image analysis and audio understanding",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 524288,
+        isSpecialized: false,
+    },
     "nemotron": {
         aliases: [
             "nemotron-3-ultra",

@@ -32,7 +32,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -104,7 +104,8 @@ function enforceCommunityEndpointPriceLimits(
     }
 }
 
-// Community fallback targets are restricted to other public community models.
+// Community fallback targets are restricted to public community models or
+// private models owned by the same developer.
 // Pointing a community model at a Pollinations-operated model is deliberately
 // out of scope: static registry prices can be function-valued/dynamic, so the
 // "same or lower price" comparison is not well-defined against them.
@@ -112,13 +113,14 @@ const FallbackModelIdsSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another public community model of the same modality, priced at or below this model on every price field.',
+        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another active community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 
 const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
 
 type FallbackPrimary = {
     modelId: string;
+    ownerUserId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
@@ -140,8 +142,14 @@ function fallbackTargetRejection(
     // public rows scanned. The write path checks this earlier, before any
     // lookup, because a model being created has no row to find.
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (target.visibility !== "public" || target.disabledAt !== null) {
-        return `Fallback target ${modelId} must be a public, active community model`;
+    if (target.disabledAt !== null) {
+        return `Fallback target ${modelId} must be active`;
+    }
+    if (
+        target.visibility === "private" &&
+        target.ownerUserId !== primary.ownerUserId
+    ) {
+        return `Fallback target ${modelId} must be public or owned by you`;
     }
     const targetModality = normalizeCommunityEndpointModality(target.modality);
     if (targetModality !== primary.modality) {
@@ -598,7 +606,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: public, active, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: active, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -632,14 +640,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
+                ownerUserId: user.id,
                 modality: normalizeCommunityEndpointModality(endpoint.modality),
                 imagePricing: normalizeCommunityEndpointImagePricing(
                     endpoint.imagePricing,
                 ),
                 prices: communityEndpointPrices(endpoint),
             };
-            // Only public rows can be targets, so the owner join never drops
-            // one: publishing already requires a GitHub username.
             const candidates = await db
                 .select({
                     endpoint: schema.communityEndpoint,
@@ -650,7 +657,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
                 )
-                .where(eq(schema.communityEndpoint.visibility, "public"));
+                .where(
+                    or(
+                        eq(schema.communityEndpoint.visibility, "public"),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                    ),
+                );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
                     if (!owner) return [];
@@ -716,6 +728,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           ownerGithubUsername,
                           input.name,
                       ),
+                      ownerUserId: user.id,
                       modality: input.modality,
                       imagePricing,
                       prices,
@@ -983,6 +996,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ownerGithubUsername,
                             input.name ?? endpoint.name,
                         ),
+                        ownerUserId: user.id,
                         modality,
                         imagePricing: effectiveImagePricing,
                         prices: effectivePrices,

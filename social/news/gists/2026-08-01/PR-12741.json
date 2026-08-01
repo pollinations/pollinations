@@ -1,0 +1,33 @@
+{
+  "pr_number": 12741,
+  "title": "fix: correct opencode-pollinations-plugin package name in README",
+  "author": "kreggscode",
+  "url": "https://github.com/pollinations/pollinations/pull/12741",
+  "merged_at": "2026-08-01T05:37:52Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes the package name from open-code-pollinations-plugin to opencode-pollinations-plugin to match the actual npm package name.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One hyphen found its hive",
+    "blurb": "The install command now points to the package that actually exists. Fewer mysterious npm scavenger hunts for everyone.",
+    "summary": "Corrected the README package name from `open-code-pollinations-plugin` to the published `opencode-pollinations-plugin` npm package.",
+    "impact": "Developers can now copy the README install command and reach the correct OpenCode Pollinations plugin package.",
+    "keywords": [
+      "documentation",
+      "npm",
+      "opencode",
+      "plugin",
+      "developer-experience"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian or terminal mechanic carefully moving a misplaced pixel hyphen into the correct npm package label on a cozy CRT terminal, with a small code-plant and flowers nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully fixing a misplaced hyphen on a retro CRT terminal displaying `opencode-pollinations-plugin`; a little code-plant sprouts beside the keyboard and warm pixel flowers surround the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12741.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully fixing a misplaced hyphen on a retro CRT terminal displaying `opencode-pollinations-plugin`; a little code-plant sprouts beside the keyboard and warm pixel flowers surround the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T05:38:49.961306+00:00"
+}

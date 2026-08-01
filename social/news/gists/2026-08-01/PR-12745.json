@@ -1,0 +1,34 @@
+{
+  "pr_number": 12745,
+  "title": "feat: add admin-controlled dashboard status notice",
+  "author": "kreggscode",
+  "url": "https://github.com/pollinations/pollinations/pull/12745",
+  "merged_at": "2026-08-01T06:06:54Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12585\n\n- Adds a KV-backed public status notice endpoint.\n- Adds admin-protected publish and clear endpoints under `/api/admin/status-notice`.\n- Shows a dismissible warning across the dashboard and restores it after refresh.\n- Validates message length and optional HTTP(S) links.\n\nChecks: Biome, Enter typecheck, production frontend build.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A note on the dashboard door",
+    "blurb": "The dashboard can now leave a polite note when the hive needs everyone’s attention. Admins publish it once; dismissed notices still know how to find their way back after a refresh.",
+    "summary": "Added a KV-backed public status-notice endpoint plus admin publish and clear controls under `/api/admin/status-notice`, with a dismissible dashboard warning that persists across refreshes and validates message length and optional HTTP(S) links.",
+    "impact": "Dashboard users can reliably see and revisit administrator status updates, while admins get a validated, centralized way to post or clear notices without redeploying the frontend.",
+    "keywords": [
+      "dashboard",
+      "status notice",
+      "admin API",
+      "KV",
+      "frontend",
+      "notifications"
+    ],
+    "visual_concept": "Depict the dashboard as a cozy garden-shed control room with a large retro terminal displaying a friendly status notice banner. Polli, wearing a tiny caretaker hat and holding a clipboard, gently pins the notice to the monitor while small code-plants and flowers grow around the terminal; the scene represents a persistent, admin-posted message reaching the whole dashboard.",
+    "image_prompt": "A cozy pixel-art garden-shed dashboard scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny caretaker hat and pins a friendly warning notice onto a glowing retro CRT dashboard; code-plants and flowers grow beside it, and the notice reads \"STATUS NOTICE\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12745.jpg",
+    "prompt": "A cozy pixel-art garden-shed dashboard scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny caretaker hat and pins a friendly warning notice onto a glowing retro CRT dashboard; code-plants and flowers grow beside it, and the notice reads \"STATUS NOTICE\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-01T06:07:53.802144+00:00"
+}

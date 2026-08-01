@@ -1,0 +1,34 @@
+{
+  "pr_number": 12990,
+  "title": "feat: extend model fallbacks across modalities",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12990",
+  "merged_at": "2026-08-01T12:22:18Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #12986.\n\n- Connects the shared fallback executor to model-selecting audio routes, embeddings, and 3D.\n- Leaves fixed-provider audio operations untouched so a fallback never retries the same upstream under another model label.\n- Leaves realtime unchanged because there is no current realtime fallback need.\n- Declares no fallback pairs or model-specific compatibility, dimension, or price guards; registry declarations remain maintainer-owned.\n\nValidation:\n- Biome: clean\n- Gen typecheck: pass\n- Focused fallback, audio, embeddings, and 3D tests: 52 passed, 3 skipped\n- Full Gen suite: 803 passed, 6 skipped\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More routes, more escape hatches",
+    "blurb": "The fallback garden grew a few new paths. Audio model selection, embeddings, and 3D generation can now find another route when an upstream gets grumpy.",
+    "summary": "Connected the shared model fallback executor to model-selecting audio routes, embeddings, and 3D generation, while keeping fixed-provider audio operations and realtime behavior unchanged.",
+    "impact": "Audio, embedding, and 3D requests with registry-declared fallback models can recover through an alternate compatible model instead of stopping at a single unavailable upstream.",
+    "keywords": [
+      "fallbacks",
+      "audio",
+      "embeddings",
+      "3d",
+      "reliability",
+      "api"
+    ],
+    "visual_concept": "A cozy multi-modal routing garden: Polli tends three code-plants representing audio waveforms, embedding vectors, and a tiny 3D cube, with gentle branching paths leading around a sleepy blocked-upstream sign toward healthy glowing terminals. The scene makes fallbacks feel like resilient garden paths rather than an error alarm; the Monitor Robot can happily point at the alternate routes.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she tends three branching code-plants: a waveform flower, a glowing vector-seed grid, and a small 3D cube blossom; a cute chunky CRT-monitor robot points eagerly toward healthy alternate garden paths around a small sleepy error stump. Cozy 8-bit pixel art aesthetic, prominently use lime green (#ecf874) with warm cream, mint, lavender, and peach pastel gradients, dark purple (#110518) outlines, chunky retro sprites, subtle CRT glow and scanlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12990.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she tends three branching code-plants: a waveform flower, a glowing vector-seed grid, and a small 3D cube blossom; a cute chunky CRT-monitor robot points eagerly toward healthy alternate garden paths around a small sleepy error stump. Cozy 8-bit pixel art aesthetic, prominently use lime green (#ecf874) with warm cream, mint, lavender, and peach pastel gradients, dark purple (#110518) outlines, chunky retro sprites, subtle CRT glow and scanlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-01T12:23:16.086931+00:00"
+}

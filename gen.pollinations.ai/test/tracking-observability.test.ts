@@ -122,6 +122,7 @@ function createCommunityEndpoint(
         imagePricing: "request",
         inputModalities: null,
         baseUrl: "https://community.example.test/openai",
+        agentId: null,
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",

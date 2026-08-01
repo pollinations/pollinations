@@ -43,12 +43,15 @@
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'"
     },
     "dependencies": {
+        "@ai-sdk/mcp": "^2.0.16",
+        "@ai-sdk/openai-compatible": "^3.0.14",
         "@hono/standard-validator": "^0.2.2",
         "@logtape/logtape": "1.3.5",
         "@pollinations/ui": "*",
         "@standard-community/standard-json": "^0.3.5",
         "@standard-community/standard-openapi": "^0.2.9",
         "@tanstack/react-router": "^1.139.3",
+        "ai": "^7.0.36",
         "better-auth": "1.4.17",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",

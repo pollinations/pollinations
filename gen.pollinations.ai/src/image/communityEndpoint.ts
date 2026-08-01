@@ -33,6 +33,9 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
+    if (!endpoint.bearerTokenCiphertext) {
+        throw new Error("Community image endpoint has no bearer token");
+    }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,

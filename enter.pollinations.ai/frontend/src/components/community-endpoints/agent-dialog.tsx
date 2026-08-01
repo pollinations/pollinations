@@ -1,0 +1,173 @@
+import {
+    Alert,
+    Button,
+    Dialog,
+    DialogTitle,
+    ScrollArea,
+} from "@pollinations/ui";
+import type { FormEvent, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { PromptAgentFields } from "./prompt-agent-fields.tsx";
+import {
+    type AgentFormState,
+    type AgentPayload,
+    emptyAgentForm,
+    isValidMcpRow,
+    type ManagedAgent,
+    type McpServerRow,
+    toAgentPayload,
+} from "./types.ts";
+
+type AgentDialogProps = {
+    agent?: ManagedAgent;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit: (payload: AgentPayload) => Promise<void>;
+    trigger?: ReactNode;
+};
+
+export function AgentDialog({
+    agent,
+    open,
+    onOpenChange,
+    onSubmit,
+    trigger,
+}: AgentDialogProps) {
+    const [form, setForm] = useState<AgentFormState>(emptyAgentForm);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setForm(
+            open && agent
+                ? {
+                      systemPrompt: agent.systemPrompt,
+                      baseModel: agent.baseModel,
+                      mcpServers: agent.mcpServers.map((server) => ({
+                          ...server,
+                          id: crypto.randomUUID(),
+                      })),
+                  }
+                : emptyAgentForm,
+        );
+        setError(null);
+        setIsSubmitting(false);
+    }, [open, agent]);
+
+    function updateForm(
+        key: keyof Omit<AgentFormState, "mcpServers">,
+        value: string,
+    ): void {
+        setForm((current) => ({ ...current, [key]: value }));
+    }
+
+    function updateMcpServer(
+        index: number,
+        key: keyof Omit<McpServerRow, "id">,
+        value: string,
+    ): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: current.mcpServers.map((row, rowIndex) =>
+                rowIndex === index ? { ...row, [key]: value } : row,
+            ),
+        }));
+    }
+
+    function addMcpServer(): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: [
+                ...current.mcpServers,
+                { id: crypto.randomUUID(), name: "", url: "" },
+            ],
+        }));
+    }
+
+    function removeMcpServer(index: number): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: current.mcpServers.filter((_, i) => i !== index),
+        }));
+    }
+
+    async function handleSubmit(event: FormEvent): Promise<void> {
+        event.preventDefault();
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await onSubmit(toAgentPayload(form));
+            onOpenChange(false);
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error ? thrown.message : "Agent save failed",
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    const canSubmit =
+        !isSubmitting &&
+        form.systemPrompt.trim() !== "" &&
+        form.baseModel.trim() !== "" &&
+        form.mcpServers.every(isValidMcpRow);
+
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={onOpenChange}
+            size="lg"
+            trigger={trigger}
+            triggerAsChild
+            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
+        >
+            <div className="shrink-0 p-6 pb-4">
+                <div className="flex items-center justify-between gap-3">
+                    <DialogTitle className="text-lg font-semibold">
+                        {agent ? "Edit Agent" : "Add Agent"}
+                    </DialogTitle>
+                    {!agent && (
+                        <span className="shrink-0 text-xs font-medium text-theme-text-muted">
+                            Step 1 of 2
+                        </span>
+                    )}
+                </div>
+                <p className="mt-1 text-sm text-theme-text-muted">
+                    {agent
+                        ? "Update the agent behavior. Listing details are edited from its model card."
+                        : "Configure the agent now. You can complete its listing next or save it for later."}
+                </p>
+            </div>
+            <form
+                onSubmit={handleSubmit}
+                className="flex min-h-0 flex-1 flex-col"
+                autoComplete="off"
+            >
+                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
+                    {error && <Alert intent="danger">{error}</Alert>}
+                    <PromptAgentFields
+                        form={form}
+                        disabled={isSubmitting}
+                        onChange={updateForm}
+                        onAddMcp={addMcpServer}
+                        onUpdateMcp={updateMcpServer}
+                        onRemoveMcp={removeMcpServer}
+                    />
+                </ScrollArea>
+                <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
+                    <Button type="button" onClick={() => onOpenChange(false)}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" intent="info" disabled={!canSubmit}>
+                        {isSubmitting
+                            ? "Saving…"
+                            : agent
+                              ? "Save"
+                              : "Save & continue"}
+                    </Button>
+                </div>
+            </form>
+        </Dialog>
+    );
+}

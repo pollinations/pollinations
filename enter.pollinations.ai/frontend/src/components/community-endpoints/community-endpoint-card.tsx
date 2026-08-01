@@ -11,6 +11,7 @@ import {
     IconButton,
     LockIcon,
     PencilIcon,
+    SparklesIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
@@ -30,6 +31,7 @@ type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     isToggling: boolean;
     onToggle: () => void;
+    onEditAgent?: () => void;
     onEdit: () => void;
     onDelete: () => void;
 };
@@ -38,6 +40,7 @@ export function CommunityEndpointCard({
     endpoint,
     isToggling,
     onToggle,
+    onEditAgent,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
@@ -64,6 +67,11 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {endpoint.agentId && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -85,10 +93,21 @@ export function CommunityEndpointCard({
                               ? "Reactivate"
                               : "Deactivate"}
                     </Button>
+                    {onEditAgent && (
+                        <IconButton
+                            intent="info"
+                            title="Edit agent"
+                            tooltip="Edit agent"
+                            tooltipAlign="center"
+                            onClick={onEditAgent}
+                        >
+                            <SparklesIcon className="h-4 w-4" />
+                        </IconButton>
+                    )}
                     <IconButton
                         intent="info"
-                        title="Edit model"
-                        tooltip="Edit model"
+                        title="Edit listing"
+                        tooltip="Edit listing"
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -125,22 +144,26 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                <CommunityDetailRow
-                    icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
-                    label="Endpoint"
-                    value={endpoint.baseUrl}
-                    copyLabel="Copy endpoint"
-                />
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={endpoint.baseUrl}
+                        copyLabel="Copy endpoint"
+                    />
+                )}
                 <CommunityDetailRow
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
                     label="Modality"
                     value={endpoint.modality}
                 />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Upstream model"
-                    value={endpoint.upstreamModel}
-                />
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                        label="Upstream model"
+                        value={endpoint.upstreamModel}
+                    />
+                )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
                         key={group.key}

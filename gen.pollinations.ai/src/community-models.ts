@@ -61,9 +61,11 @@ export async function getCommunityModelRegistryEntries(
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
             inputModalities: schema.communityEndpoint.inputModalities,
-            baseUrl: schema.communityEndpoint.baseUrl,
+            agentId: schema.communityEndpoint.agentId,
+            endpointBaseUrl: schema.communityEndpoint.baseUrl,
+            agentBaseUrl: schema.agent.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
-            bearerTokenCiphertext:
+            endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
@@ -87,10 +89,21 @@ export async function getCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
+        .leftJoin(
+            schema.agent,
+            eq(schema.communityEndpoint.agentId, schema.agent.id),
+        )
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
+        const baseUrl = row.endpointBaseUrl ?? row.agentBaseUrl;
+        if (
+            !baseUrl ||
+            (row.agentId === null && !row.endpointBearerTokenCiphertext)
+        ) {
+            return [];
+        }
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         const communityEndpoint: CommunityEndpointRuntime = {
             id: row.id,
@@ -104,9 +117,10 @@ export async function getCommunityModelRegistryEntries(
                 row.imagePricing,
             ),
             inputModalities: row.inputModalities,
-            baseUrl: row.baseUrl,
-            upstreamModel: row.upstreamModel,
-            bearerTokenCiphertext: row.bearerTokenCiphertext,
+            baseUrl,
+            agentId: row.agentId,
+            upstreamModel: row.agentId ?? row.upstreamModel,
+            bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
             visibility: row.visibility,
             delegatesGeneration: row.delegatesGeneration,
             fallbackModelIds: row.fallbackModelIds ?? [],

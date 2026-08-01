@@ -58,6 +58,7 @@ export async function communityEndpointGatewayContext(
     modelDefinition: ModelDefinition,
     requestData: RequestData,
     secret: string,
+    agentRuntimeToken: string,
     portkeyGatewayUrl: string,
     userApiKey: string,
     parentApiKeyId?: string,
@@ -66,11 +67,17 @@ export async function communityEndpointGatewayContext(
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
     // A delegating endpoint is sent the run token instead of its saved bearer,
     // so it never receives a credential it could spend on the owner's account.
-    const authKey =
-        runToken ??
-        normalizeCommunityEndpointBearerToken(
-            await decryptSecret(endpoint.bearerTokenCiphertext, secret),
-        );
+    let authKey = agentRuntimeToken;
+    if (!endpoint.agentId) {
+        if (!endpoint.bearerTokenCiphertext) {
+            throw new Error("Community endpoint has no bearer token");
+        }
+        authKey =
+            runToken ??
+            normalizeCommunityEndpointBearerToken(
+                await decryptSecret(endpoint.bearerTokenCiphertext, secret),
+            );
+    }
 
     return {
         ...requestDataWithoutMessages,
@@ -78,7 +85,7 @@ export async function communityEndpointGatewayContext(
             provider: "openai",
             "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
             authKey,
-            model: endpoint.upstreamModel,
+            model: endpoint.agentId ?? endpoint.upstreamModel,
         },
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,

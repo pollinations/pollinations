@@ -293,8 +293,9 @@ export type CommunityEndpointRuntime = {
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
     baseUrl: string;
+    agentId: string | null;
     upstreamModel: string;
-    bearerTokenCiphertext: string;
+    bearerTokenCiphertext: string | null;
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;

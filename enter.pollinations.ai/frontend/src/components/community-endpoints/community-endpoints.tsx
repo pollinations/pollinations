@@ -2,19 +2,25 @@ import {
     Alert,
     Button,
     Section,
+    SparklesIcon,
     SproutIcon,
     Surface,
     TokensIcon,
 } from "@pollinations/ui";
 import { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { AgentCard } from "./agent-card.tsx";
+import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
+import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
+    type AgentPayload,
     type CommunityEndpoint,
     type EndpointPayload,
     type FallbackModelOption,
+    type ManagedAgent,
     readError,
 } from "./types.ts";
 
@@ -33,23 +39,44 @@ export function CommunityEndpoints({
     fallbackOptions,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
+    const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [agentCreateOpen, setAgentCreateOpen] = useState(false);
+    const [registeringAgent, setRegisteringAgent] =
+        useState<ManagedAgent | null>(null);
+    const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
+    const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
+        null,
+    );
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
-        const response = await apiClient.account["my-models"].$get();
-        if (!response.ok) {
-            setError(await readError(response));
+        const [endpointResponse, agentResponse] = await Promise.all([
+            apiClient.account["my-models"].$get(),
+            apiClient.account.agents.$get(),
+        ]);
+        if (!endpointResponse.ok || !agentResponse.ok) {
+            setError(
+                await readError(
+                    endpointResponse.ok ? agentResponse : endpointResponse,
+                ),
+            );
             setIsLoading(false);
             return;
         }
-        const body = (await response.json()) as { data: CommunityEndpoint[] };
-        setEndpoints(body.data);
+        const endpointBody = (await endpointResponse.json()) as {
+            data: CommunityEndpoint[];
+        };
+        const agentBody = (await agentResponse.json()) as {
+            data: ManagedAgent[];
+        };
+        setEndpoints(endpointBody.data);
+        setAgents(agentBody.data);
         setIsLoading(false);
     }, []);
 
@@ -57,12 +84,56 @@ export function CommunityEndpoints({
         void loadEndpoints();
     }, [loadEndpoints]);
 
+    async function handleCreateAgent(payload: AgentPayload): Promise<void> {
+        const response = await apiClient.account.agents.$post({
+            json: payload,
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        const createdAgent = (await response.json()) as ManagedAgent;
+        await loadEndpoints();
+        setRegisteringAgent(createdAgent);
+        setCreateOpen(true);
+    }
+
+    async function handleUpdateAgent(payload: AgentPayload): Promise<void> {
+        if (!editingAgent) return;
+        const response = await apiClient.account.agents[":id"].$patch({
+            param: { id: editingAgent.id },
+            json: payload,
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        await loadEndpoints();
+        await onChange?.();
+    }
+
+    async function handleDeleteAgent(): Promise<void> {
+        if (!deletingAgent) return;
+        const target = deletingAgent;
+        setDeletingAgent(null);
+        setError(null);
+        try {
+            const response = await apiClient.account.agents[":id"].$delete({
+                param: { id: target.id },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            await loadEndpoints();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Agent delete failed",
+            );
+        }
+    }
+
     async function handleCreate(
         payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            json: { ...payload, bearerToken },
+            // A prompt agent mints its own worker token; only self-hosted
+            // endpoints carry a caller-supplied bearer token.
+            json: bearerToken ? { ...payload, bearerToken } : payload,
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -164,63 +235,124 @@ export function CommunityEndpoints({
         </>
     );
 
+    const endpointByAgentId = new Map(
+        endpoints.flatMap((endpoint) =>
+            endpoint.agentId ? [[endpoint.agentId, endpoint] as const] : [],
+        ),
+    );
+    const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+    const unregisteredAgents = agents.filter(
+        (agent) => !endpointByAgentId.has(agent.id),
+    );
+    const selectableAgents = editing?.agentId
+        ? agents.filter(
+              (agent) =>
+                  agent.id === editing.agentId ||
+                  !endpointByAgentId.has(agent.id),
+          )
+        : unregisteredAgents;
+    const hasModels = endpoints.length > 0 || unregisteredAgents.length > 0;
+
     return (
         <>
+            {error && <Alert intent="danger">{error}</Alert>}
             <Section
                 title="My Models"
                 framed
                 action={
-                    <CommunityEndpointDialog
-                        open={createOpen}
-                        onOpenChange={setCreateOpen}
-                        onSubmit={handleCreate}
-                        canPublish={canPublish}
-                        fallbackOptions={fallbackOptions}
-                        trigger={
-                            <Button
-                                type="button"
-                                className="inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap"
-                            >
-                                <SproutIcon className="h-4 w-4" />
-                                Add Model
-                            </Button>
-                        }
-                    />
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <AgentDialog
+                            open={agentCreateOpen}
+                            onOpenChange={setAgentCreateOpen}
+                            onSubmit={handleCreateAgent}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <SparklesIcon className="h-4 w-4" />
+                                    Add Agent
+                                </Button>
+                            }
+                        />
+                        <CommunityEndpointDialog
+                            initialAgent={registeringAgent ?? undefined}
+                            agents={unregisteredAgents}
+                            open={createOpen}
+                            onOpenChange={(open) => {
+                                setCreateOpen(open);
+                                if (!open) setRegisteringAgent(null);
+                            }}
+                            onSubmit={handleCreate}
+                            canPublish={canPublish}
+                            fallbackOptions={fallbackOptions}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <SproutIcon className="h-4 w-4" />
+                                    Add Model
+                                </Button>
+                            }
+                        />
+                    </div>
                 }
             >
-                {error && (
-                    <Alert intent="danger" className="mb-3">
-                        {error}
-                    </Alert>
-                )}
                 <div className="flex flex-col gap-3">
                     {isLoading ? (
                         <Surface className="p-6 text-center text-sm text-theme-text-muted">
                             Loading…
                         </Surface>
-                    ) : endpoints.length === 0 ? (
+                    ) : !hasModels ? (
                         <Surface className="p-6 text-center">
                             <SproutIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                             <p className="mb-2 text-lg font-semibold">
-                                Register your first model
+                                Add your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
+                                    ? "Create a managed agent or register an OpenAI-compatible endpoint."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
                     ) : (
-                        endpoints.map((endpoint) => (
-                            <CommunityEndpointCard
-                                key={endpoint.id}
-                                endpoint={endpoint}
-                                isToggling={togglingId === endpoint.id}
-                                onToggle={() => void handleToggle(endpoint)}
-                                onEdit={() => setEditing(endpoint)}
-                                onDelete={() => setDeleting(endpoint)}
-                            />
-                        ))
+                        <>
+                            {unregisteredAgents.map((agent) => (
+                                <AgentCard
+                                    key={agent.id}
+                                    agent={agent}
+                                    onComplete={() => {
+                                        setRegisteringAgent(agent);
+                                        setCreateOpen(true);
+                                    }}
+                                    onEdit={() => setEditingAgent(agent)}
+                                    onDelete={() => setDeletingAgent(agent)}
+                                />
+                            ))}
+                            {endpoints.map((endpoint) => {
+                                const agent = endpoint.agentId
+                                    ? agentById.get(endpoint.agentId)
+                                    : undefined;
+                                return (
+                                    <CommunityEndpointCard
+                                        key={endpoint.id}
+                                        endpoint={endpoint}
+                                        isToggling={togglingId === endpoint.id}
+                                        onToggle={() =>
+                                            void handleToggle(endpoint)
+                                        }
+                                        onEditAgent={
+                                            agent
+                                                ? () => setEditingAgent(agent)
+                                                : undefined
+                                        }
+                                        onEdit={() => setEditing(endpoint)}
+                                        onDelete={() => setDeleting(endpoint)}
+                                    />
+                                );
+                            })}
+                        </>
                     )}
                 </div>
                 {!isLoading && endpoints.length > 0 && (
@@ -246,6 +378,7 @@ export function CommunityEndpoints({
             <CommunityEndpointDialog
                 key={editing?.id ?? "edit-closed"}
                 endpoint={editing ?? undefined}
+                agents={selectableAgents}
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
@@ -257,6 +390,20 @@ export function CommunityEndpoints({
                 endpoint={deleting}
                 onConfirm={() => void handleDelete()}
                 onCancel={() => setDeleting(null)}
+            />
+
+            <AgentDialog
+                key={editingAgent?.id ?? "agent-edit-closed"}
+                agent={editingAgent ?? undefined}
+                open={!!editingAgent}
+                onOpenChange={(open) => !open && setEditingAgent(null)}
+                onSubmit={handleUpdateAgent}
+            />
+
+            <AgentDeleteConfirmation
+                agent={deletingAgent}
+                onConfirm={() => void handleDeleteAgent()}
+                onCancel={() => setDeletingAgent(null)}
             />
         </>
     );

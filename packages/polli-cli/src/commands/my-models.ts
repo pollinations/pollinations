@@ -83,6 +83,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -116,13 +117,22 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (includeRequired) {
-        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title"]) {
             if (!body[required]) {
-                printError(
-                    `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
-                );
+                printError(`--${required} is required`);
                 process.exit(1);
             }
+        }
+        const modeCount = [body.baseUrl, body.agentId].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            printError("Provide exactly one of --base-url or --agent-id");
+            process.exit(1);
+        }
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            printError("--bearer-token is required with --base-url");
+            process.exit(1);
         }
     }
 
@@ -181,9 +191,10 @@ const create = addPriceOptions(
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",

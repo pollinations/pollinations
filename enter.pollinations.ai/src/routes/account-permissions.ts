@@ -1,3 +1,5 @@
+import { HTTPException } from "hono/http-exception";
+
 export type AccountPermission = "profile" | "usage" | "keys";
 
 export type AccountPermissionApiKey = {
@@ -9,6 +11,17 @@ export function hasDirectAccountPermission(
     permission: AccountPermission,
 ): boolean {
     return !!apiKey?.permissions?.account?.includes(permission);
+}
+
+export function requireAccountKeysPermission(
+    apiKey: AccountPermissionApiKey | undefined,
+): void {
+    if (!apiKey) return;
+    if (!hasDirectAccountPermission(apiKey, "keys")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:keys' permission",
+        });
+    }
 }
 
 /**

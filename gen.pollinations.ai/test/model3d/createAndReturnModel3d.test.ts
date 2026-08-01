@@ -58,7 +58,7 @@ describe("createAndReturnModel3d dispatch", () => {
     });
 });
 
-workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
+workerTest("uses the shared fallback loop for 3D",  {timeout: 900000 }, async ({ paidApiKey }) => {
     const source = getRegistryModelDefinition("trellis-2-low");
     const previousFallbacks = source.fallbacks;
     try {

@@ -63,6 +63,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Inkling to Together on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "inkling" });
+
+        expect(result.options.model).toBe("thinkingmachines/inkling-small");
+        expect(result.options.provider).toEqual({
+            only: ["Together"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, { model: "mercury" });
 

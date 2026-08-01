@@ -194,6 +194,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "thinkingmachines/inkling-small": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling-small",
+            defaultOptions: {
+                provider: {
+                    only: ["Together"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>

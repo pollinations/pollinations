@@ -1,0 +1,35 @@
+{
+  "pr_number": 12986,
+  "title": "feat: unify registry and community fallback routing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12986",
+  "merged_at": "2026-08-01T06:14:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes registry and community fallbacks through one depth-one executor for text and the existing image/video path.\n- Adds an ordered registry `fallbacks` declaration field without declaring any pairs yet.\n- Keeps caller pricing anchored to the requested model while provider cost and served-model telemetry follow the model that ran.\n- Trusts registry-owned declarations without price, visibility, availability, dimension, or compatibility guards.\n- Keeps community-authored active-state, ownership/privacy, modality, and price rules; a developer’s public model may target their own private model.\n\nAudio, embeddings, realtime, and 3D are isolated in stacked draft #12990.\n\nValidation: pinned Biome 2.3.10, Gen and Enter typechecks, full core Gen suite 802/802, focused Enter boundary tests 13/13, and green GitHub lint/CodeQL. Staging forced-failure smoke passed for registry text and image fallbacks; the clean bundle was restored afterward.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fallbacks share one trail",
+    "blurb": "The hive’s backup routes now follow one well-marked path instead of wandering through separate tunnels. Text joins the established image and video fallback flow, while the receipt still names the model you asked for.",
+    "summary": "Unified registry and community fallback routing behind a depth-one executor for text plus the existing image/video path, with ordered registry fallback declarations and telemetry recording the model that actually served the request.",
+    "impact": "When a requested model needs a fallback, callers keep requested-model pricing while provider-cost accounting and served-model telemetry accurately reflect the model that ran.",
+    "keywords": [
+      "fallbacks",
+      "model-registry",
+      "routing",
+      "text-generation",
+      "image-generation",
+      "telemetry",
+      "community-models"
+    ],
+    "visual_concept": "Depict a cozy garden crossroads where several model-path signposts converge into one clearly marked fallback trail. Polli, wearing a tiny trail-guide hat, points toward the shared path while a retro CRT robot records the requested model on one clipboard and the actually served model on another; small code-plants and registry scrolls show that the routing is organized without losing provenance.",
+    "image_prompt": "A cozy pixel art garden crossroads where orderly signposts labeled in simple pixel text “TEXT”, “IMAGE”, and “VIDEO” merge into one lime green (#ecf874) fallback trail; Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wears a tiny trail-guide hat and helps a chunky CRT monitor robot compare two little clipboards labeled “REQUESTED” and “SERVED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants, flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12986.jpg",
+    "prompt": "A cozy pixel art garden crossroads where orderly signposts labeled in simple pixel text “TEXT”, “IMAGE”, and “VIDEO” merge into one lime green (#ecf874) fallback trail; Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wears a tiny trail-guide hat and helps a chunky CRT monitor robot compare two little clipboards labeled “REQUESTED” and “SERVED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants, flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-01T06:15:18.289845+00:00"
+}

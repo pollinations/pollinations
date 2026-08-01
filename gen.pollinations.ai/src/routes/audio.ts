@@ -2377,18 +2377,14 @@ export const audioRoutes = new Hono<Env>()
                 ...input,
                 text: safeTexts[index],
             }));
-            return withAudioFallback(c, async () =>
-                withSafetyHeaders(
-                    c,
-                    await generateElevenLabsDialogue({
-                        inputs,
-                        responseFormat: request.response_format,
-                        seed: request.seed,
-                        apiKey: c.env.ELEVENLABS_API_KEY,
-                        log,
-                    }),
-                ),
-            );
+            const response = await generateElevenLabsDialogue({
+                inputs,
+                responseFormat: request.response_format,
+                seed: request.seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+            return withSafetyHeaders(c, response);
         },
     )
     .post(
@@ -2495,18 +2491,14 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            return withAudioFallback(c, () =>
-                changeVoiceWithElevenLabs({
-                    audio,
-                    voice:
-                        typeof voice === "string" && voice !== ""
-                            ? voice
-                            : "alloy",
-                    responseFormat: resolvedFormat,
-                    apiKey: c.env.ELEVENLABS_API_KEY,
-                    log,
-                }),
-            );
+            return changeVoiceWithElevenLabs({
+                audio,
+                voice:
+                    typeof voice === "string" && voice !== "" ? voice : "alloy",
+                responseFormat: resolvedFormat,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -2577,13 +2569,11 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            return withAudioFallback(c, () =>
-                isolateVoiceWithElevenLabs({
-                    audio,
-                    apiKey: c.env.ELEVENLABS_API_KEY,
-                    log,
-                }),
-            );
+            return isolateVoiceWithElevenLabs({
+                audio,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(
@@ -2666,30 +2656,28 @@ export const audioRoutes = new Hono<Env>()
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
-            return withAudioFallback(c, async (candidate) => {
-                const upload = await uploadMusicReference({
-                    file,
-                    extractCompositionPlan:
-                        parseOptionalBoolean(
-                            formData.get("extract_composition_plan"),
-                            "extract_composition_plan",
-                        ) || false,
-                    apiKey,
-                    log,
-                });
-                const usageHeaders = buildUsageHeaders(
-                    candidate.id,
-                    createCompletionAudioSecondsUsage(file.size / 16000),
-                );
+            const upload = await uploadMusicReference({
+                file,
+                extractCompositionPlan:
+                    parseOptionalBoolean(
+                        formData.get("extract_composition_plan"),
+                        "extract_composition_plan",
+                    ) || false,
+                apiKey,
+                log,
+            });
+            const usageHeaders = buildUsageHeaders(
+                "elevenmusic",
+                createCompletionAudioSecondsUsage(file.size / 16000),
+            );
 
-                return Response.json(upload, {
-                    headers: {
-                        ...usageHeaders,
-                        ...(upload.song_id
-                            ? { "x-elevenlabs-song-id": upload.song_id }
-                            : {}),
-                    },
-                });
+            return Response.json(upload, {
+                headers: {
+                    ...usageHeaders,
+                    ...(upload.song_id
+                        ? { "x-elevenlabs-song-id": upload.song_id }
+                        : {}),
+                },
             });
         },
     )

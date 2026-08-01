@@ -230,9 +230,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
-    "accounts/fireworks/models/deepseek-v4-flash": () =>
+    "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash",
+            model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({

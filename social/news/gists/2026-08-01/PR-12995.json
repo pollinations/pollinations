@@ -1,0 +1,33 @@
+{
+  "pr_number": 12995,
+  "title": "chore: allow AkshayCoder48 community publishing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12995",
+  "merged_at": "2026-08-01T05:50:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `AkshayCoder48` (GitHub ID `198414737`) to the community-model publisher allowlist.\n- Changes only the immutable GitHub ID allowlist.\n\nChecks:\n- `biome check shared/auth/github-id-list.ts`\n- `git diff --check`\n\nAddresses #12578\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new gardener gets keys",
+    "blurb": "AkshayCoder48 can now publish community models to the hive. One more set of hands for the shared garden.",
+    "summary": "Added GitHub ID 198414737 (AkshayCoder48) to the immutable community-model publisher allowlist.",
+    "impact": "AkshayCoder48 can now publish community models, expanding the set of contributor-built options available through Pollinations.",
+    "keywords": [
+      "community-models",
+      "github",
+      "publishers",
+      "contributors",
+      "allowlist"
+    ],
+    "visual_concept": "Depict Polli warmly welcoming a new community gardener at a small code-garden gate marked as an approved publisher, with a retro terminal showing a GitHub-style ID badge and model seedlings ready to be planted.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, handing a glowing lime green (#ecf874) garden key to a friendly new coder beside a retro terminal showing a simple GitHub ID badge. Community model seedlings sprout from flower pots around an open garden gate, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12995.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, handing a glowing lime green (#ecf874) garden key to a friendly new coder beside a retro terminal showing a simple GitHub ID badge. Community model seedlings sprout from flower pots around an open garden gate, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-01T05:51:01.734473+00:00"
+}

@@ -66,7 +66,7 @@ with automatic Replicate fallback
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
-| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | ACTIVE (reactivated 2026-07-22) — named tunnel `flux-vast-04.pollinations.ai` |
+| flux-vast-04 | 46491202 | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — named tunnel `flux-vast-04.pollinations.ai` |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
@@ -82,26 +82,42 @@ localhost. Requests exceeded the CloudFront timeout, so users saw indefinite
 hangs, not errors — and the worker kept heartbeating green the whole time.
 Never point production at a quick tunnel; use a named tunnel.
 
-When reprovisioning, check the host's HuggingFace throughput before committing
-to it (`curl -r 0-5000000 -L <hf-model-url>`): this host previously managed
-384 KB/s and stalled during its cold download. It was reactivated only after
-its 17 GB model cache was complete, so a cold rebuild on this host remains a
-risk.
+Instance `46491202` replaced maintenance-bound instance `44731147`, which was
+destroyed after cutover. The California host is machine `138472` with Vast
+reliability `0.9971`. Qualification passed 512x512 and 1024x1024 generation,
+four concurrent requests, authentication rejection, 17-second restart
+recovery, and an external Cloudflare generation in 3.46 seconds. After the old
+connector drained, the new worker served 47 production generations with zero
+backend errors before final verification.
+
+This host exposed two provisioning edge cases now handled by `setup-vast.sh`:
+Hugging Face Xet connections repeatedly stopped advancing and Cloudflare Tunnel
+SRV lookups failed through the host resolver. Standard HTTP completed the model
+download, while the local DNS-over-HTTPS fallback established four named-tunnel
+connections.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash
 vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
 vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
-# First create a remote tunnel + hostname routing to localhost:8765 in Cloudflare, then:
+# Isolated canary: heartbeat and production tunnel are disabled by default.
+PLN_GPU_TOKEN=... HF_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
+GIT_BRANCH=main bash setup-vast.sh
+# After verification and explicit human approval, rerun with the scoped tunnel
+# token plus HEARTBEAT_ENABLED=true and TUNNEL_ENABLED=true.
 PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
-PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai GIT_BRANCH=main bash setup-vast.sh
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai HEARTBEAT_ENABLED=true \
+TUNNEL_ENABLED=true GIT_BRANCH=main bash setup-vast.sh
 ```
 Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
 `intended_status=running` after create (GPU can be taken between create/start);
 some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy); some
 drop bulk CDN downloads mid-transfer (setup-vast.sh passes pip
-`--resume-retries` so downloads resume instead of restarting); hosts with
+`--resume-retries` so downloads resume instead of restarting); Hugging Face Xet
+can hang with established but idle connections (standard HTTP is the Vast
+default); some hosts drop Cloudflare Tunnel SRV responses (setup starts a local
+DNS-over-HTTPS resolver only on affected hosts); hosts with
 driver < 580 hit CUDA Error 804 with the cuda-13 image (GeForce can't use
 forward-compat libs — setup-vast.sh disables them so the host driver is used);
 machine-to-machine rsync between vast instances is NOT reliable (hosts kill

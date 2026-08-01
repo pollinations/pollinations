@@ -85,7 +85,7 @@ describe("long-context cost variants", () => {
         ).toBe("long_context");
     });
 
-    it("Grok uses the provider-observed inclusive 200K boundary", () => {
+    it("Grok uses OpenRouter's strict greater-than 200K boundary", () => {
         expect(
             bill("grok-4.5", {
                 promptTextTokens: 199_999,
@@ -95,7 +95,7 @@ describe("long-context cost variants", () => {
             bill("grok-4.5", {
                 promptTextTokens: 200_000,
             }).costVariant,
-        ).toBe("long_context");
+        ).toBeUndefined();
         expect(
             bill("grok-4.5", {
                 promptTextTokens: 200_001,
@@ -105,10 +105,10 @@ describe("long-context cost variants", () => {
 
     it.each([
         [31_999, undefined],
-        [32_000, "context_32k"],
+        [32_000, undefined],
         [32_001, "context_32k"],
         [255_999, "context_32k"],
-        [256_000, "context_256k"],
+        [256_000, "context_32k"],
         [256_001, "context_256k"],
     ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
         expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
@@ -123,7 +123,7 @@ describe("long-context cost variants", () => {
                 promptCachedTokens: 5_000,
                 promptCacheWriteTokens: 2_000,
                 promptImageTokens: 2_000,
-                promptVideoTokens: 3_000,
+                promptVideoTokens: 3_001,
             }).costVariant,
         ).toBe("context_32k");
         expect(
@@ -132,7 +132,7 @@ describe("long-context cost variants", () => {
                 promptCachedTokens: 20_000,
                 promptCacheWriteTokens: 10_000,
                 promptImageTokens: 10_000,
-                promptVideoTokens: 16_000,
+                promptVideoTokens: 16_001,
             }).costVariant,
         ).toBe("context_256k");
     });
@@ -152,7 +152,7 @@ describe("long-context cost variants", () => {
                 },
             ],
             [
-                32_000,
+                32_001,
                 "context_32k",
                 {
                     promptTextTokens: 0.1,
@@ -164,7 +164,7 @@ describe("long-context cost variants", () => {
                 },
             ],
             [
-                256_000,
+                256_001,
                 "context_256k",
                 {
                     promptTextTokens: 0.2,
@@ -329,7 +329,7 @@ describe("long-context cost variants", () => {
         });
         expect(
             bill("grok-4.5", {
-                promptTextTokens: 200_000,
+                promptTextTokens: 200_001,
             }).priceDefinition,
         ).toMatchObject({
             promptTextTokens: 4 / 1e6,

@@ -1,7 +1,6 @@
 import {
     defineCostVariants,
     longContextAbove,
-    longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
 import {
@@ -840,9 +839,8 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Staging probes on 2026-07-31 confirmed that our billing selector is
-        // inclusive at 200K and counts provider-reported cached tokens toward
-        // the threshold. OpenRouter's billed boundary remains invoice-unverified.
+        // OpenRouter's min_prompt_tokens override is strict: the higher tier
+        // applies above 200K total prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.3),
@@ -856,12 +854,12 @@ export const TEXT_SERVICES = {
                     completionTextTokens: perMillion(12),
                 },
             },
-            longContextAtLeast(200_000),
+            longContextAbove(200_000),
             {
                 long_context: {
-                    label: "Long context (200K+)",
+                    label: "Long context (>200K)",
                     description:
-                        "At least 200,000 prompt tokens; the higher rates apply to the whole request.",
+                        "More than 200,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
         ),
@@ -1895,9 +1893,8 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Staging probes on 2026-07-31 confirmed that our billing selector
-        // applies the inclusive 32K and 256K sheets. OpenRouter did not surface
-        // provider cost, so the upstream boundaries remain invoice-unverified.
+        // OpenRouter's min_prompt_tokens overrides are strict: the higher tiers
+        // apply above 32K and 256K total prompt tokens.
         cost: {
             promptTextTokens: perMillion(0.03),
             promptCachedTokens: perMillion(0.006),
@@ -1927,20 +1924,20 @@ export const TEXT_SERVICES = {
             },
             ({ usage }) => {
                 const promptTokens = totalPromptTokens(usage);
-                if (promptTokens >= 256_000) return "context_256k";
-                if (promptTokens >= 32_000) return "context_32k";
+                if (promptTokens > 256_000) return "context_256k";
+                if (promptTokens > 32_000) return "context_32k";
                 return undefined;
             },
             {
                 context_32k: {
-                    label: "32K+ context",
+                    label: ">32K context",
                     description:
-                        "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+                        "More than 32,000 prompt tokens; the higher rates apply to the whole request.",
                 },
                 context_256k: {
-                    label: "256K+ context",
+                    label: ">256K context",
                     description:
-                        "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+                        "More than 256,000 prompt tokens; the highest rates apply to the whole request.",
                 },
             },
         ),

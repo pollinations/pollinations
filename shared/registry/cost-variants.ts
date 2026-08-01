@@ -51,16 +51,6 @@ export function longContextAbove(minPromptTokens: number) {
         totalPromptTokens(usage) > minPromptTokens ? "long_context" : undefined;
 }
 
-// Some provider billing tiers are empirically inclusive at their published
-// boundary. Keep that observation explicit rather than disguising it as a
-// threshold-minus-one call to longContextAbove.
-export function longContextAtLeast(minPromptTokens: number) {
-    return ({ usage }: CostVariantContext): "long_context" | undefined =>
-        totalPromptTokens(usage) >= minPromptTokens
-            ? "long_context"
-            : undefined;
-}
-
 // Pairs variant sheets with their selector so TypeScript checks that the
 // selector can only return names that exist in the sheets.
 export function defineCostVariants<

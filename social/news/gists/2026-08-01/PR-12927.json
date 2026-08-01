@@ -1,0 +1,34 @@
+{
+  "pr_number": 12927,
+  "title": "refactor: simplify text provider adapters",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12927",
+  "merged_at": "2026-08-01T06:18:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces lenient Azure endpoint extraction with one validated parser and removes duplicated deployment arguments from 17 model configs.\n- Replaces Cohere's hand-written SSE buffering with the existing `eventsource-parser` stream and consolidates boundary control-token stripping.\n- Preserves Azure resource/deployment/API-version routing, provider overrides, split-token handling, choice metadata, malformed JSON pass-through, and request rejection behavior.\n- Consolidates #12948 into this draft: 3 files changed, 106 insertions, 145 deletions (39 net lines removed).\n\nChecks:\n- Focused Azure resolver, parameter, and Cohere sanitizer suites — 34 passed, including all 9 Cohere cases\n- All 69 `portkeyConfig` factories resolved\n- Strict Azure parser assertions for malformed hosts, deployment paths, and missing API versions\n- Gen `npm run typecheck`\n- Biome on all 3 changed files\n- `git diff --check`\n\nSupersedes #12948.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Adapters shed their husks",
+    "blurb": "The text-provider plumbing got a careful pruning: one Azure parser, one Cohere event stream, and 39 fewer lines to keep watered. Polli labels the cables while the providers continue behaving exactly as intended.",
+    "summary": "Refactored gen's Azure and Cohere text-provider adapters by replacing lenient Azure endpoint extraction with a validated parser, removing 17 duplicated deployment arguments, and using eventsource-parser for Cohere SSE sanitization.",
+    "impact": "Azure resource/deployment/API-version routing and Cohere split-token, choice-metadata, malformed-JSON, and rejection handling remain intact with less duplicated adapter logic to maintain.",
+    "keywords": [
+      "text-generation",
+      "azure",
+      "cohere",
+      "provider-adapters",
+      "sse",
+      "refactor"
+    ],
+    "visual_concept": "A cozy garden-shed server room where Polli tidies two provider pipes: an Azure-blue-but-pastel route map feeding a clearly labeled parser box, and a Cohere event stream flowing through a small sieve that catches control-token leaves. Polli wears a tiny mechanic tool belt while code-plants grow around the organized cables, representing a simpler internal path without changing the output.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with yellow body, dark brown stripes, pink blush, light blue wings, and a tiny mechanic tool belt carefully organizes two pastel data pipes into a lime green (#ecf874) parser box, while a retro terminal shows neat streaming code and code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and tidy."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12927.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with yellow body, dark brown stripes, pink blush, light blue wings, and a tiny mechanic tool belt carefully organizes two pastel data pipes into a lime green (#ecf874) parser box, while a retro terminal shows neat streaming code and code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and tidy."
+  },
+  "generated_at": "2026-08-01T06:19:54.592321+00:00"
+}

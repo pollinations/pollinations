@@ -4,6 +4,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     CSM_VOICES,
+    KOKORO_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -62,7 +63,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -1241,8 +1242,33 @@ const QWEN_TTS_ENDPOINT =
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
-const DEEPINFRA_CSM_MODEL_ID = "sesame/csm-1b";
-const CSM_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+const DEEPINFRA_TTS_CONFIGS = {
+    "csm-1b": {
+        modelId: "sesame/csm-1b",
+        voices: CSM_VOICES,
+        defaultVoice: "conversational_a",
+        maxCharacters: 200,
+    },
+    kokoro: {
+        modelId: "hexgrad/Kokoro-82M",
+        voices: KOKORO_VOICES,
+        defaultVoice: "af_alloy",
+        maxCharacters: 10_000,
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            voices: readonly string[];
+            defaultVoice: string;
+            maxCharacters: number;
+        }
+    >
+>;
+
+type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
 
 const QWEN_TTS_MODEL_IDS = {
     "qwen-tts": "qwen3-tts-flash",
@@ -1641,49 +1667,56 @@ export async function generateQwenTts(opts: {
     });
 }
 
-export async function generateCsmSpeech(opts: {
+export async function generateDeepInfraSpeech(opts: {
+    modelName: DeepInfraTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, responseFormat, apiKey, log } = opts;
+    const { modelName, text, responseFormat, apiKey, log } = opts;
+    const config = DEEPINFRA_TTS_CONFIGS[modelName];
+    const inputCharacters = [...text].length;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "CSM speech is not configured (missing DEEPINFRA_API_KEY)",
+            message: `${modelName} speech is not configured (missing DEEPINFRA_API_KEY)`,
         });
     }
 
-    if (text.length > 200) {
+    if (inputCharacters > config.maxCharacters) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 200.`,
+            message: `Input text too long: ${inputCharacters} characters. Maximum is ${config.maxCharacters}.`,
         });
     }
 
-    const voice = opts.voice === "alloy" ? "conversational_a" : opts.voice;
-    if (!CSM_VOICES.includes(voice as (typeof CSM_VOICES)[number])) {
+    const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
+    if (!(config.voices as readonly string[]).includes(voice)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for csm-1b: ${opts.voice}. Supported voices: ${CSM_VOICES.join(", ")}.`,
+            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
         });
     }
 
     if (
-        !CSM_AUDIO_FORMATS.includes(
-            responseFormat as (typeof CSM_AUDIO_FORMATS)[number],
+        !DEEPINFRA_AUDIO_FORMATS.includes(
+            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
         )
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for csm-1b: ${responseFormat}. Supported formats: ${CSM_AUDIO_FORMATS.join(", ")}.`,
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
         });
     }
 
-    log.info("CSM request: voice={voice}, format={format}, chars={chars}", {
-        voice,
-        format: responseFormat,
-        chars: text.length,
-    });
+    log.info(
+        "DeepInfra TTS request: model={model}, voice={voice}, format={format}, chars={chars}",
+        {
+            model: config.modelId,
+            voice,
+            format: responseFormat,
+            chars: inputCharacters,
+        },
+    );
 
     const response = await ensureUpstreamOk(
         await fetch(DEEPINFRA_TTS_ENDPOINT, {
@@ -1693,7 +1726,7 @@ export async function generateCsmSpeech(opts: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: DEEPINFRA_CSM_MODEL_ID,
+                model: config.modelId,
                 input: text,
                 voice,
                 response_format: responseFormat,
@@ -1703,11 +1736,14 @@ export async function generateCsmSpeech(opts: {
     );
 
     const usageHeaders = {
-        ...buildUsageHeaders("csm-1b", createAudioTokenUsage(text.length)),
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(inputCharacters)),
         "x-tts-voice": voice,
     };
 
-    log.info("CSM success: {chars} characters", { chars: text.length });
+    log.info("DeepInfra TTS success: model={model}, chars={chars}", {
+        model: config.modelId,
+        chars: inputCharacters,
+    });
 
     return new Response(response.body, {
         status: 200,
@@ -2202,9 +2238,11 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "csm-1b":
+        case "kokoro":
             return withSafetyHeaders(
                 c,
-                await generateCsmSpeech({
+                await generateDeepInfraSpeech({
+                    modelName: model,
                     text,
                     voice,
                     responseFormat,

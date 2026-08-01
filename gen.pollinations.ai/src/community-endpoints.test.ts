@@ -418,11 +418,11 @@ describe("community endpoint helpers", () => {
         ).toBe(0.03);
     });
 
-    it("advertises image edits only after the edit probe succeeds", () => {
-        expect(communityImageSupportedEndpoints(false)).not.toContain(
+    it("advertises image edits only for models with image input", () => {
+        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
             "/v1/images/edits",
         );
-        expect(communityImageSupportedEndpoints(true)).toContain(
+        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
             "/v1/images/edits",
         );
     });
@@ -434,7 +434,7 @@ describe("community endpoint helpers", () => {
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.000005,
                 promptImagePrice: 0.00001,
@@ -478,6 +478,48 @@ describe("community endpoint helpers", () => {
         expect(Object.keys(definition)).toHaveLength(
             communityEndpointPriceFieldsForModality("text").length,
         );
+    });
+
+    it('defaults input modalities to ["text"] when not declared', () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("preserves explicitly declared input modalities", () => {
+        const definition = communityModelDefinition({
+            modelId: "marcosfrgames08/glm-4.6v-flash",
+            description: "Vision model",
+            inputModalities: ["image", "video"],
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["image", "video"]);
+    });
+
+    it("filters inputs that image endpoints cannot accept", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            inputModalities: ["text", "audio"],
+            ...communityEndpointPrices({
+                promptTextPrice: 0.2,
+                completionImagePrice: 0.03,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text"]);
     });
 
     describe("fallback target pricing", () => {
@@ -551,7 +593,7 @@ describe("community endpoint helpers", () => {
                 delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
-                supportsImageEdits: true,
+                inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
@@ -737,7 +779,7 @@ describe("community endpoint helpers", () => {
             description: null,
             modality: "text",
             imagePricing: "request",
-            supportsImageEdits: false,
+            inputModalities: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
@@ -799,7 +841,7 @@ describe("community endpoint helpers", () => {
                 description: null,
                 modality: "text",
                 imagePricing: "request",
-                supportsImageEdits: false,
+                inputModalities: null,
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
                 visibility: "public",
@@ -2124,7 +2166,20 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const registerResponse = await fetchEnterApi(
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Image Endpoint",
+            description: "OpenAI-compatible image endpoint",
+            modality: "image",
+            inputModalities: ["text", "image"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1/images/generations",
+            upstreamModel: "gpt-image-1",
+            bearerToken: "Bearer sk_image_upstream",
+            promptTextPrice: 0.000002,
+            completionImagePrice: 0.03,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
                 method: "POST",
@@ -2133,18 +2188,23 @@ fixtureTest(
                     Cookie: await signedSessionCookie(sessionToken),
                 },
                 body: JSON.stringify({
-                    name: modelName,
-                    title: "Community Image Endpoint",
-                    description: "OpenAI-compatible image endpoint",
-                    modality: "image",
-                    supportsImageEdits: true,
-                    visibility: "public",
-                    baseUrl: "https://api.example.com/v1/images/generations",
-                    upstreamModel: "gpt-image-1",
-                    bearerToken: "Bearer sk_image_upstream",
-                    promptTextPrice: 0.000002,
-                    completionImagePrice: 0.03,
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text", "audio"],
                 }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
             }),
         );
 
@@ -2153,7 +2213,7 @@ fixtureTest(
             id: string;
             modelId: string;
             modality: string;
-            supportsImageEdits: boolean;
+            inputModalities: string[];
             baseUrl: string;
             upstreamModel: string;
             promptTextPrice: number;
@@ -2162,7 +2222,7 @@ fixtureTest(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
@@ -2191,7 +2251,7 @@ fixtureTest(
                 "Generation and editing endpoints responded with image data",
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
 
         const simpleImageResponse = await SELF.fetch(

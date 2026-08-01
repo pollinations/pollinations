@@ -96,7 +96,6 @@ describe("registry fallback linking", () => {
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
     });
-
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
             "owner/primary",

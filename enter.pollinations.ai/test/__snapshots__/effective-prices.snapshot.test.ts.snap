@@ -131,12 +131,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "deepseek": {
     "cost": {
       "completionTextTokens": 0.00000028,
-      "promptCachedTokens": 0.00000003,
+      "promptCachedTokens": 0.000000028,
       "promptTextTokens": 0.00000014,
     },
     "price": {
       "completionTextTokens": 0.00000028,
-      "promptCachedTokens": 0.00000003,
+      "promptCachedTokens": 0.000000028,
       "promptTextTokens": 0.00000014,
     },
   },

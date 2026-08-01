@@ -664,10 +664,10 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.028),
             completionTextTokens: perMillion(0.28),
         },
-        title: "DeepSeek V4 Flash (Lite)",
+        title: "DeepSeek V4 Flash 0731",
         description: "Fast reasoning and coding at bargain prices",
         inputModalities: ["text"],
         outputModalities: ["text"],

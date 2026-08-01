@@ -1109,7 +1109,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000013,
     },
     "price": {
-      "promptTextTokens": 0.00000013,
+      "promptTextTokens": 0.0000000975,
     },
   },
   "openai-3-small": {
@@ -1117,7 +1117,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000002,
     },
     "price": {
-      "promptTextTokens": 0.00000002,
+      "promptTextTokens": 0.000000015,
     },
   },
   "openai-audio": {

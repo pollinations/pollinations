@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-31",
+  "period_start": "2026-07-31",
+  "period_end": "2026-07-31",
+  "generated_at": "2026-08-01T06:58:21.390602+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-31/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped per-model fallback routing. under image load, requests can move to an appropriate fallback instead of taking a scenic route somewhere unsuitable. faster generations, fewer weird detours. also updated README and documented DreamShaper deployment and its WORKERS knob."
+}

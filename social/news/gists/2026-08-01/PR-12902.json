@@ -1,0 +1,35 @@
+{
+  "pr_number": 12902,
+  "title": "fix: mint request_id server-side instead of trusting the client header",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/12902",
+  "merged_at": "2026-08-01T05:33:44Z",
+  "labels": [],
+  "pr_body_excerpt": "## Bug\n\n`requestId()` (hono's built-in middleware) was mounted bare in both\n`gen.pollinations.ai/src/index.ts` and `enter.pollinations.ai/src/index.ts`.\nAt the pinned hono version it accepts an inbound `X-Request-Id` header\nverbatim (if it passes a length/charset check) and echoes it back, so any\ncaller can pin an arbitrary id or replay one they observed elsewhere.\n\n## Root cause\n\nTrusting a client-supplied id for something used internally as a stable,\nunique per-request key breaks two things downstream:\n- `image/models/novaReelModel.ts` interpolates the request id into a fixed\n  S3 prefix and reads `{prefix}/output.mp4` back — two callers sharing an id\n  share the S3 key.\n- `request_id` is the only join key between a fallback-attempt row and its\n  settlement row, so a replayed id corrupts that grouping.\n\n## Fix\n\n- Add `shared/middleware/request-id.ts`: always mints via\n  `crypto.randomUUID()`, `c.set(\"requestId\", id)`, and still sets the\n  `X-Request-Id` response header — same `RequestIdVariables` shape as hono's\n  version, so no `env.ts` type changes were needed.\n- Swap the `hono/request-id` import for the shared middleware in both\n  `gen.pollinations.ai/src/index.ts` and `enter.pollinations.ai/src/index.ts`.\n- Add `gen.pollinations.ai/test/request-id.test.ts`: mounts the middleware on\n  a bare Hono app, sends a spoofed `X-Request-Id`, and asserts the response\n  header differs from the sent value, matches `c.get(\"requestId\")`, and is a\n  valid UUID.\n\nFixes #12889",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "IDs grow in the hive",
+    "blurb": "Request IDs are now grown fresh at the server door, where they belong. Every trip through the hive gets its own tidy little UUID.",
+    "summary": "Added shared server-side request ID middleware for both gen.pollinations.ai and enter.pollinations.ai, minting a fresh crypto.randomUUID() for every request while preserving the X-Request-Id response header.",
+    "impact": "Video output lookups and fallback settlement records now receive reliably unique per-request keys, keeping concurrent requests cleanly separated.",
+    "keywords": [
+      "request-id",
+      "middleware",
+      "api",
+      "uuid",
+      "reliability",
+      "gen",
+      "gateway"
+    ],
+    "visual_concept": "Polli is a careful postal clerk in a cozy garden-server shed, stamping freshly grown UUID labels onto separate glowing request parcels before they travel down distinct vine-lined routes to a video reel shelf and a settlement ledger. The scene represents server-minted identifiers keeping each request, output, and record in its own place.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue translucent wings, and a tiny postal clerk visor, stamping fresh UUID labels onto glowing request parcels in a garden server shed; each parcel follows its own vine-lined path toward a retro CRT terminal, a film reel, and a neat ledger. Include lime green (#ecf874) prominently in the glowing labels and code-plants, with warm cream, mint, lavender, and peach pastel gradients; subtle pixel-font text reads “FRESH ID”. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12902.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue translucent wings, and a tiny postal clerk visor, stamping fresh UUID labels onto glowing request parcels in a garden server shed; each parcel follows its own vine-lined path toward a retro CRT terminal, a film reel, and a neat ledger. Include lime green (#ecf874) prominently in the glowing labels and code-plants, with warm cream, mint, lavender, and peach pastel gradients; subtle pixel-font text reads “FRESH ID”. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T05:34:39.282859+00:00"
+}

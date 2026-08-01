@@ -1,0 +1,35 @@
+{
+  "pr_number": 12982,
+  "title": "feat: add Kokoro TTS through DeepInfra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12982",
+  "merged_at": "2026-08-01T10:28:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `kokoro` TTS through DeepInfra's exact `hexgrad/Kokoro-82M` route with multiplier 1, no fallback, and no Pollinations GPU.\n- Supports 54 voices and MP3, Opus, FLAC, WAV, and PCM through `/audio/{text}` and `/v1/audio/speech`.\n- Reuses the existing DeepInfra TTS adapter and bills Unicode code points at DeepInfra's posted $0.62 per million input characters.\n- Adds the Hexgrad brand asset and aliases `kokoro-82m`, `kokoro-tts`, and `hexgrad-kokoro-82m`.\n\nValidation:\n- DeepInfra direct: 54/54 voices and all five formats passed.\n- Local E2E: GET and POST, 54/54 voices, all formats, cache behavior, billing, authentication, and invalid inputs passed.\n- Gen: typecheck and 798 tests passed.\n- Enter: typecheck, 286 alias tests, and effective-pricing snapshot passed.\n\nDraft for maintainer validation before merge.\n\nFixes #10994\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kokoro joins the chorus",
+    "blurb": "The hive picked up Kokoro TTS through DeepInfra. Bring text, choose from 54 voices, and leave with audio in the format your little project actually wants.",
+    "summary": "Added paid-only DeepInfra Kokoro TTS using the exact hexgrad/Kokoro-82M route, with 54 voices and MP3, Opus, FLAC, WAV, and PCM output on both /audio/{text} and /v1/audio/speech.",
+    "impact": "Developers can generate Kokoro speech through the existing audio endpoints in 54 validated voices and five formats, with billing based on Unicode code points at DeepInfra's posted $0.62 per million input characters.",
+    "keywords": [
+      "kokoro",
+      "tts",
+      "deepinfra",
+      "audio",
+      "voices",
+      "api",
+      "hexgrad"
+    ],
+    "visual_concept": "A cozy sound garden represents the new Kokoro TTS model: Polli wears tiny studio headphones and adjusts a retro microphone beside a DeepInfra-powered CRT audio console. Fifty-four small pastel sound-flower buds bloom around the console, while labeled cassette-like output icons suggest MP3, Opus, FLAC, WAV, and PCM; the Hexgrad mark appears subtly on a small sign.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny studio headphones and tuning a retro microphone beside a lime green (#ecf874) CRT audio console labeled “KOKORO”; 54 tiny pastel sound-flower buds bloom from code-plants around her, with small cassette icons for MP3, Opus, FLAC, WAV, and PCM. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12982.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny studio headphones and tuning a retro microphone beside a lime green (#ecf874) CRT audio console labeled “KOKORO”; 54 tiny pastel sound-flower buds bloom from code-plants around her, with small cassette icons for MP3, Opus, FLAC, WAV, and PCM. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-01T10:31:29.817736+00:00"
+}

@@ -33,5 +33,3 @@ export const api = new Hono<Env>()
     .route("/", frontendApi)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes);
-
-export type ApiRoutes = typeof api;

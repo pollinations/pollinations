@@ -1,0 +1,35 @@
+{
+  "pr_number": 12908,
+  "title": "refactor: simplify image provider adapters and legacy utilities",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12908",
+  "merged_at": "2026-08-01T10:53:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes Replicate error mapping, Pruna's shared DeepInfra generation flow, and OpenRouter request transport while preserving provider-specific inputs, errors, billing, and retry behavior.\n- Removes the unreachable direct Vertex AI image client, generator, and tests after NanoBanana moved to OpenRouter.\n- Replaces the handwritten image base64 decoder with Buffer while preserving accepted data URI, whitespace, unpadded, URL-safe, and invalid-character behavior.\n- Removes obsolete scalar/null branches from normalized image adapters, processes Flux Klein references directly, and keeps Nova Canvas's tested direct-call tolerance.\n- Deletes 1,078 net lines with no remaining references to the removed Vertex utilities.\n\nChecks:\n- Gen TypeScript typecheck\n- Biome on all changed production files\n- Exact donor-content comparison for the four surviving normalization files\n- Repository reference scan and `git diff --check`\n- Component branches previously passed 207, 47, and 15 focused image checks respectively; the combined full-suite rerun could not collect because another worktree held the fixed snapshot-server port 3210 (no test failure)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The adapter garden pruned",
+    "blurb": "The image stack got a careful trim: shared provider paths now do the repetitive lifting, while the old Vertex shed has been cleared out. Same pixels, fewer mysterious vines.",
+    "summary": "Centralized Replicate error mapping, Pruna's shared DeepInfra generation flow, and OpenRouter transport; replaced the custom base64 decoder with Buffer; and removed 1,078 net lines of unreachable Vertex AI image utilities after NanoBanana moved to OpenRouter.",
+    "impact": "Image providers retain their existing inputs, error handling, billing, retry behavior, and normalization tolerance while the generation codebase has fewer duplicate paths to maintain.",
+    "keywords": [
+      "image-generation",
+      "providers",
+      "replicate",
+      "openrouter",
+      "refactor",
+      "vertex-ai",
+      "reliability"
+    ],
+    "visual_concept": "Polli tends a cozy garden of labeled image-provider pipes feeding a retro image terminal, while neatly composting an unused old Vertex AI tool shed. The shared pipe junction represents centralized transport and error handling; small code-plants and flowers show that the visible generation garden keeps growing normally.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully pruning duplicate vine-like API cables around a retro image-generation terminal glowing lime green (#ecf874); a small retired tool shed labeled \"VERTEX\" is being turned into a flower pot, with code-plants and pastel flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12908.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully pruning duplicate vine-like API cables around a retro image-generation terminal glowing lime green (#ecf874); a small retired tool shed labeled \"VERTEX\" is being turned into a flower pot, with code-plants and pastel flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-01T10:54:12.467659+00:00"
+}

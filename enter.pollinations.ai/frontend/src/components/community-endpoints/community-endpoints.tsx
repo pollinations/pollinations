@@ -14,6 +14,7 @@ import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type CommunityEndpoint,
     type EndpointPayload,
+    type FallbackModelOption,
     readError,
 } from "./types.ts";
 
@@ -22,11 +23,14 @@ type CommunityEndpointsProps = {
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
     canPublish: boolean;
+    // Public community models offered as fallback targets in the dialog.
+    fallbackOptions: FallbackModelOption[];
 };
 
 export function CommunityEndpoints({
     onChange,
     canPublish,
+    fallbackOptions,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -171,6 +175,7 @@ export function CommunityEndpoints({
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
                         canPublish={canPublish}
+                        fallbackOptions={fallbackOptions}
                         trigger={
                             <Button
                                 type="button"
@@ -245,6 +250,7 @@ export function CommunityEndpoints({
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
                 canPublish={canPublish}
+                fallbackOptions={fallbackOptions}
             />
 
             <CommunityEndpointDeleteConfirmation

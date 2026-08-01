@@ -82,6 +82,7 @@ describe("reasoning_effort model wiring", () => {
         "kimi-k3",
         "deepseek",
         "qwen-large",
+        "qwen3.7-flash",
         "longcat",
         "nemotron",
         "minimax",

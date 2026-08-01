@@ -77,6 +77,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -669,16 +670,22 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const serviceDef = c.var.model.definition;
-            return generateEmbeddings(
-                c.env,
-                {
-                    ...requestBody,
-                    model: getEmbeddingProviderModelId(c.var.model.resolved),
-                },
-                serviceDef,
-                c.var.model.resolved,
+            const { response, servedEntry } = await withModelFallbackResponse(
+                c.var.model,
+                (candidate) =>
+                    generateEmbeddings(
+                        c.env,
+                        {
+                            ...requestBody,
+                            model: getEmbeddingProviderModelId(candidate.id),
+                        },
+                        candidate.definition ?? c.var.model.definition,
+                        candidate.id,
+                    ),
+                c.var.track?.failedCalls,
             );
+            if (servedEntry) c.set("servedModelEntry", servedEntry);
+            return response;
         },
     )
     .post(

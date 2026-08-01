@@ -152,19 +152,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it.each([
-        "perplexity-high",
-        "perplexity-deep",
-        "sonar-deep",
-    ])("resolves %s to the high-context Sonar preset", async (modelName) => {
-        const model = findModelByName(modelName);
+    it.each(["perplexity-high", "perplexity-deep", "sonar-deep"])(
+        "resolves %s to the high-context Sonar preset",
+        async (modelName) => {
+            const model = findModelByName(modelName);
 
-        expect(model?.name).toBe("perplexity-high");
-        const transformed = await model?.transform?.(messages, {});
-        expect(transformed?.options.web_search_options).toEqual({
-            search_context_size: "high",
-        });
-    });
+            expect(model?.name).toBe("perplexity-high");
+            const transformed = await model?.transform?.(messages, {});
+            expect(transformed?.options.web_search_options).toEqual({
+                search_context_size: "high",
+            });
+        },
+    );
 
     it("marks missing model configs as 404 errors", () => {
         expect(() =>

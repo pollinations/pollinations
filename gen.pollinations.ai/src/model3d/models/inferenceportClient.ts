@@ -1,7 +1,7 @@
 /**
  * inferenceport.ai 3D generation client.
  *
- * Production path uses the async job API:
+ * Production path uses the InferencePort AI async job API:
  *
  *   POST /v1/3d/generations
  *   → returns HTTP 202 with a job_id.

@@ -45,6 +45,7 @@ interface MyModel {
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
+    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -98,6 +99,22 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
+    // An empty string clears the list, which is why this checks for the flag
+    // being present rather than for a truthy value.
+    if (opts.fallbackModels !== undefined) {
+        body.fallbackModelIds = String(opts.fallbackModels)
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
+    }
+
+    if (opts.inputModalities !== undefined) {
+        body.inputModalities = String(opts.inputModalities)
+            .split(",")
+            .map((modality) => modality.trim())
+            .filter((modality) => modality.length > 0);
+    }
+
     if (includeRequired) {
         for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
@@ -125,6 +142,7 @@ function printModels(models: MyModel[]) {
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
+            fallbacks: model.fallbackModelIds?.join(", ") || "-",
             description: model.description ?? "-",
         })),
         [
@@ -134,6 +152,7 @@ function printModels(models: MyModel[]) {
             "visibility",
             "upstream",
             "base_url",
+            "fallbacks",
             "description",
         ],
     );
@@ -168,6 +187,14 @@ const create = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -203,6 +230,14 @@ const update = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();

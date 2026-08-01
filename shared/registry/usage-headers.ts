@@ -125,6 +125,13 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
 
 /**
+ * Our id for the model that served the request. Authoritative over any name a
+ * provider reports for itself, which for a community endpoint is its upstream's
+ * name rather than the listing anyone can act on.
+ */
+export const MODEL_USED_HEADER = "x-model-used";
+
+/**
  * Convert OpenAI usage format to Usage format.
  *
  * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the
@@ -337,7 +344,7 @@ export function buildUsageHeaders(
     usage: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
-        "x-model-used": modelUsed,
+        [MODEL_USED_HEADER]: modelUsed,
     };
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {

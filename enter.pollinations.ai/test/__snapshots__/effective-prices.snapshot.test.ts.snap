@@ -110,6 +110,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
+  "command-a-plus": {
+    "cost": {
+      "completionTextTokens": 0.0000032,
+      "promptTextTokens": 0.0000008,
+    },
+    "price": {
+      "completionTextTokens": 0.0000024,
+      "promptTextTokens": 0.0000006,
+    },
+  },
   "csm-1b": {
     "cost": {
       "completionAudioTokens": 0.000007,
@@ -140,6 +150,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000348,
       "promptCachedTokens": 0.00000014,
       "promptTextTokens": 0.00000174,
+    },
+  },
+  "dreamshaper": {
+    "cost": {
+      "completionImageTokens": 0.0001,
+    },
+    "price": {
+      "completionImageTokens": 0.0001,
     },
   },
   "eleven-dialogue": {
@@ -1324,6 +1342,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "qwen3.7-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000013,
+      "promptCacheWriteTokens": 0.000000038,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.00000003,
+    },
+    "price": {
+      "completionTextTokens": 0.00000013,
+      "promptCacheWriteTokens": 0.000000038,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.00000003,
+    },
+  },
   "qwen3.7-max": {
     "cost": {
       "completionTextTokens": 0.000004425,
@@ -1344,14 +1376,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.08,
-    },
-  },
-  "sana": {
-    "cost": {
-      "completionImageTokens": 0.0001,
-    },
-    "price": {
-      "completionImageTokens": 0.0001,
     },
   },
   "scribe": {
@@ -1482,7 +1506,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000416666666666667,
     },
   },
-  "universal-3-pro": {
+  "universal-3.5-pro": {
     "cost": {
       "promptAudioSeconds": 0.0000583333333333333,
     },

@@ -161,7 +161,7 @@ describe("community endpoint OpenAI service", () => {
                 completionImageTokens: 1056,
             },
             imagePricing: "tokens",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -194,7 +194,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
-            supportsImageEdits: false,
+            inputModalities: ["text"],
         });
     });
 
@@ -225,7 +225,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
     });
 

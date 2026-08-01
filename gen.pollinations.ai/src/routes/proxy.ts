@@ -259,9 +259,9 @@ async function getVisibleModelEntriesForEventType(
     c: Context<Env>,
     eventType: GenerationModelEntry["eventType"],
 ) {
-    return (await getGenerationModelRegistry(c.env))
-        .visibleEntries(c.var.auth?.user?.id)
-        .filter((entry) => entry.eventType === eventType);
+    return (await getVisibleModelEntries(c)).filter(
+        (entry) => entry.eventType === eventType,
+    );
 }
 
 // "3d" models share the "generate.image" EventType with image/video models

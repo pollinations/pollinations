@@ -3,6 +3,11 @@ DESCRIPTION >
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
 
+    DEPLOYMENT_METHOD 'alter' swaps the view definition in place instead of
+    recomputing history: every row written before fallback attempts existed
+    already satisfies is_final, so a backfill would rewrite millions
+    of rows to the values they already hold.
+
 NODE generation_usage_hourly_mv_node
 SQL >
     SELECT
@@ -25,7 +30,7 @@ SQL >
         api_key_client_id NOT IN ('', 'undefined') AS is_byop,
         model_provider_used = 'community' AS is_community,
         multiIf(is_byop, 'byop', is_community, 'community_direct', 'core') AS business_stream,
-        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(is_final)) AS all_calls,  -- attempts are not requests
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
         sumState(
             toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)
@@ -125,3 +130,4 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE generation_usage_hourly
+DEPLOYMENT_METHOD 'alter'

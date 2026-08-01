@@ -300,8 +300,13 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    "universal-3-pro": {
+    "universal-3.5-pro": {
         aliases: [
+            "universal-3-pro",
+            "universal-3-5-pro",
+            "assemblyai-universal-3.5-pro",
+            "assemblyai-universal-3-5-pro",
+            "assemblyai-u3.5-pro",
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
@@ -312,11 +317,12 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // AssemblyAI Universal-3 Pro: $0.21/hour
+            // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
-        title: "AssemblyAI Universal-3 Pro",
-        description: "Top-accuracy transcription you can steer with prompts",
+        title: "AssemblyAI Universal-3.5 Pro",
+        description:
+            "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },

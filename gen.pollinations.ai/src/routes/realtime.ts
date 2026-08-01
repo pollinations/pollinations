@@ -87,8 +87,6 @@ type RealtimeCacheUsage = {
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyName?: string;
     apiKeyType?: "secret" | "publishable";
@@ -471,8 +469,6 @@ function createRealtimeTrackingEvent(args: {
         ipHash: args.tracking.ipHash,
         userId: args.tracking.userId,
         userTier: args.tracking.userTier,
-        userGithubId: args.tracking.userGithubId,
-        userGithubUsername: args.tracking.userGithubUsername,
         apiKeyId: args.tracking.apiKeyId,
         apiKeyName: args.tracking.apiKeyName,
         apiKeyType: args.tracking.apiKeyType,
@@ -511,12 +507,12 @@ async function settleRealtimeSession(
         return;
     }
 
-    const { cost, price, adjustments } = calculateUsageBilling(
-        tracking.resolvedModelRequested,
+    const { cost, price, adjustments } = calculateUsageBilling({
+        model: tracking.resolvedModelRequested,
         usage,
-        tracking.modelDefinition,
-        { realtimeCache: tracking.cacheUsage },
-    );
+        servedBy: tracking.modelDefinition,
+        output: { realtimeCache: tracking.cacheUsage },
+    });
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;
@@ -712,8 +708,6 @@ async function createRealtimeBillingContext(
     return {
         userId: user.id,
         userTier: user.tier,
-        userGithubId: user.githubId ? String(user.githubId) : undefined,
-        userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: c.var.auth.apiKey?.id,
         apiKeyName: c.var.auth.apiKey?.name,
         apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",

@@ -6,7 +6,6 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -25,6 +24,7 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFluxSchnellAPI } from "./models/replicateFluxModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -54,8 +54,6 @@ import {
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
-
-const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
 
 // Loggers
 const logError = debug("pollinations:error");
@@ -93,7 +91,6 @@ export type ImageGenerationResult = {
 export type AuthResult = {
     tokenAuth: boolean;
     userId: string | null;
-    username: string | null;
 };
 
 function safeTokenCount(value: unknown): number {
@@ -224,10 +221,7 @@ export const callSelfHostedServer = async (
                 },
                 body: JSON.stringify(body),
             };
-            response =
-                poolType === "sana"
-                    ? await fetch(SANA_BACKEND_URL, requestInit)
-                    : await fetchFromWeightedServer(poolType, requestInit);
+            response = await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -278,7 +272,7 @@ export const callSelfHostedServer = async (
 };
 
 /**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
+ * Flux routing: prefer the self-hosted GPU pool; fall back to Replicate when
  * no worker is registered or the pool request fails.
  * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
  * workerd it broke every pool request (all traffic silently fell back to
@@ -293,8 +287,8 @@ export const callFluxWithFallback = async (
     } catch (error) {
         // Log the full error (not just message) so unexpected error types
         // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Fireworks:", error);
-        return await callFireworksFluxSchnellAPI(prompt, safeParams);
+        logError("Self-hosted flux failed, falling back to Replicate:", error);
+        return await callReplicateFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -858,7 +852,8 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "sana":
+        case "dreamshaper":
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":

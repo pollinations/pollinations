@@ -1,20 +1,67 @@
 # GPU Instances
 
-Last updated: 2026-07-27
+Last updated: 2026-07-31
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
+| LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
+
+## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
+
+Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
+`sana` kept as an alias; the **registry pool key is still `sana`** because
+`/register` rejects unknown types, so a worker cannot join a pool that only
+exists after the routing change deploys.
+
+| Worker | Vast instance | GPU | Listed rate | Status |
+|--------|---------------|-----|-------------|--------|
+| dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
+| dreamshaper-vast-02 | 46387155 | RTX 3090 | $0.1200/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+
+Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
+tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
+`dreamshaper-lcm/`; each host runs `supervise.sh` under `screen`, relaunched on
+reboot by `/workspace/onstart.sh`.
+
+**Run several uvicorn workers per card.** A single process plateaued at
+**~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path
+(global lock, JPEG + base64 per response), not the GPU or the step count.
+Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3` each
+3090 sustains **~8 img/s** at concurrency 8 (GPU still only ~36%, so there is
+more left). The model is ~2.5 GB, so three copies fit easily in 24 GB.
+
+Measured capacity is ~16 img/s across both cards against a 5.72 img/s peak, so
+either card can carry production alone. **Never size this from a single-client
+benchmark** — the first rollout did, sized one card at 6.18 img/s, and produced
+a latency climb to 57s in production before the GH200 was put back in the pool
+as emergency capacity.
+
+Two traps that fail silently:
+
+- gen hardcodes `steps: 4` into every self-hosted request body, so the worker
+  **ignores caller-supplied steps**. Honouring them overrides the 3-step config.
+- Without `PUBLIC_HOSTNAME` the worker registers its raw Vast `IP:port`, which
+  the gen Worker cannot fetch — while the heartbeat still reports healthy. This
+  happened during rollout; always confirm the registered URL is the hostname.
+
+## Vast replacement operations
+
+The repository skill
+[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+is the source of truth for scheduled offer scouting, candidate qualification,
+isolated canaries, the human promotion gate, cutover, instance cleanup, and the
+post-cutover documentation PR.
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
 One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Fireworks fallback
+with automatic Replicate fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
 | Worker | Vast instance | GPU | Listed rate | Status |
@@ -25,7 +72,7 @@ with automatic Fireworks fallback
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
-> does not prove the data path works. Fireworks can hide either failure.
+> does not prove the data path works. Replicate can hide either failure.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -72,7 +119,7 @@ POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # r
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
 `QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Fireworks instead of making users
+shed with 503 so the gateway falls back to Replicate instead of making users
 wait in a long queue.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)

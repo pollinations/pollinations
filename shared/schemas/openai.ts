@@ -125,9 +125,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -348,9 +346,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -584,6 +580,10 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
+            description:
+                "Output resolution for resolution-priced video models (Pollinations extension)",
+        }),
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.

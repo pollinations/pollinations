@@ -15,6 +15,7 @@ import worker from "../../src/index.ts";
 
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
+const OUTPUT_VIDEO_URL = "https://media.example.test/output.mp4";
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 type ReplicateCall = {
@@ -45,11 +46,17 @@ function createBillingVariantMocks() {
                         model: match[1],
                         input: body.input,
                     });
+                    const isVideo = match[1] === "prunaai/p-video";
                     return Response.json({
                         id: `prediction-${replicateState.calls.length}`,
                         status: "succeeded",
-                        output: [OUTPUT_IMAGE_URL],
-                        metrics: { predict_time: 1 },
+                        output: isVideo ? OUTPUT_VIDEO_URL : [OUTPUT_IMAGE_URL],
+                        metrics: isVideo
+                            ? {
+                                  predict_time: 1,
+                                  video_output_duration_seconds: 5,
+                              }
+                            : { predict_time: 1 },
                     });
                 },
             },
@@ -65,6 +72,11 @@ function createBillingVariantMocks() {
                     if (pathname.endsWith(".png")) {
                         return new Response(PNG_BYTES, {
                             headers: { "content-type": "image/png" },
+                        });
+                    }
+                    if (pathname.endsWith(".mp4")) {
+                        return new Response(new Uint8Array([0, 0, 0, 24]), {
+                            headers: { "content-type": "video/mp4" },
                         });
                     }
                     return new Response("unexpected media URL", {
@@ -150,5 +162,34 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
         tokenPriceCompletionImage: 0.03,
         totalCost: 0.03,
         totalPrice: 0.03,
+    });
+});
+
+test("p-video sends the selected resolution upstream and bills its variant", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "replicate", "media");
+
+    await generate(
+        "/image/billing-pvideo?model=p-video&resolution=1080p&duration=5&seed=103",
+        paidApiKey,
+    );
+
+    expect(mocks.replicate.state.calls).toHaveLength(1);
+    expect(mocks.replicate.state.calls[0]).toMatchObject({
+        model: "prunaai/p-video",
+        input: { resolution: "1080p", duration: 5 },
+    });
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "p-video",
+        modelUsed: "p-video",
+        costVariant: "1080p",
+        costVariantStatus: "selected",
+        tokenCountCompletionVideoSeconds: 5,
+        tokenPriceCompletionVideoSeconds: 0.04,
+        totalCost: 0.2,
+        totalPrice: 0.2,
     });
 });

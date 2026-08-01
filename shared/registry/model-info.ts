@@ -56,6 +56,7 @@ export const ModelInfoSchema = z.object({
             }),
         )
         .optional(),
+    resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -147,6 +148,7 @@ export function modelInfoFromDefinition(
                       },
                   )
                 : undefined,
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

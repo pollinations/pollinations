@@ -1258,17 +1258,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
-  "p-video-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.04,
-    },
-    "price": {
-      "completionVideoSeconds": 0.04,
-    },
-  },
-  "p-video-720p": {
+  "p-video": {
     "cost": {
       "completionVideoSeconds": 0.02,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.04,
+      },
     },
     "price": {
       "completionVideoSeconds": 0.02,
@@ -1503,6 +1500,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionVideoSeconds": 0.025,
     },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.06,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.015,
+      },
+    },
     "price": {
       "completionVideoSeconds": 0.025,
     },
@@ -1624,19 +1629,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
     },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1,
+      },
+    },
     "price": {
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
-    },
-  },
-  "veo-1080p": {
-    "cost": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
-    },
-    "price": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
     },
   },
   "wan": {
@@ -1675,16 +1675,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionVideoSeconds": 0.1,
     },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1,
+      },
+      "1080p_image": {
+        "completionVideoSeconds": 0.15,
+      },
+    },
     "price": {
       "completionVideoSeconds": 0.1,
-    },
-  },
-  "wan-pro-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.15,
-    },
-    "price": {
-      "completionVideoSeconds": 0.15,
     },
   },
   "whisper": {

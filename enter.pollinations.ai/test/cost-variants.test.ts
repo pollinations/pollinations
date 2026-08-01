@@ -34,20 +34,20 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],
-    ] satisfies [
-        ModelName,
-        number,
-    ][])("%s uses a strict greater-than boundary", (model, threshold) => {
-        expect(
-            bill(model, { promptTextTokens: threshold - 1 }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill(model, { promptTextTokens: threshold }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill(model, { promptTextTokens: threshold + 1 }).costVariant,
-        ).toBe("long_context");
-    });
+    ] satisfies [ModelName, number][])(
+        "%s uses a strict greater-than boundary",
+        (model, threshold) => {
+            expect(
+                bill(model, { promptTextTokens: threshold - 1 }).costVariant,
+            ).toBeUndefined();
+            expect(
+                bill(model, { promptTextTokens: threshold }).costVariant,
+            ).toBeUndefined();
+            expect(
+                bill(model, { promptTextTokens: threshold + 1 }).costVariant,
+            ).toBe("long_context");
+        },
+    );
 
     it("Gemini uses Google's strict greater-than 200K boundary", () => {
         expect(
@@ -110,11 +110,14 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_32k"],
         [256_001, "context_256k"],
-    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
-        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
-            expectedVariant,
-        );
-    });
+    ] as const)(
+        "Qwen3.7 Flash selects the expected sheet at %s prompt tokens",
+        (promptTextTokens, expectedVariant) => {
+            expect(
+                bill("qwen3.7-flash", { promptTextTokens }).costVariant,
+            ).toBe(expectedVariant);
+        },
+    );
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
@@ -213,35 +216,32 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 10, 1, 12.5, 45],
         ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
         ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
-    ] satisfies [
-        ModelName,
-        number,
-        number,
-        number,
-        number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
-        const billing = bill(model, {
-            promptTextTokens: 272_001,
-            promptCachedTokens: 1_000,
-            promptCacheWriteTokens: 1_000,
-            completionTextTokens: 1_000,
-        });
+    ] satisfies [ModelName, number, number, number, number][])(
+        "%s applies every Azure long-context meter to the full request",
+        (model, input, cached, cacheWrite, output) => {
+            const billing = bill(model, {
+                promptTextTokens: 272_001,
+                promptCachedTokens: 1_000,
+                promptCacheWriteTokens: 1_000,
+                completionTextTokens: 1_000,
+            });
 
-        expect(billing.costVariant).toBe("long_context");
-        expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (input * 0.5) / 1e6,
-            promptCachedTokens: (cached * 0.5) / 1e6,
-            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-            completionTextTokens: (output * 0.5) / 1e6,
-        });
-        expect(billing.cost.totalCost).toBeCloseTo(
-            272_001 * (input / 1e6) +
-                1_000 * (cached / 1e6) +
-                1_000 * (cacheWrite / 1e6) +
-                1_000 * (output / 1e6),
-            12,
-        );
-    });
+            expect(billing.costVariant).toBe("long_context");
+            expect(billing.priceDefinition).toMatchObject({
+                promptTextTokens: (input * 0.5) / 1e6,
+                promptCachedTokens: (cached * 0.5) / 1e6,
+                promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
+                completionTextTokens: (output * 0.5) / 1e6,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                272_001 * (input / 1e6) +
+                    1_000 * (cached / 1e6) +
+                    1_000 * (cacheWrite / 1e6) +
+                    1_000 * (output / 1e6),
+                12,
+            );
+        },
+    );
 
     it("counts every prompt token modality, but not audio seconds", () => {
         expect(
@@ -386,6 +386,83 @@ describe("request-mode cost variants", () => {
     });
 });
 
+describe("resolution cost variants", () => {
+    it("p-video bills the 720p base and 1080p variant", () => {
+        expect(
+            bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,
+        ).toBeCloseTo(0.2, 12);
+
+        const fullHd = bill(
+            "p-video",
+            { completionVideoSeconds: 10 },
+            { resolution: "1080p" },
+        );
+        expect(fullHd.costVariant).toBe("1080p");
+        expect(fullHd.cost.totalCost).toBeCloseTo(0.4, 12);
+    });
+
+    it("veo reprices 1080p video while inheriting its audio rate", () => {
+        const billing = bill(
+            "veo",
+            { completionVideoSeconds: 8, completionAudioSeconds: 8 },
+            { resolution: "1080p" },
+        );
+
+        expect(billing.costVariant).toBe("1080p");
+        expect(billing.cost.completionVideoSeconds).toBeCloseTo(0.8, 12);
+        expect(billing.cost.completionAudioSeconds).toBeCloseTo(0.16, 12);
+    });
+
+    it("wan-pro distinguishes 1080p text-to-video and image-to-video", () => {
+        const text = bill(
+            "wan-pro",
+            { completionVideoSeconds: 5 },
+            { resolution: "1080p" },
+        );
+        const image = bill(
+            "wan-pro",
+            { completionVideoSeconds: 5 },
+            { resolution: "1080p", hasImage: true },
+        );
+
+        expect(text.costVariant).toBe("1080p");
+        expect(text.cost.totalCost).toBeCloseTo(0.5, 12);
+        expect(image.costVariant).toBe("1080p_image");
+        expect(image.cost.totalCost).toBeCloseTo(0.75, 12);
+    });
+
+    it("seedance-pro bills 480p and 1080p around its 720p base", () => {
+        const tiers = [
+            [undefined, 0.025],
+            ["480p", 0.015],
+            ["1080p", 0.06],
+        ] as const;
+
+        for (const [resolution, rate] of tiers) {
+            const billing = bill(
+                "seedance-pro",
+                { completionVideoSeconds: 6 },
+                resolution ? { resolution } : undefined,
+            );
+            expect(billing.cost.totalCost).toBeCloseTo(6 * rate, 12);
+        }
+    });
+
+    it("publishes supported resolutions with effective variant pricing", () => {
+        const definition = getRegistryModelDefinition("p-video");
+        const info = modelInfoFromDefinition("p-video", definition);
+
+        expect(info.resolutions).toEqual(["720p", "1080p"]);
+        expect(
+            info.pricing_variants?.find(({ name }) => name === "1080p")
+                ?.pricing,
+        ).toMatchObject({
+            completionVideoSeconds: "0.04",
+            currency: "pollen",
+        });
+    });
+});
+
 describe("selection safety and composition", () => {
     const fakeModel = (
         overrides: Partial<ModelDefinition>,
@@ -522,6 +599,22 @@ describe("registry-wide variant invariants", () => {
                 Boolean(def.costVariants),
                 `${model}: costVariants and selectCostVariant must pair`,
             ).toBe(Boolean(def.selectCostVariant));
+        }
+    });
+
+    it("every advertised non-default resolution selects a variant", () => {
+        for (const model of getModels()) {
+            const definition = getRegistryModelDefinition(model);
+            for (const resolution of definition.resolutions?.slice(1) ?? []) {
+                const variant = definition.selectCostVariant?.({
+                    usage: {},
+                    input: { resolution },
+                });
+                expect(
+                    variant && definition.costVariants?.[variant],
+                    `${model} must select a cost variant for ${resolution}`,
+                ).toBeTruthy();
+            }
         }
     });
 

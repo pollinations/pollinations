@@ -16,6 +16,7 @@ import type {
 // selectCostVariant. Keep this vocabulary small: a key earns its place when a
 // live model prices on it.
 export type PricingInput = {
+    resolution?: string;
     hasImage?: boolean;
 };
 
@@ -49,6 +50,13 @@ export function totalPromptTokens(usage: Usage): number {
 export function longContextAbove(minPromptTokens: number) {
     return ({ usage }: CostVariantContext): "long_context" | undefined =>
         totalPromptTokens(usage) > minPromptTokens ? "long_context" : undefined;
+}
+
+// Selects a named rate sheet when the request explicitly uses one of the
+// model's non-default resolutions. The default resolution stays on base rates.
+export function matchResolution<const R extends string>(...resolutions: R[]) {
+    return ({ input }: CostVariantContext): R | undefined =>
+        resolutions.find((resolution) => resolution === input?.resolution);
 }
 
 // Pairs variant sheets with their selector so TypeScript checks that the

@@ -415,11 +415,11 @@ describe("community endpoint helpers", () => {
         ).toBe(0.03);
     });
 
-    it("advertises image edits only after the edit probe succeeds", () => {
-        expect(communityImageSupportedEndpoints(false)).not.toContain(
+    it("advertises image edits only for models with image input", () => {
+        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
             "/v1/images/edits",
         );
-        expect(communityImageSupportedEndpoints(true)).toContain(
+        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
             "/v1/images/edits",
         );
     });
@@ -431,7 +431,6 @@ describe("community endpoint helpers", () => {
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
-            supportsImageEdits: true,
             inputModalities: ["text", "image"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.000005,
@@ -510,7 +509,6 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             description: "Image model",
             modality: "image",
-            supportsImageEdits: true,
             inputModalities: ["text", "audio"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -592,7 +590,6 @@ describe("community endpoint helpers", () => {
                 delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
-                supportsImageEdits: true,
                 inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
@@ -779,7 +776,6 @@ describe("community endpoint helpers", () => {
             description: null,
             modality: "text",
             imagePricing: "request",
-            supportsImageEdits: false,
             inputModalities: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -842,7 +838,6 @@ describe("community endpoint helpers", () => {
                 description: null,
                 modality: "text",
                 imagePricing: "request",
-                supportsImageEdits: false,
                 inputModalities: null,
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
@@ -2173,7 +2168,6 @@ fixtureTest(
             title: "Community Image Endpoint",
             description: "OpenAI-compatible image endpoint",
             modality: "image",
-            supportsImageEdits: true,
             inputModalities: ["text", "image"],
             visibility: "public",
             baseUrl: "https://api.example.com/v1/images/generations",
@@ -2216,7 +2210,6 @@ fixtureTest(
             id: string;
             modelId: string;
             modality: string;
-            supportsImageEdits: boolean;
             inputModalities: string[];
             baseUrl: string;
             upstreamModel: string;
@@ -2226,7 +2219,6 @@ fixtureTest(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
-            supportsImageEdits: true,
             inputModalities: ["text", "image"],
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
@@ -2256,7 +2248,7 @@ fixtureTest(
                 "Generation and editing endpoints responded with image data",
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
 
         const simpleImageResponse = await SELF.fetch(

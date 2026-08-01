@@ -301,7 +301,6 @@ const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     modality: ModalitySchema.optional().default("text"),
     imagePricing: ImagePricingSchema.optional().default("request"),
-    supportsImageEdits: z.boolean().optional().default(false),
     inputModalities: InputModalitiesSchema.optional().default(["text"]),
     visibility: VisibilitySchema.optional().default("private"),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -316,7 +315,6 @@ const UpdateEndpointSchema = z.object({
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
-    supportsImageEdits: z.boolean().optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
     active: z.boolean().optional(),
@@ -346,7 +344,6 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
-    supportsImageEdits: z.boolean(),
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     upstreamModel: z.string(),
@@ -382,11 +379,11 @@ const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
-        supportsImageEdits: z
-            .boolean()
+        inputModalities: z
+            .array(InputModalitySchema)
             .optional()
             .describe(
-                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
+                "Image tests only: input types detected from generation and edit probes.",
             ),
     })
     .passthrough();
@@ -469,7 +466,6 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        supportsImageEdits: row.supportsImageEdits,
         inputModalities: normalizeCommunityEndpointInputModalities(
             row.inputModalities,
             modality,
@@ -768,8 +764,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality: input.modality,
                     imagePricing,
-                    supportsImageEdits:
-                        input.modality === "image" && input.supportsImageEdits,
                     inputModalities: input.inputModalities,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
@@ -878,7 +872,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? result.supportsImageEdits
+                            ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
                             : "Endpoint responded with usage",
@@ -963,10 +957,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
-            }
-            if (input.supportsImageEdits !== undefined) {
-                update.supportsImageEdits =
-                    modality === "image" && input.supportsImageEdits;
             }
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;

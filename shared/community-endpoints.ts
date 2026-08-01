@@ -291,7 +291,6 @@ export type CommunityEndpointRuntime = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
     inputModalities: ModelInputModality[] | null;
     baseUrl: string;
     upstreamModel: string;
@@ -312,7 +311,6 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
     inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
 

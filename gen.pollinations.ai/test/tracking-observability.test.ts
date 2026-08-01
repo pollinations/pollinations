@@ -120,7 +120,6 @@ function createCommunityEndpoint(
         delegatesGeneration: false,
         modality: "text",
         imagePricing: "request",
-        supportsImageEdits: false,
         inputModalities: null,
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",

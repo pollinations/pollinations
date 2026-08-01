@@ -220,8 +220,6 @@ export function CommunityEndpointDialog({
                 form.modality === "image"
                     ? (body.imagePricing ?? "request")
                     : form.imagePricing;
-            const supportsImageEdits =
-                form.modality === "image" && body.supportsImageEdits === true;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -241,7 +239,11 @@ export function CommunityEndpointDialog({
             setForm((current) => ({
                 ...current,
                 imagePricing: detectedImagePricing,
-                supportsImageEdits,
+                inputModalities:
+                    current.modality === "image" &&
+                    body.inputModalities?.includes("image")
+                        ? (["text", "image"] as ModelInputModality[])
+                        : current.inputModalities,
                 // Changing pricing mode changes the units of these fields, so
                 // stale values must not carry across modes.
                 ...(detectedImagePricing !== current.imagePricing

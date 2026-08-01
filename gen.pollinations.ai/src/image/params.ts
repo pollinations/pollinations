@@ -30,7 +30,7 @@ const sanitizedSideLength = z.preprocess((v) => {
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
 
-function adjustImageSizeForModel(
+export function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,
     height?: number,

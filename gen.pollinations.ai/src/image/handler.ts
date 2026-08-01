@@ -1,4 +1,3 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -6,8 +5,11 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { fallbackCandidates, withModelFallback } from "../fallback.ts";
-import type { GenerationModelEntry } from "../model-registry.ts";
+import {
+    type FallbackCandidate,
+    fallbackCandidates,
+    withModelFallback,
+} from "../fallback.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -397,36 +399,36 @@ async function generateImageResult(
     return result;
 }
 
-/** Tries the model, then each fallback it declared, until one returns an image. */
-async function callCommunityImageWithFallback(
+/**
+ * One attempt against one candidate, whichever kind of image model it is.
+ *
+ * A candidate is called exactly the way the requested model was — same params,
+ * only the id swapped. Nothing is re-derived per candidate: the pairs are ours
+ * to declare, so a target that needs different parameters is one we should not
+ * have paired in the first place.
+ */
+async function generateImageForCandidate(
     c: ImageContext,
-    endpoint: CommunityEndpointRuntime,
-    prompt: string,
+    originalPrompt: string,
     safeParams: RuntimeImageParams,
-): Promise<{
-    result: ImageGenerationResult;
-    servedEntry?: GenerationModelEntry;
-    servedIndex: number;
-}> {
-    const { result, candidate, index } = await withModelFallback(
-        fallbackCandidates(c.var.model),
-        async (attempt) => {
-            const generated = await callCommunityImageEndpoint(
-                // Only the primary can reach here without its own endpoint, and
-                // this path runs only once it has one.
-                attempt.communityEndpoint ?? endpoint,
-                prompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            // Checked inside the attempt so an endpoint that answers 200 with an
-            // empty body fails over like any other broken response.
-            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
-            return generated;
-        },
-        c.var.track?.failedCalls,
-    );
-    return { result, servedEntry: candidate.entry, servedIndex: index };
+    candidate: FallbackCandidate,
+): Promise<ImageGenerationResult> {
+    const params = { ...safeParams, model: candidate.id };
+    if (candidate.communityEndpoint) {
+        const generated = await callCommunityImageEndpoint(
+            candidate.communityEndpoint,
+            originalPrompt,
+            params,
+            c.env.BETTER_AUTH_SECRET,
+        );
+        // Checked inside the attempt so an endpoint that answers 200 with an
+        // empty body fails over like any other broken response.
+        assertNonEmptyMedia(generated.buffer, "Community image endpoint");
+        return generated;
+    }
+    const result = await generateImageResult(c, originalPrompt, params);
+    assertNonEmptyMedia(result.buffer, "Image provider");
+    return result;
 }
 
 async function generateVideoResult(
@@ -451,35 +453,9 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const { result, servedEntry, servedIndex } =
-                await callCommunityImageWithFallback(
-                    c,
-                    communityEndpoint,
-                    originalPrompt,
-                    safeParams,
-                );
-            const headers = mediaHeaders(
-                originalPrompt,
-                servedEntry
-                    ? { ...safeParams, model: servedEntry.id }
-                    : safeParams,
-                result,
-                detectMimeType(result.buffer),
-            );
-            if (servedEntry) {
-                c.set("servedModelEntry", servedEntry);
-                // Same "config.targets[N]" shape the Portkey text path emits,
-                // so tracking's fallback parsing covers both.
-                headers.set(
-                    FALLBACK_TARGET_HEADER,
-                    `config.targets[${servedIndex}]`,
-                );
-            }
-            return new Response(bufferToUint8Array(result.buffer), { headers });
-        }
-
+        // Video dispatches on its own provider set and declares no fallbacks,
+        // so it stays outside the loop — which leaves exactly one seam here,
+        // covering community and catalog image models alike.
         if (isVideoModel(safeParams.model)) {
             const result = await generateVideoResult(
                 c,
@@ -497,16 +473,34 @@ export async function generateImageOrVideoResponse(
             });
         }
 
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                result.mimeType || detectMimeType(result.buffer),
-            ),
-        });
+        const { result, candidate, index } = await withModelFallback(
+            fallbackCandidates(c.var.model),
+            (attempt) =>
+                generateImageForCandidate(
+                    c,
+                    originalPrompt,
+                    safeParams,
+                    attempt,
+                ),
+            c.var.track?.failedCalls,
+        );
+
+        // Cost and the owner reward follow what actually served. Absent on the
+        // primary, which is the model the caller is charged for either way.
+        const servedEntry = candidate.entry;
+        const headers = mediaHeaders(
+            originalPrompt,
+            servedEntry ? { ...safeParams, model: servedEntry.id } : safeParams,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedEntry) {
+            c.set("servedModelEntry", servedEntry);
+            // Same "config.targets[N]" shape the Portkey text path emits, so
+            // tracking's fallback parsing covers both.
+            headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        }
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

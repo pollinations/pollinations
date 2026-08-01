@@ -135,13 +135,23 @@ function isUsableFallbackTarget(
     target: GenerationModelEntry | undefined,
 ): target is GenerationModelEntry {
     if (!target || target === from) return false;
-    if (!target.visible || target.eventType !== from.eventType) return false;
+    if (target.eventType !== from.eventType) return false;
+    // A community endpoint that is disabled or private must never serve,
+    // whoever named it. A catalog model marked `hidden` is only unlisted, not
+    // unavailable — it stays callable, so it stays a usable target.
+    if (target.communityEndpoint && !target.visible) return false;
     const primary = from.communityEndpoint;
+    // The price rule below constrains what a THIRD PARTY may declare. Our own
+    // catalog fallbacks are reviewed on both sides in one PR and pay no owner,
+    // so nothing needs to bound them — and a price guard would refuse the
+    // rescue in exactly the outage the feature exists for.
+    if (!primary) return true;
     const candidate = target.communityEndpoint;
-    // Both sides must be community endpoints: static registry prices can be
-    // dynamic, so the same-or-lower comparison that makes a fallback safe to
-    // bill is only defined between two endpoint rows.
-    if (!primary || !candidate) return false;
+    // An owner may only route to another endpoint row: the comparison below is
+    // defined over the shared price columns and a catalog target has none. The
+    // write path already refuses anything that is not <owner>/<name>, so this
+    // only restates an invariant that cannot currently be violated.
+    if (!candidate) return false;
     // The shared price columns mean Pollen per generated image in "request"
     // mode and Pollen per token in "tokens" mode, so a cross-mode comparison is
     // meaningless — and either side can switch mode long after the link was
@@ -163,7 +173,14 @@ function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const declared = entry.communityEndpoint?.fallbackModelIds ?? [];
+        // The two declaration surfaces converge here and nowhere else: an
+        // owner's list in D1, or ours in code. They are mutually exclusive by
+        // construction — communityModelDefinition never sets fallbackModels —
+        // and past this line nothing distinguishes them.
+        const declared =
+            entry.communityEndpoint?.fallbackModelIds ??
+            entry.definition.fallbackModels ??
+            [];
         const targets: GenerationModelEntry[] = [];
         for (const targetId of declared) {
             if (targets.length >= MAX_FALLBACK_TARGETS) break;

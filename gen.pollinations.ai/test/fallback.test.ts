@@ -1,11 +1,14 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     type FailedCall,
     type FallbackCandidate,
+    fallbackCandidates,
     isRetryableFallbackError,
     withModelFallback,
 } from "../src/fallback.ts";
 import { HttpError } from "../src/image/httpError.ts";
+import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 /**
  * The single decision point every modality shares, so the cases that must never
@@ -221,5 +224,59 @@ describe("withModelFallback", () => {
         expect(index).toBe(1);
         expect(seen(failures)).toEqual(["primary"]);
         expect(attempt).toHaveBeenCalledTimes(2);
+    });
+});
+
+/**
+ * The candidate list is where a catalog model becomes routable at all: it used
+ * to stop at the first target that was not a community endpoint.
+ */
+describe("fallbackCandidates", () => {
+    const entry = (
+        id: string,
+        communityEndpoint?: CommunityEndpointRuntime,
+    ): GenerationModelEntry =>
+        ({
+            id,
+            definition: { provider: id },
+            communityEndpoint,
+        }) as unknown as GenerationModelEntry;
+
+    const model = (...fallbackEntries: GenerationModelEntry[]) =>
+        ({
+            resolved: "primary",
+            definition: { provider: "primary" },
+            fallbackEntries,
+        }) as unknown as Parameters<typeof fallbackCandidates>[0];
+
+    it("routes a catalog target, carrying no endpoint and no owner", () => {
+        const [, target] = fallbackCandidates(model(entry("openai-fast")));
+
+        expect(target.id).toBe("openai-fast");
+        // No endpoint is what routes it through the static provider config,
+        // and what leaves it earning no owner reward.
+        expect(target.communityEndpoint).toBeUndefined();
+        // Present so the served model's own cost is what gets attributed.
+        expect(target.entry?.id).toBe("openai-fast");
+    });
+
+    it("keeps a catalog target from hiding the community ones behind it", () => {
+        const endpoint = { visibility: "public" } as CommunityEndpointRuntime;
+        const candidates = fallbackCandidates(
+            model(entry("openai-fast"), entry("owner/model", endpoint)),
+        );
+
+        expect(candidates.map((c) => c.id)).toEqual([
+            "primary",
+            "openai-fast",
+            "owner/model",
+        ]);
+    });
+
+    it("leaves the primary without an entry, so it bills as itself", () => {
+        const [primary] = fallbackCandidates(model(entry("openai-fast")));
+
+        expect(primary.id).toBe("primary");
+        expect(primary.entry).toBeUndefined();
     });
 });

@@ -152,9 +152,11 @@ export type FallbackCandidate = {
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
     /**
-     * Registry entry whose owner is paid when this candidate serves. Absent on
-     * the model the caller asked for, which is also the one they are charged
-     * for however the request is eventually served.
+     * The entry that served, once a fallback has stepped in. It decides what
+     * the generation cost us and, when it has an owner, who is paid.
+     *
+     * Absent on the model the caller asked for — which is the one they are
+     * charged for however the request is eventually served.
      */
     entry?: GenerationModelEntry;
 };
@@ -185,13 +187,15 @@ export function fallbackCandidates(
         },
     ];
     for (const entry of model?.fallbackEntries ?? []) {
-        // Only community endpoints are routable today. Stop at the first one
-        // that is not, so a gap never shifts the targets behind it forward.
-        if (!entry.communityEndpoint) break;
         candidates.push({
             id: entry.id,
             definition: entry.definition,
-            communityEndpoint: entry.communityEndpoint,
+            // Absent on a catalog target, which is what tells the handlers to
+            // route it through the static provider config instead of an
+            // endpoint row, and what leaves it earning no owner reward.
+            ...(entry.communityEndpoint && {
+                communityEndpoint: entry.communityEndpoint,
+            }),
             entry,
         });
     }

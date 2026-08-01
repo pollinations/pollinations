@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **848** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **849** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💬 Oracle of Chance](https://dramatise.site) | These are two apps I have created side by side, which are basically quite different. The main one, Oracle of Chance, is a search engine designed to work as a crystal ball, and to give precise YES/NO/M | [@yashok87](https://github.com/yashok87) |  | 🫧 |
 | [💬 Le petit AI](https://le-petit-seven.vercel.app) | Open https://le-petit-seven.vercel.app/ to use Le petit AI. | [@JustLookingSoftwares](https://github.com/JustLookingSoftwares) |  | 🫧 |
 | [💬 Lumina Chat](https://lumina.magnified.cc) | Lumina is an AI chat application designed to provide a seamless and flexible interface for interacting with large language models. The app includes built-in support for Pollinations.AI as a default pr | [@kokofixcomputers](https://github.com/kokofixcomputers) | 1 | 🫧 |
 | [💬 MyEntMap](https://mymap.qvlit.com) | MyEntMap is a multilingual (zh/vi/en, auto-detected) food & entertainment map for Ho Chi Minh City. It uses the Pollinations API in three ways: (1) auto-generating Ghibli-watercolor store photos with | [@yukyotsai](https://github.com/yukyotsai) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ Pollinations AI Studio](https://sashafilipov.github.io/pollinations-ai-studio) | Multimodal workspace for Pollinations.ai вЂ” chat with GPT/Claude/Gemini/DeepSeek via gen.pollinations.ai/v1/chat/completions , generate images via gen.pollinations.ai/image/{prompt} (Flux, Turbo, GPT | [@sashafilipov](https://github.com/sashafilipov) | 7 | 🫧 |
 | [🎬 Driftpod.fm](https://driftpod.fm) | Press play for endless discovery of podcasts. Users tailor their experience by adding favorite podcasts, liking and disliking episodes, and the recommendation engine gets episode metadata (summaries, | [@alexander](https://github.com/alexander) |  | 🏵️ 🫧 |
 | [🖼️ Anime Forge](https://animeforge-k4ltm64.public.builtwithrocket.new) | Anime Forge is an AI-driven anime character design web app powered by Pollinations API for text and image generation. | [@masreamro496-ship-it](https://github.com/masreamro496-ship-it) |  | 🫧 |
-| [💬 Arika](https://arika.hizumi.in) | Arika provides a conversational AI experience designed to feel more human and less robotic. | [@02th](https://github.com/02th) |  | 🫧 |
 
 ---
 
@@ -443,7 +443,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ PixPal](https://pixpal.chat) | Analyze, edit, and generate images, build websites from screenshots, create 3D games, and draft blog posts within a single chat interface. | [@andreaspaps](https://github.com/andreaspaps) |  | 🐝 |
 | [💬 Unity AI Lab](https://unity.unityailab.com/) | AI platform with chatbots, integration services, and generative tools powered by Pollinations | [@G-Fourteen](https://github.com/G-Fourteen) |  | 🐝 |
 
-<details><summary>Show all 144 apps</summary>
+<details><summary>Show all 145 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -490,6 +490,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Pollination App](https://github.com/aheadmujtaba/PollinationsApp) | Android client for Pollinations.ai to generate images and chat with AI. | [@aheadmujtaba](https://github.com/aheadmujtaba) | 1 |  |
 | [💬 AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio) | Provide a local desktop AI chat with multimodal attachments, in-chat image generation, isolated project file management, saved chats with export, and streaming responses. | [@Universe-shifting](https://github.com/Universe-shifting) | 1 |  |
 | [🧠 MindFlow](https://note.aegis-plus.my.id/) | AI second-brain notes that turns messy thoughts into structured insights. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
+| [💬 Oracle of Chance](https://dramatise.site) | These are two apps I have created side by side, which are basically quite different. The main one, Oracle of Chance, is a search engine designed to work as a crystal ball, and to give precise YES/NO/M | [@yashok87](https://github.com/yashok87) |  | 🫧 |
 | [💬 Le petit AI](https://le-petit-seven.vercel.app) | Open https://le-petit-seven.vercel.app/ to use Le petit AI. | [@JustLookingSoftwares](https://github.com/JustLookingSoftwares) |  | 🫧 |
 | [💬 MyEntMap](https://mymap.qvlit.com) | MyEntMap is a multilingual (zh/vi/en, auto-detected) food & entertainment map for Ho Chi Minh City. It uses the Pollinations API in three ways: (1) auto-generating Ghibli-watercolor store photos with | [@yukyotsai](https://github.com/yukyotsai) |  | 🫧 |
 | [💬 Arika](https://arika.hizumi.in) | Arika provides a conversational AI experience designed to feel more human and less robotic. | [@02th](https://github.com/02th) |  | 🫧 |

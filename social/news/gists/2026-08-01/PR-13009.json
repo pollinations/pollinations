@@ -1,0 +1,33 @@
+{
+  "pr_number": 13009,
+  "title": "fix: add Lykon brand logo",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13009",
+  "merged_at": "2026-08-01T12:42:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the missing Lykon brand mapping for DreamShaper.\n- Adds a lightweight monochrome bear SVG matching Lykon’s public identity.\n- Changes no model registry, pricing, routing, access, or runtime behavior.\n\nTesting:\n- `npx vitest run test/pricing-data.test.ts` — 28/28 passed.\n- Enter TypeScript check passed.\n- SVG rendered and visually inspected.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "DreamShaper finds its bear",
+    "blurb": "DreamShaper’s model card now has its proper Lykon mark: a small monochrome bear, finally reunited with the model it represents.",
+    "summary": "Added the missing Lykon brand mapping and monochrome bear SVG so DreamShaper displays its correct provider logo in the model interface.",
+    "impact": "Users browsing DreamShaper now see Lykon’s recognizable bear identity alongside the model, with no changes to pricing, routing, or access.",
+    "keywords": [
+      "DreamShaper",
+      "Lykon",
+      "brand-logo",
+      "model-ui",
+      "frontend"
+    ],
+    "visual_concept": "A cozy model-library shelf where Polli carefully hangs a tiny monochrome pixel bear emblem beside a DreamShaper card, making the provider identity visible. Include a few flowering code-plants and a softly glowing retro terminal to represent the model interface.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny curator beret, carefully placing a small monochrome bear emblem on a DreamShaper model card in a warm retro computer library; code-plants and tiny flowers bloom around a CRT terminal glowing prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with subtle pixel-font text: 'DREAMSHAPER'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-13009.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny curator beret, carefully placing a small monochrome bear emblem on a DreamShaper model card in a warm retro computer library; code-plants and tiny flowers bloom around a CRT terminal glowing prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with subtle pixel-font text: 'DREAMSHAPER'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-01T12:43:19.244136+00:00"
+}

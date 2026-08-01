@@ -1,6 +1,7 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { formatActivityChartDate } from "./activity-helpers";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -202,30 +203,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
-                label: isHourly
-                    ? date.toLocaleTimeString("en-US", {
-                          timeZone: "UTC",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      })
-                    : date.toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                          month: "short",
-                          day: "numeric",
-                      }),
-                fullDate: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(isHourly && {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    }),
-                }),
+                ...formatActivityChartDate(date, isHourly),
                 value: d[filters.metric],
                 tierValue: d[tierKey],
                 paidValue: d[paidKey],

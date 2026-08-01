@@ -1,0 +1,34 @@
+{
+  "pr_number": 12868,
+  "title": "fix: allow community endpoints to declare their input modalities",
+  "author": "itntp2024",
+  "url": "https://github.com/pollinations/pollinations/pull/12868",
+  "merged_at": "2026-08-01T01:24:06Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12989\nFixes #12762\n\n- Adds owner-configurable accepted input modalities to community model create and update flows\n- Stores modalities as a typed JSON array in D1 with migration 0042\n- Uses the shared registry modality shape so static and community models produce the same catalog metadata\n- Adds an input selector to the Add/Edit Model dialog\n- Defaults existing rows to text without forcing text onto explicit declarations\n- Preserves detected image input for edit-capable image endpoints\n- Covers defaults, explicit multimodal declarations, image edits, persistence, and model catalog output\n\nValidation:\n- Enter and Gen TypeScript checks\n- Focused community endpoint tests\n- Biome formatting/check\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Models can say what they eat",
+    "blurb": "Community model owners can now declare whether their endpoints accept text, images, or both. The catalog gets the same clear modality metadata as the static registry, because guessing what an API eats is a charmingly bad interface.",
+    "summary": "Community endpoint create and edit flows now let owners declare accepted input modalities, persist them as a typed D1 JSON array via migration 0042, and emit the shared registry modality metadata in the model catalog.",
+    "impact": "Users and API clients can see whether a community model accepts text or images before calling it, while existing endpoints default safely to text and edit-capable image endpoints retain detected image input.",
+    "keywords": [
+      "community-models",
+      "input-modalities",
+      "model-catalog",
+      "D1",
+      "registry",
+      "dashboard"
+    ],
+    "visual_concept": "Depict a cozy community model garden where clearly labeled text scrolls and image tiles feed into separate little endpoint pipes, then bloom into catalog flowers. Polli should be the observant gardener using a tiny clipboard to select the right inputs, with the CRT Monitor Robot happily displaying a model card that shows text and image modality icons; include code-plants to represent the shared registry and persisted metadata.",
+    "image_prompt": "A cozy pixel art community model garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and uses a clipboard to route text scrolls and picture tiles into labeled endpoint flower pots; a cute CRT-monitor robot displays a catalog card with simple pixel icons for TEXT and IMAGE. Lime green (#ecf874) glows prominently among code-plants, pastel lavender and warm cream flowers, and a small pixel-font sign reading \"INPUTS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12868.jpg",
+    "prompt": "A cozy pixel art community model garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and uses a clipboard to route text scrolls and picture tiles into labeled endpoint flower pots; a cute CRT-monitor robot displays a catalog card with simple pixel icons for TEXT and IMAGE. Lime green (#ecf874) glows prominently among code-plants, pastel lavender and warm cream flowers, and a small pixel-font sign reading \"INPUTS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T01:25:03.132012+00:00"
+}

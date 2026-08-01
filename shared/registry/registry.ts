@@ -15,6 +15,15 @@ export type Category =
     | "embedding"
     | "realtime";
 
+export const MODEL_INPUT_MODALITIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+] as const;
+
+export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
+
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
@@ -118,7 +127,7 @@ export type ModelDefinition = {
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
-    inputModalities?: string[];
+    inputModalities?: ModelInputModality[];
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;

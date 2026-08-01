@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
@@ -26,11 +27,13 @@ import {
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
+    normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -57,6 +60,13 @@ const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
     .describe(
         'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
+    );
+const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
+const InputModalitiesSchema = z
+    .array(InputModalitySchema)
+    .min(1)
+    .describe(
+        "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
 const PriceSchema = z
     .number()
@@ -102,6 +112,20 @@ function enforceCommunityEndpointPriceLimits(
             message: `${field.label} price must not exceed ${limit}`,
         });
     }
+}
+
+function enforceCommunityEndpointInputModalities(
+    modality: CommunityEndpointModality,
+    inputModalities: readonly string[],
+): void {
+    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
+    const unsupported = inputModalities.find(
+        (input) => !(permitted as readonly string[]).includes(input),
+    );
+    if (!unsupported) return;
+    throw new HTTPException(400, {
+        message: `${unsupported} input is not supported for ${modality} models`,
+    });
 }
 
 // Community fallback targets are restricted to public community models or
@@ -285,7 +309,7 @@ const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     modality: ModalitySchema.optional().default("text"),
     imagePricing: ImagePricingSchema.optional().default("request"),
-    supportsImageEdits: z.boolean().optional().default(false),
+    inputModalities: InputModalitiesSchema.optional().default(["text"]),
     visibility: VisibilitySchema.optional().default("private"),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
     ...UpdatePriceFieldsSchema,
@@ -299,7 +323,7 @@ const UpdateEndpointSchema = z.object({
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
-    supportsImageEdits: z.boolean().optional(),
+    inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
@@ -328,7 +352,7 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
-    supportsImageEdits: z.boolean(),
+    inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
@@ -363,11 +387,11 @@ const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
-        supportsImageEdits: z
-            .boolean()
+        inputModalities: z
+            .array(InputModalitySchema)
             .optional()
             .describe(
-                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
+                "Image tests only: input types detected from generation and edit probes.",
             ),
     })
     .passthrough();
@@ -450,7 +474,10 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        supportsImageEdits: row.supportsImageEdits,
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            row.inputModalities,
+            modality,
+        ),
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
@@ -709,6 +736,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(db, user.id, input.name);
             const imagePricing =
                 input.modality === "image" ? input.imagePricing : "request";
+            enforceCommunityEndpointInputModalities(
+                input.modality,
+                input.inputModalities,
+            );
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
@@ -746,8 +777,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality: input.modality,
                     imagePricing,
-                    supportsImageEdits:
-                        input.modality === "image" && input.supportsImageEdits,
+                    inputModalities: input.inputModalities,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
@@ -855,7 +885,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? result.supportsImageEdits
+                            ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
                             : "Endpoint responded with usage",
@@ -903,6 +933,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            if (input.inputModalities !== undefined) {
+                enforceCommunityEndpointInputModalities(
+                    modality,
+                    input.inputModalities,
+                );
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -935,9 +971,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            if (input.supportsImageEdits !== undefined) {
-                update.supportsImageEdits =
-                    modality === "image" && input.supportsImageEdits;
+            if (input.inputModalities !== undefined) {
+                update.inputModalities = input.inputModalities;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();

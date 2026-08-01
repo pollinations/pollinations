@@ -1,0 +1,35 @@
+{
+  "pr_number": 12930,
+  "title": "refactor: simplify Enter dashboard code",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12930",
+  "merged_at": "2026-08-01T06:23:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shares the repeated activity filter, table, and time-formatting controls across usage and earnings views.\n- Replaces duplicated model metadata branches with direct registry-backed helpers.\n- Removes unused Enter type exports and the unconsumed activity barrel file.\n- Reduces the dashboard and API surface by 107 net lines while preserving rendered behavior and public runtime routes.\n\nValidation:\n- npm run typecheck --prefix enter.pollinations.ai\n- npm run build:frontend --prefix enter.pollinations.ai\n- Biome check on all surviving modified TypeScript files\n- git diff --check origin/main...HEAD",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The dashboard shed its duplicates",
+    "blurb": "Usage and earnings controls now share one tidy little toolkit instead of growing parallel vines. Polli swept up 107 net lines and the dashboard kept doing exactly what it did before.",
+    "summary": "Refactored the Enter dashboard to share activity filters, tables, time formatting, and registry-backed model metadata helpers across usage and earnings views, reducing the codebase by 107 net lines without changing rendered behavior or public runtime routes.",
+    "impact": "Enter dashboard users keep the same usage and earnings experience, while maintainers get one shared implementation for activity controls and model metadata.",
+    "keywords": [
+      "enter-dashboard",
+      "refactor",
+      "activity",
+      "usage",
+      "earnings",
+      "model-registry",
+      "frontend"
+    ],
+    "visual_concept": "A cozy Enter dashboard garden shed where Polli, wearing a tiny maintainer tool belt, organizes duplicated activity-control tools into one shared lime-green toolbox beside two healthy code-plants labeled Usage and Earnings; a small CRT monitor robot happily compares matching dashboard tables.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny tool belt, carefully placing duplicate filter knobs, clock icons, and table rows into one shared lime green (#ecf874) toolbox between two thriving code-plants labeled “USAGE” and “EARNINGS”; a friendly CRT monitor robot watches matching dashboard tables with pleased pixel eyes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12930.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny tool belt, carefully placing duplicate filter knobs, clock icons, and table rows into one shared lime green (#ecf874) toolbox between two thriving code-plants labeled “USAGE” and “EARNINGS”; a friendly CRT monitor robot watches matching dashboard tables with pleased pixel eyes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T06:24:58.252861+00:00"
+}

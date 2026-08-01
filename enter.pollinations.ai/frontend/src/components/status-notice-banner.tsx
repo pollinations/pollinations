@@ -110,7 +110,6 @@ export const StatusNoticeBanner = () => {
                             href={notice.linkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            variant="ghost"
                             size="sm"
                             className="polli:mt-1"
                         >
@@ -120,12 +119,11 @@ export const StatusNoticeBanner = () => {
                 </div>
                 <IconButton
                     onClick={handleDismiss}
-                    aria-label="Dismiss status notice"
-                    variant="ghost"
-                    size="sm"
-                    icon={XIcon}
+                    title="Dismiss status notice"
                     className="polli:shrink-0"
-                />
+                >
+                    <XIcon />
+                </IconButton>
             </div>
         </Alert>
     );

@@ -16,6 +16,7 @@ import {
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
+import { linkFallbackEntries } from "./fallback.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 const TEXT_MODEL_ENDPOINTS = [
@@ -38,6 +39,9 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
+    // Entries that serve this model when its own upstream fails, in declared
+    // order. A fallback's own list is not followed, so routing stays depth one.
+    fallbackEntries?: GenerationModelEntry[];
 };
 
 export type GenerationModelRegistry = {
@@ -104,7 +108,7 @@ function communityEntryToGenerationEntry(
         supportedEndpoints:
             eventType === "generate.image"
                 ? communityImageSupportedEndpoints(
-                      entry.communityEndpoint.supportsImageEdits,
+                      entry.definition.inputModalities,
                   )
                 : communityTextSupportedEndpoints(),
         definition: entry.definition,
@@ -119,8 +123,11 @@ function communityEntryToGenerationEntry(
 }
 
 function buildRegistry(
-    entries: GenerationModelEntry[],
+    sourceEntries: GenerationModelEntry[],
 ): GenerationModelRegistry {
+    // Link on copies: STATIC_ENTRIES is module-level and shared across registry
+    // rebuilds, so resolution must never mutate the originals.
+    const entries = sourceEntries.map((entry) => ({ ...entry }));
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -134,6 +141,7 @@ function buildRegistry(
             }
         }
     }
+    linkFallbackEntries(entries, byIdOrAlias);
 
     return {
         resolve: (model) => {

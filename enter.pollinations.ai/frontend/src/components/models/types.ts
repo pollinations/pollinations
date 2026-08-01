@@ -68,8 +68,3 @@ export type ModelPrice = {
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
 };
-
-export type Modalities = {
-    input: string[];
-    output: string[];
-};

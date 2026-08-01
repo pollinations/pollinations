@@ -11,18 +11,19 @@ import {
     totalPromptTokens,
 } from "../../shared/registry/registry.ts";
 
+type BillingArgs = Parameters<typeof calculateUsageBilling>[0];
+
 function bill(
     model: ModelName,
-    usage: Parameters<typeof calculateUsageBilling>[1],
-    input?: Parameters<typeof calculateUsageBilling>[4],
+    usage: BillingArgs["usage"],
+    input?: BillingArgs["input"],
 ) {
-    return calculateUsageBilling(
+    return calculateUsageBilling({
         model,
         usage,
-        getRegistryModelDefinition(model),
-        undefined,
+        servedBy: getRegistryModelDefinition(model),
         input,
-    );
+    });
 }
 
 describe("long-context cost variants", () => {
@@ -286,29 +287,29 @@ describe("long-context cost variants", () => {
                 prompt_tokens_details: { cache_write_tokens: 100_000 },
             },
         };
-        const base = calculateUsageBilling(
-            "gemini-large",
-            { promptCacheWriteTokens: 100_000 },
-            getRegistryModelDefinition("gemini-large"),
-            baseOutput,
-        );
+        const base = calculateUsageBilling({
+            model: "gemini-large",
+            usage: { promptCacheWriteTokens: 100_000 },
+            servedBy: getRegistryModelDefinition("gemini-large"),
+            output: baseOutput,
+        });
         expect(base.costVariant).toBeUndefined();
         expect(base.cost.totalCost).toBeCloseTo(0.2375, 12);
         expect(base.adjustments).toHaveLength(1);
         expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
 
-        const long = calculateUsageBilling(
-            "gemini-large",
-            { promptCacheWriteTokens: 1_000_000 },
-            getRegistryModelDefinition("gemini-large"),
-            {
+        const long = calculateUsageBilling({
+            model: "gemini-large",
+            usage: { promptCacheWriteTokens: 1_000_000 },
+            servedBy: getRegistryModelDefinition("gemini-large"),
+            output: {
                 usage: {
                     prompt_tokens_details: {
                         cache_write_tokens: 1_000_000,
                     },
                 },
             },
-        );
+        });
         expect(long.costVariant).toBe("long_context");
         expect(long.cost.totalCost).toBeCloseTo(4.375, 12);
         expect(long.adjustments).toHaveLength(1);
@@ -402,14 +403,14 @@ describe("selection safety and composition", () => {
 
     it("unknown variant name warns and bills base rates", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const billing = calculateUsageBilling(
-            "test-model",
-            { promptTextTokens: 1_000 },
-            fakeModel({
+        const billing = calculateUsageBilling({
+            model: "test-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
                 costVariants: { real: { promptTextTokens: 9e-6 } },
                 selectCostVariant: () => "typo",
             }),
-        );
+        });
 
         expect(billing.costVariant).toBeUndefined();
         expect(billing.costVariantStatus).toBe("unknown");
@@ -421,16 +422,16 @@ describe("selection safety and composition", () => {
 
     it("throwing selector warns and bills base rates", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const billing = calculateUsageBilling(
-            "test-model",
-            { promptTextTokens: 1_000 },
-            fakeModel({
+        const billing = calculateUsageBilling({
+            model: "test-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
                 costVariants: { real: { promptTextTokens: 9e-6 } },
                 selectCostVariant: () => {
                     throw new Error("boom");
                 },
             }),
-        );
+        });
 
         expect(billing.costVariant).toBeUndefined();
         expect(billing.costVariantStatus).toBe("selector_error");
@@ -439,14 +440,14 @@ describe("selection safety and composition", () => {
     });
 
     it("preserves an explicit zero-rate override", () => {
-        const billing = calculateUsageBilling(
-            "test-model",
-            { promptTextTokens: 1_000 },
-            fakeModel({
+        const billing = calculateUsageBilling({
+            model: "test-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
                 costVariants: { free_input: { promptTextTokens: 0 } },
                 selectCostVariant: () => "free_input",
             }),
-        );
+        });
 
         expect(billing.costVariant).toBe("free_input");
         expect(billing.costVariantStatus).toBe("selected");
@@ -455,10 +456,10 @@ describe("selection safety and composition", () => {
     });
 
     it("applies variants before multipliers and keeps adjustments independent", () => {
-        const billing = calculateUsageBilling(
-            "test-model",
-            { promptTextTokens: 1_000 },
-            fakeModel({
+        const billing = calculateUsageBilling({
+            model: "test-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
                 priceMultiplier: 0.75,
                 costVariants: { premium: { promptTextTokens: 3e-6 } },
                 selectCostVariant: () => "premium",
@@ -475,7 +476,7 @@ describe("selection safety and composition", () => {
                     ],
                 },
             }),
-        );
+        });
 
         expect(billing.cost.totalCost).toBeCloseTo(0.103, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.07725, 12);

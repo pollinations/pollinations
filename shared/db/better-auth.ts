@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
   sqliteTable,
@@ -210,10 +211,15 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
     .notNull(),
-  // Set only after the registration probe successfully calls /images/edits.
-  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+  // Legacy rollout column. Runtime capability is derived only from
+  // inputModalities; remove this in a follow-up after all workers run 0042 code.
+  legacySupportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // Null for rows created before this column existed; read paths default to text.
+  inputModalities: text("input_modalities", { mode: "json" }).$type<
+    ModelInputModality[]
+  >(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
@@ -237,6 +243,13 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // Ordered community model ids ("<github_username>/<name>") tried, one after
+  // the other, when this endpoint's upstream fails. The owner declares the
+  // whole list, so no other owner's choice can change where this model's
+  // traffic goes.
+  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
+    string[]
+  >(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-07-27
+Last updated: 2026-07-31
 
 ## Capacity Summary
 
@@ -9,7 +9,54 @@ Last updated: 2026-07-27
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
+| LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
+
+## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
+
+Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
+`sana` kept as an alias; the **registry pool key is still `sana`** because
+`/register` rejects unknown types, so a worker cannot join a pool that only
+exists after the routing change deploys.
+
+| Worker | Vast instance | GPU | Listed rate | Status |
+|--------|---------------|-----|-------------|--------|
+| dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
+| dreamshaper-vast-02 | 46387155 | RTX 3090 | $0.1200/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+
+Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
+tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
+`dreamshaper-lcm/`; each host runs `supervise.sh` under `screen`, relaunched on
+reboot by `/workspace/onstart.sh`.
+
+**Run several uvicorn workers per card.** A single process plateaued at
+**~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path
+(global lock, JPEG + base64 per response), not the GPU or the step count.
+Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3` each
+3090 sustains **~8 img/s** at concurrency 8 (GPU still only ~36%, so there is
+more left). The model is ~2.5 GB, so three copies fit easily in 24 GB.
+
+Measured capacity is ~16 img/s across both cards against a 5.72 img/s peak, so
+either card can carry production alone. **Never size this from a single-client
+benchmark** — the first rollout did, sized one card at 6.18 img/s, and produced
+a latency climb to 57s in production before the GH200 was put back in the pool
+as emergency capacity.
+
+Two traps that fail silently:
+
+- gen hardcodes `steps: 4` into every self-hosted request body, so the worker
+  **ignores caller-supplied steps**. Honouring them overrides the 3-step config.
+- Without `PUBLIC_HOSTNAME` the worker registers its raw Vast `IP:port`, which
+  the gen Worker cannot fetch — while the heartbeat still reports healthy. This
+  happened during rollout; always confirm the registered URL is the hostname.
+
+## Vast replacement operations
+
+The repository skill
+[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+is the source of truth for scheduled offer scouting, candidate qualification,
+isolated canaries, the human promotion gate, cutover, instance cleanup, and the
+post-cutover documentation PR.
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
@@ -19,7 +66,7 @@ with automatic Replicate fallback
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
-| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | ACTIVE (reactivated 2026-07-22) — named tunnel `flux-vast-04.pollinations.ai` |
+| flux-vast-04 | 46491202 | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — named tunnel `flux-vast-04.pollinations.ai` |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
@@ -35,26 +82,42 @@ localhost. Requests exceeded the CloudFront timeout, so users saw indefinite
 hangs, not errors — and the worker kept heartbeating green the whole time.
 Never point production at a quick tunnel; use a named tunnel.
 
-When reprovisioning, check the host's HuggingFace throughput before committing
-to it (`curl -r 0-5000000 -L <hf-model-url>`): this host previously managed
-384 KB/s and stalled during its cold download. It was reactivated only after
-its 17 GB model cache was complete, so a cold rebuild on this host remains a
-risk.
+Instance `46491202` replaced maintenance-bound instance `44731147`, which was
+destroyed after cutover. The California host is machine `138472` with Vast
+reliability `0.9971`. Qualification passed 512x512 and 1024x1024 generation,
+four concurrent requests, authentication rejection, 17-second restart
+recovery, and an external Cloudflare generation in 3.46 seconds. After the old
+connector drained, the new worker served 47 production generations with zero
+backend errors before final verification.
+
+This host exposed two provisioning edge cases now handled by `setup-vast.sh`:
+Hugging Face Xet connections repeatedly stopped advancing and Cloudflare Tunnel
+SRV lookups failed through the host resolver. Standard HTTP completed the model
+download, while the local DNS-over-HTTPS fallback established four named-tunnel
+connections.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash
 vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
 vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
-# First create a remote tunnel + hostname routing to localhost:8765 in Cloudflare, then:
+# Isolated canary: heartbeat and production tunnel are disabled by default.
+PLN_GPU_TOKEN=... HF_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
+GIT_BRANCH=main bash setup-vast.sh
+# After verification and explicit human approval, rerun with the scoped tunnel
+# token plus HEARTBEAT_ENABLED=true and TUNNEL_ENABLED=true.
 PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
-PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai GIT_BRANCH=main bash setup-vast.sh
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai HEARTBEAT_ENABLED=true \
+TUNNEL_ENABLED=true GIT_BRANCH=main bash setup-vast.sh
 ```
 Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
 `intended_status=running` after create (GPU can be taken between create/start);
 some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy); some
 drop bulk CDN downloads mid-transfer (setup-vast.sh passes pip
-`--resume-retries` so downloads resume instead of restarting); hosts with
+`--resume-retries` so downloads resume instead of restarting); Hugging Face Xet
+can hang with established but idle connections (standard HTTP is the Vast
+default); some hosts drop Cloudflare Tunnel SRV responses (setup starts a local
+DNS-over-HTTPS resolver only on affected hosts); hosts with
 driver < 580 hit CUDA Error 804 with the cuda-13 image (GeForce can't use
 forward-compat libs — setup-vast.sh disables them so the host driver is used);
 machine-to-machine rsync between vast instances is NOT reliable (hosts kill

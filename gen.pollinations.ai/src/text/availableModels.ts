@@ -1,4 +1,5 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
+import { validateCohereRequest } from "./cohereCommandAPlus.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -6,7 +7,8 @@ import { createClaudeThinkingTransform } from "./transforms/createClaudeThinking
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
     adaptGoogleSearchToolForOpenRouter,
-    createOpenRouterNativeWebSearchTransform,
+    adaptGoogleSearchToolForVertex,
+    createGeminiToolsTransform,
     stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
@@ -80,6 +82,12 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "command-a-plus",
+        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
+        // Azure runs automatic reasoning but rejects/ignores effort controls.
+        transform: pipe(validateCohereRequest, stripReasoning),
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
@@ -103,6 +111,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.7-flash",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -121,7 +134,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "step-flash",
-        config: portkeyConfig["stepfun/step-3.7-flash"],
+        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
         transform: mandatoryReasoning,
     },
     {
@@ -137,7 +150,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-0731"
+        ],
         transform: fireworksThinking,
     },
     {
@@ -263,32 +278,31 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["google/gemini-2.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
-            stripLogitBiasForNativeWebSearch,
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["google/gemini-3.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-search-large",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["vertex/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -335,8 +349,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k3",
-        config: portkeyConfig["moonshotai/kimi-k3"],
-        transform: stripCacheControl,
+        config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "laguna",

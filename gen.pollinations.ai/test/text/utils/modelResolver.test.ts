@@ -86,6 +86,45 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "kimi-k3" });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
+        const result = resolveModelConfig(messages, { model: "deepseek" });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "command-a-plus",
+        });
+
+        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
+            "azure-model-name": "Cohere-command-a-plus-05-2026",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

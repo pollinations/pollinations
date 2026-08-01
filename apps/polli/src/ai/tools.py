@@ -811,9 +811,10 @@ Security: Results filtered to channels the user can access.""",
                     "type": "string",
                     "description": "Messages after this date/snowflake ID",
                 },
-                "limit": {
+                "top_n": {
                     "type": "integer",
-                    "description": "Max results (default 25, max 100 for history)",
+                    "enum": list(range(1, 101)),
+                    "description": "Required result count. Choose the smallest sufficient value; normally 3-10, up to 100 when independently justified.",
                 },
                 "sort_by": {
                     "type": "string",
@@ -853,7 +854,7 @@ Security: Results filtered to channels the user can access.""",
                 },
                 "offset": {
                     "type": "integer",
-                    "description": "Pagination offset (max 9975, use with limit for paging)",
+                    "description": "Pagination offset for targeted follow-up retrieval",
                 },
                 "include_archived": {
                     "type": "boolean",
@@ -864,7 +865,7 @@ Security: Results filtered to channels the user can access.""",
                     "description": "Include member list for roles (default false)",
                 },
             },
-            "required": ["action"],
+            "required": ["action", "top_n"],
         },
     },
 }

@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 Le petit AI](https://le-petit-seven.vercel.app) | Open https://le-petit-seven.vercel.app/ to use Le petit AI. | [@JustLookingSoftwares](https://github.com/JustLookingSoftwares) |
+| [💬 Lumina Chat](https://lumina.magnified.cc) | Lumina is an AI chat application designed to provide a seamless and flexible interface for interacting with large language models. The app includes built-in support for Pollinations.AI as a default pr | [@kokofixcomputers](https://github.com/kokofixcomputers) |
+| [💬 MyEntMap](https://mymap.qvlit.com) | MyEntMap is a multilingual (zh/vi/en, auto-detected) food & entertainment map for Ho Chi Minh City. It uses the Pollinations API in three ways: (1) auto-generating Ghibli-watercolor store photos with | [@yukyotsai](https://github.com/yukyotsai) |
+| [🖼️ Vtrace](https://vtrace-two.vercel.app) | raster image to vector SVG | [@ifankang](https://github.com/ifankang) |
+| [✍️ StoryStudio](https://eiigen.github.io/storystudio-app) | AI StoryStudio — A web-based storybook generator powered by Pollinations.ai. Enter any theme and get a fully illustrated multi-page story with AI-generated text, images, and optional audio narration. | [@eiigen](https://github.com/eiigen) |
+| [🛠️ AI Health Studio](https://kreggscode.github.io/health-analyzer-ai) | AI Health Studio is an AI-powered health and wellness web app that uses Pollinations AI APIs at its core: - **Chat Completions API** (POST gen.pollinations.ai/v1/chat/completions): Generates personali | [@kreggscode](https://github.com/kreggscode) |
+| [🛠️ Pollinations AI Studio](https://sashafilipov.github.io/pollinations-ai-studio) | Multimodal workspace for Pollinations.ai вЂ” chat with GPT/Claude/Gemini/DeepSeek via gen.pollinations.ai/v1/chat/completions , generate images via gen.pollinations.ai/image/{prompt} (Flux, Turbo, GPT | [@sashafilipov](https://github.com/sashafilipov) |
+| [🎬 Driftpod.fm](https://driftpod.fm) | Press play for endless discovery of podcasts. Users tailor their experience by adding favorite podcasts, liking and disliking episodes, and the recommendation engine gets episode metadata (summaries, | [@alexander](https://github.com/alexander) |
+| [🖼️ Anime Forge](https://animeforge-k4ltm64.public.builtwithrocket.new) | Anime Forge is an AI-driven anime character design web app powered by Pollinations API for text and image generation. | [@masreamro496-ship-it](https://github.com/masreamro496-ship-it) |
 | [💬 Arika](https://arika.hizumi.in) | Arika provides a conversational AI experience designed to feel more human and less robotic. | [@02th](https://github.com/02th) |
-| [🖼️ Ai Anime Legends Generator](https://anime.caasexpresss.com) | Ai Anime Legends Generator generates anime legends using AI. | [@Caas2023](https://github.com/Caas2023) |
-| [🖼️ Silenos Visual Production & Illustration Studio](https://www.silenos.es/ilustrador/) | Centraliza literatura, contenido creativo y desarrollo técnico en la plataforma silenos.es con un enfoque minimalista y preciso, priorizando el contenido puro y arquitecturas lógicas. | [@todoh](https://github.com/todoh) |
-| [📚 studybuddy](https://studybuddy-deploy2026.streamlit.app/) | studybuddy is an AI-powered learner assistant that helps students study using their own notes. | [@jmwdpk](https://github.com/jmwdpk) |
-| [🧑‍💻 Code Canvas Complete](https://code-canvas-complete-production.up.railway.app/) | Code Canvas is an all-in-one browser-based IDE with a built-in AI assistant for code generation, debugging, and explanation. It integrates Pollinations.ai as a Bring-Your-Own-Key (BYOK) AI provider, a | [@TopProjectsCreator](https://github.com/TopProjectsCreator) |
-| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |
-| [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |
-| [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |
-| [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |
-| [🧠 AINewsForge](Not public) | AINewsForge is an agentic system built with LangGraph that fetches news, generates LinkedIn posts, verifies claims, creates cover images, reviews quality, and publishes to LinkedIn. | [@Ravnoor17](https://github.com/Ravnoor17) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-07-27** – **🎨 Community image edits** Validated community models can now edit reference images through the OpenAI-compatible `/v1/images/edits` endpoint. Send pixels in; receive altered pixels back. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-27** – **🤖 NVIDIA Nemotron 3 Ultra** `nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)
-- **2026-07-27** – **⚡ More reliable Z-Image capacity** New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50.
-- **2026-07-26** – **🎵 ElevenLabs dialogue** Generate multi-speaker scenes with up to 10 voices and 25 turns through `POST /v1/audio/dialogue`. The hive has learned to hold a conversation. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **✨ Voice isolation** Send audio or video to `POST /v1/audio/voice-isolator` and get the speech back as a clean MP3. Useful when the background has opinions. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **🚀 GPT Realtime 2.1 Mini** `gpt-realtime-2.1-mini` is now available for large-context realtime text, image, and voice sessions—with tools, PCM audio, caching, and ten voices. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **🎯 TTS timestamps** Get ElevenLabs speech plus character-level alignment from `POST /v1/audio/speech/with-timestamps`, for captions and text that highlights itself while it talks. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-24** – **🎵 Lyria 3 music clips** Generate 30-second stereo MP3s with `lyria` or `lyria-3` through GET audio requests or the OpenAI-compatible API. [Try the API](https://gen.pollinations.ai/docs)
-- **2026-07-24** – **🎨 Recraft SVG generation** Turn prompts—or one reference image—into real SVG files with `recraft-v4.1-vector`, available from image and OpenAI-compatible generation/edit endpoints. [Try it](https://pollinations.ai/play)
-- **2026-07-24** – **✨ Community model stats, including the long tail** Public model estimates now cover all eligible models, including community image models that were previously below the volume cutoff. [View the model monitor](https://model-monitor.pollinations.ai)
+- **2026-07-31** – **✨ Fallback routing for community models** Model owners can nominate up to three compatible backups, so text and image generations can keep moving when an upstream model goes sideways. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-31** – **⚡ Faster DreamShaper image generation** The Sana pool now runs parallel workers per GPU, roughly doubling concurrent throughput. More pixels, less queue. [Try it](https://pollinations.ai/play)
+- **2026-07-30** – **🎵 Sharper speech-to-text** Transcription now runs on AssemblyAI Universal-3.5 Pro at the same base rate, with plain text, SRT, and VTT output still available. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-30** – **🤖 Cohere Command A+** Call `command-a-plus` for 128K-context chat, reasoning, JSON, streaming, and automatic tool use—with Quest Pollen access. [Available models](https://gen.pollinations.ai/v1/models)
+- **2026-07-30** – **🚀 Qwen3.7 Flash** A fast paid model for text, images, video, tools, reasoning, streaming, and prompt-cache-aware workloads is now available as `qwen3.7-flash`. [Try the playground](https://pollinations.ai/play)
+- **2026-07-30** – **✨ Weaver joins the model catalog** The Polli media agent is now `weaver`: discover it via `/v1/models` and invoke it through `voodoohop/weaver`.
+- **2026-07-29** – **🚀 Polli Agent** Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai) <!-- app -->
+- **2026-07-29** – **✨ Agent Run Tokens** Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-28** – **🎬 Wan gets more runway** Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.
+- **2026-07-28** – **✨ Story seeds, illustrated** Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app) <!-- app -->
 ---
 
 ## 🌱 Introduction
@@ -386,7 +386,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
-- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `open-code-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
+- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `opencode-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
 
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
@@ -426,3 +426,4 @@ pollinations.ai is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the pollinations.ai team
+

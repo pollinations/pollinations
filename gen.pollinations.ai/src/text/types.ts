@@ -93,6 +93,11 @@ export interface ServiceError extends Error {
     upstreamStatus?: number;
     requestUrl?: URL;
     code?: number | string;
+    /**
+     * Stable, machine-readable error code (mirrors `UpstreamError.errorCode`),
+     * propagated into the response envelope by the text error funnel.
+     */
+    errorCode?: string;
     details?: unknown;
     model?: string;
     provider?: string;

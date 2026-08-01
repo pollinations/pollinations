@@ -48,7 +48,7 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
-const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
+const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -605,7 +605,7 @@ export class Pollinations {
 
     /**
      * Generate a video and return it as binary data.
-     * Note: Video generation can take several minutes - timeout is set to 10 minutes.
+     * Note: Video generation can take several minutes - timeout is set to 20 minutes.
      *
      * @example
      * ```ts

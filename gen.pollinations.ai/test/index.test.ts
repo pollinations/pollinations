@@ -272,16 +272,20 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists Sana with flat per-image pricing", async () => {
+    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
         const models = (await response.json()) as {
             name: string;
+            aliases?: string[];
             pricing: Record<string, string>;
         }[];
-        expect(models.find((model) => model.name === "sana")).toMatchObject({
-            name: "sana",
+        expect(
+            models.find((model) => model.name === "dreamshaper"),
+        ).toMatchObject({
+            name: "dreamshaper",
+            aliases: ["sana"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -914,6 +918,170 @@ fixtureTest(
             await expect(response.json()).resolves.toMatchObject({
                 error: { message: expect.stringContaining(testCase.message) },
             });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(calls).not.toContain(deepInfraEndpoint);
+    },
+);
+
+fixtureTest(
+    "routes Kokoro aliases and default voice through DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const providerBodies: unknown[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+
+                if (request.url === deepInfraEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-deepinfra-key",
+                    );
+                    providerBodies.push(await request.json());
+                    return new Response(
+                        new Uint8Array([0x52, 0x49, 0x46, 0x46]),
+                        {
+                            headers: { "Content-Type": "audio/wav" },
+                        },
+                    );
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const postContext = createExecutionContext();
+        const postResponse = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "kokoro-tts",
+                    input: "Hi 😀",
+                    voice: "bf_emma",
+                    response_format: "wav",
+                }),
+            }),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            postContext,
+        );
+
+        expect(postResponse.status).toBe(200);
+        expect(postResponse.headers.get("content-type")).toBe("audio/wav");
+        expect(postResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(
+            postResponse.headers.get("x-usage-completion-audio-tokens"),
+        ).toBe("4");
+        expect(postResponse.headers.get("x-tts-voice")).toBe("bf_emma");
+        await waitOnExecutionContext(postContext);
+
+        const getContext = createExecutionContext();
+        const getResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/Hello%20Kokoro?model=hexgrad-kokoro-82m&response_format=mp3",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            getContext,
+        );
+
+        expect(getResponse.status).toBe(200);
+        expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
+        await waitOnExecutionContext(getContext);
+
+        expect(providerBodies).toEqual([
+            {
+                model: "hexgrad/Kokoro-82M",
+                input: "Hi 😀",
+                voice: "bf_emma",
+                response_format: "wav",
+            },
+            {
+                model: "hexgrad/Kokoro-82M",
+                input: "Hello Kokoro",
+                voice: "af_alloy",
+                response_format: "mp3",
+            },
+        ]);
+    },
+);
+
+fixtureTest(
+    "validates Kokoro voices and formats before calling DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        for (const testCase of [
+            { voice: "unknown_voice", response_format: "mp3" },
+            { voice: "af_bella", response_format: "aac" },
+        ]) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "kokoro",
+                            input: "Hello",
+                            ...testCase,
+                        }),
+                    },
+                ),
+                {
+                    ...env,
+                    DEEPINFRA_API_KEY: "test-deepinfra-key",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
             await waitOnExecutionContext(ctx);
         }
 

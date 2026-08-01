@@ -9,20 +9,16 @@
  */
 
 import { getImageEnv } from "../env.ts";
+import { HttpError } from "../httpError.ts";
 import { sleep } from "../util.ts";
 
 const API_BASE = "https://api.replicate.com/v1";
 const PREFER_WAIT_SECONDS = 60;
 const POLL_INTERVAL_MS = 5000;
-// Cap total poll time so a stuck prediction surfaces as a controlled 504
-// instead of consuming Worker time until the runtime kills the request.
-// Seedance 2.0 typical wall time is 40-90s; 5min covers slow runs + queueing.
-const POLL_MAX_ATTEMPTS = 60;
+// One deadline controls both Replicate's Cancel-After header and local polling
+// so the upstream and Worker ceilings cannot drift apart.
+const DEFAULT_PREDICTION_DEADLINE_MINUTES = 6;
 const CANCEL_REQUEST_TIMEOUT_MS = 5000;
-// Replicate starts this deadline when it creates the prediction. It covers the
-// 60s synchronous wait plus the 5min local polling budget, and also cleans up
-// the prediction if the client disconnects before local cancellation runs.
-const CANCEL_AFTER = "6m";
 
 export class ReplicateError extends Error {
     /**
@@ -39,6 +35,21 @@ export class ReplicateError extends Error {
         super(message);
         this.name = "ReplicateError";
     }
+}
+
+/** Preserve non-Replicate failures; map classified provider failures once. */
+export function toReplicateHttpError(
+    error: unknown,
+    messagePrefix: string,
+): unknown {
+    return error instanceof ReplicateError
+        ? new HttpError(
+              `${messagePrefix}: ${error.message}`,
+              error.status ?? 500,
+              undefined,
+              error.url,
+          )
+        : error;
 }
 
 interface ReplicatePrediction<TOutput> {
@@ -63,6 +74,7 @@ interface RunOptions<TInput> {
     model: string;
     version?: string;
     input: TInput;
+    predictionDeadlineMinutes?: number;
 }
 
 interface RunResult<TOutput> {
@@ -80,7 +92,13 @@ export async function runReplicatePrediction<TInput, TOutput>(
         throw new Error("REPLICATE_API_TOKEN environment variable is required");
     }
 
-    const { model, version, input } = opts;
+    const {
+        model,
+        version,
+        input,
+        predictionDeadlineMinutes = DEFAULT_PREDICTION_DEADLINE_MINUTES,
+    } = opts;
+    const deadlineAt = Date.now() + predictionDeadlineMinutes * 60 * 1000;
 
     // Two endpoints: POST /v1/models/{owner}/{name}/predictions for official
     // models (no version), POST /v1/predictions for pinned version in body.
@@ -95,7 +113,7 @@ export async function runReplicatePrediction<TInput, TOutput>(
         url,
         body,
         prefer: `wait=${PREFER_WAIT_SECONDS}`,
-        cancelAfter: CANCEL_AFTER,
+        cancelAfter: `${predictionDeadlineMinutes}m`,
     });
     const pollUrl =
         prediction.urls?.get || `${API_BASE}/predictions/${prediction.id}`;
@@ -103,24 +121,23 @@ export async function runReplicatePrediction<TInput, TOutput>(
         prediction.urls?.cancel ||
         `${API_BASE}/predictions/${prediction.id}/cancel`;
 
-    let pollAttempts = 0;
     while (
         prediction.status === "starting" ||
         prediction.status === "processing"
     ) {
-        if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+        const remainingMs = deadlineAt - Date.now();
+        if (remainingMs <= 0) {
             await cancelReplicatePrediction(token, cancelUrl);
             throw new ReplicateError(
-                `Replicate prediction ${prediction.id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${prediction.status})`,
+                `Replicate prediction ${prediction.id} timed out after ${predictionDeadlineMinutes}m (status=${prediction.status})`,
                 504,
             );
         }
-        await sleep(POLL_INTERVAL_MS);
+        await sleep(Math.min(POLL_INTERVAL_MS, remainingMs));
         prediction = await replicateFetch<ReplicatePrediction<TOutput>>(token, {
             method: "GET",
             url: pollUrl,
         });
-        pollAttempts++;
     }
 
     if (
@@ -131,7 +148,11 @@ export async function runReplicatePrediction<TInput, TOutput>(
         const message = prediction.error || `Prediction ${prediction.status}`;
         throw new ReplicateError(
             message,
-            classifyReplicatePredictionError(message),
+            // Replicate uses aborted before a deadline-started prediction runs
+            // and canceled after it starts, so both are gateway timeouts here.
+            prediction.status === "canceled" || prediction.status === "aborted"
+                ? 504
+                : classifyReplicatePredictionError(message),
         );
     }
     if (prediction.output === undefined || prediction.output === null) {
@@ -252,6 +273,7 @@ export function classifyReplicateHttpStatus(httpStatus: number): number {
  * - "cannot identify image file" — malformed image input (400)
  * - E003 / "unavailable due to high demand" — Alibaba capacity for WAN
  *   models (503, so monitoring separates provider capacity from our bugs)
+ * - deadline / timeout messages — upstream execution deadline (504)
  * Default 500 keeps new failure modes loud.
  */
 export function classifyReplicatePredictionError(message: string): number {
@@ -259,5 +281,6 @@ export function classifyReplicatePredictionError(message: string): number {
     if (/^Input validation error:/i.test(message)) return 400;
     if (/cannot identify image file/i.test(message)) return 400;
     if (/\bE003\b|unavailable due to high demand/i.test(message)) return 503;
+    if (/\bdeadline\b|\btimed?\s*out\b|\btimeout\b/i.test(message)) return 504;
     return 500;
 }

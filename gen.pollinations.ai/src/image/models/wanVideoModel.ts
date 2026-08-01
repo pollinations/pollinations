@@ -24,8 +24,8 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -36,6 +36,7 @@ interface WanVariantConfig {
     i2vModel: string;
     trackingName: string;
     displayName: string;
+    predictionDeadlineMinutes?: number;
     /**
      * Build the Replicate input for the chosen mode. `frames` holds the
      * already-downloaded data URIs: frames[0] = first frame, frames[1] = last.
@@ -60,6 +61,7 @@ const WAN_FAST_FIXED_SECONDS = 5;
 const WAN_26_DURATIONS = [5, 10, 15] as const;
 const WAN_PRO_MIN_DURATION = 2;
 const WAN_PRO_MAX_DURATION = 15;
+const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
 
 /** Pick the supported aspect ratio closest to the request. */
 function pickAspect<T extends string>(
@@ -165,6 +167,7 @@ function makeWan27Config(
         i2vModel: "wan-video/wan-2.7-i2v",
         trackingName,
         displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
+        predictionDeadlineMinutes: WAN_PRO_PREDICTION_DEADLINE_MINUTES,
         resolveDuration: (p) =>
             Math.max(
                 WAN_PRO_MIN_DURATION,
@@ -235,6 +238,7 @@ async function generateWanVideo(
         const result = await runReplicatePrediction<typeof input, string>({
             model,
             input,
+            predictionDeadlineMinutes: config.predictionDeadlineMinutes,
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
@@ -245,15 +249,10 @@ async function generateWanVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${config.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(
+            err,
+            `${config.displayName} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

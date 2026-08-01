@@ -1,4 +1,3 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -397,36 +396,50 @@ async function generateImageResult(
     return result;
 }
 
-/** Tries the model, then each fallback it declared, until one returns an image. */
-async function callCommunityImageWithFallback(
+/** Tries the requested model and its fallbacks through one modality-neutral loop. */
+async function generateMediaWithFallback(
     c: ImageContext,
-    endpoint: CommunityEndpointRuntime,
     prompt: string,
     safeParams: RuntimeImageParams,
 ): Promise<{
-    result: ImageGenerationResult;
+    result: ImageGenerationResult | VideoGenerationResult;
+    params: RuntimeImageParams;
     servedEntry?: GenerationModelEntry;
     servedIndex: number;
 }> {
     const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
-            const generated = await callCommunityImageEndpoint(
-                // Only the primary can reach here without its own endpoint, and
-                // this path runs only once it has one.
-                attempt.communityEndpoint ?? endpoint,
-                prompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            // Checked inside the attempt so an endpoint that answers 200 with an
-            // empty body fails over like any other broken response.
-            assertNonEmptyMedia(generated.buffer, "Community image endpoint");
-            return generated;
+            const params = { ...safeParams, model: attempt.id };
+            if (attempt.communityEndpoint) {
+                const generated = await callCommunityImageEndpoint(
+                    attempt.communityEndpoint,
+                    prompt,
+                    params,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+                assertNonEmptyMedia(
+                    generated.buffer,
+                    "Community image endpoint",
+                );
+                return { result: generated, params };
+            }
+            if (isVideoModel(params.model)) {
+                const generated = await generateVideoResult(c, prompt, params);
+                assertNonEmptyMedia(generated.buffer, "Video provider");
+                return { result: generated, params };
+            }
+            const generated = await generateImageResult(c, prompt, params);
+            assertNonEmptyMedia(generated.buffer, "Image provider");
+            return { result: generated, params };
         },
         c.var.track?.failedCalls,
     );
-    return { result, servedEntry: candidate.entry, servedIndex: index };
+    return {
+        ...result,
+        servedEntry: candidate.entry,
+        servedIndex: index,
+    };
 }
 
 async function generateVideoResult(
@@ -451,62 +464,23 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const { result, servedEntry, servedIndex } =
-                await callCommunityImageWithFallback(
-                    c,
-                    communityEndpoint,
-                    originalPrompt,
-                    safeParams,
-                );
-            const headers = mediaHeaders(
-                originalPrompt,
-                servedEntry
-                    ? { ...safeParams, model: servedEntry.id }
-                    : safeParams,
-                result,
-                detectMimeType(result.buffer),
+        const { result, params, servedEntry, servedIndex } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
+        const headers = mediaHeaders(
+            originalPrompt,
+            params,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+        if (servedIndex > 0) {
+            // Same shape text emits, so tracking has one fallback marker.
+            headers.set(
+                FALLBACK_TARGET_HEADER,
+                `config.targets[${servedIndex}]`,
             );
-            if (servedEntry) {
-                c.set("servedModelEntry", servedEntry);
-                // Same "config.targets[N]" shape the Portkey text path emits,
-                // so tracking's fallback parsing covers both.
-                headers.set(
-                    FALLBACK_TARGET_HEADER,
-                    `config.targets[${servedIndex}]`,
-                );
-            }
-            return new Response(bufferToUint8Array(result.buffer), { headers });
         }
-
-        if (isVideoModel(safeParams.model)) {
-            const result = await generateVideoResult(
-                c,
-                originalPrompt,
-                safeParams,
-            );
-            assertNonEmptyMedia(result.buffer, "Video provider");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    result.mimeType || "video/mp4",
-                ),
-            });
-        }
-
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                result.mimeType || detectMimeType(result.buffer),
-            ),
-        });
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

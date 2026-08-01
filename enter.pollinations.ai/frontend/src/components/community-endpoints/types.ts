@@ -10,8 +10,9 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
@@ -47,25 +48,51 @@ export type CommunityEndpoint = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
     agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    // Public community models tried, in order, when this model's upstream fails.
+    fallbackModelIds: string[];
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
 } & CommunityEndpointPrices;
+
+export type FallbackModelOption = {
+    modelId: string;
+    modality: CommunityEndpointModality;
+};
+
+/**
+ * Public community models from the model catalog, in dialog option form. The
+ * catalog already excludes private and deactivated models, and the server
+ * re-validates modality and pricing on write.
+ */
+export function publicCommunityFallbackOptions(
+    models: { name: string; type: string; community?: boolean }[],
+): FallbackModelOption[] {
+    return models
+        .filter(
+            (model) =>
+                model.community &&
+                (model.type === "text" || model.type === "image"),
+        )
+        .map((model) => ({
+            modelId: model.name,
+            modality: model.type === "image" ? "image" : "text",
+        }));
+}
 
 export type EndpointFormState = {
     mode: EndpointMode;
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
-    // Set only when the endpoint test receives a valid image edit response.
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
@@ -77,12 +104,14 @@ export type EndpointFormState = {
     agentId: string;
     upstreamModel: string;
     bearerToken: string;
+    // Public community model ids, tried in the order listed.
+    fallbackModelIds: string[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
@@ -91,6 +120,7 @@ export type EndpointPayload = {
     agentId?: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -101,7 +131,7 @@ export type CommunityEndpointTestResponse = {
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[];
 };
 
 export type ActionState = {
@@ -119,7 +149,7 @@ export const emptyForm: EndpointFormState = {
     mode: "external",
     modality: "text",
     imagePricing: "request",
-    supportsImageEdits: false,
+    inputModalities: ["text"],
     name: "",
     title: "",
     description: "",
@@ -128,6 +158,7 @@ export const emptyForm: EndpointFormState = {
     agentId: "",
     upstreamModel: "",
     bearerToken: "",
+    fallbackModelIds: [],
     ...emptyPriceForm,
 };
 
@@ -213,7 +244,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         mode: endpoint.agentId ? "agent" : "external",
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
-        supportsImageEdits: endpoint.supportsImageEdits,
+        inputModalities: endpoint.inputModalities,
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -222,6 +253,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         agentId: endpoint.agentId ?? "",
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        fallbackModelIds: endpoint.fallbackModelIds ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -365,12 +397,15 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const shared = {
         modality,
         imagePricing,
-        supportsImageEdits:
-            form.modality === "image" && form.supportsImageEdits,
+        inputModalities: form.inputModalities,
         name: modelName,
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
+        // Private models carry no public pricing, so their fallbacks cannot be
+        // validated against a quoted price.
+        fallbackModelIds:
+            form.visibility === "public" ? form.fallbackModelIds : [],
         ...formPricesToPayload(form, modality, imagePricing),
     };
     if (form.mode === "agent") {
@@ -394,23 +429,20 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
-    if (key === "supportsImageEdits") return current;
     if (key === "modality") {
+        const modality = value === "image" ? "image" : "text";
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
-            supportsImageEdits: false,
+            modality,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                current.inputModalities,
+                modality,
+            ),
+            // Targets must match the modality; the old choices no longer can.
+            fallbackModelIds: [],
         };
     }
     const next = { ...current, [key]: value };
-    if (
-        key === "name" ||
-        key === "upstreamModel" ||
-        key === "baseUrl" ||
-        key === "bearerToken"
-    ) {
-        next.supportsImageEdits = false;
-    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

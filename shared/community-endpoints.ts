@@ -1,5 +1,10 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelDefinition,
+    type ModelInputModality,
+    type PriceDefinition,
+} from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
@@ -36,6 +41,14 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
+    text: MODEL_INPUT_MODALITIES,
+    image: ["text", "image"],
+} as const satisfies Record<
+    CommunityEndpointModality,
+    readonly ModelInputModality[]
+>;
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -209,6 +222,31 @@ export function communityEndpointPricesForModality(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * Bounds how much latency one request can spend failing before it gives up:
+ * every extra target is another upstream timeout the caller waits through.
+ * Enforced on write and re-applied when the generation registry links entries.
+ */
+export const MAX_FALLBACK_TARGETS = 3;
+
+/**
+ * True when `target` costs no more than `primary` on every price field.
+ *
+ * The caller is charged the primary's price whichever endpoint serves, so this
+ * bounds the PAYOUT rather than the invoice: a rescuer is paid on their own
+ * listing, and this rule is what guarantees that stays at or below what was
+ * charged. It also stops an owner routing traffic to a pricier model whose
+ * owner would then earn more than the caller was quoted.
+ */
+export function isCommunityFallbackPricingAllowed(
+    primary: CommunityEndpointPrices,
+    target: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => target[field.key] <= primary[field.key],
+    );
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -219,6 +257,18 @@ export function normalizeCommunityEndpointImagePricing(
     value: string | null | undefined,
 ): CommunityEndpointImagePricing {
     return value === "tokens" ? "tokens" : "request";
+}
+
+export function normalizeCommunityEndpointInputModalities(
+    value: readonly ModelInputModality[] | null | undefined,
+    endpointModality: CommunityEndpointModality,
+): ModelInputModality[] {
+    if (!value?.length) return ["text"];
+    const declared = new Set(value);
+    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+        endpointModality
+    ].filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : ["text"];
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -241,7 +291,7 @@ export type CommunityEndpointRuntime = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[] | null;
     baseUrl: string;
     agentId: string | null;
     upstreamModel: string;
@@ -249,6 +299,9 @@ export type CommunityEndpointRuntime = {
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
+    // Community model ids tried in order when this endpoint's upstream fails.
+    // A target's own list is never followed: the owner declares the full order.
+    fallbackModelIds: string[];
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;
@@ -259,7 +312,7 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -432,6 +485,10 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
+    const inputModalities = normalizeCommunityEndpointInputModalities(
+        endpoint.inputModalities,
+        modality,
+    );
     return {
         aliases,
         provider: "community",
@@ -442,10 +499,7 @@ export function communityModelDefinition(
         addedDate: 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities:
-            isImage && endpoint.supportsImageEdits
-                ? ["text", "image"]
-                : ["text"],
+        inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

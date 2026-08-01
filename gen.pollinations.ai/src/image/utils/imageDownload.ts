@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import { fetchUserImage } from "@/userImage.ts";
 import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
@@ -124,49 +125,19 @@ export function readImageDimensions(
     return null;
 }
 
+/**
+ * Downloads one user-supplied image for a generation request.
+ *
+ * Redirects are followed here, unlike the text path: an image URL pasted into
+ * the `image` parameter is routinely a shortener or a CDN that redirects, and
+ * refusing those would reject URLs that work today.
+ */
 export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
-    let imageResponse: Response;
-    try {
-        imageResponse = await fetch(imageUrl, { signal });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Failed to fetch image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    let buffer: Buffer;
-    try {
-        buffer = Buffer.from(await imageResponse.arrayBuffer());
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Failed to read image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    const mimeType = detectImageMimeType(buffer);
-    if (!mimeType) {
-        throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
-            validation: true,
-        });
-    }
-    return { buffer, mimeType };
+    const { bytes, mimeType } = await fetchUserImage(imageUrl, { signal });
+    return { buffer: Buffer.from(bytes), mimeType };
 }
 
 export async function downloadImageAsBase64(

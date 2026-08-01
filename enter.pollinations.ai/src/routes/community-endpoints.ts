@@ -1,11 +1,15 @@
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
+    type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
@@ -13,18 +17,23 @@ import {
     communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
+    normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
+    parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -51,6 +60,13 @@ const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
     .describe(
         'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
+    );
+const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
+const InputModalitiesSchema = z
+    .array(InputModalitySchema)
+    .min(1)
+    .describe(
+        "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
 const PriceSchema = z
     .number()
@@ -98,6 +114,154 @@ function enforceCommunityEndpointPriceLimits(
     }
 }
 
+function enforceCommunityEndpointInputModalities(
+    modality: CommunityEndpointModality,
+    inputModalities: readonly string[],
+): void {
+    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
+    const unsupported = inputModalities.find(
+        (input) => !(permitted as readonly string[]).includes(input),
+    );
+    if (!unsupported) return;
+    throw new HTTPException(400, {
+        message: `${unsupported} input is not supported for ${modality} models`,
+    });
+}
+
+// Community fallback targets are restricted to other public community models.
+// Pointing a community model at a Pollinations-operated model is deliberately
+// out of scope: static registry prices can be function-valued/dynamic, so the
+// "same or lower price" comparison is not well-defined against them.
+const FallbackModelIdsSchema = z
+    .array(z.string().trim().min(1))
+    .max(MAX_FALLBACK_TARGETS)
+    .describe(
+        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another public community model of the same modality, priced at or below this model on every price field.',
+    );
+
+const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
+
+type FallbackPrimary = {
+    modelId: string;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    prices: CommunityEndpointPrices;
+};
+
+/**
+ * Why `target` may not serve as a fallback for `primary`, or null when it may.
+ *
+ * The candidate list the dashboard offers and the validation the write path
+ * applies must agree, so both go through this one function — a target the UI
+ * shows can always be saved, and one it hides always explains itself.
+ */
+function fallbackTargetRejection(
+    primary: FallbackPrimary,
+    modelId: string,
+    target: CommunityEndpointRow,
+): string | null {
+    // Reached from the candidates route, where the model itself is one of the
+    // public rows scanned. The write path checks this earlier, before any
+    // lookup, because a model being created has no row to find.
+    if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
+    if (target.visibility !== "public" || target.disabledAt !== null) {
+        return `Fallback target ${modelId} must be a public, active community model`;
+    }
+    const targetModality = normalizeCommunityEndpointModality(target.modality);
+    if (targetModality !== primary.modality) {
+        return `Fallback target ${modelId} is a ${targetModality} model, not ${primary.modality}`;
+    }
+    // The stored price columns mean different things in "request" and "tokens"
+    // mode, so comparing across modes is meaningless.
+    const targetImagePricing = normalizeCommunityEndpointImagePricing(
+        target.imagePricing,
+    );
+    if (
+        primary.modality === "image" &&
+        targetImagePricing !== primary.imagePricing
+    ) {
+        return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    const targetPrices = communityEndpointPrices(target);
+    if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
+        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+            (field) => targetPrices[field.key] > primary.prices[field.key],
+        ).map(
+            (field) =>
+                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
+        );
+        return `Fallback target ${modelId} ${excesses.join(", ")}`;
+    }
+    return null;
+}
+
+// Resolves and validates one requested fallback target.
+async function resolveFallbackModelId(
+    db: Db,
+    requested: string,
+    primary: FallbackPrimary,
+): Promise<string> {
+    const parsed = parseCommunityModelId(requested);
+    if (!parsed) {
+        throw new HTTPException(400, {
+            message: `Fallback target ${requested} must be a community model id in the form <owner>/<name>`,
+        });
+    }
+    const fallbackModelId = communityModelId(
+        parsed.ownerGithubUsername,
+        parsed.modelName,
+    );
+    // Before the lookup: on create the model has no row yet, so a self-reference
+    // would otherwise surface as "does not exist".
+    if (fallbackModelId === primary.modelId) {
+        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
+    }
+
+    const targetOwner = await db.query.user.findFirst({
+        columns: { id: true },
+        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
+    });
+    const target = targetOwner
+        ? await db.query.communityEndpoint.findFirst({
+              where: and(
+                  eq(schema.communityEndpoint.ownerUserId, targetOwner.id),
+                  eq(schema.communityEndpoint.name, parsed.modelName),
+              ),
+          })
+        : undefined;
+    if (!target) {
+        throw new HTTPException(400, {
+            message: `Fallback target ${fallbackModelId} does not exist`,
+        });
+    }
+    const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
+    if (rejection) throw new HTTPException(400, { message: rejection });
+    return fallbackModelId;
+}
+
+// Resolves the whole declared list.
+//
+// A target can later be deleted, deactivated, or repriced above the primary.
+// There is no reconciliation job: the generation registry re-checks these same
+// rules when it links entries, so this is a UX guard, not an invariant.
+async function resolveFallbackModelIds(
+    db: Db,
+    requested: string[],
+    primary: FallbackPrimary,
+): Promise<string[]> {
+    const resolved: string[] = [];
+    for (const id of requested) {
+        const modelId = await resolveFallbackModelId(db, id, primary);
+        if (resolved.includes(modelId)) {
+            throw new HTTPException(400, {
+                message: `Fallback target ${modelId} is listed more than once`,
+            });
+        }
+        resolved.push(modelId);
+    }
+    return resolved;
+}
+
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
@@ -141,8 +305,9 @@ const CreateEndpointSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
-        supportsImageEdits: z.boolean().optional().default(false),
+        inputModalities: InputModalitiesSchema.optional().default(["text"]),
         visibility: VisibilitySchema.optional().default("private"),
+        fallbackModelIds: FallbackModelIdsSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
     .refine(
@@ -176,9 +341,13 @@ const UpdateEndpointSchema = z.object({
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
-    supportsImageEdits: z.boolean().optional(),
+    inputModalities: InputModalitiesSchema.optional(),
+    fallbackModelIds: FallbackModelIdsSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
+});
+const FallbackCandidatesResponseSchema = z.object({
+    data: z.array(z.string()),
 });
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
@@ -201,11 +370,12 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
-    supportsImageEdits: z.boolean(),
+    inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
+    fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -236,11 +406,11 @@ const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
-        supportsImageEdits: z
-            .boolean()
+        inputModalities: z
+            .array(InputModalitySchema)
             .optional()
             .describe(
-                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
+                "Image tests only: input types detected from generation and edit probes.",
             ),
     })
     .passthrough();
@@ -331,11 +501,15 @@ function toResponse(
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        supportsImageEdits: row.supportsImageEdits,
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            row.inputModalities,
+            modality,
+        ),
         baseUrl,
         agentId: row.agentId,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
+        fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -505,6 +679,77 @@ export const communityEndpointsRoutes = new Hono<Env>()
             });
         },
     )
+    .get(
+        "/:id/fallback-candidates",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List Fallback Candidates",
+            description:
+                "Community models this model may declare as fallbacks: public, active, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+            responses: {
+                200: {
+                    description: "Eligible fallback model ids",
+                    content: {
+                        "application/json": {
+                            schema: resolver(FallbackCandidatesResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Model not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountKeysPermission(c.var.auth.apiKey);
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const endpoint = await db.query.communityEndpoint.findFirst({
+                where: and(
+                    eq(schema.communityEndpoint.id, c.req.param("id")),
+                    eq(schema.communityEndpoint.ownerUserId, user.id),
+                ),
+            });
+            if (!endpoint) {
+                throw new HTTPException(404, { message: "Model not found" });
+            }
+            const primary: FallbackPrimary = {
+                modelId: communityModelId(ownerGithubUsername, endpoint.name),
+                modality: normalizeCommunityEndpointModality(endpoint.modality),
+                imagePricing: normalizeCommunityEndpointImagePricing(
+                    endpoint.imagePricing,
+                ),
+                prices: communityEndpointPrices(endpoint),
+            };
+            // Only public rows can be targets, so the owner join never drops
+            // one: publishing already requires a GitHub username.
+            const candidates = await db
+                .select({
+                    endpoint: schema.communityEndpoint,
+                    ownerGithubUsername: schema.user.githubUsername,
+                })
+                .from(schema.communityEndpoint)
+                .innerJoin(
+                    schema.user,
+                    eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+                )
+                .where(eq(schema.communityEndpoint.visibility, "public"));
+            const data = candidates
+                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
+                    if (!owner) return [];
+                    const modelId = communityModelId(owner, row.name);
+                    return fallbackTargetRejection(primary, modelId, row)
+                        ? []
+                        : [modelId];
+                })
+                .sort();
+            return c.json({ data });
+        },
+    )
     .post(
         "/",
         describeRoute({
@@ -547,6 +792,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = agent ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
+            enforceCommunityEndpointInputModalities(
+                modality,
+                input.inputModalities,
+            );
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
@@ -555,11 +804,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
-            enforceCommunityEndpointPriceLimits(
-                prices,
-                input.modality,
-                imagePricing,
-            );
+            enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
+            const fallbackModelIds = input.fallbackModelIds
+                ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
+                      modelId: communityModelId(
+                          ownerGithubUsername,
+                          input.name,
+                      ),
+                      modality,
+                      imagePricing,
+                      prices,
+                  })
+                : [];
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -572,8 +828,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality,
                     imagePricing,
-                    supportsImageEdits:
-                        modality === "image" && input.supportsImageEdits,
+                    inputModalities: input.inputModalities,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -588,6 +843,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           ),
                     visibility: input.visibility,
+                    fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -689,7 +945,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? result.supportsImageEdits
+                            ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
                             : "Endpoint responded with usage",
@@ -746,6 +1002,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         "Update managed agent configuration through the agents API",
                 });
             }
+            if (input.inputModalities !== undefined) {
+                enforceCommunityEndpointInputModalities(
+                    modality,
+                    input.inputModalities,
+                );
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -778,9 +1040,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            if (input.supportsImageEdits !== undefined) {
-                update.supportsImageEdits =
-                    modality === "image" && input.supportsImageEdits;
+            if (input.inputModalities !== undefined) {
+                update.inputModalities = input.inputModalities;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();
@@ -826,6 +1087,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 modality,
                 effectiveImagePricing,
             );
+            // Validate against the prices this update actually persists, not
+            // the stored ones. An unsent field keeps the stored targets: if a
+            // later price change makes one too expensive, the generation
+            // registry stops linking it at read time.
+            if (input.fallbackModelIds) {
+                update.fallbackModelIds = await resolveFallbackModelIds(
+                    db,
+                    input.fallbackModelIds,
+                    {
+                        modelId: communityModelId(
+                            ownerGithubUsername,
+                            input.name ?? endpoint.name,
+                        ),
+                        modality,
+                        imagePricing: effectiveImagePricing,
+                        prices: effectivePrices,
+                    },
+                );
+            }
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

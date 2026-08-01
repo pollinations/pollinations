@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9a49c037-393a-4f46-9954-7c9cfa4c713b",
-  "prevId": "5cd7a5ed-3946-4277-bf00-41f70c7b6f9d",
+  "id": "c79e32e5-8761-4d1c-8baa-9a54bb9a736f",
+  "prevId": "2701c21c-bde0-485e-81ab-30e05d231342",
   "tables": {
     "account": {
       "name": "account",
@@ -116,6 +116,96 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "agent": {
+      "name": "agent",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "config": {
+          "name": "config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "base_url": {
+          "name": "base_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "api_key_ciphertext": {
+          "name": "api_key_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "api_key_id": {
+          "name": "api_key_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        }
+      },
+      "indexes": {
+        "idx_agent_owner_user_id": {
+          "name": "idx_agent_owner_user_id",
+          "columns": [
+            "owner_user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "agent_owner_user_id_user_id_fk": {
+          "name": "agent_owner_user_id_user_id_fk",
+          "tableFrom": "agent",
+          "tableTo": "user",
+          "columnsFrom": [
+            "owner_user_id"
           ],
           "columnsTo": [
             "id"
@@ -409,11 +499,25 @@
           "autoincrement": false,
           "default": false
         },
+        "input_modalities": {
+          "name": "input_modalities",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "base_url": {
           "name": "base_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "upstream_model": {
@@ -427,7 +531,7 @@
           "name": "bearer_token_ciphertext",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "visibility": {
@@ -576,6 +680,13 @@
             "name"
           ],
           "isUnique": true
+        },
+        "idx_community_endpoint_agent_id": {
+          "name": "idx_community_endpoint_agent_id",
+          "columns": [
+            "agent_id"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -590,6 +701,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "community_endpoint_agent_id_agent_id_fk": {
+          "name": "community_endpoint_agent_id_agent_id_fk",
+          "tableFrom": "community_endpoint",
+          "tableTo": "agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },

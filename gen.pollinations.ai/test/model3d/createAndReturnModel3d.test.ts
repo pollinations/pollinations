@@ -98,7 +98,7 @@ workerTest(
             );
 
             const response = await SELF.fetch(
-                `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Finferenceport.ai%2Fimg%2Ftrellis.jpg`,
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             );
 

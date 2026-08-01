@@ -1,0 +1,23 @@
+{
+  "date": "2026-07-31",
+  "period_start": "2026-07-31",
+  "period_end": "2026-07-31",
+  "title": "Image generation gets faster under load",
+  "summary": "A reliability-and-throughput day: community models can fall back gracefully, while DreamShaper moves more images through the GPU pool.\n\nThe DreamShaper sana deployment now supports three independent worker pipelines per GPU, lifting measured concurrent throughput from roughly 4.3 to 8 images per second per card. The deployment notes also document the production setup, so reproducing the faster pool should involve fewer sacred rituals.\n\nModel owners can configure up to three compatible public fallback models for their community models. Text requests use Portkey fallback entries, image requests retry safely in the worker, and scoped API keys only see targets they are allowed to use.\n\nThe root README's Latest News section was refreshed so visitors and contributors get a current snapshot of what the garden has been doing.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 12819,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12962,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12985,
+      "date": "2026-07-31"
+    }
+  ],
+  "generated_at": "2026-08-01T06:58:21.390602+00:00"
+}

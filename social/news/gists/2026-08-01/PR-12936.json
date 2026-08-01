@@ -1,0 +1,34 @@
+{
+  "pr_number": 12936,
+  "title": "refactor: simplify operations dashboards",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12936",
+  "merged_at": "2026-08-01T10:47:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes unused KPI API clients and overview/week-selector components.\n- Removes the unused KPI GitHub App authentication path and keeps the active token flow.\n- Collapses Model Monitor's duplicate polling effects and interval ref into one owned refresh lifecycle.\n- Removes 278 net lines across the two operations dashboards; supersedes #12919 and #12976.\n\nChecks:\n- Biome on all surviving changed source files\n- KPI production build and Worker dry-run\n- Model Monitor production build on the absorbed commit\n- `git diff --check`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Dashboard shed gets pruned",
+    "blurb": "A few dashboard branches had stopped bearing fruit, so they were composted. The remaining monitor refresh loop now has one gardener instead of several.",
+    "summary": "Removed unused KPI API clients, overview and week-selector UI, and the inactive GitHub App auth path while consolidating Model Monitor polling into one owned refresh lifecycle.",
+    "impact": "Operations maintainers get smaller KPI and Model Monitor codebases, with the active token flow preserved and duplicate polling state removed.",
+    "keywords": [
+      "operations",
+      "KPI dashboard",
+      "model monitor",
+      "refactor",
+      "polling",
+      "cleanup"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy operations garden: she prunes a few clearly dead dashboard branches while a single healthy retro monitor waters one thriving code-plant. This represents removing unused KPI UI and authentication paths while giving Model Monitor one clear refresh lifecycle.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she prunes old dead code branches beside one healthy CRT monitor watering a glowing code-plant. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874), warm cream and lavender pastel gradient garden, subtle scanlines, pixel flowers, and dark purple (#110518) outlines; warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12936.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she prunes old dead code branches beside one healthy CRT monitor watering a glowing code-plant. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874), warm cream and lavender pastel gradient garden, subtle scanlines, pixel flowers, and dark purple (#110518) outlines; warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T10:48:33.403692+00:00"
+}

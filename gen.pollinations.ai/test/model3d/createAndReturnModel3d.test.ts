@@ -58,52 +58,62 @@ describe("createAndReturnModel3d dispatch", () => {
     });
 });
 
-workerTest("uses the shared fallback loop for 3D", {timeout: 900000 }, async ({ paidApiKey }) => {
-    const source = getRegistryModelDefinition("trellis-2-low");
-    const previousFallbacks = source.fallbacks;
-    try {
-        source.fallbacks = ["trellis-2-medium"];
-        resetGenerationModelRegistryCache();
-        const resolutions: unknown[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url.includes("public_model_stats.json")) {
-                    return Response.json({ data: [] });
-                }
-                if (
-                    request.url.includes("/v0/events?name=generation_event_v2")
-                ) {
-                    return new Response("", { status: 202 });
-                }
-                const body = (await request.json()) as { resolution?: unknown };
-                resolutions.push(body.resolution);
-                if (body.resolution === "low") {
-                    return Response.json(
-                        { error: { message: "rate limited" } },
-                        { status: 429 },
-                    );
-                }
-                return Response.json({
-                    data: [{ model_glb_b64_bytes: btoa("glTF") }],
-                });
-            },
-        );
+workerTest(
+    "uses the shared fallback loop for 3D",
+    { timeout: 900000 },
+    async ({ paidApiKey }) => {
+        const source = getRegistryModelDefinition("trellis-2-low");
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = ["trellis-2-medium"];
+            resetGenerationModelRegistryCache();
+            const resolutions: unknown[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url.includes("public_model_stats.json")) {
+                        return Response.json({ data: [] });
+                    }
+                    if (
+                        request.url.includes(
+                            "/v0/events?name=generation_event_v2",
+                        )
+                    ) {
+                        return new Response("", { status: 202 });
+                    }
+                    const body = (await request.json()) as {
+                        resolution?: unknown;
+                    };
+                    resolutions.push(body.resolution);
+                    if (body.resolution === "low") {
+                        return Response.json(
+                            { error: { message: "rate limited" } },
+                            { status: 429 },
+                        );
+                    }
+                    return Response.json({
+                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                    });
+                },
+            );
 
-        const response = await SELF.fetch(
-            `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
-            { headers: { Authorization: `Bearer ${paidApiKey}` } },
-        );
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            );
 
-        expect(response.status).toBe(200);
-        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
-            "config.targets[1]",
-        );
-        expect(response.headers.get("x-model-used")).toBe("trellis-2-medium");
-        expect(resolutions).toEqual(["low", "medium"]);
-        expect(await response.text()).toBe("glTF");
-    } finally {
-        source.fallbacks = previousFallbacks;
-        resetGenerationModelRegistryCache();
-    }
-});
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            expect(response.headers.get("x-model-used")).toBe(
+                "trellis-2-medium",
+            );
+            expect(resolutions).toEqual(["low", "medium"]);
+            expect(await response.text()).toBe("glTF");
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
+    },
+);

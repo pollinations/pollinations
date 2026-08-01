@@ -9,3 +9,6 @@
 # This file shadows .dev.vars for the `test` environment, keeping unit tests
 # on the mocked wrangler.toml [env.test.vars] values regardless of whether
 # `npm run decrypt-vars` has been run.
+
+# Test-only tokens (never real secrets)
+PLN_ENTER_TOKEN=test_pln_enter_token

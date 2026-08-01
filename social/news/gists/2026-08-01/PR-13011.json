@@ -1,0 +1,35 @@
+{
+  "pr_number": 13011,
+  "title": "feat: add Inkling Small",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13011",
+  "merged_at": "2026-08-01T14:18:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `inkling` with versioned aliases through OpenRouter, pinned to Together with fallback disabled.\n- Exposes paid text, image, and audio understanding with tools and reasoning at 0.50/M input, 0.10/M cached input, and 1.20/M output.\n- Adds the Thinking Machines brand mark, exact pricing metadata, response framing cleanup, and clear 400 responses for malformed media.\n- Verifies direct and local text, reasoning, tools, streaming, image, multi-image, real WAV audio, aliases, cache, errors, usage, wallet deduction, Tinybird billing, and 5/15/30 bursts.\n- Passes focused and mandatory suites (481 tests total), both worker typechecks, Biome, and diff checks.\n\nRoute limits: Together supports image and audio independently but rejects them together in one request. JSON mode is not advertised. An early direct 30-request probe saw one transient 503; the final local bursts passed 5/5, 15/15, and 30/30.\n\nSources: https://thinkingmachines.ai/news/introducing-inkling/ · https://thinkingmachines.ai/model-card/inkling/ · https://openrouter.ai/thinkingmachines/inkling-small\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A small inkling arrives",
+    "blurb": "Inkling Small has landed in the hive, with text, vision, audio understanding, tools, and reasoning in one tidy model slot. It brought a Thinking Machines badge and a fairly extensive test entourage.",
+    "summary": "Added Thinking Machines Inkling Small through OpenRouter, pinned to Together, with versioned aliases and paid text, image, and audio understanding plus tools and reasoning priced at $0.50/M input, $0.10/M cached input, and $1.20/M output tokens.",
+    "impact": "Developers can call Inkling Small through the text API for streaming, tool use, reasoning, images, multi-image prompts, or WAV audio, with clear malformed-media errors and reliable tested bursts up to 30 requests.",
+    "keywords": [
+      "inkling-small",
+      "thinking-machines",
+      "openrouter",
+      "text-api",
+      "vision",
+      "audio",
+      "reasoning"
+    ],
+    "visual_concept": "Depict Inkling Small as a cozy little ink bottle or fountain pen beside a retro terminal, with separate picture and WAV sound-wave cards feeding into it to show multimodal understanding. Polli wears tiny round thinker glasses and carefully sorts the cards into separate garden paths, reflecting Together's image-or-audio-per-request route limit; blooming code-plants and the Thinking Machines mark appear nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, black oval eyes, and tiny thinker glasses, tending a lime green (#ecf874) code garden beside a small ink bottle-shaped AI terminal labeled \"INKLING\" in simple pixel font. Separate image-card flowers and a WAV sound-wave flower feed into the terminal while warm pastel mint, lavender, peach, and cream light glows around a small Thinking Machines-style mark; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-13011.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, black oval eyes, and tiny thinker glasses, tending a lime green (#ecf874) code garden beside a small ink bottle-shaped AI terminal labeled \"INKLING\" in simple pixel font. Separate image-card flowers and a WAV sound-wave flower feed into the terminal while warm pastel mint, lavender, peach, and cream light glows around a small Thinking Machines-style mark; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T14:19:53.716902+00:00"
+}

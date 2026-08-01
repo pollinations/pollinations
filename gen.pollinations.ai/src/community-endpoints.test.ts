@@ -33,7 +33,10 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import {
+    calculateUsageBilling,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -3022,6 +3025,11 @@ fixtureTest("validates community fallback targets on write", async () => {
         githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
         githubUsername: ownerGithubUsername,
     });
+    const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
+    const otherOwnerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: otherOwnerGithubUsername,
+    });
     const sessionToken = `session-${crypto.randomUUID()}`;
     await db.insert(sessionTable).values({
         id: `session-${crypto.randomUUID()}`,
@@ -3039,10 +3047,12 @@ fixtureTest("validates community fallback targets on write", async () => {
     const targetNames = {
         cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
         priv: `private-${crypto.randomUUID().slice(0, 8)}`,
+        otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
+        disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
         image: `image-${crypto.randomUUID().slice(0, 8)}`,
         pricey: `pricey-${crypto.randomUUID().slice(0, 8)}`,
     };
-    await db.insert(communityEndpointTable).values([
+    for (const target of [
         {
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
@@ -3053,6 +3063,33 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: otherOwnerUserId,
+            visibility: "private",
+            name: targetNames.otherPrivate,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "other-private-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.disabled,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "disabled-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            disabledAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -3097,7 +3134,9 @@ fixtureTest("validates community fallback targets on write", async () => {
             createdAt: new Date(),
             updatedAt: new Date(),
         },
-    ]);
+    ] satisfies (typeof communityEndpointTable.$inferInsert)[]) {
+        await db.insert(communityEndpointTable).values(target);
+    }
 
     const enterApi = await createEnterCommunityApi();
     const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
@@ -3144,23 +3183,41 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(await missing.text()).toContain("does not exist");
 
     const privateTarget = await createWithFallback(
-        primaryName,
+        `${primaryName}-private`,
         communityModelId(ownerGithubUsername, targetNames.priv),
     );
-    expect(privateTarget.status).toBe(400);
-    expect(await privateTarget.text()).toContain(
-        "must be a public, active community model",
+    expect(privateTarget.status).toBe(200);
+    await expect(privateTarget.json()).resolves.toMatchObject({
+        fallbackModelIds: [
+            communityModelId(ownerGithubUsername, targetNames.priv),
+        ],
+    });
+
+    const otherPrivateTarget = await createWithFallback(
+        `${primaryName}-other-private`,
+        communityModelId(otherOwnerGithubUsername, targetNames.otherPrivate),
+    );
+    expect(otherPrivateTarget.status).toBe(400);
+    expect(await otherPrivateTarget.text()).toContain(
+        "must be public or owned by you",
     );
 
+    const disabledTarget = await createWithFallback(
+        `${primaryName}-disabled`,
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
+    expect(disabledTarget.status).toBe(400);
+    expect(await disabledTarget.text()).toContain("must be active");
+
     const wrongModality = await createWithFallback(
-        primaryName,
+        `${primaryName}-modality`,
         communityModelId(ownerGithubUsername, targetNames.image),
     );
     expect(wrongModality.status).toBe(400);
     expect(await wrongModality.text()).toContain("is a image model, not text");
 
     const overPriced = await createWithFallback(
-        primaryName,
+        `${primaryName}-price`,
         communityModelId(ownerGithubUsername, targetNames.pricey),
     );
     expect(overPriced.status).toBe(400);
@@ -3212,12 +3269,15 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(candidates.status).toBe(200);
     const { data: eligible } = (await candidates.json()) as { data: string[] };
     expect(eligible).toContain(cheapModelId);
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.priv),
+    );
     // Never itself, and never a target the write path would reject.
     expect(eligible).not.toContain(created.modelId);
     for (const rejected of [
-        targetNames.priv,
         targetNames.image,
         targetNames.pricey,
+        targetNames.disabled,
     ]) {
         expect(eligible).not.toContain(
             communityModelId(ownerGithubUsername, rejected),
@@ -3414,6 +3474,115 @@ fixtureTest(
             id("valid-target"),
             id("second-target"),
         ]);
+    },
+);
+
+fixtureTest(
+    "uses the served model's transform for a registry fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const ownerGithubUsername = `transform-owner-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const fallbackModelId = communityModelId(
+            ownerGithubUsername,
+            `plain-${suffix}`,
+        );
+
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: `plain-${suffix}`,
+            baseUrl: "https://plain.example.com/v1",
+            upstreamModel: "plain-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_plain_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const source = getRegistryModelDefinition("qwen-coder");
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = [fallbackModelId];
+            resetGenerationModelRegistryCache();
+
+            const messageRoles: string[][] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (isPortkeyChatCompletionsRequest(request)) {
+                        const body = (await request.json()) as {
+                            messages: { role: string }[];
+                        };
+                        messageRoles.push(
+                            body.messages.map((message) => message.role),
+                        );
+                        if (
+                            request.headers.get("x-portkey-custom-host") !==
+                            "https://plain.example.com/v1"
+                        ) {
+                            return Response.json(
+                                { error: { message: "rate limited" } },
+                                { status: 429 },
+                            );
+                        }
+                        return Response.json({
+                            id: "chatcmpl_fallback_transform",
+                            object: "chat.completion",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "ok",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage: {
+                                prompt_tokens: 1,
+                                completion_tokens: 1,
+                                total_tokens: 2,
+                            },
+                        });
+                    }
+                    if (isBillingFetch(request)) {
+                        return Response.json({ data: [] });
+                    }
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }),
+            );
+
+            const response = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-coder",
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+            expect(messageRoles).toEqual([["system", "user"], ["user"]]);
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
     },
 );
 

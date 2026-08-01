@@ -1,0 +1,34 @@
+{
+  "pr_number": 12920,
+  "title": "refactor: share Gemini billing event parsing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12920",
+  "merged_at": "2026-08-01T06:03:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Unifies buffered and streamed Gemini billing output into one response shape and traversal.\n- Replaces three copied reverse scans with one positive-usage counter factory.\n- Preserves rule IDs, prices, provider fields, last-event semantics, and all exported billing APIs.\n- Removes 11 net lines from the billing paths added by #12651 and #12839.\n\nTests:\n- `enter.pollinations.ai`: 28 pricing-data tests\n- `gen.pollinations.ai`: 23 usage-header tests\n- Enter and Gen typechecks\n- Biome",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One scanner, less buzzing",
+    "blurb": "Gemini billing events now follow one shared trail instead of three nearly identical ones. The hive kept every rule, price, provider field, and final-event detail exactly where it belongs.",
+    "summary": "Unified buffered and streamed Gemini billing-event parsing in shared/registry/gemini-billing.ts, replacing three reverse scans with one positive-usage counter factory while preserving exported billing APIs, rule IDs, prices, provider fields, and last-event semantics.",
+    "impact": "Gemini billing paths now use the same response traversal for streamed and buffered output, making future maintenance safer without changing existing billing behavior.",
+    "keywords": [
+      "gemini",
+      "billing",
+      "usage",
+      "streaming",
+      "registry",
+      "refactor"
+    ],
+    "visual_concept": "A cozy shared garden path represents one reusable Gemini billing traversal replacing three duplicated routes: Polli, wearing a tiny accountant visor, guides glowing usage tokens through a single signposted path into a retro terminal. Small code-plants and neatly preserved price tags symbolize unchanged billing metadata and APIs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor as she guides glowing Gemini usage tokens from three garden paths into one shared retro terminal path; code-plants, preserved little price tags, and pixel flowers grow beside it, with lime green (#ecf874) prominent across the warm cream and lavender background. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-01/PR-12920.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor as she guides glowing Gemini usage tokens from three garden paths into one shared retro terminal path; code-plants, preserved little price tags, and pixel flowers grow beside it, with lime green (#ecf874) prominent across the warm cream and lavender background. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-01T06:04:00.301252+00:00"
+}

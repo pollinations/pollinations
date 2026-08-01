@@ -8,7 +8,10 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -28,12 +31,21 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** Entry that serves the request when this model's upstream fails. */
+        fallbackEntries?: GenerationModelEntry[];
     };
+    /**
+     * Set by the generation handlers when the fallback target actually served
+     * the request. Cost and the community owner reward follow it; the price the
+     * caller pays does not — that stays the listing they asked for.
+     */
+    servedModelEntry?: GenerationModelEntry;
     formData?: FormData;
 };
 
 type ResolveModelOptions = {
     defaultModel?: string;
+    supportedEndpoint?: string;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -55,6 +67,7 @@ export async function resolveModelDefinition(
     eventType: EventType,
     env: CloudflareBindings,
     callerUserId?: string,
+    supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
@@ -84,6 +97,19 @@ export async function resolveModelDefinition(
             message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
         });
     }
+    if (entry.definition.supportedEndpoints && !supportedEndpoint) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" is available only on: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
+    if (
+        supportedEndpoint &&
+        !entry.supportedEndpoints.includes(supportedEndpoint)
+    ) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" cannot be used on ${supportedEndpoint}. Supported endpoints: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
 
     return {
         requested: model,
@@ -91,6 +117,9 @@ export async function resolveModelDefinition(
         definition: entry.definition,
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
+        }),
+        ...(entry.fallbackEntries && {
+            fallbackEntries: entry.fallbackEntries,
         }),
     };
 }
@@ -156,15 +185,25 @@ export function resolveModel(
         // routes, so the caller identity is available to gate private
         // endpoints. If it isn't (unauthenticated path), callerUserId is
         // undefined and a private endpoint fails closed — never exposed.
-        c.set(
-            "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-            ),
+        const resolved = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
         );
+        // An API key's model allowlist scopes what the key may be served, not
+        // just what it may ask for. Drop the targets that are off the list: the
+        // request still runs against the rest, but a scoped key can never be
+        // served — or billed for — a model it would get a 403 for if it called
+        // it directly.
+        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+        if (allowedModels && resolved.fallbackEntries) {
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) => allowedModels.includes(entry.id),
+            );
+        }
+        c.set("model", resolved);
         await next();
     });
 }

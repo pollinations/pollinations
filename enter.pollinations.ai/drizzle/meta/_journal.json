@@ -267,6 +267,41 @@
       "when": 1784745559578,
       "tag": "0037_salty_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1784972286318,
+      "tag": "0038_slimy_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1785145497278,
+      "tag": "0039_blushing_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1785331128707,
+      "tag": "0040_fearless_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1785349614100,
+      "tag": "0041_material_centennial",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1785526197552,
+      "tag": "0042_lethal_marvel_apes",
+      "breakpoints": true
     }
   ]
 }

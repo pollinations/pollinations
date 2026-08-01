@@ -2,6 +2,9 @@ DESCRIPTION >
     Materializes cleanly attributed BYOP traffic from generation_event_v2 at
     daily app and model grain, including the isolated staging fixture.
 
+    DEPLOYMENT_METHOD 'alter': see generation_usage_hourly_mv. History predates
+    attempt rows, so re-materializing would reproduce the stored values.
+
 NODE byop_app_daily_mv_node
 SQL >
     SELECT
@@ -28,7 +31,7 @@ SQL >
             'quest',
             'unfunded'
         ) AS funding_source,
-        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(is_final)) AS all_calls,  -- attempts are not requests
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
         sumState(
             toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)
@@ -68,3 +71,4 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE byop_app_daily
+DEPLOYMENT_METHOD 'alter'

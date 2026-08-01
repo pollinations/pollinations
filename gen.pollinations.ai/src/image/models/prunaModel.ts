@@ -1,28 +1,20 @@
 /**
- * Pruna p-image, p-image-edit, and p-video via Replicate (prunaai/*).
+ * Pruna image generation via DeepInfra and video generation via Replicate.
  *
- * Migrated off the direct api.pruna.ai predictions API to Replicate, which
- * hosts the identical Pruna-optimised models under the `prunaai` account:
- *   - p-image      → prunaai/p-image       (text-to-image)
- *   - p-image-edit → prunaai/p-image-edit  (multi-image editing, $0.01/img)
- *   - p-video      → prunaai/p-video       (text/image-to-video)
- *
- * Same engines, so output is unchanged. The move also drops the standalone
- * PRUNA_API_KEY (auth is now REPLICATE_API_TOKEN via runReplicatePrediction)
- * and inherits the shared Replicate client's reliability properties:
- *   - bounded polling → a stuck prediction surfaces as a controlled 504
- *     instead of the old 10-minute hang
- *   - error classification → 429/400/422 are passed through to the caller
- *     instead of the old blanket 500
+ * DeepInfra hosts the exact PrunaAI/p-image and PrunaAI/p-image-Edit
+ * checkpoints at the same prices as Replicate. Both p-video resolution
+ * services remain together on Replicate until resolution-aware canonical
+ * billing can represent them as one public model.
  */
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestByRatio, closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { toDataUri } from "../utils/imageDownload.ts";
+import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -32,6 +24,8 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
 const logError = debug("pollinations:pruna:error");
+const DEEPINFRA_INFERENCE_BASE = "https://api.deepinfra.com/v1/inference";
+const DEEPINFRA_TIMEOUT_MS = 120_000;
 
 // p-image-edit / p-video accept up to this many reference images.
 const MAX_EDIT_IMAGES = 5;
@@ -83,9 +77,55 @@ interface PVideoInput {
     seed?: number;
 }
 
+interface DeepInfraInferenceStatus {
+    cost?: number;
+    runtime_ms?: number;
+}
+
+interface DeepInfraImageOutput {
+    images?: string[];
+    inference_status?: DeepInfraInferenceStatus;
+}
+
+async function runDeepInfraPrediction(
+    model: string,
+    input: PImageInput | PImageEditInput,
+    displayName: string,
+): Promise<DeepInfraImageOutput> {
+    const apiKey = getImageEnv("DEEPINFRA_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "DEEPINFRA_API_KEY environment variable is required",
+            500,
+        );
+    }
+
+    const url = `${DEEPINFRA_INFERENCE_BASE}/${model}`;
+    const response = await fetchUpstream(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+        signal: AbortSignal.timeout(DEEPINFRA_TIMEOUT_MS),
+        errorLabel: `${displayName} generation failed`,
+    });
+
+    try {
+        return (await response.json()) as DeepInfraImageOutput;
+    } catch {
+        throw new HttpError(
+            `${displayName} returned invalid JSON`,
+            502,
+            undefined,
+            url,
+        );
+    }
+}
+
 /**
- * Run a prunaai/* prediction on Replicate and return the output URL plus
- * metrics. The output schema for all three models is a single URI string.
+ * Run a Pruna video prediction on Replicate.
  * ReplicateError (already status-classified) is remapped to HttpError so the
  * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
  */
@@ -160,14 +200,21 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    const { output } = await runPrunaPrediction<PImageInput>(
-        "prunaai/p-image",
+    const result = await runDeepInfraPrediction(
+        "PrunaAI/p-image",
         input,
         "Pruna p-image",
     );
-
-    const buffer = await downloadOutput(output, "Pruna p-image");
-    logOps("Downloaded image, buffer size:", buffer.length);
+    const image = result.images?.[0];
+    if (!image) {
+        throw new HttpError("Pruna p-image returned no image", 502);
+    }
+    const buffer = base64ToBuffer(image);
+    logOps("Generated image:", {
+        bytes: buffer.length,
+        providerCost: result.inference_status?.cost,
+        runtimeMs: result.inference_status?.runtime_ms,
+    });
 
     return {
         buffer,
@@ -209,24 +256,29 @@ export async function callPrunaImageEditAPI(
         );
     }
 
-    const resolvedImages = await Promise.all(images.map(toDataUri));
-
-    const input: PImageEditInput = { prompt, images: resolvedImages };
+    const input: PImageEditInput = { prompt, images };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
 
     logOps("p-image-edit input:", {
         prompt: prompt.slice(0, 80),
-        images: `[${resolvedImages.length} data uris]`,
+        images: `[${images.length} image references]`,
     });
 
-    const { output } = await runPrunaPrediction<PImageEditInput>(
-        "prunaai/p-image-edit",
+    const result = await runDeepInfraPrediction(
+        "PrunaAI/p-image-Edit",
         input,
         "Pruna p-image-edit",
     );
-
-    const buffer = await downloadOutput(output, "Pruna p-image-edit");
-    logOps("Downloaded edited image, buffer size:", buffer.length);
+    const image = result.images?.[0];
+    if (!image) {
+        throw new HttpError("Pruna p-image-edit returned no image", 502);
+    }
+    const buffer = base64ToBuffer(image);
+    logOps("Generated edited image:", {
+        bytes: buffer.length,
+        providerCost: result.inference_status?.cost,
+        runtimeMs: result.inference_status?.runtime_ms,
+    });
 
     return {
         buffer,

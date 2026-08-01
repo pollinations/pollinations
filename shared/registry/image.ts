@@ -6,17 +6,19 @@ export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
-    "sana": {
-        aliases: [],
-        provider: "lambda",
-        brand: "NVIDIA",
+    "dreamshaper": {
+        // "sana" is kept as an alias so existing callers and the legacy image
+        // proxy worker keep working unchanged.
+        aliases: ["sana"],
+        provider: "vast",
+        brand: "Lykon",
         category: "image",
-        addedDate: new Date("2026-07-17").getTime(),
+        addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
-        title: "Sana Sprint 1.6B",
+        title: "DreamShaper 8 LCM",
         description:
             "Near-instant images at rock-bottom cost; simpler detail than premium models",
         inputModalities: ["text"],
@@ -688,7 +690,7 @@ export const IMAGE_SERVICES = {
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -704,7 +706,7 @@ export const IMAGE_SERVICES = {
     },
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
-        provider: "replicate",
+        provider: "deepinfra",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -761,7 +763,7 @@ export const IMAGE_SERVICES = {
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
-        provider: "aws",
+        provider: "bedrock",
         brand: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -777,7 +779,7 @@ export const IMAGE_SERVICES = {
     },
     "nova-reel": {
         aliases: ["amazon-nova-reel"],
-        provider: "aws",
+        provider: "bedrock",
         brand: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

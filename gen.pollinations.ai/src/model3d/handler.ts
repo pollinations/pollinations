@@ -129,6 +129,8 @@ export function throw3dError(error: unknown): never {
     if (error instanceof HttpError) {
         throw new UpstreamError(remapUpstreamStatus(error.status), {
             message: error.message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             upstreamStatus: error.status,
             responseBody: JSON.stringify({ message: error.message }),
             cause: error,

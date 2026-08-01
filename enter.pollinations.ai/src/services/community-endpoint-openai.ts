@@ -1,13 +1,14 @@
 import {
     type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
+    communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
@@ -28,6 +29,8 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
     /** Image tests only: billing mode detected from the probe response. */
     imagePricing?: CommunityEndpointImagePricing;
+    /** Image tests only: input types detected by the generation/edit probes. */
+    inputModalities?: ModelInputModality[];
 };
 
 const REQUEST_TIMEOUT_MS = 90_000;
@@ -192,9 +195,18 @@ export async function testCommunityImageEndpoint({
     });
 
     const imageBytes = await firstImageBytes(body, baseUrl);
-    if (!imageBytes || !detectImageMimeType(imageBytes)) {
+    const imageMimeType = imageBytes && detectImageMimeType(imageBytes);
+    if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
     }
+    const supportsImageInput = await testCommunityImageEdits(
+        { baseUrl, bearerToken, model },
+        imageBytes,
+        imageMimeType,
+    );
+    const inputModalities: ModelInputModality[] = supportsImageInput
+        ? ["text", "image"]
+        : ["text"];
 
     // Endpoints that return valid OpenAI image token usage are billed
     // per token ("tokens"); everything else falls back to a fixed price
@@ -205,13 +217,45 @@ export async function testCommunityImageEndpoint({
             usage: { ...openaiUsage },
             billableUsage: openaiImageUsageToUsage(openaiUsage),
             imagePricing: "tokens",
+            inputModalities,
         };
     }
     return {
         usage: { images: 1 },
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
+        inputModalities,
     };
+}
+
+async function testCommunityImageEdits(
+    { baseUrl, bearerToken, model }: EndpointTestInput,
+    imageBytes: Uint8Array,
+    imageMimeType: string,
+): Promise<boolean> {
+    const formData = new FormData();
+    formData.append("model", model);
+    formData.append("prompt", "Add a small blue dot to the image.");
+    formData.append("n", "1");
+    formData.append("size", "1024x1024");
+    formData.append("quality", "medium");
+    formData.append(
+        "image",
+        new Blob([new Uint8Array(imageBytes)], { type: imageMimeType }),
+        `source.${imageMimeType.split("/")[1] ?? "png"}`,
+    );
+
+    try {
+        const body = await fetchJson(communityImageEditsUrl(baseUrl), {
+            method: "POST",
+            headers: authorizationHeaders(bearerToken),
+            body: formData,
+        });
+        const editedImage = await firstImageBytes(body, baseUrl);
+        return Boolean(editedImage && detectImageMimeType(editedImage));
+    } catch {
+        return false;
+    }
 }
 
 async function firstImageBytes(

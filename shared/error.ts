@@ -98,6 +98,37 @@ function extractUpstreamMessage(body: string): string {
     return body;
 }
 
+/**
+ * Stable, machine-readable codes for failures involving a user-supplied image
+ * (URL or upload). Values are OpenAI `ResponseErrorCode` names so callers can
+ * branch on a code instead of parsing our error prose. All are returned with
+ * HTTP 400 — a bad user-supplied image is a client error, never an upstream one.
+ */
+export type ImageInputErrorCode =
+    | "failed_to_download_image"
+    | "invalid_image_url"
+    | "image_too_large"
+    | "unsupported_image_media_type";
+
+/**
+ * Codes we emit in place of the status-derived code, keyed by the status they
+ * are emitted with. The response envelope's `code` is therefore not always
+ * `getErrorCode(status)`, and the published schema must say so.
+ */
+const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
+    400: [
+        "failed_to_download_image",
+        "invalid_image_url",
+        "image_too_large",
+        "unsupported_image_media_type",
+    ],
+    422: ["content_policy_violation"],
+};
+
+export function getErrorCodesForStatus(status: number): [string, ...string[]] {
+    return [getErrorCode(status), ...(OVERRIDE_ERROR_CODES[status] ?? [])];
+}
+
 const GenericErrorDetailsSchema = z
     .object({
         name: z.string(),
@@ -126,7 +157,7 @@ export function createErrorResponseSchema(
         status: z.literal(status),
         success: z.literal(false),
         error: z.object({
-            code: z.literal(getErrorCode(status)),
+            code: z.enum(getErrorCodesForStatus(status)),
             message: z.union([
                 z.literal(getDefaultErrorMessage(status)),
                 z.string(),
@@ -134,7 +165,6 @@ export function createErrorResponseSchema(
             timestamp: z.string(),
             details: errorDetailsSchema,
             requestId: z.string().optional(),
-            cause: z.unknown().optional(),
         }),
     });
 }
@@ -148,7 +178,6 @@ export const GenericErrorResponseSchema = z.object({
         timestamp: z.string(),
         details: GenericErrorDetailsSchema.optional(),
         requestId: z.string().optional(),
-        cause: z.unknown().optional(),
     }),
 });
 
@@ -266,7 +295,6 @@ function createErrorResponse(
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
-            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };

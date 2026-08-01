@@ -1,8 +1,9 @@
+import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDeepInfraModelConfig,
     createFireworksModelConfig,
-    createInceptionModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -16,6 +17,21 @@ import {
 
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
+
+/** Creates a direct Vertex AI config for Gemini models. */
+function createVertexGeminiConfig(
+    modelId: string,
+    region: string,
+): PortkeyConfigFactory {
+    return () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": region,
+        "vertex-model-id": modelId,
+        "strict-openai-compliance": "false",
+    });
+}
 
 /** Creates a no-fallback OpenRouter route pinned to one Vertex deployment. */
 function createPinnedOpenRouterGeminiConfig(
@@ -128,12 +144,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
+    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
+    "Cohere-command-a-plus-05-2026": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
+            "Cohere-command-a-plus-05-2026",
+        ),
+
     // -- OpenRouter (frontier models) ----------------------------------------
-    "moonshotai/kimi-k3": () =>
-        createOpenRouterModelConfig({
-            model: "moonshotai/kimi-k3",
-            defaultOptions: { provider: { sort: "price" } },
-        }),
     "x-ai/grok-4.5": () =>
         createOpenRouterModelConfig({
             model: "x-ai/grok-4.5",
@@ -159,6 +178,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "qwen/qwen3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-flash",
+            defaultOptions: {
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
             model: "poolside/laguna-s-2.1",
@@ -180,6 +209,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- DeepInfra (NVIDIA) ---------------------------------------------------
+    "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+            defaultOptions: {
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+        }),
+
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
     // posted vs $0.07/$0.34) and is credit-eligible.
@@ -193,10 +231,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { provider: { sort: "price" } },
         }),
 
-    // -- Inception Labs (Mercury) -------------------------------------------
+    // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>
-        createInceptionModelConfig({
-            model: "mercury-2",
+        createOpenRouterModelConfig({
+            model: "inception/mercury-2",
+            defaultOptions: {
+                provider: {
+                    only: ["Inception"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
@@ -217,6 +261,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/kimi-k2p7-code": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p7-code",
+        }),
+    "accounts/fireworks/models/kimi-k3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k3",
         }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
@@ -263,9 +311,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-opus-4-8": () =>
+    "claude-opus-5": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-8",
+            model: "global.anthropic.claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>
@@ -305,6 +353,20 @@ export const portkeyConfig: PortkeyConfigMap = {
     "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
         "gemini-3.6-flash",
         "google-vertex/global",
+    ),
+
+    // -- Google Vertex AI (dedicated Gemini Search services) -----------------
+    "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "global",
+    ),
+    "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
+        "gemini-3.5-flash-lite",
+        "global",
+    ),
+    "vertex/gemini-3.6-flash": createVertexGeminiConfig(
+        "gemini-3.6-flash",
+        "global",
     ),
 
     // -- Perplexity -----------------------------------------------------------
@@ -372,9 +434,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
-    "stepfun/step-3.7-flash": () =>
-        createOpenRouterModelConfig({
-            model: "stepfun/step-3.7-flash",
+
+    // -- DeepInfra (StepFun) --------------------------------------------------
+    "stepfun-ai/Step-3.7-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "stepfun-ai/Step-3.7-Flash",
         }),
 
     // -- OVHcloud -------------------------------------------------------------

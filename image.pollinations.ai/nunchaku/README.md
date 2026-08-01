@@ -39,7 +39,7 @@ Vast runs after a container restart to restore both supervised services.
 ## Verify before traffic cutover
 
 A healthy `/docs` response and registry heartbeat are control-plane checks;
-they do not prove that `gen.pollinations.ai` can reach the tunnel. Fireworks can
+they do not prove that `gen.pollinations.ai` can reach the tunnel. Replicate can
 otherwise hide a broken Vast route.
 
 Run the end-to-end canary on the Vast host with a valid Pollinations API key:
@@ -50,7 +50,11 @@ POLLINATIONS_API_KEY=... bash verify-vast.sh
 
 The canary creates a unique uncached prompt, generates it directly on Vast and
 through the public Flux route with the same seed, and compares decoded pixels.
-Do not destroy the old worker until this passes on the replacement.
+Do not change production routing until this passes and a human explicitly
+approves the promotion. After cutover, confirm real production requests are
+served by the replacement, then drain and immediately destroy the old worker.
+The fleet-wide qualification and approval policy is documented in
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
 ## Operations
 
@@ -67,6 +71,6 @@ The setup defaults are `QUEUE_LIMIT=3`, `MAX_PIXELS=1048576`, and
 environment variables in `setup-vast.sh`.
 
 `QUEUE_LIMIT=3` means one request can run while two wait. Additional requests
-receive 503 immediately so the gateway can use Fireworks rather than building a
-long user-facing queue. Keep Fireworks enabled as burst capacity; add a second
+receive 503 immediately so the gateway can use Replicate rather than building a
+long user-facing queue. Keep Replicate enabled as burst capacity; add a second
 Vast GPU only when its measured avoided fallback cost exceeds its hourly cost.

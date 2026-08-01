@@ -68,20 +68,16 @@ const putBodySchema = z
 // ---------------------------------------------------------------------------
 
 async function readNotice(kv: KVNamespace): Promise<StatusNotice | null> {
-    const raw = await kv.get(KV_KEY, "json");
+    const raw = (await kv.get(KV_KEY, "json")) as Record<
+        string,
+        unknown
+    > | null;
     if (!raw) return null;
-    if (
-        typeof raw === "object" &&
-        raw !== null &&
-        typeof raw.message === "string" &&
-        typeof raw.updatedAt === "string"
-    ) {
+    if (typeof raw.message === "string" && typeof raw.updatedAt === "string") {
         return {
             message: raw.message as string,
-            severity: SEVERITIES.includes(
-                (raw as Record<string, unknown>).severity as Severity,
-            )
-                ? ((raw as Record<string, unknown>).severity as Severity)
+            severity: SEVERITIES.includes(raw.severity as Severity)
+                ? (raw.severity as Severity)
                 : "warning",
             linkUrl: typeof raw.linkUrl === "string" ? raw.linkUrl : undefined,
             linkLabel:

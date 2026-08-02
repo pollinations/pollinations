@@ -75,11 +75,17 @@ export function SiteHeader() {
     return (
         <header
             ref={headerRef}
-            className={`sticky top-0 z-30 bg-app-bg py-4 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 sm:py-5 motion-reduce:transition-none ${
-                scrolled ? "shadow-well" : ""
-            } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
+            className={`sticky top-0 z-30 bg-transparent py-4 transition-transform duration-300 focus-within:translate-y-0 sm:py-5 motion-reduce:transition-none ${
+                hidden ? "-translate-y-full" : "translate-y-0"
+            }`}
         >
-            <div className={SHELL}>
+            <div
+                aria-hidden="true"
+                className={`site-header-dissolve pointer-events-none absolute inset-x-0 top-0 h-40 transition-opacity duration-300 motion-reduce:transition-none ${
+                    scrolled && !hidden ? "opacity-100" : "opacity-0"
+                }`}
+            />
+            <div className={`${SHELL} relative z-10`}>
                 <div
                     className={`${GUTTER} flex items-center justify-between gap-4 sm:gap-6`}
                 >

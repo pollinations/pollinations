@@ -53,9 +53,9 @@ export function useHideOnScroll({
 }
 
 /**
- * True once the page has moved at all. Used to add elevation to the header
- * only while it is actually overlapping content — at rest it should be
- * indistinguishable from the desk it sits on.
+ * True once the page has moved at all. Used to reveal the desk-colored
+ * dissolve only while the transparent header overlaps content — at rest the
+ * header remains indistinguishable from the desk it sits on.
  */
 export function useScrolled(at = 4): boolean {
     const [scrolled, setScrolled] = useState(false);

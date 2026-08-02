@@ -10,6 +10,16 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* ── Header dissolve ──────────────────────────────────────────────────
+   The sticky navigation has no bar, rule or shadow. Once it overlaps page
+   content, this desk-colored veil lets that content dissolve naturally behind
+   the controls. A mask keeps the fade theme-aware without interpolating the
+   desk colour toward transparent black. */
+.site-header-dissolve {
+    background: var(--polli-color-app-bg);
+    mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 100%);
+}
+
 /* The hero scene is positioned and dips below its section, so every later
    sibling needs a position too — a positioned element paints above earlier
    positioned ones in DOM order, which puts sections over the fading art

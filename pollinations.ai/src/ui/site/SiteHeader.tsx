@@ -75,23 +75,33 @@ export function SiteHeader() {
     return (
         <header
             ref={headerRef}
-            className={`sticky top-0 z-30 bg-app-bg py-5 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none ${
+            className={`sticky top-0 z-30 bg-app-bg py-4 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 sm:py-5 motion-reduce:transition-none ${
                 scrolled ? "shadow-well" : ""
             } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
         >
             <div className={SHELL}>
                 <div
-                    className={`${GUTTER} flex items-center justify-between gap-6`}
+                    className={`${GUTTER} flex items-center justify-between gap-4 sm:gap-6`}
                 >
-                    <div className="flex items-center gap-9">
+                    <div className="flex min-w-0 items-center gap-9">
                         <Link
                             to="/"
                             className="flex items-center text-theme-text-strong"
                             aria-label="pollinations.ai — home"
                         >
-                            <BrandLockup height={30} label="" />
+                            <BrandLockup
+                                variant="mark"
+                                height={32}
+                                label=""
+                                className="sm:hidden"
+                            />
+                            <BrandLockup
+                                height={30}
+                                label=""
+                                className="hidden sm:inline-block"
+                            />
                         </Link>
-                        <nav className="hidden gap-1.5 md:flex">
+                        <nav className="hidden gap-1.5 lg:flex">
                             {NAV.map((item) => (
                                 <TabButton
                                     key={item.to}
@@ -113,7 +123,7 @@ export function SiteHeader() {
                                 href={item.href}
                                 variant="ghost"
                                 active={false}
-                                className="hidden sm:inline-flex"
+                                className="hidden xl:inline-flex"
                             >
                                 {item.label} ↗
                             </TabButton>
@@ -121,13 +131,13 @@ export function SiteHeader() {
                         <Button
                             as="a"
                             href="https://enter.pollinations.ai"
-                            className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
+                            className="hidden bg-brand-dark text-surface-opaque hover:bg-brand-dark sm:inline-flex"
                         >
                             Dashboard ↗
                         </Button>
-                        {/* Below md the nav row is gone and below sm the
-                            outbound links go too, which left a phone with no
-                            way to reach three of the four pages.
+                        {/* Below lg the nav row is gone, and Docs/GitHub wait
+                            until xl. Below sm, Dashboard moves into the menu
+                            too, leaving the mark and menu button room to fit.
 
                             Button, not IconButton: IconButton takes a closed
                             prop set, so aria-expanded/aria-controls are
@@ -142,7 +152,7 @@ export function SiteHeader() {
                             // stretches to fill the flex box and drags the
                             // button's width down with it, which lands under
                             // the 44px touch target.
-                            className="h-11 w-11 min-w-11 p-0 [&>svg]:size-6 md:hidden"
+                            className="h-11 w-11 min-w-11 p-0 [&>svg]:size-6 lg:hidden"
                         >
                             {menuOpen ? <XIcon /> : <MenuIcon />}
                         </Button>
@@ -150,10 +160,10 @@ export function SiteHeader() {
                 </div>
 
                 {menuOpen && (
-                    <div className={`${GUTTER} md:hidden`}>
-                        {/* Every destination, including the ones still in the
-                            bar at sm — a menu that lists some of them is
-                            harder to trust than one that lists all. */}
+                    <div className={`${GUTTER} lg:hidden`}>
+                        {/* Every destination, including Dashboard when it is
+                            still in the bar — a menu that lists some of them
+                            is harder to trust than one that lists all. */}
                         <nav
                             id="site-menu"
                             className="mt-4 flex flex-col gap-1 rounded-2xl bg-surface-opaque p-3 shadow-well"
@@ -183,6 +193,15 @@ export function SiteHeader() {
                                     {item.label} ↗
                                 </TabButton>
                             ))}
+                            <TabButton
+                                as="a"
+                                href="https://enter.pollinations.ai"
+                                variant="ghost"
+                                active={false}
+                                className="h-11 justify-start px-4"
+                            >
+                                Dashboard ↗
+                            </TabButton>
                         </nav>
                     </div>
                 )}

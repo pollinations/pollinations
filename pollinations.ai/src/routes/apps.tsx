@@ -57,8 +57,8 @@ function OpenPill({ children }: { children: string }) {
 }
 
 /**
- * One row of pills. The label sits in a fixed column so all three axes start
- * on the same left edge — three unlabelled rows read as one long list.
+ * One row of pills on wider screens. On phones the label takes its own line so
+ * the controls keep the full content width and remain comfortable touch targets.
  */
 function FilterAxis<T extends string>({
     label,
@@ -74,17 +74,18 @@ function FilterAxis<T extends string>({
     onToggle: (value: T) => void;
 }) {
     return (
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-            <PixelLabel variant="chrome" className="w-20 shrink-0">
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-baseline sm:gap-x-3">
+            <PixelLabel variant="chrome" className="w-auto shrink-0 sm:w-20">
                 {label}
             </PixelLabel>
-            <div className="flex flex-1 flex-wrap gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:flex-1">
                 {values.map((value) => (
                     <TabButton
                         key={value}
                         size="sm"
                         active={selected.includes(value)}
                         onClick={() => onToggle(value)}
+                        className="min-h-11"
                     >
                         {labels[value]}
                     </TabButton>
@@ -156,9 +157,9 @@ function AppsPage() {
         });
 
     const [lead, ...strip] = spotlight;
-    // Paging beats a hard cap: "the first 60 of 818" told you the other 758
-    // existed and gave you no way to reach them.
-    const PAGE = 60;
+    // A short first page keeps the one-column phone view browseable; Show more
+    // still makes the whole directory reachable without a separate paginator.
+    const PAGE = 18;
     const [shown, setShown] = useState(PAGE);
     const visible = filtered.slice(0, shown);
 
@@ -268,8 +269,11 @@ function AppsPage() {
                     {/* `q` was validated, round-tripped through the URL and
                         filtered on, with nothing able to set it — the search
                         worked only if you hand-edited the address bar. */}
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-                        <PixelLabel variant="chrome" className="w-20 shrink-0">
+                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-baseline sm:gap-x-3">
+                        <PixelLabel
+                            variant="chrome"
+                            className="w-auto shrink-0 sm:w-20"
+                        >
                             Search
                         </PixelLabel>
                         <Input
@@ -288,7 +292,7 @@ function AppsPage() {
                                     }),
                                 })
                             }
-                            className="max-w-xs flex-1"
+                            className="min-h-11 w-full max-w-xs sm:flex-1"
                         />
                     </div>
                     <FilterAxis

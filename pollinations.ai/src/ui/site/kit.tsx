@@ -32,8 +32,8 @@ import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
  * `md:px-18` are the same property, the breakpoint wins, and the outer inset
  * silently vanishes.
  */
-export const SHELL = "mx-auto w-full max-w-[1240px] px-6";
-export const GUTTER = "px-8 md:px-18";
+export const SHELL = "mx-auto w-full max-w-[1240px] px-4 sm:px-6";
+export const GUTTER = "px-4 sm:px-8 md:px-18";
 
 const GRID_MIN = {
     /** Four across: short "on the way" notes. */
@@ -171,7 +171,7 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
                 {/* leading-[1.08], not leading-tight: at 7xl a wrapped title
                     ("Every model, one wallet.") opened a visible gap between
                     its two lines. */}
-                <h1 className="font-heading text-5xl leading-[1.08] text-theme-text-strong lg:text-7xl">
+                <h1 className="font-heading text-4xl leading-[1.08] text-theme-text-strong sm:text-5xl lg:text-7xl">
                     {title}
                 </h1>
                 {subtitle && (
@@ -180,7 +180,7 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
                     // fade into the painted scenery. Every intro carries one
                     // <strong> — the claim the page stands on — styled here so
                     // routes write bare tags.
-                    <p className="max-w-lg text-lg leading-relaxed text-theme-text-base [&_strong]:text-theme-text-strong">
+                    <p className="max-w-lg text-base leading-relaxed text-theme-text-base sm:text-lg [&_strong]:text-theme-text-strong">
                         {subtitle}
                     </p>
                 )}
@@ -220,7 +220,7 @@ export function Hero({
     children: ReactNode;
 }) {
     return (
-        <section className="-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:items-start">
+        <section className="-mx-4 -mt-10 relative sm:-mx-8 sm:-mt-16 md:-mx-18 lg:flex lg:items-start">
             {/* The scene is a fixed-height backdrop, decoupled from the text.
                 Tying it to the section meant short pages got small art —
                 Play's robot shrank to its two lines of copy. Now every page
@@ -236,9 +236,9 @@ export function Hero({
                 height={854}
                 // The LCP element on every page — never lazy.
                 fetchPriority="high"
-                className="hero-scene pointer-events-none h-56 w-full select-none object-cover object-right-bottom sm:h-72 lg:absolute lg:top-0 lg:h-[max(560px,calc(100%+120px))]"
+                className="hero-scene pointer-events-none h-40 w-full select-none object-cover object-right-bottom sm:h-72 lg:absolute lg:top-0 lg:h-[max(560px,calc(100%+120px))]"
             />
-            <div className="relative flex w-full min-w-0 flex-col gap-8 px-8 pb-2 md:px-18 lg:max-w-[58%] lg:py-16">
+            <div className="relative flex w-full min-w-0 flex-col gap-6 px-4 pb-2 sm:gap-8 sm:px-8 md:px-18 lg:max-w-[58%] lg:py-16">
                 {children}
             </div>
         </section>
@@ -273,10 +273,10 @@ export function StatRow({
         : stats.map((stat) => ({ ...stat, key: stat.label }));
 
     return (
-        <dl className="mt-2 flex flex-wrap gap-10" aria-busy={loading}>
+        <dl className="mt-2 flex flex-wrap gap-6 sm:gap-10" aria-busy={loading}>
             {slots.map((slot) => (
                 <div key={slot.key} className="flex flex-col gap-1">
-                    <dt className="font-heading text-4xl text-theme-text-soft tabular-nums">
+                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums sm:text-4xl">
                         {slot.value ?? (
                             <span
                                 aria-hidden="true"
@@ -309,7 +309,7 @@ export function SectionHeader({
         <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="flex max-w-2xl flex-col gap-3">
                 <PixelLabel variant="eyebrow">{eyebrow}</PixelLabel>
-                <h2 className="font-heading text-4xl leading-tight text-theme-text-strong">
+                <h2 className="font-heading text-3xl leading-tight text-theme-text-strong sm:text-4xl">
                     {title}
                 </h2>
                 {subtitle && (
@@ -500,12 +500,12 @@ export function CalloutPanel({
     return (
         <section
             className={cn(
-                "flex flex-wrap items-center justify-between gap-10 rounded-3xl px-10 py-12",
+                "flex flex-wrap items-center justify-between gap-8 rounded-3xl px-6 py-9 sm:gap-10 sm:px-10 sm:py-12",
                 tone === "dark" ? "dark bg-brand-dark" : "bg-theme-bg-active",
             )}
         >
             <div className="flex max-w-lg flex-col gap-2.5">
-                <h2 className="font-heading text-4xl leading-tight text-theme-text-strong">
+                <h2 className="font-heading text-3xl leading-tight text-theme-text-strong sm:text-4xl">
                     {title}
                 </h2>
                 <p className="leading-relaxed text-theme-text-strong/75">

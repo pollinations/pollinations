@@ -146,7 +146,8 @@ export const Models: FC<ModelsProps> = ({
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),

@@ -31,7 +31,9 @@ import {
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
+    type PricingInput,
     type Usage,
+    type UsageBilling,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -39,7 +41,9 @@ import {
     FALLBACK_TARGET_HEADER,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROVIDER_REPORTED_COST_HEADER,
     parseUsageHeaders,
+    USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type {
     EventType,
@@ -79,6 +83,7 @@ export type ModelUsage = {
     model: string;
     usage: Usage;
     output?: unknown;
+    providerReportedCost?: number;
 };
 
 type RequestTrackingData = {
@@ -105,9 +110,23 @@ type ResponseTrackingData = {
     price?: UsagePrice;
     /** What the serving model charges for this usage; bounds the owner reward. */
     servedPrice?: number;
-    // Per-rule billing adjustment breakdown for the billed generation. Absent on
-    // cache hits / not-billed paths, which return before cost calculation.
+    // Per-rule provider-cost adjustment breakdown. Absent when no independently
+    // knowable provider adjustment was incurred.
     adjustments?: BillingAdjustment[];
+    // Effective per-unit price sheet applied at billing time (cost variant
+    // merged, multiplier applied). The tracking event records this sheet so
+    // recorded rates always reproduce the billed totals.
+    priceDefinition?: PriceDefinition;
+    // Applied cost variant name (financial identity; modelUsed stays
+    // observational).
+    costVariant?: string;
+    // Separates a normal base-rate request from selector fallback failures.
+    costVariantStatus?: UsageBilling["costVariantStatus"];
+    // OpenRouter's own billed USD amount, when returned by the provider.
+    // This is reconciliation telemetry only and never changes user billing.
+    providerReportedCost?: number;
+    // Pollinations-calculated provider cost minus OpenRouter-reported cost.
+    providerCostDelta?: number;
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -117,6 +136,9 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
+        // Service layers register normalized request facts that affect
+        // pricing. Consumed once at billing time by selectCostVariant.
+        setPricingInput: (input: PricingInput) => void;
         /**
          * Handed to the fallback loop to append to. Nothing is written as the
          * calls fail: the block after next() owns every row this request
@@ -172,6 +194,7 @@ export const track = (eventType: EventType) =>
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
+        let pricingInput: PricingInput | undefined;
         /**
          * Every upstream call that failed, in the order they were tried.
          *
@@ -241,6 +264,9 @@ export const track = (eventType: EventType) =>
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
             },
+            setPricingInput: (input: PricingInput) => {
+                pricingInput = input;
+            },
             failedCalls,
         });
 
@@ -305,7 +331,8 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                     servedEntry?.definition,
-                    terminalAttemptModel,
+                    terminalAttemptModel ?? servedEntry?.id,
+                    pricingInput,
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
@@ -542,6 +569,7 @@ export async function trackResponse(
     response: Response,
     servedModelDefinition?: ModelDefinition,
     terminalAttemptModel?: string,
+    pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -604,7 +632,7 @@ export async function trackResponse(
         return notBilled({ modelUsed: resolvedModelRequested });
     }
 
-    const { modelUsage, contentFilterResults } =
+    const { modelUsage, output, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
@@ -614,22 +642,78 @@ export async function trackResponse(
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
+        // Missing token usage must never fabricate token charges, but some
+        // provider fees are independently knowable from the request/response
+        // (for example, Perplexity's flat per-request search fee).
+        const adjustmentOnlyBilling = calculateUsageBilling({
+            model: resolvedModelRequested,
+            usage: {},
+            servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+            quotedBy: requestTracking.modelDefinition,
+            output,
+            input: pricingInput,
+        });
+        const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
+        const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
+        if (hasKnownProviderCost || hasBillablePrice) {
+            return {
+                responseStatus: response.status,
+                cacheHit,
+                isBilledUsage: hasBillablePrice,
+                fallbackUsed,
+                ...adjustmentOnlyBilling,
+                modelUsed: modelCalled,
+                usage: {},
+                contentFilterResults,
+            };
+        }
         return notBilled({
             contentFilterResults,
-            modelUsed: resolvedModelRequested,
+            modelUsed: modelCalled,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
-    // for, so the invoice does not move because a fallback stepped in. Both
-    // still walk the billing rules together, so the event's adjustment maps
-    // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments, servedPrice } = calculateUsageBilling({
+    // for, so the invoice does not move because a fallback stepped in.
+    const {
+        cost,
+        price,
+        adjustments,
+        servedPrice,
+        priceDefinition,
+        costVariant,
+        costVariantStatus,
+    } = calculateUsageBilling({
         model: resolvedModelRequested,
         usage: modelUsage.usage,
         servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
         quotedBy: requestTracking.modelDefinition,
         output: modelUsage.output,
+        input: pricingInput,
     });
+    const providerReportedCost =
+        requestTracking.modelProvider === "openrouter"
+            ? modelUsage.providerReportedCost
+            : undefined;
+    const providerCostDelta =
+        providerReportedCost === undefined
+            ? undefined
+            : cost.totalCost - providerReportedCost;
+    if (
+        providerReportedCost !== undefined &&
+        providerCostDelta !== undefined &&
+        Math.abs(providerCostDelta) >
+            Math.max(0.000001, providerReportedCost * 0.01)
+    ) {
+        log.warn(
+            "OpenRouter cost mismatch for model {model}: calculated={calculatedCost}, provider={providerCost}, delta={delta}",
+            {
+                model: resolvedModelRequested,
+                calculatedCost: cost.totalCost,
+                providerCost: providerReportedCost,
+                delta: providerCostDelta,
+            },
+        );
+    }
     return {
         responseStatus: response.status,
         cacheHit,
@@ -639,6 +723,11 @@ export async function trackResponse(
         price,
         servedPrice,
         adjustments,
+        priceDefinition,
+        costVariant,
+        costVariantStatus,
+        providerReportedCost,
+        providerCostDelta,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -834,6 +923,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
+        costVariantStatus: responseTracking.costVariantStatus,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,
 
@@ -842,10 +933,17 @@ function createTrackingEvent({
         ...balanceTracking,
         ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        // Billed rows record the effective sheet resolved at billing time
+        // (cost variant merged); not-billed rows fall back to the base sheet.
+        ...priceToEventParams(
+            responseTracking.priceDefinition ??
+                requestTracking.modelPriceDefinition,
+        ),
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
+        providerReportedCost: responseTracking.providerReportedCost,
+        providerCostDelta: responseTracking.providerCostDelta,
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
@@ -893,7 +991,10 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     return false;
 }
 
-function extractUsageHeaders(response: Response): ModelUsage {
+function extractUsageHeaders(response: Response): ModelUsage | null {
+    if (response.headers.get(USAGE_MISSING_HEADER) === "true") {
+        return null;
+    }
     const modelUsed = response.headers.get("x-model-used");
     if (!modelUsed) {
         throw new Error(
@@ -904,7 +1005,20 @@ function extractUsageHeaders(response: Response): ModelUsage {
     return {
         model: modelUsed,
         usage,
+        providerReportedCost: parseProviderReportedCost(
+            response.headers.get(PROVIDER_REPORTED_COST_HEADER),
+        ),
     };
+}
+
+function parseProviderReportedCost(value: unknown): number | undefined {
+    const parsed =
+        typeof value === "string" && value.trim() !== ""
+            ? Number(value)
+            : value;
+    return typeof parsed === "number" && Number.isFinite(parsed) && parsed >= 0
+        ? parsed
+        : undefined;
 }
 
 async function extractResponseJsonOutput(
@@ -939,13 +1053,18 @@ function extractContentFilterHeaders(
 async function extractUsageAndContentFilterResultsHeaders(
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const modelUsage = extractUsageHeaders(response);
-    modelUsage.output = await extractResponseJsonOutput(response);
+    const output = await extractResponseJsonOutput(response);
+    if (modelUsage) {
+        modelUsage.output = output;
+    }
     return {
         modelUsage,
+        output,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
@@ -955,12 +1074,19 @@ async function extractUsageAndContentFilterResultsStream(
     servedModelId?: string,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
-        usage: CompletionUsageSchema.nullish(),
+        // Providers use different cost shapes: OpenRouter reports a number,
+        // while Perplexity reports an object with request_cost/total_cost.
+        // Preserve either shape here; reconciliation accepts only a valid
+        // numeric value below, and billing rules inspect the original event.
+        usage: CompletionUsageSchema.extend({
+            cost: z.unknown().nullish(),
+        }).nullish(),
         choices: z.array(
             z.object({
                 content_filter_results: ContentFilterResultSchema.nullish(),
@@ -977,6 +1103,7 @@ async function extractUsageAndContentFilterResultsStream(
 
     let model: string | undefined;
     let usage: CompletionUsage | undefined;
+    let providerReportedCost: number | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -1009,6 +1136,9 @@ async function extractUsageAndContentFilterResultsStream(
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
+            providerReportedCost = parseProviderReportedCost(
+                parseResult.data.usage.cost,
+            );
         }
     }
 
@@ -1025,16 +1155,20 @@ async function extractUsageAndContentFilterResultsStream(
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
             contentFilterResults,
         };
     }
 
+    const output = streamEvents.length > 0 ? { streamEvents } : undefined;
     return {
         modelUsage: {
             model: servedModel,
             usage: openaiUsageToUsage(usage),
-            output: streamEvents.length > 0 ? { streamEvents } : undefined,
+            output,
+            providerReportedCost,
         },
+        output,
         contentFilterResults,
     };
 }
@@ -1045,6 +1179,7 @@ async function extractUsageAndContentFilterResults(
     response: Response,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const contentType = response.headers.get("content-type") || "";

@@ -61,6 +61,10 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Named conditional pricing sheet selected for this billed request. */
+    costVariant?: string;
+    /** Outcome of conditional pricing selection for this billed request. */
+    costVariantStatus?: "base" | "selected" | "unknown" | "selector_error";
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     /**
@@ -112,6 +116,10 @@ export type TinybirdEvent = {
 
     // Totals
     totalCost: number;
+    /** OpenRouter's billed USD amount, when supplied by its response. */
+    providerReportedCost?: number;
+    /** Pollinations-calculated provider cost minus providerReportedCost. */
+    providerCostDelta?: number;
     totalPrice: number;
     devPrice?: number;
     markupRate?: number;

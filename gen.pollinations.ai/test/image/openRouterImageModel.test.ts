@@ -98,6 +98,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
             actualModel: "grok-imagine-pro",
+            providerReportedCost: 0.05,
             usage: { completionImageTokens: 1 },
         });
     });
@@ -231,6 +232,7 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana",
+            providerReportedCost: 0.0387027,
             usage: {
                 promptTextTokens: 9,
                 completionImageTokens: 1290,
@@ -281,6 +283,7 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-2",
+            providerReportedCost: 0.151254,
             usage: {
                 promptTextTokens: 12,
                 completionTextTokens: 12,
@@ -359,6 +362,7 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-2-lite",
+            providerReportedCost: 0.0336135,
             usage: {
                 promptTextTokens: 10,
                 completionReasoningTokens: 4,
@@ -409,6 +413,7 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-pro",
+            providerReportedCost: 0.240124,
             usage: {
                 promptTextTokens: 14,
                 completionReasoningTokens: 8,
@@ -617,6 +622,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
             actualModel: "seedream-pro",
+            providerReportedCost: 0.04,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -774,6 +780,7 @@ describe("OpenRouter Recraft vector", () => {
         expect(result.mimeType).toBe("image/svg+xml");
         expect(result.trackingData).toEqual({
             actualModel: "recraft-v4.1-vector",
+            providerReportedCost: 0.08,
             usage: { completionImageTokens: 1 },
         });
     });

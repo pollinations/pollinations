@@ -1,0 +1,34 @@
+{
+  "pr_number": 13020,
+  "title": "fix: surface catalog fetch failure instead of rendering empty models table",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/13020",
+  "merged_at": "2026-08-02T16:55:41Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- `fetchModelCatalog` now validates the parsed `/models` response and throws when it is empty, not an array, or every entry is missing a `name`/`id` — instead of silently resolving with unusable data.\n- That throw routes through the existing `catalogError` handling in `models.tsx`, so the dashboard shows **\"Could not load models.\"** instead of a blank table with no indication anything failed.\n- Adds `parseModelCatalogResponse` unit tests covering valid, non-array, empty, and all-unidentifiable-entries responses.\n\n## Why\nAcross #12289 and #12870, the recurring symptom was a **silently empty models table** — page skeleton loads, console is clean, no error banner — traced each time to a different edge/DNS failure (Cuba DNS, SIN edge timeout, Italy edge returning malformed 200s). The #12870 investigation flagged the actual gap: `getModelPricesFromCatalog`'s `.filter(Boolean)` swallows any unusable response with no signal to the user. This does not (and cannot) fix the underlying regional edge/DNS issue — that is infra-side — but it closes the frontend gap so any future recurrence is visible instead of silent.\n\nAddresses #12289, #12870\n\n## Test plan\n- [x] `npx vitest run test/model-catalog.test.ts` — 4/4 passing\n- [x] `npx tsc --noEmit` on the frontend project — clean\n- [ ] Manual check on a deploy preview: confirm the models page still renders normally against the live catalog",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more silent shelves",
+    "blurb": "When the model catalog takes a scenic route through the edge network, the dashboard now says so. Empty tables have been promoted from mysterious to usefully loud.",
+    "summary": "The dashboard now validates the `/models` catalog response and shows “Could not load models.” when it is empty, malformed, or contains no entries with a `name` or `id`, rather than rendering a blank models table.",
+    "impact": "Users encountering regional edge, DNS, timeout, or malformed-response issues will get a clear loading error and know the catalog did not arrive, while valid catalogs continue to render normally.",
+    "keywords": [
+      "dashboard",
+      "models",
+      "catalog",
+      "error-handling",
+      "frontend",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian bee in a cozy garden-library, inspecting an empty model shelf with a magnifying glass while a retro CRT terminal displays a clear “Could not load models.” notice. A few healthy labeled code-plants remain nearby to show that the catalog is normally full of useful things; the scene represents replacing a silently blank table with an understandable error signal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, holding a magnifying glass beside an empty garden-library shelf while a retro CRT monitor clearly reads “COULD NOT LOAD MODELS.” Healthy code-plants and pixel flowers grow in lime green (#ecf874) pots nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with Polli looking calmly amused rather than alarmed."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-02/PR-13020.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, holding a magnifying glass beside an empty garden-library shelf while a retro CRT monitor clearly reads “COULD NOT LOAD MODELS.” Healthy code-plants and pixel flowers grow in lime green (#ecf874) pots nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with Polli looking calmly amused rather than alarmed."
+  },
+  "generated_at": "2026-08-02T16:56:40.847035+00:00"
+}

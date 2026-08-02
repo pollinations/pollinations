@@ -1,13 +1,13 @@
 # GPU Instances
 
-Last updated: 2026-07-31
+Last updated: 2026-08-02
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
-| Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
@@ -146,15 +146,33 @@ sees one stable backend URL.
 
 | Worker | Vast instance | Region | Listed rate | Status |
 |--------|---------------|--------|-------------|--------|
-| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | STOPPED 2026-07-27 — overnight rollback |
-| zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
 | zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
+| zimage-vast-03 | 46598648 | Estonia | $0.391111/hr | ACTIVE — production (promoted 2026-08-02) |
 
-The active two-worker fleet costs `$0.773333/hr`, saving `$0.071111/hr` or
-about `$51.20` per 30-day month versus the previous pair. Stopped instance
-`45311852` retains its 80GB disk for rollback and incurs `$0.022222/hr` in
-storage charges (about `$16/month`) until destroyed. Restart is subject to GPU
-availability on its host.
+The active two-worker fleet costs `$0.742222/hr`. Instance `46598648` replaced
+`45313816`, saving `$0.031111/hr` or `$22.40` per 30-day month; the replaced
+instance was destroyed immediately after production verification. Compared
+with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
+30-day month. Total live Vast fleet burn after this cleanup was
+`$1.572222/hr`.
+
+**Replacement validation (2026-08-02):**
+
+- Vast reliability was `0.998151`; the replacement preserved a separate
+  machine and moved the replica from South Korea to Estonia.
+- A supervised restart restored local health in 14 seconds, external health in
+  16 seconds, and all four Cloudflare Tunnel connections.
+- Authentication rejection, 512x512, 1024x1024, and 768x1152 generation
+  passed; fixed-seed output was byte-identical through the local and external
+  routes.
+- Sustained qualification completed 135 images in 123.5 seconds with zero
+  errors and 3.75-second p95 latency.
+- Production verification observed 14 real requests on the replacement: 10
+  successful images, four expected 422 validation responses, zero 5xx, zero
+  tunnel request failures, and zero GPU/server errors. Five shared-hostname
+  health probes also passed after the old instance was destroyed.
+- The Estonia host intermittently logged DNS refresh timeouts, but its four
+  QUIC connections stayed registered and recovered cleanly after restart.
 
 **Canary validation (2026-07-27):**
 

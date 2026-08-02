@@ -55,13 +55,7 @@ type CachedRegistry = {
     registry: GenerationModelRegistry;
 };
 
-type PendingRegistryLoad = {
-    dbBinding: CloudflareBindings["DB"] | undefined;
-    promise: Promise<GenerationModelRegistry>;
-};
-
 let cachedRegistry: CachedRegistry | null = null;
-let pendingRegistryLoad: PendingRegistryLoad | null = null;
 
 function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
@@ -178,40 +172,28 @@ async function loadGenerationModelRegistry(
 export async function getGenerationModelRegistry(
     env: Pick<CloudflareBindings, "DB">,
 ): Promise<GenerationModelRegistry> {
-    const now = Date.now();
     if (
         cachedRegistry &&
         cachedRegistry.dbBinding === env.DB &&
-        cachedRegistry.expiresAt > now
+        cachedRegistry.expiresAt > Date.now()
     ) {
         return cachedRegistry.registry;
     }
 
-    if (!pendingRegistryLoad || pendingRegistryLoad.dbBinding !== env.DB) {
-        const dbBinding = env.DB;
-        pendingRegistryLoad = {
-            dbBinding,
-            promise: loadGenerationModelRegistry(dbBinding)
-                .then((registry) => {
-                    cachedRegistry = {
-                        dbBinding,
-                        expiresAt: Date.now() + REGISTRY_TTL_MS,
-                        registry,
-                    };
-                    return registry;
-                })
-                .finally(() => {
-                    if (pendingRegistryLoad?.dbBinding === dbBinding) {
-                        pendingRegistryLoad = null;
-                    }
-                }),
-        };
-    }
-
-    return pendingRegistryLoad.promise;
+    // Deliberately no in-flight promise cache: sharing one pending promise
+    // across requests hands request A's D1 I/O to requests B..N, and if A is
+    // cancelled the promise can never settle, wedging the isolate for good.
+    // Racing a few cheap SELECTs on cache expiry is the better trade.
+    const dbBinding = env.DB;
+    const registry = await loadGenerationModelRegistry(dbBinding);
+    cachedRegistry = {
+        dbBinding,
+        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        registry,
+    };
+    return registry;
 }
 
 export function resetGenerationModelRegistryCache(): void {
     cachedRegistry = null;
-    pendingRegistryLoad = null;
 }

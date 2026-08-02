@@ -1,0 +1,33 @@
+{
+  "pr_number": 13016,
+  "title": "chore: update app metrics 2026-08-02",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13016",
+  "merged_at": "2026-08-02T05:09:01Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got measured",
+    "blurb": "The bot made its daily lap through the app garden, checking which seedlings are thriving and which ones need a little sun.",
+    "summary": "Updated the app directory metrics, health-check results, and GREENHOUSE status snapshot for 2026-08-02.",
+    "impact": "Community builders and maintainers have a current view of listed app activity and health without changing app behavior.",
+    "keywords": [
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse",
+      "community"
+    ],
+    "visual_concept": "A cozy greenhouse maintenance scene: Polli acts as a tiny garden inspector with a clipboard, checking code-plants labeled as community apps while a CRT monitor robot displays simple green health indicators. The visual represents an automated daily status refresh rather than a new product capability.",
+    "image_prompt": "Cozy pixel art scene inside a warm community app greenhouse, where Polli—the cute yellow-and-brown striped bee with pink rectangular blush, black oval eyes, light blue translucent wings, and a tiny gardener visor—checks lime green (#ecf874) code-plants with a clipboard while a friendly CRT monitor robot shows small healthy sprout indicators. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"DAILY CHECK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-02/PR-13016.jpg",
+    "prompt": "Cozy pixel art scene inside a warm community app greenhouse, where Polli—the cute yellow-and-brown striped bee with pink rectangular blush, black oval eyes, light blue translucent wings, and a tiny gardener visor—checks lime green (#ecf874) code-plants with a clipboard while a friendly CRT monitor robot shows small healthy sprout indicators. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"DAILY CHECK\"."
+  },
+  "generated_at": "2026-08-02T05:09:55.327249+00:00"
+}

@@ -108,7 +108,12 @@ export async function fetchModelCatalog(
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
         .then(({ config }) =>
-            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
+            // Without a timeout a stalled edge leaves this promise pending
+            // forever, which renders as an empty table with no error.
+            fetch(`${config.genBaseUrl}/models`, {
+                cache: "no-store",
+                signal: AbortSignal.timeout(15_000),
+            }),
         )
         .then((response) => {
             if (!response.ok) {

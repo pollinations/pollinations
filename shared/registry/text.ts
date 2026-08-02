@@ -200,8 +200,8 @@ export const TEXT_SERVICES = {
         priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(2.0),
-            promptCachedTokens: perMillion(0.25),
-            promptCacheWriteTokens: perMillion(3.125),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
             completionTextTokens: perMillion(12.0),
         },
         title: "ChatGPT 5.6 Terra",
@@ -223,8 +223,8 @@ export const TEXT_SERVICES = {
         priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(0.2),
-            promptCachedTokens: perMillion(0.1),
-            promptCacheWriteTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.02),
+            promptCacheWriteTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.2),
         },
         title: "ChatGPT 5.6 Luna",

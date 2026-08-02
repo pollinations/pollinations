@@ -263,7 +263,8 @@ export function CommunityEndpoints({
             <CommunityEndpointToggleConfirmation
                 endpoint={toggling}
                 onConfirm={() => {
-                    void handleToggle(toggling!);
+                    if (!toggling) return;
+                    void handleToggle(toggling);
                     setToggling(null);
                 }}
                 onCancel={() => setToggling(null)}

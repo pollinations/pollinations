@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
+import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type CommunityEndpoint,
@@ -38,6 +39,7 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [togglig, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
@@ -216,7 +218,7 @@ export function CommunityEndpoints({
                                 key={endpoint.id}
                                 endpoint={endpoint}
                                 isToggling={togglingId === endpoint.id}
-                                onToggle={() => void handleToggle(endpoint)}
+                                onToggle={() => setToggling(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />
@@ -257,6 +259,11 @@ export function CommunityEndpoints({
                 endpoint={deleting}
                 onConfirm={() => void handleDelete()}
                 onCancel={() => setDeleting(null)}
+            />
+            <CommunityEndpointToggleConfirmation
+                endpoint={toggling}
+                onConfirm={() => { void handleToggle(toggling!); setToggling(null); }}
+                onCancel={() => setToggling(null)}
             />
         </>
     );

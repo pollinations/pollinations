@@ -34,20 +34,20 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],
-    ] satisfies [ModelName, number][])(
-        "%s uses a strict greater-than boundary",
-        (model, threshold) => {
-            expect(
-                bill(model, { promptTextTokens: threshold - 1 }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold + 1 }).costVariant,
-            ).toBe("long_context");
-        },
-    );
+    ] satisfies [
+        ModelName,
+        number,
+    ][])("%s uses a strict greater-than boundary", (model, threshold) => {
+        expect(
+            bill(model, { promptTextTokens: threshold - 1 }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold + 1 }).costVariant,
+        ).toBe("long_context");
+    });
 
     it("Gemini uses Google's strict greater-than 200K boundary", () => {
         expect(
@@ -110,14 +110,11 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_32k"],
         [256_001, "context_256k"],
-    ] as const)(
-        "Qwen3.7 Flash selects the expected sheet at %s prompt tokens",
-        (promptTextTokens, expectedVariant) => {
-            expect(
-                bill("qwen3.7-flash", { promptTextTokens }).costVariant,
-            ).toBe(expectedVariant);
-        },
-    );
+    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
+            expectedVariant,
+        );
+    });
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
@@ -216,32 +213,35 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 10, 1, 12.5, 45],
         ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
         ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
-    ] satisfies [ModelName, number, number, number, number][])(
-        "%s applies every Azure long-context meter to the full request",
-        (model, input, cached, cacheWrite, output) => {
-            const billing = bill(model, {
-                promptTextTokens: 272_001,
-                promptCachedTokens: 1_000,
-                promptCacheWriteTokens: 1_000,
-                completionTextTokens: 1_000,
-            });
+    ] satisfies [
+        ModelName,
+        number,
+        number,
+        number,
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        const billing = bill(model, {
+            promptTextTokens: 272_001,
+            promptCachedTokens: 1_000,
+            promptCacheWriteTokens: 1_000,
+            completionTextTokens: 1_000,
+        });
 
-            expect(billing.costVariant).toBe("long_context");
-            expect(billing.priceDefinition).toMatchObject({
-                promptTextTokens: (input * 0.5) / 1e6,
-                promptCachedTokens: (cached * 0.5) / 1e6,
-                promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-                completionTextTokens: (output * 0.5) / 1e6,
-            });
-            expect(billing.cost.totalCost).toBeCloseTo(
-                272_001 * (input / 1e6) +
-                    1_000 * (cached / 1e6) +
-                    1_000 * (cacheWrite / 1e6) +
-                    1_000 * (output / 1e6),
-                12,
-            );
-        },
-    );
+        expect(billing.costVariant).toBe("long_context");
+        expect(billing.priceDefinition).toMatchObject({
+            promptTextTokens: (input * 0.5) / 1e6,
+            promptCachedTokens: (cached * 0.5) / 1e6,
+            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
+            completionTextTokens: (output * 0.5) / 1e6,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            272_001 * (input / 1e6) +
+                1_000 * (cached / 1e6) +
+                1_000 * (cacheWrite / 1e6) +
+                1_000 * (output / 1e6),
+            12,
+        );
+    });
 
     it("counts every prompt token modality, but not audio seconds", () => {
         expect(
@@ -567,6 +567,74 @@ describe("selection safety and composition", () => {
             cost: 0.1,
         });
         expect(billing.adjustments[0].price).toBeCloseTo(0.075, 12);
+    });
+
+    it("keeps fallback cost on the served model and price on the quoted model", () => {
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
+                cost: { promptTextTokens: 2e-6 },
+                priceMultiplier: 3,
+            }),
+            quotedBy: fakeModel({
+                cost: { promptTextTokens: 5e-6 },
+                priceMultiplier: 2,
+            }),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.002, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.006, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+    });
+
+    it("reports a served-side selector failure while preserving the quoted price variant", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
+                costVariants: { served_premium: { promptTextTokens: 9e-6 } },
+                selectCostVariant: () => {
+                    throw new Error("boom");
+                },
+            }),
+            quotedBy: fakeModel({
+                costVariants: { quoted_premium: { promptTextTokens: 7e-6 } },
+                selectCostVariant: () => "quoted_premium",
+            }),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.001, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.007, 12);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(7e-6, 15);
+        expect(billing.costVariant).toBe("quoted_premium");
+        expect(billing.costVariantStatus).toBe("selector_error");
+        expect(warn).toHaveBeenCalledOnce();
+    });
+
+    it("continues reporting a quoted-side selector failure across a fallback", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({}),
+            quotedBy: fakeModel({
+                cost: { promptTextTokens: 5e-6 },
+                costVariants: { quoted_premium: { promptTextTokens: 9e-6 } },
+                selectCostVariant: () => {
+                    throw new Error("boom");
+                },
+            }),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.001, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.005, 12);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(5e-6, 15);
+        expect(billing.costVariant).toBeUndefined();
+        expect(billing.costVariantStatus).toBe("selector_error");
+        expect(warn).toHaveBeenCalledOnce();
     });
 });
 

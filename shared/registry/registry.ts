@@ -313,9 +313,8 @@ export function calculateBillingAdjustments(
     return adjustments;
 }
 
-// Full billing for one generation, computed in a single pass: the adjustment
-// rules are walked exactly once (so clamp/absence warnings log once per
-// request) and cost, price, and the per-rule breakdown all derive from it.
+// Full billing for one model definition. Fallbacks rate the served and quoted
+// definitions independently because their costs, prices, and rules may differ.
 export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
@@ -443,17 +442,25 @@ export function calculateUsageBilling({
     }
     // Rated independently rather than rescaled: see rateAgainst.
     const quoted = rateAgainst(model, usage, quotedBy, output, input);
+    const selectionStatuses = [
+        served.costVariantStatus,
+        quoted.costVariantStatus,
+    ];
+    const costVariantStatus = selectionStatuses.includes("selector_error")
+        ? "selector_error"
+        : selectionStatuses.includes("unknown")
+          ? "unknown"
+          : quoted.costVariantStatus;
     return {
         cost: served.cost,
         adjustments: served.adjustments,
         price: quoted.price,
         servedPrice: served.price.totalPrice,
-        // The rate sheet telemetry records has to reproduce what was billed,
-        // and what was billed is the quoted listing — so the variant identity
-        // follows the quote, not the upstream that happened to serve it.
+        // The rate sheet and variant identify what the caller was billed. The
+        // status is a health signal, so a failure on either side takes priority.
         priceDefinition: quoted.priceDefinition,
         costVariant: quoted.costVariant,
-        costVariantStatus: quoted.costVariantStatus,
+        costVariantStatus,
     };
 }
 

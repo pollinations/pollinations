@@ -274,6 +274,7 @@ function createHeaderApp(
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
     model: ModelName = "openai",
+    servedModelEntry?: GenerationModelEntry,
 ) {
     const app = new Hono<Env>();
 
@@ -298,6 +299,7 @@ function createHeaderApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
+        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
     app.post(
@@ -317,6 +319,19 @@ function createHeaderApp(
     );
 
     return app;
+}
+
+function createStaticEntry(model: ModelName): GenerationModelEntry {
+    const definition = getRegistryModelDefinition(model);
+    return {
+        id: model,
+        aliases: definition.aliases,
+        eventType: "generate.text",
+        supportedEndpoints: ["/v1/chat/completions"],
+        definition,
+        info: modelInfoFromDefinition(model, definition),
+        visible: true,
+    };
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -568,6 +583,128 @@ describe("tracking observability", () => {
             },
         });
         expect(consumePollen).toHaveBeenCalledWith(0.005);
+    });
+
+    it("bills the quoted flat fee when a fallback without adjustments served", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-missing": "true",
+                "x-model-used": "openai",
+                "x-fallback-target": "config.targets[1]",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            "perplexity-fast",
+            createStaticEntry("openai"),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "perplexity-fast",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            isBilledUsage: true,
+            fallbackUsed: true,
+            modelUsed: "openai",
+            totalCost: 0,
+            totalPrice: 0.005,
+            devPrice: 0.005,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0.005);
+    });
+
+    it("records a served flat cost without marking a zero-price fallback as billed", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-missing": "true",
+                "x-model-used": "perplexity-fast",
+                "x-fallback-target": "config.targets[1]",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            "openai",
+            createStaticEntry("perplexity-fast"),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            isBilledUsage: false,
+            fallbackUsed: true,
+            modelUsed: "perplexity-fast",
+            totalCost: 0.005,
+            totalPrice: 0,
+            devPrice: 0,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("records and deducts the effective long-context price sheet", async () => {

@@ -110,8 +110,8 @@ type ResponseTrackingData = {
     price?: UsagePrice;
     /** What the serving model charges for this usage; bounds the owner reward. */
     servedPrice?: number;
-    // Per-rule billing adjustment breakdown for the billed generation. Absent on
-    // cache hits / not-billed paths, which return before cost calculation.
+    // Per-rule provider-cost adjustment breakdown. Absent when no independently
+    // knowable provider adjustment was incurred.
     adjustments?: BillingAdjustment[];
     // Effective per-unit price sheet applied at billing time (cost variant
     // merged, multiplier applied). The tracking event records this sheet so
@@ -331,7 +331,7 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                     servedEntry?.definition,
-                    terminalAttemptModel,
+                    terminalAttemptModel ?? servedEntry?.id,
                     pricingInput,
                 );
                 if (responseTracking.cacheHit) {
@@ -653,27 +653,27 @@ export async function trackResponse(
             output,
             input: pricingInput,
         });
-        if (adjustmentOnlyBilling.adjustments.length > 0) {
+        const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
+        const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
+        if (hasKnownProviderCost || hasBillablePrice) {
             return {
                 responseStatus: response.status,
                 cacheHit,
-                isBilledUsage: true,
+                isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: resolvedModelRequested,
+                modelUsed: modelCalled,
                 usage: {},
                 contentFilterResults,
             };
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: resolvedModelRequested,
+            modelUsed: modelCalled,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
-    // for, so the invoice does not move because a fallback stepped in. Both
-    // still walk the billing rules together, so the event's adjustment maps
-    // match the billed totals and clamp warnings log once per request.
+    // for, so the invoice does not move because a fallback stepped in.
     const {
         cost,
         price,

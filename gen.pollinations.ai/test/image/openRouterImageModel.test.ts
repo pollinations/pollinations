@@ -297,30 +297,27 @@ describe("OpenRouter Gemini image", () => {
         [1024, 1024, "1K"],
         [1920, 1080, "2K"],
         [3840, 2160, "4K"],
-    ] as const)(
-        "maps %sx%s NanoBanana 2 requests to %s",
-        async (width, height, expectedResolution) => {
-            syncImageEnv(
-                {
-                    OPENROUTER_API_KEY: "openrouter-test-key",
-                } as CloudflareBindings,
-                ["OPENROUTER_API_KEY"],
-            );
-            const requests: Record<string, unknown>[] = [];
-            mockGeminiFetch(requests);
+    ] as const)("maps %sx%s NanoBanana 2 requests to %s", async (width, height, expectedResolution) => {
+        syncImageEnv(
+            {
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests);
 
-            await callOpenRouterGeminiImageAPI("test prompt", {
-                ...baseParams,
-                model: "nanobanana-2",
-                width,
-                height,
-                reasoning: "fast",
-            });
+        await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana-2",
+            width,
+            height,
+            reasoning: "fast",
+        });
 
-            expect(requests[0].resolution).toBe(expectedResolution);
-            expect(requests[0].reasoning_effort).toBe("low");
-        },
-    );
+        expect(requests[0].resolution).toBe(expectedResolution);
+        expect(requests[0].reasoning_effort).toBe("low");
+    });
 
     it("pins NanoBanana 2 Lite to 1K Vertex with no fallback", async () => {
         syncImageEnv(
@@ -823,28 +820,28 @@ describe("OpenRouter Recraft vector", () => {
         });
     });
 
-    it.each([null, "image/png"])(
-        "rejects an unsupported %s response media type",
-        async (mediaType) => {
-            syncImageEnv(
-                {
-                    OPENROUTER_API_KEY: "openrouter-test-key",
-                } as CloudflareBindings,
-                ["OPENROUTER_API_KEY"],
-            );
-            mockRecraftResponse([], mediaType);
+    it.each([
+        null,
+        "image/png",
+    ])("rejects an unsupported %s response media type", async (mediaType) => {
+        syncImageEnv(
+            {
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        mockRecraftResponse([], mediaType);
 
-            await expect(
-                callOpenRouterRecraftVectorAPI("vector prompt", {
-                    ...baseParams,
-                    model: "recraft-v4.1-vector",
-                }),
-            ).rejects.toMatchObject({
-                status: 502,
-                upstreamUrl: OPENROUTER_IMAGE_URL,
-            });
-        },
-    );
+        await expect(
+            callOpenRouterRecraftVectorAPI("vector prompt", {
+                ...baseParams,
+                model: "recraft-v4.1-vector",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamUrl: OPENROUTER_IMAGE_URL,
+        });
+    });
 
     it("preserves provider capacity responses as retryable 429 errors", async () => {
         syncImageEnv(

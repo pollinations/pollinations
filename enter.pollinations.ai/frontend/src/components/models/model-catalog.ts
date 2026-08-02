@@ -85,6 +85,21 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         : pricePerSecond.toFixed(4);
 };
 
+// A 200 response with an empty array, a non-array body, or entries that all
+// lack an identifiable name/id is indistinguishable from "no models" to the
+// caller — it must be treated as a fetch failure, not a valid empty catalog,
+// so the UI surfaces an error instead of silently rendering an empty table.
+export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Model catalog response was empty or malformed");
+    }
+    const models = data as ApiModelInfo[];
+    if (!models.some((model) => getCatalogModelId(model))) {
+        throw new Error("Model catalog response had no usable model entries");
+    }
+    return models;
+}
+
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 
 export async function fetchModelCatalog(
@@ -99,8 +114,9 @@ export async function fetchModelCatalog(
             if (!response.ok) {
                 throw new Error(`Failed to fetch models (${response.status})`);
             }
-            return response.json() as Promise<ApiModelInfo[]>;
+            return response.json();
         })
+        .then(parseModelCatalogResponse)
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;

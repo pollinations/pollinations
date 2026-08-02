@@ -736,6 +736,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "inkling": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
+    },
+  },
   "kimi": {
     "cost": {
       "completionTextTokens": 0.000004,

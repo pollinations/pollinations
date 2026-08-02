@@ -369,6 +369,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "inkling",
+        config: portkeyConfig["thinkingmachines/inkling-small"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
         name: "nemotron",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),

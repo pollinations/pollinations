@@ -31,7 +31,10 @@ export function CommunityEndpointToggleConfirmation({
                 <Button type="button" onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button type="button" intent={endpoint?.disabled ? "info" : "danger"} onClick={onConfirm}>
+                <Button
+                    type="button"
+                    intent={endpoint?.disabled ? "info" : "danger"}
+                    onClick={onConfirm}>
                     {endpoint?.disabled ? "Reactivate" : "Deactivate"}
                 </Button>
             </div>

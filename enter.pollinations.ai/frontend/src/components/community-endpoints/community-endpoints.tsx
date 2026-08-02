@@ -39,7 +39,7 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
-    const [togglig, setToggling] = useState<CommunityEndpoint | null>(null);
+    const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {

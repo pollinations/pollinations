@@ -371,10 +371,6 @@ const models: ModelDefinition[] = [
     {
         name: "inkling",
         config: portkeyConfig["thinkingmachines/inkling-small"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            createReasoningEffortTransform("toggle"),
-        ),
     },
     {
         name: "nemotron",

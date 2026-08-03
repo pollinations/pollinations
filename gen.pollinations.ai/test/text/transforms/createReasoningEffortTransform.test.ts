@@ -75,6 +75,10 @@ describe("createReasoningEffortTransform — strip", () => {
 });
 
 describe("reasoning_effort model wiring", () => {
+    it("leaves Inkling reasoning and tool schemas to OpenRouter", () => {
+        expect(findModelByName("inkling")?.transform).toBeUndefined();
+    });
+
     it.each([
         "glm",
         "kimi",

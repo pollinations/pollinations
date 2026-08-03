@@ -569,7 +569,7 @@ test("rejects unsupported Perplexity search context sizes", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("portkeyDirect");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -584,8 +584,57 @@ test("rejects unsupported Perplexity search context sizes", async ({
     });
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+        error: {
+            message:
+                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
+        },
+    });
     expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
     await wait();
+});
+
+test("pins other Perplexity models high and strips search options elsewhere", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("portkeyDirect");
+
+    for (const [model, searchContextSize] of [
+        ["perplexity", "low"],
+        ["perplexity-reasoning", "low"],
+        ["openai-fast", "medium"],
+    ] as const) {
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: `context ${model}` }],
+                web_search_options: {
+                    search_context_size: searchContextSize,
+                },
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        await response.text();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        web_search_options: { search_context_size: "high" },
+    });
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        web_search_options: { search_context_size: "high" },
+    });
+    expect(mocks.portkeyDirect.state.requests[2]).not.toHaveProperty(
+        "web_search_options",
+    );
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

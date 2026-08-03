@@ -282,15 +282,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["vertex/gemini-3.6-flash"],
+        config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
             legacyGeminiSearchDefault([
                 "gemini-search-large",
                 "gemini-3.6-flash-search",
                 "gemini-3.5-flash-search",
             ]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
@@ -298,15 +298,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-flash-lite-3.5",
-        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
             legacyGeminiSearchDefault([
                 "gemini-search-fast",
                 "gemini-3.1-flash-lite-search",
                 "gemini-3.5-flash-lite-search",
             ]),
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },

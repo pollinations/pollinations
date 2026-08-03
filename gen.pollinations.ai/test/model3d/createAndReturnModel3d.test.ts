@@ -60,6 +60,57 @@ describe("createAndReturnModel3d dispatch", () => {
     });
 });
 
+workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
+    const source = getRegistryModelDefinition("hyper3d-rodin");
+    const previousFallbacks = source.fallbacks;
+    try {
+        source.fallbacks = ["trellis-2"];
+        resetGenerationModelRegistryCache();
+
+        const upstreams: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("public_model_stats.json")) {
+                    return Response.json({ data: [] });
+                }
+                if (
+                    request.url.includes("/v0/events?name=generation_event_v2")
+                ) {
+                    return new Response("", { status: 202 });
+                }
+                if (request.url.includes("queue.fal.run")) {
+                    upstreams.push("hyper3d-rodin");
+                    return new Response("rate limited", { status: 429 });
+                }
+                if (request.url.includes("api.inferenceport.ai")) {
+                    upstreams.push("trellis-2");
+                    return Response.json({
+                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                    });
+                }
+                return new Response("unexpected request", { status: 500 });
+            },
+        );
+
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=hyper3d-rodin&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+            { headers: { Authorization: `Bearer ${paidApiKey}` } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        expect(response.headers.get("x-model-used")).toBe("trellis-2");
+        expect(await response.text()).toBe("glTF");
+        expect(upstreams).toEqual(["hyper3d-rodin", "trellis-2"]);
+    } finally {
+        source.fallbacks = previousFallbacks;
+        resetGenerationModelRegistryCache();
+    }
+});
+
 workerTest(
     "legacy Trellis IDs preserve resolution defaults",
     async ({ paidApiKey }) => {

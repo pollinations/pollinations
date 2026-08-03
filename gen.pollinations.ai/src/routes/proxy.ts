@@ -172,6 +172,7 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         const response = await handleChatCompletionLocal(c, requestBody);
+        if (!response.ok) return response;
 
         assertStreamContentType(c, response, c.var.upstreamRequestUrl);
 

@@ -381,12 +381,12 @@ async function generateTextResponse(
 ): Promise<Response> {
     syncTextEnvironment(c.env);
 
-    const normalizedRequestData = normalizePerplexitySearchContext(
-        c,
-        requestData,
-    );
-
     try {
+        const normalization = normalizePerplexitySearchContext(c, requestData);
+        if ("errorResponse" in normalization) {
+            return normalization.errorResponse;
+        }
+        const normalizedRequestData = normalization.requestData;
         const {
             result: completion,
             candidate,
@@ -463,26 +463,48 @@ const LEGACY_PERPLEXITY_HIGH_IDS = new Set([
 function normalizePerplexitySearchContext(
     c: TextContext,
     requestData: RequestData,
-): RequestData {
-    const resolved = c.var.model.resolved;
-    if (
-        !["perplexity-fast", "perplexity", "perplexity-reasoning"].includes(
-            resolved,
-        )
-    ) {
-        return requestData;
+): { requestData: RequestData } | { errorResponse: Response } {
+    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
+    const model = c.var.model;
+    if (!model) return { requestData: requestWithoutSearchOptions };
+    const resolved = model.resolved;
+
+    if (resolved === "perplexity-fast") {
+        const searchContextSize =
+            web_search_options?.search_context_size ||
+            (LEGACY_PERPLEXITY_HIGH_IDS.has(model.requested) ? "high" : "low");
+        if (searchContextSize === "medium") {
+            return {
+                errorResponse: c.json(
+                    {
+                        error: {
+                            message:
+                                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
+                        },
+                    },
+                    400,
+                ),
+            };
+        }
+        c.var.track.setPricingInput({ searchContextSize });
+        return {
+            requestData: {
+                ...requestWithoutSearchOptions,
+                web_search_options: { search_context_size: searchContextSize },
+            },
+        };
     }
 
-    const searchContextSize =
-        requestData.web_search_options?.search_context_size ||
-        (resolved !== "perplexity-fast" ||
-        LEGACY_PERPLEXITY_HIGH_IDS.has(c.var.model.requested)
-            ? "high"
-            : "low");
-    c.var.track.setPricingInput({ searchContextSize });
+    if (!["perplexity", "perplexity-reasoning"].includes(resolved)) {
+        return { requestData: requestWithoutSearchOptions };
+    }
+
+    c.var.track.setPricingInput({ searchContextSize: "high" });
     return {
-        ...requestData,
-        web_search_options: { search_context_size: searchContextSize },
+        requestData: {
+            ...requestWithoutSearchOptions,
+            web_search_options: { search_context_size: "high" },
+        },
     };
 }
 

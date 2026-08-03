@@ -5,7 +5,6 @@ import {
     totalPromptTokens,
 } from "./cost-variants";
 import {
-    GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
@@ -550,7 +549,7 @@ export const TEXT_SERVICES = {
             "gemini-3.6-flash-search",
             "gemini-3.5-flash-search",
         ],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
@@ -567,7 +566,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.6 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -591,7 +593,7 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-search",
             "gemini-3.5-flash-lite-search",
         ],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
@@ -606,7 +608,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",

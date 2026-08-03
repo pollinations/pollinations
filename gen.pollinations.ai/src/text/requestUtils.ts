@@ -35,7 +35,7 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         audio: data.audio as Record<string, unknown> | undefined,
         response_format: data.response_format as RequestData["response_format"],
         web_search_options: data.web_search_options as
-            | { search_context_size: "low" | "high" }
+            | { search_context_size: "low" | "medium" | "high" }
             | undefined,
         stop: data.stop,
         stream_options: data.stream_options as

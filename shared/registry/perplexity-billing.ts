@@ -61,9 +61,9 @@ function getReportedSearchContextSize(output: unknown): string | undefined {
 //  - malformed provider cost    → static fee + ERROR
 //  - provider cost > 10× static → clamp to static fee + ERROR
 //  - otherwise                  → provider-reported cost verbatim
-// The gateway pins the search tier per model alias (callers cannot override
-// web_search_options), so a reported `search_context_size` that differs from
-// the pinned tier means the pin drifted — logged as WARN.
+// The gateway supplies the effective search tier used for billing. A reported
+// `search_context_size` that differs from it means the provider drifted — logged
+// as WARN.
 function resolvePerplexityRequestCost(args: {
     output: unknown;
     model: string;

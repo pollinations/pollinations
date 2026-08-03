@@ -116,16 +116,20 @@ function gatewayContext(
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> | TransformOptions {
     const { communityEndpoint, definition } = candidate;
+    // A fallback must resolve transforms from the model that will actually run.
+    const candidateRequest = candidate.entry
+        ? { ...requestData, model: candidate.id }
+        : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
-    // config the gateway resolves from the request itself.
+    // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, requestData);
+        return withGatewayContext(c, candidateRequest);
     }
     return communityEndpointGatewayContext(
         communityEndpoint,
         definition,
-        requestData,
+        candidateRequest,
         c.env.BETTER_AUTH_SECRET,
         c.env.PORTKEY_GATEWAY_URL,
         c.var.auth?.apiKey?.rawKey || "",
@@ -157,15 +161,14 @@ function usageHeaders(
     const headers = new Headers();
     const modelUsed = servedModelId || completion?.model;
     if (modelUsed) {
-        const usage = completion?.usage
+        const usage = completion?.usage;
+        const normalizedUsage = usage
             ? openaiUsageToUsage(
-                  completion.usage as unknown as Parameters<
-                      typeof openaiUsageToUsage
-                  >[0],
+                  usage as unknown as Parameters<typeof openaiUsageToUsage>[0],
               )
-            : {};
+            : undefined;
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(modelUsed, usage),
+            buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
         }

@@ -15,10 +15,12 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -153,6 +155,23 @@ export function CommunityEndpointDialog({
         setError(null);
     }
 
+    function toggleInputModality(modality: ModelInputModality): void {
+        setForm((current) => {
+            const selected = current.inputModalities.includes(modality);
+            if (selected && current.inputModalities.length === 1)
+                return current;
+            const next = new Set(current.inputModalities);
+            if (selected) next.delete(modality);
+            else next.add(modality);
+            return {
+                ...current,
+                inputModalities: COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                    current.modality
+                ].filter((value) => next.has(value)),
+            };
+        });
+    }
+
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
@@ -201,8 +220,6 @@ export function CommunityEndpointDialog({
                 form.modality === "image"
                     ? (body.imagePricing ?? "request")
                     : form.imagePricing;
-            const supportsImageEdits =
-                form.modality === "image" && body.supportsImageEdits === true;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -222,7 +239,11 @@ export function CommunityEndpointDialog({
             setForm((current) => ({
                 ...current,
                 imagePricing: detectedImagePricing,
-                supportsImageEdits,
+                inputModalities:
+                    current.modality === "image" &&
+                    body.inputModalities?.includes("image")
+                        ? (["text", "image"] as ModelInputModality[])
+                        : current.inputModalities,
                 // Changing pricing mode changes the units of these fields, so
                 // stale values must not carry across modes.
                 ...(detectedImagePricing !== current.imagePricing
@@ -425,6 +446,37 @@ export function CommunityEndpointDialog({
                                 );
                             })}
                         </div>
+                    </FieldStack>
+
+                    <FieldStack
+                        label="Accepted inputs"
+                        helper="Select every input type supported by this model. At least one is required."
+                        alignLabelRow
+                    >
+                        <ButtonGroup aria-label="Accepted input modalities">
+                            {COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                                form.modality
+                            ].map((modality) => {
+                                const selected =
+                                    form.inputModalities.includes(modality);
+                                return (
+                                    <TabButton
+                                        key={modality}
+                                        active={selected}
+                                        onClick={() =>
+                                            toggleInputModality(modality)
+                                        }
+                                        size="sm"
+                                        className="min-w-20 gap-1.5 capitalize"
+                                    >
+                                        {selected && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {modality}
+                                    </TabButton>
+                                );
+                            })}
+                        </ButtonGroup>
                     </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">

@@ -6,8 +6,8 @@
  *   - text-to-image → qwen/qwen-image            ($0.025/img)
  *   - image editing → qwen/qwen-image-edit-plus  ($0.03/img, multi-image)
  *
- * We bill a single $0.03/img rate (registry), so the t2i path runs slightly
- * under cost — acceptable, and avoids under-billing the edit path.
+ * The registry bills the selected route: $0.025 for text-to-image and $0.03
+ * for editing.
  */
 
 import debug from "debug";
@@ -18,8 +18,8 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
@@ -122,15 +122,7 @@ export async function callQwenImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${modelLabel} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {

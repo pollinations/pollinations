@@ -1,63 +1,63 @@
+import {
+    type EventSourceMessage,
+    EventSourceParserStream,
+} from "eventsource-parser/stream";
 import type { ChatCompletion, ServiceError, TransformFn } from "./types.js";
 
-const COHERE_CONTROL_TOKENS = [
+const RESPONSE_CONTROL_TOKENS = [
     "<|START_THINKING|>",
     "<|END_THINKING|>",
     "<|START_TEXT|>",
     "<|END_TEXT|>",
     "<|START_RESPONSE|>",
     "<|END_RESPONSE|>",
+    "<|content_text|>",
+    "<|content_thinking|>",
+    "<|content_model_end_sampling|>",
+    "<|end_message|>",
+    "<|endoftext|>",
 ] as const;
 
-function stripLeadingControlTokens(text: string): string {
+function stripBoundaryControlTokens(
+    text: string,
+    boundary: "start" | "end",
+): string {
     let cleaned = text;
     while (true) {
-        const token = COHERE_CONTROL_TOKENS.find((value) =>
-            cleaned.startsWith(value),
+        const token = RESPONSE_CONTROL_TOKENS.find((value) =>
+            boundary === "start"
+                ? cleaned.startsWith(value)
+                : cleaned.endsWith(value),
         );
         if (!token) return cleaned;
-        cleaned = cleaned.slice(token.length);
+        cleaned =
+            boundary === "start"
+                ? cleaned.slice(token.length)
+                : cleaned.slice(0, -token.length);
     }
-}
-
-function stripTrailingControlTokens(text: string): string {
-    let cleaned = text;
-    while (true) {
-        const token = COHERE_CONTROL_TOKENS.find((value) =>
-            cleaned.endsWith(value),
-        );
-        if (!token) return cleaned;
-        cleaned = cleaned.slice(0, -token.length);
-    }
-}
-
-function isControlTokenSequenceOrPrefix(text: string): boolean {
-    let remaining = text;
-    while (remaining) {
-        const token = COHERE_CONTROL_TOKENS.find((value) =>
-            remaining.startsWith(value),
-        );
-        if (token) {
-            remaining = remaining.slice(token.length);
-            continue;
-        }
-        return COHERE_CONTROL_TOKENS.some((value) =>
-            value.startsWith(remaining),
-        );
-    }
-    return true;
 }
 
 function possibleTrailingControlLength(text: string): number {
     for (let index = 0; index < text.length; index += 1) {
-        if (isControlTokenSequenceOrPrefix(text.slice(index))) {
+        let remaining = text.slice(index);
+        while (remaining) {
+            const token = RESPONSE_CONTROL_TOKENS.find((value) =>
+                remaining.startsWith(value),
+            );
+            if (!token) break;
+            remaining = remaining.slice(token.length);
+        }
+        if (
+            !remaining ||
+            RESPONSE_CONTROL_TOKENS.some((value) => value.startsWith(remaining))
+        ) {
             return text.length - index;
         }
     }
     return 0;
 }
 
-class CohereContentSanitizer {
+class FramedContentSanitizer {
     private pending = "";
     private atStart = true;
 
@@ -65,10 +65,10 @@ class CohereContentSanitizer {
         this.pending += text;
 
         if (this.atStart) {
-            this.pending = stripLeadingControlTokens(this.pending);
+            this.pending = stripBoundaryControlTokens(this.pending, "start");
             if (!this.pending) return "";
             if (
-                COHERE_CONTROL_TOKENS.some((token) =>
+                RESPONSE_CONTROL_TOKENS.some((token) =>
                     token.startsWith(this.pending),
                 )
             ) {
@@ -89,8 +89,8 @@ class CohereContentSanitizer {
 
     finish(): string {
         let ready = this.pending;
-        if (this.atStart) ready = stripLeadingControlTokens(ready);
-        ready = stripTrailingControlTokens(ready);
+        if (this.atStart) ready = stripBoundaryControlTokens(ready, "start");
+        ready = stripBoundaryControlTokens(ready, "end");
         this.pending = "";
         this.atStart = false;
         return ready;
@@ -98,62 +98,65 @@ class CohereContentSanitizer {
 }
 
 function sanitizeContent(text: string): string {
-    const sanitizer = new CohereContentSanitizer();
+    const sanitizer = new FramedContentSanitizer();
     return sanitizer.push(text) + sanitizer.finish();
 }
 
 function sanitizeStream(
-    source: ReadableStream<Uint8Array>,
+    source: ReadableStream<Uint8Array<ArrayBuffer>>,
 ): ReadableStream<Uint8Array> {
-    const decoder = new TextDecoder();
     const encoder = new TextEncoder();
-    const contentSanitizers = new Map<number, CohereContentSanitizer>();
-    let pendingSse = "";
+    const contentSanitizers = new Map<number, FramedContentSanitizer>();
     let lastChunkMetadata: Record<string, unknown> = {};
 
-    function sanitizerFor(index: number): CohereContentSanitizer {
+    function sanitizerFor(index: number): FramedContentSanitizer {
         const existing = contentSanitizers.get(index);
         if (existing) return existing;
-        const sanitizer = new CohereContentSanitizer();
+        const sanitizer = new FramedContentSanitizer();
         contentSanitizers.set(index, sanitizer);
         return sanitizer;
     }
 
-    function flushPendingContent(): string {
-        let output = "";
+    function encodeEvent(event: EventSourceMessage, data = event.data) {
+        const fields: string[] = [];
+        if (event.event !== undefined) fields.push(`event: ${event.event}`);
+        if (event.id !== undefined) fields.push(`id: ${event.id}`);
+        for (const line of data.split("\n")) fields.push(`data: ${line}`);
+        return encoder.encode(`${fields.join("\n")}\n\n`);
+    }
+
+    function flushPendingContent(): EventSourceMessage[] {
+        const events: EventSourceMessage[] = [];
         for (const [index, sanitizer] of contentSanitizers) {
             const content = sanitizer.finish();
             if (!content) continue;
-            output += `data: ${JSON.stringify({
-                ...lastChunkMetadata,
-                choices: [
-                    {
-                        index,
-                        delta: { content },
-                        finish_reason: null,
-                    },
-                ],
-            })}\n\n`;
+            events.push({
+                data: JSON.stringify({
+                    ...lastChunkMetadata,
+                    choices: [
+                        {
+                            index,
+                            delta: { content },
+                            finish_reason: null,
+                        },
+                    ],
+                }),
+            });
         }
         contentSanitizers.clear();
-        return output;
+        return events;
     }
 
-    function sanitizeEvent(event: string): string {
-        const lines = event.split(/\r?\n/);
-        const dataIndex = lines.findIndex((line) => line.startsWith("data:"));
-        if (dataIndex < 0) return `${event}\n\n`;
-
-        const data = lines[dataIndex].slice("data:".length).trimStart();
-        if (data === "[DONE]") {
-            return `${flushPendingContent()}${event}\n\n`;
+    function sanitizeEvent(event: EventSourceMessage): EventSourceMessage[] {
+        if (event.data === "[DONE]") {
+            return [...flushPendingContent(), event];
         }
 
         let chunk: Record<string, unknown>;
         try {
-            chunk = JSON.parse(data) as Record<string, unknown>;
+            chunk = JSON.parse(event.data) as Record<string, unknown>;
         } catch {
-            return `${event}\n\n`;
+            return [event];
         }
 
         const choices = Array.isArray(chunk.choices) ? chunk.choices : [];
@@ -196,51 +199,36 @@ function sanitizeStream(
             }
         }
 
-        lines[dataIndex] = `data: ${JSON.stringify(chunk)}`;
-        return `${lines.join("\n")}\n\n`;
+        return [{ ...event, data: JSON.stringify(chunk) }];
     }
 
-    function emitReadyEvents(
-        controller: TransformStreamDefaultController<Uint8Array>,
-    ): void {
-        while (true) {
-            const boundary = pendingSse.match(/\r?\n\r?\n/);
-            if (!boundary || boundary.index === undefined) return;
-            const event = pendingSse.slice(0, boundary.index);
-            pendingSse = pendingSse.slice(boundary.index + boundary[0].length);
-            controller.enqueue(encoder.encode(sanitizeEvent(event)));
-        }
-    }
-
-    return source.pipeThrough(
-        new TransformStream<Uint8Array, Uint8Array>({
-            transform(chunk, controller) {
-                pendingSse += decoder.decode(chunk, { stream: true });
-                emitReadyEvents(controller);
-            },
-            flush(controller) {
-                pendingSse += decoder.decode();
-                emitReadyEvents(controller);
-                if (pendingSse) {
-                    controller.enqueue(
-                        encoder.encode(sanitizeEvent(pendingSse)),
-                    );
-                } else {
-                    const remaining = flushPendingContent();
-                    if (remaining)
-                        controller.enqueue(encoder.encode(remaining));
-                }
-            },
-        }),
-    );
+    return source
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new EventSourceParserStream())
+        .pipeThrough(
+            new TransformStream<EventSourceMessage, Uint8Array>({
+                transform(event, controller) {
+                    for (const ready of sanitizeEvent(event)) {
+                        controller.enqueue(encodeEvent(ready));
+                    }
+                },
+                flush(controller) {
+                    for (const ready of flushPendingContent()) {
+                        controller.enqueue(encodeEvent(ready));
+                    }
+                },
+            }),
+        );
 }
 
-export function sanitizeCohereResponse(
+export function sanitizeFramedResponse(
     completion: ChatCompletion,
 ): ChatCompletion {
     if (completion.stream && completion.responseStream) {
         completion.responseStream = sanitizeStream(
-            completion.responseStream as ReadableStream<Uint8Array>,
+            completion.responseStream as ReadableStream<
+                Uint8Array<ArrayBuffer>
+            >,
         );
         return completion;
     }
@@ -252,6 +240,12 @@ export function sanitizeCohereResponse(
         }
     }
     return completion;
+}
+
+function rejectCohereRequest(message: string): never {
+    const error = new Error(message) as ServiceError;
+    error.status = 400;
+    throw error;
 }
 
 export const validateCohereRequest: TransformFn = (messages, options) => {
@@ -266,11 +260,9 @@ export const validateCohereRequest: TransformFn = (messages, options) => {
             ),
     );
     if (hasNonTextInput) {
-        const error = new Error(
+        rejectCohereRequest(
             "Cohere Command A+ on Azure supports text input only",
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
+        );
     }
 
     if (
@@ -278,11 +270,9 @@ export const validateCohereRequest: TransformFn = (messages, options) => {
         options.tool_choice !== "auto" &&
         options.tool_choice !== "none"
     ) {
-        const error = new Error(
+        rejectCohereRequest(
             'Cohere Command A+ on Azure supports tool_choice "auto" or "none" only',
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
+        );
     }
 
     const normalizedOptions = { ...options };

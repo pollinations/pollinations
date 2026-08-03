@@ -9,6 +9,7 @@
  */
 
 import { getImageEnv } from "../env.ts";
+import { HttpError } from "../httpError.ts";
 import { sleep } from "../util.ts";
 
 const API_BASE = "https://api.replicate.com/v1";
@@ -34,6 +35,21 @@ export class ReplicateError extends Error {
         super(message);
         this.name = "ReplicateError";
     }
+}
+
+/** Preserve non-Replicate failures; map classified provider failures once. */
+export function toReplicateHttpError(
+    error: unknown,
+    messagePrefix: string,
+): unknown {
+    return error instanceof ReplicateError
+        ? new HttpError(
+              `${messagePrefix}: ${error.message}`,
+              error.status ?? 500,
+              undefined,
+              error.url,
+          )
+        : error;
 }
 
 interface ReplicatePrediction<TOutput> {

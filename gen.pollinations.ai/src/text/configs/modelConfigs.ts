@@ -60,25 +60,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.4-nano",
         ),
     "gpt-5-nano-2025-08-07": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5-nano-2025-08-07",
         ),
     "gpt-5.4": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.4",
         ),
     "gpt-5.4-mini": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.4-mini",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
@@ -86,7 +82,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.5",
         ),
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
@@ -94,19 +89,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
-            "gpt-5.6-sol",
         ),
     "gpt-5.6-terra": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
-            "gpt-5.6-terra",
         ),
     "gpt-5.6-luna": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
-            "gpt-5.6-luna",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
@@ -114,14 +106,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-mini/chat/completions?api-version=2025-01-01-preview",
-            "gpt-audio-mini-2025-12-15",
         ),
     // -- Azure (Myceli Prod — swedencentral, audio) ---------------------------
     "gpt-audio-1.5": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-1.5/chat/completions?api-version=2025-01-01-preview",
-            "gpt-audio-1.5",
         ),
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
@@ -129,19 +119,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "grok-4-20-non-reasoning",
         ),
     "grok-4-20-reasoning": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "grok-4-20-reasoning",
         ),
     "grok-4.3": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
-            "grok-4.3",
         ),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
@@ -149,7 +136,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-            "Cohere-command-a-plus-05-2026",
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
@@ -208,6 +194,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "thinkingmachines/inkling-small": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling-small",
+            defaultOptions: {
+                provider: {
+                    only: ["Together"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
@@ -244,9 +240,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
-    "accounts/fireworks/models/deepseek-v4-flash": () =>
+    "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash",
+            model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({
@@ -285,7 +281,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
-            "Mistral-Large-3",
         ),
 
     // -- Claude via AWS Bedrock -----------------------------------------------
@@ -399,13 +394,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-3.3-70B-Instruct/chat/completions?api-version=2024-12-01-preview",
-            "Llama-3.3-70B-Instruct",
         ),
     "Llama-4-Maverick-17B-128E-Instruct-FP8": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
-            "Llama-4-Maverick-17B-128E-Instruct-FP8",
             { requiresBase64ImageUrls: true },
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not

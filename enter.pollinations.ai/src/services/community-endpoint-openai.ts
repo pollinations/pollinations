@@ -8,7 +8,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
@@ -29,8 +29,8 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
     /** Image tests only: billing mode detected from the probe response. */
     imagePricing?: CommunityEndpointImagePricing;
-    /** Image tests only: whether a valid /images/edits response was observed. */
-    supportsImageEdits?: boolean;
+    /** Image tests only: input types detected by the generation/edit probes. */
+    inputModalities?: ModelInputModality[];
 };
 
 const REQUEST_TIMEOUT_MS = 90_000;
@@ -199,11 +199,14 @@ export async function testCommunityImageEndpoint({
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
     }
-    const supportsImageEdits = await testCommunityImageEdits(
+    const supportsImageInput = await testCommunityImageEdits(
         { baseUrl, bearerToken, model },
         imageBytes,
         imageMimeType,
     );
+    const inputModalities: ModelInputModality[] = supportsImageInput
+        ? ["text", "image"]
+        : ["text"];
 
     // Endpoints that return valid OpenAI image token usage are billed
     // per token ("tokens"); everything else falls back to a fixed price
@@ -214,14 +217,14 @@ export async function testCommunityImageEndpoint({
             usage: { ...openaiUsage },
             billableUsage: openaiImageUsageToUsage(openaiUsage),
             imagePricing: "tokens",
-            supportsImageEdits,
+            inputModalities,
         };
     }
     return {
         usage: { images: 1 },
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
-        supportsImageEdits,
+        inputModalities,
     };
 }
 

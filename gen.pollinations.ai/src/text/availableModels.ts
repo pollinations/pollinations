@@ -150,7 +150,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-0731"
+        ],
         transform: fireworksThinking,
     },
     {
@@ -361,6 +363,14 @@ const models: ModelDefinition[] = [
     {
         name: "longcat",
         config: portkeyConfig["meituan/longcat-2.0"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "inkling",
+        config: portkeyConfig["thinkingmachines/inkling-small"],
         transform: pipe(
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),

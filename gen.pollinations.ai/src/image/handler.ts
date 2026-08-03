@@ -63,6 +63,7 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENROUTER_API_KEY",
@@ -462,6 +463,10 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
 
     try {
         const { result, params, servedEntry, servedIndex } =

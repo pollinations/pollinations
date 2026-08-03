@@ -52,6 +52,15 @@ export function longContextAbove(minPromptTokens: number) {
         totalPromptTokens(usage) > minPromptTokens ? "long_context" : undefined;
 }
 
+// OpenRouter pricing tiers apply when prompt tokens meet or exceed the
+// advertised minimum.
+export function longContextAtLeast(minPromptTokens: number) {
+    return ({ usage }: CostVariantContext): "long_context" | undefined =>
+        totalPromptTokens(usage) >= minPromptTokens
+            ? "long_context"
+            : undefined;
+}
+
 // Selects a named rate sheet when the request explicitly uses one of the
 // model's non-default resolutions. The default resolution stays on base rates.
 export function matchResolution<const R extends string>(...resolutions: R[]) {

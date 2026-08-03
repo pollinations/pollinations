@@ -1,7 +1,6 @@
 // No imports needed for Web Crypto API
-
-import { checkTurnstile } from "../../../shared/turnstile.js";
 import { sendToAnalytics } from "./analytics.js";
+import { checkTurnstile } from "../../../shared/turnstile.js";
 
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";

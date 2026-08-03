@@ -52,6 +52,14 @@ function applyModelSpecificRules(url: URL): URL {
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url: URL): string {
+    return generateCacheKeyWithVersion(url, CACHE_VERSION);
+}
+
+export function generateLegacyCacheKey(url: URL): string {
+    return generateCacheKeyWithVersion(url);
+}
+
+function generateCacheKeyWithVersion(url: URL, version?: string): string {
     // Apply model-specific rules first
     const transformedUrl = applyModelSpecificRules(url);
 
@@ -85,10 +93,11 @@ export function generateCacheKey(url: URL): string {
     const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-    const maxPathLength = 1000 - CACHE_VERSION.length - hash.length - 2; // two separators
+    const prefix = version ? `${version}-` : "";
+    const maxPathLength = 1000 - prefix.length - hash.length - 1;
     const trimmedPath = safePath.substring(0, maxPathLength);
 
-    return `${CACHE_VERSION}-${trimmedPath}-${hash}`;
+    return `${prefix}${trimmedPath}-${hash}`;
 }
 
 /**
@@ -292,10 +301,7 @@ export async function deleteCacheEntry(
         if (vectorDeleted) {
             console.log("[DELETE] Deleted from Vectorize:", vectorId);
         } else {
-            console.log(
-                "[DELETE] Vector not found or delete failed:",
-                vectorId,
-            );
+            console.log("[DELETE] Vector not found or delete failed:", vectorId);
         }
     } catch (error) {
         console.error("[DELETE] Error deleting from Vectorize:", error);

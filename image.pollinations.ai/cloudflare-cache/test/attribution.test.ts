@@ -4,6 +4,7 @@ import {
     addAttributionHeaders,
 } from "../src/attribution.ts";
 import { CACHE_VERSION, generateCacheKey } from "../src/cache-utils.ts";
+import { getVersionedSemanticBucket } from "../src/middleware/semantic-cache.ts";
 
 describe("endpoint branding", () => {
     it("adds the Pollinations link and logo headers", () => {
@@ -30,5 +31,11 @@ describe("endpoint branding", () => {
 
         expect(first).toBe(reordered);
         expect(first.startsWith(`${CACHE_VERSION}-`)).toBe(true);
+    });
+
+    it("versions semantic cache buckets so old unbranded images are bypassed", () => {
+        expect(getVersionedSemanticBucket("1024x1024_nologofalse")).toBe(
+            `${CACHE_VERSION}-1024x1024_nologofalse`,
+        );
     });
 });

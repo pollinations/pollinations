@@ -1018,7 +1018,15 @@ const processImageBuffer = async (
 ): Promise<Buffer> => {
     // Add logo
     progress.updateBar(requestId, 80, "Processing", "Adding logo...");
-    const processedBuffer = await addPollinationsLogo(buffer);
+    let processedBuffer = buffer;
+    try {
+        processedBuffer = await addPollinationsLogo(buffer);
+    } catch (error) {
+        logError(
+            "Failed to add Pollinations logo; returning generated image",
+            error,
+        );
+    }
 
     // Add metadata
     progress.updateBar(requestId, 90, "Processing", "Writing metadata...");

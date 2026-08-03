@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -344,6 +345,16 @@ describe("gen worker routing", () => {
         const embeddingModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/v1/embeddings"),
         );
+        const transcriptionModelIds = new Set(
+            Object.entries(AUDIO_SERVICES)
+                .filter(([, definition]) =>
+                    definition.outputModalities.includes("text"),
+                )
+                .map(([id]) => id),
+        );
+        const transcriptionModels = models.data.filter((model) =>
+            transcriptionModelIds.has(model.id),
+        );
 
         expect(textModel).toMatchObject({
             id: expect.any(String),
@@ -354,6 +365,12 @@ describe("gen worker routing", () => {
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();
+        expect(transcriptionModels).toHaveLength(transcriptionModelIds.size);
+        for (const model of transcriptionModels) {
+            expect(model.supported_endpoints).toEqual([
+                "/v1/audio/transcriptions",
+            ]);
+        }
     });
 
     it("adds CORS headers on public model responses", async () => {

@@ -21,7 +21,7 @@ const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 function isClientInputError(details: unknown): boolean {
     const serialized =
         typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|image URL must be a valid and downloadable URL or look like data:/i.test(
+    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
         serialized,
     );
 }

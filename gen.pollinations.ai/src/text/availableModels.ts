@@ -45,21 +45,10 @@ function usesGrokReasoning(options: TransformOptions): boolean {
     );
 }
 
-const grokTransform: TransformFn = async (messages, options) => {
-    const reasoning = usesGrokReasoning(options);
-    const transformed = await (reasoning
+const grokTransform: TransformFn = (messages, options) =>
+    usesGrokReasoning(options)
         ? stripCacheControl(messages, options)
-        : pipe(stripCacheControl, stripReasoning)(messages, options));
-    return {
-        ...transformed,
-        options: {
-            ...transformed.options,
-            // Preserve the selected route after the non-reasoning transform
-            // strips reasoning_effort.
-            model: reasoning ? "grok-4-20-reasoning" : "grok",
-        },
-    };
-};
+        : pipe(stripCacheControl, stripReasoning)(messages, options);
 
 const models: ModelDefinition[] = [
     {

@@ -523,7 +523,7 @@ test("chat completions bill provider-reported Perplexity request cost without ex
     });
 });
 
-test("Perplexity aliases forward only explicitly supplied options", async ({
+test("Perplexity aliases add no options and allow explicit override", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -565,7 +565,7 @@ test("Perplexity aliases forward only explicitly supplied options", async ({
     });
 });
 
-test("forwards Perplexity search context options to the provider", async ({
+test("rejects unsupported Perplexity search context sizes", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -583,16 +583,18 @@ test("forwards Perplexity search context options to the provider", async ({
         }),
     });
 
-    expect(response.status).toBe(200);
-    await response.text();
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
-    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "medium" },
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+        error: {
+            message:
+                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
+        },
     });
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
     await wait();
 });
 
-test("passes search context options through unchanged for every model", async ({
+test("pins other Perplexity models high and strips search options elsewhere", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -625,14 +627,14 @@ test("passes search context options through unchanged for every model", async ({
 
     expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
+        web_search_options: { search_context_size: "high" },
     });
     expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
+        web_search_options: { search_context_size: "high" },
     });
-    expect(mocks.portkeyDirect.state.requests[2]).toMatchObject({
-        web_search_options: { search_context_size: "medium" },
-    });
+    expect(mocks.portkeyDirect.state.requests[2]).not.toHaveProperty(
+        "web_search_options",
+    );
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

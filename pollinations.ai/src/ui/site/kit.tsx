@@ -206,10 +206,10 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
  * `overflow-clip` on <main> crops it at the 28px radius (clip, not hidden —
  * hidden would stop /play's sticky output panel sticking).
  *
- * Below lg the axis flips: the scene becomes a short band up top, masked
- * downward, and the text follows underneath — overlaying text on the art at
- * phone widths puts it over the busy right third, which is where the
- * character lives.
+ * On phones the scene sits behind the copy rather than reserving a separate
+ * band above it. Its left edge is masked away so the character can remain in
+ * the top-right without competing with the headline. Between sm and lg the
+ * scene remains a separate band; desktop keeps the full background treatment.
  */
 export function Hero({
     scene,
@@ -236,9 +236,9 @@ export function Hero({
                 height={854}
                 // The LCP element on every page — never lazy.
                 fetchPriority="high"
-                className="hero-scene pointer-events-none h-40 w-full select-none object-cover object-right-bottom sm:h-72 lg:absolute lg:top-0 lg:h-[max(560px,calc(100%+120px))]"
+                className="hero-scene pointer-events-none absolute top-0 right-0 h-auto w-full select-none object-cover object-right-top sm:relative sm:h-72 sm:object-right-bottom lg:absolute lg:h-[max(560px,calc(100%+120px))]"
             />
-            <div className="relative flex w-full min-w-0 flex-col gap-6 px-4 pb-2 sm:gap-8 sm:px-8 md:px-18 lg:max-w-[58%] lg:py-16">
+            <div className="relative flex w-full min-w-0 flex-col gap-6 px-4 pt-14 pb-2 sm:gap-8 sm:px-8 sm:pt-0 md:px-18 lg:max-w-[58%] lg:py-16">
                 {children}
             </div>
         </section>

@@ -36,9 +36,19 @@ main > * {
    model keeps drifting scenery toward the centre (seed 4103's stalls reached
    27% and a reroll still hit 46%), so the mask is what actually guarantees
    the text's ground. Full opacity returns by 62%, right of every character.
-   Below lg the scene is a band above the text, so only the bottom fades. */
+   On phones the scene is layered behind the copy, so it also fades away on
+   the left. From sm to lg it is a band above the text, so only the bottom
+   fades. */
 .hero-scene {
-    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    mask-image:
+        linear-gradient(to right, transparent 18%, transparent 42%, black 92%),
+        linear-gradient(to bottom, black 46%, transparent 100%);
+    mask-composite: intersect;
+}
+@media (min-width: 40rem) and (max-width: 63.999rem) {
+    .hero-scene {
+        mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    }
 }
 @media (min-width: 64rem) {
     .hero-scene {

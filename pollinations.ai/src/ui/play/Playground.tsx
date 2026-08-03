@@ -703,7 +703,7 @@ export function Playground() {
         const audioFile = audioFiles[0];
 
         if (!apiKey) {
-            setError("Authorize the app before generating.");
+            setError("Connect before generating.");
             return;
         }
         if (!currentModel) {

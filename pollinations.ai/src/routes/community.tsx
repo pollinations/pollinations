@@ -40,7 +40,7 @@ const WAYS_IN = [
     {
         label: "Code",
         title: "Fix a bug or improve the docs",
-        body: "Open a PR, close an issue, improve the examples, or make the docs clearer.",
+        body: "Open a PR, close an issue, or improve the examples.",
         linkLabel: "Good first issues",
         href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
     },
@@ -48,7 +48,7 @@ const WAYS_IN = [
         label: "Talk",
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
-        linkLabel: "Start in #pollen-beta",
+        linkLabel: "Join the Discord",
         href: DISCORD_URL,
     },
 ];
@@ -186,8 +186,8 @@ function Contributors() {
         <section className="flex flex-col gap-5">
             <SectionHeader
                 eyebrow="Contributors"
-                title="Most active contributors"
-                subtitle="These folks are actively building and improving the platform. Want to join them?"
+                title="Top contributors"
+                subtitle="These contributors have helped build and improve the platform. Want to join them?"
                 action={
                     <ArrowLink href={REPO_URL}>Open the repository</ArrowLink>
                 }
@@ -246,7 +246,7 @@ function CommunityPage() {
         stars !== null && { value: compact(stars), label: "GitHub stars" },
         apps.length > 0 && {
             value: String(apps.length),
-            label: "live apps",
+            label: "apps built",
         },
     ].filter((stat): stat is { value: string; label: string } => Boolean(stat));
 
@@ -324,7 +324,7 @@ function CommunityPage() {
                 <SectionHeader
                     eyebrow="Supporters"
                     title="Who keeps the GPUs warm"
-                    subtitle="Credits and infrastructure from these folks are what let the free tier stay free."
+                    subtitle="Their credits and infrastructure help people start building with free Pollen earned through Quests."
                 />
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
                     {SUPPORTERS.map((supporter) => (

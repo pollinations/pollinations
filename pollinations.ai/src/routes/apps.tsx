@@ -209,7 +209,7 @@ function AppsPage() {
                         title="Playground"
                         badge="Official"
                         badgeTone="accent"
-                        description="Every model in the browser — text, image, audio, video. Sign in and generate on your own Pollen, nothing to install."
+                        description="Official text, image, audio and video models in the browser. Sign in and generate with your own Pollen — nothing to install."
                         meta="pollinations.ai/play"
                         image={appCover("Pollinations Playground")}
                         action={<OpenPill>Open →</OpenPill>}
@@ -255,7 +255,7 @@ function AppsPage() {
                 <SectionHeader
                     eyebrow="Browse"
                     title="Everything else."
-                    subtitle="Combine as many as you like. Badges are automatic — 🐝 busy this week, 🏵️ runs on your Pollen, 🫧 new this month."
+                    subtitle="Filters stack. Badges are automatic — 🐝 100+ requests in the last 24 hours, 🏵️ runs on your Pollen, 🫧 new this month."
                     action={
                         !loading && (
                             <PixelLabel variant="eyebrow">

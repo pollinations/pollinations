@@ -11,7 +11,7 @@ export function StartBuilding() {
             title="Start building"
             body="One API. Free Pollen from Quests to start, earnings when your app gets used."
         >
-            <ActionButton href="https://enter.pollinations.ai" tone="dark">
+            <ActionButton href="https://enter.pollinations.ai/keys" tone="dark">
                 Get an API key
             </ActionButton>
             <ActionButton

@@ -170,7 +170,7 @@ function currentWeekStart(now = new Date()): string {
  * progress*. Reading that made the hero collapse every Monday — measured at
  * 01:30 on Mon 27 Jul it said 1,608 requests and 100.0% availability, against
  * 7.3M and 99.48% for the week that had just ended. We report the last
- * complete week instead, which is also what "requests a week" claims.
+ * complete week instead, which is also what "requests last week" claims.
  *
  * (Related trap already fixed: the param on models/status is `minutes`, not
  * `window`. An unknown param is ignored and silently returns the 60-minute

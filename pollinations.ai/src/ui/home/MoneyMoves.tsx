@@ -30,7 +30,7 @@ export function MoneyMoves() {
                 <SectionHeader
                     eyebrow="How the money moves"
                     title={<>Your app doesn&rsquo;t need a budget to launch.</>}
-                    subtitle="On most platforms every user you win costs you money. Here, users hold their own Pollen — bought, or earned free by completing Quests — so usage scales without a bill landing on you, and a share of what they spend comes back to you."
+                    subtitle="Most platforms charge you for every user you win. With Pollinations, users spend their own Pollen — bought or earned through Quests. As usage grows, your bill doesn’t; 20% of what they spend comes back to you."
                 />
                 <div className="mt-1 flex flex-wrap items-center gap-5">
                     {/* `bright`, not `accent` — see the tone table in kit.tsx:
@@ -42,7 +42,7 @@ export function MoneyMoves() {
                         Start earning
                     </ActionButton>
                     <ArrowLink
-                        href="https://gen.pollinations.ai/docs"
+                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#developer-earnings"
                         className="text-theme-text-strong"
                     >
                         See how the split works

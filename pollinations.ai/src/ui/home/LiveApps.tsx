@@ -38,8 +38,8 @@ export function LiveApps() {
                 eyebrow="Built on Pollinations"
                 title={
                     loading
-                        ? "Apps are already live."
-                        : `${apps.length} apps are already live.`
+                        ? "Apps built on Pollinations."
+                        : `${apps.length} apps built on Pollinations.`
                 }
                 action={
                     <ArrowLink as={Link} to="/apps">
@@ -62,7 +62,7 @@ export function LiveApps() {
                     The app directory couldn’t be loaded right now.
                 </p>
             ) : (
-                <ScrollStrip ariaLabel="Live apps built on Pollinations">
+                <ScrollStrip ariaLabel="Apps built on Pollinations">
                     {featured.map((app) => (
                         <AppTile
                             key={app.name}

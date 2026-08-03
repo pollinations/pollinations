@@ -29,7 +29,7 @@ function useHeroStats() {
     const { data } = usePlatformStats();
     if (!data) return [];
     return [
-        { value: compact(data.requestsWeek), label: "requests a week" },
+        { value: compact(data.requestsWeek), label: "requests last week" },
         {
             value: `${data.availability.toFixed(1)}%`,
             label: "availability",
@@ -49,7 +49,7 @@ function HelloPage() {
             {/* Polli herself opens the site — the one the brand already had. */}
             <Hero scene="/heroes/home.webp">
                 <PageHeader
-                    eyebrow="The infrastructure for AI apps"
+                    eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
                     subtitle={
                         <>
@@ -63,7 +63,7 @@ function HelloPage() {
                     }
                 />
                 <div className="flex flex-wrap gap-3">
-                    <ActionButton href="https://enter.pollinations.ai">
+                    <ActionButton href="https://enter.pollinations.ai/keys">
                         Get an API key
                     </ActionButton>
                     <ActionButton

@@ -55,7 +55,7 @@ function PlayPage() {
             {/* The monitor robot, showing off something it just made. */}
             <Hero scene="/heroes/play.webp">
                 <PageHeader
-                    eyebrow="Every model, in the browser"
+                    eyebrow="Official models, in the browser"
                     title="Try it out."
                     subtitle={
                         <>

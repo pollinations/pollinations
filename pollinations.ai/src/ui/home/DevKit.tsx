@@ -62,12 +62,12 @@ const TOOLS: Tool[] = [
         title: "Sign in with Pollinations",
         body: "OAuth 2.1 with PKCE, plus device flow for CLIs and desktop apps. Users approve once and spend from their own wallet — with a budget and expiry they set, revocable any time.",
         linkLabel: "Read the BYOP guide",
-        href: "https://gen.pollinations.ai/docs",
+        href: "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
     },
     {
         label: "Drop-in",
         title: "Works with your OpenAI SDK",
-        body: "Change the base URL and keep your client. Streaming is byte-for-byte the OpenAI format, with tool calling, structured output and image input.",
+        body: "Change the base URL and keep your client. OpenAI-compatible streaming, with tool calling, structured output and image input.",
         linkLabel: "See the API reference",
         href: "https://gen.pollinations.ai/docs",
     },
@@ -123,7 +123,7 @@ export function DevKit() {
                 title="Everything already in your hands."
                 action={
                     <ArrowLink href="https://gen.pollinations.ai/docs">
-                        Need the details? read the API docs
+                        Need the details? Read the API docs
                     </ArrowLink>
                 }
             />

@@ -38,6 +38,9 @@ function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
+    const portkeyState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const replicateState: {
         requests: Array<{
             body: Record<string, unknown>;
@@ -48,11 +51,21 @@ function createGenerationMocks() {
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
-            state: {},
+            state: portkeyState,
             handlerMap: {
-                [portkeyHost]: fakePortkeyResponse,
+                [portkeyHost]: async (request) => {
+                    portkeyState.requests.push(
+                        (await request.clone().json()) as Record<
+                            string,
+                            unknown
+                        >,
+                    );
+                    return fakePortkeyResponse(request);
+                },
             },
-            reset: () => {},
+            reset: () => {
+                portkeyState.requests = [];
+            },
         },
         imageBackend: {
             state: {},
@@ -508,6 +521,71 @@ test("chat completions bill provider-reported Perplexity request cost without ex
     expect(mocks.tinybird.state.events[0].adjustmentUnits).toEqual({
         "perplexity.sonar_low.search_request.v1": 1,
     });
+});
+
+test("legacy Perplexity high aliases preserve their default and allow override", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    for (const [model, requestedSize] of [
+        ["perplexity-high", undefined],
+        ["sonar-deep", "low"],
+    ] as const) {
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: `context ${model}` }],
+                ...(requestedSize && {
+                    web_search_options: {
+                        search_context_size: requestedSize,
+                    },
+                }),
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
+        await response.text();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        web_search_options: { search_context_size: "high" },
+    });
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        web_search_options: { search_context_size: "low" },
+    });
+});
+
+test("rejects unsupported Perplexity search context sizes", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("portkeyDirect");
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [{ role: "user", content: "invalid context" }],
+            web_search_options: { search_context_size: "medium" },
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    await wait();
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

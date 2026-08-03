@@ -20,9 +20,13 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function baseParams(model: string): Model3dParams {
+function baseParams(
+    model: string,
+    resolution: "low" | "medium" | "high" = "low",
+): Model3dParams {
     return {
         model,
+        resolution,
         image: ["https://example.com/ref.jpg"],
         safe: false,
     };
@@ -32,9 +36,7 @@ function baseParams(model: string): Model3dParams {
 // upstream host is hit first for each model id.
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["trellis-2-low", "api.inferenceport.ai"],
-        ["trellis-2-medium", "api.inferenceport.ai"],
-        ["trellis-2-high", "api.inferenceport.ai"],
+        ["trellis-2", "api.inferenceport.ai"],
         ["hyper3d-rodin", "queue.fal.run"],
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi
@@ -58,52 +60,90 @@ describe("createAndReturnModel3d dispatch", () => {
     });
 });
 
-workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
-    const source = getRegistryModelDefinition("trellis-2-low");
-    const previousFallbacks = source.fallbacks;
-    try {
-        source.fallbacks = ["trellis-2-medium"];
+workerTest(
+    "legacy Trellis IDs preserve resolution defaults",
+    async ({ paidApiKey }) => {
+        getRegistryModelDefinition("trellis-2");
         resetGenerationModelRegistryCache();
-        const resolutions: unknown[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url.includes("public_model_stats.json")) {
-                    return Response.json({ data: [] });
-                }
-                if (
-                    request.url.includes("/v0/events?name=generation_event_v2")
-                ) {
-                    return new Response("", { status: 202 });
-                }
-                const body = (await request.json()) as { resolution?: unknown };
-                resolutions.push(body.resolution);
-                if (body.resolution === "low") {
-                    return Response.json(
-                        { error: { message: "rate limited" } },
-                        { status: 429 },
-                    );
-                }
-                return Response.json({
-                    data: [{ model_glb_b64_bytes: btoa("glTF") }],
-                });
-            },
-        );
+        try {
+            const resolutions: unknown[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url.includes("public_model_stats.json")) {
+                        return Response.json({ data: [] });
+                    }
+                    if (
+                        request.url.includes(
+                            "/v0/events?name=generation_event_v2",
+                        )
+                    ) {
+                        return new Response("", { status: 202 });
+                    }
+                    const body = (await request.json()) as {
+                        resolution?: unknown;
+                    };
+                    resolutions.push(body.resolution);
+                    return Response.json({
+                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                    });
+                },
+            );
 
-        const response = await SELF.fetch(
-            `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
-            { headers: { Authorization: `Bearer ${paidApiKey}` } },
-        );
+            for (const resolution of ["low", "medium", "high"]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                    { headers: { Authorization: `Bearer ${paidApiKey}` } },
+                );
+                expect(response.status).toBe(200);
+                expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBeNull();
+                expect(response.headers.get("x-model-used")).toBe("trellis-2");
+                expect(await response.text()).toBe("glTF");
+            }
 
-        expect(response.status).toBe(200);
-        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
-            "config.targets[1]",
-        );
-        expect(response.headers.get("x-model-used")).toBe("trellis-2-medium");
-        expect(resolutions).toEqual(["low", "medium"]);
-        expect(await response.text()).toBe("glTF");
-    } finally {
-        source.fallbacks = previousFallbacks;
-        resetGenerationModelRegistryCache();
-    }
-});
+            const overrideResponse = await SELF.fetch(
+                `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-high&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(overrideResponse.status).toBe(200);
+
+            const postResponse = await SELF.fetch(
+                `https://gen.pollinations.ai/3d/${crypto.randomUUID()}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "content-type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "trellis-2",
+                        resolution: "high",
+                        image: "https://example.com/ref.jpg",
+                    }),
+                },
+            );
+            expect(postResponse.status).toBe(200);
+
+            const cachePrompt = crypto.randomUUID();
+            for (const resolution of ["low", "high"]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai/3d/${cachePrompt}?model=trellis-2&resolution=${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                    { headers: { Authorization: `Bearer ${paidApiKey}` } },
+                );
+                expect(response.status).toBe(200);
+            }
+
+            expect(resolutions).toEqual([
+                "low",
+                "medium",
+                "high",
+                "low",
+                "high",
+                "low",
+                "high",
+            ]);
+        } finally {
+            resetGenerationModelRegistryCache();
+        }
+    },
+);

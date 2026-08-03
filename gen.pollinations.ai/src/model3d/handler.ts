@@ -23,6 +23,7 @@ export async function generate3dResponse(
     syncModel3dEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "");
     const safeParams = parseModel3dParams(c, body);
+    c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
         const { response, servedEntry } = await withModelFallbackResponse(
@@ -80,7 +81,11 @@ export function parseModel3dParams(
     body: Record<string, unknown>,
 ): Model3dParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    const legacyResolution = c.var.model.requested.match(
+        /^trellis-2-(low|medium|high)$/,
+    )?.[1];
     const mergedParams = {
+        resolution: legacyResolution || "low",
         ...queryParams,
         ...body,
         model: c.var.model.resolved,

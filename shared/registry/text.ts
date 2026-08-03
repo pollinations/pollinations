@@ -12,10 +12,9 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
-    PERPLEXITY_FAST_BILLING,
-    PERPLEXITY_HIGH_BILLING,
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
+    PERPLEXITY_SONAR_BILLING,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -544,8 +543,14 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini": {
-        aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
-        provider: "openrouter",
+        aliases: [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-search-large",
+            "gemini-3.6-flash-search",
+            "gemini-3.5-flash-search",
+        ],
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
@@ -562,10 +567,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.6 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -585,8 +587,11 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
             "gemini-3.5-flash-lite",
+            "gemini-search-fast",
+            "gemini-3.1-flash-lite-search",
+            "gemini-3.5-flash-lite-search",
         ],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
@@ -601,10 +606,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
@@ -760,6 +762,9 @@ export const TEXT_SERVICES = {
             "grok-4-fast",
             "grok-4-20-non-reasoning",
             "grok-non-reasoning",
+            "grok-4-20-reasoning",
+            "grok-4-20",
+            "grok-4-1-fast-reasoning",
         ],
         provider: "azure",
         brand: "xAI",
@@ -772,32 +777,8 @@ export const TEXT_SERVICES = {
             promptImageTokens: perMillion(2.0),
             completionTextTokens: perMillion(6.0),
         },
-        title: "Grok 4.20 Non-Reasoning",
-        description:
-            "Snappy multimodal chat with tool calling; skips step-by-step reasoning",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
-        tools: true,
-        contextLength: 262144,
-        isSpecialized: false,
-    },
-    "grok-4-20-reasoning": {
-        aliases: ["grok-4-20", "grok-4-1-fast-reasoning"],
-        provider: "azure",
-        brand: "xAI",
-        category: "text",
-        addedDate: new Date("2026-04-09").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(2.0),
-            promptCachedTokens: perMillion(0.2),
-            promptImageTokens: perMillion(2.0),
-            completionTextTokens: perMillion(6.0),
-        },
-        title: "Grok 4.20 Reasoning",
-        description:
-            "Step-by-step multimodal reasoning for agentic tasks; slower than the non-thinking variant",
+        title: "Grok 4.20",
+        description: "Multimodal chat and tool calling with optional reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
@@ -897,69 +878,6 @@ export const TEXT_SERVICES = {
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
         inputModalities: ["text", "image", "video"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
-        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
-        tools: false,
-        search: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "gemini-search-fast": {
-        aliases: [
-            "gemini-3.1-flash-lite-search",
-            "gemini-3.5-flash-lite-search",
-        ],
-        provider: "google",
-        brand: "Google",
-        category: "text",
-        addedDate: new Date("2026-05-26").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Vertex base rates for Gemini 3.5 Flash Lite.
-        cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.03),
-            promptCacheWriteTokens: perMillion(0.3),
-            promptAudioTokens: perMillion(0.3),
-            promptImageTokens: perMillion(0.3),
-            promptVideoTokens: perMillion(0.3),
-            completionTextTokens: perMillion(2.5),
-        },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash Lite Search",
-        description: "Fast multimodal answers grounded in live web results",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
-        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
-        tools: false,
-        search: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "gemini-search-large": {
-        aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
-        provider: "google",
-        brand: "Google",
-        category: "text",
-        addedDate: new Date("2026-05-26").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Vertex base rates for Gemini 3.6 Flash.
-        cost: {
-            promptTextTokens: perMillion(1.5),
-            promptCachedTokens: perMillion(0.15),
-            promptCacheWriteTokens: perMillion(1.5),
-            promptAudioTokens: perMillion(1.5),
-            promptImageTokens: perMillion(1.5),
-            promptVideoTokens: perMillion(1.5),
-            completionTextTokens: perMillion(7.5),
-        },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.6 Flash Search",
-        description: "Premium web research with grounded, up-to-date answers",
-        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1201,13 +1119,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity-fast": {
-        aliases: ["sonar"],
+        aliases: ["sonar", "perplexity-high", "perplexity-deep", "sonar-deep"],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
-        billing: PERPLEXITY_FAST_BILLING,
+        billing: PERPLEXITY_SONAR_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -1216,28 +1134,6 @@ export const TEXT_SERVICES = {
         description: "Quick web searches with cited answers; keeps it brief",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        search: true,
-        contextLength: 128000,
-        isSpecialized: false,
-    },
-    "perplexity-high": {
-        aliases: ["perplexity-deep", "sonar-deep"],
-        provider: "perplexity",
-        brand: "Perplexity",
-        category: "text",
-        addedDate: new Date("2026-05-29").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_HIGH_BILLING,
-        cost: {
-            promptTextTokens: perMillion(1.0),
-            completionTextTokens: perMillion(1.0),
-        },
-        title: "Perplexity Sonar High-Context Search",
-        description:
-            "Digs through many sources for thorough, cited research answers",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
+import { normalizeModelPermissions } from "../registry/model-permissions.ts";
 import {
     AGENT_RUN_TOKEN_PREFIX,
     type AgentRunClaims,
@@ -405,8 +406,12 @@ function normalizePermissions(
         const safeScopes = scopes.filter(
             (scope): scope is string => typeof scope === "string",
         );
-        if (safeScopes.length || key === "models") {
-            permissions[key] = safeScopes;
+        const normalizedScopes =
+            key === "models"
+                ? normalizeModelPermissions(safeScopes)
+                : safeScopes;
+        if (normalizedScopes.length || key === "models") {
+            permissions[key] = normalizedScopes;
         }
     }
     return Object.keys(permissions).length ? permissions : undefined;

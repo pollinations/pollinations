@@ -9,12 +9,6 @@ describe("OpenRouter Gemini routing", () => {
             "google/gemini-3-flash-preview",
             "google-vertex/global",
         ],
-        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
-        [
-            "gemini-flash-lite-3.5",
-            "google/gemini-3.5-flash-lite",
-            "google-vertex/global",
-        ],
         ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         [
             "gemini-large",
@@ -49,7 +43,7 @@ describe("OpenRouter Gemini routing", () => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 
-        const { options } = await transform([], {});
+        const { options } = await transform([], { model });
 
         expect(options.tools).toBeUndefined();
     });
@@ -94,7 +88,9 @@ describe("OpenRouter Gemini routing", () => {
 describe("Vertex Gemini Search routing", () => {
     const routes = [
         ["gemini-search", "gemini-2.5-flash-lite"],
+        ["gemini-flash-lite-3.5", "gemini-3.5-flash-lite"],
         ["gemini-search-fast", "gemini-3.5-flash-lite"],
+        ["gemini", "gemini-3.6-flash"],
         ["gemini-search-large", "gemini-3.6-flash"],
     ] as const;
 
@@ -123,7 +119,7 @@ describe("Vertex Gemini Search routing", () => {
 
         const { options } = await transform(
             [{ role: "user", content: "latest news" }],
-            {},
+            { model },
         );
 
         expect(options.tools).toEqual([
@@ -141,6 +137,7 @@ describe("Vertex Gemini Search routing", () => {
         if (!transform) throw new Error(`${model} transform missing`);
 
         const { options } = await transform([], {
+            model,
             tools: [{ type: "google_search" }],
         });
 
@@ -159,7 +156,10 @@ describe("Vertex Gemini Search routing", () => {
             { type: "function", function: { name: "customer_tool" } },
         ];
 
-        const { options } = await transform([], { tools });
+        const { options } = await transform([], {
+            model: "gemini-search-fast",
+            tools,
+        });
 
         expect(options.tools).toEqual(tools);
     });

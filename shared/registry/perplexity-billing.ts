@@ -133,19 +133,46 @@ function createPerplexitySearchBilling(
     };
 }
 
-export const PERPLEXITY_FAST_BILLING = createPerplexitySearchBilling(
-    "perplexity.sonar_low.search_request.v1",
-    "Perplexity Search adds $5 / 1K requests for low search context.",
-    5 / 1000,
-    "low",
-);
-
-export const PERPLEXITY_HIGH_BILLING = createPerplexitySearchBilling(
-    "perplexity.sonar_high.search_request.v1",
-    "Perplexity Search adds $12 / 1K requests for high search context.",
-    12 / 1000,
-    "high",
-);
+export const PERPLEXITY_SONAR_BILLING: BillingRules = {
+    adjustments: [
+        {
+            id: "perplexity.sonar_low.search_request.v1",
+            description:
+                "Perplexity Search adds $5 / 1K requests for low search context.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 5 / 1000,
+            countUnits: (_output, input) =>
+                input?.searchContextSize === "high" ? 0 : 1,
+            resolveUnitCost: (output, model) =>
+                resolvePerplexityRequestCost({
+                    output,
+                    model,
+                    ruleId: "perplexity.sonar_low.search_request.v1",
+                    staticFee: 5 / 1000,
+                    expectedSearchContextSize: "low",
+                }),
+        },
+        {
+            id: "perplexity.sonar_high.search_request.v1",
+            description:
+                "Perplexity Search adds $12 / 1K requests for high search context.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 12 / 1000,
+            countUnits: (_output, input) =>
+                input?.searchContextSize === "high" ? 1 : 0,
+            resolveUnitCost: (output, model) =>
+                resolvePerplexityRequestCost({
+                    output,
+                    model,
+                    ruleId: "perplexity.sonar_high.search_request.v1",
+                    staticFee: 12 / 1000,
+                    expectedSearchContextSize: "high",
+                }),
+        },
+    ],
+};
 
 export const PERPLEXITY_PRO_BILLING = createPerplexitySearchBilling(
     "perplexity.sonar_pro_high.search_request.v1",

@@ -381,6 +381,11 @@ async function generateTextResponse(
 ): Promise<Response> {
     syncTextEnvironment(c.env);
 
+    const normalizedRequestData = normalizePerplexitySearchContext(
+        c,
+        requestData,
+    );
+
     try {
         const {
             result: completion,
@@ -390,8 +395,8 @@ async function generateTextResponse(
             fallbackCandidates(c.var.model),
             async (attempt) =>
                 generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
+                    normalizedRequestData.messages,
+                    await gatewayContext(c, normalizedRequestData, attempt),
                 ),
             c.var.track?.failedCalls,
         );
@@ -417,8 +422,11 @@ async function generateTextResponse(
         // which is strictly more information, so leave it alone.
         const servedModelId =
             servedEntry?.id ??
-            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
-        if (requestData.stream)
+            (c.var.model?.communityEndpoint ||
+            CONSOLIDATED_TEXT_MODELS.has(c.var.model.resolved)
+                ? c.var.model.resolved
+                : undefined);
+        if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
@@ -437,6 +445,45 @@ async function generateTextResponse(
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }
+}
+
+const CONSOLIDATED_TEXT_MODELS = new Set([
+    "perplexity-fast",
+    "grok",
+    "gemini",
+    "gemini-flash-lite-3.5",
+]);
+
+const LEGACY_PERPLEXITY_HIGH_IDS = new Set([
+    "perplexity-high",
+    "perplexity-deep",
+    "sonar-deep",
+]);
+
+function normalizePerplexitySearchContext(
+    c: TextContext,
+    requestData: RequestData,
+): RequestData {
+    const resolved = c.var.model.resolved;
+    if (
+        !["perplexity-fast", "perplexity", "perplexity-reasoning"].includes(
+            resolved,
+        )
+    ) {
+        return requestData;
+    }
+
+    const searchContextSize =
+        requestData.web_search_options?.search_context_size ||
+        (resolved !== "perplexity-fast" ||
+        LEGACY_PERPLEXITY_HIGH_IDS.has(c.var.model.requested)
+            ? "high"
+            : "low");
+    c.var.track.setPricingInput({ searchContextSize });
+    return {
+        ...requestData,
+        web_search_options: { search_context_size: searchContextSize },
+    };
 }
 
 export async function handleChatCompletionLocal(

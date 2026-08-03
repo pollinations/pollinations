@@ -169,11 +169,35 @@ describe("resolveModelConfig", () => {
     ])("resolves %s to the high-context Sonar preset", async (modelName) => {
         const model = findModelByName(modelName);
 
-        expect(model?.name).toBe("perplexity-high");
-        const transformed = await model?.transform?.(messages, {});
-        expect(transformed?.options.web_search_options).toEqual({
+        expect(model?.name).toBe("perplexity-fast");
+        const result = resolveModelConfig(messages, {
+            model: modelName,
+            web_search_options: { search_context_size: "high" },
+        });
+        expect(result.options.model).toBe("sonar");
+        expect(result.options.web_search_options).toEqual({
             search_context_size: "high",
         });
+    });
+
+    it.each([
+        ["grok", undefined, "grok-4-20-non-reasoning"],
+        ["grok-4-20-reasoning", undefined, "grok-4-20-reasoning"],
+        ["grok", "high", "grok-4-20-reasoning"],
+        ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
+    ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {
+        const definition = findModelByName(model);
+        const transformed = await definition?.transform?.(messages, {
+            model,
+            reasoning_effort: reasoningEffort,
+        });
+        if (!transformed) throw new Error("Grok transform missing");
+
+        const result = resolveModelConfig(messages, transformed.options);
+        expect(result.options.model).toBe(deployment);
+        if (deployment === "grok-4-20-non-reasoning") {
+            expect(result.options.reasoning_effort).toBeUndefined();
+        }
     });
 
     it("marks missing model configs as 404 errors", () => {

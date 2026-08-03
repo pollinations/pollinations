@@ -76,6 +76,21 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
+test("legacy model permissions expose the consolidated canonical model", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["gemini-search-fast"],
+        user: { packBalance: 100 },
+    });
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        data: [{ id: "gemini-flash-lite-3.5" }],
+    });
+});
+
 test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,

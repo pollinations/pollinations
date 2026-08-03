@@ -2,6 +2,7 @@ import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
+import { normalizeModelPermissions } from "./model-permissions.ts";
 import { getModels } from "./registry.ts";
 
 export async function getVisibleModelIdsForUser(
@@ -50,8 +51,8 @@ export function filterPermissionsToVisibleModels(
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
+        models: normalizeModelPermissions(permissions.models).filter(
+            (modelId) => visibleModelIds.has(modelId),
         ),
     };
 }

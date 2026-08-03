@@ -12,14 +12,13 @@ import {
     stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
-import type { TransformFn } from "./types.js";
+import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
@@ -35,8 +34,46 @@ const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
 
 interface ModelDefinition {
     name: string;
-    config: (typeof portkeyConfig)[string];
+    config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+}
+
+const GROK_REASONING_ALIASES = new Set([
+    "grok-4-20-reasoning",
+    "grok-4-20",
+    "grok-4-1-fast-reasoning",
+]);
+
+function usesGrokReasoning(options: TransformOptions): boolean {
+    if (options.reasoning_effort !== undefined) {
+        return options.reasoning_effort !== "none";
+    }
+    return GROK_REASONING_ALIASES.has(options.model || "");
+}
+
+const grokTransform: TransformFn = async (messages, options) => {
+    const reasoning = usesGrokReasoning(options);
+    const transformed = await (reasoning
+        ? stripCacheControl(messages, options)
+        : pipe(stripCacheControl, stripReasoning)(messages, options));
+    return {
+        ...transformed,
+        options: {
+            ...transformed.options,
+            // Preserve the selected route after the non-reasoning transform
+            // strips reasoning_effort.
+            model: reasoning ? "grok-4-20-reasoning" : "grok",
+        },
+    };
+};
+
+function legacyGeminiSearchDefault(modelIds: string[]): TransformFn {
+    const legacyIds = new Set(modelIds);
+    const defaultSearch = createGeminiToolsTransform(["google_search"]);
+    return (messages, options) =>
+        legacyIds.has(options.model || "")
+            ? defaultSearch(messages, options)
+            : { messages, options };
 }
 
 const models: ModelDefinition[] = [
@@ -170,14 +207,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok",
-        config: portkeyConfig["grok-4-20-non-reasoning"],
-        // Non-reasoning deployment 500s if reasoning_effort is forwarded.
-        transform: pipe(stripCacheControl, stripReasoning),
-    },
-    {
-        name: "grok-4-20-reasoning",
-        config: portkeyConfig["grok-4-20-reasoning"],
-        transform: stripCacheControl,
+        config: (options = {}) =>
+            (usesGrokReasoning(options)
+                ? portkeyConfig["grok-4-20-reasoning"]
+                : portkeyConfig["grok-4-20-non-reasoning"])(),
+        transform: grokTransform,
     },
     {
         name: "grok-large",
@@ -248,10 +282,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["vertex/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
+            adaptGoogleSearchToolForVertex,
+            legacyGeminiSearchDefault([
+                "gemini-search-large",
+                "gemini-3.6-flash-search",
+                "gemini-3.5-flash-search",
+            ]),
             removeToolsForJsonResponse,
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
@@ -259,10 +298,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-flash-lite-3.5",
-        config: portkeyConfig["google/gemini-3.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
+            adaptGoogleSearchToolForVertex,
+            legacyGeminiSearchDefault([
+                "gemini-search-fast",
+                "gemini-3.1-flash-lite-search",
+                "gemini-3.5-flash-lite-search",
+            ]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -287,27 +331,6 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-search-fast",
-        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v3-flash"),
-        ),
-    },
-    {
-        name: "gemini-search-large",
-        config: portkeyConfig["vertex/gemini-3.6-flash"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiToolsTransform(["google_search"]),
-            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
         name: "midijourney",
         config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
@@ -320,22 +343,14 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
-        transform: createPerplexitySearchTransform("low"),
-    },
-    {
-        name: "perplexity-high",
-        config: portkeyConfig["sonar"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity",
         config: portkeyConfig["sonar-pro"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "kimi",

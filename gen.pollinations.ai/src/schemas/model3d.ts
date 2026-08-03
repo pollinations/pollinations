@@ -23,6 +23,10 @@ export const Generate3dRequestQueryParamsSchema = z.object({
             description:
                 "Model to use. See /3d/models for the full list and per-model input requirements.",
         }),
+    resolution: z.enum(["low", "medium", "high"]).optional().meta({
+        description:
+            "Output detail for `trellis-2`. Defaults to `low`; legacy resolution model IDs keep their previous default.",
+    }),
     image: z
         .string()
         .transform((value: string) => {
@@ -58,3 +62,14 @@ export const Generate3dRequestQueryParamsSchema = z.object({
 export type Generate3dRequestQueryParams = z.infer<
     typeof Generate3dRequestQueryParamsSchema
 >;
+
+export const Generate3dRequestBodySchema = z.object({
+    model: z
+        .enum(VALID_3D_MODELS as unknown as [string, ...string[]])
+        .optional()
+        .default(DEFAULT_3D_MODEL),
+    image: z.union([z.string(), z.array(z.string())]).optional(),
+    resolution: z.enum(["low", "medium", "high"]).optional(),
+    seed: z.number().int().optional(),
+    safe: SafeSchema,
+});

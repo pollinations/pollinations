@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { proxy } from "hono/proxy";
+import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import { deleteCacheEntry, generateCacheKey } from "./cache-utils.ts";
 import type { Env } from "./env";
 import { googleAnalytics } from "./middleware/analytics.ts";
@@ -17,8 +18,16 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
         allowHeaders: ["*"],
+        exposeHeaders: Object.keys(ATTRIBUTION_HEADERS),
     }),
 );
+
+app.use("*", async (c, next) => {
+    await next();
+    if (c.res.ok) {
+        addAttributionHeaders(c.res.headers);
+    }
+});
 
 // Delete cache entry endpoint
 // Usage: DELETE /delete/prompt/{prompt}?{same query params as original request}

@@ -15,6 +15,8 @@ type Env = {
     };
 };
 
+export const CACHE_VERSION = "brand-v1";
+
 /**
  * Apply model-specific caching rules to the URL
  * @param {URL} url - The URL object to transform
@@ -83,11 +85,10 @@ export function generateCacheKey(url: URL): string {
     const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-    // Allow 10 chars for the hash and hyphen
-    const maxPathLength = 990;
+    const maxPathLength = 1000 - CACHE_VERSION.length - hash.length - 2; // two separators
     const trimmedPath = safePath.substring(0, maxPathLength);
 
-    return `${trimmedPath}-${hash}`;
+    return `${CACHE_VERSION}-${trimmedPath}-${hash}`;
 }
 
 /**
@@ -291,7 +292,10 @@ export async function deleteCacheEntry(
         if (vectorDeleted) {
             console.log("[DELETE] Deleted from Vectorize:", vectorId);
         } else {
-            console.log("[DELETE] Vector not found or delete failed:", vectorId);
+            console.log(
+                "[DELETE] Vector not found or delete failed:",
+                vectorId,
+            );
         }
     } catch (error) {
         console.error("[DELETE] Error deleting from Vectorize:", error);

@@ -1,10 +1,10 @@
 import { exec } from "node:child_process";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import debug from "debug";
 import { fileTypeFromBuffer } from "file-type";
+import sharp from "sharp";
 import tempfile from "tempfile";
-import { MODELS } from "./models.js";
-import { ImageParams } from "./params.js";
 
 const logError = debug("pollinations:error");
 
@@ -117,87 +117,99 @@ export async function resizeImage(
     });
 }
 
+const LOGO_ASPECT_RATIO = 1024 / 126;
+const BLACK_LOGO_PATH = fileURLToPath(
+    new URL("../assets/lockup-horizontal-black.png", import.meta.url),
+);
+const WHITE_LOGO_PATH = fileURLToPath(
+    new URL("../assets/lockup-horizontal-white.png", import.meta.url),
+);
+
+export type LogoPlacement = {
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+    outline: number;
+};
+
 /**
- * Determines the appropriate logo path based on the parameters and maturity flags.
- * @param {Object} safeParams - The safe parameters for the image generation.
- * @param {boolean} isChild - Flag indicating if the image is considered child content.
- * @param {boolean} isMature - Flag indicating if the image is considered mature content.
- * @returns {string|null} - The path to the logo file or null if no logo should be added.
+ * Keep the horizontal lockup readable without letting it dominate the image.
  */
-export function getLogoPath(
-    safeParams: ImageParams,
-    isChild: boolean,
-    isMature: boolean,
-): string | null {
-    if (
-        !MODELS[safeParams.model].type.startsWith("meoow") &&
-        (safeParams.nologo || safeParams.nofeed || isChild || isMature)
-    ) {
-        return null;
-    }
-    return null; // logo disabled on legacy service
+export function getLogoPlacement(width: number, height: number): LogoPlacement {
+    const shortSide = Math.min(width, height);
+    const margin = Math.max(
+        1,
+        Math.min(
+            Math.max(10, Math.min(20, Math.round(shortSide * 0.015))),
+            Math.floor(width / 8),
+            Math.floor(height / 8),
+        ),
+    );
+    const availableWidth = Math.max(1, width - margin * 2);
+    const availableHeight = Math.max(1, height - margin * 2);
+    const desiredHeight = Math.max(
+        14,
+        Math.min(28, Math.round(shortSide * 0.025)),
+    );
+    const logoHeight = Math.max(
+        1,
+        Math.min(
+            desiredHeight,
+            availableHeight,
+            Math.max(1, Math.floor(availableWidth / LOGO_ASPECT_RATIO)),
+        ),
+    );
+    const logoWidth = Math.min(
+        availableWidth,
+        Math.max(1, Math.round(logoHeight * LOGO_ASPECT_RATIO)),
+    );
+
+    return {
+        width: logoWidth,
+        height: logoHeight,
+        left: width - logoWidth - margin,
+        top: height - logoHeight - margin,
+        outline: logoHeight >= 24 ? 2 : 1,
+    };
 }
 
 /**
- * Adds a logo to the image using ImageMagick.
- * @param {Buffer} buffer - The image buffer.
- * @param {string} logoPath - The path to the logo file.
- * @param {Object} safeParams - Parameters for adjusting the logo size.
- * @returns {Promise<Buffer>} - The image buffer with the logo added.
+ * Adds the Pollinations horizontal lockup in the bottom-right corner.
+ * A small black outline keeps the white lockup legible on light backgrounds.
  */
-export async function addPollinationsLogoWithImagemagick(
-    buffer: Buffer,
-    logoPath: string,
-    safeParams: ImageParams,
-): Promise<Buffer> {
-    const fileTypeResult = await fileTypeFromBuffer(buffer);
-    if (!fileTypeResult) {
-        throw new Error("Failed to determine file type");
+export async function addPollinationsLogo(buffer: Buffer): Promise<Buffer> {
+    const metadata = await sharp(buffer).metadata();
+    if (!metadata.width || !metadata.height) {
+        throw new Error("Failed to determine image dimensions");
     }
-    const { ext } = fileTypeResult;
 
-    const tempImageFile = tempfile({ extension: ext });
+    const placement = getLogoPlacement(metadata.width, metadata.height);
+    const resizeOptions = {
+        width: placement.width,
+        height: placement.height,
+        fit: "contain" as const,
+    };
+    const [blackLogo, whiteLogo] = await Promise.all([
+        sharp(BLACK_LOGO_PATH).resize(resizeOptions).png().toBuffer(),
+        sharp(WHITE_LOGO_PATH).resize(resizeOptions).png().toBuffer(),
+    ]);
+    const outlineOffsets = [-1, 0, 1]
+        .flatMap((x) => [-1, 0, 1].map((y) => ({ x, y })))
+        .filter(({ x, y }) => x !== 0 || y !== 0);
 
-    // Use PNG for gptimage model, JPG otherwise
-    const outputExt = "png";
-    const tempOutputFile = tempfile({ extension: outputExt });
-
-    await fs.writeFile(tempImageFile, buffer);
-
-    const targetWidth = safeParams.width * 0.3;
-    const scaleFactor = targetWidth / 200;
-    const targetHeight = scaleFactor * 31;
-
-    return new Promise((resolve, reject) => {
-        // Note: -background none is crucial for preserving transparency
-        const command = [
-            `convert`,
-            `-background none`,
-            `-gravity southeast`,
-            `-geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath}`,
-            `-composite ${tempOutputFile}`,
-        ].join(" ");
-        try {
-            exec(command, async (error, _stdout, _stderr) => {
-                try {
-                    if (error) {
-                        logError(`error: ${error.message}`);
-                        reject(error);
-                        return;
-                    }
-                    const bufferWithLegend = await fs.readFile(tempOutputFile);
-                    await Promise.all([
-                        fs.unlink(tempImageFile),
-                        fs.unlink(tempOutputFile),
-                    ]);
-                    resolve(bufferWithLegend);
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        } catch (error) {
-            logError(`error: ${error.message}`);
-            reject(error);
-        }
-    });
+    return await sharp(buffer)
+        .composite([
+            ...outlineOffsets.map(({ x, y }) => ({
+                input: blackLogo,
+                left: placement.left + x * placement.outline,
+                top: placement.top + y * placement.outline,
+            })),
+            {
+                input: whiteLogo,
+                left: placement.left,
+                top: placement.top,
+            },
+        ])
+        .toBuffer();
 }

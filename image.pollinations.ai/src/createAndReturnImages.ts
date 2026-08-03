@@ -5,10 +5,7 @@ import { fileTypeFromBuffer } from "file-type";
 // Import shared authentication utilities
 import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
-import {
-    addPollinationsLogoWithImagemagick,
-    getLogoPath,
-} from "./imageOperations.ts";
+import { addPollinationsLogo } from "./imageOperations.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -1032,25 +1029,14 @@ const prepareMetadata = (
  */
 const processImageBuffer = async (
     buffer: Buffer,
-    maturityFlags: ContentSafetyFlags,
-    safeParams: ImageParams,
     metadataObj: object,
     maturity: object,
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> => {
-    const { isMature, isChild } = maturityFlags;
-
     // Add logo
     progress.updateBar(requestId, 80, "Processing", "Adding logo...");
-    const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let processedBuffer = !logoPath
-        ? buffer
-        : await addPollinationsLogoWithImagemagick(
-              buffer,
-              logoPath,
-              safeParams,
-          );
+    let processedBuffer = await addPollinationsLogo(buffer);
 
     // Convert format to JPEG (gptimage PNG support temporarily disabled)
     progress.updateBar(
@@ -1148,8 +1134,6 @@ export async function createAndReturnImageCached(
         // Process the image buffer
         const processedBuffer = await processImageBuffer(
             result.buffer,
-            maturityFlags,
-            safeParams,
             metadataObj,
             maturity,
             progress,

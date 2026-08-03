@@ -1,0 +1,35 @@
+{
+  "pr_number": 13012,
+  "title": "feat: add Krea 2 Medium",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13012",
+  "merged_at": "2026-08-03T11:27:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only krea with the krea-2 alias through fal at $0.03 per image, multiplier 1, and no Pollinations fallback. fal provider-managed endpoint fallback remains at its enabled default for reliability.\n- Uses the official fal queue under a 120-second deadline; a live 30-request burst completed 30/30 in 40.29s average and 61.43s maximum.\n- Supports text-to-image, aspect ratio mapping, and seed. Image references are rejected because fal prices them differently and this route has one flat billing unit.\n- Adds the official Krea brand icon and focused adapter, catalog, pricing, permissions, cache, VCR, and safety coverage. Local E2E verified canonical and alias routes, square/wide/tall output, paid-only rejection, MISS-to-HIT caching, and an exact $0.03 wallet deduction.\n\nAddresses #11980",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Krea joins the garden",
+    "blurb": "Krea 2 Medium has landed in the image hive, bringing its own carefully tended route through fal. Paid creators can now send a prompt, choose a shape and seed, and collect fresh pixels for $0.03 a bloom.",
+    "summary": "Added paid-only Krea 2 Medium image generation through fal under the `krea-2` alias, with text-to-image, aspect-ratio mapping, seed support, official queue handling, and flat $0.03-per-image billing.",
+    "impact": "Paid users can generate square, wide, or tall Krea 2 Medium images via the canonical model or `krea-2` alias, with cached repeats and an exact $0.03 wallet charge per new image.",
+    "keywords": [
+      "krea-2-medium",
+      "image-generation",
+      "fal",
+      "paid-models",
+      "billing",
+      "image-api",
+      "seed"
+    ],
+    "visual_concept": "Depict Krea 2 Medium as a cozy artist's image garden: a retro terminal renders several framed pixel landscapes in square, wide, and tall formats, each grown from prompt-seeds. Polli wears a tiny painter's beret and tends the glowing frames while holding a seed packet, with the Krea brand mark on a small friendly sign; code-plants and flowers make the API-to-image flow feel organic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny painter’s beret while tending a garden of retro image frames in square, wide, and tall formats grown from prompt-seeds; a small Krea logo sign, code-plants, and a CRT terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: “KREA 2”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13012.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny painter’s beret while tending a garden of retro image frames in square, wide, and tall formats grown from prompt-seeds; a small Krea logo sign, code-plants, and a CRT terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: “KREA 2”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-03T11:28:24.907851+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13025,
+  "title": "fix: harden DreamShaper Vast deployment",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13025",
+  "merged_at": "2026-08-03T10:25:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records DreamShaper instance `46607014` replacing `46307858` at `$0.150000/hr`, saving about `$18.40/month`, and reconciles the live Vast fleet burn.\n- Adds a checked-in `setup-vast.sh` with isolated-canary defaults, explicit heartbeat/tunnel gates, `/root/onstart.sh`, and stale Uvicorn listener cleanup.\n- Corrects the production pool key documentation (`sana`) and captures the successful deployment procedure.\n- Documents validation: 210 images in 20.69s at 10.15 img/s, zero load errors, 1.54s p95, fixed-seed public parity, successful Vast stop/start, and 358 attributed production generations with zero backend failures before old-instance destruction.\n\nChecks: `bash -n`, `git diff --check`. Biome processed no files because Markdown and shell are excluded. No model pricing, registry contract, production Worker deployment, or secret values changed.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "DreamShaper gets a sturdier pot",
+    "blurb": "DreamShaper Vast has moved into a carefully checked new home, with canary gates, heartbeat checks, and a cleanup crew for stray Uvicorn listeners. The bees tested the plumbing before planting anything permanent.",
+    "summary": "Hardened the DreamShaper LCM Vast deployment around replacement instance 46607014 with a checked-in setup script, isolated-canary defaults, heartbeat and tunnel gates, stale Uvicorn cleanup, and documented validation procedures.",
+    "impact": "DreamShaper image generation now runs on a deployment path validated at 10.15 images/s with 1.54s p95 latency, fixed-seed public parity, successful stop/start recovery, and zero backend failures across 358 attributed production generations.",
+    "keywords": [
+      "DreamShaper",
+      "Vast",
+      "image-generation",
+      "deployment",
+      "reliability",
+      "GPU"
+    ],
+    "visual_concept": "Depict DreamShaper as a cozy image-generation garden greenhouse being carefully transplanted to a new, sturdier server plot. Polli wears a tiny mechanic tool belt and checks a glowing heartbeat meter and tunnel cable while a small CRT monitor robot watches a terminal showing clean image tiles; code-plants, flowers, and a gently cleared old cable suggest safe migration and reliable operations.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny mechanic tool belt, tending a lime green (#ecf874) server greenhouse where DreamShaper image tiles bloom from code-plants; she checks a glowing heartbeat monitor and secure tunnel cable while a friendly CRT robot holds a terminal printout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"DREAMSHAPER READY\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13025.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny mechanic tool belt, tending a lime green (#ecf874) server greenhouse where DreamShaper image tiles bloom from code-plants; she checks a glowing heartbeat monitor and secure tunnel cable while a friendly CRT robot holds a terminal printout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"DREAMSHAPER READY\"."
+  },
+  "generated_at": "2026-08-03T10:27:43.047814+00:00"
+}

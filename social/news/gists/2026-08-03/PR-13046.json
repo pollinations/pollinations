@@ -1,0 +1,34 @@
+{
+  "pr_number": 13046,
+  "title": "fix: queue production Cloudflare deploys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13046",
+  "merged_at": "2026-08-03T19:38:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps Gen, Enter, and Media deployments serialized in the shared production concurrency group.\n- Enables GitHub Actions’ `queue: max` behavior so a third triggered workflow waits instead of replacing the existing pending workflow.\n- Fixes recurring zero-job cancellations when a production commit triggers all three backend deploys.\n\nValidation:\n- `git diff --check`\n- Biome check on all three workflow files\n- Syntax matches GitHub’s documented May 2026 concurrency queue feature",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The deploy queue learned patience",
+    "blurb": "Production deploys for Gen, Enter, and Media now wait their turn instead of vanishing into the workflow compost. Three backend bees can arrive at once; the shared queue keeps them orderly.",
+    "summary": "Enabled GitHub Actions' `queue: max` concurrency behavior for the shared production deployment group, so Gen, Enter, and Media deploy workflows serialize instead of cancelling a pending third deploy with zero jobs.",
+    "impact": "Production commits that trigger all three backend deploys now queue reliably, improving deployment completion and reducing skipped releases.",
+    "keywords": [
+      "github-actions",
+      "cloudflare",
+      "deployments",
+      "production",
+      "concurrency",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a tiny production release coordinator in a cozy garden-server shed, guiding three labeled deployment carts—Gen, Enter, and Media—into one orderly queue beneath a shared Cloudflare-like gateway. Use a patient line of code-plants and softly glowing terminals to represent serialized workflows and reliable releases.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny traffic-controller cap as she guides three small carts labeled “GEN”, “ENTER”, and “MEDIA” into a calm single queue beside a glowing retro deployment terminal and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes; pixel-font sign reads “QUEUE: MAX”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13046.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny traffic-controller cap as she guides three small carts labeled “GEN”, “ENTER”, and “MEDIA” into a calm single queue beside a glowing retro deployment terminal and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes; pixel-font sign reads “QUEUE: MAX”."
+  },
+  "generated_at": "2026-08-03T19:39:35.911508+00:00"
+}

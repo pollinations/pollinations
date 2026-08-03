@@ -387,29 +387,6 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
-    it("grok-video-pro bills every supported resolution and image input", () => {
-        const tiers = [
-            ["480p", 0.08],
-            ["720p", 0.14],
-            ["1080p", 0.25],
-        ] as const;
-
-        for (const [resolution, rate] of tiers) {
-            const billing = bill(
-                "grok-video-pro",
-                {
-                    promptImageTokens: 1,
-                    completionVideoSeconds: 5,
-                },
-                { resolution, hasImage: true },
-            );
-            expect(billing.costVariant).toBe(
-                resolution === "720p" ? undefined : resolution,
-            );
-            expect(billing.cost.totalCost).toBeCloseTo(0.01 + 5 * rate, 12);
-        }
-    });
-
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,

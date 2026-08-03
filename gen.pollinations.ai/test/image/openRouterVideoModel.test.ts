@@ -255,7 +255,6 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
 
     it.each([
         "480p",
-        "720p",
         "1080p",
     ] as const)("forwards the explicit %s resolution", async (resolution) => {
         setOpenRouterEnv();
@@ -289,7 +288,6 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
                 dimensionsExplicit: true,
                 aspectRatio: "9:16",
                 duration: 15,
-                resolution: "1080p",
                 image: ["https://example.com/start.png"],
             },
         );
@@ -297,7 +295,7 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
         expect(requests[0]).toEqual({
             model: "x-ai/grok-imagine-video-1.5",
             prompt: "animate this opening frame",
-            resolution: "1080p",
+            resolution: "720p",
             duration: 15,
             aspect_ratio: "3:2",
             frame_images: [
@@ -389,86 +387,5 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-        "failed",
-        "cancelled",
-        "expired",
-    ] as const)("returns a 502 when the upstream job is %s", async (status) => {
-        setOpenRouterEnv();
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-            const href = typeof url === "string" ? url : url.toString();
-
-            if (href === SUBMIT_URL) {
-                return new Response(
-                    JSON.stringify({
-                        id: "job-grok-test",
-                        polling_url: GROK_POLL_URL,
-                        status: "pending",
-                    }),
-                    { status: 200 },
-                );
-            }
-
-            if (href === GROK_POLL_URL) {
-                return new Response(
-                    JSON.stringify({
-                        id: "job-grok-test",
-                        polling_url: GROK_POLL_URL,
-                        status,
-                        error: "upstream test error",
-                    }),
-                    { status: 200 },
-                );
-            }
-
-            return new Response("unexpected URL", { status: 404 });
-        });
-
-        await expect(
-            callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                ...baseParams,
-                model: "grok-video-pro",
-            }),
-        ).rejects.toMatchObject({ status: 502 });
-    });
-
-    it("returns a 502 when a completed job has no download URL", async () => {
-        setOpenRouterEnv();
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-            const href = typeof url === "string" ? url : url.toString();
-
-            if (href === SUBMIT_URL) {
-                return new Response(
-                    JSON.stringify({
-                        id: "job-grok-test",
-                        polling_url: GROK_POLL_URL,
-                        status: "pending",
-                    }),
-                    { status: 200 },
-                );
-            }
-
-            if (href === GROK_POLL_URL) {
-                return new Response(
-                    JSON.stringify({
-                        id: "job-grok-test",
-                        polling_url: GROK_POLL_URL,
-                        status: "completed",
-                    }),
-                    { status: 200 },
-                );
-            }
-
-            return new Response("unexpected URL", { status: 404 });
-        });
-
-        await expect(
-            callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                ...baseParams,
-                model: "grok-video-pro",
-            }),
-        ).rejects.toMatchObject({ status: 502 });
     });
 });

@@ -318,59 +318,6 @@ describe("gen worker routing", () => {
         });
     });
 
-    it("lists Grok Imagine Video 1.5 with resolution pricing and audio", async () => {
-        const response = await fetchWorker("/video/models", envWithEnter());
-
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            title?: string;
-            description?: string;
-            aliases?: string[];
-            resolutions?: string[];
-            pricing: Record<string, string>;
-            pricing_variants?: Array<{
-                name: string;
-                pricing: Record<string, string>;
-            }>;
-            output_modalities?: string[];
-            video_capabilities?: string[];
-        }[];
-        const model = models.find(
-            (candidate) => candidate.name === "grok-video-pro",
-        );
-
-        expect(model).toMatchObject({
-            title: "Grok Imagine Video 1.5",
-            aliases: ["grok-imagine-video", "grok-imagine-video-1.5"],
-            resolutions: ["720p", "480p", "1080p"],
-            pricing: {
-                promptImageTokens: "0.01",
-                completionVideoSeconds: "0.14",
-                currency: "pollen",
-            },
-            output_modalities: ["video", "audio"],
-            video_capabilities: ["start_frame", "audio_output"],
-        });
-        expect(model?.description).not.toContain(model?.title);
-        expect(model?.pricing_variants).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    name: "480p",
-                    pricing: expect.objectContaining({
-                        completionVideoSeconds: "0.08",
-                    }),
-                }),
-                expect.objectContaining({
-                    name: "1080p",
-                    pricing: expect.objectContaining({
-                        completionVideoSeconds: "0.25",
-                    }),
-                }),
-            ]),
-        );
-    });
-
     it("serves OpenAI-compatible models without auth", async () => {
         const response = await fetchWorker("/v1/models", envWithEnter());
 

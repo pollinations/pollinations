@@ -1,0 +1,34 @@
+{
+  "pr_number": 13034,
+  "title": "fix: correct cost variant boundaries and roll back undeployed telemetry",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13034",
+  "merged_at": "2026-08-03T14:18:41Z",
+  "labels": [],
+  "pr_body_excerpt": "## What\n\n- Make OpenRouter `min_prompt_tokens` cost-variant boundaries inclusive for Grok 4.5, Gemini Large, Qwen Large, and Qwen3.7 Flash.\n- Keep Azure/OpenAI's separate 272K boundary strict.\n- Retain only `cost_variant` on the live `generation_event_v2` datasource.\n- Roll back the undeployed `cost_variant_status`, `provider_reported_cost`, and `provider_cost_delta` telemetry and reconciliation plumbing.\n- Remove the prior `DEPLOYMENT_METHOD 'alter'` directives from `generation_usage_hourly_mv` and `byop_app_daily_mv`.\n\n## Impact\n\n- Requests exactly at an OpenRouter boundary use the higher rate sheet.\n- Rates, routing, aliases, token aggregation, multipliers, and paid-only behavior are otherwise unchanged.\n- Perplexity request-fee billing still reads `usage.cost.request_cost`; `x-usage-missing` remains.\n- No Tinybird deployment has been performed.\n\n## Checks\n\n- Gen: 820 passed, 6 skipped.\n- Enter pricing suites: 367 passed.\n- Gen and Enter typechecks pass.\n- Biome and `git diff --check` pass.\n- Prior Tinybird staging and production deployment checks were non-destructive and copied no data.\n\n## Deployment gate\n\nImmediately before deployment, rerun `deployment create --check --no-allow-destructive-operations` for each workspace. Confirm that neither `generation_usage_hourly_mv` nor `byop_app_daily_mv` will be repopulated before proceeding.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The boundary bees learned math",
+    "blurb": "Token-count fenceposts are now facing the right direction. Requests landing exactly on OpenRouter’s big-model thresholds find the correct higher rate sheet, while the hive keeps its telemetry tidy.",
+    "summary": "Made OpenRouter min_prompt_tokens boundaries inclusive for Grok 4.5, Gemini Large, Qwen Large, and Qwen3.7 Flash, while preserving Azure/OpenAI’s strict 272K boundary and retaining only live cost_variant telemetry.",
+    "impact": "Requests exactly at the affected OpenRouter token thresholds now receive the higher matching rate sheet, with routing, aliases, multipliers, paid-only behavior, and Perplexity request-fee billing unchanged.",
+    "keywords": [
+      "billing",
+      "cost-variants",
+      "OpenRouter",
+      "token-boundaries",
+      "telemetry",
+      "pricing"
+    ],
+    "visual_concept": "Depict a cozy token garden with four labeled stepping-stone thresholds leading to a higher-rate flower bed, representing inclusive OpenRouter boundaries. Polli, wearing tiny accountant glasses and holding a ruler, carefully places a token exactly on a boundary while a friendly CRT robot confirms the correct path; keep a separate tall 272K gate visibly strict in the background, with code-plants and tidy clipped telemetry vines.",
+    "image_prompt": "A cozy pixel art token garden where the cute Polli bee mascot—yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded translucent light-blue wings—wears tiny accountant glasses and uses a ruler to place a glowing token exactly on an inclusive stepping-stone boundary leading to a higher-rate flower bed; a cute CRT monitor robot points happily at the correct path, while a separate clearly closed \"272K\" garden gate sits behind them among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13034.jpg",
+    "prompt": "A cozy pixel art token garden where the cute Polli bee mascot—yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded translucent light-blue wings—wears tiny accountant glasses and uses a ruler to place a glowing token exactly on an inclusive stepping-stone boundary leading to a higher-rate flower bed; a cute CRT monitor robot points happily at the correct path, while a separate clearly closed \"272K\" garden gate sits behind them among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-03T14:19:48.731569+00:00"
+}

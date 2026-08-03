@@ -32,6 +32,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     162339795, // meow18838
     130518306, // Lorodn4x
     198414737, // AkshayCoder48
+    205307392, // chirag-gamer
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

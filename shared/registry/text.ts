@@ -1,4 +1,9 @@
 import {
+    defineCostVariants,
+    longContextAbove,
+    totalPromptTokens,
+} from "./cost-variants";
+import {
     GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
@@ -112,6 +117,27 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.25),
             completionTextTokens: perMillion(15.0),
         },
+        // Azure meters GPT-5.4 as separate "<272k" / ">272k context length"
+        // SKUs — the whole request bills at one tier (2x input & cached,
+        // 1.5x output). Verified against azure.microsoft.com/pricing and the
+        // Retail Prices API ("5.4 longco *" meters), 2026-07-22.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(5.0),
+                    promptCachedTokens: perMillion(0.5),
+                    completionTextTokens: perMillion(22.5),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+        ),
         title: "GPT-5.4",
         description:
             "Deep reasoning for the hardest questions; slower and pricier than lighter tiers",
@@ -157,6 +183,25 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        // GPT-5.5 documents strict >272K whole-request repricing; Azure's
+        // LongCo global meters are $10/$1/$45 per M.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+        ),
         title: "GPT-5.5",
         description:
             "Frontier reasoning for complex, multi-step problems; takes its time thinking",
@@ -181,6 +226,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(30.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    promptCacheWriteTokens: perMillion(12.5),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
         inputModalities: ["text", "image"],
@@ -204,6 +267,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(3.125),
             completionTextTokens: perMillion(15.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(5.0),
+                    promptCachedTokens: perMillion(0.5),
+                    promptCacheWriteTokens: perMillion(6.25),
+                    completionTextTokens: perMillion(22.5),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
         inputModalities: ["text", "image"],
@@ -227,6 +308,24 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(1.25),
             completionTextTokens: perMillion(6.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(2.0),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(2.5),
+                    completionTextTokens: perMillion(9.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+        ),
         title: "ChatGPT 5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
         inputModalities: ["text", "image"],
@@ -638,7 +737,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.74),
-            promptCachedTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.145),
             completionTextTokens: perMillion(3.48),
         },
         title: "DeepSeek V4 Pro",
@@ -740,13 +839,30 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter doubles token rates above 200K prompt tokens. Pollinations
-        // keeps the full context window and absorbs that higher tier.
+        // OpenRouter's min_prompt_tokens override is strict: the higher tier
+        // applies above 200K total prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.3),
             completionTextTokens: perMillion(6),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.6),
+                    completionTextTokens: perMillion(12),
+                },
+            },
+            longContextAbove(200_000),
+            {
+                long_context: {
+                    label: "Long context (>200K)",
+                    description:
+                        "More than 200,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+        ),
         title: "Grok 4.5",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
@@ -882,6 +998,24 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        // Uses the same Azure GPT-5.5 deployment as openai-large.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+        ),
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",
@@ -1392,12 +1526,38 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
+            // OpenRouter bills Gemini cache writes as normal input plus the
+            // five-minute storage charge applied by the billing rule below.
             promptCacheWriteTokens: perMillion(2.0),
             promptAudioTokens: perMillion(2.0),
             promptImageTokens: perMillion(2.0),
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
+        // The pinned OpenRouter Google Vertex route reprices the whole request
+        // above 200K prompt tokens. Image tokens retain their separately
+        // advertised base rate; cache storage remains an independent
+        // adjustment below.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4.0),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(4.0),
+                    promptAudioTokens: perMillion(4.0),
+                    promptVideoTokens: perMillion(4.0),
+                    completionTextTokens: perMillion(18.0),
+                },
+            },
+            longContextAbove(200_000),
+            {
+                long_context: {
+                    label: "Long context (>200K)",
+                    description:
+                        "More than 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                },
+            },
+        ),
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
             4.5,
@@ -1691,14 +1851,31 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter triples token rates above 256K prompt tokens. Pollinations
-        // keeps the full context window and absorbs that higher tier.
+        // OpenRouter triples all token rates above 256K prompt tokens.
         cost: {
             promptTextTokens: perMillion(0.32),
             promptCachedTokens: perMillion(0.064),
             promptCacheWriteTokens: perMillion(0.4),
             completionTextTokens: perMillion(1.28),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.96),
+                    promptCachedTokens: perMillion(0.192),
+                    promptCacheWriteTokens: perMillion(1.2),
+                    completionTextTokens: perMillion(3.84),
+                },
+            },
+            longContextAbove(256_000),
+            {
+                long_context: {
+                    label: "Long context (>256K)",
+                    description:
+                        "More than 256,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+        ),
         title: "Qwen3.7 Plus",
         description:
             "Multimodal agent intelligence for coding and productivity",
@@ -1742,14 +1919,54 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter raises rates above 32K and 256K prompt tokens.
-        // Pollinations charges the base tier and absorbs the higher tiers.
+        // OpenRouter's min_prompt_tokens overrides are strict: the higher tiers
+        // apply above 32K and 256K total prompt tokens.
         cost: {
             promptTextTokens: perMillion(0.03),
             promptCachedTokens: perMillion(0.006),
             promptCacheWriteTokens: perMillion(0.038),
+            promptImageTokens: perMillion(0.03),
+            promptVideoTokens: perMillion(0.03),
             completionTextTokens: perMillion(0.13),
         },
+        ...defineCostVariants(
+            {
+                context_32k: {
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
+                },
+                context_256k: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
+                },
+            },
+            ({ usage }) => {
+                const promptTokens = totalPromptTokens(usage);
+                if (promptTokens > 256_000) return "context_256k";
+                if (promptTokens > 32_000) return "context_32k";
+                return undefined;
+            },
+            {
+                context_32k: {
+                    label: ">32K context",
+                    description:
+                        "More than 32,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+                context_256k: {
+                    label: ">256K context",
+                    description:
+                        "More than 256,000 prompt tokens; the highest rates apply to the whole request.",
+                },
+            },
+        ),
         title: "Qwen3.7 Flash",
         description:
             "Ultra-low-cost multimodal reasoning for agents and visual tasks",

@@ -150,14 +150,12 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
         tokenPriceCompletionImage: 0.025,
         totalCost: 0.025,
         totalPrice: 0.025,
-        costVariantStatus: "base",
     });
     expect(textToImage.costVariant).toBeUndefined();
     expect(edit).toMatchObject({
         modelRequested: "qwen-image",
         modelUsed: "qwen-image-edit",
         costVariant: "edit",
-        costVariantStatus: "selected",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.03,
         totalCost: 0.03,
@@ -186,7 +184,6 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
         modelRequested: "p-video",
         modelUsed: "p-video",
         costVariant: "1080p",
-        costVariantStatus: "selected",
         tokenCountCompletionVideoSeconds: 5,
         tokenPriceCompletionVideoSeconds: 0.04,
         totalCost: 0.2,

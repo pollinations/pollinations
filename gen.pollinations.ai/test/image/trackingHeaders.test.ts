@@ -18,30 +18,6 @@ describe("buildTrackingHeaders", () => {
         });
     });
 
-    it("forwards a valid provider-reported cost for reconciliation", () => {
-        expect(
-            buildTrackingHeaders("grok-video-pro", {
-                actualModel: "grok-video-pro",
-                usage: { completionVideoSeconds: 5 },
-                providerReportedCost: 0.35,
-            }),
-        ).toMatchObject({
-            "x-model-used": "grok-video-pro",
-            "x-usage-completion-video-seconds": "5",
-            "x-provider-reported-cost": "0.35",
-        });
-    });
-
-    it("ignores malformed provider-reported costs", () => {
-        expect(
-            buildTrackingHeaders("flux", {
-                actualModel: "flux",
-                usage: { completionImageTokens: 1 },
-                providerReportedCost: Number.NaN,
-            }),
-        ).not.toHaveProperty("x-provider-reported-cost");
-    });
-
     it("rejects missing usage instead of inventing an image unit", () => {
         expect(() => buildTrackingHeaders("flux", undefined as never)).toThrow(
             "Missing billable usage for flux",

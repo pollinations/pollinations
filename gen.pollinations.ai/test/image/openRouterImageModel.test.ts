@@ -98,7 +98,6 @@ describe("OpenRouter Grok Imagine Pro", () => {
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
             actualModel: "grok-imagine-pro",
-            providerReportedCost: 0.05,
             usage: { completionImageTokens: 1 },
         });
     });
@@ -232,7 +231,6 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana",
-            providerReportedCost: 0.0387027,
             usage: {
                 promptTextTokens: 9,
                 completionImageTokens: 1290,
@@ -283,7 +281,6 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-2",
-            providerReportedCost: 0.151254,
             usage: {
                 promptTextTokens: 12,
                 completionTextTokens: 12,
@@ -297,27 +294,30 @@ describe("OpenRouter Gemini image", () => {
         [1024, 1024, "1K"],
         [1920, 1080, "2K"],
         [3840, 2160, "4K"],
-    ] as const)("maps %sx%s NanoBanana 2 requests to %s", async (width, height, expectedResolution) => {
-        syncImageEnv(
-            {
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockGeminiFetch(requests);
+    ] as const)(
+        "maps %sx%s NanoBanana 2 requests to %s",
+        async (width, height, expectedResolution) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            const requests: Record<string, unknown>[] = [];
+            mockGeminiFetch(requests);
 
-        await callOpenRouterGeminiImageAPI("test prompt", {
-            ...baseParams,
-            model: "nanobanana-2",
-            width,
-            height,
-            reasoning: "fast",
-        });
+            await callOpenRouterGeminiImageAPI("test prompt", {
+                ...baseParams,
+                model: "nanobanana-2",
+                width,
+                height,
+                reasoning: "fast",
+            });
 
-        expect(requests[0].resolution).toBe(expectedResolution);
-        expect(requests[0].reasoning_effort).toBe("low");
-    });
+            expect(requests[0].resolution).toBe(expectedResolution);
+            expect(requests[0].reasoning_effort).toBe("low");
+        },
+    );
 
     it("pins NanoBanana 2 Lite to 1K Vertex with no fallback", async () => {
         syncImageEnv(
@@ -362,7 +362,6 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-2-lite",
-            providerReportedCost: 0.0336135,
             usage: {
                 promptTextTokens: 10,
                 completionReasoningTokens: 4,
@@ -413,7 +412,6 @@ describe("OpenRouter Gemini image", () => {
         ]);
         expect(result.trackingData).toEqual({
             actualModel: "nanobanana-pro",
-            providerReportedCost: 0.240124,
             usage: {
                 promptTextTokens: 14,
                 completionReasoningTokens: 8,
@@ -622,7 +620,6 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
             actualModel: "seedream-pro",
-            providerReportedCost: 0.04,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -780,7 +777,6 @@ describe("OpenRouter Recraft vector", () => {
         expect(result.mimeType).toBe("image/svg+xml");
         expect(result.trackingData).toEqual({
             actualModel: "recraft-v4.1-vector",
-            providerReportedCost: 0.08,
             usage: { completionImageTokens: 1 },
         });
     });
@@ -820,28 +816,28 @@ describe("OpenRouter Recraft vector", () => {
         });
     });
 
-    it.each([
-        null,
-        "image/png",
-    ])("rejects an unsupported %s response media type", async (mediaType) => {
-        syncImageEnv(
-            {
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        mockRecraftResponse([], mediaType);
+    it.each([null, "image/png"])(
+        "rejects an unsupported %s response media type",
+        async (mediaType) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            mockRecraftResponse([], mediaType);
 
-        await expect(
-            callOpenRouterRecraftVectorAPI("vector prompt", {
-                ...baseParams,
-                model: "recraft-v4.1-vector",
-            }),
-        ).rejects.toMatchObject({
-            status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
-        });
-    });
+            await expect(
+                callOpenRouterRecraftVectorAPI("vector prompt", {
+                    ...baseParams,
+                    model: "recraft-v4.1-vector",
+                }),
+            ).rejects.toMatchObject({
+                status: 502,
+                upstreamUrl: OPENROUTER_IMAGE_URL,
+            });
+        },
+    );
 
     it("preserves provider capacity responses as retryable 429 errors", async () => {
         syncImageEnv(

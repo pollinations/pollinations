@@ -20,7 +20,6 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
-export const PROVIDER_REPORTED_COST_HEADER = "x-provider-reported-cost";
 export const USAGE_MISSING_HEADER = "x-usage-missing";
 
 export const OPENAI_CHAT_USAGE_TYPES = [

@@ -33,7 +33,6 @@ import {
     type PriceDefinition,
     type PricingInput,
     type Usage,
-    type UsageBilling,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -41,7 +40,6 @@ import {
     FALLBACK_TARGET_HEADER,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
-    PROVIDER_REPORTED_COST_HEADER,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -83,7 +81,6 @@ export type ModelUsage = {
     model: string;
     usage: Usage;
     output?: unknown;
-    providerReportedCost?: number;
 };
 
 type RequestTrackingData = {
@@ -120,13 +117,6 @@ type ResponseTrackingData = {
     // Applied cost variant name (financial identity; modelUsed stays
     // observational).
     costVariant?: string;
-    // Separates a normal base-rate request from selector fallback failures.
-    costVariantStatus?: UsageBilling["costVariantStatus"];
-    // OpenRouter's own billed USD amount, when returned by the provider.
-    // This is reconciliation telemetry only and never changes user billing.
-    providerReportedCost?: number;
-    // Pollinations-calculated provider cost minus OpenRouter-reported cost.
-    providerCostDelta?: number;
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -681,7 +671,6 @@ export async function trackResponse(
         servedPrice,
         priceDefinition,
         costVariant,
-        costVariantStatus,
     } = calculateUsageBilling({
         model: resolvedModelRequested,
         usage: modelUsage.usage,
@@ -690,30 +679,6 @@ export async function trackResponse(
         output: modelUsage.output,
         input: pricingInput,
     });
-    const providerReportedCost =
-        requestTracking.modelProvider === "openrouter"
-            ? modelUsage.providerReportedCost
-            : undefined;
-    const providerCostDelta =
-        providerReportedCost === undefined
-            ? undefined
-            : cost.totalCost - providerReportedCost;
-    if (
-        providerReportedCost !== undefined &&
-        providerCostDelta !== undefined &&
-        Math.abs(providerCostDelta) >
-            Math.max(0.000001, providerReportedCost * 0.01)
-    ) {
-        log.warn(
-            "OpenRouter cost mismatch for model {model}: calculated={calculatedCost}, provider={providerCost}, delta={delta}",
-            {
-                model: resolvedModelRequested,
-                calculatedCost: cost.totalCost,
-                providerCost: providerReportedCost,
-                delta: providerCostDelta,
-            },
-        );
-    }
     return {
         responseStatus: response.status,
         cacheHit,
@@ -725,9 +690,6 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        costVariantStatus,
-        providerReportedCost,
-        providerCostDelta,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -924,7 +886,6 @@ function createTrackingEvent({
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,
-        costVariantStatus: responseTracking.costVariantStatus,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,
 
@@ -942,8 +903,6 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        providerReportedCost: responseTracking.providerReportedCost,
-        providerCostDelta: responseTracking.providerCostDelta,
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
@@ -1005,20 +964,7 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
     return {
         model: modelUsed,
         usage,
-        providerReportedCost: parseProviderReportedCost(
-            response.headers.get(PROVIDER_REPORTED_COST_HEADER),
-        ),
     };
-}
-
-function parseProviderReportedCost(value: unknown): number | undefined {
-    const parsed =
-        typeof value === "string" && value.trim() !== ""
-            ? Number(value)
-            : value;
-    return typeof parsed === "number" && Number.isFinite(parsed) && parsed >= 0
-        ? parsed
-        : undefined;
 }
 
 async function extractResponseJsonOutput(
@@ -1080,10 +1026,8 @@ async function extractUsageAndContentFilterResultsStream(
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
-        // Providers use different cost shapes: OpenRouter reports a number,
-        // while Perplexity reports an object with request_cost/total_cost.
-        // Preserve either shape here; reconciliation accepts only a valid
-        // numeric value below, and billing rules inspect the original event.
+        // Preserve Perplexity's provider-reported request cost for billing
+        // rules that inspect the original event.
         usage: CompletionUsageSchema.extend({
             cost: z.unknown().nullish(),
         }).nullish(),
@@ -1103,7 +1047,6 @@ async function extractUsageAndContentFilterResultsStream(
 
     let model: string | undefined;
     let usage: CompletionUsage | undefined;
-    let providerReportedCost: number | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -1136,9 +1079,6 @@ async function extractUsageAndContentFilterResultsStream(
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
-            providerReportedCost = parseProviderReportedCost(
-                parseResult.data.usage.cost,
-            );
         }
     }
 
@@ -1166,7 +1106,6 @@ async function extractUsageAndContentFilterResultsStream(
             model: servedModel,
             usage: openaiUsageToUsage(usage),
             output,
-            providerReportedCost,
         },
         output,
         contentFilterResults,

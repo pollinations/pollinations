@@ -248,7 +248,6 @@ describe("OpenRouter Grok Video Pro", () => {
             durationSeconds: 5,
             trackingData: {
                 actualModel: "grok-video-pro",
-                providerReportedCost: 0.35,
                 usage: { completionVideoSeconds: 5 },
             },
         });
@@ -354,19 +353,20 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(pollAttempts).toBe(6);
     });
 
-    it.each([
-        0.5, 4.5, 15.5,
-    ])("rejects non-integer duration %s before submitting a job", async (duration) => {
-        setOpenRouterEnv();
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it.each([0.5, 4.5, 15.5])(
+        "rejects non-integer duration %s before submitting a job",
+        async (duration) => {
+            setOpenRouterEnv();
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(
-            callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                ...baseParams,
-                model: "grok-video-pro",
-                duration,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+            await expect(
+                callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
+                    ...baseParams,
+                    model: "grok-video-pro",
+                    duration,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 });

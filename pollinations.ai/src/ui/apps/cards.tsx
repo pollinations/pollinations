@@ -77,8 +77,8 @@ export function AppTile({
 }
 
 /**
- * The big one: a 240px image, a badge beside the name, and a footer that says
- * where the link goes. Two of these open the Apps page.
+ * The big one: a complete 2:1 cover on mobile, a 240px image on larger screens,
+ * a badge beside the name, and a footer that says where the link goes.
  */
 export function AppHero({
     href,
@@ -113,12 +113,12 @@ export function AppHero({
                     loading="lazy"
                     width={1200}
                     height={600}
-                    className="block h-60 w-full bg-theme-bg-subtle object-cover"
+                    className="block aspect-[2/1] w-full bg-theme-bg-subtle object-cover sm:h-60 sm:aspect-auto"
                 />
             ) : (
                 <div
                     aria-hidden="true"
-                    className="h-60 w-full bg-theme-bg-subtle"
+                    className="aspect-[2/1] w-full bg-theme-bg-subtle sm:h-60 sm:aspect-auto"
                 />
             )}
             <div className="flex flex-1 flex-col gap-2 px-6.5 py-5.5">

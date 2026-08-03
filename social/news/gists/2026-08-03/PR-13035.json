@@ -1,0 +1,33 @@
+{
+  "pr_number": 13035,
+  "title": "chore: allow pollinations-router community publishing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13035",
+  "merged_at": "2026-08-03T13:06:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `pollinations-router`’s immutable GitHub user ID to the community-model publisher allowlist.\n- Keeps the allowlist stable if the GitHub username changes.\n\nChecks:\n- `npx biome check --write shared/auth/github-id-list.ts`\n- Direct allowlist membership and uniqueness assertion via Node",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Router joins the garden",
+    "blurb": "The pollinations-router account has been given a permanent plot in the community-model garden. Its GitHub ID stays recognized even if the username decides to molt.",
+    "summary": "Added pollinations-router’s immutable GitHub user ID to the community-model publisher allowlist, so it can publish community models without depending on a mutable username.",
+    "impact": "Community model publishing now recognizes pollinations-router reliably even if its GitHub username changes.",
+    "keywords": [
+      "community-models",
+      "publisher",
+      "github",
+      "allowlist",
+      "pollinations-router"
+    ],
+    "visual_concept": "Depict Polli welcoming a small friendly router-shaped companion through a garden gate labeled COMMUNITY MODELS, with an ID badge as the stable identity symbol. Include code-plants and a tiny GitHub-style octocat-shaped badge without relying on a username, emphasizing durable access to the shared garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, welcoming a friendly little retro router with blinking lights through a lime green (#ecf874) garden gate labeled “COMMUNITY MODELS”; the router carries a sturdy pixel ID badge while code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13035.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, welcoming a friendly little retro router with blinking lights through a lime green (#ecf874) garden gate labeled “COMMUNITY MODELS”; the router carries a sturdy pixel ID badge while code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "generated_at": "2026-08-03T13:07:18.117646+00:00"
+}

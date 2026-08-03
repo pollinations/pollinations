@@ -149,7 +149,7 @@ export function getLogoPlacement(width: number, height: number): LogoPlacement {
     const availableWidth = Math.max(1, width - margin * 2);
     const availableHeight = Math.max(1, height - margin * 2);
     const desiredHeight = Math.max(
-        14,
+        16,
         Math.min(28, Math.round(shortSide * 0.025)),
     );
     const logoHeight = Math.max(
@@ -177,6 +177,7 @@ export function getLogoPlacement(width: number, height: number): LogoPlacement {
 /**
  * Adds the Pollinations horizontal lockup in the bottom-right corner.
  * A small black outline keeps the white lockup legible on light backgrounds.
+ * The result is encoded once as the final quality-90 JPEG response.
  */
 export async function addPollinationsLogo(buffer: Buffer): Promise<Buffer> {
     const metadata = await sharp(buffer).metadata();
@@ -211,5 +212,6 @@ export async function addPollinationsLogo(buffer: Buffer): Promise<Buffer> {
                 top: placement.top,
             },
         ])
+        .jpeg({ quality: 90, mozjpeg: true })
         .toBuffer();
 }

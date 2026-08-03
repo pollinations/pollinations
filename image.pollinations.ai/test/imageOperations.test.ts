@@ -6,17 +6,23 @@ import {
 } from "../src/imageOperations.ts";
 
 describe("Pollinations logo", () => {
-    it("keeps the horizontal lockup below 25% of a typical image width", () => {
+    it("keeps the horizontal lockup readable without dominating normal image sizes", () => {
         const small = getLogoPlacement(512, 512);
         const medium = getLogoPlacement(1024, 1024);
         const large = getLogoPlacement(2048, 2048);
 
-        expect(small.height).toBe(14);
+        expect(small.height).toBe(16);
         expect(medium.height).toBe(26);
         expect(large.height).toBe(28);
-        expect(small.width / 512).toBeLessThan(0.25);
-        expect(medium.width / 1024).toBeLessThan(0.25);
-        expect(large.width / 2048).toBeLessThan(0.25);
+        expect(small.width / 512).toBeLessThan(0.26);
+        expect(medium.width / 1024).toBeLessThan(0.26);
+        expect(large.width / 2048).toBeLessThan(0.26);
+    });
+
+    it("keeps the wordmark readable on unusually narrow images", () => {
+        const placement = getLogoPlacement(256, 768);
+
+        expect(placement.height).toBe(16);
     });
 
     it.each([
@@ -50,6 +56,7 @@ describe("Pollinations logo", () => {
 
         expect(metadata.width).toBe(width);
         expect(metadata.height).toBe(height);
+        expect(metadata.format).toBe("jpeg");
         expect(
             Math.min(...logoStats.channels.map(({ min }) => min)),
         ).toBeLessThan(16);

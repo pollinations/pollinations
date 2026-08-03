@@ -16,7 +16,7 @@ The image.pollinations.ai service provides AI-powered image generation through a
   - `height` - Image height (default varies by model)
   - `seed` - Random seed for reproducible results
   - `enhance` - Enable prompt enhancement (boolean)
-  - `nologo` - Disable Pollinations logo (boolean)
+  - `nologo` - Deprecated and ignored; Pollinations branding is always applied
   - `nofeed` - Exclude from public feed (boolean)
   - `private` - Mark as private (boolean)
   - `safe` - Enable safety filters (boolean)

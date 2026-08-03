@@ -87,7 +87,8 @@ paths:
             default: true
         - name: nologo
           in: query
-          description: Whether to exclude the Pollinations logo
+          deprecated: true
+          description: Deprecated and ignored. Pollinations branding is always applied.
           schema:
             type: boolean
             default: false

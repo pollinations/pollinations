@@ -197,7 +197,6 @@ function createWrongContentTypeApp(
 function createSseStreamApp(
     chunkDelayMs: number,
     modelName: ModelName = "openai",
-    providerReportedCost?: number,
 ) {
     const app = new Hono<Env>();
 
@@ -240,9 +239,6 @@ function createSseStreamApp(
                     prompt_tokens: 1000,
                     completion_tokens: 500,
                     total_tokens: 1500,
-                    ...(providerReportedCost === undefined
-                        ? {}
-                        : { cost: providerReportedCost }),
                 },
             }),
             "data: [DONE]\n\n",
@@ -768,7 +764,6 @@ describe("tracking observability", () => {
             modelRequested: "gpt-5.4",
             resolvedModelRequested: "gpt-5.4",
             costVariant: "long_context",
-            costVariantStatus: "selected",
             tokenPricePromptText: 5 / 1e6,
             tokenPriceCompletionText: 22.5 / 1e6,
             tokenCountPromptText: 272_001,
@@ -778,63 +773,6 @@ describe("tracking observability", () => {
             devPrice: expectedCost,
         });
         expect(consumePollen).toHaveBeenCalledWith(expectedCost);
-    });
-
-    it("records OpenRouter provider cost without changing billing", async () => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
-        const model: ModelVariables["model"] = {
-            requested: "qwen-large",
-            resolved: "qwen-large",
-            definition: getRegistryModelDefinition("qwen-large"),
-        };
-
-        const ctx = createExecutionContext();
-        await createTestApp(consumePollen, trackingUser, model, undefined, {
-            "x-provider-reported-cost": "0.123",
-        }).fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    model: "qwen-large",
-                    stream: false,
-                    messages: [{ role: "user", content: "test" }],
-                }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-
-        await waitOnExecutionContext(ctx);
-
-        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-        const providerReportedCost = event.providerReportedCost;
-        expect(providerReportedCost).toBe(0.123);
-        if (providerReportedCost === undefined) {
-            throw new Error("Expected provider-reported cost");
-        }
-        expect(event.providerCostDelta).toBeCloseTo(
-            event.totalCost - providerReportedCost,
-        );
-        expect(consumePollen).toHaveBeenCalledWith(event.devPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {
@@ -1650,52 +1588,6 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
         expect(event.isBilledUsage).toBe(true);
-    });
-
-    it("extracts OpenRouter provider cost from streamed usage", async () => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-
-        const ctx = createExecutionContext();
-        await createSseStreamApp(0, "qwen-large", 0.456).fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    model: "qwen-large",
-                    stream: true,
-                    messages: [{ role: "user", content: "test" }],
-                }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-
-        await waitOnExecutionContext(ctx);
-
-        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-        const providerReportedCost = event.providerReportedCost;
-        expect(providerReportedCost).toBe(0.456);
-        if (providerReportedCost === undefined) {
-            throw new Error("Expected provider-reported cost");
-        }
-        expect(event.providerCostDelta).toBeCloseTo(
-            event.totalCost - providerReportedCost,
-        );
     });
 
     it("records fallbackUsed=true when Portkey served a non-primary target", async () => {

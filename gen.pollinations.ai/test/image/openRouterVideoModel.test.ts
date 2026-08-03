@@ -248,7 +248,6 @@ describe("OpenRouter Grok Video Pro", () => {
             durationSeconds: 5,
             trackingData: {
                 actualModel: "grok-video-pro",
-                providerReportedCost: 0.35,
                 usage: { completionVideoSeconds: 5 },
             },
         });

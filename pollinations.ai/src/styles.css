@@ -1024,6 +1024,7 @@ main > * {
 
 .bee-story-stage[data-phase="10"] .bee-story-community {
     transform: scale(1);
+    animation: bee-story-community-enter 260ms steps(3, end) both;
 }
 
 .bee-story-community video {
@@ -2047,6 +2048,17 @@ main > * {
     }
     to {
         transform: scale(1.055);
+    }
+}
+
+@keyframes bee-story-community-enter {
+    from {
+        opacity: 0.25;
+        transform: scale(1.01);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 

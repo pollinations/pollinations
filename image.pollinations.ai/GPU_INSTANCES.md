@@ -7,14 +7,13 @@ Last updated: 2026-08-02
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.361111/hr all-in | **ACTIVE — production** (Replicate fallback) |
-| Z-Image | 2 production + 1 isolated canary | 3x RTX 5090 | Vast.ai | $0.773333/hr production + $0.391111/hr canary | **ACTIVE — two production** |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
 
-At capture time, the seven running Vast instances cost **$1.994444/hr** in
-total: **$1.603333/hr** for production workers and **$0.391111/hr** for the
-isolated Z-Image canary.
+At capture time, the six running Vast instances cost **$1.572222/hr** in total.
+All six are production workers; there is no isolated canary left running.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -168,14 +167,33 @@ sees one stable backend URL.
 
 | Worker | Vast instance | Region | Listed rate | Status |
 |--------|---------------|--------|-------------|--------|
-| zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
 | zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
-| zimage-reserved-target-45313816-20260802 | 46598648 | Estonia | $0.391111/hr | ACTIVE — isolated canary, not production |
+| zimage-vast-03 | 46598648 | Estonia | $0.391111/hr | ACTIVE — production (promoted 2026-08-02) |
 
-The active two-worker production fleet costs `$0.773333/hr`. Instance
-`46598648` adds `$0.391111/hr` while it remains isolated for replacement
-validation. The previous stopped rollback `45311852` has been destroyed and no
-longer accrues storage charges.
+The active two-worker fleet costs `$0.742222/hr`. Instance `46598648` replaced
+`45313816`, saving `$0.031111/hr` or `$22.40` per 30-day month; the replaced
+instance was destroyed immediately after production verification. Compared
+with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
+30-day month. Total live Vast fleet burn after this cleanup was
+`$1.572222/hr`.
+
+**Replacement validation (2026-08-02):**
+
+- Vast reliability was `0.998151`; the replacement preserved a separate
+  machine and moved the replica from South Korea to Estonia.
+- A supervised restart restored local health in 14 seconds, external health in
+  16 seconds, and all four Cloudflare Tunnel connections.
+- Authentication rejection, 512x512, 1024x1024, and 768x1152 generation
+  passed; fixed-seed output was byte-identical through the local and external
+  routes.
+- Sustained qualification completed 135 images in 123.5 seconds with zero
+  errors and 3.75-second p95 latency.
+- Production verification observed 14 real requests on the replacement: 10
+  successful images, four expected 422 validation responses, zero 5xx, zero
+  tunnel request failures, and zero GPU/server errors. Five shared-hostname
+  health probes also passed after the old instance was destroyed.
+- The Estonia host intermittently logged DNS refresh timeouts, but its four
+  QUIC connections stayed registered and recovered cleanly after restart.
 
 **Canary validation (2026-07-27):**
 

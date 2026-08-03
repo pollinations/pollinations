@@ -726,6 +726,50 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
+    "grok-imagine-video-1.5": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "video",
+        addedDate: new Date("2026-08-03").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.14, // per sec at 720p
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.08,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.25,
+                },
+            },
+            matchResolution("480p", "1080p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+        ),
+        resolutions: ["720p", "480p", "1080p"],
+        title: "Grok Imagine Video 1.5",
+        description:
+            "Video from text or a start image with synchronized audio at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
         provider: "openrouter",

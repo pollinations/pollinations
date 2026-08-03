@@ -392,6 +392,12 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             completionVideoSeconds: 5,
         }).totalCost,
     ).toBeCloseTo(0.352, 8);
+    expect(
+        calculateCost("grok-imagine-video-1.5", {
+            promptImageTokens: 1,
+            completionVideoSeconds: 5,
+        }).totalCost,
+    ).toBeCloseTo(0.71, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {

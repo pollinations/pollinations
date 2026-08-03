@@ -7,6 +7,23 @@ export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
+    "krea": {
+        aliases: ["krea-2"],
+        provider: "fal",
+        brand: "Krea",
+        category: "image",
+        addedDate: new Date("2026-08-01").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.03, // flat per text-to-image output
+        },
+        title: "Krea 2 Medium",
+        description:
+            "Style-rich generation with strong prompt adherence and clean typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "dreamshaper": {
         // "sana" is kept as an alias so existing callers and the legacy image
         // proxy worker keep working unchanged.

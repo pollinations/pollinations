@@ -856,6 +856,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.04,
     },
   },
+  "krea": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
   "laguna": {
     "cost": {
       "completionTextTokens": 0.0000002,

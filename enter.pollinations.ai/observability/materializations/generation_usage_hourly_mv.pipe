@@ -3,11 +3,6 @@ DESCRIPTION >
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
 
-    DEPLOYMENT_METHOD 'alter' swaps the view definition in place instead of
-    recomputing history: every row written before fallback attempts existed
-    already satisfies is_final, so a backfill would rewrite millions
-    of rows to the values they already hold.
-
 NODE generation_usage_hourly_mv_node
 SQL >
     SELECT
@@ -130,4 +125,3 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE generation_usage_hourly
-DEPLOYMENT_METHOD 'alter'

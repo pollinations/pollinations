@@ -6,11 +6,14 @@ Last updated: 2026-08-02
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
-| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr | **ACTIVE — two production** |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.361111/hr all-in | **ACTIVE — production** (Replicate fallback) |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
+
+At capture time, the six running Vast instances cost **$1.572222/hr** in total.
+All six are production workers; there is no isolated canary left running.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -19,15 +22,33 @@ Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
 `/register` rejects unknown types, so a worker cannot join a pool that only
 exists after the routing change deploys.
 
-| Worker | Vast instance | GPU | Listed rate | Status |
-|--------|---------------|-----|-------------|--------|
-| dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
-| dreamshaper-vast-02 | 46387155 | RTX 3090 | $0.1200/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+| Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
+|--------|---------------|------------------|-----|-------------|--------|
+| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | RTX 3090 | $0.150000/hr | ACTIVE — named tunnel `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | 46387155 | 123712 / California, US | RTX 3090 | $0.153333/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
-`dreamshaper-lcm/`; each host runs `supervise.sh` under `screen`, relaunched on
-reboot by `/workspace/onstart.sh`.
+`dreamshaper-lcm/`; Vast runs `/root/onstart.sh` after container start to
+restore the worker and named tunnel.
+
+Instance `46607014` replaced `46307858` on 2026-08-02 and reduced the slot from
+`$0.175556/hr` to `$0.150000/hr`, saving **$0.025556/hr** or about
+**$18.40 per 30-day month**. The Oregon host has Vast reliability `0.9977` and
+preserves regional and machine diversity from the California replica.
+
+Qualification passed authentication, fixed-seed byte parity, caller-step
+override protection, 512x512 and clamped dimension limits, public tunnel
+parity, and a genuine Vast stop/start. A 20.69-second concurrency-8 run served
+210 images with zero errors at **10.15 img/s** and **1.54s p95**. After
+promotion the host served 358 attributed production generations with zero
+5xx, OOM, CUDA, worker, or tunnel failures before the old instance was
+destroyed.
+
+The canary also exposed a reusable restart failure: quitting the `screen`
+session can leave Uvicorn child workers holding port 8766. `setup-vast.sh` now
+uses `fuser` to terminate the existing listener before relaunching, preventing
+an `Address already in use` restart loop.
 
 **Run several uvicorn workers per card.** A single process plateaued at
 **~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path

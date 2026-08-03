@@ -720,6 +720,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
+  "grok-imagine-video-1.5": {
+    "cost": {
+      "completionVideoSeconds": 0.14,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.25,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.14,
+      "promptImageTokens": 0.01,
+    },
+  },
   "grok-large": {
     "cost": {
       "completionTextTokens": 0.0000025,

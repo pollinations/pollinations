@@ -215,8 +215,8 @@ function mockGrokFetch(requests: Record<string, unknown>[]) {
         });
 }
 
-describe("OpenRouter Grok Imagine Video 1.5", () => {
-    it("submits the exact route at the default 720p resolution", async () => {
+describe("OpenRouter Grok Video Pro", () => {
+    it("submits the exact 720p route and honors an explicit aspect ratio", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
@@ -235,7 +235,7 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
 
         expect(requests).toEqual([
             {
-                model: "x-ai/grok-imagine-video-1.5",
+                model: "x-ai/grok-imagine-video",
                 prompt: "a calm ocean at sunrise",
                 resolution: "720p",
                 duration: 5,
@@ -254,23 +254,28 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
     });
 
     it.each([
-        "480p",
-        "1080p",
-    ] as const)("forwards the explicit %s resolution", async (resolution) => {
+        [undefined, "720p"],
+        ["480p", "480p"],
+        ["1080p", "1080p"],
+    ] as const)("routes 1.5 resolution %s as %s", async (resolution, expectedResolution) => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
 
-        await callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-            ...baseParams,
-            model: "grok-video-pro",
-            resolution,
-        });
+        const result = await callOpenRouterGrokVideoAPI(
+            "a calm ocean at sunrise",
+            {
+                ...baseParams,
+                model: "grok-video-pro-1.5",
+                resolution,
+            },
+        );
 
         expect(requests[0]).toMatchObject({
             model: "x-ai/grok-imagine-video-1.5",
-            resolution,
+            resolution: expectedResolution,
         });
+        expect(result.trackingData?.actualModel).toBe("grok-video-pro-1.5");
     });
 
     it("forwards one start frame and derives ratio from explicit dimensions", async () => {
@@ -293,7 +298,7 @@ describe("OpenRouter Grok Imagine Video 1.5", () => {
         );
 
         expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-video-1.5",
+            model: "x-ai/grok-imagine-video",
             prompt: "animate this opening frame",
             resolution: "720p",
             duration: 15,

@@ -708,11 +708,30 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1,
     },
     "grok-video-pro": {
-        aliases: ["grok-imagine-video", "grok-imagine-video-1.5"],
+        aliases: ["grok-imagine-video"],
         provider: "openrouter",
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptImageTokens: 0.002, // per start-frame image
+            completionVideoSeconds: 0.07, // per sec at 720p
+        },
+        title: "Grok Video Pro",
+        description: "Short videos from text or an image (720p, 1-15s)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "grok-video-pro-1.5": {
+        aliases: ["grok-imagine-video-1.5"],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "video",
+        addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {

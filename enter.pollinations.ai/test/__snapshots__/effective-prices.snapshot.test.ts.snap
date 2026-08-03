@@ -736,6 +736,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "grok-video-pro": {
     "cost": {
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
+    },
+    "price": {
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
+    },
+  },
+  "grok-video-pro-1.5": {
+    "cost": {
       "completionVideoSeconds": 0.14,
       "promptImageTokens": 0.01,
     },

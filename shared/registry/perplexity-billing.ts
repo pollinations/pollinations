@@ -61,9 +61,8 @@ function getReportedSearchContextSize(output: unknown): string | undefined {
 //  - malformed provider cost    → static fee + ERROR
 //  - provider cost > 10× static → clamp to static fee + ERROR
 //  - otherwise                  → provider-reported cost verbatim
-// The gateway supplies the effective search tier used for billing. A reported
-// `search_context_size` that differs from it means the provider drifted — logged
-// as WARN.
+// The provider-reported search tier selects variable Sonar request fees. A
+// fixed-tier rule logs when the reported tier differs from its static fallback.
 function resolvePerplexityRequestCost(args: {
     output: unknown;
     model: string;
@@ -142,8 +141,8 @@ export const PERPLEXITY_SONAR_BILLING: BillingRules = {
             kind: "search_request",
             unit: "request",
             unitCost: 5 / 1000,
-            countUnits: (_output, input) =>
-                input?.searchContextSize === "high" ? 0 : 1,
+            countUnits: (output) =>
+                getReportedSearchContextSize(output) === "high" ? 0 : 1,
             resolveUnitCost: (output, model) =>
                 resolvePerplexityRequestCost({
                     output,
@@ -160,8 +159,8 @@ export const PERPLEXITY_SONAR_BILLING: BillingRules = {
             kind: "search_request",
             unit: "request",
             unitCost: 12 / 1000,
-            countUnits: (_output, input) =>
-                input?.searchContextSize === "high" ? 1 : 0,
+            countUnits: (output) =>
+                getReportedSearchContextSize(output) === "high" ? 1 : 0,
             resolveUnitCost: (output, model) =>
                 resolvePerplexityRequestCost({
                     output,

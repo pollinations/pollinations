@@ -18,7 +18,6 @@ import type {
 export type PricingInput = {
     resolution?: string;
     hasImage?: boolean;
-    searchContextSize?: "low" | "high";
 };
 
 export type CostVariantContext = {

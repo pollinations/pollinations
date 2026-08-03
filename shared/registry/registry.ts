@@ -169,9 +169,6 @@ export type ModelDefinition = {
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;
-    // Supported Perplexity search-context sizes; first entry is the default.
-    // A single entry is fixed and ignores request overrides.
-    searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];

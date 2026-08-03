@@ -495,14 +495,14 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["perplexity-fast", 2.005, undefined],
-        ["perplexity-fast", 2.012, { searchContextSize: "high" as const }],
+        ["perplexity-fast", 2.012, { usage: { search_context_size: "high" } }],
         ["perplexity", 18.014, undefined],
         ["perplexity-reasoning", 10.014, undefined],
     ] as const;
 
-    for (const [model, total, input] of cases) {
-        const cost = calculateCost(model, usage, undefined, input);
-        const price = calculatePrice(model, usage, undefined, input);
+    for (const [model, total, output] of cases) {
+        const cost = calculateCost(model, usage, output);
+        const price = calculatePrice(model, usage, output);
 
         expect(cost.totalCost).toBeCloseTo(total, 8);
         expect(price.totalPrice).toBeCloseTo(total, 8);
@@ -646,18 +646,13 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
     ]);
     const sonarRules =
         getRegistryModelDefinition("perplexity-fast").billing?.adjustments;
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        1,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        1,
-    );
+    expect(sonarRules?.[0]?.countUnits({})).toBe(1);
+    expect(sonarRules?.[1]?.countUnits({})).toBe(0);
+    const highContextOutput = {
+        usage: { search_context_size: "high" },
+    };
+    expect(sonarRules?.[0]?.countUnits(highContextOutput)).toBe(0);
+    expect(sonarRules?.[1]?.countUnits(highContextOutput)).toBe(1);
 
     for (const [model, ruleId, unitCost] of perplexityFees) {
         const adjustment = getRegistryModelDefinition(model as ModelName)

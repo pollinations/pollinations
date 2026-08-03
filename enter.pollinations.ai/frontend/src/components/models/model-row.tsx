@@ -20,7 +20,11 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import {
+    getModelPriceBadges,
+    PriceBadgeList,
+    PriceVariantDisclosure,
+} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -170,6 +174,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                        />
+                        <PriceVariantDisclosure
+                            variants={model.priceVariants}
                         />
                         <BalanceAccessChip
                             access={balanceAccess}

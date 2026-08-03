@@ -44,6 +44,7 @@ export interface VideoGenerationResult {
     durationSeconds: number;
     trackingData: {
         actualModel: string;
+        providerReportedCost?: number;
         usage: {
             completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
             completionVideoTokens?: number; // For Seedance (billed by tokens)
@@ -71,18 +72,14 @@ interface VeoOperationResponse {
 }
 
 /**
- * Generates a video using a fixed-resolution Veo 3.1 Fast tier.
- * Resolution is selected by model name, not inferred from dimensions, so the
- * upstream request always matches the registry rate.
- * @param {"720p" | "1080p"} resolution - Fixed upstream resolution
- * @param {"veo" | "veo-1080p"} actualModel - Registry model used for billing
+ * Generates a Veo 3.1 Fast video at the explicitly selected resolution.
+ * @param {"720p" | "1080p"} resolution - Upstream resolution
  * @param {string} prompt - The prompt for video generation
  * @param {ImageParams} safeParams - The parameters for video generation
  * @returns {Promise<VideoGenerationResult>}
  */
 const generateVeoVideo = async (
     resolution: "720p" | "1080p",
-    actualModel: "veo" | "veo-1080p",
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> => {
@@ -223,7 +220,7 @@ const generateVeoVideo = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel,
+            actualModel: "veo",
             usage: {
                 completionVideoSeconds: durationSeconds,
                 ...(generateAudio
@@ -234,19 +231,16 @@ const generateVeoVideo = async (
     };
 };
 
-/** Veo 3.1 Fast at 720p ($0.08/s video + $0.02/s audio when enabled). */
+/** Veo 3.1 Fast; request resolution defaults to the 720p base tier. */
 export const callVeoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generateVeoVideo("720p", "veo", prompt, safeParams);
-
-/** Veo 3.1 Fast at 1080p ($0.10/s video + $0.02/s audio when enabled). */
-export const callVeo1080pAPI = (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> =>
-    generateVeoVideo("1080p", "veo-1080p", prompt, safeParams);
+    generateVeoVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );
 
 /**
  * Poll Veo operation until completion using fetchPredictOperation

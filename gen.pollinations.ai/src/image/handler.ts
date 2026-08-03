@@ -463,6 +463,10 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
 
     try {
         const { result, params, servedEntry, servedIndex } =

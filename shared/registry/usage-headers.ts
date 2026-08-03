@@ -20,6 +20,9 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
+export const PROVIDER_REPORTED_COST_HEADER = "x-provider-reported-cost";
+export const USAGE_MISSING_HEADER = "x-usage-missing";
+
 export const OPENAI_CHAT_USAGE_TYPES = [
     "promptTextTokens",
     "promptCachedTokens",
@@ -341,11 +344,16 @@ function detectUsageConvention(
  */
 export function buildUsageHeaders(
     modelUsed: string,
-    usage: Usage,
+    usage?: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
         [MODEL_USED_HEADER]: modelUsed,
     };
+
+    if (!usage) {
+        headers[USAGE_MISSING_HEADER] = "true";
+        return headers;
+    }
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];

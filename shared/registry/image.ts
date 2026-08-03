@@ -726,8 +726,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "grok-video-pro-1.5": {
-        aliases: ["grok-imagine-video-1.5"],
+    "grok-imagine-video-1.5": {
+        aliases: [],
         provider: "openrouter",
         brand: "xAI",
         category: "video",

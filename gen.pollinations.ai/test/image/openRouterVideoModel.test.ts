@@ -266,7 +266,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-video-pro-1.5",
+                model: "grok-imagine-video-1.5",
                 resolution,
             },
         );
@@ -275,7 +275,7 @@ describe("OpenRouter Grok Video Pro", () => {
             model: "x-ai/grok-imagine-video-1.5",
             resolution: expectedResolution,
         });
-        expect(result.trackingData?.actualModel).toBe("grok-video-pro-1.5");
+        expect(result.trackingData?.actualModel).toBe("grok-imagine-video-1.5");
     });
 
     it("forwards one start frame and derives ratio from explicit dimensions", async () => {

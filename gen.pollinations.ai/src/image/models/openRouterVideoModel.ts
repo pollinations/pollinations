@@ -147,7 +147,7 @@ export async function callOpenRouterGrokVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
-    const isVersion15 = safeParams.model === "grok-video-pro-1.5";
+    const isVersion15 = safeParams.model === "grok-imagine-video-1.5";
     const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
         model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,

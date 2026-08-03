@@ -63,7 +63,7 @@ export async function createAndReturnVideo(
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
-        case "grok-video-pro-1.5":
+        case "grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "happyhorse-1.1":

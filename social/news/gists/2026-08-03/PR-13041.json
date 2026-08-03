@@ -1,0 +1,34 @@
+{
+  "pr_number": 13041,
+  "title": "fix: bound model permission migration work",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13041",
+  "merged_at": "2026-08-03T15:41:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Materializes only API keys containing retired model aliases before expanding permission JSON.\n- Preserves the existing canonicalization, order, deduplication, and unrelated permission fields.\n- Adds a D1 regression test with 10,000 unaffected keys and affected alias combinations.\n- Fixes the production deployment failure where migration `0043` exceeded the D1 CPU limit.\n- Verified with focused D1/alias tests, a 200,000-row SQLite stress run, and Enter typecheck.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The migration stops for snacks",
+    "blurb": "Migration 0043 now visits only the API keys carrying retired model aliases, instead of trying to pollinate the entire database at once. The D1 CPU limit may return to its quiet life.",
+    "summary": "Optimized Enter's model-permission migration 0043 to materialize and rewrite only API keys containing retired model aliases, preserving canonicalization, ordering, deduplication, and unrelated permission fields while staying within D1 CPU limits.",
+    "impact": "Permission migrations can now complete reliably on large key tables—including databases with tens of thousands of unaffected keys—without changing unrelated API-key permissions.",
+    "keywords": [
+      "enter",
+      "d1",
+      "migrations",
+      "api-keys",
+      "model-permissions",
+      "reliability"
+    ],
+    "visual_concept": "A cozy database garden represents the D1 migration: thousands of calm sleeping seed packets/API keys remain untouched while Polli carefully tends only a few pots labeled with retired model aliases, transforming their tangled vines into neat canonical code-plants. A helpful CRT monitor robot can inspect a small selected batch, emphasizing targeted work rather than processing the whole field.",
+    "image_prompt": "A cozy pixel-art database garden where the cute Polli bee mascot—with yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny gardener tool belt—carefully repots only a few tangled code-plants labeled \"OLD ALIAS\" into neat canonical blooms, while thousands of peaceful untouched seed packets rest behind her and a chunky CRT robot checks the selected pots. Cozy 8-bit pixel art aesthetic, prominent lime green (#ecf874) with warm cream, mint, lavender, and peach pastel gradients, flowers and vines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13041.jpg",
+    "prompt": "A cozy pixel-art database garden where the cute Polli bee mascot—with yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny gardener tool belt—carefully repots only a few tangled code-plants labeled \"OLD ALIAS\" into neat canonical blooms, while thousands of peaceful untouched seed packets rest behind her and a chunky CRT robot checks the selected pots. Cozy 8-bit pixel art aesthetic, prominent lime green (#ecf874) with warm cream, mint, lavender, and peach pastel gradients, flowers and vines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-03T15:43:11.005336+00:00"
+}

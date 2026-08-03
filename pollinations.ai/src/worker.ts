@@ -27,9 +27,9 @@ interface Env {
 
 const ROUTE_META: Record<string, { title: string; description: string }> = {
     "/": {
-        title: "pollinations.ai",
+        title: "pollinations.ai — Every model, one wallet.",
         description:
-            "Build AI apps with one API, user wallets, and developer earnings",
+            "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
     },
     "/play": {
         title: "Play | pollinations.ai",
@@ -69,7 +69,7 @@ const JSON_LD_HOME = JSON.stringify({
         "https://x.com/pollinations_ai",
     ],
     description:
-        "Build AI apps with one API, user wallets, and developer earnings",
+        "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
 });
 
 const JSON_LD_PLAY = JSON.stringify({

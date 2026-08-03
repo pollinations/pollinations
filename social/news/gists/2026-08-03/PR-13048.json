@@ -1,0 +1,35 @@
+{
+  "pr_number": 13048,
+  "title": "feat: add Qwen3.8 Max",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13048",
+  "merged_at": "2026-08-03T22:46:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `qwen3.8-max` alongside the unchanged `qwen3.7-max` service, with no new aliases.\n- Routes `qwen/qwen3.8-max` through OpenRouter to Alibaba only, with provider fallback disabled and no Pollinations fallback.\n- Publishes text, image, and video inputs at OpenRouter's current $2/M prompt, $0.25/M cache-read, $2.50/M cache-write, and $6/M completion rates.\n- Adds one focused resolver test and the required effective-price snapshot.\n\nTests: direct Alibaba and full local Pollinations E2E passed 10-image and 10-video requests; cached-video billing matched exactly. Gen typecheck and 66 focused tests passed; Enter alias, pricing, variant, and snapshot tests passed (367).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh Max bloom",
+    "blurb": "Qwen3.8 Max has landed in the hive as a paid-only model, with its route pointed straight at Alibaba. Bring text, images, or video; the new blossom knows what to do with all three.",
+    "summary": "Added the paid-only qwen3.8-max model alongside unchanged qwen3.7-max, routed exclusively through Alibaba on OpenRouter with no provider or Pollinations fallback, at $2/M prompt, $0.25/M cache-read, $2.50/M cache-write, and $6/M completion tokens.",
+    "impact": "Developers can now use qwen3.8-max for text, image, and video inputs with explicit Alibaba-only routing and published multimodal token pricing.",
+    "keywords": [
+      "qwen3.8-max",
+      "qwen",
+      "openrouter",
+      "alibaba",
+      "text-api",
+      "multimodal",
+      "pricing"
+    ],
+    "visual_concept": "Depict Qwen3.8 Max as a newly cultivated, clearly labeled code-flower in a cozy model garden, with a direct dedicated pipe running from an Alibaba-inspired cloud kiosk to the flower and no branching fallback paths. Polli, wearing a tiny gardener's hat and carrying a price-tag clipboard, inspects the new bloom while a retro terminal shows text, image, and video icons; small surrounding flowers and code vines keep the scene warm and open-source-minded.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny gardener hat, tending a new code-flower labeled “QWEN3.8 MAX” in a lime green (#ecf874) garden; a single direct pipe from a small Alibaba cloud kiosk feeds the bloom while a retro monitor displays tiny text, image, and video icons. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code vines and pixel flowers, dark purple (#110518) outlines, nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13048.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny gardener hat, tending a new code-flower labeled “QWEN3.8 MAX” in a lime green (#ecf874) garden; a single direct pipe from a small Alibaba cloud kiosk feeds the bloom while a retro monitor displays tiny text, image, and video icons. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code vines and pixel flowers, dark purple (#110518) outlines, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-08-03T22:47:19.502726+00:00"
+}

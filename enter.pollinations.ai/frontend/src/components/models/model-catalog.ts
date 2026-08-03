@@ -22,6 +22,12 @@ export type ApiModelInfo = {
     brand?: string;
     community?: boolean;
     pricing?: ApiPricing;
+    pricing_variants?: Array<{
+        name: string;
+        label: string;
+        description: string;
+        pricing: ApiPricing;
+    }>;
     title?: string;
     description?: string;
     input_modalities?: string[];
@@ -220,7 +226,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     };
 }
 
-function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const price = baseModelPrice(model);
     if (!price) return null;
 
@@ -484,6 +490,31 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             ],
         ),
     };
+}
+
+function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+    const basePrice = modelPriceFromPricing(model);
+    if (!basePrice) return null;
+
+    const priceVariants = model.pricing_variants?.flatMap((variant) => {
+        const variantPrice = modelPriceFromPricing({
+            ...model,
+            pricing: variant.pricing,
+            pricing_variants: undefined,
+        });
+        return variantPrice
+            ? [
+                  {
+                      name: variant.name,
+                      label: variant.label,
+                      description: variant.description,
+                      prices: variantPrice.prices,
+                  },
+              ]
+            : [];
+    });
+
+    return priceVariants?.length ? { ...basePrice, priceVariants } : basePrice;
 }
 
 export function getModelPricesFromCatalog(

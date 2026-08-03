@@ -1,16 +1,19 @@
 # GPU Instances
 
-Last updated: 2026-07-31
+Last updated: 2026-08-02
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
-| Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.361111/hr all-in | **ACTIVE — production** (Replicate fallback) |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.2956/hr | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
+
+At capture time, the six running Vast instances cost **$1.572222/hr** in total.
+All six are production workers; there is no isolated canary left running.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -19,15 +22,33 @@ Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
 `/register` rejects unknown types, so a worker cannot join a pool that only
 exists after the routing change deploys.
 
-| Worker | Vast instance | GPU | Listed rate | Status |
-|--------|---------------|-----|-------------|--------|
-| dreamshaper-vast-01 | 46307858 | RTX 3090 | $0.1756/hr | ACTIVE — named tunnel `dreamshaper-vast-01.pollinations.ai` |
-| dreamshaper-vast-02 | 46387155 | RTX 3090 | $0.1200/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+| Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
+|--------|---------------|------------------|-----|-------------|--------|
+| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | RTX 3090 | $0.150000/hr | ACTIVE — named tunnel `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | 46387155 | 123712 / California, US | RTX 3090 | $0.153333/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
-`dreamshaper-lcm/`; each host runs `supervise.sh` under `screen`, relaunched on
-reboot by `/workspace/onstart.sh`.
+`dreamshaper-lcm/`; Vast runs `/root/onstart.sh` after container start to
+restore the worker and named tunnel.
+
+Instance `46607014` replaced `46307858` on 2026-08-02 and reduced the slot from
+`$0.175556/hr` to `$0.150000/hr`, saving **$0.025556/hr** or about
+**$18.40 per 30-day month**. The Oregon host has Vast reliability `0.9977` and
+preserves regional and machine diversity from the California replica.
+
+Qualification passed authentication, fixed-seed byte parity, caller-step
+override protection, 512x512 and clamped dimension limits, public tunnel
+parity, and a genuine Vast stop/start. A 20.69-second concurrency-8 run served
+210 images with zero errors at **10.15 img/s** and **1.54s p95**. After
+promotion the host served 358 attributed production generations with zero
+5xx, OOM, CUDA, worker, or tunnel failures before the old instance was
+destroyed.
+
+The canary also exposed a reusable restart failure: quitting the `screen`
+session can leave Uvicorn child workers holding port 8766. `setup-vast.sh` now
+uses `fuser` to terminate the existing listener before relaunching, preventing
+an `Address already in use` restart loop.
 
 **Run several uvicorn workers per card.** A single process plateaued at
 **~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path
@@ -146,15 +167,33 @@ sees one stable backend URL.
 
 | Worker | Vast instance | Region | Listed rate | Status |
 |--------|---------------|--------|-------------|--------|
-| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | STOPPED 2026-07-27 — overnight rollback |
-| zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
 | zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
+| zimage-vast-03 | 46598648 | Estonia | $0.391111/hr | ACTIVE — production (promoted 2026-08-02) |
 
-The active two-worker fleet costs `$0.773333/hr`, saving `$0.071111/hr` or
-about `$51.20` per 30-day month versus the previous pair. Stopped instance
-`45311852` retains its 80GB disk for rollback and incurs `$0.022222/hr` in
-storage charges (about `$16/month`) until destroyed. Restart is subject to GPU
-availability on its host.
+The active two-worker fleet costs `$0.742222/hr`. Instance `46598648` replaced
+`45313816`, saving `$0.031111/hr` or `$22.40` per 30-day month; the replaced
+instance was destroyed immediately after production verification. Compared
+with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
+30-day month. Total live Vast fleet burn after this cleanup was
+`$1.572222/hr`.
+
+**Replacement validation (2026-08-02):**
+
+- Vast reliability was `0.998151`; the replacement preserved a separate
+  machine and moved the replica from South Korea to Estonia.
+- A supervised restart restored local health in 14 seconds, external health in
+  16 seconds, and all four Cloudflare Tunnel connections.
+- Authentication rejection, 512x512, 1024x1024, and 768x1152 generation
+  passed; fixed-seed output was byte-identical through the local and external
+  routes.
+- Sustained qualification completed 135 images in 123.5 seconds with zero
+  errors and 3.75-second p95 latency.
+- Production verification observed 14 real requests on the replacement: 10
+  successful images, four expected 422 validation responses, zero 5xx, zero
+  tunnel request failures, and zero GPU/server errors. Five shared-hostname
+  health probes also passed after the old instance was destroyed.
+- The Estonia host intermittently logged DNS refresh timeouts, but its four
+  QUIC connections stayed registered and recovered cleanly after restart.
 
 **Canary validation (2026-07-27):**
 

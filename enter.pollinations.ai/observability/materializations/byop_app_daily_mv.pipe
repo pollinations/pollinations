@@ -2,9 +2,6 @@ DESCRIPTION >
     Materializes cleanly attributed BYOP traffic from generation_event_v2 at
     daily app and model grain, including the isolated staging fixture.
 
-    DEPLOYMENT_METHOD 'alter': see generation_usage_hourly_mv. History predates
-    attempt rows, so re-materializing would reproduce the stored values.
-
 NODE byop_app_daily_mv_node
 SQL >
     SELECT
@@ -71,4 +68,3 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE byop_app_daily
-DEPLOYMENT_METHOD 'alter'

@@ -96,6 +96,33 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Step Flash directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "step-flash" });
+
+        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Qwen3.7 Flash to Alibaba on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.7-flash",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

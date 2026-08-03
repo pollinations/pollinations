@@ -708,7 +708,7 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1,
     },
     "grok-video-pro": {
-        aliases: ["grok-imagine-video"],
+        aliases: ["grok-imagine-video", "grok-imagine-video-1.5"],
         provider: "openrouter",
         brand: "xAI",
         category: "video",
@@ -716,14 +716,39 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.002, // per start-frame image
-            completionVideoSeconds: 0.07, // per sec at 720p
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.14, // per sec at 720p
         },
-        title: "Grok Video Pro",
-        description: "Short videos from text or an image (720p, 1-15s)",
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.08,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.25,
+                },
+            },
+            matchResolution("480p", "1080p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+        ),
+        resolutions: ["720p", "480p", "1080p"],
+        title: "Grok Imagine Video 1.5",
+        description:
+            "Video from text or a start image with synchronized audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
     "happyhorse-1.1": {

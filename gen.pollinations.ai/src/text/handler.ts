@@ -467,6 +467,10 @@ function normalizeSearchContext(
         };
     }
 
+    if (supported.length > 1 && requested === undefined) {
+        return { requestData: requestWithoutSearchOptions };
+    }
+
     const searchContextSize =
         supported.length > 1 && requested
             ? (requested as "low" | "high")

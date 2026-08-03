@@ -157,6 +157,7 @@ workerTest(
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             );
             expect(overrideResponse.status).toBe(200);
+            await overrideResponse.text();
 
             const postResponse = await SELF.fetch(
                 `https://gen.pollinations.ai/3d/${crypto.randomUUID()}`,
@@ -174,6 +175,7 @@ workerTest(
                 },
             );
             expect(postResponse.status).toBe(200);
+            await postResponse.text();
 
             const cachePrompt = crypto.randomUUID();
             for (const resolution of ["low", "high"]) {
@@ -182,6 +184,7 @@ workerTest(
                     { headers: { Authorization: `Bearer ${paidApiKey}` } },
                 );
                 expect(response.status).toBe(200);
+                await response.text();
             }
 
             expect(resolutions).toEqual([

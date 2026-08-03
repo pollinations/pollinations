@@ -1,0 +1,34 @@
+{
+  "pr_number": 13033,
+  "title": "refactor: streamline model management skill",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13033",
+  "merged_at": "2026-08-03T11:32:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reduces the model-management skill from a 662-line monolith to a 119-line core workflow with four focused references.\n- Records stable operating policy: provider preference, paid-only routing rules, no-fallback default, serverless/GPU criteria, and the 120-second media budget.\n- Preserves the mandatory model-contract, E2E, billing, capacity, description, logo, and secret-safety gates.\n- Keeps changing prices, balances, quotas, PR statuses, and candidate priorities in the ignored `temp` plans instead of hard-coding stale state.\n\nValidation:\n\n- `quick_validate.py .claude/skills/model-management`\n- `git diff --check`\n- Manual coverage audit of every existing mandatory gate\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The model garden got pruned",
+    "blurb": "The model-management playbook is now a small core path with focused reference notes instead of one very determined 662-line scroll. The gates stayed; the stale weather reports moved out of the handbook.",
+    "summary": "Refactored the model-management skill from a 662-line monolith into a 119-line workflow plus four references, preserving model-contract, E2E, billing, capacity, description, logo, and secret-safety checks while moving volatile operational state into ignored temp plans.",
+    "impact": "Contributors get a clearer, maintainable process for model changes, with stable routing and testing policy separated from fast-changing prices, quotas, balances, and candidate status.",
+    "keywords": [
+      "model-management",
+      "claude-skill",
+      "workflow",
+      "testing",
+      "billing",
+      "maintenance"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper with a tiny tool belt, pruning an oversized code-vine handbook into one neat central plant and four labeled reference seedlings. A cozy retro terminal can show simple checkmarks for the preserved validation gates, surrounded by flowers and organized paper notes.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny gardener tool belt, carefully pruning a huge code-vine scroll into one neat lime green (#ecf874) core plant and four small labeled reference sprouts beside a retro terminal with pixel checkmarks. Warm cream, mint, lavender, and peach garden shed lighting with flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-03/PR-13033.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny gardener tool belt, carefully pruning a huge code-vine scroll into one neat lime green (#ecf874) core plant and four small labeled reference sprouts beside a retro terminal with pixel checkmarks. Warm cream, mint, lavender, and peach garden shed lighting with flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-03T11:33:06.949281+00:00"
+}

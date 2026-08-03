@@ -27,18 +27,50 @@ WITH alias_map(alias, canonical) AS (
         ('gemini-3.6-flash-search', 'gemini'),
         ('gemini-3.5-flash-search', 'gemini')
 ),
+-- Avoid expanding and grouping the permissions JSON for every API key. Only
+-- valid model allowlists containing a retired ID need consolidation.
+candidate_keys AS MATERIALIZED (
+    SELECT id, permissions
+    FROM apikey
+    WHERE json_valid(permissions)
+      AND json_type(permissions, '$.models') = 'array'
+      AND (
+           instr(permissions, '"trellis-2-low"') > 0
+        OR instr(permissions, '"trellis-2-medium"') > 0
+        OR instr(permissions, '"trellis-2-high"') > 0
+        OR instr(permissions, '"sonar"') > 0
+        OR instr(permissions, '"perplexity-high"') > 0
+        OR instr(permissions, '"perplexity-deep"') > 0
+        OR instr(permissions, '"sonar-deep"') > 0
+        OR instr(permissions, '"grok-fast"') > 0
+        OR instr(permissions, '"grok-4-1-fast"') > 0
+        OR instr(permissions, '"grok-4-1-fast-non-reasoning"') > 0
+        OR instr(permissions, '"grok-legacy"') > 0
+        OR instr(permissions, '"grok-4"') > 0
+        OR instr(permissions, '"grok-4-fast"') > 0
+        OR instr(permissions, '"grok-4-20-non-reasoning"') > 0
+        OR instr(permissions, '"grok-non-reasoning"') > 0
+        OR instr(permissions, '"grok-4-20-reasoning"') > 0
+        OR instr(permissions, '"grok-4-20"') > 0
+        OR instr(permissions, '"grok-4-1-fast-reasoning"') > 0
+        OR instr(permissions, '"gemini-search-fast"') > 0
+        OR instr(permissions, '"gemini-3.1-flash-lite-search"') > 0
+        OR instr(permissions, '"gemini-3.5-flash-lite-search"') > 0
+        OR instr(permissions, '"gemini-search-large"') > 0
+        OR instr(permissions, '"gemini-3.6-flash-search"') > 0
+        OR instr(permissions, '"gemini-3.5-flash-search"') > 0
+      )
+),
 canonicalized AS (
     SELECT
-        apikey.id,
+        candidate_keys.id,
         CAST(model.key AS integer) AS position,
         COALESCE(alias_map.canonical, model.value) AS model_id,
         alias_map.canonical IS NOT NULL AS changed
-    FROM apikey
-    JOIN json_each(apikey.permissions, '$.models') AS model
+    FROM candidate_keys
+    JOIN json_each(candidate_keys.permissions, '$.models') AS model
     LEFT JOIN alias_map
         ON model.type = 'text' AND model.value = alias_map.alias
-    WHERE json_valid(apikey.permissions)
-      AND json_type(apikey.permissions, '$.models') = 'array'
 ),
 deduplicated AS (
     SELECT id, model_id, MIN(position) AS position

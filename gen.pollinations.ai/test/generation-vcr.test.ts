@@ -523,7 +523,7 @@ test("chat completions bill provider-reported Perplexity request cost without ex
     });
 });
 
-test("legacy Perplexity high aliases preserve their default and allow override", async ({
+test("Perplexity aliases use the canonical default and allow override", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -558,7 +558,7 @@ test("legacy Perplexity high aliases preserve their default and allow override",
 
     expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "high" },
+        web_search_options: { search_context_size: "low" },
     });
     expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
         web_search_options: { search_context_size: "low" },

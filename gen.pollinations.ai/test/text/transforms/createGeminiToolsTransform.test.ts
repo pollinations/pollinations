@@ -97,18 +97,13 @@ describe("OpenRouter Gemini routing", () => {
         "gemini-search-large",
         "gemini-3.6-flash-search",
         "gemini-3.5-flash-search",
-    ])("defaults legacy search alias %s to native web search", async (model) => {
+    ])("uses canonical defaults for legacy search alias %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 
         const { options } = await transform([], { model });
 
-        expect(options.tools).toEqual([
-            {
-                type: "openrouter:web_search",
-                parameters: { engine: "native" },
-            },
-        ]);
+        expect(options.tools).toBeUndefined();
     });
 
     it("preserves explicit user tools on a legacy search alias", async () => {

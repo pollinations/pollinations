@@ -382,7 +382,7 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const normalization = normalizePerplexitySearchContext(c, requestData);
+        const normalization = normalizeSearchContext(c, requestData);
         if ("errorResponse" in normalization) {
             return normalization.errorResponse;
         }
@@ -414,18 +414,8 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        // Only override the provider's own name where it is misleading. A
-        // community endpoint reports its upstream — "gemini-2.0-flash" for what
-        // everyone calls "alice/pro" — and after a rescue that upstream belongs
-        // to a different owner's model. A static model instead reports the
-        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
-        // which is strictly more information, so leave it alone.
-        const servedModelId =
-            servedEntry?.id ??
-            (c.var.model?.communityEndpoint ||
-            CONSOLIDATED_TEXT_MODELS.has(c.var.model?.resolved || "")
-                ? c.var.model?.resolved
-                : undefined);
+        // Report the public registry id, not a provider-specific model name.
+        const servedModelId = servedEntry?.id ?? c.var.model?.resolved;
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
@@ -447,63 +437,45 @@ async function generateTextResponse(
     }
 }
 
-const CONSOLIDATED_TEXT_MODELS = new Set([
-    "perplexity-fast",
-    "grok",
-    "gemini",
-    "gemini-flash-lite-3.5",
-]);
-
-const LEGACY_PERPLEXITY_HIGH_IDS = new Set([
-    "perplexity-high",
-    "perplexity-deep",
-    "sonar-deep",
-]);
-
-function normalizePerplexitySearchContext(
+function normalizeSearchContext(
     c: TextContext,
     requestData: RequestData,
 ): { requestData: RequestData } | { errorResponse: Response } {
     const { web_search_options, ...requestWithoutSearchOptions } = requestData;
     const model = c.var.model;
     if (!model) return { requestData: requestWithoutSearchOptions };
-    const resolved = model.resolved;
-
-    if (resolved === "perplexity-fast") {
-        const searchContextSize =
-            web_search_options?.search_context_size ||
-            (LEGACY_PERPLEXITY_HIGH_IDS.has(model.requested) ? "high" : "low");
-        if (searchContextSize === "medium") {
-            return {
-                errorResponse: c.json(
-                    {
-                        error: {
-                            message:
-                                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
-                        },
-                    },
-                    400,
-                ),
-            };
-        }
-        c.var.track.setPricingInput({ searchContextSize });
-        return {
-            requestData: {
-                ...requestWithoutSearchOptions,
-                web_search_options: { search_context_size: searchContextSize },
-            },
-        };
-    }
-
-    if (!["perplexity", "perplexity-reasoning"].includes(resolved)) {
+    const supported = model.definition.searchContextSizes;
+    if (!supported?.length) {
         return { requestData: requestWithoutSearchOptions };
     }
 
-    c.var.track.setPricingInput({ searchContextSize: "high" });
+    const requested = web_search_options?.search_context_size;
+    if (
+        supported.length > 1 &&
+        requested !== undefined &&
+        !supported.includes(requested as "low" | "high")
+    ) {
+        return {
+            errorResponse: c.json(
+                {
+                    error: {
+                        message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
+                    },
+                },
+                400,
+            ),
+        };
+    }
+
+    const searchContextSize =
+        supported.length > 1 && requested
+            ? (requested as "low" | "high")
+            : supported[0];
+    c.var.track.setPricingInput({ searchContextSize });
     return {
         requestData: {
             ...requestWithoutSearchOptions,
-            web_search_options: { search_context_size: "high" },
+            web_search_options: { search_context_size: searchContextSize },
         },
     };
 }

@@ -166,7 +166,7 @@ describe("resolveModelConfig", () => {
         "perplexity-high",
         "perplexity-deep",
         "sonar-deep",
-    ])("resolves %s to the high-context Sonar preset", async (modelName) => {
+    ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
         const model = findModelByName(modelName);
 
         expect(model?.name).toBe("perplexity-fast");
@@ -182,7 +182,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         ["grok", undefined, "grok-4-20-non-reasoning"],
-        ["grok-4-20-reasoning", undefined, "grok-4-20-reasoning"],
+        ["grok-4-20-reasoning", undefined, "grok-4-20-non-reasoning"],
         ["grok", "high", "grok-4-20-reasoning"],
         ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
     ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {

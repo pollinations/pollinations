@@ -38,17 +38,11 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
-const GROK_REASONING_ALIASES = new Set([
-    "grok-4-20-reasoning",
-    "grok-4-20",
-    "grok-4-1-fast-reasoning",
-]);
-
 function usesGrokReasoning(options: TransformOptions): boolean {
-    if (options.reasoning_effort !== undefined) {
-        return options.reasoning_effort !== "none";
-    }
-    return GROK_REASONING_ALIASES.has(options.model || "");
+    return (
+        options.reasoning_effort !== undefined &&
+        options.reasoning_effort !== "none"
+    );
 }
 
 const grokTransform: TransformFn = async (messages, options) => {
@@ -66,15 +60,6 @@ const grokTransform: TransformFn = async (messages, options) => {
         },
     };
 };
-
-function legacyGeminiSearchDefault(modelIds: string[]): TransformFn {
-    const legacyIds = new Set(modelIds);
-    const defaultSearch = createGeminiToolsTransform(["google_search"]);
-    return (messages, options) =>
-        legacyIds.has(options.model || "")
-            ? defaultSearch(messages, options)
-            : { messages, options };
-}
 
 const models: ModelDefinition[] = [
     {
@@ -285,11 +270,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            legacyGeminiSearchDefault([
-                "gemini-search-large",
-                "gemini-3.6-flash-search",
-                "gemini-3.5-flash-search",
-            ]),
             adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
@@ -301,11 +281,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            legacyGeminiSearchDefault([
-                "gemini-search-fast",
-                "gemini-3.1-flash-lite-search",
-                "gemini-3.5-flash-lite-search",
-            ]),
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),

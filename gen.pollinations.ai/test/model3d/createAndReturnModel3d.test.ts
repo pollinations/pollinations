@@ -112,7 +112,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
 });
 
 workerTest(
-    "legacy Trellis IDs preserve resolution defaults",
+    "legacy Trellis IDs use the canonical resolution default",
     async ({ paidApiKey }) => {
         getRegistryModelDefinition("trellis-2");
         resetGenerationModelRegistryCache();
@@ -189,8 +189,8 @@ workerTest(
 
             expect(resolutions).toEqual([
                 "low",
-                "medium",
-                "high",
+                "low",
+                "low",
                 "low",
                 "high",
                 "low",

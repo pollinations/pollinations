@@ -666,6 +666,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
+  "grok-imagine-video-1.5": {
+    "cost": {
+      "completionVideoSeconds": 0.14,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.25,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.14,
+      "promptImageTokens": 0.01,
+    },
+  },
   "grok-large": {
     "cost": {
       "completionTextTokens": 0.0000025,
@@ -1426,6 +1444,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000184375,
       "promptCachedTokens": 0.000000295,
       "promptTextTokens": 0.000001475,
+    },
+  },
+  "qwen3.8-max": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.00000025,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.00000025,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
     },
   },
   "recraft-v4.1-vector": {

@@ -122,6 +122,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.8-max",
+        config: portkeyConfig["qwen/qwen3.8-max"],
+    },
+    {
         name: "qwen3.7-flash",
         config: portkeyConfig["qwen/qwen3.7-flash"],
         transform: createReasoningEffortTransform("toggle"),

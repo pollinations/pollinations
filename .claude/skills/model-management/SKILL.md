@@ -34,11 +34,11 @@ First inspect the registry and every reachable runtime route. Present the values
 | Pollinations-operated GPU | **Yes** only when Pollinations operates the production inference hardware; a managed provider API is **No**, even though that provider uses GPUs |
 | Registry provider | Primary provider configured for the model; this is not the model brand and not a fallback that happened to serve one request |
 | Primary inference route | Runtime handler/config, deployment or host, and upstream `modelId` |
-| Fallback route | Fallback provider, deployment/host, and upstream `modelId`, or explicitly `none` |
+| Pollinations fallback route | Alternative route configured and controlled by Pollinations: provider, deployment/host, and upstream `modelId`, or explicitly `none` |
 
 Ask this explicit question, filled with the discovered values:
 
-> Please confirm: the price multiplier is **X**, paid-only is **yes/no**, Pollinations-operated GPU is **yes/no**, the registry provider is **Y**, the primary inference route is **Z**, and the fallback route is **A/none**. Are all of these correct?
+> Please confirm: the price multiplier is **X**, paid-only is **yes/no**, Pollinations-operated GPU is **yes/no**, the registry provider is **Y**, the primary inference route is **Z**, and the Pollinations fallback route is **A/none**. Are all of these correct?
 
 Also show the canonical name and aliases immediately above the question. Do not proceed on a general approval such as “looks good” if any value is missing from what was shown.
 
@@ -69,6 +69,22 @@ Keep these concepts separate:
 - **Used** provider/GPU describes the backend proven to have served a specific request.
 - A fallback can make configured and used values different. Never overwrite the configured registry provider with an observed fallback provider.
 - When the registry has a `selfHosted` field, `selfHosted: true` means the configured primary route uses Pollinations-operated production inference GPUs. It does not prove which backend served an individual request.
+
+### Pollinations fallback vs provider-managed fallback
+
+Treat these as separate reliability layers:
+
+- **Pollinations fallback** is an alternative inference route configured in our code or gateway. This is what the confirmation gate's “Pollinations fallback route” refers to.
+- **Provider-managed fallback** is transparent rerouting performed inside the selected upstream provider, such as routing to an equivalent endpoint, deployment, or backend. A confirmed Pollinations fallback of `none` does **not** mean provider-managed fallback must be disabled.
+
+For every new model or provider change, inspect whether the upstream offers provider-managed fallback and report:
+
+1. Its documented default behavior.
+2. Any request parameter or header that controls it.
+3. Whether our integration overrides the default.
+4. The reliability benefit and any material tradeoffs, especially changes to model identity, capabilities, pricing, data residency, or observability.
+
+Surface this information to the user before editing or approving the integration. Do not enable or disable provider-managed fallback by assumption. If its behavior creates a material business or inference-contract choice, obtain explicit confirmation; otherwise preserve the provider default and document it in the PR review.
 
 ## Related skills — when to hand off
 
@@ -572,7 +588,8 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## Empirical (must all pass against `localhost:8788`)
 
-- [ ] PR links or includes the explicitly approved confirmation row(s): name, aliases, `priceMultiplier`, `paidOnly`, Pollinations-operated GPU, registry provider, primary route, and fallback route
+- [ ] PR links or includes the explicitly approved confirmation row(s): name, aliases, `priceMultiplier`, `paidOnly`, Pollinations-operated GPU, registry provider, primary route, and Pollinations fallback route
+- [ ] Provider-managed fallback defaults and controls were inspected and surfaced; any override or material tradeoff is documented and explicitly confirmed
 - [ ] All [Change matrix](#6-change-matrix--if-you-change-x-verify-y) rows for this change type re-verified
 - [ ] All [Test matrix](#7-test-matrix--if-model-claims-x-run-y) rows for declared capabilities passed (not from docs)
 - [ ] [Output cache](#72-image) tested with **byte-identical requests** if the modality caches

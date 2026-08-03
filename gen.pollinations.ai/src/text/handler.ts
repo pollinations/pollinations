@@ -423,8 +423,8 @@ async function generateTextResponse(
         const servedModelId =
             servedEntry?.id ??
             (c.var.model?.communityEndpoint ||
-            CONSOLIDATED_TEXT_MODELS.has(c.var.model.resolved)
-                ? c.var.model.resolved
+            CONSOLIDATED_TEXT_MODELS.has(c.var.model?.resolved || "")
+                ? c.var.model?.resolved
                 : undefined);
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);

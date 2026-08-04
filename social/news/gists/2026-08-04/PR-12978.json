@@ -1,0 +1,34 @@
+{
+  "pr_number": 12978,
+  "title": "fix: return 400 for invalid image URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12978",
+  "merged_at": "2026-08-04T11:10:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Returns HTTP 400 when Portkey reports its status-less invalid image URL validation error.\n- Keeps genuine status-less provider failures classified as 502.\n- Prevents invalid image requests from being recorded as server errors in model health.\n- Adds an endpoint-level regression test covering the public response and telemetry behavior.\n\nChecks:\n- `npx biome check --write gen.pollinations.ai/src/text/genericOpenAIClient.ts gen.pollinations.ai/test/error-observability.test.ts`\n- `npx vitest run test/error-observability.test.ts test/text/genericOpenAIClient.test.ts` (27 passed)\n- `npm run typecheck` (Gen)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bad URLs, Properly Labeled",
+    "blurb": "Invalid image URLs now get the little 400 they were always meant to receive. The model-health garden no longer mistakes a malformed request for a sick provider.",
+    "summary": "The text generation gateway now maps Portkey's status-less invalid image URL validation error to HTTP 400 while preserving genuine status-less provider failures as HTTP 502.",
+    "impact": "Developers sending an invalid image URL receive a clear client-error response, and those requests no longer count as server errors in model-health telemetry.",
+    "keywords": [
+      "image-urls",
+      "http-400",
+      "error-handling",
+      "Portkey",
+      "model-health",
+      "api"
+    ],
+    "visual_concept": "Polli acts as a careful API gardener, inspecting an image-URL seed that has a tiny malformed tag and placing it in a clearly labeled 400 compost bin, while healthy provider flowers remain untouched. A nearby CRT monitor robot displays separate 400 and 502 status tiles, representing accurate error classification and clean telemetry.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully sorting a malformed image-URL seed into a little flower pot labeled \"400\" while a chunky CRT monitor robot shows tidy pixel status tiles \"400\" and \"502\" beside healthy code-flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, subtle retro screen glow, nature-filled API garden, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-12978.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully sorting a malformed image-URL seed into a little flower pot labeled \"400\" while a chunky CRT monitor robot shows tidy pixel status tiles \"400\" and \"502\" beside healthy code-flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, subtle retro screen glow, nature-filled API garden, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-04T11:11:24.563737+00:00"
+}

@@ -353,11 +353,7 @@ export const proxyRoutes = new Hono<Env>()
                 created: now,
                 input_modalities: entry.info.input_modalities,
                 output_modalities: entry.info.output_modalities,
-                supported_endpoints:
-                    entry.eventType === "generate.audio" &&
-                    entry.info.output_modalities?.includes("text")
-                        ? ["/v1/audio/transcriptions"]
-                        : entry.supportedEndpoints,
+                supported_endpoints: entry.supportedEndpoints,
                 ...(entry.info.tools && { tools: entry.info.tools }),
                 ...(entry.info.reasoning && {
                     reasoning: entry.info.reasoning,

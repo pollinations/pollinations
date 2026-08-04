@@ -3100,6 +3100,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         resolveModel("generate.audio", {
             defaultModel: "whisper-large-v3",
+            supportedEndpoint: "/v1/audio/transcriptions",
         }),
         track("generate.audio"),
         async (c) => {

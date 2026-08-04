@@ -636,7 +636,7 @@ const imageParamsSchema = {
         .optional()
         .describe(
             "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
-                "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
+                "I2I models: bytedance-seed/seedream-4.5, google/gemini-3-pro-image, google/gemini-2.5-flash-image, openai/gpt-image-1-mini, bytedance/seedream-4 (all multi-image), black-forest-labs/flux.1-kontext-pro (single image).\n" +
                 "Put this parameter last in URL or URL-encode it.",
         ),
     transparent: z
@@ -803,7 +803,7 @@ export const imageTools = [
                 .optional()
                 .describe(
                     "Vision-capable model to use (default: 'openai/gpt-5.4-nano'). " +
-                        "Options: openai, gemini, claude, grok - all support vision",
+                        "Options: openai/gpt-5.4-nano, google/gemini-3.6-flash, anthropic/claude-sonnet-4.6, x-ai/grok-4.1-fast - all support vision",
                 ),
         },
         describeImage,
@@ -832,7 +832,7 @@ export const imageTools = [
                 .optional()
                 .describe(
                     "Model to use (default: 'google/gemini-3.1-pro-preview'). " +
-                        "gemini-large and gemini support native video input",
+                        "google/gemini-3.1-pro-preview and google/gemini-3.6-flash support native video input",
                 ),
         },
         analyzeVideo,

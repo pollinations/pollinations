@@ -20,7 +20,7 @@ const testFunctionCalling = async () => {
     (error) => {
       console.error('Error:', error);
     },
-    'openai/gpt-5.5',
+    'openai-large',
     { maxTokens: 1000, temperature: 0.7 }
   );
 };

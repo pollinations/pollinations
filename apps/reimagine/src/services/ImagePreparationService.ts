@@ -143,9 +143,9 @@ class ImagePreparationService {
   /**
    * choise the right model depending number of images
    */
-  static determineModel(imageCount: number): 'black-forest-labs/flux.1-kontext-pro' | 'openai/gpt-image-1-mini' | null {
-    if (imageCount === 1) return 'black-forest-labs/flux.1-kontext-pro';
-    if (imageCount >= 2 && imageCount <= 4) return 'openai/gpt-image-1-mini';
+  static determineModel(imageCount: number): 'kontext' | 'gptimage' | null {
+    if (imageCount === 1) return 'kontext';
+    if (imageCount >= 2 && imageCount <= 4) return 'gptimage';
     return null;
   }
 }

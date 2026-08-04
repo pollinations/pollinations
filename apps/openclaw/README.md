@@ -31,15 +31,15 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.5** (default) | `pollinations/moonshotai/kimi-k2.6` | Agentic tasks, vision, reasoning (256K context) |
 | **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
-| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
-| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
-| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **DeepSeek V4 Flash** | `pollinations/deepseek/deepseek-v4-flash-0731` | Fast reasoning & tool calling (paid) |
+| **DeepSeek V4 Pro** | `pollinations/deepseek/deepseek-v4-pro` | Advanced reasoning & coding (paid) |
+| **GLM 5.1** | `pollinations/z-ai/glm-5.2` | Coding, reasoning, agentic workflows |
 | **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
-| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
+| **Claude Haiku 4.5** | `pollinations/anthropic/claude-haiku-4.5` | Fast with good reasoning |
+| **Claude Opus 4.6** | `pollinations/anthropic/claude-opus-5` | Most intelligent (paid) |
+| **Gemini 3.1 Pro** | `pollinations/google/gemini-3.1-pro-preview` | 1M context (paid) |
 
 ## Manual Setup
 
@@ -80,9 +80,9 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
 Then set the default model:
 
 ```bash
-openclaw models set pollinations/kimi
-openclaw models fallbacks add pollinations/deepseek
-openclaw models fallbacks add pollinations/glm
+openclaw models set pollinations/moonshotai/kimi-k2.6
+openclaw models fallbacks add pollinations/deepseek/deepseek-v4-flash-0731
+openclaw models fallbacks add pollinations/z-ai/glm-5.2
 openclaw gateway restart
 ```
 

@@ -86,7 +86,8 @@ const CreateSpeechRequestSchema = z
             example: "distortion, vocals",
         }),
         loop: z.boolean().optional().meta({
-            description: "Loop the generated sound effect (elevenlabs/eleven-text-to-sound-v2 only)",
+            description:
+                "Loop the generated sound effect (elevenlabs/eleven-text-to-sound-v2 only)",
             example: false,
         }),
         prompt_influence: z.number().min(0).max(1).optional().meta({

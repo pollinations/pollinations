@@ -89,7 +89,7 @@ def _tier_score(mid: str, meta: dict[str, Any], tier: str) -> float:
 
 
 def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
-    mid = item.get("id", "")
+    mid = item.get("id", "").lower()
     owned = (item.get("owned_by") or "").lower()
     caps = item.get("capabilities", {}) or {}
     modalities: list[str] = []
@@ -125,13 +125,16 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
             "flux",
             "seedream",
             "ideogram",
-            "gptimage",
-            "nanobanana",
+            "gpt-image",
+            "gemini-2.5-flash-image",
+            "gemini-3.1-flash-image",
+            "gemini-3.1-flash-lite-image",
+            "gemini-3-pro-image",
             "qwen-image",
             "grok-imagine",
             "p-image",
             "nova-canvas",
-            "zimage",
+            "z-image",
             "wan-image",
             "klein",
         ]

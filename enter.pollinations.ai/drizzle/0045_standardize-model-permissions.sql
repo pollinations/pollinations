@@ -669,18 +669,16 @@ deduplicated AS (
     GROUP BY id, model_id
 ),
 migrated AS (
-    SELECT id, json_group_array(model_id) AS models
-    FROM (
-        SELECT id, model_id
-        FROM deduplicated
-        ORDER BY id, position
-    )
+    SELECT id, json_group_array(model_id ORDER BY position) AS models
+    FROM deduplicated
     GROUP BY id
 )
 UPDATE apikey
 SET permissions = json_set(
-    permissions,
+    apikey.permissions,
     '$.models',
-    json((SELECT models FROM migrated WHERE migrated.id = apikey.id))
+    json(migrated.models)
 )
-WHERE id IN (SELECT id FROM canonicalized WHERE changed);
+FROM migrated
+WHERE apikey.id = migrated.id
+  AND migrated.id IN (SELECT id FROM canonicalized WHERE changed);

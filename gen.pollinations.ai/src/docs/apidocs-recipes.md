@@ -146,7 +146,7 @@ Three endpoints accept `multipart/form-data` request bodies. Each has its own fi
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./recording.mp3" \
-  -F "model=openai-audio" \
+  -F "model=openai/gpt-audio-mini" \
   -F "response_format=verbose_json" \
   -F "temperature=0"
 ```

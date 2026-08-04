@@ -45,7 +45,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/FLUX.1-schnell, Tongyi-MAI/Z-Image-Turbo, bytedance/seedream-4, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon.nova-reel-v1:1. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z

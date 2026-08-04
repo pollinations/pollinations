@@ -39,7 +39,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         app_key: APP_KEY,
         budget: "5",
-        models: "gptimage,nanobanana,claude-fast",
+        models: "openai/gpt-image-1-mini,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
         permissions: "profile,usage",
     })}`;
 }

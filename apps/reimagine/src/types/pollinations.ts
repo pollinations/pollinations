@@ -1,8 +1,8 @@
-export type PollinationsModel = 'black-forest-labs/flux.1-kontext-pro' | 'openai/gpt-image-1-mini';
+export type PollinationsModel = 'kontext' | 'gptimage';
 
 
 export interface KontextParams {
-  model: 'black-forest-labs/flux.1-kontext-pro';
+  model: 'kontext';
   prompt: string;
   imageUrl: string;
   width?: number;
@@ -13,7 +13,7 @@ export interface KontextParams {
 
 
 export interface GPTImageParams {
-  model: 'openai/gpt-image-1-mini';
+  model: 'gptimage';
   prompt: string;
   imageUrls: string[];
   width?: number;
@@ -36,14 +36,14 @@ export const DEFAULT_TRANSFORMATION_SETTINGS = {
 
 export const TRANSFORMATION_MODELS = [
   {
-    id: 'black-forest-labs/flux.1-kontext-pro' as const,
+    id: 'kontext' as const,
     name: 'Kontext',
     description: 'Transform a single image',
     imageCount: 1,
     maxImages: 1,
   },
   {
-    id: 'openai/gpt-image-1-mini' as const,
+    id: 'gptimage' as const,
     name: 'GPT Image',
     description: 'Mix 2-4 images together',
     imageCount: { min: 2, max: 4 },

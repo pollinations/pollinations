@@ -164,6 +164,11 @@ describe("standardize model permissions migration", () => {
     it("bounds work and migrates every renamed canonical ID", async () => {
         expect(migrationSql).toContain("candidate_keys AS MATERIALIZED");
         expect(migrationSql).toContain("FROM candidate_keys");
+        expect(migrationSql).toContain("UPDATE apikey");
+        expect(migrationSql).toContain("FROM migrated");
+        expect(migrationSql).not.toContain(
+            "SELECT models FROM migrated WHERE migrated.id = apikey.id",
+        );
         for (const [retiredId, canonicalId] of modelMappings) {
             expect(migrationSql).toContain(
                 `('${retiredId}', '${canonicalId}')`,

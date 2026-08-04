@@ -318,6 +318,14 @@ export const CreateChatCompletionRequestSchema = z
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
             )
             .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+            )
+            .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),

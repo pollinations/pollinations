@@ -41,6 +41,9 @@ export interface TransformOptions {
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     modalities?: string[];
     audio?: Record<string, unknown>;
     normalizeFinishReasonAtTokenLimit?: boolean;
@@ -129,6 +132,9 @@ export interface RequestData {
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;

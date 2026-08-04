@@ -52,7 +52,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "FLUX.1 Kontext",
+        title: "FLUX.1 Kontext Pro",
         description:
             "Edits an existing image from plain instructions — swap, restyle, refine",
         inputModalities: ["text", "image"],
@@ -74,7 +74,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
-        title: "NanoBanana",
+        title: "Nano Banana",
         description:
             "Quick image generation and editing that follows instructions well",
         inputModalities: ["text", "image"],
@@ -96,7 +96,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(3), // text/reasoning output tokens
             completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
         },
-        title: "NanoBanana 2",
+        title: "Nano Banana 2",
         description:
             "Sharper detail and better text rendering in generated and edited images",
         inputModalities: ["text", "image"],
@@ -118,7 +118,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
-        title: "NanoBanana 2 Lite",
+        title: "Nano Banana 2 Lite",
         description:
             "Speedy, affordable image generation and editing for everyday use",
         inputModalities: ["text", "image"],
@@ -142,7 +142,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
-        title: "NanoBanana Pro",
+        title: "Nano Banana Pro",
         description:
             "Studio-quality images up to 4K, with reasoning for tricky prompts",
         inputModalities: ["text", "image"],
@@ -212,7 +212,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "Seedream 4.5 Pro",
+        title: "Seedream 4.5",
         description: "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -345,7 +345,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.002, // per image
         },
-        title: "Flux Schnell",
+        title: "FLUX.1 Schnell",
         description: "Fast, high-quality images at a tiny cost",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -445,7 +445,7 @@ export const IMAGE_SERVICES = {
             },
         ),
         resolutions: ["720p", "480p", "1080p"],
-        title: "Seedance Pro-Fast",
+        title: "Seedance 1.0 Pro Fast",
         description: "Video from text or a start image at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
@@ -640,7 +640,7 @@ export const IMAGE_SERVICES = {
                 },
             },
         ),
-        title: "Qwen Image Plus",
+        title: "Qwen Image",
         description:
             "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],
@@ -659,7 +659,7 @@ export const IMAGE_SERVICES = {
             promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
-        title: "Grok Imagine",
+        title: "Grok Imagine Image",
         description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -682,7 +682,7 @@ export const IMAGE_SERVICES = {
             promptImageTokens: 0.01, // per input image on edits
             completionImageTokens: 0.05, // per 1K image
         },
-        title: "Grok Imagine Pro",
+        title: "Grok Imagine Image Quality",
         description:
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
@@ -719,7 +719,7 @@ export const IMAGE_SERVICES = {
             promptImageTokens: 0.002, // per start-frame image
             completionVideoSeconds: 0.07, // per sec at 720p
         },
-        title: "Grok Video Pro",
+        title: "Grok Imagine Video",
         description: "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
@@ -815,7 +815,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.005, // per image
         },
-        title: "Pruna p-image",
+        title: "p-image",
         description: "Cheap, speedy text-to-image for rapid iteration",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -831,7 +831,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.01, // per image
         },
-        title: "Pruna p-image-edit",
+        title: "p-image Edit",
         description: "Fast instruction-based photo editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -871,7 +871,7 @@ export const IMAGE_SERVICES = {
             },
         ),
         resolutions: ["720p", "1080p"],
-        title: "Pruna p-video",
+        title: "p-video",
         description: "Affordable video from text or an image at 720p or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
@@ -888,7 +888,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "Nova Canvas",
+        title: "Amazon Nova Canvas",
         description: "Image generation with editing and inpainting tools",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -904,7 +904,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.08, // per sec
         },
-        title: "Nova Reel",
+        title: "Amazon Nova Reel",
         description:
             "Long-form video — clips from 6 seconds up to 2 minutes at 720p",
         inputModalities: ["text", "image"],

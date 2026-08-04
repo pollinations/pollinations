@@ -73,7 +73,7 @@ export const EMBEDDING_SERVICES = {
             promptTextTokens: perMillion(0.12),
             promptImageTokens: perMillion(0.47),
         },
-        title: "Cohere Embed v4",
+        title: "Embed 4",
         description:
             "Multilingual text and image vectors. 1536 dimensions, 128K context.",
         inputModalities: ["text", "image"],

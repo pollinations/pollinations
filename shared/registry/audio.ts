@@ -135,7 +135,7 @@ export const AUDIO_SERVICES = {
             // (matches elevenlabs.io/pricing/api).
             completionAudioTokens: 0.1 / 1000,
         },
-        title: "ElevenLabs v3 TTS",
+        title: "Eleven v3",
         description:
             "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
@@ -161,7 +161,7 @@ export const AUDIO_SERVICES = {
             // credits = $0.05/1k chars (matches elevenlabs.io/pricing/api).
             completionAudioTokens: 0.05 / 1000,
         },
-        title: "ElevenLabs Flash v2.5",
+        title: "Eleven Flash v2.5",
         description:
             "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
@@ -187,7 +187,7 @@ export const AUDIO_SERVICES = {
             // = $0.10/1k chars (matches elevenlabs.io/pricing/api).
             completionAudioTokens: 0.1 / 1000,
         },
-        title: "ElevenLabs Multilingual v2",
+        title: "Eleven Multilingual v2",
         description:
             "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
@@ -272,7 +272,7 @@ export const AUDIO_SERVICES = {
             // Scale plan $0.166/1k credits => 15.05 * 0.166/1000 ≈ $0.0025/sec ($0.15/min).
             completionAudioSeconds: 0.0025,
         },
-        title: "ElevenLabs Music",
+        title: "Eleven Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
@@ -289,7 +289,7 @@ export const AUDIO_SERVICES = {
             // Vertex bills a fixed $0.04 for each 30-second generated clip.
             completionAudioTokens: 0.04,
         },
-        title: "Lyria 3 Clip",
+        title: "Lyria 3 Clip Preview",
         description:
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
@@ -307,7 +307,7 @@ export const AUDIO_SERVICES = {
             // ElevenLabs Sound Effects: $0.12/minute.
             completionAudioSeconds: 0.002,
         },
-        title: "ElevenLabs Sound Effects",
+        title: "Eleven Sound Effects",
         description: "Sound effects from a text description",
         inputModalities: ["text"],
         outputModalities: ["audio"],
@@ -356,7 +356,7 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
         },
-        title: "AssemblyAI Universal-2",
+        title: "Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
@@ -381,7 +381,7 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
-        title: "AssemblyAI Universal-3.5 Pro",
+        title: "Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
@@ -429,7 +429,7 @@ export const AUDIO_SERVICES = {
             // surcharge — the handler bills one flat completion audio unit.
             completionAudioTokens: 0.26,
         },
-        title: "Stable Audio 3 Large",
+        title: "Stable Audio 3.0",
         description:
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
@@ -464,7 +464,7 @@ export const AUDIO_SERVICES = {
             // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
             completionAudioTokens: 0.0115 / 1000,
         },
-        title: "Qwen3-TTS Instruct",
+        title: "Qwen3-TTS Instruct Flash",
         description:
             "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],

@@ -370,7 +370,7 @@ function throwTextError(error: ServiceError): never {
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
-        diagnosticMetadata: error.diagnosticMetadata,
+        upstreamHeaders: error.upstreamHeaders,
         cause: error,
     });
 }

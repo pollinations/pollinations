@@ -23,7 +23,8 @@ export type TinybirdErrorEvent = {
     upstream_host?: string;
     upstream_status?: number;
     upstream_body?: string;
-    diagnostic_metadata?: string;
+    edge_colo?: string;
+    upstream_headers?: string;
     model_requested?: string;
     resolved_model_requested?: string;
     request_inputs?: string;

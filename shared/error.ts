@@ -31,14 +31,7 @@ type ErrorHandlerEnv = {
     Variables: RequestIdVariables & ErrorVariables;
 };
 
-export type ErrorDiagnosticMetadata = {
-    edge_colo?: string;
-    gateway_provider?: string;
-    gateway_retry_attempt_count?: number;
-    gateway_route?: string;
-    gateway_trace_id?: string;
-    upstream_generation_id?: string;
-};
+export type UpstreamHeaders = Record<string, string>;
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -48,7 +41,7 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
-    diagnosticMetadata?: ErrorDiagnosticMetadata;
+    upstreamHeaders?: UpstreamHeaders;
     /**
      * Overrides the status-derived error code in the response envelope. Used to
      * surface a stable, machine-readable code (e.g. `content_policy_violation`)
@@ -63,7 +56,7 @@ export class UpstreamError extends HTTPException {
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
-    public readonly diagnosticMetadata?: ErrorDiagnosticMetadata;
+    public readonly upstreamHeaders?: UpstreamHeaders;
     public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
@@ -72,51 +65,25 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
-        this.diagnosticMetadata = options?.diagnosticMetadata;
+        this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
     }
 }
 
-const MAX_DIAGNOSTIC_VALUE_LENGTH = 512;
+const REDACTED_HEADER_VALUE = "[redacted]";
+const SENSITIVE_HEADER_NAME =
+    /(^|[-_])(authorization|cookie|api[-_]?key|token|secret)([-_]|$)/i;
 
-function getDiagnosticHeader(
+/** Preserves upstream response headers while redacting credential-bearing values. */
+export function collectUpstreamHeaders(
     headers: Headers,
-    name: string,
-): string | undefined {
-    return truncateString(
-        headers.get(name)?.trim(),
-        MAX_DIAGNOSTIC_VALUE_LENGTH,
-    );
-}
+): UpstreamHeaders | undefined {
+    const entries = Array.from(headers.entries(), ([name, value]) => [
+        name,
+        SENSITIVE_HEADER_NAME.test(name) ? REDACTED_HEADER_VALUE : value,
+    ]);
 
-/** Extracts only explicitly allowlisted, non-secret upstream response headers. */
-export function extractErrorDiagnosticMetadata(
-    headers: Headers,
-): ErrorDiagnosticMetadata | undefined {
-    const retryAttemptValue = getDiagnosticHeader(
-        headers,
-        "x-portkey-retry-attempt-count",
-    );
-    const retryAttemptCount =
-        retryAttemptValue && /^\d+$/.test(retryAttemptValue)
-            ? Number(retryAttemptValue)
-            : undefined;
-    const metadata: ErrorDiagnosticMetadata = {
-        gateway_provider: getDiagnosticHeader(headers, "x-portkey-provider"),
-        gateway_retry_attempt_count: Number.isSafeInteger(retryAttemptCount)
-            ? retryAttemptCount
-            : undefined,
-        gateway_route: getDiagnosticHeader(
-            headers,
-            "x-portkey-last-used-option-index",
-        ),
-        gateway_trace_id: getDiagnosticHeader(headers, "x-portkey-trace-id"),
-        upstream_generation_id: getDiagnosticHeader(headers, "x-generation-id"),
-    };
-
-    return Object.values(metadata).some((value) => value !== undefined)
-        ? metadata
-        : undefined;
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 export async function ensureUpstreamOk(
@@ -134,7 +101,7 @@ export async function ensureUpstreamOk(
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
         upstreamStatus: response.status,
         responseBody,
-        diagnosticMetadata: extractErrorDiagnosticMetadata(response.headers),
+        upstreamHeaders: collectUpstreamHeaders(response.headers),
     });
 }
 
@@ -260,7 +227,8 @@ type ServerErrorEnvelope = {
     upstreamHost?: string;
     upstreamStatus?: number;
     upstreamBody?: string;
-    diagnosticMetadata?: ErrorDiagnosticMetadata;
+    edgeColo?: string;
+    upstreamHeaders?: UpstreamHeaders;
     modelRequested?: string;
     resolvedModelRequested?: string;
     requestInputs?: RequestInputs;
@@ -509,20 +477,11 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         ) || getDefaultErrorMessage(status);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
     const resolvedRoutePath = getRoutePath(c);
-    const upstreamDiagnosticMetadata =
-        error instanceof UpstreamError ? error.diagnosticMetadata : undefined;
-    const edgeColo = truncateString(
-        (
-            c.req.raw as Request & {
-                cf?: { colo?: string };
-            }
-        ).cf?.colo,
-        MAX_DIAGNOSTIC_VALUE_LENGTH,
-    );
-    const diagnosticMetadata: ErrorDiagnosticMetadata = {
-        ...upstreamDiagnosticMetadata,
-        ...(edgeColo ? { edge_colo: edgeColo } : {}),
-    };
+    const edgeColo = (
+        c.req.raw as Request & {
+            cf?: { colo?: string };
+        }
+    ).cf?.colo;
 
     return {
         kind: "server_error",
@@ -551,11 +510,9 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError
                 ? truncateString(error.responseBody, MAX_UPSTREAM_BODY_LENGTH)
                 : undefined,
-        diagnosticMetadata: Object.values(diagnosticMetadata).some(
-            (value) => value !== undefined,
-        )
-            ? diagnosticMetadata
-            : undefined,
+        edgeColo,
+        upstreamHeaders:
+            error instanceof UpstreamError ? error.upstreamHeaders : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
         requestInputs: await collectRequestInputs(c),
@@ -585,8 +542,9 @@ function toTinybirdErrorEvent(
         upstream_host: envelope.upstreamHost,
         upstream_status: envelope.upstreamStatus,
         upstream_body: envelope.upstreamBody,
-        diagnostic_metadata: envelope.diagnosticMetadata
-            ? JSON.stringify(envelope.diagnosticMetadata)
+        edge_colo: envelope.edgeColo,
+        upstream_headers: envelope.upstreamHeaders
+            ? JSON.stringify(envelope.upstreamHeaders)
             : undefined,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,

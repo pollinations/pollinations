@@ -2,7 +2,7 @@
  * Shared types for the text generation service.
  */
 
-import type { ErrorDiagnosticMetadata } from "@shared/error.ts";
+import type { UpstreamHeaders } from "@shared/error.ts";
 
 /** OpenAI-style chat message. */
 export interface ChatMessage {
@@ -104,7 +104,7 @@ export interface ServiceError extends Error {
     model?: string;
     provider?: string;
     response?: { data?: unknown };
-    diagnosticMetadata?: ErrorDiagnosticMetadata;
+    upstreamHeaders?: UpstreamHeaders;
 }
 
 export type TextVariables = {

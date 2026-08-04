@@ -429,6 +429,7 @@ describe("error observability", () => {
                         headers: {
                             authorization: "Bearer must-not-be-recorded",
                             "set-cookie": "session=must-not-be-recorded",
+                            "x-debug-detail": "x".repeat(600),
                             "x-generation-id": "gen-openrouter-test",
                             "x-portkey-last-used-option-index":
                                 "config.targets[1]",
@@ -492,26 +493,24 @@ describe("error observability", () => {
             kind: "server_error",
             status: 502,
             error_code: "BAD_GATEWAY",
+            edge_colo: "FRA",
             upstream_host: "portkey.test",
             upstream_status: 429,
         });
-        expect(
-            JSON.parse(tinybirdPayload.diagnostic_metadata as string),
-        ).toEqual({
-            edge_colo: "FRA",
-            gateway_provider: "openrouter",
-            gateway_retry_attempt_count: 2,
-            gateway_route: "config.targets[1]",
-            gateway_trace_id: "portkey-trace-test",
-            upstream_generation_id: "gen-openrouter-test",
+        expect(JSON.parse(tinybirdPayload.upstream_headers as string)).toEqual({
+            authorization: "[redacted]",
+            "content-type": "application/json",
+            "set-cookie": "[redacted]",
+            "x-debug-detail": "x".repeat(600),
+            "x-generation-id": "gen-openrouter-test",
+            "x-portkey-last-used-option-index": "config.targets[1]",
+            "x-portkey-provider": "openrouter",
+            "x-portkey-retry-attempt-count": "2",
+            "x-portkey-trace-id": "portkey-trace-test",
         });
-        expect(tinybirdPayload.diagnostic_metadata).not.toContain(
+        expect(tinybirdPayload.upstream_headers).not.toContain(
             "must-not-be-recorded",
         );
-        expect(tinybirdPayload.diagnostic_metadata).not.toContain(
-            "authorization",
-        );
-        expect(tinybirdPayload.diagnostic_metadata).not.toContain("set-cookie");
     });
 
     it("attributes provider error envelopes to the gateway", async () => {

@@ -1,0 +1,43 @@
+{
+  "date": "2026-08-03",
+  "period_start": "2026-08-03",
+  "period_end": "2026-08-03",
+  "title": "New image and video models, ready for creative mischief",
+  "summary": "A creative-model day: new Krea, Grok video, and Qwen capabilities, backed by sturdier deployments and community publishing.\n\nKrea 2 Medium joined the image API with text-to-image generation, aspect-ratio support, and reproducible seeds. Grok Imagine Video 1.5 also landed, bringing video generation with synchronized audio and 480p through 1080p output.\n\nqwen3.8-max is now available for text, image, and video inputs, routed directly through Alibaba on OpenRouter. Explicit routing means builders get the intended model rather than a mysterious substitute from the model cupboard.\n\npollinations-router can now publish community models using its immutable GitHub account ID instead of relying on a username that may someday wander off and reinvent itself.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 13012,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13025,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13034,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13035,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13041,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13046,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13047,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13048,
+      "date": "2026-08-03"
+    }
+  ],
+  "generated_at": "2026-08-04T07:01:47.293796+00:00"
+}

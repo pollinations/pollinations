@@ -685,7 +685,7 @@ describe("error observability", () => {
         expect(responseText).not.toContain('"cost"');
     });
 
-    it("keeps user image URL fetch 429 client-facing", async () => {
+    it("codes a rate-limited user image host as a 400 without leaking its status", async () => {
         const fetchRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -748,10 +748,10 @@ describe("error observability", () => {
 
         expect(fetchRequests).toHaveLength(1);
         expect(fetchRequests[0].url).toBe("https://example.com/image.png");
-        expect(response.status).toBe(429);
+        expect(response.status).toBe(400);
         await expect(response.json()).resolves.toMatchObject({
             error: {
-                code: "RATE_LIMITED",
+                code: "failed_to_download_image",
                 message: expect.stringContaining(
                     "The image server is rate limiting requests",
                 ),

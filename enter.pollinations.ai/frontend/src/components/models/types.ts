@@ -20,7 +20,6 @@ export type ModelCapability =
 
 export type PriceKind =
     | "text"
-    | "document"
     | "image"
     | "3d"
     | "cached"
@@ -32,13 +31,20 @@ export type PriceKind =
 
 export type PriceDirection = "input" | "output";
 
-export type PriceUnit = "token" | "second" | "request" | "page";
+export type PriceUnit = "token" | "second" | "request";
 
 export type ModelPriceLine = {
     direction: PriceDirection;
     kind: PriceKind;
     price: string;
     unit: PriceUnit;
+};
+
+export type ModelPriceVariant = {
+    name: string;
+    label: string;
+    description: string;
+    prices: ModelPriceLine[];
 };
 
 export type ModelPrice = {
@@ -58,11 +64,7 @@ export type ModelPrice = {
     inputSortPrice?: number;
     outputSortPrice?: number;
     prices: ModelPriceLine[];
+    priceVariants?: ModelPriceVariant[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
-};
-
-export type Modalities = {
-    input: string[];
-    output: string[];
 };

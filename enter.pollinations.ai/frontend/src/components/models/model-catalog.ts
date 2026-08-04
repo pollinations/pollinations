@@ -22,11 +22,11 @@ export type ApiModelInfo = {
     brand?: string;
     community?: boolean;
     pricing?: ApiPricing;
-    billing_adjustments?: Array<{
-        kind: string;
-        unit: string;
-        unit_price: string;
+    pricing_variants?: Array<{
+        name: string;
+        label: string;
         description: string;
+        pricing: ApiPricing;
     }>;
     title?: string;
     description?: string;
@@ -91,6 +91,21 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         : pricePerSecond.toFixed(4);
 };
 
+// A 200 response with an empty array, a non-array body, or entries that all
+// lack an identifiable name/id is indistinguishable from "no models" to the
+// caller — it must be treated as a fetch failure, not a valid empty catalog,
+// so the UI surfaces an error instead of silently rendering an empty table.
+export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Model catalog response was empty or malformed");
+    }
+    const models = data as ApiModelInfo[];
+    if (!models.some((model) => getCatalogModelId(model))) {
+        throw new Error("Model catalog response had no usable model entries");
+    }
+    return models;
+}
+
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 
 export async function fetchModelCatalog(
@@ -99,14 +114,20 @@ export async function fetchModelCatalog(
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
         .then(({ config }) =>
-            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
+            // Without a timeout a stalled edge leaves this promise pending
+            // forever, which renders as an empty table with no error.
+            fetch(`${config.genBaseUrl}/models`, {
+                cache: "no-store",
+                signal: AbortSignal.timeout(15_000),
+            }),
         )
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch models (${response.status})`);
             }
-            return response.json() as Promise<ApiModelInfo[]>;
+            return response.json();
         })
+        .then(parseModelCatalogResponse)
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -155,18 +176,6 @@ function priceSum(pricing: ApiPricing | undefined, fields: PriceField[]) {
     return total > 0 ? total : undefined;
 }
 
-function adjustmentPrice(
-    model: ApiModelInfo,
-    unit: string,
-): number | undefined {
-    const value = Number(
-        model.billing_adjustments?.find(
-            (adjustment) => adjustment.unit === unit,
-        )?.unit_price,
-    );
-    return Number.isFinite(value) && value > 0 ? value : undefined;
-}
-
 type PriceLineInput = [
     ModelPriceLine["direction"],
     ModelPriceLine["kind"],
@@ -193,7 +202,6 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     if (!name) return null;
     const inputSortPrice = priceSum(model.pricing, INPUT_PRICE_FIELDS);
     const outputSortPrice = priceSum(model.pricing, OUTPUT_PRICE_FIELDS);
-    const pagePrice = adjustmentPrice(model, "page");
 
     return {
         name,
@@ -209,7 +217,6 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         free:
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
-            pagePrice === undefined &&
             outputSortPrice === undefined,
         alpha: model.alpha,
         addedDate: model.added_date,
@@ -219,23 +226,11 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     };
 }
 
-function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const price = baseModelPrice(model);
     if (!price) return null;
 
     const pricing = model.pricing;
-    const pagePrice = adjustmentPrice(model, "page");
-    if (pagePrice) {
-        return {
-            ...price,
-            prices: priceLines([
-                "input",
-                "document",
-                formatPrice(pagePrice, formatPriceFlat),
-                "page",
-            ]),
-        };
-    }
     if (!pricing) return price;
 
     const promptTextTokens = priceNumber(pricing, "promptTextTokens");
@@ -495,6 +490,31 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             ],
         ),
     };
+}
+
+function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+    const basePrice = modelPriceFromPricing(model);
+    if (!basePrice) return null;
+
+    const priceVariants = model.pricing_variants?.flatMap((variant) => {
+        const variantPrice = modelPriceFromPricing({
+            ...model,
+            pricing: variant.pricing,
+            pricing_variants: undefined,
+        });
+        return variantPrice
+            ? [
+                  {
+                      name: variant.name,
+                      label: variant.label,
+                      description: variant.description,
+                      prices: variantPrice.prices,
+                  },
+              ]
+            : [];
+    });
+
+    return priceVariants?.length ? { ...basePrice, priceVariants } : basePrice;
 }
 
 export function getModelPricesFromCatalog(

@@ -6,10 +6,3 @@ export async function getWeeklyRegistrations(weeksBack = 12) {
     const data = await res.json();
     return data.data;
 }
-
-export async function getTotalUsers() {
-    const res = await fetch("/api/kpi/total-users");
-    if (!res.ok) return 0;
-    const data = await res.json();
-    return data.total;
-}

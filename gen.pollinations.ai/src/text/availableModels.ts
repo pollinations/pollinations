@@ -111,6 +111,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.8-max",
+        config: portkeyConfig["qwen/qwen3.8-max"],
+    },
+    {
+        name: "qwen3.7-flash",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -129,7 +138,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "step-flash",
-        config: portkeyConfig["stepfun/step-3.7-flash"],
+        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
         transform: mandatoryReasoning,
     },
     {
@@ -145,7 +154,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-0731"
+        ],
         transform: fireworksThinking,
     },
     {
@@ -356,6 +367,14 @@ const models: ModelDefinition[] = [
     {
         name: "longcat",
         config: portkeyConfig["meituan/longcat-2.0"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "inkling",
+        config: portkeyConfig["thinkingmachines/inkling-small"],
         transform: pipe(
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),

@@ -1,11 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import {
-    AUDIO_VOICES,
-    DEFAULT_TEXT_MODEL,
-    MISTRAL_OCR_MODEL_NAMES,
-} from "../registry/text.ts";
+import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -271,64 +267,6 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
-const MAX_MISTRAL_OCR_PAGES = 300;
-const MISTRAL_OCR_PAGE_LIMIT_MESSAGE = `Mistral OCR accepts at most ${MAX_MISTRAL_OCR_PAGES} selected pages per request.`;
-
-function countOcrPageSelections(value: string): number {
-    let count = 0;
-    for (const part of value.split(",")) {
-        const [start, end = start] = part.split("-").map(Number);
-        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)) {
-            return Number.POSITIVE_INFINITY;
-        }
-        count += end - start + 1;
-        if (count > MAX_MISTRAL_OCR_PAGES) return count;
-    }
-    return count;
-}
-
-const OcrPagesSchema = z.union([
-    z
-        .string()
-        .regex(/^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/)
-        .refine(
-            (value) =>
-                value.split(",").every((part) => {
-                    const [start, end] = part.split("-").map(Number);
-                    return end === undefined || start <= end;
-                }),
-            { message: "Page ranges must be in ascending order." },
-        )
-        .refine(
-            (value) => countOcrPageSelections(value) <= MAX_MISTRAL_OCR_PAGES,
-            { message: MISTRAL_OCR_PAGE_LIMIT_MESSAGE },
-        ),
-    z
-        .array(z.number().int().nonnegative())
-        .min(1)
-        .max(MAX_MISTRAL_OCR_PAGES, MISTRAL_OCR_PAGE_LIMIT_MESSAGE),
-]);
-
-const UnsupportedOcrAnnotationSchema = z.unknown().refine(() => false, {
-    message:
-        "Custom OCR annotations are not supported because annotated pages use separate billing.",
-});
-
-const MistralOcrRequestOptionsSchema = z.object({
-    pages: OcrPagesSchema.optional(),
-    include_image_base64: z.boolean().optional(),
-    image_limit: z.number().int().min(1).max(5).optional(),
-    image_min_size: z.number().int().nonnegative().optional(),
-    table_format: z.enum(["markdown", "html"]).optional(),
-    extract_header: z.boolean().optional(),
-    extract_footer: z.boolean().optional(),
-    include_blocks: z.boolean().optional(),
-    confidence_scores_granularity: z.enum(["word", "page"]).optional(),
-    bbox_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
-    document_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
-    document_annotation_prompt: UnsupportedOcrAnnotationSchema.optional(),
-});
-
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -397,48 +335,8 @@ export const CreateChatCompletionRequestSchema = z
             .min(1)
             .max(128)
             .optional(), // deprecated, supported
-        pages: z.unknown().optional().meta({
-            description:
-                "Required for document OCR. Select up to 300 zero-indexed pages as an array or ranges such as `0,2-4`.",
-        }),
-        include_image_base64: z.unknown().optional().meta({
-            description:
-                "Include up to five extracted base64 images in document OCR responses.",
-        }),
-        image_limit: z.unknown().optional().meta({
-            description:
-                "Maximum extracted base64 images to return, from 1 to 5.",
-        }),
-        image_min_size: z.unknown().optional(),
-        table_format: z.unknown().optional(),
-        extract_header: z.unknown().optional(),
-        extract_footer: z.unknown().optional(),
-        include_blocks: z.unknown().optional().meta({
-            description:
-                "Include paragraph-level OCR block metadata. Defaults to false.",
-        }),
-        confidence_scores_granularity: z.unknown().optional(),
-        bbox_annotation_format: z.unknown().optional(),
-        document_annotation_format: z.unknown().optional(),
-        document_annotation_prompt: z.unknown().optional(),
     })
-    .passthrough()
-    .superRefine((request, context) => {
-        if (
-            !MISTRAL_OCR_MODEL_NAMES.includes(
-                request.model as (typeof MISTRAL_OCR_MODEL_NAMES)[number],
-            )
-        ) {
-            return;
-        }
-
-        const parsed = MistralOcrRequestOptionsSchema.safeParse(request);
-        if (parsed.success) return;
-
-        for (const issue of parsed.error.issues) {
-            context.addIssue({ ...issue });
-        }
-    });
+    .passthrough();
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
@@ -592,27 +490,6 @@ const CompletionChoiceSchema = z.object({
     content_filter_results: ContentFilterResultSchema.nullish(),
 });
 
-const OcrResultSchema = z
-    .object({
-        pages: z.array(
-            z
-                .object({
-                    index: z.number().int().nonnegative(),
-                    markdown: z.string(),
-                })
-                .passthrough(),
-        ),
-        model: z.string(),
-        document_annotation: z.unknown().nullable().optional(),
-        usage_info: z
-            .object({
-                pages_processed: z.number().int().positive(),
-                doc_size_bytes: z.number().int().nonnegative().optional(),
-            })
-            .passthrough(),
-    })
-    .passthrough();
-
 export const CreateChatCompletionResponseSchema = z.object({
     id: z.string(),
     choices: z.array(CompletionChoiceSchema),
@@ -623,7 +500,6 @@ export const CreateChatCompletionResponseSchema = z.object({
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
-    ocr: OcrResultSchema.optional(),
 });
 
 export type CreateChatCompletionResponse = z.infer<
@@ -708,6 +584,10 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
+            description:
+                "Output resolution for resolution-priced video models (Pollinations extension)",
+        }),
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.

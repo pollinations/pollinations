@@ -311,24 +311,6 @@ export interface ChatOptions extends RequestOptions {
     functions?: FunctionDefinition[];
     /** Legacy function call control (use toolChoice instead) */
     functionCall?: "none" | "auto" | { name: string };
-    /** Zero-indexed pages for document OCR. */
-    ocrPages?: string | number[];
-    /** Include extracted images in the structured OCR response. */
-    ocrIncludeImages?: boolean;
-    /** Maximum number of images to extract during OCR. */
-    ocrImageLimit?: number;
-    /** Minimum image width and height to extract during OCR. */
-    ocrImageMinSize?: number;
-    /** Extract tables separately as Markdown or HTML. */
-    ocrTableFormat?: "markdown" | "html";
-    /** Extract page headers separately from the Markdown body. */
-    ocrExtractHeader?: boolean;
-    /** Extract page footers separately from the Markdown body. */
-    ocrExtractFooter?: boolean;
-    /** Include layout blocks and bounding boxes. */
-    ocrIncludeBlocks?: boolean;
-    /** Include OCR confidence scores at the selected granularity. */
-    ocrConfidenceScores?: "word" | "page";
 }
 
 /** Legacy function definition (use Tool instead) */
@@ -377,15 +359,6 @@ export interface ChatChoice {
             expires_at: number;
         } | null;
         reasoning_content?: string | null;
-        content_blocks?: Array<
-            | {
-                  type: "ocr_page";
-                  index: number;
-                  markdown: string;
-                  [key: string]: unknown;
-              }
-            | { type: string; [key: string]: unknown }
-        >;
     };
     finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | null;
     logprobs?: {
@@ -402,22 +375,6 @@ export interface ChatChoice {
     } | null;
 }
 
-export interface OcrResult {
-    pages: Array<{
-        index: number;
-        markdown: string;
-        [key: string]: unknown;
-    }>;
-    model: string;
-    document_annotation?: unknown;
-    usage_info: {
-        pages_processed: number;
-        doc_size_bytes?: number;
-        [key: string]: unknown;
-    };
-    [key: string]: unknown;
-}
-
 /** Chat completion response */
 export interface ChatResponse {
     id: string;
@@ -428,8 +385,6 @@ export interface ChatResponse {
     usage?: CompletionUsage;
     system_fingerprint?: string;
     citations?: string[];
-    /** Structured OCR output when using the document OCR text model. */
-    ocr?: OcrResult;
 }
 
 /** A chunk in streaming response */
@@ -863,12 +818,6 @@ export interface ModelInfo {
     is_specialized?: boolean;
     paid_only?: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
-    billing_adjustments?: Array<{
-        kind: string;
-        unit: string;
-        unit_price: string;
-        description: string;
-    }>;
 }
 
 // ============================================================================

@@ -69,6 +69,8 @@ jobs:
           ISSUE_AUTHOR=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" --jq .user.login)
           echo "number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
           echo "author=$ISSUE_AUTHOR" >> "$GITHUB_OUTPUT"
+          BOT_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "bot-id=$BOT_ID" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
         with:
@@ -109,7 +111,7 @@ jobs:
       - name: Run AI pre-review
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-          GH_BOT_LOGIN: ${{ steps.token.outputs.app-slug }}[bot]
+          GH_BOT_ID: ${{ steps.issue.outputs.bot-id }}
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}

@@ -4,13 +4,13 @@ import { PRICE_ICON } from "./model-icons.tsx";
 import type {
     ModelPrice,
     ModelPriceLine,
+    ModelPriceVariant,
     PriceDirection,
     PriceKind,
 } from "./types.ts";
 
 const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
-    document: "document",
     image: "image",
     "3d": "3D model",
     cached: "cached",
@@ -25,7 +25,6 @@ const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
     token: "/M",
     second: "/sec",
     request: "/gen",
-    page: "/page",
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -87,10 +86,10 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
-    const typeLabel =
+    const tokenTypeLabel =
         tokenTypes.length > 1
             ? `Token types: ${tokenTypes.join(", ")}`
-            : `${unit === "page" ? "Billing" : "Token"} type: ${tokenTypes[0]}`;
+            : `Token type: ${tokenTypes[0]}`;
 
     const badge = (
         <Chip
@@ -111,5 +110,44 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
         </Chip>
     );
 
-    return typeLabel ? <Tooltip content={typeLabel}>{badge}</Tooltip> : badge;
+    return tokenTypeLabel ? (
+        <Tooltip content={tokenTypeLabel}>{badge}</Tooltip>
+    ) : (
+        badge
+    );
+};
+
+export const PriceVariantDetails: FC<{
+    variants: ModelPriceVariant[];
+}> = ({ variants }) => (
+    <div className="flex max-w-[360px] flex-col gap-3 text-left">
+        {variants.map((variant) => (
+            <div key={variant.name} className="flex flex-col gap-1.5">
+                <span className="font-medium text-theme-text-strong">
+                    {variant.label}
+                </span>
+                <span className="text-xs leading-relaxed text-theme-text-muted">
+                    {variant.description}
+                </span>
+                <PriceBadgeList
+                    badges={groupPriceBadges(variant.prices)}
+                    className="flex flex-wrap gap-1"
+                />
+            </div>
+        ))}
+    </div>
+);
+
+export const PriceVariantDisclosure: FC<{
+    variants?: ModelPriceVariant[];
+}> = ({ variants }) => {
+    if (!variants?.length) return null;
+
+    return (
+        <Tooltip content={<PriceVariantDetails variants={variants} />}>
+            <Chip intent="neutral" size="sm" className="whitespace-nowrap">
+                Tiered pricing
+            </Chip>
+        </Tooltip>
+    );
 };

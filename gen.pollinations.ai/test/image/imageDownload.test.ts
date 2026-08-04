@@ -2,8 +2,34 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { HttpError } from "../../src/image/httpError.ts";
 import {
     downloadUserImage,
+    getSourceImageDimensions,
     readImageDimensions,
 } from "../../src/image/utils/imageDownload.ts";
+
+function makeKv() {
+    const store = new Map<string, string>();
+    const puts: string[] = [];
+    return {
+        store,
+        puts,
+        async get(key: string, _type?: "json") {
+            const raw = store.get(key);
+            return raw === undefined ? null : JSON.parse(raw);
+        },
+        async put(key: string, value: string) {
+            puts.push(key);
+            store.set(key, value);
+        },
+    } as unknown as KVNamespace & { puts: string[] };
+}
+
+function pngDataUri(width: number, height: number): string {
+    const png = Buffer.alloc(24);
+    png.set([0x89, 0x50, 0x4e, 0x47]);
+    png.writeUInt32BE(width, 16);
+    png.writeUInt32BE(height, 20);
+    return `data:image/png;base64,${png.toString("base64")}`;
+}
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -242,5 +268,82 @@ describe("readImageDimensions", () => {
             width: 1280,
             height: 720,
         });
+    });
+});
+
+describe("getSourceImageDimensions", () => {
+    it("reads an inline data URI without fetching", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            getSourceImageDimensions(pngDataUri(768, 1024)),
+        ).resolves.toEqual({ width: 768, height: 1024 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("returns null for an unreadable inline image", async () => {
+        await expect(
+            getSourceImageDimensions("data:text/plain;base64,aGVsbG8="),
+        ).resolves.toBeNull();
+    });
+
+    it("downloads and caches remote dimensions, then reuses the cache", async () => {
+        const kv = makeKv();
+        let fetches = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+            fetches += 1;
+            const png = new Uint8Array(24);
+            png.set([0x89, 0x50, 0x4e, 0x47]);
+            new DataView(png.buffer).setUint32(16, 2048, false);
+            new DataView(png.buffer).setUint32(20, 1024, false);
+            return new Response(png, {
+                status: 200,
+                headers: { "content-type": "image/png" },
+            });
+        });
+
+        await expect(
+            getSourceImageDimensions("https://example.com/source.png", kv),
+        ).resolves.toEqual({ width: 2048, height: 1024 });
+        await expect(
+            getSourceImageDimensions("https://example.com/source.png", kv),
+        ).resolves.toEqual({ width: 2048, height: 1024 });
+
+        expect(fetches).toBe(1);
+        expect(kv.puts).toHaveLength(1);
+    });
+
+    it("does not cache inline data URIs", async () => {
+        const kv = makeKv();
+
+        await expect(
+            getSourceImageDimensions(pngDataUri(768, 1024), kv),
+        ).resolves.toEqual({ width: 768, height: 1024 });
+
+        expect(kv.puts).toHaveLength(0);
+    });
+
+    it("returns null instead of throwing when the source can't be downloaded", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("fetch failed"),
+        );
+
+        await expect(
+            getSourceImageDimensions("https://example.com/gone.png"),
+        ).resolves.toBeNull();
+    });
+
+    it("works without a kv binding", async () => {
+        const png = Buffer.alloc(24);
+        png.set([0x89, 0x50, 0x4e, 0x47]);
+        png.writeUInt32BE(400, 16);
+        png.writeUInt32BE(300, 20);
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(png, { status: 200 }),
+        );
+
+        await expect(
+            getSourceImageDimensions("https://example.com/untyped.png"),
+        ).resolves.toEqual({ width: 400, height: 300 });
     });
 });

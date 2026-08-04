@@ -1,0 +1,33 @@
+{
+  "pr_number": 13060,
+  "title": "chore: update app metrics 2026-08-04",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13060",
+  "merged_at": "2026-08-04T05:06:59Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got measured",
+    "blurb": "The daily garden ledger has been refreshed: app metrics, health checks, and greenhouse notes are all back in season.",
+    "summary": "Updated the app directory metrics, health-check results, and GREENHOUSE.md status records for 2026-08-04.",
+    "impact": "Community maintainers have a current snapshot of listed apps and their greenhouse health without changing any app behavior.",
+    "keywords": [
+      "community",
+      "app-metrics",
+      "health-checks",
+      "greenhouse",
+      "automation"
+    ],
+    "visual_concept": "A cozy community garden status board represents refreshed app metrics: Polli, wearing a tiny gardener hat and holding a clipboard, checks healthy code-plants with small metric tags while a friendly CRT monitor robot displays a lime-green health dashboard. The scene emphasizes routine care and a well-tended open-source app garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat and checking a clipboard beside a community garden of code-plants labeled with tiny health meters; a helpful CRT monitor robot shows a lime green (#ecf874) status dashboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the freshly updated greenhouse board."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-13060.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat and checking a clipboard beside a community garden of code-plants labeled with tiny health meters; a helpful CRT monitor robot shows a lime green (#ecf874) status dashboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the freshly updated greenhouse board."
+  },
+  "generated_at": "2026-08-04T05:08:00.597002+00:00"
+}

@@ -136,3 +136,39 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+/** Extract image dimensions from a data URI without a network request. */
+function getImageDimensionsFromDataUri(
+    dataUri: string,
+): { width: number; height: number } | null {
+    try {
+        const buf = base64ToBuffer(dataUri);
+        const mimeType = detectImageMimeType(buf);
+        if (!mimeType) return null;
+        return readImageDimensions(buf, mimeType);
+    } catch {
+        return null;
+    }
+}
+
+/** Extract image dimensions from a remote URL by fetching the image. */
+export async function getImageDimensionsFromUrl(
+    url: string,
+): Promise<{ width: number; height: number } | null> {
+    try {
+        const { buffer, mimeType } = await downloadUserImage(url);
+        return readImageDimensions(buffer, mimeType);
+    } catch {
+        return null;
+    }
+}
+
+/** Get image dimensions from either a data URI or a remote URL. */
+export async function getSourceImageDimensions(
+    imageUrl: string,
+): Promise<{ width: number; height: number } | null> {
+    if (imageUrl.startsWith("data:")) {
+        return getImageDimensionsFromDataUri(imageUrl);
+    }
+    return getImageDimensionsFromUrl(imageUrl);
+}

@@ -67,7 +67,10 @@ import {
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
-import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
+import {
+    Generate3dRequestBodySchema,
+    Generate3dRequestQueryParamsSchema,
+} from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -924,6 +927,55 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", Generate3dRequestQueryParamsSchema),
         ...model3dHandlers,
+    )
+    .post(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model With JSON",
+            description:
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution.",
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator("query", Generate3dRequestQueryParamsSchema),
+        validator("json", Generate3dRequestBodySchema),
+        resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+        track("generate.image"),
+        generationAccess,
+        async (c) => {
+            const query = c.req.valid("query" as never) as {
+                safe?: SafeValue;
+            };
+            const prompt = await applySafety(
+                c,
+                c.req.param("prompt") || "",
+                query.safe,
+            );
+            return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
+        },
     )
     .get(
         "/audio/:text",

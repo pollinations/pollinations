@@ -137,6 +137,30 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        const model3dPost = (
+            schema.paths["/3d/{prompt}"] as Record<string, unknown>
+        )?.post as Record<string, unknown>;
+        expect(model3dPost).toBeDefined();
+        const model3dRequestBody = model3dPost.requestBody as {
+            content: {
+                "application/json": {
+                    schema: {
+                        additionalProperties?: boolean;
+                        properties: Record<string, unknown>;
+                    };
+                };
+            };
+        };
+        const model3dBodySchema =
+            model3dRequestBody.content["application/json"].schema;
+        expect(Object.keys(model3dBodySchema.properties)).toEqual([
+            "model",
+            "image",
+            "resolution",
+            "seed",
+        ]);
+        expect(model3dBodySchema.properties.safe).toBeUndefined();
+        expect(model3dBodySchema.additionalProperties).toBe(false);
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();

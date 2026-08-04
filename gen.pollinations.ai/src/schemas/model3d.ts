@@ -61,3 +61,42 @@ export const Generate3dRequestQueryParamsSchema = z.object({
 export type Generate3dRequestQueryParams = z.infer<
     typeof Generate3dRequestQueryParamsSchema
 >;
+
+export const Generate3dRequestBodySchema = z
+    .object({
+        model: z
+            .enum(VALID_3D_MODELS as unknown as [string, ...string[]])
+            .optional()
+            .default(DEFAULT_3D_MODEL)
+            .meta({
+                description:
+                    "Model to use. See /3d/models for the full list and per-model input requirements.",
+            }),
+        image: z
+            .union([z.string(), z.array(z.string())])
+            .optional()
+            .refine(
+                (value) => {
+                    const urls = Array.isArray(value) ? value : [value];
+                    return urls.every(
+                        (url) =>
+                            url === undefined ||
+                            url.startsWith("http://") ||
+                            url.startsWith("https://"),
+                    );
+                },
+                { message: "Invalid image URL." },
+            )
+            .meta({
+                description:
+                    "Reference image URL or URLs for image-to-3D generation.",
+            }),
+        resolution: z.enum(["low", "medium", "high"]).optional().meta({
+            description: "Output detail for `trellis-2`. Defaults to `low`.",
+        }),
+        seed: z.number().int().optional().meta({
+            description:
+                "Seed for varied generations. Passed to models that support it.",
+        }),
+    })
+    .strict();

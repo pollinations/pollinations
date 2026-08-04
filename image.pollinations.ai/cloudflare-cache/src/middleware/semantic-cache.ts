@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { CACHE_VERSION } from "../cache-utils.ts";
 import {
     createEmbeddingService,
     variableThreshold,
@@ -18,6 +19,10 @@ type Env = {
         cacheKey: string;
     };
 };
+
+export function getVersionedSemanticBucket(bucket: string): string {
+    return `${CACHE_VERSION}-${bucket}`;
+}
 
 export const semanticCache = createMiddleware<Env>(async (c, next) => {
     // @ts-ignore
@@ -54,6 +59,7 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
 
     const imageParams = c.get("imageParams");
     const metadata = buildMetadata(cacheKey, imageParams);
+    metadata.bucket = getVersionedSemanticBucket(metadata.bucket);
 
     try {
         const nearest = await vectorStore.findNearest(

@@ -38,6 +38,7 @@ COPY --from=builder /workspace/shared/node_modules ./shared/node_modules
 COPY image.pollinations.ai/package*.json ./app/
 COPY image.pollinations.ai/tsconfig.json ./app/
 COPY image.pollinations.ai/src           ./app/src
+COPY image.pollinations.ai/assets        ./app/assets
 COPY image.pollinations.ai/observability ./app/observability
 COPY image.pollinations.ai/auth          ./app/auth
 COPY --from=builder /workspace/app/node_modules ./app/node_modules

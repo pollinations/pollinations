@@ -15,6 +15,8 @@ type Env = {
     };
 };
 
+export const CACHE_VERSION = "brand-v1";
+
 /**
  * Apply model-specific caching rules to the URL
  * @param {URL} url - The URL object to transform
@@ -50,6 +52,14 @@ function applyModelSpecificRules(url: URL): URL {
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url: URL): string {
+    return generateCacheKeyWithVersion(url, CACHE_VERSION);
+}
+
+export function generateLegacyCacheKey(url: URL): string {
+    return generateCacheKeyWithVersion(url);
+}
+
+function generateCacheKeyWithVersion(url: URL, version?: string): string {
     // Apply model-specific rules first
     const transformedUrl = applyModelSpecificRules(url);
 
@@ -83,11 +93,11 @@ export function generateCacheKey(url: URL): string {
     const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-    // Allow 10 chars for the hash and hyphen
-    const maxPathLength = 990;
+    const prefix = version ? `${version}-` : "";
+    const maxPathLength = 1000 - prefix.length - hash.length - 1;
     const trimmedPath = safePath.substring(0, maxPathLength);
 
-    return `${trimmedPath}-${hash}`;
+    return `${prefix}${trimmedPath}-${hash}`;
 }
 
 /**

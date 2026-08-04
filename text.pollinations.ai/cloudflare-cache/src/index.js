@@ -257,10 +257,47 @@ async function storeRequestBody(env, request, key) {
     }
 }
 
+const ATTRIBUTION_HEADERS = {
+    Link: '<https://pollinations.ai>; rel="service"',
+    "X-Pollinations-Logo":
+        "https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.svg",
+    "X-Powered-By": "Pollinations.AI",
+};
+
+export function withAttributionHeaders(response) {
+    if (!response.ok) {
+        return response;
+    }
+
+    const headers = new Headers(response.headers);
+    for (const [name, value] of Object.entries(ATTRIBUTION_HEADERS)) {
+        headers.set(name, value);
+    }
+    const exposedHeaders = new Set(
+        (headers.get("Access-Control-Expose-Headers") || "")
+            .split(",")
+            .map((name) => name.trim())
+            .filter(Boolean),
+    );
+    for (const name of Object.keys(ATTRIBUTION_HEADERS)) {
+        exposedHeaders.add(name);
+    }
+    headers.set(
+        "Access-Control-Expose-Headers",
+        Array.from(exposedHeaders).join(", "),
+    );
+
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
+
 /**
  * Main worker entry point
  */
-export default {
+const worker = {
     async fetch(request, env, ctx) {
         try {
             const url = new URL(request.url);
@@ -619,6 +656,12 @@ export default {
                 },
             });
         }
+    },
+};
+
+export default {
+    async fetch(request, env, ctx) {
+        return withAttributionHeaders(await worker.fetch(request, env, ctx));
     },
 };
 

@@ -1,14 +1,10 @@
 import debug from "debug";
 import dotenv from "dotenv";
-import { fileTypeFromBuffer } from "file-type";
 
 // Import shared authentication utilities
 import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
-import {
-    addPollinationsLogoWithImagemagick,
-    getLogoPath,
-} from "./imageOperations.ts";
+import { addPollinationsLogo } from "./imageOperations.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -459,21 +455,6 @@ function getCloudflareCredentials(): { accountId: string; apiToken: string } {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
     return { accountId, apiToken };
-}
-
-/**
- * Converts an image buffer to JPEG format if it's not already a JPEG.
- * @param {Buffer} buffer - The image buffer to convert.
- * @returns {Promise<Buffer>} - The converted image buffer.
- */
-export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
-    const fileType = await fileTypeFromBuffer(buffer);
-    // no need to check for jpeg here, according to type information
-    if (!fileType || fileType.ext !== "jpg") {
-        const result = await sharp(buffer).jpeg().toBuffer();
-        return result;
-    }
-    return buffer;
 }
 
 /**
@@ -1022,8 +1003,6 @@ const prepareMetadata = (
 /**
  * Processes the image buffer with logo, format conversion, and metadata
  * @param {Buffer} buffer - The raw image buffer
- * @param {Object} maturityFlags - Object containing isMature and isChild flags
- * @param {Object} safeParams - Parameters for image generation
  * @param {Object} metadataObj - Metadata to embed in the image
  * @param {Object} maturity - Additional maturity information
  * @param {Object} progress - Progress tracking object
@@ -1032,52 +1011,22 @@ const prepareMetadata = (
  */
 const processImageBuffer = async (
     buffer: Buffer,
-    maturityFlags: ContentSafetyFlags,
-    safeParams: ImageParams,
     metadataObj: object,
     maturity: object,
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> => {
-    const { isMature, isChild } = maturityFlags;
-
     // Add logo
     progress.updateBar(requestId, 80, "Processing", "Adding logo...");
-    const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let processedBuffer = !logoPath
-        ? buffer
-        : await addPollinationsLogoWithImagemagick(
-              buffer,
-              logoPath,
-              safeParams,
-          );
-
-    // Convert format to JPEG (gptimage PNG support temporarily disabled)
-    progress.updateBar(
-        requestId,
-        85,
-        "Processing",
-        "Converting to JPEG...",
-    );
-    processedBuffer = await convertToJpeg(processedBuffer);
-    
-    // GPT Image PNG format support (temporarily disabled - uncomment to reactivate)
-    // if (safeParams.model !== "gptimage") {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Converting to JPEG...",
-    //     );
-    //     processedBuffer = await convertToJpeg(processedBuffer);
-    // } else {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Keeping PNG format for gptimage...",
-    //     );
-    // }
+    let processedBuffer = buffer;
+    try {
+        processedBuffer = await addPollinationsLogo(buffer);
+    } catch (error) {
+        logError(
+            "Failed to add Pollinations logo; returning generated image",
+            error,
+        );
+    }
 
     // Add metadata
     progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
@@ -1148,8 +1097,6 @@ export async function createAndReturnImageCached(
         // Process the image buffer
         const processedBuffer = await processImageBuffer(
             result.buffer,
-            maturityFlags,
-            safeParams,
             metadataObj,
             maturity,
             progress,

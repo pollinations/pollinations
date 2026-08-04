@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import { test as baseTest, describe, expect } from "vitest";
 import worker from "../src";
+import { generateLegacyCacheKey } from "../src/cache-utils.ts";
 import { createMockVectorize } from "./mock-vectorize";
 
 const test = baseTest.extend<{ env: Cloudflare.Env }>({
@@ -99,4 +100,24 @@ describe("Cache Integration Tests", () => {
             cacheType: "SEMANTIC",
         });
     }, 120000);
+
+    test("DELETE removes legacy unversioned cache entries", async ({ env }) => {
+        const imageUrl = new URL(
+            "http://localhost:8787/prompt/legacy-delete?width=512&height=512",
+        );
+        const legacyCacheKey = generateLegacyCacheKey(imageUrl);
+        await env.IMAGE_BUCKET.put(legacyCacheKey, new Uint8Array([1]));
+
+        const response = await worker.fetch(
+            new Request(
+                "http://localhost:8787/delete/prompt/legacy-delete?width=512&height=512",
+                { method: "DELETE" },
+            ),
+            env,
+            createExecutionContext(),
+        );
+
+        expect(response.status).toBe(200);
+        expect(await env.IMAGE_BUCKET.head(legacyCacheKey)).toBeNull();
+    });
 });

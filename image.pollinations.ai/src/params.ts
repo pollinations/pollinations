@@ -67,6 +67,8 @@ export const ImageParamsSchema = z
             return model === "flux" || model === "z-image" || model === "turbo" || model === "zimage" ? "sana" : model;
         }, z.literal(allowedModels).catch("sana")),
         enhance: sanitizedBoolean.catch(false),
+        // Deprecated and retained only so legacy requests continue to parse.
+        // Pollinations branding is always applied.
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),
         nofeed: sanitizedBoolean.catch(false),

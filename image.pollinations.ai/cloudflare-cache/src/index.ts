@@ -1,7 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { proxy } from "hono/proxy";
-import { deleteCacheEntry, generateCacheKey } from "./cache-utils.ts";
+import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
+import {
+    deleteCacheEntry,
+    generateCacheKey,
+    generateLegacyCacheKey,
+} from "./cache-utils.ts";
 import type { Env } from "./env";
 import { googleAnalytics } from "./middleware/analytics.ts";
 import { exactCache } from "./middleware/exact-cache";
@@ -17,8 +22,16 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
         allowHeaders: ["*"],
+        exposeHeaders: Object.keys(ATTRIBUTION_HEADERS),
     }),
 );
+
+app.use("*", async (c, next) => {
+    await next();
+    if (c.res.ok) {
+        addAttributionHeaders(c.res.headers);
+    }
+});
 
 // Delete cache entry endpoint
 // Usage: DELETE /delete/prompt/{prompt}?{same query params as original request}
@@ -27,26 +40,32 @@ app.delete("/delete/prompt/:prompt", async (c) => {
     // Transform the URL to match the original cache key format
     // Replace /delete/prompt/ with /prompt/
     url.pathname = url.pathname.replace(/^\/delete\/prompt\//, "/prompt/");
-    
+
     const cacheKey = generateCacheKey(url);
+    const legacyCacheKey = generateLegacyCacheKey(url);
     console.log("[DELETE] Deleting cache entry:", cacheKey);
-    
-    const result = await deleteCacheEntry(cacheKey, c.env);
-    
-    if (result.r2Deleted || result.vectorDeleted) {
+
+    const [current, legacy] = await Promise.all([
+        deleteCacheEntry(cacheKey, c.env),
+        deleteCacheEntry(legacyCacheKey, c.env),
+    ]);
+    const r2Deleted = current.r2Deleted || legacy.r2Deleted;
+    const vectorDeleted = current.vectorDeleted || legacy.vectorDeleted;
+
+    if (r2Deleted || vectorDeleted) {
         return c.json({
             success: true,
             cacheKey,
-            r2Deleted: result.r2Deleted,
-            vectorDeleted: result.vectorDeleted,
+            r2Deleted,
+            vectorDeleted,
         });
     } else {
         return c.json({
             success: false,
             cacheKey,
             message: "Cache entry not found or already deleted",
-            r2Deleted: result.r2Deleted,
-            vectorDeleted: result.vectorDeleted,
+            r2Deleted,
+            vectorDeleted,
         }, 404);
     }
 });

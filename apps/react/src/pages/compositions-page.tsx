@@ -216,7 +216,7 @@ export function CompositionsPage() {
                     >
                         <Markdown className="text-sm text-theme-text-soft">
                             {
-                                '**Generation note**\n\n- Use `model: "openai"` for text\n- Add **image input** when available\n- See [API docs](https://pollinations.ai)'
+                                '**Generation note**\n\n- Use `model: "openai/gpt-5.4-nano"` for text\n- Add **image input** when available\n- See [API docs](https://pollinations.ai)'
                             }
                         </Markdown>
                     </PrimitiveExample>
@@ -236,7 +236,7 @@ export function CompositionsPage() {
                     >
                         <CodeBlock
                             code={
-                                'await generateText("Hello", { model: "openai" });'
+                                'await generateText("Hello", { model: "openai/gpt-5.4-nano" });'
                             }
                         />
                     </PrimitiveExample>

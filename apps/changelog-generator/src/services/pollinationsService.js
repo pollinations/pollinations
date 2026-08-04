@@ -12,7 +12,7 @@ Return only the rewritten sentence without any extra text.
         const response = await axios.post(
             "https://gen.pollinations.ai/text",
             {
-                model: "openai",
+                model: "openai/gpt-5.4-nano",
                 messages: [
                     {
                         role: "system",

@@ -104,8 +104,8 @@ export async function callXaiImageAPI(
             actualModel:
                 modelId === "grok-imagine-image-quality" ||
                 modelId === "grok-imagine-image-pro"
-                    ? "grok-imagine-pro"
-                    : "grok-imagine",
+                    ? "x-ai/grok-imagine-image-quality"
+                    : "x-ai/grok-imagine-image",
             usage: {
                 ...(isEditMode ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,

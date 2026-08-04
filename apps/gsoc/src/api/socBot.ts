@@ -53,7 +53,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
             });
 
             const requestBody = {
-                model: "gemini-fast",
+                model: "google/gemini-2.5-flash-lite",
                 messages: [
                     {
                         role: "system",

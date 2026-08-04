@@ -5,7 +5,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const baseParams: ImageParams = {
-    model: "veo",
+    model: "google/veo-3.1-fast",
     width: 1280,
     height: 720,
     dimensionsExplicit: true,
@@ -82,7 +82,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: false,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: { completionVideoSeconds: 4 },
         });
     });
@@ -105,7 +105,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: true,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,

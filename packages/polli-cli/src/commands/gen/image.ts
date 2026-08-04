@@ -14,7 +14,7 @@ export function createImageCommand() {
     return new Command("image")
         .description("Generate an image from a prompt")
         .argument("<prompt>", "Image description")
-        .option("--model <model>", "Image model", "zimage")
+        .option("--model <model>", "Image model", "Tongyi-MAI/Z-Image-Turbo")
         .option("--width <n>", "Image width", "1024")
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")

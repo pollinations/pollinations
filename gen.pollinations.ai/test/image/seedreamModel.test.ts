@@ -56,7 +56,7 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
 }
 
 const baseParams: ImageParams = {
-    model: "seedream",
+    model: "bytedance/seedream-4",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -113,7 +113,7 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
 
         const result = await callSeedreamAPI("test prompt", baseParams);
 
-        expect(result.trackingData?.actualModel).toBe("seedream");
+        expect(result.trackingData?.actualModel).toBe("bytedance/seedream-4");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 
@@ -308,7 +308,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5",
+            model: "bytedance/seedream-5-lite",
             width: 2048,
             height: 2048,
         };
@@ -337,7 +337,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5",
+            model: "bytedance/seedream-5-lite",
             width: 4096,
             height: 2048,
         };
@@ -354,7 +354,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5",
+            model: "bytedance/seedream-5-lite",
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
@@ -378,7 +378,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5",
+            model: "bytedance/seedream-5-lite",
             image: Array.from(
                 { length: 15 },
                 (_, i) => `https://example.com/${i}.jpg`,
@@ -393,10 +393,15 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
     it("returns seedream5 as actualModel", async () => {
         mockReplicateFetch([]);
 
-        const params: ImageParams = { ...baseParams, model: "seedream5" };
+        const params: ImageParams = {
+            ...baseParams,
+            model: "bytedance/seedream-5-lite",
+        };
         const result = await callSeedream5API("test prompt", params);
 
-        expect(result.trackingData?.actualModel).toBe("seedream5");
+        expect(result.trackingData?.actualModel).toBe(
+            "bytedance/seedream-5-lite",
+        );
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 });
@@ -408,7 +413,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5-pro",
+            model: "bytedance/seedream-5-pro",
             width: 2048,
             height: 2048,
         };
@@ -424,7 +429,9 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
         expect(input.output_format).toBe("png");
         expect(input.sequential_image_generation).toBe("disabled");
         expect(input.max_images).toBe(1);
-        expect(result.trackingData?.actualModel).toBe("seedream5-pro");
+        expect(result.trackingData?.actualModel).toBe(
+            "bytedance/seedream-5-pro",
+        );
     });
 
     it("always requests the 2K tier that matches static registry pricing", async () => {
@@ -433,7 +440,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5-pro",
+            model: "bytedance/seedream-5-pro",
             width: 1024,
             height: 1024,
         };
@@ -449,7 +456,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream5-pro",
+            model: "bytedance/seedream-5-pro",
             image: Array.from(
                 { length: 11 },
                 (_, i) => `https://example.com/${i}.jpg`,

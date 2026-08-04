@@ -254,7 +254,7 @@ import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'zimage',
+  model: 'Tongyi-MAI/Z-Image-Turbo',
   width: 1920,
   height: 1080,
 });
@@ -276,7 +276,7 @@ const url = await imageUrl('a sunset');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'zimage'` | Model to use |
+| `model` | string | `'Tongyi-MAI/Z-Image-Turbo'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
@@ -285,7 +285,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
-| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
+| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for Google Gemini image models. Booleans are accepted for backward compatibility. |
 | `n` | number | `1` | Number of images |
 
 ## Image Editing
@@ -295,7 +295,7 @@ import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
-  model: 'flux',
+  model: 'black-forest-labs/FLUX.1-schnell',
 });
 await result.saveToFile('edited.png');
 
@@ -315,7 +315,7 @@ import { imageGenerate } from '@pollinations/sdk';
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
   size: '1024x1024',
-  model: 'flux',
+  model: 'black-forest-labs/FLUX.1-schnell',
 });
 await img.saveToFile('robot.png');
 
@@ -336,7 +336,7 @@ const text = await generateText('write a poem about coding');
 
 // With options
 const story = await generateText('explain gravity', {
-  model: 'openai',
+  model: 'openai/gpt-5.4-nano',
   systemPrompt: 'You are a physics teacher',
 });
 
@@ -359,7 +359,7 @@ console.log(result.actualModel); // actual model used
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'openai'` | Model to use |
+| `model` | string | `'openai/gpt-5.4-nano'` | Model to use |
 | `systemPrompt` | string | - | System prompt |
 | `temperature` | number | `1` | Creativity (0-2) |
 | `maxTokens` | number | - | Max output tokens |
@@ -389,7 +389,7 @@ for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }]
 }
 
 // Conversation (auto-manages history)
-const convo = conversation({ model: 'openai' });
+const convo = conversation({ model: 'openai/gpt-5.4-nano' });
 convo.system('You are a pirate');
 
 const r1 = await convo.say('Hello!');        // "Ahoy, matey!"
@@ -405,7 +405,7 @@ convo.clear(); // Reset conversation
 import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
-  model: 'veo',
+  model: 'google/veo-3.1-fast',
   duration: 6,
 });
 await video.saveToFile('clouds.mp4');
@@ -418,11 +418,11 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
+| `model` | string | `'google/veo-3.1-fast'` | `'google/veo-3.1-fast'`, `'bytedance/seedance-1-pro-fast'`, `'alibaba/wan-2.6'`, etc. |
 | `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
-| `audio` | boolean | `false` | Include audio (`wan` always has audio) |
+| `audio` | boolean | `false` | Include audio (`alibaba/wan-2.6` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
@@ -438,7 +438,7 @@ await speech.saveToFile('welcome.mp3');
 
 // Music generation
 const music = await generateAudio('upbeat jazz piano', {
-  model: 'elevenmusic',
+  model: 'elevenlabs/music-v2',
   duration: 30,
 });
 await music.saveToFile('jazz.mp3');
@@ -457,7 +457,7 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
+| `model` | string | `'elevenlabs/eleven-v3'` | `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |

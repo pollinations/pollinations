@@ -6,7 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from "expo-constants";
 
-export type TransformationModel = 'kontext' | 'gptimage';
+export type TransformationModel = 'black-forest-labs/flux.1-kontext-pro' | 'openai/gpt-image-1-mini';
 
 export interface TransformationParams {
   prompt: string;
@@ -256,14 +256,14 @@ export class PollinationsTransformationService {
       return { valid: false, error: 'At least one image is required' };
     }
 
-    if (model === 'kontext' && imageUrls.length > 1) {
+    if (model === 'black-forest-labs/flux.1-kontext-pro' && imageUrls.length > 1) {
       return {
         valid: false,
         error: 'Kontext model only supports 1 image'
       };
     }
 
-    if (model === 'gptimage' && imageUrls.length > 4) {
+    if (model === 'openai/gpt-image-1-mini' && imageUrls.length > 4) {
       return {
         valid: false,
         error: 'GPTImage model supports maximum 4 images'

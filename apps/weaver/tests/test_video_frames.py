@@ -14,7 +14,7 @@ def _params(url: str) -> dict[str, list[str]]:
 async def test_start_and_end_frame_join_into_one_image_param():
     url = await gen.generate_video(
         "a flower blooming",
-        model="wan-fast",
+        model="wan-video/wan-2.2-fast",
         image="https://x/start.jpg",
         end_image="https://x/end.jpg",
     )
@@ -25,41 +25,46 @@ async def test_start_and_end_frame_join_into_one_image_param():
 
 
 async def test_start_frame_only_passes_single_image():
-    url = await gen.generate_video("pan out", model="wan", image="https://x/start.jpg")
+    url = await gen.generate_video(
+        "pan out", model="alibaba/wan-2.6", image="https://x/start.jpg"
+    )
     q = _params(url)
     assert q["image"] == ["https://x/start.jpg"]
 
 
 async def test_end_frame_forces_a_model_that_supports_it():
-    """`wan` silently drops the end frame — never let it be used with end_image."""
+    """`alibaba/wan-2.6` silently drops the end frame — never use it with end_image."""
     url = await gen.generate_video(
-        "morph", model="wan", image="https://x/a.jpg", end_image="https://x/b.jpg"
+        "morph",
+        model="alibaba/wan-2.6",
+        image="https://x/a.jpg",
+        end_image="https://x/b.jpg",
     )
     q = _params(url)
     assert q["model"][0] in gen.END_FRAME_MODELS
 
 
 async def test_text_to_video_has_no_image_param():
-    url = await gen.generate_video("a wave", model="wan-fast")
+    url = await gen.generate_video("a wave", model="wan-video/wan-2.2-fast")
     assert "image" not in _params(url)
 
 
 async def test_veo_image_to_video_duration_snaps_to_supported():
     """veo img2vid only accepts 4/6/8s; duration=5 is a guaranteed 400."""
     url = await gen.generate_video(
-        "boat drifts", model="veo", image="https://x/a.jpg", duration=5
+        "boat drifts", model="google/veo-3.1-fast", image="https://x/a.jpg", duration=5
     )
     assert _params(url)["duration"] == ["4"]
 
     url = await gen.generate_video(
-        "boat drifts", model="veo", image="https://x/a.jpg", duration=7
+        "boat drifts", model="google/veo-3.1-fast", image="https://x/a.jpg", duration=7
     )
     assert _params(url)["duration"] == ["6"]
 
     # Text-to-video and other models keep the caller's duration.
-    url = await gen.generate_video("boat drifts", model="veo", duration=5)
+    url = await gen.generate_video("boat drifts", model="google/veo-3.1-fast", duration=5)
     assert _params(url)["duration"] == ["5"]
     url = await gen.generate_video(
-        "boat", model="wan-fast", image="https://x/a.jpg", duration=5
+        "boat", model="wan-video/wan-2.2-fast", image="https://x/a.jpg", duration=5
     )
     assert _params(url)["duration"] == ["5"]

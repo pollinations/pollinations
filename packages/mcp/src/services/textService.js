@@ -18,7 +18,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "openai",
+        model = "openai/gpt-5.4-nano",
         seed,
         system,
         temperature,
@@ -80,7 +80,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "openai",
+        model = "openai/gpt-5.4-nano",
         temperature,
         max_tokens,
         top_p,
@@ -259,7 +259,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
+                m.name === "openai/gpt-audio-mini",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
@@ -329,7 +329,7 @@ async function webSearch(params) {
 
     const searchModels = [
         "perplexity-fast",
-        "perplexity-reasoning",
+        "perplexity/sonar-reasoning-pro",
         "gemini-search",
     ];
     if (!searchModels.includes(model)) {
@@ -433,7 +433,7 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'openai'). Popular options:\n" +
+            "Text model to use (default: 'openai/gpt-5.4-nano'). See listTextModels for current IDs.\n" +
                 "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
                 "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
                 "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
@@ -596,7 +596,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). See listTextModels for all options",
+            "Text model (default: 'openai/gpt-5.4-nano'). See listTextModels for all options",
         ),
     temperature: z
         .number()
@@ -760,7 +760,7 @@ export const textTools = [
             model: z
                 .enum([
                     "perplexity-fast",
-                    "perplexity-reasoning",
+                    "perplexity/sonar-reasoning-pro",
                     "gemini-search",
                 ])
                 .optional()

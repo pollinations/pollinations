@@ -117,7 +117,11 @@ async def generate_image(
     """Text-to-image. Returns a list of image URLs (one per n)."""
     from weaver.registry import pick_model
 
-    model = model or pick_model("image", settings.default_tier, prompt) or "flux"
+    model = (
+        model
+        or pick_model("image", settings.default_tier, prompt)
+        or "black-forest-labs/FLUX.1-schnell"
+    )
     urls: list[str] = []
     for i in range(max(1, n)):
         params = {"model": model, "width": width, "height": height, **extra}
@@ -132,7 +136,7 @@ async def generate_image(
 async def edit_image(
     prompt: str,
     image_url: str,
-    model: str = "nanobanana",
+    model: str = "google/gemini-2.5-flash-image",
     **extra: Any,
 ) -> str:
     """Image-to-image edit via POST /v1/images/edits (multipart upload).
@@ -176,7 +180,17 @@ async def edit_image(
 # --------------------------------------------------------------------------- #
 # Models that honour a second reference image as the END frame. Others silently
 # drop it and produce a start-frame-only animation.
-END_FRAME_MODELS = ("wan-fast", "veo", "wan-pro", "wan-pro-1080p", "seedance-2.0")
+END_FRAME_MODELS = (
+    "wan-fast",
+    "wan-video/wan-2.2-fast",
+    "veo",
+    "google/veo-3.1-fast",
+    "wan-pro",
+    "alibaba/wan-2.7",
+    "wan-pro-1080p",
+    "seedance-2.0",
+    "bytedance/seedance-2.0",
+)
 
 # veo's upstream (Vertex) only renders image-to-video at these lengths.
 _VEO_I2V_DURATIONS = (4, 6, 8)
@@ -214,11 +228,15 @@ async def generate_video(
     if end_image and (model is None or model not in END_FRAME_MODELS):
         # Silently producing a start-only clip would look like success; pick a model
         # that actually interpolates to the end frame.
-        model = "wan-fast"
-    model = model or pick_model("video", settings.default_tier, prompt) or "wan-fast"
+        model = "wan-video/wan-2.2-fast"
+    model = model or pick_model("video", settings.default_tier, prompt) or "wan-video/wan-2.2-fast"
 
     frames = [await _public_frame_url(f) for f in (image, end_image) if f]
-    if frames and model.startswith("veo") and duration not in _VEO_I2V_DURATIONS:
+    if (
+        frames
+        and model.startswith(("veo", "google/veo-3.1-fast"))
+        and duration not in _VEO_I2V_DURATIONS
+    ):
         # veo's image-to-video upstream hard-rejects other durations (400).
         duration = min(_VEO_I2V_DURATIONS, key=lambda d: (abs(d - duration), d))
     params = {
@@ -237,7 +255,7 @@ async def generate_video(
 async def text_to_speech(
     text: str,
     voice: str | None = None,
-    model: str = "openai-audio",
+    model: str = "openai/gpt-audio-mini",
     fmt: str = "mp3",
 ) -> dict[str, Any]:
     """Read `text` aloud verbatim.
@@ -248,7 +266,7 @@ async def text_to_speech(
     from weaver.registry import get_voices
 
     voice = voice or settings.default_voice or (get_voices() or ["nova"])[0]
-    # openai-audio is a conversational model — without this guard it *answers* the
+    # openai/gpt-audio-mini is a conversational model — without this guard it *answers* the
     # text instead of reading it. Other audio models read verbatim natively; the
     # instruction is harmless to them.
     system = (
@@ -288,7 +306,7 @@ async def text_to_speech(
 # --------------------------------------------------------------------------- #
 async def transcribe(
     audio_url: str,
-    model: str = "gemini",
+    model: str = "google/gemini-3.6-flash",
     instruction: str = "Transcribe this audio verbatim.",
 ) -> str:
     """Speech-to-text. Accepts an audio/video URL or a data: URI."""

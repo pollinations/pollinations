@@ -168,7 +168,7 @@ export async function callNovaCanvasAPI(
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: "nova-canvas",
+                actualModel: "amazon.nova-canvas-v1:0",
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,

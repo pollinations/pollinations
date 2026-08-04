@@ -41,11 +41,16 @@ function App() {
     } = useChat();
 
     const [_sidebarOpen, setSidebarOpen] = useState(false);
-    const [selectedModel, setSelectedModel] = useState("openai");
-    const [selectedImageModel, setSelectedImageModel] = useState("flux");
-    const [selectedVideoModel, setSelectedVideoModel] = useState("veo");
-    const [selectedAudioModel, setSelectedAudioModel] =
-        useState("openai-audio");
+    const [selectedModel, setSelectedModel] = useState("openai/gpt-5.4-nano");
+    const [selectedImageModel, setSelectedImageModel] = useState(
+        "black-forest-labs/FLUX.1-schnell",
+    );
+    const [selectedVideoModel, setSelectedVideoModel] = useState(
+        "google/veo-3.1-fast",
+    );
+    const [selectedAudioModel, setSelectedAudioModel] = useState(
+        "openai/gpt-audio-mini",
+    );
     const [theme, setTheme] = useState("dark");
     const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
     const [isBYOPModalOpen, setIsBYOPModalOpen] = useState(false);
@@ -132,11 +137,13 @@ function App() {
     useEffect(() => {
         const savedModel = getSelectedModel();
         const savedImageModel =
-            localStorage.getItem("selectedImageModel") || "flux";
+            localStorage.getItem("selectedImageModel") ||
+            "black-forest-labs/FLUX.1-schnell";
         const savedVideoModel =
-            localStorage.getItem("selectedVideoModel") || "veo";
+            localStorage.getItem("selectedVideoModel") || "google/veo-3.1-fast";
         const savedAudioModel =
-            localStorage.getItem("selectedAudioModel") || "openai-audio";
+            localStorage.getItem("selectedAudioModel") ||
+            "openai/gpt-audio-mini";
         const savedTheme = getTheme();
         setSelectedModel(savedModel);
         setSelectedImageModel(savedImageModel);

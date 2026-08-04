@@ -119,7 +119,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
-        name: "qwen3.8-max",
+        name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
@@ -449,8 +449,9 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     try {
         const resolvedModelName = resolveModelName(modelName);
         return (
-            availableModels.find((model) => model.name === resolvedModelName) ||
-            null
+            availableModels.find(
+                (model) => resolveModelName(model.name) === resolvedModelName,
+            ) || null
         );
     } catch {
         return null;

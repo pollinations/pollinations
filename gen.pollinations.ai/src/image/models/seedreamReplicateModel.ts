@@ -102,7 +102,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     seedream: {
         replicateModel: "bytedance/seedream-4",
         displayName: "Seedream 4.0",
-        trackingLabel: "seedream",
+        trackingLabel: "bytedance/seedream-4",
         maxReferenceImages: 10,
         resolveSize(longerSide) {
             if (longerSide > 2048) return "4K";
@@ -114,7 +114,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     seedream5: {
         replicateModel: "bytedance/seedream-5-lite",
         displayName: "Seedream 5.0 Lite",
-        trackingLabel: "seedream5",
+        trackingLabel: "bytedance/seedream-5-lite",
         maxReferenceImages: 14,
         // 5.0's size enum is ["2K", "3K"] only — no pixel dimensions, no custom.
         resolveSize(longerSide) {
@@ -126,7 +126,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     "seedream5-pro": {
         replicateModel: "bytedance/seedream-5-pro",
         displayName: "Seedream 5.0 Pro",
-        trackingLabel: "seedream5-pro",
+        trackingLabel: "bytedance/seedream-5-pro",
         maxReferenceImages: 10,
         // Pro's Replicate schema supports ["1K", "2K"]. The registry has one
         // flat per-image price, so always request the 2K tier it prices.

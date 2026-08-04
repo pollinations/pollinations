@@ -37,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (default: 'Tongyi-MAI/Z-Image-Turbo') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -65,7 +65,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (default: 'black-forest-labs/FLUX.1-schnell') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -87,7 +87,7 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (default: 'veo') */
+    /** Video model to use (default: 'google/veo-3.1-fast') */
     model?: VideoModel;
     /** Duration in seconds (supported range varies by model) */
     duration?: number;
@@ -198,7 +198,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -256,7 +256,7 @@ export type BuiltInToolType =
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -429,15 +429,18 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | string;
+export type AudioModel =
+    | "elevenlabs/eleven-v3"
+    | "elevenlabs/music-v2"
+    | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (default: 'elevenlabs/eleven-v3') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic) */
+    /** Duration in seconds (for music models like elevenlabs/music-v2) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
@@ -469,11 +472,11 @@ export interface AudioResponse {
 
 /** STT model options */
 export type TranscriptionModel =
-    | "whisper-large-v3"
+    | "openai/whisper-large-v3"
     | "whisper-1"
-    | "scribe"
-    | "universal-2"
-    | "universal-3.5-pro"
+    | "elevenlabs/scribe-v2"
+    | "assemblyai/universal-2"
+    | "assemblyai/universal-3.5-pro"
     | "universal-3-pro"
     | string;
 
@@ -487,7 +490,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (default: 'whisper-large-v3') */
+    /** Model to use (default: 'openai/whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -880,7 +883,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (default: 'Tongyi-MAI/Z-Image-Turbo') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

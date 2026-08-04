@@ -36,7 +36,9 @@ export function useAuth(): UseAuthReturn {
     const [balance, setBalance] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [models, setModels] = useState<ImageModel[]>([]);
-    const [selectedModel, setSelectedModel] = useState("gptimage");
+    const [selectedModel, setSelectedModel] = useState(
+        "openai/gpt-image-1-mini",
+    );
 
     // Extract API key from URL fragment on mount (redirect from enter.pollinations.ai)
     useEffect(() => {
@@ -129,7 +131,7 @@ export function useAuth(): UseAuthReturn {
                     // Default to gptimage if available, otherwise first model
                     if (imageModels.length > 0) {
                         const hasGptimage = imageModels.some(
-                            (m) => m.id === "gptimage",
+                            (m) => m.id === "openai/gpt-image-1-mini",
                         );
                         if (!hasGptimage) {
                             setSelectedModel(imageModels[0].id);

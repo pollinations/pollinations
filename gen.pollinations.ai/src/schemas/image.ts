@@ -7,8 +7,8 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 const NOVA_REEL_MODELS = new Set([
-    "nova-reel",
-    ...IMAGE_SERVICES["nova-reel"].aliases,
+    "amazon.nova-reel-v1:1",
+    ...IMAGE_SERVICES["amazon.nova-reel-v1:1"].aliases,
 ]);
 
 const GenerateImageRequestQueryParamsBaseSchema = z.object({
@@ -20,7 +20,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list.",
+                "Model to use. See /image/models for the current canonical IDs and aliases.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
@@ -91,7 +91,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Video-specific params
     resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
         description:
-            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier.",
+            "Output resolution for video models that advertise resolution tiers. Defaults to 720p. Non-default resolutions bill at the model's rate for that tier.",
     }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:

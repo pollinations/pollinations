@@ -2,13 +2,13 @@ import { defineCostVariants, matchResolution } from "./cost-variants";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "zimage" as const;
+export const DEFAULT_IMAGE_MODEL = "Tongyi-MAI/Z-Image-Turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
-    "krea": {
-        aliases: ["krea-2"],
+    "krea/krea-2-medium": {
+        aliases: ["krea-2", "krea"],
         provider: "fal",
         brand: "Krea",
         category: "image",
@@ -42,8 +42,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "kontext": {
-        aliases: [],
+    "black-forest-labs/flux.1-kontext-pro": {
+        aliases: ["kontext"],
         provider: "azure",
         brand: "Black Forest Labs",
         category: "image",
@@ -59,8 +59,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
-    "nanobanana": {
-        aliases: [],
+    "google/gemini-2.5-flash-image": {
+        aliases: ["nanobanana"],
         provider: "openrouter",
         brand: "Google",
         category: "image",
@@ -81,8 +81,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
     },
-    "nanobanana-2": {
-        aliases: ["nanobanana2"],
+    "google/gemini-3.1-flash-image": {
+        aliases: ["nanobanana2", "nanobanana-2"],
         provider: "openrouter",
         brand: "Google",
         category: "image",
@@ -103,8 +103,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
-    "nanobanana-2-lite": {
-        aliases: ["nanobanana2lite", "nanobanana-lite"],
+    "google/gemini-3.1-flash-lite-image": {
+        aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
         provider: "openrouter",
         brand: "Google",
         category: "image",
@@ -125,8 +125,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
-    "nanobanana-pro": {
-        aliases: [],
+    "google/gemini-3-pro-image": {
+        aliases: ["nanobanana-pro"],
         provider: "openrouter",
         brand: "Google",
         category: "image",
@@ -149,8 +149,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "seedream5": {
-        aliases: [],
+    "bytedance/seedream-5-lite": {
+        aliases: ["seedream5"],
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -167,8 +167,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "seedream5-pro": {
-        aliases: ["seedream-5-pro", "seedream-pro-5"],
+    "bytedance/seedream-5-pro": {
+        aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -184,8 +184,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "seedream": {
-        aliases: [],
+    "bytedance/seedream-4": {
+        aliases: ["seedream"],
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -201,8 +201,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-pro": {
-        aliases: [],
+    "bytedance-seed/seedream-4.5": {
+        aliases: ["seedream-pro"],
         provider: "openrouter",
         brand: "ByteDance",
         category: "image",
@@ -224,8 +224,8 @@ export const IMAGE_SERVICES = {
     // therefore independent of the resolution preset the handler picks, and all
     // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
     // flat per-image cost is correct regardless of aspect ratio / resolution.
-    "ideogram-v4-turbo": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-turbo": {
+        aliases: ["ideogram-v4-turbo"],
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -240,8 +240,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-balanced": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-balanced": {
+        aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -256,8 +256,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-quality": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-quality": {
+        aliases: ["ideogram-v4-quality"],
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -273,8 +273,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini"],
+    "openai/gpt-image-1-mini": {
+        aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -292,8 +292,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gptimage-large": {
-        aliases: ["gpt-image-1.5", "gpt-image-large"],
+    "openai/gpt-image-1.5": {
+        aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -314,8 +314,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gpt-image-2": {
-        aliases: [],
+    "openai/gpt-image-2": {
+        aliases: ["gpt-image-2"],
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -335,8 +335,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "flux": {
-        aliases: [],
+    "black-forest-labs/FLUX.1-schnell": {
+        aliases: ["flux"],
         provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
@@ -350,8 +350,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "zimage": {
-        aliases: ["z-image", "z-image-turbo"],
+    "Tongyi-MAI/Z-Image-Turbo": {
+        aliases: ["z-image", "z-image-turbo", "zimage"],
         provider: "vast",
         brand: "Alibaba",
         category: "image",
@@ -366,7 +366,7 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "veo": {
+    "google/veo-3.1-fast": {
         aliases: [
             "veo-3.1-fast",
             "veo-720p",
@@ -374,6 +374,7 @@ export const IMAGE_SERVICES = {
             "veo-1080p",
             "veo-3.1-fast-1080p",
             "veo-1080",
+            "veo",
         ],
         provider: "google",
         brand: "Google",
@@ -408,8 +409,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "seedance-pro": {
-        aliases: [],
+    "bytedance/seedance-1-pro-fast": {
+        aliases: ["seedance-pro"],
         provider: "replicate",
         brand: "ByteDance",
         category: "video",
@@ -452,8 +453,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "seedance-2.0": {
-        aliases: ["seedance-2"],
+    "bytedance/seedance-2.0": {
+        aliases: ["seedance-2", "seedance-2.0"],
         provider: "replicate",
         brand: "ByteDance",
         category: "video",
@@ -472,8 +473,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan": {
-        aliases: ["wan2.6", "wan-i2v"],
+    "alibaba/wan-2.6": {
+        aliases: ["wan2.6", "wan-i2v", "wan"],
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -493,8 +494,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "wan-fast": {
-        aliases: ["wan2.2", "wan-2.2"],
+    "wan-video/wan-2.2-fast": {
+        aliases: ["wan2.2", "wan-2.2", "wan-fast"],
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -514,13 +515,14 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-pro": {
+    "alibaba/wan-2.7": {
         aliases: [
             "wan2.7",
             "wan-2.7",
             "wan-pro-1080p",
             "wan2.7-1080p",
             "wan-pro-1080",
+            "wan-pro",
         ],
         provider: "replicate",
         brand: "Alibaba",
@@ -568,8 +570,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-image": {
-        aliases: ["wan2.7-image", "wan-img"],
+    "wan-video/wan-2.7-image": {
+        aliases: ["wan2.7-image", "wan-img", "wan-image"],
         provider: "replicate",
         brand: "Alibaba",
         category: "image",
@@ -587,8 +589,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "wan-image-pro": {
-        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+    "wan-video/wan-2.7-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro", "wan-image-pro"],
         provider: "replicate",
         brand: "Alibaba",
         category: "image",
@@ -607,12 +609,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image": {
+    "qwen/qwen-image": {
         aliases: [
             "qwen-image-plus",
             "qwen-image-2512",
             "qwen-image-edit",
             "qwen-image-edit-plus",
+            "qwen-image",
         ],
         provider: "replicate",
         brand: "Qwen",
@@ -647,8 +650,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
-    "grok-imagine": {
-        aliases: ["grok-imagine-image"],
+    "x-ai/grok-imagine-image": {
+        aliases: ["grok-imagine-image", "grok-imagine"],
         provider: "xai",
         brand: "xAI",
         category: "image",
@@ -665,12 +668,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
-    "grok-imagine-pro": {
+    "x-ai/grok-imagine-image-quality": {
         aliases: [
             "grok-aurora",
             "aurora",
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
+            "grok-imagine-pro",
         ],
         provider: "openrouter",
         brand: "xAI",
@@ -689,8 +693,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
-    "recraft-v4.1-vector": {
-        aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+    "recraft/recraft-v4.1-vector": {
+        aliases: [
+            "recraft-vector",
+            "recraft-svg",
+            "recraft-v4.1-svg",
+            "recraft-v4.1-vector",
+        ],
         provider: "openrouter",
         brand: "Recraft",
         category: "image",
@@ -707,8 +716,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
-    "grok-video-pro": {
-        aliases: ["grok-imagine-video"],
+    "x-ai/grok-imagine-video": {
+        aliases: ["grok-imagine-video", "grok-video-pro"],
         provider: "openrouter",
         brand: "xAI",
         category: "video",
@@ -726,8 +735,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "grok-imagine-video-1.5": {
-        aliases: [],
+    "x-ai/grok-imagine-video-1.5": {
+        aliases: ["grok-imagine-video-1.5"],
         provider: "openrouter",
         brand: "xAI",
         category: "video",
@@ -770,8 +779,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "happyhorse-1.1": {
-        aliases: ["happyhorse", "happy-horse-1.1"],
+    "alibaba/happyhorse-1.1": {
+        aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
         provider: "openrouter",
         brand: "Alibaba",
         category: "video",
@@ -788,8 +797,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
     },
-    "klein": {
-        aliases: ["flux-klein"],
+    "black-forest-labs/flux.2-klein-4b": {
+        aliases: ["flux-klein", "klein"],
         provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
@@ -804,8 +813,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "p-image": {
-        aliases: ["pruna-image", "pruna"],
+    "PrunaAI/p-image": {
+        aliases: ["pruna-image", "pruna", "p-image"],
         provider: "deepinfra",
         brand: "Pruna",
         category: "image",
@@ -820,8 +829,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "p-image-edit": {
-        aliases: ["pruna-edit", "pruna-image-edit"],
+    "PrunaAI/p-image-Edit": {
+        aliases: ["pruna-edit", "pruna-image-edit", "p-image-edit"],
         provider: "deepinfra",
         brand: "Pruna",
         category: "image",
@@ -839,12 +848,13 @@ export const IMAGE_SERVICES = {
     },
     // Pruna p-video is one Replicate model priced per second by resolution:
     // 720p $0.02/s and 1080p $0.04/s in standard mode.
-    "p-video": {
+    "prunaai/p-video": {
         aliases: [
             "pruna-video",
             "p-video-720p",
             "p-video-1080p",
             "pruna-video-1080p",
+            "p-video",
         ],
         provider: "replicate",
         brand: "Pruna",
@@ -878,8 +888,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "nova-canvas": {
-        aliases: ["amazon-nova-canvas"],
+    "amazon.nova-canvas-v1:0": {
+        aliases: ["amazon-nova-canvas", "nova-canvas"],
         provider: "bedrock",
         brand: "Amazon",
         category: "image",
@@ -894,8 +904,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
     },
-    "nova-reel": {
-        aliases: ["amazon-nova-reel"],
+    "amazon.nova-reel-v1:1": {
+        aliases: ["amazon-nova-reel", "nova-reel"],
         provider: "bedrock",
         brand: "Amazon",
         category: "video",

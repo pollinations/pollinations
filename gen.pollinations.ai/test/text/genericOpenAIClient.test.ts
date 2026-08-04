@@ -88,8 +88,8 @@ describe("genericOpenAIClient", () => {
             {
                 model: "provider-model",
                 modelConfig: { provider: "azure-openai" },
-                modelDef: { name: "openai-fast" },
-                requestedModel: "openai-fast",
+                modelDef: { name: "openai/gpt-5-nano" },
+                requestedModel: "openai/gpt-5-nano",
                 userApiKey: "sk_should_not_leak",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },

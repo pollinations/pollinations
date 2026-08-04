@@ -31,7 +31,7 @@ CF_ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"].strip()
 CF_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"].strip()
 POLLINATIONS_TOKEN = os.environ["POLLI_VECTOR_DB"].strip()
 INDEX_NAME = os.environ.get("VECTORIZE_INDEX", "polli-code-embeddings")
-EMBED_MODEL = "qwen3-embedding-8b"
+EMBED_MODEL = "qwen/qwen3-embedding-8b"
 EMBED_DIMENSIONS = 1536
 
 CF_BASE = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/vectorize/v2/indexes/{INDEX_NAME}"

@@ -20,7 +20,7 @@ The Model Monitor at https://monitor.pollinations.ai shows **all real-world traf
 - **401 errors**: Anonymous users without API keys (most common)
 - **402 errors**: Users with insufficient pollen balance or exhausted API key budget
 - **403 errors**: Users denied access to specific models (API key restrictions)
-- **400 errors**: Invalid request parameters (e.g., `openai-audio` without `modalities` param)
+- **400 errors**: Invalid request parameters (e.g., `openai/gpt-audio-mini` without `modalities` param)
 - **429 errors**: Rate-limited requests
 - **500/504 errors**: Actual backend failures (investigate these)
 
@@ -190,13 +190,13 @@ jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -i "Cont
 
 | Model | Backend | Common Issues |
 |-------|---------|---------------|
-| `flux` | Azure/Replicate | Rate limits, content filter |
-| `kontext` | Azure Flux Kontext | Content filter (strict) |
-| `nanobanana` | Vertex AI Gemini | Invalid image URLs, content filter |
-| `seedream-pro` | ByteDance ARK | NSFW filter, API key issues |
-| `veo` | Vertex AI | Quota, empty responses |
-| `openai-audio` | Azure OpenAI | Invalid voice names |
-| `deepseek` | DeepSeek API | Rate limits, API key |
+| `black-forest-labs/FLUX.1-schnell` | Azure/Replicate | Rate limits, content filter |
+| `black-forest-labs/flux.1-kontext-pro` | Azure Flux Kontext | Content filter (strict) |
+| `google/gemini-2.5-flash-image` | Vertex AI Gemini | Invalid image URLs, content filter |
+| `bytedance-seed/seedream-4.5` | ByteDance ARK | NSFW filter, API key issues |
+| `google/veo-3.1-fast` | Vertex AI | Quota, empty responses |
+| `openai/gpt-audio-mini` | Azure OpenAI | Invalid voice names |
+| `deepseek/deepseek-v4-flash-0731` | DeepSeek API | Rate limits, API key |
 
 ---
 
@@ -619,13 +619,13 @@ Helper scripts for common debugging tasks. Run from repo root.
 
 | Model | Type | Endpoint | Status |
 |-------|------|----------|--------|
-| `openai` | text | POST /v1/chat/completions | ✅ |
-| `openai-fast` | text | POST /v1/chat/completions | ✅ |
-| `openai-large` | text | POST /v1/chat/completions | ✅ |
-| `openai-audio` | text | GET /text/{prompt}?model=openai-audio&voice=alloy | ✅ (MP3) |
-| `claude` | text | POST /v1/chat/completions | ✅ |
-| `gemini-fast` | text | POST /v1/chat/completions | ✅ |
-| `flux` | image | GET /image/{prompt} | ✅ |
-| `nanobanana-pro` | image | GET /image/{prompt} | ✅ |
-| `seedream-pro` | image | GET /image/{prompt} | ✅ |
-| `seedance-pro` | video | GET /image/{prompt} | ✅ (MP4) |
+| `openai/gpt-5.4-nano` | text | POST /v1/chat/completions | ✅ |
+| `openai/gpt-5-nano` | text | POST /v1/chat/completions | ✅ |
+| `openai/gpt-5.5` | text | POST /v1/chat/completions | ✅ |
+| `openai/gpt-audio-mini` | text | GET /text/{prompt}?model=openai/gpt-audio-mini&voice=alloy | ✅ (MP3) |
+| `anthropic/claude-sonnet-4.6` | text | POST /v1/chat/completions | ✅ |
+| `google/gemini-2.5-flash-lite` | text | POST /v1/chat/completions | ✅ |
+| `black-forest-labs/FLUX.1-schnell` | image | GET /image/{prompt} | ✅ |
+| `google/gemini-3-pro-image` | image | GET /image/{prompt} | ✅ |
+| `bytedance-seed/seedream-4.5` | image | GET /image/{prompt} | ✅ |
+| `bytedance/seedance-1-pro-fast` | video | GET /image/{prompt} | ✅ (MP4) |

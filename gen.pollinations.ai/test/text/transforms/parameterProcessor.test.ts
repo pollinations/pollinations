@@ -51,7 +51,7 @@ describe("processParameters", () => {
 
     it("strips nullable stream_options for non-OpenAI Azure models", () => {
         const result = processParameters(messages, {
-            model: "mistral-large",
+            model: "mistralai/mistral-large-2512",
             stream_options: null as unknown as Record<string, unknown>,
             modelConfig: {
                 provider: "azure-openai",

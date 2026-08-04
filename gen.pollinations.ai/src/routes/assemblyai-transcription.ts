@@ -15,8 +15,8 @@ const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
 const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 240_000;
 const ASSEMBLYAI_MODELS: Record<string, string[]> = {
-    "universal-2": ["universal-2"],
-    "universal-3.5-pro": ["universal-3-5-pro"],
+    "assemblyai/universal-2": ["universal-2"],
+    "assemblyai/universal-3.5-pro": ["universal-3-5-pro"],
 };
 
 interface AssemblyAiUploadResponse {
@@ -368,8 +368,9 @@ function getAssemblyAiRegistryModel(
     speechModelUsed: string | null | undefined,
     fallbackModel: string,
 ): string {
-    if (speechModelUsed === "universal-2") return "universal-2";
-    if (speechModelUsed === "universal-3-5-pro") return "universal-3.5-pro";
+    if (speechModelUsed === "universal-2") return "assemblyai/universal-2";
+    if (speechModelUsed === "universal-3-5-pro")
+        return "assemblyai/universal-3.5-pro";
     return fallbackModel;
 }
 

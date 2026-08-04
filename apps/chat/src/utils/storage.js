@@ -92,7 +92,7 @@ export const saveAccentColor = (accent) => {
 };
 
 export const getSelectedModel = () => {
-    return localStorage.getItem(STORAGE_KEYS.MODEL) || "openai";
+    return localStorage.getItem(STORAGE_KEYS.MODEL) || "openai/gpt-5.4-nano";
 };
 
 export const saveSelectedModel = (model) => {

@@ -72,7 +72,7 @@ describe("stripCacheControl model wiring", () => {
     });
 
     it.each([
-        "grok-large",
+        "x-ai/grok-4.3",
         "grok-4.3",
     ])("wires stripCacheControl onto %s", (modelName) => {
         expect(findModelByName(modelName)?.transform).toBe(stripCacheControl);
@@ -85,11 +85,11 @@ describe("cache_control passthrough (vertex explicit caching)", () => {
     // (e.g. stripCacheControl gets copy-pasted onto a gemini model), caching
     // silently degrades to uncached requests — no error, just full price.
     it.each([
-        "gemini-3-flash",
+        "google/gemini-3-flash-preview",
         "gemini",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-3.1-pro-preview",
     ])("%s transform preserves content-block cache_control markers", async (modelName) => {
         const model = findModelByName(modelName);
         if (!model?.transform)

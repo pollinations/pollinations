@@ -11,13 +11,13 @@ const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 // on the real prompts. DeepSeek is kept as an option for its stubborn
 // in-character resistance, but it reasons heavily — on the long Guide prompt
 // "reasoning_effort: low" pushed replies past 10s, so api.ts now sends "none".
-export const DEFAULT_MODEL = "mistral";
+export const DEFAULT_MODEL = "mistralai/mistral-small-2603";
 
 export const AVAILABLE_MODELS = [
-    { id: "mistral", label: "Mistral" },
-    { id: "openai", label: "OpenAI" },
-    { id: "deepseek", label: "DeepSeek" },
-    { id: "claude-fast", label: "Claude" },
+    { id: "mistralai/mistral-small-2603", label: "Mistral" },
+    { id: "openai/gpt-5.4-nano", label: "OpenAI" },
+    { id: "deepseek/deepseek-v4-flash-0731", label: "DeepSeek" },
+    { id: "anthropic/claude-haiku-4.5", label: "Claude" },
 ] as const;
 
 export interface UserProfile {

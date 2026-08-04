@@ -4,12 +4,12 @@ import {
 } from "./realtime-billing";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1" as const;
+export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
-        aliases: [],
+        aliases: ["gpt-realtime-2.1"],
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -33,8 +33,8 @@ export const REALTIME_SERVICES = {
         reasoning: true,
         contextLength: 32000,
     },
-    "gpt-realtime-2.1-mini": {
-        aliases: [],
+    "openai/gpt-realtime-2.1-mini": {
+        aliases: ["gpt-realtime-2.1-mini"],
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -71,8 +71,8 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
-    "gpt-realtime-2": {
-        aliases: [],
+    "openai/gpt-realtime-2": {
+        aliases: ["gpt-realtime-2"],
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",

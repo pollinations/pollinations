@@ -21,17 +21,17 @@ const APIDOCS_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 
 // Image models — must NOT appear as `model=<x>` inside a `/video/` example.
 const IMAGE_MODELS = new Set([
-    "flux",
-    "zimage",
-    "gptimage",
-    "gptimage-large",
-    "gpt-image-2",
-    "kontext",
-    "seedream5",
-    "seedream",
-    "nanobanana",
-    "nanobanana-pro",
-    "klein",
+    "black-forest-labs/FLUX.1-schnell",
+    "Tongyi-MAI/Z-Image-Turbo",
+    "openai/gpt-image-1-mini",
+    "openai/gpt-image-1.5",
+    "openai/gpt-image-2",
+    "black-forest-labs/flux.1-kontext-pro",
+    "bytedance/seedream-5-lite",
+    "bytedance/seedream-4",
+    "google/gemini-2.5-flash-image",
+    "google/gemini-3-pro-image",
+    "black-forest-labs/flux.2-klein-4b",
 ]);
 
 // Public read endpoints whose curl examples must not show Authorization.

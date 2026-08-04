@@ -115,7 +115,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "gpt-image-2" && data.transparent) {
+        if (data.model === "openai/gpt-image-2" && data.transparent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["transparent"],

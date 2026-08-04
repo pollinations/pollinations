@@ -61,7 +61,7 @@ async function generateOpposite(prompt: string): Promise<string> {
     const res = await axios.post(
         TEXT_API,
         {
-            model: "claude-large",
+            model: "anthropic/claude-opus-5",
             messages: [
                 { role: "system", content: OPPOSITE_PROMPT },
                 { role: "user", content: prompt },

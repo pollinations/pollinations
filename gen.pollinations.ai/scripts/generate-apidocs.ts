@@ -410,7 +410,7 @@ function buildCurl(
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
-        ? { model: "veo" }
+        ? { model: "google/veo-3.1-fast" }
         : {};
     if (queryParams.length) {
         const queryStr = queryParams
@@ -937,22 +937,25 @@ function simplifyModelEnums(spec: Spec): void {
  */
 const CURATED_BODIES: Record<string, Json> = {
     postV1ChatCompletions: {
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         messages: [{ role: "user", content: "Hello!" }],
     },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
-        model: "flux",
+        model: "black-forest-labs/FLUX.1-schnell",
         size: "1024x1024",
     },
     postText: {
         messages: [{ role: "user", content: "Hello!" }],
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
     },
     postAccountKeys: {
         name: "my-app-backend",
         type: "secret",
-        allowedModels: ["openai", "flux"],
+        allowedModels: [
+            "openai/gpt-5.4-nano",
+            "black-forest-labs/FLUX.1-schnell",
+        ],
         pollenBudget: 100,
     },
     postV1AudioSpeech: {
@@ -1016,12 +1019,12 @@ function visibleParams(path: string, params: Schema[]): Schema[] {
 const CURATED_MULTIPART: Record<string, Array<[string, string]>> = {
     postV1AudioTranscriptions: [
         ["file", "@./audio.mp3"],
-        ["model", "whisper-large-v3"],
+        ["model", "openai/whisper-large-v3"],
     ],
     postV1ImagesEdits: [
         ["image", "@./input.png"],
         ["prompt", "make the sky a vivid sunset"],
-        ["model", "kontext"],
+        ["model", "black-forest-labs/flux.1-kontext-pro"],
     ],
     postUpload: [["file", "@./image.png"]],
 };

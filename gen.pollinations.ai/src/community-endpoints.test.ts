@@ -587,7 +587,7 @@ describe("community endpoint helpers", () => {
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
-                name: "gptimage",
+                name: "openai/gpt-image-1-mini",
                 title: "GPT Image",
                 description: null,
                 delegatesGeneration: false,
@@ -3508,7 +3508,9 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition("qwen-coder");
+        const source = getRegistryModelDefinition(
+            "qwen/qwen3-coder-30b-a3b-instruct",
+        );
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];
@@ -3570,7 +3572,7 @@ fixtureTest(
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        model: "qwen-coder",
+                        model: "qwen/qwen3-coder-30b-a3b-instruct",
                         messages: [{ role: "user", content: "hello" }],
                     }),
                 }),

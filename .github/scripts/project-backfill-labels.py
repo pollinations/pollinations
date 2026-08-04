@@ -253,7 +253,7 @@ Body: {(body or "")[:2000]}
                     "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
                 },
                 json={
-                    "model": "openai-large",
+                    "model": "openai/gpt-5.5",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},

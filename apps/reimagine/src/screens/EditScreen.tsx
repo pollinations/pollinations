@@ -32,7 +32,7 @@ export default function EditScreen({ navigation, route }: RootStackScreenProps<'
   const [currentChainId, setCurrentChainId] = useState<string | undefined>(chainId);
 
   const model = ImagePreparationService.determineModel(selectedImages.length);
-  const modelName = model === 'kontext' ? 'Kontext' : 'GPTImage';
+  const modelName = model === 'black-forest-labs/flux.1-kontext-pro' ? 'Kontext' : 'GPTImage';
 
   useEffect(() => {
     console.log('EditScreen mounted with:', {

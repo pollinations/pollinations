@@ -315,7 +315,9 @@ export function Playground({
     } = usePlaygroundCatalog(apiKey);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const [selectedModel, setSelectedModel] = useState(
+        "black-forest-labs/FLUX.1-schnell",
+    );
     const [prompt, setPrompt] = useState("");
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
@@ -336,7 +338,9 @@ export function Playground({
         if (catalog.models.length === 0) return;
         if (catalog.models.some((model) => model.id === selectedModel)) return;
         const nextModel =
-            catalog.models.find((model) => model.id === "flux") ??
+            catalog.models.find(
+                (model) => model.id === "black-forest-labs/FLUX.1-schnell",
+            ) ??
             catalog.models.find((model) => model.category === "image") ??
             catalog.models[0];
         if (nextModel) {

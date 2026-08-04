@@ -50,19 +50,19 @@ const REALTIME_ROUTES: Record<
     RealtimeModelName,
     { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
 > = {
-    "gpt-realtime-2.1": {
+    "openai/gpt-realtime-2.1": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
         deployment: "gpt-realtime-2-1",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
-    "gpt-realtime-2.1-mini": {
+    "openai/gpt-realtime-2.1-mini": {
         endpoint:
             "https://myceli-prod-eastus2.openai.azure.com/openai/v1/realtime",
         deployment: "gpt-realtime-2-1-mini",
         apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     },
-    "gpt-realtime-2": {
+    "openai/gpt-realtime-2": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
         deployment: "gpt-realtime-2",

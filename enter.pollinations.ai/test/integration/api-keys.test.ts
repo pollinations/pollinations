@@ -814,7 +814,10 @@ describe("API Key Management", () => {
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
-                models: ["openai-fast", "flux"],
+                models: [
+                    "openai/gpt-5-nano",
+                    "black-forest-labs/FLUX.1-schnell",
+                ],
             });
         });
 
@@ -842,7 +845,11 @@ describe("API Key Management", () => {
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-retired-model",
-                allowedModels: ["flux", "nanobanana2", "retired-model"],
+                allowedModels: [
+                    "black-forest-labs/FLUX.1-schnell",
+                    "nanobanana2",
+                    "retired-model",
+                ],
             });
 
             const response = await SELF.fetch(
@@ -857,14 +864,16 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
-            expect(listed?.permissions?.models).toEqual(["flux"]);
+            expect(listed?.permissions?.models).toEqual([
+                "black-forest-labs/FLUX.1-schnell",
+            ]);
 
             const db = drizzle(env.DB, { schema });
             const stored = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "flux",
+                "black-forest-labs/FLUX.1-schnell",
                 "nanobanana2",
                 "retired-model",
             ]);
@@ -1019,7 +1028,10 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: [
+                            "black-forest-labs/FLUX.1-schnell",
+                            "openai/gpt-5.4-nano",
+                        ],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -1041,7 +1053,10 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: [
+                    "black-forest-labs/FLUX.1-schnell",
+                    "openai/gpt-5.4-nano",
+                ],
                 account: ["profile", "usage"],
             });
         });
@@ -1062,7 +1077,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux"],
+                        allowedModels: ["black-forest-labs/FLUX.1-schnell"],
                     }),
                 },
             );
@@ -1081,7 +1096,9 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual(["flux"]);
+            expect(keyInfo.permissions?.models).toEqual([
+                "black-forest-labs/FLUX.1-schnell",
+            ]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
@@ -1199,7 +1216,10 @@ describe("API Key Management", () => {
             // Create a new key
             const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "budget-test",
-                allowedModels: ["flux", "retired-model"],
+                allowedModels: [
+                    "black-forest-labs/FLUX.1-schnell",
+                    "retired-model",
+                ],
             });
             const keyId = createdKey.id;
 
@@ -1221,7 +1241,9 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual(["flux"]);
+            expect(JSON.parse(result.permissions).models).toEqual([
+                "black-forest-labs/FLUX.1-schnell",
+            ]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
@@ -1302,7 +1324,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux"],
+                        allowedModels: ["black-forest-labs/FLUX.1-schnell"],
                         accountPermissions: ["usage"],
                     }),
                 },
@@ -1422,7 +1444,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["openai"],
+                        allowedModels: ["openai/gpt-5.4-nano"],
                     }),
                 },
             );
@@ -1460,7 +1482,9 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual(["openai"]);
+            expect(finalKey.permissions.models).toEqual([
+                "openai/gpt-5.4-nano",
+            ]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });

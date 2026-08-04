@@ -10,7 +10,7 @@
   "amount": 8.17,
   "currency": "USD",
   "cost_category": "gpu",
-  "model": "flux",
+  "model": "black-forest-labs/FLUX.1-schnell",
   "op_cloud_type": "gpu",
   "op_transaction_category": null,
   "should_match_op_transaction": false,

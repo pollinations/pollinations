@@ -176,10 +176,10 @@ See `social/prompts/tone/linkedin.md`, `social/prompts/brand/about.md`.
 ## Generating the announcement post (lessons)
 
 **Model selection (ranked for this task):**
-- `claude-fast` — **pick this for live demos.** Consistent ~4s latency, never leaks scaffolding in this prompt shape. Voice slightly flatter than glm but reliability wins when a `Sleep 30000ms` hold has to cover the call.
-- `glm` — best voice quality when it works. But latency is wildly variable (12s first call → 31s next → sometimes >60s); not safe behind a fixed `Sleep` budget. Use for offline one-shots, not live-tape renders.
-- `kimi` — strong rhythm, hacker-genz feel. Solid backup.
-- `openai` — leaks prompt scaffolding verbatim (e.g. `sign-off:`, `110w`, `your own line-1 hook`), overshoots word count. Avoid.
+- `anthropic/claude-haiku-4.5` — **pick this for live demos.** Consistent ~4s latency, never leaks scaffolding in this prompt shape. Voice slightly flatter than `z-ai/glm-5.2` but reliability wins when a `Sleep 30000ms` hold has to cover the call.
+- `z-ai/glm-5.2` — best voice quality when it works. But latency is wildly variable (12s first call → 31s next → sometimes >60s); not safe behind a fixed `Sleep` budget. Use for offline one-shots, not live-tape renders.
+- `moonshotai/kimi-k2.6` — strong rhythm, hacker-genz feel. Solid backup.
+- `openai/gpt-5.4-nano` — leaks prompt scaffolding verbatim (e.g. `sign-off:`, `110w`, `your own line-1 hook`), overshoots word count. Avoid.
 - `gemini-search` / `perplexity-fast` — web-search adds citation markers `[1][2]`; hallucinate features, inflate corpo voice. Avoid for this.
 
 **Call flags:**
@@ -208,9 +208,9 @@ voice: hacker-genz .nfo irc-drop · dry · emojis 🐝💾⚡🔮🧪👁️🌀
 100-130w · sharp sign-off · no md · no 🚀 · no corpo
 ```
 
-Pipe in via: `polli --help | polli gen text --model claude-fast --no-stream "<prompt>"`.
+Pipe in via: `polli --help | polli gen text --model anthropic/claude-haiku-4.5 --no-stream "<prompt>"`.
 
-**For live tape renders** (where a `Sleep Xms` must cover the call): use `claude-fast` — ~4s predictable. For offline post generation without timing constraints, `glm` gives slightly better voice but `polli --help | polli gen text --model glm --no-stream …` may take 10–60s.
+**For live tape renders** (where a `Sleep Xms` must cover the call): use `anthropic/claude-haiku-4.5` — ~4s predictable. For offline post generation without timing constraints, `z-ai/glm-5.2` gives slightly better voice but `polli --help | polli gen text --model z-ai/glm-5.2 --no-stream …` may take 10–60s.
 
 **Parallel batching gotcha:** 3+ concurrent calls to the same model hit Cloudflare 520. Run sequentially for reliable batches.
 
@@ -222,14 +222,14 @@ Pipe in via: `polli --help | polli gen text --model claude-fast --no-stream "<pr
 Type "clear"
 Enter
 Sleep 400ms
-Type `polli gen text --model claude "ascii frame 50×20; spell POLLI big block letters centered. organic evolving mycelium decor — demoscene."`
+Type `polli gen text --model anthropic/claude-sonnet-4.6 "ascii frame 50×20; spell POLLI big block letters centered. organic evolving mycelium decor — demoscene."`
 Enter
 Sleep 17000ms   # hold long enough for full generation + read time
 ```
 
 **Prompt engineering notes for ASCII wordmarks:**
 - Small prompts work best. Every added constraint (CA rules, 6 frames, palette, emoji) pushes the model away from the actual word. Keep it one sentence.
-- Strict letter constraints ("P O L L I — two L's") drift anyway with claude-fast. Use `claude` (non-fast) for final renders; `claude-fast` often outputs "POLL" / "PELL" / random block shapes.
+- Strict letter constraints ("P O L L I — two L's") drift anyway with `anthropic/claude-haiku-4.5`. Use `anthropic/claude-sonnet-4.6` for final renders; `anthropic/claude-haiku-4.5` often outputs "POLL" / "PELL" / random block shapes.
 - Canvas 50×20 is the sweet spot for 960-wide terminals at FontSize 16. 60×40 overflows vertically.
 - No color/palette mentions — ASCII is monochrome. Confuses the model.
 - One keyword for "evolving" (e.g. `mycelium`, `cellular automaton`) > a full description. But `cellular automaton` sometimes confuses the model into abandoning the word entirely — `mycelium` is more reliable.

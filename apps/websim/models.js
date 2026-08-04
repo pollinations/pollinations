@@ -1,4 +1,4 @@
-export const DEFAULT_MODEL = "openai-fast";
+export const DEFAULT_MODEL = "openai/gpt-5-nano";
 
 export const WEB_SIM_MODELS = /** @type {const} */ ([
     {
@@ -7,17 +7,17 @@ export const WEB_SIM_MODELS = /** @type {const} */ ([
         detail: "Fast first pass",
     },
     {
-        id: "claude-fast",
+        id: "anthropic/claude-haiku-4.5",
         label: "Structured",
         detail: "Cleaner hierarchy",
     },
     {
-        id: "gemini-fast",
+        id: "google/gemini-2.5-flash-lite",
         label: "Creative",
         detail: "Richer page ideas",
     },
     {
-        id: "gemini",
+        id: "google/gemini-3.6-flash",
         label: "Detailed",
         detail: "More complete HTML",
     },

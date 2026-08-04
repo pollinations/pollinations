@@ -5,7 +5,7 @@ import type { ImageGenerationResponse, PollinationsRequest } from "./types";
 const POLLINATIONS_API_BASE = "https://gen.pollinations.ai";
 const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const DEFAULT_CONFIG = {
-    model: "gptimage" as const,
+    model: "openai/gpt-image-1-mini" as const,
     enhance: true,
     nologo: true,
 };

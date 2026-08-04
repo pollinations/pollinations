@@ -263,7 +263,7 @@ export async function callNovaReelAPI(
                     mimeType: "video/mp4",
                     durationSeconds,
                     trackingData: {
-                        actualModel: "nova-reel",
+                        actualModel: "amazon.nova-reel-v1:1",
                         usage: {
                             completionVideoSeconds: durationSeconds,
                         },

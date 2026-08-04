@@ -23,7 +23,7 @@ const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
 const MODEL = "bytedance/seedance-2.0";
-const TRACKING_LABEL = "seedance-2.0";
+const TRACKING_LABEL = "bytedance/seedance-2.0";
 
 // Replicate's Seedance 2.0 accepts a narrower set than our shared aspectRatio
 // enum (which also allows 9:21). Validate at the boundary so users get a clear

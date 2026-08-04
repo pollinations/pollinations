@@ -14,7 +14,7 @@ The Worker runs on `http://localhost:16386` and serves the Vite-built app from `
 ## Routes
 
 - `/` serves the React app shell using `@pollinations/sdk` and `@pollinations/ui`.
-- `/api/generate` accepts `POST { "prompt": "...", "model": "openai-fast" }` and returns generated HTML.
+- `/api/generate` accepts `POST { "prompt": "...", "model": "openai/gpt-5-nano" }` and returns generated HTML.
 - `/{prompt}/?model=openai-fast` is a legacy generation URL and requires `Authorization: Bearer ...`.
 - `/api/health` returns Worker configuration health without exposing tokens.
 

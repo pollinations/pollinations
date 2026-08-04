@@ -55,7 +55,7 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
         "api": "openai-completions",
         "models": [
           {
-            "id": "kimi",
+            "id": "moonshotai/kimi-k2.6",
             "name": "Kimi K2.5",
             "reasoning": true,
             "input": ["text", "image"],

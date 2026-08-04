@@ -144,7 +144,7 @@ async def test_generate_video_rehosts_unfetchable_frames(monkeypatch):
 
     url = await gen.generate_video(
         "melt",
-        model="wan-fast",
+        model="wan-video/wan-2.2-fast",
         image="https://gen.pollinations.ai/image/cube?model=flux",
         end_image="https://i.example.com/external.jpg",
     )

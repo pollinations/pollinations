@@ -101,7 +101,7 @@ test("nanobanana bills exact OpenRouter usage end-to-end", async ({
     };
 
     const { response, wait } = await fetchWorker(
-        "/image/red%20square?model=nanobanana&width=1024&height=1024&seed=42",
+        "/image/red%20square?model=google/gemini-2.5-flash-image&width=1024&height=1024&seed=42",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
 
@@ -110,7 +110,9 @@ test("nanobanana bills exact OpenRouter usage end-to-end", async ({
     expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("content-type")).toMatch(/^image\//);
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
-    expect(response.headers.get("x-model-used")).toBe("nanobanana");
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-2.5-flash-image",
+    );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("11");
     expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
         "1290",
@@ -132,7 +134,7 @@ test("nanobanana bills exact OpenRouter usage end-to-end", async ({
     const event = mocks.tinybird.state.events[0];
     expect(event).toMatchObject({
         eventType: "generate.image",
-        modelRequested: "nanobanana",
+        modelRequested: "google/gemini-2.5-flash-image",
         tokenCountPromptText: 11,
         tokenCountCompletionImage: 1290,
         isBilledUsage: true,
@@ -150,7 +152,7 @@ test("nanobanana rejects a response without usage metadata", async ({
     mocks.openrouter.state.usage = undefined;
 
     const { response, wait } = await fetchWorker(
-        "/image/red%20square?model=nanobanana&width=1024&height=1024&seed=42",
+        "/image/red%20square?model=google/gemini-2.5-flash-image&width=1024&height=1024&seed=42",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
 
@@ -177,7 +179,7 @@ test("nanobanana rejects usage that does not sum to its total", async ({
     };
 
     const { response, wait } = await fetchWorker(
-        "/image/red%20square?model=nanobanana&width=1024&height=1024&seed=42",
+        "/image/red%20square?model=google/gemini-2.5-flash-image&width=1024&height=1024&seed=42",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
 
@@ -203,12 +205,14 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
     };
 
     const { response, wait } = await fetchWorker(
-        "/image/black%20circle?model=nanobanana-2&width=3840&height=2160&seed=42&reasoning=pro",
+        "/image/black%20circle?model=google/gemini-3.1-flash-image&width=3840&height=2160&seed=42&reasoning=pro",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
 
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("nanobanana-2");
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-3.1-flash-image",
+    );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("12");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
         "4",
@@ -234,7 +238,7 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     const event = mocks.tinybird.state.events[0];
     expect(event).toMatchObject({
-        modelRequested: "nanobanana-2",
+        modelRequested: "google/gemini-3.1-flash-image",
         tokenCountPromptText: 12,
         tokenCountCompletionReasoning: 4,
         tokenCountCompletionImage: 2520,
@@ -267,7 +271,9 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     );
 
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("nanobanana-2-lite");
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-3.1-flash-lite-image",
+    );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("10");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
         "4",
@@ -321,12 +327,14 @@ test("nanobanana-pro preserves 4K AI Studio routing and exact billing", async ({
     };
 
     const { response, wait } = await fetchWorker(
-        "/image/purple%20hexagon?model=nanobanana-pro&width=3840&height=2160&seed=42&reasoning=pro",
+        "/image/purple%20hexagon?model=google/gemini-3-pro-image&width=3840&height=2160&seed=42&reasoning=pro",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
 
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("nanobanana-pro");
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-3-pro-image",
+    );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("14");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
         "8",
@@ -354,7 +362,7 @@ test("nanobanana-pro preserves 4K AI Studio routing and exact billing", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     const event = mocks.tinybird.state.events[0];
     expect(event).toMatchObject({
-        modelRequested: "nanobanana-pro",
+        modelRequested: "google/gemini-3-pro-image",
         tokenCountPromptText: 14,
         tokenCountCompletionReasoning: 8,
         tokenCountCompletionImage: 2000,

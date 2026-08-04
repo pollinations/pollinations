@@ -551,7 +551,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
+        expect(response.headers.get("x-model-used")).toBe("sonar");
         await response.text();
         await wait();
     }

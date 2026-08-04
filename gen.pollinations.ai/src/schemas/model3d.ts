@@ -70,5 +70,4 @@ export const Generate3dRequestBodySchema = z.object({
     image: z.union([z.string(), z.array(z.string())]).optional(),
     resolution: z.enum(["low", "medium", "high"]).optional(),
     seed: z.number().int().optional(),
-    safe: SafeSchema,
 });

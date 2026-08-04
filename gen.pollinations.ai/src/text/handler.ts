@@ -414,8 +414,15 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        // Report the public registry id, not a provider-specific model name.
-        const servedModelId = servedEntry?.id ?? c.var.model?.resolved;
+        // Only override the provider's own name where it is misleading. A
+        // community endpoint reports its upstream — "gemini-2.0-flash" for what
+        // everyone calls "alice/pro" — and after a rescue that upstream belongs
+        // to a different owner's model. A static model instead reports the
+        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
+        // which is strictly more information, so leave it alone.
+        const servedModelId =
+            servedEntry?.id ??
+            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert

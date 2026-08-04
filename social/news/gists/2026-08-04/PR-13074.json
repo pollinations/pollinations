@@ -1,0 +1,34 @@
+{
+  "pr_number": 13074,
+  "title": "fix: polish model display titles",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13074",
+  "merged_at": "2026-08-04T14:31:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Corrects 17 model display titles while keeping them polished and easy to scan.\n- Adds meaningful product details such as Pro, Preview, Flash, and exact model versions where existing titles were incomplete or inaccurate.\n- Aligns Seedream and Seedance user-facing validation errors with their corrected catalog titles.\n- Leaves canonical IDs, aliases, providers, routes, pricing, capabilities, and descriptions unchanged.\n\nChecks:\n- Biome on all changed files\n- Gen full suite: 80 files passed; 841 tests passed; 6 skipped\n- Focused image and moderation suites: 62 tests passed\n- Gen and SDK type checks\n- SDK model tests\n- Diff audit confirming only title metadata and corresponding user-facing names changed\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Names got their name tags",
+    "blurb": "Seventeen model labels got a careful trim and a few missing details put back on. The catalog now says Pro, Preview, Flash, and exact versions when it should.",
+    "summary": "Polished 17 model display titles across the text, image, audio, and video registries, adding missing details such as Pro, Preview, Flash, and exact versions while aligning Seedream and Seedance validation messages.",
+    "impact": "Users can scan the model catalog and error messages with clearer, consistent names, while canonical IDs, aliases, providers, routes, pricing, capabilities, and descriptions remain unchanged.",
+    "keywords": [
+      "model catalog",
+      "display titles",
+      "Seedream",
+      "Seedance",
+      "validation",
+      "registry"
+    ],
+    "visual_concept": "A cozy model-library garden where neatly labeled seed packets and flowering code-plants represent the corrected catalog names. Polli acts as a careful librarian-gardener, replacing fuzzy plant labels with clear tags reading Pro, Preview, Flash, and version numbers; a helpful CRT robot can hold the refreshed title cards.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she carefully replaces labels on blooming code-plants in a model garden; the labels read \"PRO\", \"PREVIEW\", \"FLASH\", and \"v3\" while a cute CRT monitor robot holds tidy catalog cards. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-13074.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she carefully replaces labels on blooming code-plants in a model garden; the labels read \"PRO\", \"PREVIEW\", \"FLASH\", and \"v3\" while a cute CRT monitor robot holds tidy catalog cards. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-04T14:32:42.463377+00:00"
+}

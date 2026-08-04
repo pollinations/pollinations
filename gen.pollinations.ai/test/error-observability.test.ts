@@ -762,4 +762,72 @@ describe("error observability", () => {
             },
         });
     });
+
+    it("returns 400 for a status-less invalid image URL error from Portkey", async () => {
+        const fetchRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                fetchRequests.push(new Request(input, init));
+                return Response.json({
+                    error: {
+                        message:
+                            "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
+                    },
+                });
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTextTestApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemma",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "describe this" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: "not-a-valid-image" },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                OPENROUTER_API_KEY: "test_openrouter_key",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            status: 400,
+            error: {
+                code: "BAD_REQUEST",
+                message:
+                    "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
+                details: {
+                    upstreamHost: "portkey.test",
+                },
+            },
+        });
+        expect(fetchRequests).toHaveLength(1);
+        expect(fetchRequests[0].url).toBe(
+            "https://portkey.test/v1/chat/completions",
+        );
+    });
 });

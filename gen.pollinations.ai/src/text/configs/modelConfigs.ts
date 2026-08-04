@@ -164,6 +164,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "qwen/qwen3.8-max": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-max",
+            defaultOptions: {
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen/qwen3.7-flash": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",

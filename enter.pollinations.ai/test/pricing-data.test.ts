@@ -219,6 +219,22 @@ test("catalog prices expose 3D flat output generation rates", () => {
     }
 });
 
+test("Trellis 2 prices selectable resolution tiers", () => {
+    const usage = { completionImageTokens: 1 };
+
+    expect(calculateCost("trellis-2", usage).totalCost).toBe(0.24);
+    expect(
+        calculateCost("trellis-2", usage, undefined, {
+            resolution: "medium",
+        }).totalCost,
+    ).toBe(0.29);
+    expect(
+        calculateCost("trellis-2", usage, undefined, {
+            resolution: "high",
+        }).totalCost,
+    ).toBe(0.35);
+});
+
 test("catalog models resolve brand logo SVG assets", () => {
     const logoAssets = new Set(
         Object.keys(
@@ -392,6 +408,12 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             completionVideoSeconds: 5,
         }).totalCost,
     ).toBeCloseTo(0.352, 8);
+    expect(
+        calculateCost("grok-imagine-video-1.5", {
+            promptImageTokens: 1,
+            completionVideoSeconds: 5,
+        }).totalCost,
+    ).toBeCloseTo(0.71, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {
@@ -413,16 +435,6 @@ test("Gemini search cost follows each route's provider metadata", () => {
             },
         ],
     };
-    const vertex3SearchOutput = {
-        choices: [
-            {
-                groundingMetadata: {
-                    webSearchQueries: ["query one", "query two"],
-                },
-            },
-        ],
-    };
-
     const geminiSearchCost = calculateCost(
         "gemini-search",
         usage,
@@ -439,17 +451,17 @@ test("Gemini search cost follows each route's provider metadata", () => {
         openRouterSearchOutput,
     );
     const geminiSearchFastCost = calculateCost(
-        "gemini-search-fast",
+        "gemini-flash-lite-3.5",
         usage,
-        vertex3SearchOutput,
+        openRouterSearchOutput,
     );
     const geminiSearchLargeCost = calculateCost(
-        "gemini-search-large",
+        "gemini",
         usage,
-        vertex3SearchOutput,
+        openRouterSearchOutput,
     );
     const ungroundedGeminiSearchFastCost = calculateCost(
-        "gemini-search-fast",
+        "gemini-flash-lite-3.5",
         usage,
         { choices: [] },
     );
@@ -458,7 +470,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
     expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
-    // General Gemini remains on OpenRouter; Vertex Gemini 3 bills per query.
+    // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
     expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
@@ -470,7 +482,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
 // object is absent so a future re-exposure is a deliberate, tested change.
 test("Gemini billing internals are not exposed in public model catalog", () => {
     const geminiSearchFast = getTextModelsInfo().find(
-        (model) => model.name === "gemini-search-fast",
+        (model) => model.name === "gemini-flash-lite-3.5",
     );
     const geminiLarge = getTextModelsInfo().find(
         (model) => model.name === "gemini-large",
@@ -488,15 +500,15 @@ test("Perplexity request search fees are added by declarative billing rules", ()
         completionTextTokens: 1_000_000,
     };
     const cases = [
-        ["perplexity-fast", 2.005],
-        ["perplexity-high", 2.012],
-        ["perplexity", 18.014],
-        ["perplexity-reasoning", 10.014],
+        ["perplexity-fast", 2.005, undefined],
+        ["perplexity-fast", 2.012, { searchContextSize: "high" as const }],
+        ["perplexity", 18.014, undefined],
+        ["perplexity-reasoning", 10.014, undefined],
     ] as const;
 
-    for (const [model, total] of cases) {
-        const cost = calculateCost(model, usage);
-        const price = calculatePrice(model, usage);
+    for (const [model, total, input] of cases) {
+        const cost = calculateCost(model, usage, undefined, input);
+        const price = calculatePrice(model, usage, undefined, input);
 
         expect(cost.totalCost).toBeCloseTo(total, 8);
         expect(price.totalPrice).toBeCloseTo(total, 8);
@@ -581,7 +593,7 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     );
 });
 
-test("Vertex Gemini grounding is detected on streamed chunk output", () => {
+test("independent Vertex Gemini Search detects streamed grounding", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -608,22 +620,12 @@ test("Vertex Gemini grounding is detected on streamed chunk output", () => {
     expect(
         calculatePrice("gemini-search", usage, vertexStreamOutput).totalPrice,
     ).toBeCloseTo(0.535, 8);
-    expect(
-        calculateCost("gemini-search-fast", usage, vertexStreamOutput)
-            .totalCost,
-    ).toBeCloseTo(2.828, 8);
 });
 
 // Billing rules live on the private ModelDefinition (drive the fee), but are
 // NOT surfaced in the public /models schema. Assert both facts.
 test("Perplexity billing rules carry per-tier request fees privately only", () => {
     const perplexityFees = [
-        ["perplexity-fast", "perplexity.sonar_low.search_request.v1", 5 / 1000],
-        [
-            "perplexity-high",
-            "perplexity.sonar_high.search_request.v1",
-            12 / 1000,
-        ],
         [
             "perplexity",
             "perplexity.sonar_pro_high.search_request.v1",
@@ -635,6 +637,33 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
             14 / 1000,
         ],
     ] as const;
+
+    expect(
+        getRegistryModelDefinition("perplexity-fast").billing?.adjustments,
+    ).toMatchObject([
+        {
+            id: "perplexity.sonar_low.search_request.v1",
+            unitCost: 5 / 1000,
+        },
+        {
+            id: "perplexity.sonar_high.search_request.v1",
+            unitCost: 12 / 1000,
+        },
+    ]);
+    const sonarRules =
+        getRegistryModelDefinition("perplexity-fast").billing?.adjustments;
+    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
+        1,
+    );
+    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "low" })).toBe(
+        0,
+    );
+    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "high" })).toBe(
+        0,
+    );
+    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "high" })).toBe(
+        1,
+    );
 
     for (const [model, ruleId, unitCost] of perplexityFees) {
         const adjustment = getRegistryModelDefinition(model as ModelName)
@@ -663,8 +692,6 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
         "gemini-fast",
         "gemini-large",
         "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
     ] as const;
     for (const model of models) {
         // getRegistryModelDefinition throws on unknown names, so a renamed
@@ -686,8 +713,6 @@ test("Gemini routes price separately reported media input tokens", () => {
         "gemini-fast",
         "gemini-large",
         "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
     ] as const) {
         const cost = getRegistryModelDefinition(model).cost;
         expect(
@@ -709,11 +734,7 @@ test("Google text model providers match their configured routes", () => {
         "gemini-fast",
         "gemini-large",
     ] as const;
-    const vertexModels = [
-        "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
-    ] as const;
+    const vertexModels = ["gemini-search"] as const;
     const publicModels = new Map(
         getTextModelsInfo().map((model) => [model.name, model]),
     );
@@ -866,7 +887,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     }
 
     const streamedSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini"),
+        getRegistryModelDefinition("gemini-3-flash"),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -877,7 +898,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                 },
             ],
         },
-        "gemini",
+        "gemini-3-flash",
     );
     expect(streamedSearch).toEqual([
         {
@@ -934,50 +955,6 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
             price: 0.035,
         },
     ]);
-
-    for (const model of [
-        "gemini-search-fast",
-        "gemini-search-large",
-    ] as const) {
-        expect(
-            calculateBillingAdjustments(
-                getRegistryModelDefinition(model),
-                {
-                    streamEvents: [
-                        {
-                            choices: [
-                                {
-                                    groundingMetadata: {
-                                        webSearchQueries: ["one", "two"],
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            choices: [
-                                {
-                                    groundingMetadata: {
-                                        webSearchQueries: ["one", "two"],
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                model,
-            ),
-        ).toEqual([
-            {
-                ruleId: "google.gemini_3.search_query.v1",
-                kind: "search_query",
-                unit: "query",
-                units: 2,
-                unitCost: 0.014,
-                cost: 0.028,
-                price: 0.028,
-            },
-        ]);
-    }
 
     const cacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-search"),

@@ -114,7 +114,6 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "grok",
         "mistral-large",
         "llama",
         "qwen-coder",

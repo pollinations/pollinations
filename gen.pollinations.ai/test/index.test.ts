@@ -410,7 +410,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("distinguishes Perplexity Sonar search presets", async () => {
+    it("publishes one configurable Perplexity Sonar model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -429,11 +429,7 @@ describe("gen worker routing", () => {
         });
         expect(
             models.find((model) => model.name === "perplexity-high"),
-        ).toMatchObject({
-            title: "Perplexity Sonar High-Context Search",
-            description:
-                "Digs through many sources for thorough, cited research answers",
-        });
+        ).toBeUndefined();
         expect(
             models.find((model) => model.name === "perplexity"),
         ).toMatchObject({

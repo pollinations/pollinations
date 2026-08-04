@@ -1,0 +1,35 @@
+{
+  "pr_number": 13043,
+  "title": "refactor: consolidate model entries",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13043",
+  "merged_at": "2026-08-04T12:02:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Consolidates Trellis 2, Perplexity Sonar, Grok 4.20, Gemini Flash Lite, and Gemini Flash variant rows into parameter-driven canonical entries.\n- Keeps retired IDs as identity-only aliases: they only resolve the canonical entry and never imply parameters; explicit resolution, search-context, search-tool, and reasoning parameters select behavior.\n- Keeps the independent gemini-search model unchanged on its existing route.\n- Migrates stored API-key allowlists to canonical IDs with bounded, idempotent, order-preserving deduplication.\n\nDeployment: apply Enter migration 0044 before deploying the Gen registry changes.\n\nTests:\n- Gen and Enter typechecks\n- 62 text routing/transform, 28 request/3D, 36 tracking/permissions, and 32 pricing/migration tests\n- D1 migration coverage with 10,000 unaffected keys, all 24 retired IDs, malformed/unrestricted rows, ordering, deduplication, and idempotency\n- 200,001-row SQLite stress run: zero retired IDs remained, 0.78s\n- Local Trellis query, cache, billing, and alias paths\n- Production smoke tests for canonical Gemini, independent gemini-search, Perplexity low/high, and Grok reasoning routes\n\nProduction Trellis reached InferencePort but the provider returned HTTP 524; the equivalent local end-to-end path passes.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Many labels, one hive",
+    "blurb": "The model garden got a careful pruning: Trellis 2, Perplexity Sonar, Grok 4.20, and Gemini Flash variants now grow from canonical entries. Old labels still lead to the right flower; parameters decide which petals open.",
+    "summary": "Consolidated Trellis 2, Perplexity Sonar, Grok 4.20, Gemini Flash Lite, and Gemini Flash variant rows into parameter-driven canonical models, while preserving retired IDs as identity-only aliases and migrating API-key allowlists to canonical IDs.",
+    "impact": "Existing retired model IDs continue resolving safely, while explicit search-context, search-tool, and reasoning parameters consistently select Perplexity, Grok, and Gemini behavior; the standalone gemini-search route remains unchanged.",
+    "keywords": [
+      "model-registry",
+      "model-aliases",
+      "gemini",
+      "perplexity",
+      "grok",
+      "trellis",
+      "api-keys"
+    ],
+    "visual_concept": "A cozy model garden being organized into a few well-labeled central planters, with many small old plant tags gently pointing toward the same canonical flowers. Polli acts as the careful gardener with a tiny clipboard, while a CRT monitor robot happily maps old labels to the correct plants; vines made of API-key tags show that existing access follows the new paths without losing its place.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses and carefully sorting old model-label signs into a few blooming canonical code-plants; a cute CRT monitor robot holds a map of arrows from old tags to new flowers. Lime green (#ecf874) appears prominently in the planters and monitor glow, with warm cream, mint, lavender, and peach garden colors, subtle vines of API-key tags, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'CANONICAL MODELS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-13043.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses and carefully sorting old model-label signs into a few blooming canonical code-plants; a cute CRT monitor robot holds a map of arrows from old tags to new flowers. Lime green (#ecf874) appears prominently in the planters and monitor glow, with warm cream, mint, lavender, and peach garden colors, subtle vines of API-key tags, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'CANONICAL MODELS'."
+  },
+  "generated_at": "2026-08-04T12:03:22.569040+00:00"
+}

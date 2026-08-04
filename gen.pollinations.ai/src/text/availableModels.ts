@@ -1,5 +1,4 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
-import { validateCohereRequest } from "./cohereCommandAPlus.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -84,8 +83,6 @@ const models: ModelDefinition[] = [
     {
         name: "command-a-plus",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
-        // Azure runs automatic reasoning but rejects/ignores effort controls.
-        transform: pipe(validateCohereRequest, stripReasoning),
     },
     {
         name: "qwen-coder",

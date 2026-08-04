@@ -377,7 +377,7 @@ export const TEXT_SERVICES = {
         title: "Cohere Command A+",
         description:
             "Multilingual agentic reasoning with tools and long context",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,

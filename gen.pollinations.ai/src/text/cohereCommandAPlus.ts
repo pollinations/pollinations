@@ -2,7 +2,7 @@ import {
     type EventSourceMessage,
     EventSourceParserStream,
 } from "eventsource-parser/stream";
-import type { ChatCompletion, ServiceError, TransformFn } from "./types.js";
+import type { ChatCompletion } from "./types.js";
 
 const COHERE_CONTROL_TOKENS = [
     "<|START_THINKING|>",
@@ -236,45 +236,3 @@ export function sanitizeCohereResponse(
     }
     return completion;
 }
-
-function rejectCohereRequest(message: string): never {
-    const error = new Error(message) as ServiceError;
-    error.status = 400;
-    throw error;
-}
-
-export const validateCohereRequest: TransformFn = (messages, options) => {
-    const hasNonTextInput = messages.some(
-        (message) =>
-            Array.isArray(message.content) &&
-            message.content.some(
-                (part) =>
-                    !part ||
-                    typeof part !== "object" ||
-                    (part as { type?: unknown }).type !== "text",
-            ),
-    );
-    if (hasNonTextInput) {
-        rejectCohereRequest(
-            "Cohere Command A+ on Azure supports text input only",
-        );
-    }
-
-    if (
-        options.tool_choice !== undefined &&
-        options.tool_choice !== "auto" &&
-        options.tool_choice !== "none"
-    ) {
-        rejectCohereRequest(
-            'Cohere Command A+ on Azure supports tool_choice "auto" or "none" only',
-        );
-    }
-
-    const normalizedOptions = { ...options };
-    if (normalizedOptions.tool_choice === "none") {
-        delete normalizedOptions.tools;
-        delete normalizedOptions.tool_choice;
-    }
-
-    return { messages, options: normalizedOptions };
-};

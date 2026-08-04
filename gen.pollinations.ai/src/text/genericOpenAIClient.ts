@@ -1,4 +1,4 @@
-import { remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
 import {
     normalizeOptions,
@@ -101,7 +101,7 @@ function extractErrorMessage(details: unknown): string | null {
 }
 
 function createApiError(
-    response: { status: number; statusText: string },
+    response: Response,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -118,6 +118,7 @@ function createApiError(
     error.details = details;
     error.model = modelName;
     error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
     return error;
 }
 
@@ -295,6 +296,7 @@ export async function genericOpenAIClient(
             error.details = errorDetails.details;
             error.model = modelName;
             error.requestUrl = requestUrl;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
         log(

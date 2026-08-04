@@ -155,7 +155,8 @@ test("catalog prices keep community text models flagged for display", () => {
             aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
-            brand: "Community",
+            brand: "Example AI",
+            brand_url: "https://example.com/",
             title: "OpenAI relay",
             description: "OpenAI relay",
             pricing: {
@@ -174,7 +175,8 @@ test("catalog prices keep community text models flagged for display", () => {
         type: "text",
         community: true,
         displayName: "OpenAI relay",
-        brand: "Community",
+        brand: "Example AI",
+        brandUrl: "https://example.com/",
         capabilities: [],
     });
     expect(communityModel?.prices).toEqual(

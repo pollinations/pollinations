@@ -1,0 +1,35 @@
+{
+  "pr_number": 13032,
+  "title": "fix: simplify Inkling and Cohere proxy handling",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13032",
+  "merged_at": "2026-08-04T12:45:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes Inkling-specific reasoning, tool-schema, and response transforms so OpenRouter receives and returns the native request shape.\n- Removes Cohere request validation and rewriting; messages, `reasoning_effort`, tools, and `tool_choice` now pass through unchanged to Azure.\n- Keeps only Cohere response-boundary cleanup for control tokens observed in raw normal and streaming Azure responses.\n- Advertises empirically verified image input for `command-a-plus` and preserves the current generic malformed-media client-error mapping.\n- Keeps the confirmed contract unchanged: canonical `command-a-plus`; aliases `cohere-command-a-plus`, `command-a-plus-05-2026`, `cohere-command-a-plus-05-2026`; multiplier `0.75`; paid-only no; Pollinations GPU no; Azure East US deployment `Cohere-command-a-plus-05-2026`; fallback none.\n- Verified with direct Azure text, streaming, reasoning, tool-choice, and image probes; 55 focused tests, TypeScript, Biome, and CodeQL pass.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Let the requests be themselves",
+    "blurb": "Inkling and Cohere requests have stopped taking the scenic route through proxy-specific rewrites. Tools, reasoning, messages, and image inputs can now arrive in their native shape, as the protocol bees intended.",
+    "summary": "Simplified Inkling and Cohere Command A Plus proxy handling so native messages, reasoning_effort, tools, and tool_choice pass through unchanged, while retaining Azure control-token cleanup and verified image input support for command-a-plus.",
+    "impact": "Developers using canonical command-a-plus or its existing aliases get more faithful Azure request and streaming behavior for text, reasoning, tool calls, and images without changing the confirmed model contract.",
+    "keywords": [
+      "cohere",
+      "command-a-plus",
+      "azure",
+      "inkling",
+      "tools",
+      "reasoning",
+      "image-input"
+    ],
+    "visual_concept": "Depict Polli as a careful mail carrier removing unnecessary detour stamps from message envelopes headed toward a cozy Azure-like cloud terminal. The envelopes carry tiny symbols for chat, tools, reasoning, and an image, traveling directly through a garden path while a CRT monitor robot happily confirms the messages arrived intact.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, carefully sending chat envelopes marked with a wrench, thought bubble, and picture icon straight into a glowing retro cloud terminal, while a chunky CRT monitor robot watches proudly beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes; subtle pixel-font text on the terminal: 'NATIVE SHAPE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-13032.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, carefully sending chat envelopes marked with a wrench, thought bubble, and picture icon straight into a glowing retro cloud terminal, while a chunky CRT monitor robot watches proudly beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes; subtle pixel-font text on the terminal: 'NATIVE SHAPE'."
+  },
+  "generated_at": "2026-08-04T12:46:51.273014+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12981,
+  "title": "feat: add structured error diagnostics",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12981",
+  "merged_at": "2026-08-04T12:21:45Z",
+  "labels": [],
+  "pr_body_excerpt": "## What\n\n- Adds one structured `diagnostic_metadata` field to Tinybird error events and the recent-errors endpoint.\n- Captures Cloudflare colo, OpenRouter generation ID, and allowlisted Portkey trace, provider, retry, and route metadata.\n- Labels `x-portkey-provider` as the gateway provider rather than claiming it is OpenRouter's selected downstream provider.\n- Rejects all other response headers, including credentials and cookies.\n\n## Why\n\nCurrent error events preserve status and body but discard correlation and routing headers, making concentrated model failures difficult to reproduce and attribute.\n\n## Checks\n\n- `npx vitest run test/error-observability.test.ts`\n- `npm run typecheck` in `gen.pollinations.ai`\n- `npm run typecheck` in `enter.pollinations.ai`\n- Biome check\n\nNo Tinybird or Cloudflare deployment was performed.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Errors grow little labels",
+    "blurb": "When a model hiccups, the hive now keeps the useful breadcrumbs. Correlation data gets a tidy little basket; cookies and credentials remain firmly outside it.",
+    "summary": "Error events and the recent-errors endpoint now include allowlisted diagnostic_metadata for Cloudflare colo, OpenRouter generation IDs, and Portkey trace, provider, retry, and route details.",
+    "impact": "Maintainers can more quickly correlate and reproduce concentrated model failures using routing metadata, while unapproved headers such as credentials and cookies are excluded.",
+    "keywords": [
+      "observability",
+      "error-diagnostics",
+      "tinybird",
+      "cloudflare",
+      "openrouter",
+      "portkey"
+    ],
+    "visual_concept": "A cozy observability garden: Polli acts as a careful bug detective, sorting labeled diagnostic breadcrumbs into a transparent jar beside a retro error-monitor terminal. Small code-plants represent Cloudflare colo, OpenRouter generation IDs, and Portkey routing traces, while a locked cookie jar sits outside the collection basket to show sensitive headers are deliberately rejected.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses and carefully filing glowing error breadcrumbs into a labeled diagnostic jar beside a lime green (#ecf874) retro CRT terminal; little code-plants labeled COLO, GEN ID, and TRACE bloom nearby, while a locked cookie jar is kept outside the basket. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"DIAGNOSTICS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-04/PR-12981.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses and carefully filing glowing error breadcrumbs into a labeled diagnostic jar beside a lime green (#ecf874) retro CRT terminal; little code-plants labeled COLO, GEN ID, and TRACE bloom nearby, while a locked cookie jar is kept outside the basket. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"DIAGNOSTICS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-04T12:22:43.650659+00:00"
+}

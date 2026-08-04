@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-03",
+  "period_start": "2026-08-03",
+  "period_end": "2026-08-03",
+  "generated_at": "2026-08-04T07:01:47.293796+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Three models added, deployment paths hardened",
+  "text": "Eight PRs merged today.\n\nNew model surface area:\n- Krea 2 Medium was added for image generation: #13012\n- Grok Imagine Video 1.5 was added for video generation: #13047\n- Qwen3.8 Max was added to the multimodal text API: #13048\n\nThe less visible work was mostly about making the paths around those models fail less creatively. DreamShaper Vast deployment handling was hardened (#13025), cost-variant boundaries were corrected and undeployed telemetry was rolled back (#13034), and model-permission migration work is now bounded rather than allowed to wander through an unbounded backlog (#13041).\n\nCommunity publishing for `pollinations-router` now has a stricter identity check (#13035). Production Cloudflare deploys are also queued (#13046), which should reduce collisions between otherwise innocent deploys.\n\nPR list and code: https://github.com/pollinations/pollinations/pulls\n\nAPI/docs: https://github.com/pollinations/pollinations\n\nIf you use the router or model permissions in an app, the publishing and migration changes are the ones worth watching. The new models are ready for the usual creative misuse."
+}

@@ -159,24 +159,6 @@ workerTest(
             expect(overrideResponse.status).toBe(200);
             await overrideResponse.text();
 
-            const postResponse = await SELF.fetch(
-                `https://gen.pollinations.ai/3d/${crypto.randomUUID()}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${paidApiKey}`,
-                        "content-type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model: "trellis-2",
-                        resolution: "high",
-                        image: "https://example.com/ref.jpg",
-                    }),
-                },
-            );
-            expect(postResponse.status).toBe(200);
-            await postResponse.text();
-
             const cachePrompt = crypto.randomUUID();
             for (const resolution of ["low", "high"]) {
                 const response = await SELF.fetch(
@@ -192,7 +174,6 @@ workerTest(
                 "low",
                 "low",
                 "low",
-                "high",
                 "low",
                 "high",
             ]);

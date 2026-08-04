@@ -304,7 +304,7 @@ Core rules you must ALWAYS follow:
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "mistral",
+                    model: "mistralai/mistral-small-2603",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: prompt },
@@ -474,7 +474,7 @@ Core rules you must ALWAYS follow:
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "mistral",
+                    model: "mistralai/mistral-small-2603",
                     messages: [
                         {
                             role: "system",
@@ -589,7 +589,7 @@ Core rules you must ALWAYS follow:
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "mistral",
+                    model: "mistralai/mistral-small-2603",
                     messages: [
                         {
                             role: "system",

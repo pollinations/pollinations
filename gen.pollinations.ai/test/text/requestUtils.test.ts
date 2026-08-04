@@ -5,7 +5,7 @@ describe("getRequestData", () => {
     it("coerces token limits from query strings", () => {
         const requestData = getRequestData({
             query: {
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 max_tokens: "12",
                 max_completion_tokens: "16",
             },
@@ -25,7 +25,7 @@ describe("getRequestData", () => {
         const requestData = getRequestData({
             query: {},
             body: {
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "hello" }],
                 thinking: { type: "enabled", budget_tokens: 1024 },
                 thinking_budget: 1024,

@@ -69,7 +69,7 @@ if (!KEY) {
     await step("generateText", async () => {
         const out = await call("generateText", {
             prompt: "Reply with exactly: pong",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
@@ -77,7 +77,7 @@ if (!KEY) {
     await step("generateImageUrl", async () => {
         const out = await call("generateImageUrl", {
             prompt: "a small red apple",
-            model: "flux",
+            model: "black-forest-labs/FLUX.1-schnell",
             width: 256,
             height: 256,
         });

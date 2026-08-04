@@ -633,7 +633,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-2` supports text, image, audio, and video. `cohere-embed-v4` supports text and one image. OpenAI and Qwen embedding models are text-only.",
+                "**Models:** `google/gemini-embedding-2` supports text, image, audio, and video. `embed-v4.0` supports text and one image. OpenAI and Qwen embedding models are text-only.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
@@ -641,7 +641,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.",
                 "",
-                "**Gemini migration:** `gemini-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.",
+                "**Gemini migration:** `google/gemini-embedding-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.",
                 "",
                 "**Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.",
             ].join("\n"),
@@ -939,7 +939,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `fal-ai/stable-audio-3/medium`, or `stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {
@@ -979,13 +979,13 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                            "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3-clip-preview` and `elevenlabs/eleven-text-to-sound-v2` support mp3 only.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
                     description:
-                        "Audio model: TTS (default) or a music-generation model such as lyria-3-clip",
-                    example: "tts-1",
+                        "Audio model: TTS (default) or a music-generation model such as `google/lyria-3-clip-preview`",
+                    example: "elevenlabs/eleven-v3",
                 }),
                 duration: z
                     .string()
@@ -994,21 +994,21 @@ export const proxyRoutes = new Hono<Env>()
                     .pipe(z.number().min(0.5).max(300).optional())
                     .meta({
                         description:
-                            "Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30)",
+                            "Music duration in seconds (`elevenlabs/music-v2` 3-300; `google/lyria-3-clip-preview` fixed at 30)",
                         example: "30",
                     }),
                 seconds: z.coerce.number().min(1).max(380).optional().meta({
                     description:
-                        "Audio duration in seconds for stable-audio-3-medium/large, 1-380",
+                        "Audio duration in seconds for Stable Audio models, 1-380",
                     example: "30",
                 }),
                 steps: z.coerce.number().int().min(1).max(100).optional().meta({
                     description:
-                        "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8)",
+                        "Sampling steps (`fal-ai/stable-audio-3/medium` 1-100, `stable-audio-3` 4-8)",
                     example: "8",
                 }),
                 negative_prompt: z.string().optional().meta({
-                    description: "Negative prompt for stable-audio-3-large",
+                    description: "Negative prompt for `stable-audio-3`",
                     example: "distortion, vocals",
                 }),
                 instrumental: z
@@ -1017,12 +1017,12 @@ export const proxyRoutes = new Hono<Env>()
                     .transform((v) => v === "true")
                     .meta({
                         description:
-                            "If true, guarantees instrumental output (elevenmusic only)",
+                            "If true, guarantees instrumental output (`elevenlabs/music-v2` only)",
                         example: "false",
                     }),
                 instruct: z.string().optional().meta({
                     description:
-                        "Emotion/style instruction (qwen-tts-instruct only)",
+                        "Emotion/style instruction (`qwen/qwen3-tts-instruct-flash` only)",
                     example: "speak softly and warmly",
                 }),
                 loop: z

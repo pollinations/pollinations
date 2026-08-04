@@ -179,7 +179,7 @@ async function handleGenerate(res, session) {
             Authorization: `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [
                 {
                     role: "user",

@@ -14,7 +14,7 @@ describe("generatePortkeyHeaders — fallback config", () => {
                     provider: "openai",
                     custom_host: "https://api.airforce/v1",
                     authKey: "sk-air-test",
-                    override_params: { model: "gemini-3-flash" },
+                    override_params: { model: "google/gemini-3-flash-preview" },
                 },
                 {
                     provider: "vertex-ai",
@@ -47,7 +47,7 @@ describe("generatePortkeyHeaders — fallback config", () => {
             provider: "openai",
             custom_host: "https://api.airforce/v1",
             api_key: "sk-air-test",
-            override_params: { model: "gemini-3-flash" },
+            override_params: { model: "google/gemini-3-flash-preview" },
         });
         expect(payload.targets[0].authKey).toBeUndefined();
 
@@ -65,14 +65,16 @@ describe("generatePortkeyHeaders — fallback config", () => {
             provider: "openai",
             "custom-host": "https://api.airforce/v1",
             authKey: "sk-air-test",
-            model: "gemini-3-flash",
+            model: "google/gemini-3-flash-preview",
         });
 
         expect(headers["x-portkey-provider"]).toBe("openai");
         expect(headers["x-portkey-custom-host"]).toBe(
             "https://api.airforce/v1",
         );
-        expect(headers["x-portkey-model"]).toBe("gemini-3-flash");
+        expect(headers["x-portkey-model"]).toBe(
+            "google/gemini-3-flash-preview",
+        );
         expect(headers["Authorization"]).toBe("Bearer sk-air-test");
         expect(headers["x-portkey-config"]).toBeUndefined();
     });

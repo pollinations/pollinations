@@ -46,13 +46,13 @@ describe("getAuthorizeInitialPermissions", () => {
     it("keeps optional permissions from the url in state", () => {
         expect(
             getAuthorizeInitialPermissions({
-                models: ["flux"],
+                models: ["black-forest-labs/FLUX.1-schnell"],
                 budget: 2,
                 expiry: 3,
                 permissions: ["usage", "profile"],
             }),
         ).toEqual({
-            allowedModels: ["flux"],
+            allowedModels: ["black-forest-labs/FLUX.1-schnell"],
             pollenBudget: 2,
             expiryDays: 3,
             accountPermissions: ["usage", "profile"],

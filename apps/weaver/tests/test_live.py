@@ -42,7 +42,7 @@ async def test_edit_image_transforms_the_source():
     base = (
         await gen.generate_image(
             "a plain solid blue circle on a plain white background",
-            model="flux",
+            model="black-forest-labs/FLUX.1-schnell",
             width=768,
             height=768,
             seed=7,
@@ -90,7 +90,15 @@ async def test_chained_video_via_frame_extraction(tmp_path, monkeypatch):
     await warm_registry()
 
     k1, k2 = [
-        (await gen.generate_image(p, model="flux", width=512, height=512, seed=11))[0]
+        (
+            await gen.generate_image(
+                p,
+                model="black-forest-labs/FLUX.1-schnell",
+                width=512,
+                height=512,
+                seed=11,
+            )
+        )[0]
         for p in (
             "a red cube on a white table, studio lighting",
             "a red cube melting into a puddle on a white table, studio lighting",
@@ -98,7 +106,7 @@ async def test_chained_video_via_frame_extraction(tmp_path, monkeypatch):
     ]
 
     clip1_url = await gen.generate_video(
-        "the red cube slowly melts", model="wan-fast", image=k1, end_image=k2
+        "the red cube slowly melts", model="wan-video/wan-2.2-fast", image=k1, end_image=k2
     )
     clip1 = await media.fetch_media(clip1_url, "clip1.mp4")
 
@@ -111,7 +119,7 @@ async def test_chained_video_via_frame_extraction(tmp_path, monkeypatch):
     assert frame_url.startswith("https://media.pollinations.ai/")
 
     clip2_url = await gen.generate_video(
-        "the puddle evaporates into red mist", model="wan-fast", image=frame_url
+        "the puddle evaporates into red mist", model="wan-video/wan-2.2-fast", image=frame_url
     )
     await media.fetch_media(clip2_url, "clip2.mp4")
 

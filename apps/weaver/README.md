@@ -8,7 +8,7 @@ Given a prompt like *"make a 20-second continuous video of a paper boat drifting
 
 ## How it works
 
-- **Brain**: an OpenAI-compatible tool-calling model (default `glm`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
+- **Brain**: an OpenAI-compatible tool-calling model (default `z-ai/glm-5.2`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
 - **Tools** (`tools/`): `generate_image`, `edit_image` (real img2img), `generate_video` (text-to-video, image-to-video, start+end-frame interpolation), `text_to_speech` (verbatim narration), `transcribe`, `web_search`, `bash` (sandboxed shell with ffmpeg), `upload_media`/`fetch_media` (Pollinations media hosting — the plumbing that lets edited images and extracted frames flow back into video generation as public URLs).
 - **API** (`api.py`): FastAPI app exposing `/v1/chat/completions` (OpenAI-compatible request/response, SSE streaming with keepalives for long multi-clip runs), `/v1/models`, `/health`.
 

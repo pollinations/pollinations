@@ -8,15 +8,15 @@ const DEFAULT_IMAGE_SIDE_LENGTH = 1024;
 export const IMAGE_DEFAULT_SIDE_LENGTHS: Partial<
     Record<ImageModelName, number>
 > = {
-    seedream5: 2048,
-    "seedream5-pro": 2048,
-    "seedream-pro": 2048,
-    "ideogram-v4-turbo": 2048,
-    "ideogram-v4-balanced": 2048,
-    "ideogram-v4-quality": 2048,
-    "nanobanana-pro": 2048,
-    gptimage: 1021,
-    "wan-image-pro": 2048,
+    "bytedance/seedream-5-lite": 2048,
+    "bytedance/seedream-5-pro": 2048,
+    "bytedance-seed/seedream-4.5": 2048,
+    "ideogram-ai/ideogram-v4-turbo": 2048,
+    "ideogram-ai/ideogram-v4-balanced": 2048,
+    "ideogram-ai/ideogram-v4-quality": 2048,
+    "google/gemini-3-pro-image": 2048,
+    "openai/gpt-image-1-mini": 1021,
+    "wan-video/wan-2.7-image-pro": 2048,
 };
 
 export function getDefaultSideLength(model: ImageModelName): number {

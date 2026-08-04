@@ -46,7 +46,7 @@ describe("OpenAI SDK — /v1/images/generations", () => {
         { timeout: 60_000 },
         async () => {
             const response = await client.images.generate({
-                model: "flux",
+                model: "black-forest-labs/FLUX.1-schnell",
                 prompt: "a red circle on white background",
                 size: "256x256",
                 response_format: "b64_json",
@@ -63,7 +63,7 @@ describe("OpenAI SDK — /v1/images/generations", () => {
         { timeout: 60_000 },
         async () => {
             const response = await client.images.generate({
-                model: "flux",
+                model: "black-forest-labs/FLUX.1-schnell",
                 prompt: "a blue square",
                 size: "256x256",
                 response_format: "url",
@@ -82,7 +82,7 @@ describe("OpenAI SDK — /v1/images/generations", () => {
         { timeout: 60_000 },
         async () => {
             const response = await client.images.generate({
-                model: "flux",
+                model: "black-forest-labs/FLUX.1-schnell",
                 prompt: "a green triangle",
                 size: "256x256",
             });
@@ -105,7 +105,7 @@ describe("OpenAI SDK — /v1/images/edits", () => {
                     "Authorization": `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: "flux",
+                    model: "black-forest-labs/FLUX.1-schnell",
                     prompt: "make it blue",
                     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png",
                     size: "256x256",
@@ -145,7 +145,7 @@ describe("OpenAI SDK — /v1/images/edits", () => {
             );
 
             const response = await client.images.edit({
-                model: "flux",
+                model: "black-forest-labs/FLUX.1-schnell",
                 image: imageFile,
                 prompt: "make it blue",
             });
@@ -175,14 +175,18 @@ describe("OpenAI SDK — /v1/models", () => {
             expect(body.data.length).toBeGreaterThan(0);
 
             // Should include a known image model
-            const fluxModel = body.data.find((m) => m.id === "flux");
+            const fluxModel = body.data.find(
+                (m) => m.id === "black-forest-labs/FLUX.1-schnell",
+            );
             expect(fluxModel).toBeDefined();
             expect(fluxModel?.supported_endpoints).toContain(
                 "/v1/images/generations",
             );
 
             // Should include a known text model
-            const textModel = body.data.find((m) => m.id === "openai");
+            const textModel = body.data.find(
+                (m) => m.id === "openai/gpt-5.4-nano",
+            );
             expect(textModel).toBeDefined();
             expect(textModel?.supported_endpoints).toContain(
                 "/v1/chat/completions",

@@ -46,7 +46,7 @@ describe("callNovaCanvasAPI", () => {
 
         await expect(
             callNovaCanvasAPI("too long", {
-                model: "nova-canvas",
+                model: "amazon.nova-canvas-v1:0",
                 width: 1024,
                 height: 1024,
                 seed: 42,

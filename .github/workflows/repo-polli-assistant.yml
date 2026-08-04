@@ -181,12 +181,12 @@ jobs:
               name: "pollinations",
               api_base_url: "http://127.0.0.1:9912/v1/chat/completions",
               api_key: $key,
-              models: ["gpt-5.6-sol", "minimax", "perplexity"]
+              models: ["openai/gpt-5.6-sol", "minimax/minimax-m3", "perplexity/sonar-pro"]
             }],
             Router: {
-              default: "pollinations,gpt-5.6-sol",
-              background: "pollinations,minimax",
-              webSearch: "pollinations,perplexity"
+              default: "pollinations,openai/gpt-5.6-sol",
+              background: "pollinations,minimax/minimax-m3",
+              webSearch: "pollinations,perplexity/sonar-pro"
             }
           }' > $HOME/.claude-code-router/config.json
 

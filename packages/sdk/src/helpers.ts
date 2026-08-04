@@ -227,7 +227,7 @@ export async function imageGenerate(
  *
  * @example
  * ```ts
- * const url = await videoUrl('A bird flying', { model: 'veo', duration: 4 });
+ * const url = await videoUrl('A bird flying', { model: 'google/veo-3.1-fast', duration: 4 });
  * ```
  */
 export async function videoUrl(
@@ -406,7 +406,7 @@ export async function* chatStream(
  *
  * @example
  * ```ts
- * const convo = conversation({ model: 'openai' });
+ * const convo = conversation({ model: 'openai/gpt-5.4-nano' });
  * convo.system('You are a helpful assistant');
  * const response = await convo.say('Hello!');
  * ```
@@ -429,7 +429,7 @@ export function conversation(options?: ChatOptions): Conversation {
  * await audio.saveToFile('speech.mp3');
  *
  * // Music generation
- * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
  * // Multiple variations
@@ -544,7 +544,7 @@ export async function upload(
  * ```ts
  * const url = authorizeUrl({
  *   redirectUrl: 'https://myapp.com/callback',
- *   models: ['flux', 'openai'],
+ *   models: ['black-forest-labs/FLUX.1-schnell', 'openai/gpt-5.4-nano'],
  *   budget: 10,
  * });
  * ```

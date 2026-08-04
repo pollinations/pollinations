@@ -22,7 +22,7 @@ const EXPECTED_HOSTS = new Set([
 ]);
 
 const params: ImageParams = {
-    model: "gpt-image-2",
+    model: "openai/gpt-image-2",
     width: 1024,
     height: 1024,
     dimensionsExplicit: true,
@@ -66,7 +66,7 @@ describe("gpt-image-2 Azure routing", () => {
         });
 
         for (let index = 0; index < EXPECTED_HOSTS.size; index++) {
-            await callGPTImage("test", params, userInfo, "gpt-image-2");
+            await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
         }
 
         expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
@@ -84,7 +84,7 @@ describe("gpt-image-2 Azure routing", () => {
                 : successResponse();
         });
 
-        await callGPTImage("test", params, userInfo, "gpt-image-2");
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 
         expect(urls).toHaveLength(2);
         expect(new URL(urls[0]).host).not.toBe(new URL(urls[1]).host);
@@ -96,7 +96,7 @@ describe("gpt-image-2 Azure routing", () => {
             .mockResolvedValue(new Response("bad request", { status: 400 }));
 
         await expect(
-            callGPTImage("test", params, userInfo, "gpt-image-2"),
+            callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
         ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
         expect(fetchMock).toHaveBeenCalledOnce();
     });
@@ -109,7 +109,7 @@ describe("gpt-image-2 Azure routing", () => {
         });
 
         await expect(
-            callGPTImage("test", params, userInfo, "gpt-image-2"),
+            callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
         ).rejects.toMatchObject({ status: 429 } satisfies Partial<HttpError>);
         expect(urls).toHaveLength(EXPECTED_HOSTS.size);
         expect(new Set(urls.map((url) => new URL(url).host))).toEqual(

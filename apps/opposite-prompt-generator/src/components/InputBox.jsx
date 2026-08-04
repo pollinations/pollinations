@@ -36,7 +36,7 @@ export default function InputBox({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     messages: [
                         {
                             role: "system",

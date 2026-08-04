@@ -13,7 +13,7 @@ const GROK_POLL_URL = "https://openrouter.ai/api/v1/videos/job-grok-test";
 const GROK_VIDEO_URL = "https://video.example.com/grok-output.mp4";
 
 const baseParams: ImageParams = {
-    model: "happyhorse-1.1",
+    model: "alibaba/happyhorse-1.1",
     width: 1280,
     height: 720,
     dimensionsExplicit: true,
@@ -109,7 +109,7 @@ describe("openRouterVideoModel", () => {
         expect(pollAttempts).toBe(3);
         expect(downloadAuthorization).toBeNull();
         expect(result.trackingData).toEqual({
-            actualModel: "happyhorse-1.1",
+            actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -225,7 +225,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 dimensionsExplicit: false,
                 width: 1024,
                 height: 1024,
@@ -247,7 +247,7 @@ describe("OpenRouter Grok Video Pro", () => {
             mimeType: "video/mp4",
             durationSeconds: 5,
             trackingData: {
-                actualModel: "grok-video-pro",
+                actualModel: "x-ai/grok-imagine-video",
                 usage: { completionVideoSeconds: 5 },
             },
         });
@@ -266,7 +266,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-imagine-video-1.5",
+                model: "x-ai/grok-imagine-video-1.5",
                 resolution,
             },
         );
@@ -275,7 +275,9 @@ describe("OpenRouter Grok Video Pro", () => {
             model: "x-ai/grok-imagine-video-1.5",
             resolution: expectedResolution,
         });
-        expect(result.trackingData?.actualModel).toBe("grok-imagine-video-1.5");
+        expect(result.trackingData?.actualModel).toBe(
+            "x-ai/grok-imagine-video-1.5",
+        );
     });
 
     it("forwards one start frame and derives ratio from explicit dimensions", async () => {
@@ -287,7 +289,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "animate this opening frame",
             {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 width: 1080,
                 height: 720,
                 dimensionsExplicit: true,
@@ -326,7 +328,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 duration: 99,
             },
         );
@@ -367,7 +369,7 @@ describe("OpenRouter Grok Video Pro", () => {
 
         const resultPromise = callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
-            { ...baseParams, model: "grok-video-pro" },
+            { ...baseParams, model: "x-ai/grok-imagine-video" },
         );
         const rejection = expect(resultPromise).rejects.toMatchObject({
             status: 504,
@@ -387,7 +389,7 @@ describe("OpenRouter Grok Video Pro", () => {
         await expect(
             callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 duration,
             }),
         ).rejects.toMatchObject({ status: 400 });

@@ -204,7 +204,7 @@ describe("Pollinations seed handling", () => {
 
         await client.image("a cat", { seed: -1 });
         await client.video("a long scene", {
-            model: "nova-reel",
+            model: "amazon.nova-reel-v1:1",
             duration: 120,
             seed: -1,
         });

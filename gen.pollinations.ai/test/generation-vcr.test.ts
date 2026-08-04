@@ -187,7 +187,7 @@ async function fakePortkeyResponse(request: Request) {
         model?: string;
         stream?: boolean;
     };
-    const model = body.model || "openai-fast";
+    const model = body.model || "openai/gpt-5-nano";
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
 
@@ -319,7 +319,7 @@ async function fakePortkeyResponse(request: Request) {
     ];
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
-        model === "openai-audio" || prompt.includes("vcr audio text");
+        model === "openai/gpt-audio-mini" || prompt.includes("vcr audio text");
 
     if (isAudio) {
         return Response.json(
@@ -436,7 +436,7 @@ test("chat completions use local text generation with VCR-backed Portkey", async
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr chat json" }],
         }),
     });
@@ -457,7 +457,7 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         responseStatus: 200,
-        modelRequested: "openai-fast",
+        modelRequested: "openai/gpt-5-nano",
         tokenCountPromptText: 7,
         tokenCountCompletionText: 3,
         isBilledUsage: true,
@@ -728,7 +728,7 @@ test("non-stream chat completions keep moderation telemetry in generation events
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr moderated text" }],
         }),
     });
@@ -742,7 +742,7 @@ test("non-stream chat completions keep moderation telemetry in generation events
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
-        modelRequested: "openai-fast",
+        modelRequested: "openai/gpt-5-nano",
         moderationPromptHateSeverity: "safe",
         moderationPromptSexualSeverity: "safe",
         moderationCompletionViolenceSeverity: "medium",
@@ -763,7 +763,7 @@ test("streaming chat completions replay through VCR", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             stream: true,
             messages: [{ role: "user", content: "vcr chat stream" }],
         }),
@@ -824,7 +824,7 @@ test("POST /text returns assistant content directly", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr post text" }],
         }),
     });
@@ -857,7 +857,7 @@ test("POST /text passes through empty assistant content", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr empty text" }],
         }),
     });
@@ -889,7 +889,7 @@ test("POST /text streams direct content responses", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             stream: true,
             messages: [{ role: "user", content: "vcr post stream" }],
         }),
@@ -1076,7 +1076,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "gpt-image-2",
+            model: "openai/gpt-image-2",
             prompt: "transparent",
             transparent: true,
         }),
@@ -1096,7 +1096,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
-        modelRequested: "gpt-image-2",
+        modelRequested: "openai/gpt-image-2",
         responseStatus: 400,
     });
 });

@@ -26,7 +26,7 @@ function startAuthorize() {
         window.location.origin + window.location.pathname,
     );
     const models = encodeURIComponent(
-        "kimi,kimi-k2.6,deepseek,deepseek-pro,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large",
+        "moonshotai/kimi-k2.6,deepseek/deepseek-v4-flash-0731,deepseek/deepseek-v4-pro,z-ai/glm-5.2,gemini-search,perplexity-fast,anthropic/claude-haiku-4.5,anthropic/claude-opus-5,google/gemini-3.1-pro-preview",
     );
     const params = `redirect_url=${redirectUrl}&models=${models}`;
     // Only attach app_key when a real publishable key is configured.

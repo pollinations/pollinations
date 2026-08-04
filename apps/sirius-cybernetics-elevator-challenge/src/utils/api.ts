@@ -27,7 +27,11 @@ function createFetchRequest(
             // thousands of tokens, pushing replies past 10s on the long Guide
             // prompt, so it gets "none". The other (non-reasoning) models stay
             // at "low" — it's a harmless no-op for them.
-            reasoning_effort: model === "deepseek" ? "none" : "low",
+            reasoning_effort:
+                model === "deepseek" ||
+                model === "deepseek/deepseek-v4-flash-0731"
+                    ? "none"
+                    : "low",
             response_format: jsonMode ? { type: "json_object" } : undefined,
             seed: Math.floor(Math.random() * 1000000),
         }),

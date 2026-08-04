@@ -18,7 +18,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "openai",
+        model = "openai/gpt-5.4-nano",
         seed,
         system,
         temperature,
@@ -80,7 +80,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "openai",
+        model = "openai/gpt-5.4-nano",
         temperature,
         max_tokens,
         top_p,
@@ -259,7 +259,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
+                m.name === "openai/gpt-audio-mini",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
@@ -306,7 +306,7 @@ async function listTextModels(_params) {
                 advanced:
                     "Use chatCompletion for multi-turn conversations, tool calling, audio output",
                 reasoning:
-                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
+                    "True reasoning models: moonshotai/kimi-k2.6, perplexity/sonar-reasoning-pro, openai/gpt-5.5, google/gemini-3.1-pro-preview. Use reasoning_effort",
                 audio: "Use openai-audio with modalities=['text','audio'] for voice output",
             },
         };
@@ -329,7 +329,7 @@ async function webSearch(params) {
 
     const searchModels = [
         "perplexity-fast",
-        "perplexity-reasoning",
+        "perplexity/sonar-reasoning-pro",
         "gemini-search",
     ];
     if (!searchModels.includes(model)) {
@@ -433,13 +433,13 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'openai'). Popular options:\n" +
-                "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
-                "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
-                "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
-                "- deepseek: Advanced reasoning model\n" +
+            "Text model to use (default: 'openai/gpt-5.4-nano'). See listTextModels for current IDs.\n" +
+                "- openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-5.5: GPT models\n" +
+                "- anthropic/claude-sonnet-4.6, anthropic/claude-haiku-4.5, anthropic/claude-opus-5: Claude models\n" +
+                "- google/gemini-3.6-flash, google/gemini-2.5-flash-lite, google/gemini-3.1-pro-preview: Gemini models\n" +
+                "- deepseek/deepseek-v4-flash-0731: Advanced reasoning model\n" +
                 "- grok: xAI's Grok model\n" +
-                "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
+                "- mistralai/mistral-small-2603, qwen/qwen3-coder-30b-a3b-instruct, perplexity-fast, perplexity/sonar-reasoning-pro\n" +
                 "Use listTextModels for complete list.",
         ),
     seed: z
@@ -596,7 +596,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). See listTextModels for all options",
+            "Text model (default: 'openai/gpt-5.4-nano'). See listTextModels for all options",
         ),
     temperature: z
         .number()
@@ -760,7 +760,7 @@ export const textTools = [
             model: z
                 .enum([
                     "perplexity-fast",
-                    "perplexity-reasoning",
+                    "perplexity/sonar-reasoning-pro",
                     "gemini-search",
                 ])
                 .optional()

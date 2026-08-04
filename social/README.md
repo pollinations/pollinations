@@ -12,7 +12,7 @@ See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data 
 | **Weekly** | Buffer (scheduled) | Buffer (scheduled) | Buffer (scheduled) | VPS deploy | Webhook |
 | **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (weekly PR) | Yes (daily PR) | No (automatic) |
 | **Images** | 1 per post | 1 per post | up to 3 carousel | 1 per post | 1 per PR |
-| **Model** | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` |
+| **Model** | `google/gemini-3.1-flash-lite-image` | `google/gemini-3.1-flash-lite-image` | `google/gemini-3.1-flash-lite-image` | `google/gemini-3.1-flash-lite-image` | `google/gemini-3.1-flash-lite-image` |
 
 ## Delivery Schedule
 

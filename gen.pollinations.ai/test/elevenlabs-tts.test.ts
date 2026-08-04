@@ -12,9 +12,9 @@ describe("ElevenLabs TTS model routing", () => {
     });
 
     it.each([
-        ["elevenlabs", "eleven_v3"],
-        ["elevenflash", "eleven_flash_v2_5"],
-        ["eleven-multilingual-v2", "eleven_multilingual_v2"],
+        ["elevenlabs/eleven-v3", "eleven_v3"],
+        ["elevenlabs/eleven-flash-v2.5", "eleven_flash_v2_5"],
+        ["elevenlabs/eleven-multilingual-v2", "eleven_multilingual_v2"],
     ] as const)("maps %s to %s", async (modelName, expectedModelId) => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {
@@ -48,7 +48,7 @@ describe("ElevenLabs TTS model routing", () => {
         );
 
         await generateElevenLabsSpeech({
-            modelName: "elevenlabs",
+            modelName: "elevenlabs/eleven-v3",
             text: "Hello",
             voice: "custom/voice?output_format=pcm_44100",
             responseFormat: "mp3",

@@ -38,35 +38,35 @@ export async function createAndReturnVideo(
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
-        case "veo":
+        case "google/veo-3.1-fast":
             result = await callVeoAPI(prompt, safeParams);
             break;
-        case "seedance-pro":
+        case "bytedance/seedance-1-pro-fast":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
-        case "seedance-2.0":
+        case "bytedance/seedance-2.0":
             result = await callSeedanceV2API(prompt, safeParams);
             break;
-        case "wan":
+        case "alibaba/wan-2.6":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "wan-fast":
+        case "wan-video/wan-2.2-fast":
             result = await callWanFastAPI(prompt, safeParams);
             break;
-        case "wan-pro":
+        case "alibaba/wan-2.7":
             result = await callWanProAPI(prompt, safeParams);
             break;
-        case "p-video":
+        case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "nova-reel":
+        case "amazon.nova-reel-v1:1":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
-        case "grok-video-pro":
-        case "grok-imagine-video-1.5":
+        case "x-ai/grok-imagine-video-1.5":
+        case "x-ai/grok-imagine-video":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
-        case "happyhorse-1.1":
+        case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
             break;
         default:

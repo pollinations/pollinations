@@ -512,7 +512,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     ) as Record<string, unknown>;
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
-    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
+    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
@@ -524,8 +524,8 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
 });
 
 test.each([
-    "gpt-realtime-2",
-    "gpt-realtime-2.1",
+    "openai/gpt-realtime-2",
+    "openai/gpt-realtime-2.1",
 ] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
     const { key, userId } = await createTestApiKey({
         name: `${model}-cache-realtime-key`,
@@ -752,7 +752,7 @@ test("uses the cached-text rate when cache details are absent", async () => {
     expect(warn).toHaveBeenCalledOnce();
     expect(warn).toHaveBeenCalledWith(
         "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
-        { model: "gpt-realtime-2.1-mini" },
+        { model: "openai/gpt-realtime-2.1-mini" },
     );
 
     client.close();
@@ -998,9 +998,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     };
     const realtimeModels = publicBody.data.filter((model) =>
         [
-            "gpt-realtime-2",
-            "gpt-realtime-2.1",
-            "gpt-realtime-2.1-mini",
+            "openai/gpt-realtime-2",
+            "openai/gpt-realtime-2.1",
+            "openai/gpt-realtime-2.1-mini",
         ].includes(model.id),
     );
     expect(realtimeModels).toHaveLength(3);
@@ -1016,13 +1016,13 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         data: { id: string }[];
     };
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2",
+        "openai/gpt-realtime-2",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2.1",
+        "openai/gpt-realtime-2.1",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2.1-mini",
+        "openai/gpt-realtime-2.1-mini",
     );
 });
 

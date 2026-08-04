@@ -63,7 +63,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
   "api": "openai-completions",
   "models": [
     {
-      "id": "kimi",
+      "id": "moonshotai/kimi-k2.6",
       "name": "Kimi K2.5 — 256K context, vision, tools, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
@@ -81,7 +81,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "deepseek",
+      "id": "deepseek/deepseek-v4-flash-0731",
       "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
       "reasoning": true,
       "input": ["text"],
@@ -90,7 +90,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "deepseek-pro",
+      "id": "deepseek/deepseek-v4-pro",
       "name": "DeepSeek V4 Pro — Advanced reasoning & coding (paid)",
       "reasoning": true,
       "input": ["text"],
@@ -99,7 +99,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "glm",
+      "id": "z-ai/glm-5.2",
       "name": "GLM 5 — Coding, reasoning, agentic workflows",
       "reasoning": false,
       "input": ["text"],
@@ -117,7 +117,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "claude-fast",
+      "id": "anthropic/claude-haiku-4.5",
       "name": "Claude Haiku 4.5 — Fast with good reasoning",
       "reasoning": false,
       "input": ["text", "image"],
@@ -126,7 +126,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "claude-large",
+      "id": "anthropic/claude-opus-5",
       "name": "Claude Opus 4.6 — Most intelligent (paid)",
       "reasoning": false,
       "input": ["text", "image"],
@@ -135,7 +135,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "gemini-large",
+      "id": "google/gemini-3.1-pro-preview",
       "name": "Gemini 3 Pro — 1M context (paid)",
       "reasoning": true,
       "input": ["text", "image"],
@@ -155,9 +155,9 @@ jq --argjson provider "$POLLINATIONS_PROVIDER" --arg key "$API_KEY" \
 
 # --- Step 3: Set default model + fallbacks via CLI ---
 
-openclaw models set pollinations/kimi >/dev/null
-openclaw models fallbacks add pollinations/deepseek >/dev/null
-openclaw models fallbacks add pollinations/glm >/dev/null
+openclaw models set pollinations/moonshotai/kimi-k2.6 >/dev/null
+openclaw models fallbacks add pollinations/deepseek/deepseek-v4-flash-0731 >/dev/null
+openclaw models fallbacks add pollinations/z-ai/glm-5.2 >/dev/null
 
 # --- Step 4: Restart gateway if running ---
 
@@ -170,11 +170,11 @@ echo ""
 echo "Done! Pollinations.ai is ready."
 echo ""
 echo "  API Key:   $MASKED"
-echo "  Default:   pollinations/kimi (256K context, vision, reasoning)"
-echo "  Fallbacks: deepseek, glm"
+echo "  Default:   pollinations/moonshotai/kimi-k2.6 (256K context, vision, reasoning)"
+echo "  Fallbacks: deepseek/deepseek-v4-flash-0731, z-ai/glm-5.2"
 echo ""
-echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
+echo "  Switch models:  /model pollinations/deepseek/deepseek-v4-flash-0731 or /model pollinations/deepseek/deepseek-v4-pro"
 echo "  Your account:   https://enter.pollinations.ai"
 echo ""
-echo "  Free: kimi, glm, gemini-search, claude-fast"
-echo "  Paid: deepseek, deepseek-pro, claude-large, gemini-large"
+echo "  Free: moonshotai/kimi-k2.6, z-ai/glm-5.2, gemini-search, anthropic/claude-haiku-4.5"
+echo "  Paid: deepseek/deepseek-v4-flash-0731, deepseek/deepseek-v4-pro, anthropic/claude-opus-5, google/gemini-3.1-pro-preview"

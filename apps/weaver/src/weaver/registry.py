@@ -89,7 +89,7 @@ def _tier_score(mid: str, meta: dict[str, Any], tier: str) -> float:
 
 
 def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
-    mid = item.get("id", "")
+    mid = item.get("id", "").lower()
     owned = (item.get("owned_by") or "").lower()
     caps = item.get("capabilities", {}) or {}
     modalities: list[str] = []
@@ -125,13 +125,16 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
             "flux",
             "seedream",
             "ideogram",
-            "gptimage",
-            "nanobanana",
+            "gpt-image",
+            "gemini-2.5-flash-image",
+            "gemini-3.1-flash-image",
+            "gemini-3.1-flash-lite-image",
+            "gemini-3-pro-image",
             "qwen-image",
             "grok-imagine",
             "p-image",
             "nova-canvas",
-            "zimage",
+            "z-image",
             "wan-image",
             "klein",
         ]
@@ -310,31 +313,31 @@ def _is_free_model(meta: dict[str, Any]) -> bool:
 # Prompt-aware image model priority for text-heavy/infographic/diagram prompts
 # Ordered: best text rendering → good text → fast/cost-effective → general quality
 _IMAGE_TEXT_PRIORITY: list[str] = [
-    "ideogram-v4-quality",
-    "ideogram-v4-balanced",
-    "ideogram-v4-turbo",
-    "gptimage-large",
-    "gpt-image-2",
-    "gptimage",
-    "nanobanana-2-lite",
-    "nanobanana-2",
-    "nanobanana-pro",
-    "nanobanana",
-    "seedream-pro",
-    "seedream5",
-    "seedream",
-    "flux",
-    "qwen-image",
-    "grok-imagine-pro",
-    "grok-imagine",
-    "zimage",
-    "p-image",
-    "nova-canvas",
-    "klein",
-    "wan-image",
-    "wan-image-pro",
-    "p-image-edit",
-    "kontext",
+    "ideogram-ai/ideogram-v4-quality",
+    "ideogram-ai/ideogram-v4-balanced",
+    "ideogram-ai/ideogram-v4-turbo",
+    "openai/gpt-image-1.5",
+    "openai/gpt-image-2",
+    "openai/gpt-image-1-mini",
+    "google/gemini-3.1-flash-lite-image",
+    "google/gemini-3.1-flash-image",
+    "google/gemini-3-pro-image",
+    "google/gemini-2.5-flash-image",
+    "bytedance-seed/seedream-4.5",
+    "bytedance/seedream-5-lite",
+    "bytedance/seedream-4",
+    "black-forest-labs/FLUX.1-schnell",
+    "qwen/qwen-image",
+    "x-ai/grok-imagine-image-quality",
+    "x-ai/grok-imagine-image",
+    "Tongyi-MAI/Z-Image-Turbo",
+    "PrunaAI/p-image",
+    "amazon.nova-canvas-v1:0",
+    "black-forest-labs/flux.2-klein-4b",
+    "wan-video/wan-2.7-image",
+    "wan-video/wan-2.7-image-pro",
+    "PrunaAI/p-image-Edit",
+    "black-forest-labs/flux.1-kontext-pro",
 ]
 
 

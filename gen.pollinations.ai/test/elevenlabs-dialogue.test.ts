@@ -156,7 +156,7 @@ workerTest(
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "elevenlabs",
+                    model: "elevenlabs/eleven-v3",
                     input: "Explicit model route test.",
                     safe: false,
                 }),

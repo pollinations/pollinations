@@ -315,7 +315,7 @@ const response = await fetch("https://gen.pollinations.ai/v1/chat/completions", 
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    model: "openai",
+    model: "openai/gpt-5.4-nano",
     messages: [
       {
         role: "system",

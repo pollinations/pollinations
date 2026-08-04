@@ -52,7 +52,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
             date: "2026-04-14",
             api_key_id: "key_abc123",
             api_key: "debug-usage-fixture",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             requests: 3,
             cost_usd: 10,
@@ -107,7 +107,7 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
             date: "2026-04-14",
             api_key_id: "key_abc123",
             api_key: "debug-usage-fixture",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             requests: 3,
             cost_usd: 10,
@@ -128,7 +128,7 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
         "date,api_key_id,api_key,model,meter_source,requests,cost_usd",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_abc123,debug-usage-fixture,openai-fast,tier,3,10",
+        "2026-04-14,key_abc123,debug-usage-fixture,openai/gpt-5-nano,tier,3,10",
     );
 });
 
@@ -230,7 +230,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
             cursor_event_id: "event-2",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -281,7 +281,7 @@ test("GET /api/account/usage accepts account usage permission", async ({
             cursor_event_id: "event-admin",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -352,7 +352,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",

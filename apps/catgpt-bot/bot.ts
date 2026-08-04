@@ -23,7 +23,7 @@ const ORIGINAL_CATGPT =
 // must be a durable URL — media.pollinations.ai uploads expire after 30 days (broke twice: #10826 + Jul 2026)
 const SELFIE_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
-const MODEL = "nanobanana-2-lite";
+const MODEL = "google/gemini-3.1-flash-lite-image";
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
@@ -57,7 +57,7 @@ async function generateCatReply(
     const res = await axios.post(
         TEXT_API,
         {
-            model: "claude-fast",
+            model: "anthropic/claude-haiku-4.5",
             messages: [
                 { role: "system", content: CAT_SYSTEM },
                 { role: "user", content: userContent },

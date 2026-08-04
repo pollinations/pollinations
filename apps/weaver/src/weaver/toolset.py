@@ -34,7 +34,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "Generate one or more images from a text prompt (text-to-image). "
                 "Use n>1 to create several variations, e.g. steps of an explanation. "
                 "For text/labels/diagrams/infographics prefer models good at typography "
-                "(ideogram, gptimage, nanobanana); omit `model` to auto-pick the best."
+                "(ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, google/gemini-2.5-flash-image); omit `model` to auto-pick the best."
             ),
             "parameters": {
                 "type": "object",
@@ -64,7 +64,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "Edit or transform an existing image (image-to-image). Provide the source "
                 "image_url and a prompt describing the change. Pass two source URLs "
                 "separated by '|' to blend/combine references. The edited image is attached "
-                "to the reply automatically. Best models: nanobanana, kontext, p-image-edit."
+                "to the reply automatically. Best models: google/gemini-2.5-flash-image, black-forest-labs/flux.1-kontext-pro, PrunaAI/p-image-Edit."
             ),
             "parameters": {
                 "type": "object",
@@ -74,7 +74,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                         "type": "string",
                         "description": "Source image URL (or two, '|'-separated).",
                     },
-                    "model": {"type": "string", "default": "nanobanana"},
+                    "model": {"type": "string", "default": "google/gemini-2.5-flash-image"},
                 },
                 "required": ["prompt", "image_url"],
             },
@@ -126,7 +126,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "properties": {
                     "text": {"type": "string", "description": "Exact words to speak."},
                     "voice": {"type": "string"},
-                    "model": {"type": "string", "default": "openai-audio"},
+                    "model": {"type": "string", "default": "openai/gpt-audio-mini"},
                 },
                 "required": ["text"],
             },
@@ -141,7 +141,10 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "type": "object",
                 "properties": {
                     "audio_url": {"type": "string"},
-                    "model": {"type": "string", "default": "gemini"},
+                    "model": {
+                        "type": "string",
+                        "default": "google/gemini-3.6-flash",
+                    },
                 },
                 "required": ["audio_url"],
             },

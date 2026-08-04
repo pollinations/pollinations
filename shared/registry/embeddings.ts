@@ -3,11 +3,12 @@ import type { ModelDefinition } from "./registry";
 
 export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;
 
-export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
+export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
+    "openai/text-embedding-3-small";
 
 export const EMBEDDING_SERVICES = {
-    "gemini-2": {
-        aliases: ["embedding"],
+    "google/gemini-embedding-2": {
+        aliases: ["embedding", "gemini-2"],
         provider: "google",
         brand: "Google",
         category: "embedding",
@@ -27,8 +28,8 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-small": {
-        aliases: ["embedding-small"],
+    "openai/text-embedding-3-small": {
+        aliases: ["embedding-small", "openai-3-small"],
         provider: "azure",
         brand: "OpenAI",
         category: "embedding",
@@ -44,8 +45,8 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-large": {
-        aliases: ["embedding-large"],
+    "openai/text-embedding-3-large": {
+        aliases: ["embedding-large", "openai-3-large"],
         provider: "azure",
         brand: "OpenAI",
         category: "embedding",
@@ -61,8 +62,8 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "cohere-embed-v4": {
-        aliases: ["embed-v-4-0", "cohere-embed-v-4-0"],
+    "embed-v4.0": {
+        aliases: ["embed-v-4-0", "cohere-embed-v-4-0", "cohere-embed-v4"],
         provider: "azure",
         brand: "Cohere",
         category: "embedding",
@@ -80,8 +81,8 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 128000,
     },
-    "qwen3-embedding-8b": {
-        aliases: ["qwen3-embedding"],
+    "qwen/qwen3-embedding-8b": {
+        aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
         provider: "fireworks",
         brand: "Qwen",
         category: "embedding",

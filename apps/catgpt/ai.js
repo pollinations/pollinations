@@ -39,7 +39,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         app_key: APP_KEY,
         budget: "5",
-        models: "gptimage,nanobanana,claude-fast",
+        models: "openai/gpt-image-1-mini,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
         permissions: "profile,usage",
     })}`;
 }
@@ -86,7 +86,7 @@ export async function generateCatReply(question, imageUrl = null) {
             ...(key ? { Authorization: `Bearer ${key}` } : {}),
         },
         body: JSON.stringify({
-            model: "claude-fast",
+            model: "anthropic/claude-haiku-4.5",
             messages: [
                 { role: "system", content: CAT_SYSTEM },
                 { role: "user", content: userContent },
@@ -125,8 +125,8 @@ export function generateImageURL(prompt, model, imageUrl = null) {
 
 // ── Models ──────────────────────────────────────────────────────────────────
 
-const PREFERRED_MODEL = "nanobanana";
-const FALLBACK_MODEL = "gptimage";
+const PREFERRED_MODEL = "google/gemini-2.5-flash-image";
+const FALLBACK_MODEL = "openai/gpt-image-1-mini";
 
 export async function pickModel(apiKey) {
     try {

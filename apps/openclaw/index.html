@@ -146,19 +146,19 @@
                                         "agents": {
                                         "defaults": {
                                         "model": {
-                                        "primary": "pollinations/kimi",
-                                        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+                                        "primary": "pollinations/moonshotai/kimi-k2.6",
+                                        "fallbacks": ["pollinations/deepseek/deepseek-v4-flash-0731", "pollinations/z-ai/glm-5.2"]
                                         },
                                         "models": {
-                                        "pollinations/kimi": { "alias": "Kimi K2.5" },
+                                        "pollinations/moonshotai/kimi-k2.6": { "alias": "Kimi K2.5" },
                                         "pollinations/kimi-k2.6": { "alias": "Kimi K2.6" },
-                                        "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
-                                        "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro" },
-                                        "pollinations/glm": { "alias": "GLM 5.1" },
+                                        "pollinations/deepseek/deepseek-v4-flash-0731": { "alias": "DeepSeek V4 Flash" },
+                                        "pollinations/deepseek/deepseek-v4-pro": { "alias": "DeepSeek V4 Pro" },
+                                        "pollinations/z-ai/glm-5.2": { "alias": "GLM 5.1" },
                                         "pollinations/gemini-search": { "alias": "Gemini + Search" },
-                                        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
-                                        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
-                                        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
+                                        "pollinations/anthropic/claude-haiku-4.5": { "alias": "Claude Haiku 4.5" },
+                                        "pollinations/anthropic/claude-opus-5": { "alias": "Claude Opus 4.6" },
+                                        "pollinations/google/gemini-3.1-pro-preview": { "alias": "Gemini 3 Pro" }
                                         }
                                         }
                                         },
@@ -170,23 +170,23 @@
                                         "apiKey": "${POLLINATIONS_API_KEY}",
                                         "api": "openai-completions",
                                         "models": [
-                                        { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+                                        { "id": "moonshotai/kimi-k2.6", "name": "Kimi K2.5", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 256000 },
                                         { "id": "kimi-k2.6", "name": "Kimi K2.6 (Paid)", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 262000 },
-                                        { "id": "deepseek", "name": "DeepSeek V4 Flash",
+                                        { "id": "deepseek/deepseek-v4-flash-0731", "name": "DeepSeek V4 Flash",
                                         "input": ["text"], "contextWindow": 1000000 },
-                                        { "id": "deepseek-pro", "name": "DeepSeek V4 Pro",
+                                        { "id": "deepseek/deepseek-v4-pro", "name": "DeepSeek V4 Pro",
                                         "input": ["text"], "contextWindow": 65536 },
-                                        { "id": "glm", "name": "GLM 5.1",
+                                        { "id": "z-ai/glm-5.2", "name": "GLM 5.1",
                                         "input": ["text"], "contextWindow": 128000 },
                                         { "id": "gemini-search", "name": "Gemini + Search",
                                         "input": ["text","image"], "contextWindow": 128000 },
-                                        { "id": "claude-fast", "name": "Claude Haiku 4.5",
+                                        { "id": "anthropic/claude-haiku-4.5", "name": "Claude Haiku 4.5",
                                         "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+                                        { "id": "anthropic/claude-opus-5", "name": "Claude Opus 4.6 (Paid)",
                                         "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+                                        { "id": "google/gemini-3.1-pro-preview", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 1000000 }
                                         ]
                                         }
@@ -222,7 +222,7 @@
         | bash -s -- <span class="key-in-json">YOUR_API_KEY</span></div>
                             </div>
                             <p style="margin-top:8px;">The script will restart the gateway automatically. After that,
-                                switch to the new provider with: <code>/model pollinations/kimi</code></p>
+                                switch to the new provider with: <code>/model pollinations/moonshotai/kimi-k2.6</code></p>
                         </div>
                     </div>
                 </div>
@@ -234,7 +234,7 @@
                 <div class="model-table">
                     <div class="model-row recommended">
                         <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
-                        <div class="model-id">pollinations/kimi</div>
+                        <div class="model-id">pollinations/moonshotai/kimi-k2.6</div>
                         <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K
                                 context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
                     </div>
@@ -252,36 +252,36 @@
                     </div>
                     <div class="model-row">
                         <div class="model-label">DeepSeek V3.2 <span class="model-tag">reasoning</span> </div>
-                        <div class="model-id">pollinations/deepseek</div>
+                        <div class="model-id">pollinations/deepseek/deepseek-v4-flash-0731</div>
                         <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to
                             Kimi for hard problems.</div>
                     </div>
                     <div class="model-row">
                         <div class="model-label">GLM 5</div>
-                        <div class="model-id">pollinations/glm</div>
+                        <div class="model-id">pollinations/z-ai/glm-5.2</div>
                         <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with
                             Kimi.</div>
                     </div>
                     <div class="model-row">
                         <div class="model-label">Claude Haiku 4.5</div>
-                        <div class="model-id">pollinations/claude-fast</div>
+                        <div class="model-id">pollinations/anthropic/claude-haiku-4.5</div>
                         <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality,
                             lower cost.</div>
                     </div>
                     <div class="model-row dimmed">
                         <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
-                        <div class="model-id">pollinations/claude-large</div>
+                        <div class="model-id">pollinations/anthropic/claude-opus-5</div>
                         <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
                     </div>
                     <div class="model-row dimmed">
                         <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
-                        <div class="model-id">pollinations/gemini-large</div>
+                        <div class="model-id">pollinations/google/gemini-3.1-pro-preview</div>
                         <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
                     </div>
                 </div>
 
                 <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code
-                        style="color:var(--text)">/model pollinations/kimi</code></p>
+                        style="color:var(--text)">/model pollinations/moonshotai/kimi-k2.6</code></p>
             </section>
 
             <section class="section">

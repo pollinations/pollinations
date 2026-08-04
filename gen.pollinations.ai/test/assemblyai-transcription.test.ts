@@ -44,7 +44,7 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3.5-pro",
+            model: "assemblyai/universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "verbose_json",
             language: "en",
@@ -53,7 +53,9 @@ describe("transcribeWithAssemblyAi", () => {
             log,
         });
 
-        expect(response.headers.get("x-model-used")).toBe("universal-3.5-pro");
+        expect(response.headers.get("x-model-used")).toBe(
+            "assemblyai/universal-3.5-pro",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("12");
         await expect(response.json()).resolves.toMatchObject({
             text: "hello world",
@@ -100,13 +102,15 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3.5-pro",
+            model: "assemblyai/universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "vtt",
             log,
         });
 
-        expect(response.headers.get("x-model-used")).toBe("universal-3.5-pro");
+        expect(response.headers.get("x-model-used")).toBe(
+            "assemblyai/universal-3.5-pro",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("3");
         await expect(response.text()).resolves.toContain("WEBVTT");
         expect(fetchMock.mock.calls[3][0]).toBe(
@@ -151,7 +155,7 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3.5-pro",
+            model: "assemblyai/universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "diarized_json",
             speakersExpected: 2,
@@ -210,14 +214,14 @@ describe("transcribeWithAssemblyAi", () => {
                     status: "completed",
                     text: "hi",
                     audio_duration: 1,
-                    speech_model_used: "universal-2",
+                    speech_model_used: "assemblyai/universal-2",
                 }),
             );
         vi.stubGlobal("fetch", fetchMock);
 
         await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-2",
+            model: "assemblyai/universal-2",
             apiKey: "test-key",
             log,
         });
@@ -260,7 +264,7 @@ describe("transcribeWithAssemblyAi", () => {
                     file: new File(["audio"], "audio.mp3", {
                         type: "audio/mpeg",
                     }),
-                    model: "universal-2",
+                    model: "assemblyai/universal-2",
                     apiKey: "test-key",
                     log,
                 }),

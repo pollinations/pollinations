@@ -4,7 +4,7 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 describe("ImageParamsSchema", () => {
     it("rejects transparent backgrounds for gpt-image-2", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "gpt-image-2",
+            model: "openai/gpt-image-2",
             transparent: true,
         });
 
@@ -21,7 +21,7 @@ describe("ImageParamsSchema", () => {
     it("keeps transparent backgrounds available for gptimage models", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "gptimage",
+                model: "openai/gpt-image-1-mini",
                 transparent: true,
             }).success,
         ).toBe(true);
@@ -29,12 +29,14 @@ describe("ImageParamsSchema", () => {
 
     it("accepts resolutions declared by the model", () => {
         expect(
-            ImageParamsSchema.safeParse({ model: "veo", resolution: "1080p" })
-                .success,
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                resolution: "1080p",
+            }).success,
         ).toBe(true);
         expect(
             ImageParamsSchema.safeParse({
-                model: "seedance-pro",
+                model: "bytedance/seedance-1-pro-fast",
                 resolution: "480p",
             }).success,
         ).toBe(true);
@@ -42,7 +44,7 @@ describe("ImageParamsSchema", () => {
 
     it("rejects an unsupported resolution", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "veo",
+            model: "google/veo-3.1-fast",
             resolution: "480p",
         });
 
@@ -51,14 +53,14 @@ describe("ImageParamsSchema", () => {
             expect(result.error.issues[0]).toMatchObject({
                 path: ["resolution"],
                 message:
-                    'Resolution "480p" is not supported by veo. Supported: 720p, 1080p.',
+                    'Resolution "480p" is not supported by google/veo-3.1-fast. Supported: 720p, 1080p.',
             });
         }
     });
 
     it("rejects resolution on models without resolution tiers", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "flux",
+            model: "black-forest-labs/FLUX.1-schnell",
             resolution: "720p",
         });
 
@@ -66,7 +68,8 @@ describe("ImageParamsSchema", () => {
         if (!result.success) {
             expect(result.error.issues[0]).toMatchObject({
                 path: ["resolution"],
-                message: "flux does not accept a resolution parameter.",
+                message:
+                    "black-forest-labs/FLUX.1-schnell does not accept a resolution parameter.",
             });
         }
     });

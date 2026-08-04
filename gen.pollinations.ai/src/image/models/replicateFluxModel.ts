@@ -95,7 +95,7 @@ export async function callReplicateFluxSchnellAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux",
+            actualModel: "black-forest-labs/FLUX.1-schnell",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

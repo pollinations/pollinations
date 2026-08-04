@@ -80,16 +80,16 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "glm",
-        "kimi",
-        "kimi-code",
-        "kimi-k3",
-        "deepseek",
-        "qwen-large",
-        "qwen3.7-flash",
-        "longcat",
-        "nemotron",
-        "minimax",
+        "z-ai/glm-5.2",
+        "moonshotai/kimi-k2.6",
+        "moonshotai/kimi-k2.7-code",
+        "moonshotai/kimi-k3",
+        "deepseek/deepseek-v4-flash-0731",
+        "qwen/qwen3.7-plus",
+        "qwen/qwen3.7-flash",
+        "meituan/longcat-2.0",
+        "nvidia/nemotron-3-ultra-550b-a55b",
+        "minimax/minimax-m3",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -100,10 +100,10 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "minimax-m2.7",
-        "step-3.5-flash",
-        "step-flash",
-        "qwen-vision-pro",
+        "minimax/minimax-m2.7",
+        "stepfun/step-3.5-flash",
+        "stepfun/step-3.7-flash",
+        "qwen/qwen3-vl-235b-a22b-thinking",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -114,9 +114,9 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "mistral-large",
-        "llama",
-        "qwen-coder",
+        "mistralai/mistral-large-2512",
+        "meta-llama/llama-3.3-70b-instruct",
+        "qwen/qwen3-coder-30b-a3b-instruct",
     ])("strips reasoning_effort on non-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -127,6 +127,8 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it("passes Command A+ requests through without a model-specific transform", () => {
-        expect(findModelByName("command-a-plus")?.transform).toBeUndefined();
+        expect(
+            findModelByName("command-a-plus-05-2026")?.transform,
+        ).toBeUndefined();
     });
 });

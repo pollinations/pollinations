@@ -68,7 +68,7 @@ https://enter.pollinations.ai/authorize
 
 With restrictions:
 ```text
-https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=black-forest-labs/FLUX.1-schnell,openai/gpt-5.4-nano&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
@@ -80,7 +80,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `flux,openai,gptimage` |
+| `models` | Restrict to specific models | `black-forest-labs/FLUX.1-schnell,openai/gpt-5.4-nano,openai/gpt-image-1-mini` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
@@ -119,7 +119,7 @@ Use the returned `access_token` as the API key:
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
@@ -158,7 +158,7 @@ const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 

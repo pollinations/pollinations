@@ -48,7 +48,7 @@ function createTextCacheApp() {
                     {
                         headers: {
                             "Content-Type": "application/json; charset=utf-8",
-                            "x-model-used": "openai-fast",
+                            "x-model-used": "openai/gpt-5-nano",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
@@ -140,7 +140,7 @@ describe("text cache", () => {
             );
         const env = createTextCacheEnv();
         const cachedBody = {
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "cached public hit" }],
         };
 
@@ -174,7 +174,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "uncached miss" }],
             }),
             env,
@@ -189,7 +189,7 @@ describe("text cache", () => {
         const { app } = cache;
         const env = createTextCacheEnv();
         const body = JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "cache me" }],
         });
 
@@ -225,7 +225,7 @@ describe("text cache", () => {
         expect(second.headers.get("Content-Type")).toBe(
             "application/json; charset=utf-8",
         );
-        expect(second.headers.get("x-model-used")).toBe("openai-fast");
+        expect(second.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
@@ -241,7 +241,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "message a" }],
             }),
             env,
@@ -253,7 +253,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "message b" }],
             }),
             env,
@@ -349,7 +349,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [message],
                 stream: false,
             }),
@@ -361,7 +361,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [message],
                 stream: false,
             }),
@@ -373,7 +373,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [message],
                 stream: true,
             }),
@@ -385,7 +385,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [message],
                 stream: true,
             }),
@@ -410,7 +410,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "random post" }],
                 seed: -1,
             }),
@@ -422,7 +422,7 @@ describe("text cache", () => {
             app,
             "/v1/chat/completions",
             chatInit({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "random post" }],
                 seed: -1,
             }),

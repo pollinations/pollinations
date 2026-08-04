@@ -28,12 +28,12 @@ function bill(
 
 describe("long-context cost variants", () => {
     it.each([
-        ["gpt-5.4", 272_000],
-        ["openai-large", 272_000],
+        ["openai/gpt-5.4", 272_000],
+        ["openai/gpt-5.5", 272_000],
         ["midijourney-large", 272_000],
-        ["gpt-5.6-sol", 272_000],
-        ["gpt-5.6-terra", 272_000],
-        ["gpt-5.6-luna", 272_000],
+        ["openai/gpt-5.6-sol", 272_000],
+        ["openai/gpt-5.6-terra", 272_000],
+        ["openai/gpt-5.6-luna", 272_000],
     ] satisfies [
         ModelName,
         number,
@@ -51,17 +51,17 @@ describe("long-context cost variants", () => {
 
     it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -69,17 +69,17 @@ describe("long-context cost variants", () => {
 
     it("Qwen uses OpenRouter's inclusive 256K boundary", () => {
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 255_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_001,
             }).costVariant,
         ).toBe("long_context");
@@ -87,17 +87,17 @@ describe("long-context cost variants", () => {
 
     it("Grok uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("grok-4.5", {
+            bill("x-ai/grok-4.5", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("grok-4.5", {
+            bill("x-ai/grok-4.5", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("grok-4.5", {
+            bill("x-ai/grok-4.5", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -111,14 +111,14 @@ describe("long-context cost variants", () => {
         [256_000, "context_256k"],
         [256_001, "context_256k"],
     ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
-        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
-            expectedVariant,
-        );
+        expect(
+            bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
+        ).toBe(expectedVariant);
     });
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
-            bill("qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash", {
                 promptTextTokens: 20_000,
                 promptCachedTokens: 5_000,
                 promptCacheWriteTokens: 2_000,
@@ -127,7 +127,7 @@ describe("long-context cost variants", () => {
             }).costVariant,
         ).toBe("context_32k");
         expect(
-            bill("qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash", {
                 promptTextTokens: 200_000,
                 promptCachedTokens: 20_000,
                 promptCacheWriteTokens: 10_000,
@@ -178,7 +178,7 @@ describe("long-context cost variants", () => {
         ] as const;
 
         for (const [promptTextTokens, variant, rates] of expectedRates) {
-            const billing = bill("qwen3.7-flash", { promptTextTokens });
+            const billing = bill("qwen/qwen3.7-flash", { promptTextTokens });
             expect(billing.costVariant).toBe(variant);
             for (const [usageType, perMillionTokens] of Object.entries(rates)) {
                 expect(
@@ -191,7 +191,7 @@ describe("long-context cost variants", () => {
     });
 
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
-        const billing = bill("openai-large", {
+        const billing = bill("openai/gpt-5.5", {
             promptTextTokens: 272_001,
             promptCachedTokens: 10_000,
             completionTextTokens: 1_000,
@@ -210,9 +210,9 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45],
-        ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
-        ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
+        ["openai/gpt-5.6-sol", 10, 1, 12.5, 45],
+        ["openai/gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
+        ["openai/gpt-5.6-luna", 2, 0.2, 2.5, 9],
     ] satisfies [
         ModelName,
         number,
@@ -267,7 +267,7 @@ describe("long-context cost variants", () => {
             promptVideoTokens: 10_000,
             completionTextTokens: 1_000,
         };
-        const billing = bill("gemini-large", usage);
+        const billing = bill("google/gemini-3.1-pro-preview", usage);
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
@@ -288,9 +288,11 @@ describe("long-context cost variants", () => {
             },
         };
         const base = calculateUsageBilling({
-            model: "gemini-large",
+            model: "google/gemini-3.1-pro-preview",
             usage: { promptCacheWriteTokens: 100_000 },
-            servedBy: getRegistryModelDefinition("gemini-large"),
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
             output: baseOutput,
         });
         expect(base.costVariant).toBeUndefined();
@@ -299,9 +301,11 @@ describe("long-context cost variants", () => {
         expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
 
         const long = calculateUsageBilling({
-            model: "gemini-large",
+            model: "google/gemini-3.1-pro-preview",
             usage: { promptCacheWriteTokens: 1_000_000 },
-            servedBy: getRegistryModelDefinition("gemini-large"),
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
             output: {
                 usage: {
                     prompt_tokens_details: {
@@ -318,7 +322,7 @@ describe("long-context cost variants", () => {
 
     it("Qwen and Grok apply their advertised long-context sheets", () => {
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_000,
             }).priceDefinition,
         ).toMatchObject({
@@ -328,7 +332,7 @@ describe("long-context cost variants", () => {
             completionTextTokens: 3.84 / 1e6,
         });
         expect(
-            bill("grok-4.5", {
+            bill("x-ai/grok-4.5", {
                 promptTextTokens: 200_000,
             }).priceDefinition,
         ).toMatchObject({
@@ -339,7 +343,7 @@ describe("long-context cost variants", () => {
     });
 
     it("bills reasoning tokens at the selected completion rate", () => {
-        const billing = bill("gpt-5.4", {
+        const billing = bill("openai/gpt-5.4", {
             promptTextTokens: 300_000,
             completionReasoningTokens: 2_000,
         });
@@ -353,11 +357,11 @@ describe("long-context cost variants", () => {
 
 describe("request-mode cost variants", () => {
     it("qwen-image bills text-to-image and edit at their separate rates", () => {
-        const textToImage = bill("qwen-image", {
+        const textToImage = bill("qwen/qwen-image", {
             completionImageTokens: 1,
         });
         const edit = bill(
-            "qwen-image",
+            "qwen/qwen-image",
             { completionImageTokens: 1 },
             { hasImage: true },
         );
@@ -374,12 +378,12 @@ describe("request-mode cost variants", () => {
         const usage = { completionImageTokens: 1 };
 
         expect(
-            calculateCost("qwen-image", usage, undefined, {
+            calculateCost("qwen/qwen-image", usage, undefined, {
                 hasImage: true,
             }).totalCost,
         ).toBeCloseTo(0.03, 12);
         expect(
-            calculatePrice("qwen-image", usage, undefined, {
+            calculatePrice("qwen/qwen-image", usage, undefined, {
                 hasImage: true,
             }).totalPrice,
         ).toBeCloseTo(0.03, 12);
@@ -389,11 +393,12 @@ describe("request-mode cost variants", () => {
 describe("resolution cost variants", () => {
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
-            bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,
+            bill("prunaai/p-video", { completionVideoSeconds: 10 }).cost
+                .totalCost,
         ).toBeCloseTo(0.2, 12);
 
         const fullHd = bill(
-            "p-video",
+            "prunaai/p-video",
             { completionVideoSeconds: 10 },
             { resolution: "1080p" },
         );
@@ -403,7 +408,7 @@ describe("resolution cost variants", () => {
 
     it("veo reprices 1080p video while inheriting its audio rate", () => {
         const billing = bill(
-            "veo",
+            "google/veo-3.1-fast",
             { completionVideoSeconds: 8, completionAudioSeconds: 8 },
             { resolution: "1080p" },
         );
@@ -415,12 +420,12 @@ describe("resolution cost variants", () => {
 
     it("wan-pro distinguishes 1080p text-to-video and image-to-video", () => {
         const text = bill(
-            "wan-pro",
+            "alibaba/wan-2.7",
             { completionVideoSeconds: 5 },
             { resolution: "1080p" },
         );
         const image = bill(
-            "wan-pro",
+            "alibaba/wan-2.7",
             { completionVideoSeconds: 5 },
             { resolution: "1080p", hasImage: true },
         );
@@ -440,7 +445,7 @@ describe("resolution cost variants", () => {
 
         for (const [resolution, rate] of tiers) {
             const billing = bill(
-                "seedance-pro",
+                "bytedance/seedance-1-pro-fast",
                 { completionVideoSeconds: 6 },
                 resolution ? { resolution } : undefined,
             );
@@ -449,8 +454,8 @@ describe("resolution cost variants", () => {
     });
 
     it("publishes supported resolutions with effective variant pricing", () => {
-        const definition = getRegistryModelDefinition("p-video");
-        const info = modelInfoFromDefinition("p-video", definition);
+        const definition = getRegistryModelDefinition("prunaai/p-video");
+        const info = modelInfoFromDefinition("prunaai/p-video", definition);
 
         expect(info.resolutions).toEqual(["720p", "1080p"]);
         expect(

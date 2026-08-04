@@ -5,20 +5,28 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 describe("OpenRouter Gemini routing", () => {
     const routes = [
         [
-            "gemini-3-flash",
+            "google/gemini-3-flash-preview",
             "google/gemini-3-flash-preview",
             "google-vertex/global",
         ],
-        ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         [
-            "gemini-large",
-            "google/gemini-3.1-pro-preview",
+            "google/gemini-3.6-flash",
+            "google/gemini-3.6-flash",
             "google-vertex/global",
         ],
-        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
         [
-            "gemini-flash-lite-3.5",
             "google/gemini-3.5-flash-lite",
+            "google/gemini-3.5-flash-lite",
+            "google-vertex/global",
+        ],
+        [
+            "google/gemini-2.5-flash-lite",
+            "google/gemini-2.5-flash-lite",
+            "google-vertex/eu",
+        ],
+        [
+            "google/gemini-3.1-pro-preview",
+            "google/gemini-3.1-pro-preview",
             "google-vertex/global",
         ],
     ] as const;
@@ -40,11 +48,11 @@ describe("OpenRouter Gemini routing", () => {
     });
 
     it.each([
-        "gemini-3-flash",
-        "gemini",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
+        "google/gemini-3-flash-preview",
+        "google/gemini-3.6-flash",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-3.1-pro-preview",
     ])("does not inject code execution for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
@@ -166,7 +174,9 @@ describe("Vertex Gemini Search routing", () => {
     });
 
     it("drops logit_bias from explicit search on the 2.5 general route", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
+        const transform = findModelByName(
+            "google/gemini-2.5-flash-lite",
+        )?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
         const { options } = await transform([], {
@@ -178,7 +188,9 @@ describe("Vertex Gemini Search routing", () => {
     });
 
     it("preserves logit_bias without native search on the 2.5 route", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
+        const transform = findModelByName(
+            "google/gemini-2.5-flash-lite",
+        )?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
         const { options } = await transform([], {

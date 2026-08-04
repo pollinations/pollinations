@@ -114,7 +114,7 @@ async function updateKeyMetadata(
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
  * Permissions format: { models?: string[], account?: string[] }
- * - models: ["flux", "openai"] = restrict to specific models
+ * - models: ["black-forest-labs/FLUX.1-schnell", "openai/gpt-5.4-nano"] = restrict to specific models
  * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({

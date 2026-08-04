@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     default_tier: str = Field("balanced", validation_alias="POLLI_TIER")
     max_concurrency: int = Field(4, validation_alias="POLLI_MAX_CONCURRENCY")
     temp_dir: str = Field("tmp", validation_alias="POLLI_TEMP_DIR")
-    brain_model: str = Field("glm", validation_alias="POLLI_BRAIN_MODEL")
+    brain_model: str = Field("z-ai/glm-5.2", validation_alias="POLLI_BRAIN_MODEL")
     # Safety backstop only — loop detection injects corrective guidance long
     # before this; the cap just prevents a truly runaway loop from burning quota.
     max_iters: int = Field(100, validation_alias="POLLI_MAX_ITERS")

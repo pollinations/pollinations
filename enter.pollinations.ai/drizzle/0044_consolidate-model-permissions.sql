@@ -20,12 +20,12 @@ WITH alias_map(alias, canonical) AS (
         ('grok-4-20-reasoning', 'grok'),
         ('grok-4-20', 'grok'),
         ('grok-4-1-fast-reasoning', 'grok'),
-        ('gemini-search-fast', 'gemini-flash-lite-3.5'),
-        ('gemini-3.1-flash-lite-search', 'gemini-flash-lite-3.5'),
-        ('gemini-3.5-flash-lite-search', 'gemini-flash-lite-3.5'),
-        ('gemini-search-large', 'gemini'),
-        ('gemini-3.6-flash-search', 'gemini'),
-        ('gemini-3.5-flash-search', 'gemini')
+        ('gemini-search-fast', 'gemini-search'),
+        ('gemini-3.1-flash-lite-search', 'gemini-search'),
+        ('gemini-3.5-flash-lite-search', 'gemini-search'),
+        ('gemini-search-large', 'gemini-search'),
+        ('gemini-3.6-flash-search', 'gemini-search'),
+        ('gemini-3.5-flash-search', 'gemini-search')
 ),
 -- Avoid expanding and grouping the permissions JSON for every API key. Only
 -- valid model allowlists containing a retired ID need consolidation.

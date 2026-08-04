@@ -89,45 +89,23 @@ describe("OpenRouter Gemini routing", () => {
             },
         ]);
     });
+});
 
-    it.each([
+describe("Vertex Gemini Search routing", () => {
+    const routes = [
+        "gemini-search",
+        "gemini-2.5-flash-search",
+        "gemini-2.5-flash-lite-search",
         "gemini-search-fast",
         "gemini-3.1-flash-lite-search",
         "gemini-3.5-flash-lite-search",
         "gemini-search-large",
         "gemini-3.6-flash-search",
         "gemini-3.5-flash-search",
-    ])("uses canonical defaults for legacy search alias %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
+    ] as const;
 
-        const { options } = await transform([], { model });
-
-        expect(options.tools).toBeUndefined();
-    });
-
-    it("preserves explicit user tools on a legacy search alias", async () => {
-        const transform = findModelByName("gemini-search-fast")?.transform;
-        if (!transform) throw new Error("gemini-search-fast transform missing");
-        const tools = [
-            { type: "function", function: { name: "customer_tool" } },
-        ];
-
-        const { options } = await transform([], {
-            model: "gemini-search-fast",
-            tools,
-        });
-
-        expect(options.tools).toEqual(tools);
-    });
-});
-
-describe("Vertex Gemini Search routing", () => {
-    const routes = [["gemini-search", "gemini-2.5-flash-lite"]] as const;
-
-    it.each(
-        routes,
-    )("routes %s directly to Vertex %s", (model, upstreamModel) => {
+    it.each(routes)("routes %s directly to Vertex", (model) => {
+        const upstreamModel = "gemini-2.5-flash-lite";
         const { options } = resolveModelConfig([], { model });
 
         expect(options.model).toBe(upstreamModel);
@@ -140,8 +118,7 @@ describe("Vertex Gemini Search routing", () => {
         expect(options.provider).toBeUndefined();
     });
 
-    it("adds native Google Search without code execution", async () => {
-        const model = "gemini-search";
+    it.each(routes)("adds native Google Search for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 
@@ -159,7 +136,7 @@ describe("Vertex Gemini Search routing", () => {
     });
 
     it.each(
-        routes.map(([model]) => model),
+        routes,
     )("adapts the public Google Search shape for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);

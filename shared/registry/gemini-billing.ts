@@ -3,7 +3,6 @@ import type { BillingRules } from "./registry";
 const OPENROUTER_GOOGLE_SEARCH_COST_PER_REQUEST = 14 / 1000;
 const OPENROUTER_CACHE_TTL_HOURS = 5 / 60;
 const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
-const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 const VERTEX_CACHE_TTL_HOURS = 1;
 
 type GeminiBillingOutput = {
@@ -59,16 +58,6 @@ function countGeminiGroundedPrompt(output: unknown): number {
         if (chunks.some((chunk) => chunk?.web?.uri)) return 1;
     }
     return 0;
-}
-
-function countGeminiWebSearchQueries(output: unknown): number {
-    const queries = new Set<string>();
-    for (const metadata of eachGroundingMetadata(output)) {
-        for (const query of webSearchQueryStrings(metadata)) {
-            queries.add(query.trim());
-        }
-    }
-    return queries.size;
 }
 
 function positiveUsageCounter(
@@ -172,20 +161,6 @@ export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
             unit: "prompt",
             unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
             countUnits: countGeminiGroundedPrompt,
-        },
-    ],
-};
-
-export const GEMINI_3_SEARCH_BILLING: BillingRules = {
-    adjustments: [
-        {
-            id: "google.gemini_3.search_query.v1",
-            description:
-                "Google Search grounding adds $14 / 1K search queries when grounding metadata is present.",
-            kind: "search_query",
-            unit: "query",
-            unitCost: GEMINI_3_GROUNDING_COST_PER_QUERY,
-            countUnits: countGeminiWebSearchQueries,
         },
     ],
 };

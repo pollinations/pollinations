@@ -20,9 +20,13 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function baseParams(model: string): Model3dParams {
+function baseParams(
+    model: string,
+    resolution: "low" | "medium" | "high" = "low",
+): Model3dParams {
     return {
         model,
+        resolution,
         image: ["https://example.com/ref.jpg"],
         safe: false,
     };
@@ -32,9 +36,7 @@ function baseParams(model: string): Model3dParams {
 // upstream host is hit first for each model id.
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["trellis-2-low", "api.inferenceport.ai"],
-        ["trellis-2-medium", "api.inferenceport.ai"],
-        ["trellis-2-high", "api.inferenceport.ai"],
+        ["trellis-2", "api.inferenceport.ai"],
         ["hyper3d-rodin", "queue.fal.run"],
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi
@@ -59,12 +61,13 @@ describe("createAndReturnModel3d dispatch", () => {
 });
 
 workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
-    const source = getRegistryModelDefinition("trellis-2-low");
+    const source = getRegistryModelDefinition("hyper3d-rodin");
     const previousFallbacks = source.fallbacks;
     try {
-        source.fallbacks = ["trellis-2-medium"];
+        source.fallbacks = ["trellis-2"];
         resetGenerationModelRegistryCache();
-        const resolutions: unknown[] = [];
+
+        const upstreams: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
@@ -76,22 +79,22 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
                 ) {
                     return new Response("", { status: 202 });
                 }
-                const body = (await request.json()) as { resolution?: unknown };
-                resolutions.push(body.resolution);
-                if (body.resolution === "low") {
-                    return Response.json(
-                        { error: { message: "rate limited" } },
-                        { status: 429 },
-                    );
+                if (request.url.includes("queue.fal.run")) {
+                    upstreams.push("hyper3d-rodin");
+                    return new Response("rate limited", { status: 429 });
                 }
-                return Response.json({
-                    data: [{ model_glb_b64_bytes: btoa("glTF") }],
-                });
+                if (request.url.includes("api.inferenceport.ai")) {
+                    upstreams.push("trellis-2");
+                    return Response.json({
+                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                    });
+                }
+                return new Response("unexpected request", { status: 500 });
             },
         );
 
         const response = await SELF.fetch(
-            `https://gen.pollinations.ai/3d/fallback-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+            `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=hyper3d-rodin&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
             { headers: { Authorization: `Bearer ${paidApiKey}` } },
         );
 
@@ -99,14 +102,86 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );
-        expect(response.headers.get("x-model-used")).toBe("trellis-2-medium");
-        expect(resolutions).toEqual(["low", "medium"]);
+        expect(response.headers.get("x-model-used")).toBe("trellis-2");
         expect(await response.text()).toBe("glTF");
+        expect(upstreams).toEqual(["hyper3d-rodin", "trellis-2"]);
     } finally {
         source.fallbacks = previousFallbacks;
         resetGenerationModelRegistryCache();
     }
 });
+
+workerTest(
+    "legacy Trellis IDs use the canonical resolution default",
+    async ({ paidApiKey }) => {
+        getRegistryModelDefinition("trellis-2");
+        resetGenerationModelRegistryCache();
+        try {
+            const resolutions: unknown[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url.includes("public_model_stats.json")) {
+                        return Response.json({ data: [] });
+                    }
+                    if (
+                        request.url.includes(
+                            "/v0/events?name=generation_event_v2",
+                        )
+                    ) {
+                        return new Response("", { status: 202 });
+                    }
+                    const body = (await request.json()) as {
+                        resolution?: unknown;
+                    };
+                    resolutions.push(body.resolution);
+                    return Response.json({
+                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                    });
+                },
+            );
+
+            for (const resolution of ["low", "medium", "high"]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                    { headers: { Authorization: `Bearer ${paidApiKey}` } },
+                );
+                expect(response.status).toBe(200);
+                expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBeNull();
+                expect(response.headers.get("x-model-used")).toBe("trellis-2");
+                expect(await response.text()).toBe("glTF");
+            }
+
+            const overrideResponse = await SELF.fetch(
+                `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-high&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(overrideResponse.status).toBe(200);
+            await overrideResponse.text();
+
+            const cachePrompt = crypto.randomUUID();
+            for (const resolution of ["low", "high"]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai/3d/${cachePrompt}?model=trellis-2&resolution=${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+                    { headers: { Authorization: `Bearer ${paidApiKey}` } },
+                );
+                expect(response.status).toBe(200);
+                await response.text();
+            }
+
+            expect(resolutions).toEqual([
+                "low",
+                "low",
+                "low",
+                "low",
+                "low",
+                "high",
+            ]);
+        } finally {
+            resetGenerationModelRegistryCache();
+        }
+    },
+);
 
 workerTest(
     "returns 400 for Inferenceport validation failures",
@@ -130,7 +205,7 @@ workerTest(
         );
 
         const response = await SELF.fetch(
-            `https://gen.pollinations.ai/3d/invalid-${crypto.randomUUID()}?model=trellis-2-low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+            `https://gen.pollinations.ai/3d/invalid-${crypto.randomUUID()}?model=trellis-2&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
             { headers: { Authorization: `Bearer ${paidApiKey}` } },
         );
 

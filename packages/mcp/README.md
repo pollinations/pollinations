@@ -1,97 +1,57 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for generating images, videos, text, and audio with pollinations.ai, plus checking Pollen balance and usage.
 
-All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing are read live from the registry — no hardcoded enums.
+All requests go through `https://gen.pollinations.ai`. Gen owns model defaults, aliases, capabilities, validation, and errors; the MCP server keeps a small tool surface and wraps responses for MCP.
 
 ## Quick Start
 
-```bash
-# Run directly with npx (no installation required)
-npx @pollinations/mcp
-```
-
-Or install globally:
-
-```bash
-npm install -g @pollinations/mcp
-pollinations-mcp
-```
-
-## Authentication
-
-Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use [BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users bring their own pollen (supports web redirects and [device flow](../../BRING_YOUR_OWN_POLLEN.md#clis--headless-apps-device-flow) for CLIs).
-
-**Key types:**
-
-- `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
-- `sk_` (secret) — server-side only, no rate limits, can spend Pollen
-
-Set your key via environment variable or the `setApiKey` tool:
+Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys), set it in the server process environment, and start the server:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here
 npx @pollinations/mcp
 ```
 
+The key is read only from `POLLINATIONS_API_KEY`. There are no authentication tools because API keys must not be passed through model-visible tool arguments or conversation content.
+
 ## Available Tools
 
-### Image & Video Generation
+### Image and Video
 
-| Tool                 | Description                                                |
-| -------------------- | ---------------------------------------------------------- |
-| `generateImageUrl`   | Generate a shareable image URL from a text prompt          |
-| `generateImage`      | Generate an image and return base64 data                   |
-| `generateImageBatch` | Generate multiple images in parallel (best with `sk_` keys)|
-| `generateVideo`      | Generate a video and return base64 data                    |
-| `generateVideoUrl`   | Generate a shareable video URL from a text prompt          |
-| `describeImage`      | Vision analysis of an image URL                            |
-| `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
-| `listImageModels`    | List available image & video models (live)                 |
+| Tool | Description |
+| --- | --- |
+| `generateImage` | Generate an image; set `output` to `url` (default) or `inline` |
+| `generateVideo` | Generate a video; set `output` to `url` (default) or `inline` |
 
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
+Video generation requires an explicit video model so Gen cannot fall back to its default image model.
 
-### Text Generation
+### Text
 
-| Tool             | Description                                       |
-| ---------------- | ------------------------------------------------- |
-| `generateText`   | Simple text generation from a prompt              |
-| `chatCompletion` | OpenAI-compatible chat completions + tool calling |
-| `webSearch`      | Web-grounded answers (perplexity, gemini-search)  |
-| `listTextModels` | List available text models (live)                 |
-| `getPricing`     | Per-model pricing (text / image / audio)          |
+| Tool | Description |
+| --- | --- |
+| `chatCompletion` | Proxy an OpenAI-compatible chat completion and return raw Gen JSON |
+| `listModels` | Return Gen's live registry for all model types |
 
-Call `listTextModels` for the current model set, aliases, and capabilities (reasoning, tools, audio output, etc.).
+Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool calling, search, and image/video/audio analysis.
 
 ### Audio
 
-| Tool               | Description                              |
-| ------------------ | ---------------------------------------- |
-| `respondAudio`     | AI responds to a prompt with speech      |
-| `sayText`          | Text-to-speech (verbatim)                |
-| `transcribeAudio`  | Transcribe audio (gemini-large)          |
-| `listAudioVoices`  | List available voices (live)             |
-
-Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, flac, opus, pcm16.
-
-### Auth Tools
-
-| Tool          | Description                          |
-| ------------- | ------------------------------------ |
-| `setApiKey`   | Set the API key for this session     |
-| `getKeyInfo`  | Check stored key type/prefix (local) |
-| `clearApiKey` | Remove the stored key                |
+| Tool | Description |
+| --- | --- |
+| `textToSpeech` | Speak text through `POST /v1/audio/speech` |
+| `transcribeAudio` | Transcribe a public HTTPS audio URL through `POST /v1/audio/transcriptions` |
 
 ### Account
 
-| Tool         | Description                                                                  |
-| ------------ | ---------------------------------------------------------------------------- |
-| `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)        |
-| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`) |
+| Tool | Description |
+| --- | --- |
+| `getBalance` | Get the key budget or, with `account:usage`, account balances |
+| `getUsage` | Get usage for the authenticated key |
+
+The model registry responses include the current names, aliases, capabilities, and pricing supplied by Gen.
 
 ## Claude Desktop Integration
-
-Add to your Claude Desktop config:
 
 ```json
 {
@@ -107,40 +67,19 @@ Add to your Claude Desktop config:
 }
 ```
 
-## Examples
-
-```text
-Generate an image of a sunset over mountains using the flux model.
-
-Create a 6-second video of waves crashing on a beach using veo.
-
-Have a chatCompletion conversation about the weather, with the ability to call a weather API.
-
-Say "Hello, welcome to pollinations.ai!" using the nova voice.
-```
-
 ## Testing
 
 ```bash
-POLLINATIONS_API_KEY=sk_… npm run test
+npm test
+POLLINATIONS_API_KEY=sk_… npm test
 ```
 
-Spawns the server over stdio, lists tools, and exercises a small live slice (auth, text, image URL, balance). Skips authenticated calls when the env var is unset.
+The smoke test always lists tools and models. With a key, it also exercises chat completion, image URL generation, text-to-speech, transcription, and balance.
 
-## System Requirements
+## Requirements and Links
 
-- Node.js 18.0.0 or higher
-
-## API Reference
-
-All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
-
-## License
+- Node.js 18 or later
+- [API documentation](https://gen.pollinations.ai/docs)
+- [GitHub issues](https://github.com/pollinations/pollinations/issues)
 
 MIT
-
-## Links
-
-- [pollinations.ai](https://pollinations.ai)
-- [API Documentation](https://gen.pollinations.ai/docs)
-- [GitHub Issues](https://github.com/pollinations/pollinations/issues)

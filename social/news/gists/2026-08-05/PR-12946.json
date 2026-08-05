@@ -1,0 +1,34 @@
+{
+  "pr_number": 12946,
+  "title": "refactor: simplify community endpoint handling and tests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12946",
+  "merged_at": "2026-08-05T06:23:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes community endpoint error-body parsing for Enter and Gen callers.\n- Shares repeated community fallback fixtures while preserving text, image, pricing, billing, and authorization coverage.\n- Removes 141 net lines across runtime and test code without changing public response shapes.\n- Supersedes #12912 and #12926.\n\nChecks:\n- Biome on all four changed runtime/test files\n- Enter changed-file typecheck and billing-registry tests\n- Full Gen test suite and TypeScript typecheck\n- CodeQL",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One error path to tend",
+    "blurb": "The community endpoint callers now share one careful little error parser instead of growing their own. Fewer duplicated branches, same responses, tidier garden.",
+    "summary": "Centralized community endpoint error-body parsing in shared/community-endpoints.ts for both Enter and Gen, while consolidating fallback test fixtures without changing public response shapes.",
+    "impact": "Enter and Gen community endpoint behavior remains consistent across text, image, pricing, billing, and authorization cases, with less duplicated runtime and test code to maintain.",
+    "keywords": [
+      "community-endpoints",
+      "error-handling",
+      "enter",
+      "gen",
+      "tests",
+      "refactor"
+    ],
+    "visual_concept": "Polli tends two neighboring retro terminal plants labeled Enter and Gen, whose tangled error-message vines now join into one neat shared root beneath a garden sign. A cheerful CRT monitor robot helps sort identical code leaves into a single basket, representing shared parsing and fixtures.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, carefully tying two code-vines from retro CRT terminals labeled \"ENTER\" and \"GEN\" into one neat shared root; a friendly monitor robot holds a basket of matching error-code leaves, with small flowers and code-plants around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12946.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, carefully tying two code-vines from retro CRT terminals labeled \"ENTER\" and \"GEN\" into one neat shared root; a friendly monitor robot holds a basket of matching error-code leaves, with small flowers and code-plants around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T06:24:08.697198+00:00"
+}

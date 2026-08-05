@@ -1,0 +1,36 @@
+{
+  "pr_number": 13108,
+  "title": "Add Agentic Automation to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13108",
+  "merged_at": "2026-08-05T10:14:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Agentic Automation](https://pollinations-chat-kohl.vercel.app) to build\n- Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI\n\nFixes #10206",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flow finds its path",
+    "blurb": "A new no-code workflow garden has sprouted in build. Drag together triggers, agents, requests, and decisions; let the little processes wander off and do useful things.",
+    "summary": "Added Flow, a visual no-code agentic workflow builder powered by pollinations.ai, to build with drag-and-drop Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes.",
+    "impact": "Builders can now compose multi-step AI automations visually instead of wiring each trigger, model call, request, and branch together by hand.",
+    "keywords": [
+      "community-app",
+      "flow",
+      "agentic-automation",
+      "no-code",
+      "workflows",
+      "build"
+    ],
+    "visual_concept": "Depict Flow as a cozy garden-like drag-and-drop workflow canvas: connected node tiles form a winding path from a trigger flower through an AI-agent terminal, HTTP watering can, transform plant, condition signpost, and output mailbox. Polli should wear a tiny builder tool belt and gently place a glowing node onto the path, with code-vines and small flowers showing that the automation is growing organically.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny tool belt, arranging glowing drag-and-drop workflow nodes along a garden path: Trigger flower, AI Agent CRT terminal, HTTP watering can, Transform code-plant, Condition signpost, and Output mailbox. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-vines and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13108.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny tool belt, arranging glowing drag-and-drop workflow nodes along a garden path: Trigger flower, AI Agent CRT terminal, HTTP watering can, Transform code-plant, Condition signpost, and Output mailbox. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-vines and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T10:15:36.003229+00:00",
+  "app_name": "Agentic Automation",
+  "app_url": "https://pollinations-chat-kohl.vercel.app"
+}

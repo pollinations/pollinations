@@ -1,5 +1,10 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelDefinition,
+    type ModelInputModality,
+    type PriceDefinition,
+} from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
@@ -36,6 +41,14 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
+    text: MODEL_INPUT_MODALITIES,
+    image: ["text", "image"],
+} as const satisfies Record<
+    CommunityEndpointModality,
+    readonly ModelInputModality[]
+>;
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -246,6 +259,18 @@ export function normalizeCommunityEndpointImagePricing(
     return value === "tokens" ? "tokens" : "request";
 }
 
+export function normalizeCommunityEndpointInputModalities(
+    value: readonly ModelInputModality[] | null | undefined,
+    endpointModality: CommunityEndpointModality,
+): ModelInputModality[] {
+    if (!value?.length) return ["text"];
+    const declared = new Set(value);
+    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+        endpointModality
+    ].filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : ["text"];
+}
+
 // Access/visibility of a registered endpoint. Private is the default; choosing
 // public on create or update is allowlist-gated.
 //   private → owner-only callable, shown only to the owner, no owner-set price
@@ -266,7 +291,7 @@ export type CommunityEndpointRuntime = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[] | null;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -286,7 +311,7 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -459,6 +484,10 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
+    const inputModalities = normalizeCommunityEndpointInputModalities(
+        endpoint.inputModalities,
+        modality,
+    );
     return {
         aliases,
         provider: "community",
@@ -469,10 +498,7 @@ export function communityModelDefinition(
         addedDate: 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities:
-            isImage && endpoint.supportsImageEdits
-                ? ["text", "image"]
-                : ["text"],
+        inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

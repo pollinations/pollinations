@@ -1,0 +1,34 @@
+{
+  "pr_number": 13104,
+  "title": "refactor(sdk): make convenience helpers single-request",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13104",
+  "merged_at": "2026-08-05T14:06:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Makes `generateImage`, `generateVideo`, `generateText`, `chat`, and `generateAudio` issue exactly one upstream request and return one result.\n- Removes SDK-owned `n` batching and automatic `seed: -1`; explicit caller seeds still pass through unchanged.\n- Keeps `imageGenerate({ n })`, where Gen handles multiple images in one OpenAI-compatible request.\n- Updates helper types, examples, and request-count regression tests.\n\nTests: SDK test suite (32 tests), typecheck, and production build.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One call, one flower",
+    "blurb": "The SDK convenience helpers have stopped quietly multiplying requests in the garden shed. One helper call now sends one upstream request and brings back one result, exactly as advertised.",
+    "summary": "Updated the SDK's generateImage, generateVideo, generateText, chat, and generateAudio helpers so each makes exactly one upstream request and returns one result, while imageGenerate({ n }) remains available for OpenAI-compatible multi-image generation.",
+    "impact": "SDK users get predictable request counts and caller-controlled seeds: automatic seed: -1 and helper-owned n batching are gone, while explicitly supplied seeds continue to pass through unchanged.",
+    "keywords": [
+      "sdk",
+      "request-counts",
+      "image-generation",
+      "helpers",
+      "seeds",
+      "api"
+    ],
+    "visual_concept": "A cozy garden workbench represents the SDK helpers becoming literal one-seed, one-flower tools: Polli carefully sends a single glowing request envelope through one tidy tube and receives one finished pixel flower. A nearby retro terminal shows a simple “1 → 1” indicator, while a separate watering can labeled “n” tends a small multi-flower imageGenerate patch to show batching still exists in its dedicated API path.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings wears a tiny gardener tool belt as she sends one glowing seed-shaped API request through a single tube and receives one blooming code-flower. A retro CRT terminal displays pixel text “1 → 1,” with a separate small flower patch marked “n”; lime green (#ecf874) is prominent among mint, lavender, peach, and warm cream pastels, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, and nostalgic emotionally warm Stardew Valley-like charm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13104.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings wears a tiny gardener tool belt as she sends one glowing seed-shaped API request through a single tube and receives one blooming code-flower. A retro CRT terminal displays pixel text “1 → 1,” with a separate small flower patch marked “n”; lime green (#ecf874) is prominent among mint, lavender, peach, and warm cream pastels, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, and nostalgic emotionally warm Stardew Valley-like charm."
+  },
+  "generated_at": "2026-08-05T14:08:11.860516+00:00"
+}

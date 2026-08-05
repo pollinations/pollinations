@@ -1,0 +1,34 @@
+{
+  "pr_number": 13106,
+  "title": "refactor(sdk): defer request defaults to Gen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13106",
+  "merged_at": "2026-08-05T14:24:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops the SDK from injecting image, text, chat, audio, and transcription model defaults or the TTS voice default.\n- Makes `/video/{prompt}` own its `veo` default and gives it a matching request schema.\n- Makes `/v1/images/edits` own its documented `flux` default, preserving existing SDK behavior.\n- Adds SDK serialization coverage and Gen permission tests for endpoint-specific defaults.\n\nTests: SDK suite (33 tests), SDK typecheck/build, Gen typecheck, and direct image/video schema checks.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Defaults moved into the hive",
+    "blurb": "The SDK has stopped guessing which model to bring. Gen now keeps each endpoint's defaults in one well-labeled garden bed.",
+    "summary": "The SDK now sends image, text, chat, audio, transcription, and TTS requests without injecting defaults, while Gen owns endpoint-specific defaults including `veo` for `/video/{prompt}` and `flux` for `/v1/images/edits`.",
+    "impact": "SDK users keep the existing documented video and image-edit behavior while API defaults can now be updated centrally by Gen instead of being duplicated in client code.",
+    "keywords": [
+      "sdk",
+      "gen",
+      "model-defaults",
+      "video",
+      "image-edits",
+      "api-compatibility"
+    ],
+    "visual_concept": "A cozy shared defaults garden: Polli carefully carries a basket of model-name seeds from a small SDK tool shed to a central Gen greenhouse, where separate labeled beds for video and image edits grow `veo` and `flux` flowers. A helpful CRT monitor robot checks matching request-schema notes while code-vines connect the garden beds, representing defaults being owned centrally rather than copied into the SDK.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small happy smile, light blue translucent wings, and a tiny gardener apron, carrying model-seed packets into a glowing central greenhouse labeled \"GEN\"; inside, `veo` and `flux` flowers grow in separate labeled beds while a cute CRT monitor robot happily checks schema notes beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13106.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small happy smile, light blue translucent wings, and a tiny gardener apron, carrying model-seed packets into a glowing central greenhouse labeled \"GEN\"; inside, `veo` and `flux` flowers grow in separate labeled beds while a cute CRT monitor robot happily checks schema notes beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-05T14:25:46.903654+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12956,
+  "title": "refactor: simplify Gen client request handling",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12956",
+  "merged_at": "2026-08-05T06:54:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes authenticated Gen requests and fatal errors across Polli CLI commands while preserving binary responses, caller headers, 402 guidance, messages, and exit code 1.\n- Centralizes SDK JSON GETs and MCP chat, media, and live-capability web-search requests while preserving package-specific response and error contracts.\n- Keeps Sirius request handling app-local while folding its one-caller builder and retry wrapper into the generation client.\n- Removes 301 net lines across 19 files (179 additions, 480 deletions).\n\nChecks:\n- CLI build and deterministic auth/header/402/error/exit assertions\n- SDK: 30 tests, typecheck, and build\n- MCP syntax plus deterministic request, media, search-capability, auth, and error assertions\n- Sirius TypeScript and Vite build\n- Removed-symbol reference scan\n- Biome and `git diff --check`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One path through the hive",
+    "blurb": "The request plumbing got a careful pruning. Polli CLI, SDK, MCP, and Sirius now share less duplicated wiring while keeping their familiar responses intact.",
+    "summary": "Centralized authenticated Gen requests, fatal-error handling, SDK JSON GETs, and MCP chat/media/live-search calls, removing 301 net lines across 19 files while preserving binary responses, headers, 402 guidance, package contracts, and exit behavior.",
+    "impact": "CLI, SDK, MCP, and Sirius maintain their existing request and error behavior, with a smaller shared code surface that is easier to maintain consistently.",
+    "keywords": [
+      "refactor",
+      "polli-cli",
+      "sdk",
+      "mcp",
+      "request-handling",
+      "error-handling"
+    ],
+    "visual_concept": "Polli acts as a cozy garden plumber, replacing a tangle of duplicate request pipes from CLI, SDK, MCP, and Sirius terminals with one tidy central irrigation line; small code-plants receive the same water, representing preserved behavior despite simpler internals.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, a cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular blush, light blue wings, and a tiny tool belt, tidies several tangled API request pipes into one clean lime green (#ecf874) irrigation line feeding CLI, SDK, MCP, and Sirius code-plants beside warm CRT terminals. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike; a small pixel sign reads “ONE REQUEST PATH.”"
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12956.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, a cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular blush, light blue wings, and a tiny tool belt, tidies several tangled API request pipes into one clean lime green (#ecf874) irrigation line feeding CLI, SDK, MCP, and Sirius code-plants beside warm CRT terminals. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike; a small pixel sign reads “ONE REQUEST PATH.”"
+  },
+  "generated_at": "2026-08-05T06:55:41.619474+00:00"
+}

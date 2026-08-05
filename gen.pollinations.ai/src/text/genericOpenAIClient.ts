@@ -28,9 +28,8 @@ function isClientInputError(details: unknown): boolean {
 
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withResponseMetadata(
+function withUpstreamRequestUrl(
     completion: ChatCompletion,
-    fallbackTarget: string | undefined,
     requestUrl: URL,
 ): ChatCompletion {
     Object.defineProperty(completion, "upstreamRequestUrl", {
@@ -39,22 +38,12 @@ function withResponseMetadata(
         configurable: true,
         writable: true,
     });
-    if (fallbackTarget !== undefined) {
-        Object.defineProperty(completion, "fallbackTarget", {
-            value: fallbackTarget,
-            enumerable: false,
-            configurable: true,
-            writable: true,
-        });
-    }
     return completion;
 }
 
 function ensureOpenAISseDone(
-    source: ReadableStream<Uint8Array> | null,
-): ReadableStream<Uint8Array> | null {
-    if (!source) return source;
-
+    source: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
@@ -236,20 +225,19 @@ export async function genericOpenAIClient(
             throw createApiError(response, errorDetails, modelName, requestUrl);
         }
 
-        // Portkey reports which fallback target served the call via this header
-        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
-        // fallback). Surface it so tracking can record whether a fallback fired.
-        const fallbackTarget =
-            response.headers.get("x-portkey-last-used-option-index") ??
-            undefined;
-
         if (normalizedOptions.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
+            if (!response.body) {
+                throw withUpstreamContext(
+                    new Error("Text model returned an empty stream"),
+                    requestUrl,
+                );
+            }
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return withResponseMetadata(
+            return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
@@ -265,7 +253,6 @@ export async function genericOpenAIClient(
                         },
                     ],
                 },
-                fallbackTarget,
                 requestUrl,
             );
         }
@@ -321,14 +308,13 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "length";
         }
 
-        return withResponseMetadata(
+        return withUpstreamRequestUrl(
             {
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
                 object: data.object || "chat.completion",
                 choices: [formattedChoice],
             },
-            fallbackTarget,
             requestUrl,
         );
     } catch (thrown: unknown) {

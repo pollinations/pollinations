@@ -122,7 +122,3 @@ export const GenerateImageRequestQueryParamsSchema =
             });
         }
     });
-
-export type GenerateImageRequestQueryParams = z.infer<
-    typeof GenerateImageRequestQueryParamsSchema
->;

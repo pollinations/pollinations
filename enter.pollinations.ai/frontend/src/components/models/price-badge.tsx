@@ -153,10 +153,20 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     );
 };
 
-export const ModelPricingLedger: FC<{
-    model: ModelPrice;
-    className?: string;
-}> = ({ model, className }) => {
+type ModelPricingSelection = {
+    prices: ModelPriceLine[];
+    adjustments: ModelPriceAdjustment[];
+    dropdowns: Array<{
+        key: string;
+        value: string;
+        options: Array<{ value: string; label: string }>;
+        onSelect: (value: string) => void;
+    }>;
+};
+
+export const useModelPricingSelection = (
+    model: ModelPrice,
+): ModelPricingSelection => {
     const [variantName, setVariantName] = useState("");
     const adjustmentOptionGroups = new Map<
         string,
@@ -221,69 +231,83 @@ export const ModelPricingLedger: FC<{
         })),
     ];
 
-    if (!prices.length && !adjustments.length) return null;
+    return { prices, adjustments, dropdowns };
+};
+
+export const ModelPricingControls: FC<{
+    model: ModelPrice;
+    pricing: ModelPricingSelection;
+    className?: string;
+}> = ({ model, pricing, className }) => {
+    if (!pricing.dropdowns.length) return null;
+
+    return (
+        <div className={cn("flex min-w-0 flex-wrap gap-1", className)}>
+            {pricing.dropdowns.map((dropdown) => {
+                const selected = dropdown.options.find(
+                    ({ value }) => value === dropdown.value,
+                );
+                return (
+                    <Dropdown
+                        key={dropdown.key}
+                        align="start"
+                        className="w-max min-w-40 p-1"
+                        trigger={(open) => (
+                            <Button
+                                type="button"
+                                size="sm"
+                                aria-label={`Pricing option for ${model.displayName ?? model.name}`}
+                                className="max-w-52 justify-between gap-2 text-xs tabular-nums"
+                            >
+                                <span className="truncate">
+                                    {selected?.label}
+                                </span>
+                                <ChevronIcon expanded={open} />
+                            </Button>
+                        )}
+                    >
+                        {(close) => (
+                            <div role="menu">
+                                {dropdown.options.map((option) => {
+                                    const isSelected =
+                                        option.value === dropdown.value;
+                                    return (
+                                        <DropdownItem
+                                            key={option.value}
+                                            role="menuitemradio"
+                                            aria-checked={isSelected}
+                                            onClick={() => {
+                                                dropdown.onSelect(option.value);
+                                                close();
+                                            }}
+                                        >
+                                            <span className="flex-1">
+                                                {option.label}
+                                            </span>
+                                            {isSelected && (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            )}
+                                        </DropdownItem>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </Dropdown>
+                );
+            })}
+        </div>
+    );
+};
+
+export const ModelPricingLedger: FC<{
+    pricing: ModelPricingSelection;
+    className?: string;
+}> = ({ pricing, className }) => {
+    if (!pricing.prices.length && !pricing.adjustments.length) return null;
 
     return (
         <div className={cn("flex min-w-0 flex-col gap-1", className)}>
-            {dropdowns.length > 0 && (
-                <div className="flex flex-wrap justify-end gap-1 pb-1">
-                    {dropdowns.map((dropdown) => {
-                        const selected = dropdown.options.find(
-                            ({ value }) => value === dropdown.value,
-                        );
-                        return (
-                            <Dropdown
-                                key={dropdown.key}
-                                align="end"
-                                className="w-max min-w-40 p-1"
-                                trigger={(open) => (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        aria-label={`Pricing option for ${model.displayName ?? model.name}`}
-                                        className="max-w-52 justify-between gap-2 text-xs tabular-nums"
-                                    >
-                                        <span className="truncate">
-                                            {selected?.label}
-                                        </span>
-                                        <ChevronIcon expanded={open} />
-                                    </Button>
-                                )}
-                            >
-                                {(close) => (
-                                    <div role="menu">
-                                        {dropdown.options.map((option) => {
-                                            const isSelected =
-                                                option.value === dropdown.value;
-                                            return (
-                                                <DropdownItem
-                                                    key={option.value}
-                                                    role="menuitemradio"
-                                                    aria-checked={isSelected}
-                                                    onClick={() => {
-                                                        dropdown.onSelect(
-                                                            option.value,
-                                                        );
-                                                        close();
-                                                    }}
-                                                >
-                                                    <span className="flex-1">
-                                                        {option.label}
-                                                    </span>
-                                                    {isSelected && (
-                                                        <CheckIcon className="h-3.5 w-3.5" />
-                                                    )}
-                                                </DropdownItem>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </Dropdown>
-                        );
-                    })}
-                </div>
-            )}
-            {prices.map((price) => (
+            {pricing.prices.map((price) => (
                 <div
                     key={`${price.direction}-${price.kind}-${price.unit}`}
                     className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"
@@ -299,9 +323,9 @@ export const ModelPricingLedger: FC<{
                     </span>
                 </div>
             ))}
-            {adjustments.length > 0 && (
+            {pricing.adjustments.length > 0 && (
                 <div className="mt-1 border-t border-dashed border-divider pt-1">
-                    {adjustments.map((adjustment) => (
+                    {pricing.adjustments.map((adjustment) => (
                         <div
                             key={adjustment.name}
                             className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"

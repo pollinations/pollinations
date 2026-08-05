@@ -25,7 +25,11 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import { ModelPricingLedger } from "./price-badge.tsx";
+import {
+    ModelPricingControls,
+    ModelPricingLedger,
+    useModelPricingSelection,
+} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 export type SectionType = ModelCategory;
@@ -139,6 +143,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
+    const pricing = useModelPricingSelection(model);
 
     const perPollen = calculatePerPollen(model);
     return (
@@ -254,7 +259,11 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
-                        <ModelPricingLedger model={model} className="w-full" />
+                        <ModelPricingControls model={model} pricing={pricing} />
+                        <ModelPricingLedger
+                            pricing={pricing}
+                            className="w-full"
+                        />
                     </div>
                 </div>
             )}

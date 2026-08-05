@@ -1,7 +1,10 @@
+import {
+    getRedirectUris,
+    parseMetadata,
+} from "@shared/auth/api-key-metadata.ts";
 import { describe, expect, test } from "vitest";
-import { parseMetadata } from "../src/routes/metadata-utils.ts";
 
-describe("parseMetadata", () => {
+describe("API key metadata", () => {
     test("parses normalized metadata objects", () => {
         expect(
             parseMetadata(
@@ -21,5 +24,14 @@ describe("parseMetadata", () => {
         expect(parseMetadata("not json")).toEqual({});
         expect(parseMetadata(JSON.stringify(["not", "metadata"]))).toEqual({});
         expect(parseMetadata(JSON.stringify("double-encoded"))).toEqual({});
+    });
+
+    test("keeps only non-empty string redirect URIs", () => {
+        expect(
+            getRedirectUris({
+                redirectUris: ["https://example.com/callback", "", null, 1],
+            }),
+        ).toEqual(["https://example.com/callback"]);
+        expect(getRedirectUris({ redirectUris: "not-an-array" })).toEqual([]);
     });
 });

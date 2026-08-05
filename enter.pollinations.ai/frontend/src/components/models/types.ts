@@ -54,6 +54,7 @@ export type ModelPrice = {
     displayName?: string;
     description?: string;
     brand?: string;
+    brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
     capabilities: ModelCapability[];

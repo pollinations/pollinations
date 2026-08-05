@@ -222,9 +222,21 @@ def get_fallback_classification(_: bool) -> dict:
     }
 
 
-def classify_with_ai(is_internal: bool, tracking_issues: Optional[list] = None) -> dict:
+def classify_with_ai(
+    is_internal: bool,
+    tracking_issues: Optional[list] = None,
+    *,
+    title: Optional[str] = None,
+    body: Optional[str] = None,
+    author: Optional[str] = None,
+    is_pull_request: Optional[bool] = None,
+) -> dict:
+    title = ISSUE_TITLE if title is None else title
+    body = ISSUE_BODY if body is None else body
+    author = ISSUE_AUTHOR if author is None else author
+    is_pull_request = IS_PULL_REQUEST if is_pull_request is None else is_pull_request
     base_prompt = read_prompt_file()
-    item_kind = "pull request" if IS_PULL_REQUEST else "issue"
+    item_kind = "pull request" if is_pull_request else "issue"
 
     tracking_block = ""
     if tracking_issues:
@@ -242,10 +254,10 @@ def classify_with_ai(is_internal: bool, tracking_issues: Optional[list] = None) 
 
     user_prompt = f"""
 Item Type: {item_kind}
-Author: {ISSUE_AUTHOR}
+Author: {author}
 Author Type: {"Internal" if is_internal else "External"}
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}
+Title: {title}
+Body: {body[:2000]}
 """
 
     for attempt in range(3):

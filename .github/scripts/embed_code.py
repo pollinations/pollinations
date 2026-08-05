@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Embed pollinations/pollinations code into Cloudflare Vectorize using Pollinations qwen3-embedding-8b.
 
 Two modes:
@@ -17,7 +16,6 @@ import json
 import os
 import subprocess
 import sys
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
@@ -205,16 +203,18 @@ def content_hash(data: str) -> str:
 
 def is_definition_start(line: str) -> bool:
     stripped = line.strip()
-    return (
-        stripped.startswith("def ")
-        or stripped.startswith("class ")
-        or stripped.startswith("async def ")
-        or stripped.startswith("function ")
-        or stripped.startswith("const ")
-        or stripped.startswith("export ")
-        or stripped.startswith("pub fn ")
-        or stripped.startswith("fn ")
-        or stripped.startswith("func ")
+    return stripped.startswith(
+        (
+            "def ",
+            "class ",
+            "async def ",
+            "function ",
+            "const ",
+            "export ",
+            "pub fn ",
+            "fn ",
+            "func ",
+        )
     )
 
 
@@ -290,10 +290,7 @@ def is_embeddable_path(rel_path: str) -> bool:
     name = Path(rel_path).name
     if name in SKIP_FILES:
         return False
-    suffix = Path(rel_path).suffix.lower()
-    if suffix in BINARY_EXTENSIONS:
-        return False
-    return True
+    return Path(rel_path).suffix.lower() not in BINARY_EXTENSIONS
 
 
 def git_tracked_files(repo_root: Path) -> list[str]:
@@ -373,12 +370,7 @@ def _embed_single_request(texts: list[str], retries: int = 4) -> list[list[float
             if indices != list(range(len(texts))):
                 raise RuntimeError(f"Pollinations embed returned non-contiguous indices: {indices}")
             return [item["embedding"] for item in sorted_data]
-        except requests.exceptions.RequestException as e:
-            last_err = e
-            wait = 2**attempt
-            print(f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s", file=sys.stderr)
-            time.sleep(wait)
-        except RuntimeError as e:
+        except (requests.exceptions.RequestException, RuntimeError) as e:
             last_err = e
             wait = 2**attempt
             print(f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s", file=sys.stderr)
@@ -634,25 +626,21 @@ def run_full(repo_root: Path) -> bool:
     print(f"Full embed: {len(files)} files found (concurrency={EMBED_CONCURRENCY}, HEAD={git_sha[:8]})")
 
     total_vectors = 0
-    processed = 0
     failed: list[str] = []
-    progress_lock = threading.Lock()
-
     with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
-        futures = {
-            pool.submit(_embed_and_upsert_file, repo_root, str(f.relative_to(repo_root)), git_sha): f for f in files
-        }
-        for future in as_completed(futures):
+        futures = [
+            pool.submit(_embed_and_upsert_file, repo_root, str(file.relative_to(repo_root)), git_sha)
+            for file in files
+        ]
+        for processed, future in enumerate(as_completed(futures), 1):
             rel_path, vector_count, error = future.result()
-            with progress_lock:
-                processed += 1
-                if error:
-                    failed.append(rel_path)
-                    print(f"  FAILED {rel_path}: {error}", file=sys.stderr)
-                else:
-                    total_vectors += vector_count
-                if processed % 25 == 0 or processed == len(files):
-                    print(f"[{processed}/{len(files)}] files processed, {total_vectors} vectors upserted so far")
+            if error:
+                failed.append(rel_path)
+                print(f"  FAILED {rel_path}: {error}", file=sys.stderr)
+            else:
+                total_vectors += vector_count
+            if processed % 25 == 0 or processed == len(files):
+                print(f"[{processed}/{len(files)}] files processed, {total_vectors} vectors upserted so far")
 
     print(f"Full embed complete: {total_vectors} vectors across {len(files) - len(failed)} files")
     if failed:

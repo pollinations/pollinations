@@ -31,7 +31,7 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return tier, pack, and lastTierGrant", async ({
+test("/balance should return tier and pack balances", async ({
     sessionToken,
     mocks,
 }) => {
@@ -55,14 +55,10 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
         tierBalance: 10.5,
         packBalance: 25.3,
     };
-    const lastTierGrant = Date.now() - 3600000; // 1 hour ago
-
     await db
         .update(userTable)
         .set({
             ...testBalances,
-            tier: "seed",
-            lastTierGrant,
         })
         .where(eq(userTable.id, userId));
 
@@ -81,7 +77,6 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
         packBalance: testBalances.packBalance,
-        lastTierGrant,
     });
 });
 
@@ -103,15 +98,11 @@ test("/balance should return raw tier and pack balances regardless of tier", asy
     const session = await sessionResponse.json();
     const userId = session.user.id;
 
-    // The /balance handler never reads the tier column, so a single tier
-    // proves the raw passthrough (tierBalance/packBalance/lastTierGrant=null).
     await db
         .update(userTable)
         .set({
-            tier: "seed",
             tierBalance: 1,
             packBalance: 3,
-            lastTierGrant: null,
         })
         .where(eq(userTable.id, userId));
 
@@ -126,7 +117,6 @@ test("/balance should return raw tier and pack balances regardless of tier", asy
     expect(await response.json()).toEqual({
         tierBalance: 1,
         packBalance: 3,
-        lastTierGrant: null,
     });
 });
 

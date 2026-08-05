@@ -47,7 +47,7 @@ export interface VideoGenerationResult {
         usage: {
             completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
             completionVideoTokens?: number; // For Seedance (billed by tokens)
-            completionAudioSeconds?: number; // For Wan audio (billed by seconds)
+            completionAudioSeconds?: number; // Output audio billed by seconds
             totalTokenCount?: number;
         };
     };
@@ -71,12 +71,14 @@ interface VeoOperationResponse {
 }
 
 /**
- * Generates a video using Veo 3.1 Fast API
+ * Generates a Veo 3.1 Fast video at the explicitly selected resolution.
+ * @param {"720p" | "1080p"} resolution - Upstream resolution
  * @param {string} prompt - The prompt for video generation
  * @param {ImageParams} safeParams - The parameters for video generation
  * @returns {Promise<VideoGenerationResult>}
  */
-export const callVeoAPI = async (
+const generateVeoVideo = async (
+    resolution: "720p" | "1080p",
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> => {
@@ -102,18 +104,11 @@ export const callVeoAPI = async (
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
 
-    // Calculate resolution and aspect ratio from width/height or aspectRatio
-    const { aspectRatio, resolution: resolutionUpper } =
-        calculateVideoResolution({
-            width: safeParams.width,
-            height: safeParams.height,
-            aspectRatio: safeParams.aspectRatio,
-            defaultResolution: "720P",
-        });
-    const resolution = resolutionUpper.toLowerCase() as
-        | "480p"
-        | "720p"
-        | "1080p";
+    const { aspectRatio } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+    });
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -227,10 +222,24 @@ export const callVeoAPI = async (
             actualModel: "veo",
             usage: {
                 completionVideoSeconds: durationSeconds,
+                ...(generateAudio
+                    ? { completionAudioSeconds: durationSeconds }
+                    : {}),
             },
         },
     };
 };
+
+/** Veo 3.1 Fast; request resolution defaults to the 720p base tier. */
+export const callVeoAPI = (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> =>
+    generateVeoVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );
 
 /**
  * Poll Veo operation until completion using fetchPredictOperation

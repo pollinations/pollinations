@@ -20,8 +20,8 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
-MODEL = "gemini-large"  # Text generation model
-IMAGE_MODEL = "nanobanana-2"  # Image generation model
+MODEL = "gpt-5.6-terra"  # Text generation model
+IMAGE_MODEL = "nanobanana-2-lite"  # Image generation model
 
 # Limits and retry settings
 MAX_SEED = 2147483647
@@ -968,6 +968,37 @@ def commit_files_to_branch(
 
 
 # ── VPS deployment ───────────────────────────────────────────────────
+
+def deploy_reddit_news_post(
+    post_dir: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[bool]:
+    """Deploy reddit.json when the shared VPS configuration is available."""
+    vps_host = get_env("REDDIT_VPS_HOST", required=False)
+    vps_user = get_env("REDDIT_VPS_USER", required=False)
+    vps_ssh_key = (get_env("REDDIT_VPS_SSH_KEY", required=False) or "").strip()
+    if not (vps_host and vps_user and vps_ssh_key):
+        print("  Reddit VPS credentials not configured — skipping")
+        return None
+
+    import base64
+    import io
+    import paramiko
+
+    private_key = base64.b64decode(vps_ssh_key).decode("utf-8")
+    pkey = paramiko.Ed25519Key.from_private_key(io.StringIO(private_key))
+    reddit_data = read_news_file(
+        os.path.join(post_dir, "reddit.json"), github_token, owner, repo
+    )
+    if not reddit_data:
+        print("  No reddit.json — skipping")
+        return None
+
+    print("  Reddit...")
+    return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+
 
 def deploy_reddit_post(
     reddit_data: Dict,

@@ -7,7 +7,6 @@
 | [Labels](LABELS.md)                 | Label system reference (inbox, app, PR labels)  |
 | [Triage](TRIAGE.md)                 | Issue/PR labeling, AI agents, project management |
 | [Deployment](DEPLOYMENT.md)         | Deploy pipelines (Cloudflare, EC2)               |
-| [Maintenance](MAINTENANCE.md)       | Branch cleanup, CI/testing                       |
 
 ---
 
@@ -26,7 +25,6 @@
 **Examples:**
 
 - `issue-label-external` → Issue / label / external
-- `branch-delete-stale` → Branch / delete / stale
 - `app-deploy` → App / deploy
 
 **Entity = Effect** (what is affected/created, not what triggers it).
@@ -44,7 +42,7 @@ Scripts follow a similar pattern:
 
 ## Authentication
 
-Most workflows use **Polly Bot** (GitHub App) for authentication instead of personal access tokens.
+Most workflows use **Polli Bot** (GitHub App) for authentication instead of personal access tokens.
 
 **Benefits:**
 

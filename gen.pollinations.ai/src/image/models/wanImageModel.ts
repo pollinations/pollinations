@@ -19,8 +19,8 @@ import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
@@ -131,13 +131,7 @@ export async function callWanImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${modelLabel} generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
@@ -147,7 +141,20 @@ export async function callWanImageAPI(
     const imageResponse = await fetchUpstream(outputUrls[0], {
         errorLabel: `Failed to download ${modelLabel} output image`,
     });
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    let imageBuffer: Buffer;
+    try {
+        imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    } catch (err) {
+        // Body-read failures (connection drop mid-download of a 4K output)
+        // otherwise surface as bare TypeErrors with no upstream context.
+        const message = err instanceof Error ? err.message : String(err);
+        throw new HttpError(
+            `Failed to download ${modelLabel} output image: ${message}`,
+            502,
+            undefined,
+            outputUrls[0],
+        );
+    }
     logOps(
         `${modelLabel} image downloaded:`,
         (imageBuffer.length / 1024).toFixed(1),

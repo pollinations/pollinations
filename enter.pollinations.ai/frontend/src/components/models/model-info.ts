@@ -1,7 +1,6 @@
-import type { Modalities, ModelCapability, ModelPrice } from "./types.ts";
+import type { ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
-    "ACE-Step": "ace-step",
     Alibaba: "alibaba",
     Amazon: "amazon",
     Anthropic: "anthropic",
@@ -14,103 +13,72 @@ const BRAND_LOGOS: Record<string, string> = {
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
     Google: "google",
+    Hexgrad: "hexgrad",
     Ideogram: "ideogram",
     Inception: "inception",
-    Lightricks: "lightricks",
+    Krea: "krea",
+    Lykon: "lykon",
+    Meituan: "meituan",
     Meta: "meta",
     Microsoft: "microsoft",
     MiniMax: "minimax",
     Mistral: "mistral",
     "Moonshot AI": "moonshot",
+    NVIDIA: "nvidia",
     OpenAI: "openai",
     Perplexity: "perplexity",
     Pollinations: "pollinations",
+    Poolside: "poolside",
     Pruna: "pruna",
     Qwen: "qwen",
+    Recraft: "recraft",
+    Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    "Thinking Machines": "thinking-machines",
+    Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
 };
 
-const MODEL_LOGOS: Record<string, string> = {};
-
-const getSourceDescription = (model: ModelPrice): string | undefined => {
-    if (!model.description) return model.displayName;
-    return model.displayName
-        ? `${model.displayName} - ${model.description}`
-        : model.description;
-};
-
-export const getModalities = (model: ModelPrice): Modalities => {
-    return {
-        input: model.inputModalities || ["text"],
-        output: model.outputModalities || ["text"],
-    };
-};
-
-export const getModelDescription = (model: ModelPrice): string | undefined => {
-    return getSourceDescription(model);
-};
+const getInputModalities = (model: ModelPrice): string[] =>
+    model.inputModalities || ["text"];
 
 export const getModelDisplayName = (model: ModelPrice): string | undefined => {
     if (model.displayName) return model.displayName;
-    const description = getSourceDescription(model);
+    const description = model.description;
     if (!description) return undefined;
     return description.split(" - ")[0];
 };
 
 export const getModelDescriptionWithoutName = (
     model: ModelPrice,
-): string | undefined => {
-    if (model.description) return model.description;
-    const description = getSourceDescription(model);
-    if (!description) return undefined;
-    if (model.displayName && description.trim() === model.displayName.trim()) {
-        return undefined;
-    }
-    const prefix = model.displayName ? `${model.displayName} - ` : "";
-    if (prefix && description.startsWith(prefix)) {
-        return description.slice(prefix.length).trim() || undefined;
-    }
-    const parts = description.split(" - ");
-    if (parts.length < 2) return undefined;
-    return parts.slice(1).join(" - ").trim() || undefined;
-};
+): string | undefined => model.description || undefined;
 
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    const logoName =
-        MODEL_LOGOS[model.name] ??
-        (model.brand ? BRAND_LOGOS[model.brand] : undefined);
+    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
 export type InputModality = "text" | "image" | "video" | "audio";
 
 export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
-    const modalities = getModalities(model);
+    const modalities = getInputModalities(model);
     const keys: InputModality[] = [];
 
-    if (modalities.input.includes("text")) keys.push("text");
-    if (modalities.input.includes("image")) keys.push("image");
-    if (modalities.input.includes("video")) keys.push("video");
-    if (modalities.input.includes("audio")) keys.push("audio");
+    if (modalities.includes("text")) keys.push("text");
+    if (modalities.includes("image")) keys.push("image");
+    if (modalities.includes("video")) keys.push("video");
+    if (modalities.includes("audio")) keys.push("audio");
 
     return keys;
 };
 
 export const getModelModalityLabel = (model: ModelPrice): string => {
-    const modalities = getModalities(model);
-    const labels: string[] = [];
-
-    if (modalities.input.includes("text")) labels.push("text");
-    if (modalities.input.includes("image")) labels.push("image");
-    if (modalities.input.includes("video")) labels.push("video");
-    if (modalities.input.includes("audio")) labels.push("audio");
-
-    return labels.length > 0 ? `Input: ${labels.join(", ")}` : "Input";
+    const modalities = getModelInputModalities(model);
+    return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
 };
 
 export type DisplayCapability = "reasoning" | "web_search" | "code_execution";
@@ -142,29 +110,14 @@ const hasCapability = (
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
 
-export const hasReasoning = (model: ModelPrice): boolean =>
+const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");
 
-export const hasSearch = (model: ModelPrice): boolean =>
+const hasSearch = (model: ModelPrice): boolean =>
     hasCapability(model, "web_search");
 
-export const hasCodeExecution = (model: ModelPrice): boolean =>
+const hasCodeExecution = (model: ModelPrice): boolean =>
     hasCapability(model, "code_execution");
-
-export const hasVision = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.input.includes("image");
-};
-
-export const hasAudioInput = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.input.includes("audio");
-};
-
-export const hasAudioOutput = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.output.includes("audio");
-};
 
 /**
  * Check if a model is "new" (added within the last 7 days).
@@ -177,7 +130,7 @@ export const isNewModel = (model: ModelPrice): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only (no tier balance)
+ * Check if a model requires paid balance only, not Quest Pollen.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

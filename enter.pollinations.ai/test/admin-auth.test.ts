@@ -1,56 +1,86 @@
-import { env, SELF } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { SELF } from "cloudflare:test";
+import { describe, expect } from "vitest";
+import { test } from "./fixtures.ts";
 
 describe("Admin authentication", () => {
     const baseUrl = "https://enter.pollinations.ai";
 
-    it("should reject requests without token", async () => {
-        const response = await SELF.fetch(`${baseUrl}/api/admin/update-tier`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId: "test", tier: "seed" }),
-        });
-        expect(response.status).toBe(401);
-    });
-
-    it("should reject requests with invalid token", async () => {
-        const response = await SELF.fetch(`${baseUrl}/api/admin/update-tier`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer invalid_token",
-            },
-            body: JSON.stringify({ userId: "test", tier: "seed" }),
-        });
-        expect(response.status).toBe(401);
-    });
-
-    it("should allow full admin token access to all endpoints", async () => {
-        const response = await SELF.fetch(`${baseUrl}/api/admin/update-tier`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-            },
-            body: JSON.stringify({ userId: "nonexistent", tier: "seed" }),
-        });
-        // Will get 404 for non-existent user, but authentication passed
-        expect(response.status).toBe(404);
-    });
-
-    it("should allow full admin token access to trigger-refill", async () => {
+    test("should reject requests without token", async () => {
         const response = await SELF.fetch(
-            `${baseUrl}/api/admin/trigger-refill`,
+            `${baseUrl}/api/admin/trigger-d1-sync`,
             {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    "Content-Type": "application/json",
                 },
             },
         );
-        // Will succeed or skip, but authentication passed
-        expect([200]).toContain(response.status);
+        expect(response.status).toBe(401);
+    });
+
+    test("should reject the Tinybird token", async () => {
+        const response = await SELF.fetch(
+            `${baseUrl}/api/admin/trigger-d1-sync`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test_tinybird_sync_token",
+                },
+            },
+        );
+        expect(response.status).toBe(401);
+    });
+
+    test("should allow the sync token to export a d1 page", async () => {
+        const response = await SELF.fetch(
+            `${baseUrl}/api/admin/trigger-d1-sync`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test_d1_export_token",
+                },
+                body: JSON.stringify({
+                    datasource: "d1_user",
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+
+        const body = (await response.json()) as {
+            success: boolean;
+            datasource: string;
+            rows: unknown[];
+            done: boolean;
+        };
+        expect(body.success).toBe(true);
+        expect(body.datasource).toBe("d1_user");
+        expect(body.rows).toEqual([]);
+        expect(body.done).toBe(true);
+    });
+
+    test.each([
+        ["unknown datasource", { datasource: "unknown" }],
+        [
+            "empty cursor",
+            {
+                datasource: "d1_user",
+                cursor: "",
+            },
+        ],
+    ])("should reject %s", async (_name, requestBody) => {
+        const response = await SELF.fetch(
+            `${baseUrl}/api/admin/trigger-d1-sync`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test_d1_export_token",
+                },
+                body: JSON.stringify(requestBody),
+            },
+        );
+        expect(response.status).toBe(400);
     });
 });

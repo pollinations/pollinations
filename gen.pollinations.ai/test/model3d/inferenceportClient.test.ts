@@ -17,7 +17,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const SUBMIT_URL = "https://sharktide-lightning.hf.space/v1/3d/generations";
+const SUBMIT_URL = "https://api.inferenceport.ai/v1/3d/generations";
 
 describe("runInferenceportSync", () => {
     it("POSTs to ?sync=true and returns GLB from data[0]", async () => {
@@ -90,6 +90,27 @@ describe("runInferenceportSync", () => {
                 imageUrls: ["https://example.com/a.jpg"],
             }),
         ).rejects.toMatchObject({ name: "InferenceportError", status: 429 });
+    });
+
+    it.each([
+        400, 422,
+    ])("maps upstream %i validation errors to 400", async (status) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({ detail: "Invalid image dimensions" }),
+                { status },
+            ),
+        );
+
+        await expect(
+            runInferenceportSync({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({
+            name: "InferenceportError",
+            status: 400,
+        });
     });
 
     it("maps other HTTP errors to 502", async () => {

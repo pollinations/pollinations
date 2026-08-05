@@ -72,11 +72,10 @@
 }
 
 @layer base {
-    html.polli-ui-root {
-        /* color-scheme is owned by tokens.css (:root = light, .dark = dark)
-           so adding class `dark` to <html> flips native controls too. */
-        overflow-x: hidden;
-    }
+    /* color-scheme is owned by tokens.css (:root = light, .dark = dark)
+       so adding class `dark` to <html> flips native controls too.
+       No overflow rules on html: document-flow apps scroll with the window;
+       polli-ui-shell / polli-ui-body opt into their own clipping below. */
 
     html.polli-ui-root *,
     html.polli-ui-root ::before,

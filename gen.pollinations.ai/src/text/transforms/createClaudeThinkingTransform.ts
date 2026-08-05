@@ -10,8 +10,8 @@ const log = debug("pollinations:transforms:claude-thinking");
  * - `"budget"`: Haiku 4.5 — classic `thinking:{type:"enabled",
  *   budget_tokens:N}`. (`adaptive` is rejected: "adaptive thinking is not
  *   supported on this model".)
- * - `"adaptive"`: Sonnet 4.6 and Opus 4.6/4.7/4.8 —
- *   `thinking:{type:"adaptive"}` + `output_config:{effort}`. On Opus 4.7/4.8,
+ * - `"adaptive"`: Sonnet 4.6 and Opus 4.6/4.7/4.8/5 —
+ *   `thinking:{type:"adaptive"}` + `output_config:{effort}`. On Opus 4.7+,
  *   `{type:"enabled",budget_tokens}` is rejected; on Sonnet/Opus 4.6 it still
  *   works but is deprecated.
  */
@@ -47,10 +47,13 @@ function normalizeEffort(value: unknown): string | undefined {
  * Creates a transform that maps the standard `reasoning_effort` onto Claude's
  * native extended-thinking request shape for Bedrock. Thinking is OFF by
  * default; it is only enabled when the caller asks for it.
- * `reasoning_effort:"none"` leaves thinking off.
+ * `reasoning_effort:"none"` leaves thinking off. Models that enable adaptive
+ * thinking upstream by default can set `disableAdaptiveByDefault` to preserve
+ * Pollinations' opt-in reasoning behavior.
  */
 export function createClaudeThinkingTransform(
     mode: ClaudeThinkingMode,
+    disableAdaptiveByDefault = false,
 ): TransformFn {
     return (messages, options) => {
         const updated: TransformOptions = { ...options };
@@ -63,7 +66,9 @@ export function createClaudeThinkingTransform(
         const wantsThinking = effort !== undefined && effort !== "none";
 
         if (!wantsThinking) {
-            // Off (default): emit no thinking block.
+            if (mode === "adaptive" && disableAdaptiveByDefault) {
+                updated.thinking = { type: "disabled" };
+            }
             return { messages, options: updated };
         }
 
@@ -90,7 +95,7 @@ export function createClaudeThinkingTransform(
 
         // Anthropic rejects non-default sampling params when thinking is on
         // ("`temperature` may only be set to 1 when thinking is enabled"). Strip
-        // them so an enabled toggle never 400s. (Opus 4.7/4.8 already get this in
+        // them so an enabled toggle never 400s. (Opus 4.7+ already get this in
         // parameterProcessor, but Sonnet/Haiku do not.)
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updated[param] !== undefined) {

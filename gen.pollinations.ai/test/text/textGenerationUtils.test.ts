@@ -35,6 +35,31 @@ describe("CreateChatCompletionRequestSchema cache_control handling", () => {
     });
 });
 
+describe("CreateChatCompletionRequestSchema seed handling", () => {
+    const request = {
+        model: "qwen-vision-pro",
+        messages: [{ role: "user" as const, content: "hello" }],
+    };
+
+    it("accepts signed INT32 seeds", () => {
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                seed: 2147483647,
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects seeds above signed INT32 range", () => {
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                ...request,
+                seed: 2147483648,
+            }).success,
+        ).toBe(false);
+    });
+});
+
 describe("validateAndNormalizeMessages cache_control handling", () => {
     // Vertex explicit context caching (pollinations/gateway#8) relies on
     // content-block cache_control markers surviving ingress. Message content

@@ -15,12 +15,7 @@ const MAX_WEEKS_BACK = 20;
 type Env = {
     TINYBIRD_READ_TOKEN: string;
     TINYBIRD_API: string;
-    POLAR_ACCESS_TOKEN: string;
-    POLAR_API: string;
     GITHUB_TOKEN?: string;
-    GITHUB_APP_ID?: string;
-    GITHUB_APP_PRIVATE_KEY?: string;
-    GITHUB_APP_INSTALLATION_ID?: string;
     GITHUB_REPO: string;
     DASHBOARD_PASSWORD?: string;
     __STATIC_CONTENT: KVNamespace;
@@ -206,17 +201,8 @@ app.get("/api/kpi/total-users", async (c) => {
     return c.json({ total: row?.total || 0 });
 });
 
-// Tinybird: Tier distribution (from Oct 1, 2025)
-app.get("/api/kpi/tiers", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_tier_distribution", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
-});
-
 // D7 Activations: users who made their first API request within 7 days of registration
-// Fully computed in Tinybird by joining d1_user with generation_event
+// Fully computed in Tinybird by joining d1_user with generation_event_v2
 app.get("/api/kpi/activations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_activations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,
@@ -298,75 +284,6 @@ app.get("/api/kpi/stripe-revenue", async (c) => {
     return c.json({ data: result.data });
 });
 
-// Polar: Revenue (one-time pollen purchases only) - legacy, being phased out
-async function fetchPolarRevenue(
-    env: Env,
-): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
-    const allOrders: Array<{
-        status: string;
-        created_at: string;
-        amount: number;
-    }> = [];
-    let page = 1;
-    const maxPages = 5;
-
-    while (page <= maxPages) {
-        const res = await fetch(
-            `${env.POLAR_API}/v1/orders?limit=100&product_billing_type=one_time&page=${page}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                redirect: "follow",
-            },
-        );
-
-        if (!res.ok) break;
-
-        const data = (await res.json()) as {
-            items: Array<{
-                status: string;
-                created_at: string;
-                amount: number;
-            }>;
-            pagination: { total_count: number };
-        };
-
-        allOrders.push(...(data.items || []));
-
-        if (
-            allOrders.length >= data.pagination.total_count ||
-            data.items.length === 0
-        )
-            break;
-        page++;
-    }
-
-    const weeklyData: Record<string, { revenue: number; purchases: number }> =
-        {};
-
-    for (const order of allOrders) {
-        if (order.status !== "paid") continue;
-        if (order.amount === 0) continue;
-
-        const date = new Date(order.created_at);
-        if (date < new Date(DATA_START_DATE)) continue;
-
-        const weekStart = getWeekStart(date);
-
-        if (!weeklyData[weekStart]) {
-            weeklyData[weekStart] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[weekStart].revenue += order.amount / 100;
-        weeklyData[weekStart].purchases += 1;
-    }
-
-    return Object.entries(weeklyData)
-        .map(([week, d]) => ({ week, ...d }))
-        .sort((a, b) => a.week.localeCompare(b.week));
-}
-
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
     env: Env,
@@ -401,41 +318,11 @@ async function fetchStripeRevenue(
         .sort((a, b) => a.week.localeCompare(b.week));
 }
 
-// Combined Revenue: Stripe (primary) + Polar (legacy)
 app.get("/api/kpi/revenue", async (c) => {
-    // Fetch both sources in parallel
-    const [stripeRevenue, polarRevenue] = await Promise.all([
-        fetchStripeRevenue(c.env),
-        fetchPolarRevenue(c.env),
-    ]);
-
-    // Merge by week, summing revenue and purchases
-    const weeklyData: Record<string, { revenue: number; purchases: number }> =
-        {};
-
-    for (const row of stripeRevenue) {
-        if (!weeklyData[row.week]) {
-            weeklyData[row.week] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[row.week].revenue += row.revenue;
-        weeklyData[row.week].purchases += row.purchases;
-    }
-
-    for (const row of polarRevenue) {
-        if (!weeklyData[row.week]) {
-            weeklyData[row.week] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[row.week].revenue += row.revenue;
-        weeklyData[row.week].purchases += row.purchases;
-    }
-
-    const result = Object.entries(weeklyData)
-        .map(([week, d]) => ({
-            week,
-            revenue: Math.round(d.revenue * 100) / 100,
-            purchases: d.purchases,
-        }))
-        .sort((a, b) => a.week.localeCompare(b.week));
+    const result = (await fetchStripeRevenue(c.env)).map((row) => ({
+        ...row,
+        revenue: Math.round(row.revenue * 100) / 100,
+    }));
 
     return c.json({ data: result });
 });
@@ -496,141 +383,46 @@ app.get("/api/kpi/user-segments", async (c) => {
     return c.json({ data: result.data });
 });
 
-// GitHub App JWT auth for higher rate limits (15k/hr vs 5k/hr)
-// Falls back to GITHUB_TOKEN (PAT) if app credentials aren't configured
-async function getGitHubToken(env: Env): Promise<string | null> {
-    // Try GitHub App auth first
-    if (
-        env.GITHUB_APP_ID &&
-        env.GITHUB_APP_PRIVATE_KEY &&
-        env.GITHUB_APP_INSTALLATION_ID
-    ) {
-        try {
-            const now = Math.floor(Date.now() / 1000);
-            const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }))
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-            const payload = btoa(
-                JSON.stringify({
-                    iat: now - 30,
-                    exp: now + 600,
-                    iss: env.GITHUB_APP_ID,
-                }),
-            )
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-
-            // Import RSA private key for signing
-            const pemBody = env.GITHUB_APP_PRIVATE_KEY.replace(
-                /-----BEGIN RSA PRIVATE KEY-----/,
-                "",
-            )
-                .replace(/-----END RSA PRIVATE KEY-----/, "")
-                .replace(/\s/g, "");
-            const binaryKey = Uint8Array.from(atob(pemBody), (c) =>
-                c.charCodeAt(0),
-            );
-            const cryptoKey = await crypto.subtle.importKey(
-                "pkcs8",
-                binaryKey,
-                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-                false,
-                ["sign"],
-            );
-
-            const sigData = new TextEncoder().encode(`${header}.${payload}`);
-            const signature = await crypto.subtle.sign(
-                "RSASSA-PKCS1-v1_5",
-                cryptoKey,
-                sigData,
-            );
-            const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-
-            const jwtToken = `${header}.${payload}.${sig}`;
-
-            // Exchange JWT for installation token
-            const res = await fetch(
-                `https://api.github.com/app/installations/${env.GITHUB_APP_INSTALLATION_ID}/access_tokens`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${jwtToken}`,
-                        Accept: "application/vnd.github+json",
-                        "User-Agent": "KPI-Dashboard",
-                    },
-                },
-            );
-
-            if (res.ok) {
-                const data = (await res.json()) as { token: string };
-                return data.token;
-            }
-            console.error(`[GitHub App] Token exchange failed: ${res.status}`);
-        } catch (e) {
-            console.error(
-                `[GitHub App] Auth failed, falling back to PAT: ${e}`,
-            );
-        }
-    }
-
-    return env.GITHUB_TOKEN || null;
-}
-
-// GitHub: App submissions — weekly counts from issue labels
-app.get("/api/kpi/app-submissions", async (c) => {
-    const token = await getGitHubToken(c.env);
+function githubHeaders(env: Env): Record<string, string> {
     const headers: Record<string, string> = {
         "User-Agent": "KPI-Dashboard",
         Accept: "application/vnd.github+json",
     };
-    if (token) headers.Authorization = `token ${token}`;
+    if (env.GITHUB_TOKEN) {
+        headers.Authorization = `token ${env.GITHUB_TOKEN}`;
+    }
+    return headers;
+}
 
-    // Fetch all TIER-APP issues (submissions) across the full app-review state machine.
-    // GitHub Search API lets us get created/closed dates with labels in one call.
+// GitHub: App submissions — weekly counts from issue labels
+app.get("/api/kpi/app-submissions", async (c) => {
+    const headers = githubHeaders(c.env);
+
     const repo = c.env.GITHUB_REPO;
     const since = DATA_START_DATE;
-
-    // TIER-APP label gets replaced as issues progress, so search each label separately.
-    // GitHub Search API treats comma-separated labels as AND, not OR.
-    const labels = [
-        "TIER-APP",
-        "TIER-APP-REVIEW",
-        "TIER-APP-APPROVED",
-        "TIER-APP-REJECTED",
-        "TIER-APP-INCOMPLETE",
-    ];
-    const seenIssues = new Set<number>();
     const weeklySubmissions: Record<string, number> = {};
-
-    for (const label of labels) {
-        const query = `repo:${repo}+is:issue+label:${label}+created:>=${since}`;
-        let page = 1;
-        let totalCount = 0;
-        do {
-            const res = await fetch(
-                `https://api.github.com/search/issues?q=${query}&per_page=100&sort=created&order=asc&page=${page}`,
-                { headers },
-            );
-            if (!res.ok) break;
-            const data = (await res.json()) as {
-                total_count: number;
-                items: Array<{ number: number; created_at: string }>;
-            };
-            totalCount = data.total_count;
-            for (const issue of data.items) {
-                if (seenIssues.has(issue.number)) continue;
-                seenIssues.add(issue.number);
-                const week = getWeekStart(new Date(issue.created_at));
-                weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
-            }
-            page++;
-        } while ((page - 1) * 100 < totalCount && page <= 5);
-    }
+    let page = 1;
+    let itemCount = 0;
+    do {
+        const res = await fetch(
+            `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
+            { headers },
+        );
+        if (!res.ok) break;
+        const data = (await res.json()) as Array<{
+            created_at: string;
+            pull_request?: unknown;
+        }>;
+        itemCount = data.length;
+        for (const issue of data) {
+            if (issue.pull_request) continue;
+            const createdAt = new Date(issue.created_at);
+            if (createdAt.getTime() < DATA_START_TIMESTAMP_MS) continue;
+            const week = getWeekStart(createdAt);
+            weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
+        }
+        page++;
+    } while (itemCount === 100);
 
     const result = Object.entries(weeklySubmissions)
         .map(([week, submitted]) => ({ week, submitted }))
@@ -641,13 +433,7 @@ app.get("/api/kpi/app-submissions", async (c) => {
 
 // GitHub: Stars
 app.get("/api/kpi/github", async (c) => {
-    const token = await getGitHubToken(c.env);
-    const headers: Record<string, string> = {
-        "User-Agent": "KPI-Dashboard",
-    };
-    if (token) {
-        headers.Authorization = `token ${token}`;
-    }
+    const headers = githubHeaders(c.env);
 
     const res = await fetch(
         `https://api.github.com/repos/${c.env.GITHUB_REPO}`,

@@ -8,6 +8,11 @@ type FetchUpstreamOptions = RequestInit & {
     errorLabel?: string;
 };
 
+type UpstreamFetcher = (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+) => Promise<Response>;
+
 /**
  * fetch() wrapper that throws HttpError(status, ..., upstreamUrl) on non-ok
  * responses. Use for upstream backend calls where the URL should appear in
@@ -19,9 +24,19 @@ type FetchUpstreamOptions = RequestInit & {
 export async function fetchUpstream(
     url: string,
     options: FetchUpstreamOptions = {},
+    fetcher: UpstreamFetcher = fetch,
 ): Promise<Response> {
     const { errorLabel = "Upstream request failed", ...init } = options;
-    const response = await fetch(url, init);
+    let response: Response;
+    try {
+        response = await fetcher(url, init);
+    } catch (error) {
+        // fetch() rejections (e.g. "Network connection lost") carry no
+        // upstream context; rethrow with the URL so error tracking records
+        // the host instead of a bare TypeError.
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(`${errorLabel}: ${message}`, 502, undefined, url);
+    }
 
     if (!response.ok) {
         const body = await response.text().catch(() => "");

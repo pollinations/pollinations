@@ -54,6 +54,9 @@ await client.connect(transport);
 await step("listTools", async () => {
     const { tools } = await client.listTools();
     if (tools.length < 15) throw new Error(`only ${tools.length} tools`);
+    if (!tools.some((tool) => tool.name === "listQuests")) {
+        throw new Error("listQuests is not registered");
+    }
     return `${tools.length} tools`;
 });
 
@@ -86,6 +89,7 @@ if (!KEY) {
         return out;
     });
     await step("getBalance", () => call("getBalance"));
+    await step("listQuests", () => call("listQuests"));
     await step("clearApiKey", () => call("clearApiKey"));
 }
 

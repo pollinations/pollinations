@@ -7,7 +7,7 @@ Pollinations" — the same shape alp.anondrop.net-style clients use.
 
 ## Register a client
 
-1. Sign in at https://enter.pollinations.ai and create an **App Key** (`pk_…`).
+1. Sign in at https://enter.pollinations.ai/keys and create an **App Key** (`pk_…`).
 2. Add `http://localhost:8789/callback` to the key's **redirect URIs**
    (loopback redirects match any port per RFC 8252 §7.3).
 

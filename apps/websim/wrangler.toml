@@ -3,7 +3,8 @@ main = "worker.js"
 compatibility_date = "2026-05-01"
 
 routes = [
-  { pattern = "websim.myceli.ai", zone_name = "myceli.ai", custom_domain = true }
+  { pattern = "websim.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+  { pattern = "websim.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
 ]
 
 [assets]

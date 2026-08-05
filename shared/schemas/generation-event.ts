@@ -26,8 +26,6 @@ export type TinybirdEvent = {
     // User
     userId?: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
 
     // API Key
     apiKeyId?: string;
@@ -63,8 +61,23 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Named conditional pricing sheet selected for this billed request. */
+    costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
+    /**
+     * True on the row that says how the request ENDED; false on a row recording
+     * one upstream call that was moved on from.
+     *
+     * About grain, not about fallback. This table used to be exactly one row per
+     * request and every consumer relies on that, so counting requests means
+     * counting these. A request that failed over emits one row per call it made,
+     * and only the last of them is the outcome. Rows where this is false carry
+     * the per-call detail: which model was tried, and how it failed.
+     *
+     * Defaults to true, matching every row written before fallback existed.
+     */
+    isFinal?: boolean;
     isBilledUsage: boolean;
 
     // Pricing
@@ -72,11 +85,13 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -121,10 +136,6 @@ export type TinybirdEvent = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
     moderationCompletionProtectedMaterialTextDetected?: boolean;
 
-    // Cache
-    cacheHit?: boolean;
-    cacheKey?: string;
-
     // Error
     errorResponseCode?: string;
     errorSource?: string;
@@ -136,11 +147,13 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -177,6 +190,8 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -189,6 +204,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:

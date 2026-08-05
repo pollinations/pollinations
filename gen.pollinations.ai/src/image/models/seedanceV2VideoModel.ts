@@ -16,6 +16,7 @@ import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance2:ops");
@@ -125,12 +126,8 @@ export async function callSeedanceV2API(
                 message: err.message,
                 status: err.status,
             });
-            throw new HttpError(
-                `Seedance 2.0 generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
         }
-        throw err;
+        throw toReplicateHttpError(err, "Seedance 2.0 generation failed");
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

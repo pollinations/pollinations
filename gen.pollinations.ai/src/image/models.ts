@@ -9,6 +9,7 @@ export const IMAGE_DEFAULT_SIDE_LENGTHS: Partial<
     Record<ImageModelName, number>
 > = {
     seedream5: 2048,
+    "seedream5-pro": 2048,
     "seedream-pro": 2048,
     "ideogram-v4-turbo": 2048,
     "ideogram-v4-balanced": 2048,

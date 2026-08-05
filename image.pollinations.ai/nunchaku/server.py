@@ -47,7 +47,12 @@ gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA 
 BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 # Shed load instead of building unbounded backlog: beyond this many in-flight
 # requests, reply 503 so the gateway falls back to its secondary provider.
-QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "3"))
+HEARTBEAT_ENABLED = os.getenv("HEARTBEAT_ENABLED", "true").lower() in {
+    "1",
+    "true",
+    "yes",
+}
 pending_requests = 0
 
 # Function to get public IP address
@@ -117,23 +122,26 @@ async def lifespan(app: FastAPI):
         ).to("cuda")
         print("FLUX pipeline loaded successfully")
         
-        # Send initial heartbeat and start periodic task
-        try:
-            await send_heartbeat()
-            logger.info("Initial heartbeat sent successfully")
-            # Store the task in app.state to prevent garbage collection
-            heartbeat_task = asyncio.create_task(periodic_heartbeat())
-            app.state.heartbeat_task = heartbeat_task
-            logger.info("Periodic heartbeat task started")
-        except Exception as e:
-            logger.error(f"Error in heartbeat initialization: {str(e)}")
-            if heartbeat_task:
-                heartbeat_task.cancel()
-                try:
-                    await heartbeat_task
-                except asyncio.CancelledError:
-                    pass
-            raise
+        if HEARTBEAT_ENABLED:
+            # Send initial heartbeat and start periodic task
+            try:
+                await send_heartbeat()
+                logger.info("Initial heartbeat sent successfully")
+                # Store the task in app.state to prevent garbage collection
+                heartbeat_task = asyncio.create_task(periodic_heartbeat())
+                app.state.heartbeat_task = heartbeat_task
+                logger.info("Periodic heartbeat task started")
+            except Exception as e:
+                logger.error(f"Error in heartbeat initialization: {str(e)}")
+                if heartbeat_task:
+                    heartbeat_task.cancel()
+                    try:
+                        await heartbeat_task
+                    except asyncio.CancelledError:
+                        pass
+                raise
+        else:
+            logger.warning("Production heartbeat disabled")
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
         if heartbeat_task:
@@ -278,8 +286,8 @@ async def _generate(request: ImageRequest):
             "prompt": request.prompts[0]
         }]
         
-        # Send heartbeat after successful generation
-        await send_heartbeat()
+        if HEARTBEAT_ENABLED:
+            await send_heartbeat()
         return JSONResponse(content=response_content)
     
     except torch.cuda.OutOfMemoryError as e:

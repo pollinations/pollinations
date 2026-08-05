@@ -12,9 +12,11 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
+import { linkFallbackEntries } from "./fallback.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 const TEXT_MODEL_ENDPOINTS = [
@@ -33,15 +35,18 @@ export type GenerationModelEntry = {
     aliases: string[];
     eventType: EventType;
     supportedEndpoints: string[];
-    definition: ModelDefinition<string>;
+    definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
+    // Entries that serve this model when its own upstream fails, in declared
+    // order. A fallback's own list is not followed, so routing stays depth one.
+    fallbackEntries?: GenerationModelEntry[];
 };
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: () => GenerationModelEntry[];
+    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
 };
 
 type CachedRegistry = {
@@ -50,13 +55,7 @@ type CachedRegistry = {
     registry: GenerationModelRegistry;
 };
 
-type PendingRegistryLoad = {
-    dbBinding: CloudflareBindings["DB"] | undefined;
-    promise: Promise<GenerationModelRegistry>;
-};
-
 let cachedRegistry: CachedRegistry | null = null;
-let pendingRegistryLoad: PendingRegistryLoad | null = null;
 
 function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
@@ -68,7 +67,9 @@ function eventTypeForCategory(category: Category): EventType {
 
 function supportedEndpointsForEventType(eventType: EventType): string[] {
     if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
-    if (eventType === "generate.audio") return ["/audio/{text}"];
+    if (eventType === "generate.audio") {
+        return ["/audio/{text}", "/v1/audio/speech"];
+    }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
     if (eventType === "generate.realtime") return ["/v1/realtime"];
     return IMAGE_MODEL_ENDPOINTS;
@@ -81,7 +82,9 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForEventType(eventType),
+        supportedEndpoints:
+            definition.supportedEndpoints ??
+            supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,
@@ -91,21 +94,34 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
 function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
     return {
         id: entry.id,
         aliases: entry.aliases,
-        eventType: "generate.text",
-        supportedEndpoints: communityTextSupportedEndpoints(),
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints(
+                      entry.definition.inputModalities,
+                  )
+                : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: entry.communityEndpoint.disabledAt === null,
+        // Public endpoints appear for everyone. Private endpoints are added
+        // back for their owner by visibleEntries().
+        visible:
+            entry.communityEndpoint.disabledAt === null &&
+            entry.communityEndpoint.visibility === "public",
     };
 }
 
 function buildRegistry(
-    entries: GenerationModelEntry[],
+    sourceEntries: GenerationModelEntry[],
 ): GenerationModelRegistry {
+    // Link on copies: STATIC_ENTRIES is module-level and shared across registry
+    // rebuilds, so resolution must never mutate the originals.
+    const entries = sourceEntries.map((entry) => ({ ...entry }));
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -119,6 +135,7 @@ function buildRegistry(
             }
         }
     }
+    linkFallbackEntries(entries, byIdOrAlias);
 
     return {
         resolve: (model) => {
@@ -130,7 +147,16 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: () => entries.filter((entry) => entry.visible),
+        visibleEntries: (callerUserId) =>
+            entries.filter((entry) => {
+                if (entry.visible) return true;
+                const endpoint = entry.communityEndpoint;
+                return (
+                    endpoint?.disabledAt === null &&
+                    endpoint.visibility === "private" &&
+                    endpoint.ownerUserId === callerUserId
+                );
+            }),
     };
 }
 
@@ -146,40 +172,28 @@ async function loadGenerationModelRegistry(
 export async function getGenerationModelRegistry(
     env: Pick<CloudflareBindings, "DB">,
 ): Promise<GenerationModelRegistry> {
-    const now = Date.now();
     if (
         cachedRegistry &&
         cachedRegistry.dbBinding === env.DB &&
-        cachedRegistry.expiresAt > now
+        cachedRegistry.expiresAt > Date.now()
     ) {
         return cachedRegistry.registry;
     }
 
-    if (!pendingRegistryLoad || pendingRegistryLoad.dbBinding !== env.DB) {
-        const dbBinding = env.DB;
-        pendingRegistryLoad = {
-            dbBinding,
-            promise: loadGenerationModelRegistry(dbBinding)
-                .then((registry) => {
-                    cachedRegistry = {
-                        dbBinding,
-                        expiresAt: Date.now() + REGISTRY_TTL_MS,
-                        registry,
-                    };
-                    return registry;
-                })
-                .finally(() => {
-                    if (pendingRegistryLoad?.dbBinding === dbBinding) {
-                        pendingRegistryLoad = null;
-                    }
-                }),
-        };
-    }
-
-    return pendingRegistryLoad.promise;
+    // Deliberately no in-flight promise cache: sharing one pending promise
+    // across requests hands request A's D1 I/O to requests B..N, and if A is
+    // cancelled the promise can never settle, wedging the isolate for good.
+    // Racing a few cheap SELECTs on cache expiry is the better trade.
+    const dbBinding = env.DB;
+    const registry = await loadGenerationModelRegistry(dbBinding);
+    cachedRegistry = {
+        dbBinding,
+        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        registry,
+    };
+    return registry;
 }
 
 export function resetGenerationModelRegistryCache(): void {
     cachedRegistry = null;
-    pendingRegistryLoad = null;
 }

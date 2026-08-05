@@ -14,7 +14,6 @@ import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
-import { questTools } from "./services/questsService.js";
 import { textTools } from "./services/textService.js";
 
 // Combine all tools
@@ -24,7 +23,6 @@ const allTools = [
     ...audioTools,
     ...authTools,
     ...accountTools,
-    ...questTools,
 ];
 
 /**
@@ -37,7 +35,7 @@ Set your API key first using the setApiKey tool:
 - **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen per IP per hour)
 - **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
 
-Get your API key at: https://enter.pollinations.ai
+Get your API key at: https://enter.pollinations.ai/keys
 
 ## Available Tools
 
@@ -72,9 +70,7 @@ Get your API key at: https://enter.pollinations.ai
 ### Account
 - **getBalance** - Remaining Pollen for the authenticated key (requires account:usage)
 - **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
-
-### Quests
-- **listQuests** - List quests with your account status and earned rewards, flagging which are ready to claim (requires account:usage). Read-only: claiming a reward requires a dashboard session, not an API key.
+- **listQuests** - Quests and earned rewards for the authenticated account (requires account:usage)
 
 ## API Endpoint
 All requests go through: https://gen.pollinations.ai

@@ -24,7 +24,7 @@ export type WalletKindIconProps = {
     className?: string;
 };
 
-/** The paid/tier marker — a card (paid) or sprout (tier) glyph in the wallet's deep color. */
+/** The paid/Quest marker: a card for paid balance or sprout for Quest Pollen. */
 export const WalletKindIcon: FC<WalletKindIconProps> = ({
     kind,
     className,

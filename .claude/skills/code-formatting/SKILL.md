@@ -26,7 +26,7 @@ This formats all `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, `.jsonc` files changed c
 1. Finds files changed on current branch vs base branch
 2. Filters to JS/TS/JSON files only
 3. Runs `npx biome check --write` on those files
-4. Uses same settings as the `biome-check.yml` CI workflow
+4. Uses same settings as the `ci-pull-request-checks.yml` CI workflow
 
 ## Config
 

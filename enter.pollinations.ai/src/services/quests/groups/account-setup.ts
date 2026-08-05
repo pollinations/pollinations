@@ -38,7 +38,7 @@ const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
 const firstApiKeyQuest: QuestDefinition = {
     id: "first_api_key",
     title: "Create your first API key",
-    description: "Create an API [key](#keys).",
+    description: "Create an API [key](/keys).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -54,8 +54,6 @@ const byopLoginQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 0.25,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
 const sixMonthAccountQuest: QuestDefinition = {
@@ -73,7 +71,7 @@ const sixMonthAccountQuest: QuestDefinition = {
 const legacyFirstTopUpQuest: QuestDefinition = {
     id: "first_top_up",
     title: "First Pollen top up",
-    description: "[Top up](#buy-pollen) Pollen.",
+    description: "[Top up](/pollen#buy-pollen) Pollen.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -85,7 +83,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
     id: "top_up_100",
     title: "Top up 100 Pollen",
     description:
-        "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
+        "You have [topped up](/pollen#buy-pollen) 100 Pollen or more in total.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,
@@ -96,7 +94,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
 const topUpSinceLaunchQuest: QuestDefinition = {
     id: "top_up_since_launch",
     title: "Top up Pollen",
-    description: `[Top up](#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `[Top up](/pollen#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,
@@ -106,7 +104,7 @@ const topUpSinceLaunchQuest: QuestDefinition = {
 const overHundredPollenSinceLaunchQuest: QuestDefinition = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
-    description: `You have [topped up](#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `You have [topped up](/pollen#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

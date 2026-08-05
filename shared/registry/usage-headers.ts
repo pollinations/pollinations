@@ -20,6 +20,8 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
+export const USAGE_MISSING_HEADER = "x-usage-missing";
+
 export const OPENAI_CHAT_USAGE_TYPES = [
     "promptTextTokens",
     "promptCachedTokens",
@@ -42,7 +44,10 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
         "prompt_tokens_details.cached_tokens",
         "cache_read_input_tokens",
     ],
-    promptCacheWriteTokens: ["cache_creation_input_tokens"],
+    promptCacheWriteTokens: [
+        "prompt_tokens_details.cache_write_tokens",
+        "cache_creation_input_tokens",
+    ],
     promptAudioTokens: ["prompt_tokens_details.audio_tokens"],
     promptImageTokens: ["prompt_tokens_details.image_tokens"],
     completionTextTokens: ["completion_tokens"],
@@ -50,12 +55,83 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
     completionAudioTokens: ["completion_tokens_details.audio_tokens"],
 };
 
+export type OpenAIImageUsage = {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details: {
+        text_tokens: number;
+        image_tokens: number;
+    };
+};
+
+export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (!usage || typeof usage !== "object") return null;
+    const details =
+        "input_tokens_details" in usage
+            ? usage.input_tokens_details
+            : undefined;
+    if (!details || typeof details !== "object") return null;
+    if (
+        !("input_tokens" in usage) ||
+        !isTokenCount(usage.input_tokens) ||
+        !("output_tokens" in usage) ||
+        !isTokenCount(usage.output_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        !("text_tokens" in details) ||
+        !isTokenCount(details.text_tokens) ||
+        !("image_tokens" in details) ||
+        !isTokenCount(details.image_tokens)
+    ) {
+        return null;
+    }
+    if (
+        usage.input_tokens !== details.text_tokens + details.image_tokens ||
+        usage.total_tokens !== usage.input_tokens + usage.output_tokens
+    ) {
+        return null;
+    }
+    return usage as OpenAIImageUsage;
+}
+
+export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
+    const inputTextTokens =
+        (usage.promptTextTokens ?? 0) +
+        (usage.promptCachedTokens ?? 0) +
+        (usage.promptCacheWriteTokens ?? 0);
+    const inputImageTokens = usage.promptImageTokens ?? 0;
+    const inputTokens = inputTextTokens + inputImageTokens;
+    const outputTokens =
+        (usage.completionTextTokens ?? 0) + (usage.completionImageTokens ?? 0);
+    return {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens,
+        input_tokens_details: {
+            text_tokens: inputTextTokens,
+            image_tokens: inputImageTokens,
+        },
+    };
+}
+
 /**
  * Internal worker header carrying Portkey's served fallback target (e.g.
  * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
  * tracking can read it off the worker response like the other usage headers.
  */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
+ * Our id for the model that served the request. Authoritative over any name a
+ * provider reports for itself, which for a community endpoint is its upstream's
+ * name rather than the listing anyone can act on.
+ */
+export const MODEL_USED_HEADER = "x-model-used";
 
 /**
  * Convert OpenAI usage format to Usage format.
@@ -79,8 +155,10 @@ export function openaiUsageToUsage(openaiUsage: {
     total_tokens: number;
     prompt_tokens_details?: {
         cached_tokens?: number | null;
+        cache_write_tokens?: number | null;
         audio_tokens?: number | null;
         image_tokens?: number | null;
+        video_tokens?: number | null;
     } | null;
     cached_input_tokens?: number | null;
     cache_read_input_tokens?: number | null;
@@ -89,6 +167,7 @@ export function openaiUsageToUsage(openaiUsage: {
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
+        image_tokens?: number | null;
         accepted_prediction_tokens?: number | null;
         rejected_prediction_tokens?: number | null;
     } | null;
@@ -98,12 +177,16 @@ export function openaiUsageToUsage(openaiUsage: {
         openaiUsage.cached_input_tokens ||
         openaiUsage.cache_read_input_tokens ||
         0;
-    const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
+    const promptCacheWriteTokens =
+        openaiUsage.prompt_tokens_details?.cache_write_tokens ??
+        openaiUsage.cache_creation_input_tokens ??
+        0;
     const promptDetails = [
         promptCachedTokens,
         promptCacheWriteTokens,
         openaiUsage.prompt_tokens_details?.audio_tokens || 0,
         openaiUsage.prompt_tokens_details?.image_tokens || 0,
+        openaiUsage.prompt_tokens_details?.video_tokens || 0,
     ];
 
     const rawCompletionReasoningTokens =
@@ -114,6 +197,7 @@ export function openaiUsageToUsage(openaiUsage: {
         openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.audio_tokens || 0,
+        openaiUsage.completion_tokens_details?.image_tokens || 0,
         rawCompletionReasoningTokens,
     ];
 
@@ -147,9 +231,15 @@ export function openaiUsageToUsage(openaiUsage: {
         cappedPromptCacheWriteTokens,
         promptAudioTokens,
         promptImageTokens,
+        promptVideoTokens,
     ] = cappedPromptDetails;
-    const [, , completionAudioTokens, completionReasoningTokens] =
-        cappedCompletionDetails;
+    const [
+        ,
+        ,
+        completionAudioTokens,
+        completionImageTokens,
+        completionReasoningTokens,
+    ] = cappedCompletionDetails;
 
     return {
         promptTextTokens,
@@ -157,10 +247,26 @@ export function openaiUsageToUsage(openaiUsage: {
         promptCacheWriteTokens: cappedPromptCacheWriteTokens,
         promptAudioTokens,
         promptImageTokens,
+        promptVideoTokens,
         completionTextTokens,
         completionAudioTokens,
+        completionImageTokens,
         completionReasoningTokens,
     };
+}
+
+export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
+    return {
+        promptTextTokens: usage.input_tokens_details.text_tokens,
+        promptImageTokens: usage.input_tokens_details.image_tokens,
+        completionImageTokens: usage.output_tokens,
+    };
+}
+
+function isTokenCount(value: unknown): value is number {
+    return (
+        typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    );
 }
 
 function sumTokens(tokens: readonly number[]): number {
@@ -237,11 +343,16 @@ function detectUsageConvention(
  */
 export function buildUsageHeaders(
     modelUsed: string,
-    usage: Usage,
+    usage?: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
-        "x-model-used": modelUsed,
+        [MODEL_USED_HEADER]: modelUsed,
     };
+
+    if (!usage) {
+        headers[USAGE_MISSING_HEADER] = "true";
+        return headers;
+    }
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];

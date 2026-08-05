@@ -175,10 +175,6 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
 
 # Generate music (ElevenLabs)
 curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
-
-# Generate music (ACE-Step, open-source)
-curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {
@@ -547,8 +543,6 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/profile": {
         githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
-        tier: "seed",
-        nextResetAt: "2026-01-01T01:00:00Z",
         communityEndpointsAllowed: false,
         name: "Jane Developer",
         email: "jane@example.com",

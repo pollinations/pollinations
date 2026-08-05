@@ -1,4 +1,5 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
 import { getDefaultSideLength } from "./models.js";
 
@@ -85,6 +86,7 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
+        resolution: z.enum(["480p", "720p", "1080p"]).optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -98,6 +100,29 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+    })
+    .superRefine((data, ctx) => {
+        if (data.resolution) {
+            const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
+                .resolutions;
+            if (!supported?.includes(data.resolution)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["resolution"],
+                    message: supported
+                        ? `Resolution "${data.resolution}" is not supported by ${data.model}. Supported: ${supported.join(", ")}.`
+                        : `${data.model} does not accept a resolution parameter.`,
+                });
+            }
+        }
+        if (data.model === "gpt-image-2" && data.transparent) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["transparent"],
+                message:
+                    "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
     })
     .transform((data) => {
         // Capture whether the caller actually specified dimensions BEFORE we

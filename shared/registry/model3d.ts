@@ -1,18 +1,17 @@
+import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_3D_MODEL = "trellis-2-low" as const;
+export const DEFAULT_3D_MODEL = "trellis-2" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
-export type Model3dId = (typeof MODEL3D_SERVICES)[Model3dName]["modelId"];
 
 // completionImageTokens is reused here as a flat per-generation charge (not
 // literal tokens) — same convention as image models — to avoid introducing a
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 export const MODEL3D_SERVICES = {
-    "trellis-2-low": {
-        aliases: [],
-        modelId: "trellis-2-low",
+    "trellis-2": {
+        aliases: ["trellis-2-low", "trellis-2-medium", "trellis-2-high"],
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -21,55 +20,34 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
 
         cost: {
-            completionImageTokens: 0.24, // per generation, "low" resolution
+            completionImageTokens: 0.24,
         },
-        title: "Trellis 2 (Low)",
-        description: "Trellis 2 - High-quality image-to-3D, low resolution",
+        ...defineCostVariants(
+            {
+                medium: { completionImageTokens: 0.29 },
+                high: { completionImageTokens: 0.35 },
+            },
+            matchResolution("medium", "high"),
+            {
+                medium: {
+                    label: "Medium resolution",
+                    description: "Balanced output detail and generation cost.",
+                },
+                high: {
+                    label: "High resolution",
+                    description: "Maximum output detail.",
+                },
+            },
+        ),
+        title: "Trellis 2",
+        description: "Image-to-3D generation with selectable output detail",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
-    },
-    "trellis-2-medium": {
-        aliases: [],
-        modelId: "trellis-2-medium",
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.29, // per generation, "medium" resolution
-        },
-        title: "Trellis 2 (Medium)",
-        description: "Trellis 2 - High-quality image-to-3D, medium resolution",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
-    },
-    "trellis-2-high": {
-        aliases: [],
-        modelId: "trellis-2-high",
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.35, // per generation, "high" resolution
-        },
-        title: "Trellis 2 (High)",
-        description: "Trellis 2 - High-quality image-to-3D, high resolution",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
+        resolutions: ["low", "medium", "high"],
     },
     "hyper3d-rodin": {
         aliases: ["rodin"],
-        modelId: "hyper3d-rodin",
         provider: "fal",
         brand: "Deemos",
         category: "3d",
@@ -79,14 +57,14 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
 
         cost: {
-            completionImageTokens: 0.4, // per generation
+            completionImageTokens: 0.1, // per generation
         },
         title: "Hyper3D Rodin 2.5",
-        description: "Hyper3D Rodin 2.5 - Image/text-to-3D with textures",
+        description: "Textured 3D models from an image or a text prompt",
         inputModalities: ["text", "image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-} as const satisfies Record<string, ModelDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition>;
 
 export const getModel3dModelIds = (): string[] => Object.keys(MODEL3D_SERVICES);

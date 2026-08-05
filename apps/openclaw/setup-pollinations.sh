@@ -9,7 +9,7 @@ set -e
 if [ -z "$1" ]; then
     echo "Usage: $0 <POLLINATIONS_API_KEY>"
     echo ""
-    echo "Get your API key (with free credits) at: https://enter.pollinations.ai"
+    echo "Get your API key (with free credits) at: https://enter.pollinations.ai/keys"
     exit 1
 fi
 

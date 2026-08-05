@@ -1,9 +1,10 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
+    AUDIO_VOICES,
     type AudioModelName,
-    ELEVENLABS_VOICES,
+    CSM_VOICES,
+    KOKORO_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -25,10 +26,19 @@ import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import {
+    applySafety,
+    applySafetyToTexts,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
+import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import {
+    type FallbackCandidate,
+    withModelFallbackResponse,
+} from "../fallback.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
 
@@ -45,7 +55,7 @@ const CreateSpeechRequestSchema = z
             .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
+                description: `The voice to use. Model-specific presets include ${AUDIO_VOICES.join(", ")}; ElevenLabs models also accept a custom voice ID.`,
                 example: "rachel",
             }),
         response_format: z
@@ -53,12 +63,12 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
+                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
+                "Output duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -112,11 +122,6 @@ const CreateSpeechRequestSchema = z
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
         }),
-        style: z.string().optional().meta({
-            description:
-                "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
-            example: "brazilian berimbau instrumental",
-        }),
         instruct: z.string().optional().meta({
             description:
                 "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
@@ -126,14 +131,55 @@ const CreateSpeechRequestSchema = z
     .meta({ $id: "CreateSpeechRequest" });
 
 type CreateSpeechRequest = z.infer<typeof CreateSpeechRequestSchema>;
+const CreateDialogueRequestSchema = z
+    .object({
+        model: z.string().optional(),
+        inputs: z
+            .array(
+                z.object({
+                    text: z.string().min(1).max(2000),
+                    voice: z.string().min(1),
+                }),
+            )
+            .min(1)
+            .max(25),
+        response_format: z
+            .enum(["mp3", "opus", "aac", "wav", "pcm"])
+            .default("mp3"),
+        seed: z.number().int().min(0).max(4294967295).optional(),
+        safe: SafeSchema,
+    })
+    .refine(
+        ({ inputs }) =>
+            inputs.reduce((total, input) => total + input.text.length, 0) <=
+            2000,
+        {
+            path: ["inputs"],
+            message: "Dialogue input is limited to 2000 total text characters.",
+        },
+    )
+    .meta({ $id: "CreateDialogueRequest" });
+
 type AudioContext = Context<Env>;
+
+async function withAudioFallback(
+    c: AudioContext,
+    attempt: (candidate: FallbackCandidate) => Promise<Response>,
+): Promise<Response> {
+    const { response, servedEntry } = await withModelFallbackResponse(
+        c.var.model,
+        attempt,
+        c.var.track?.failedCalls,
+    );
+    if (servedEntry) c.set("servedModelEntry", servedEntry);
+    return response;
+}
 type SimpleAudioQuery = {
     safe?: SafeValue;
     duration?: number;
     seconds?: number;
     steps?: number;
     negative_prompt?: string;
-    style?: string;
     instrumental?: boolean;
     seed?: number;
     voice: string;
@@ -216,9 +262,53 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
     return buffer; // no data chunk found
 }
 
-export async function generateSpeech(opts: {
-    modelName: string;
-    modelId: string;
+async function buildElevenLabsAudioResponse(
+    response: Response,
+    responseFormat: string,
+    headers: Record<string, string>,
+): Promise<Response> {
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    // ElevenLabs streams WAV with placeholder RIFF sizes, so WAV must be
+    // buffered and repaired. Other formats keep streaming from upstream.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...headers,
+            },
+        });
+    }
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...headers,
+        },
+    });
+}
+
+const ELEVENLABS_TTS_MODEL_IDS = {
+    elevenlabs: "eleven_v3",
+    elevenflash: "eleven_flash_v2_5",
+    "eleven-multilingual-v2": "eleven_multilingual_v2",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+const ELEVENLABS_TTS_VOICE_SETTINGS = {
+    stability: 0.5,
+    similarity_boost: 0.75,
+    style: 0.0,
+    use_speaker_boost: true,
+} as const;
+
+type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
+
+export async function generateElevenLabsSpeech(opts: {
+    modelName: ElevenLabsTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -226,8 +316,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
-        opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -259,21 +349,14 @@ export async function generateSpeech(opts: {
         chars: text.length,
     });
 
-    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
 
-    const elevenLabsBody: Record<string, unknown> = {
+    const elevenLabsBody = {
         text,
         model_id: modelId,
-        voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.0,
-            use_speaker_boost: true,
-        },
+        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        ...(opts.seed === undefined ? {} : { seed: opts.seed }),
     };
-    if (opts.seed !== undefined) {
-        elevenLabsBody.seed = opts.seed;
-    }
 
     const rawResponse = await fetch(elevenLabsUrl, {
         method: "POST",
@@ -286,8 +369,6 @@ export async function generateSpeech(opts: {
     });
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-
     const usageHeaders = {
         ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
         "x-tts-voice": voice,
@@ -295,26 +376,331 @@ export async function generateSpeech(opts: {
 
     log.info("TTS success: {chars} characters", { chars: text.length });
 
-    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
-    // which requires buffering the body. Audio is small (input capped at 10000
-    // chars) so this is cheap; all other formats keep streaming.
-    if (responseFormat === "wav") {
-        const audioBuffer = fixWavHeader(await response.arrayBuffer());
-        return new Response(audioBuffer, {
-            status: 200,
-            headers: {
-                "Content-Type": contentType,
-                "Content-Length": String(audioBuffer.byteLength),
-                ...usageHeaders,
-            },
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
+}
+
+export async function generateElevenLabsSpeechWithTimestamps(opts: {
+    modelName: ElevenLabsTtsModelName;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    seed?: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, voice, responseFormat, seed, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "TTS service is not configured (missing API key)",
         });
     }
+    if (text.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    const voiceId = resolveElevenLabsVoiceId(voice);
+    if (!voiceId || voiceId.length < 8) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${outputFormat}`;
+    const body = {
+        text,
+        model_id: modelId,
+        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        ...(seed === undefined ? {} : { seed }),
+    };
+
+    log.info(
+        "Timestamped TTS request: voice={voice}, format={format}, chars={chars}",
+        {
+            voice,
+            format: responseFormat,
+            chars: text.length,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(body),
+        }),
+        endpoint,
+    );
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("application/json")) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "ElevenLabs returned an invalid timestamp response.",
+        });
+    }
+
+    log.info("Timestamped TTS success: {chars} characters", {
+        chars: text.length,
+    });
 
     return new Response(response.body, {
         status: 200,
         headers: {
             "Content-Type": contentType,
-            ...usageHeaders,
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
+            "x-tts-voice": voice,
+            "x-pollinations-response-format": "audio-with-timestamps",
+        },
+    });
+}
+
+export async function generateElevenLabsDialogue(opts: {
+    inputs: { text: string; voice: string }[];
+    responseFormat: string;
+    seed?: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { inputs, responseFormat, seed, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Dialogue service is not configured (missing API key)",
+        });
+    }
+
+    const characterCount = inputs.reduce(
+        (total, input) => total + input.text.length,
+        0,
+    );
+    if (characterCount > 2000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Dialogue input too long: ${characterCount} characters. Maximum is 2000.`,
+        });
+    }
+
+    const resolvedInputs = inputs.map((input) => ({
+        text: input.text,
+        voice_id: resolveElevenLabsVoiceId(input.voice),
+    }));
+    const uniqueVoices = new Set(resolvedInputs.map((input) => input.voice_id));
+    if (uniqueVoices.size > 10) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Dialogue supports at most 10 unique voices per request.",
+        });
+    }
+    if (resolvedInputs.some((input) => input.voice_id.length < 8)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "Each dialogue voice must be a preset name or valid ElevenLabs voice ID.",
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/text-to-dialogue?output_format=${outputFormat}`;
+    const body: Record<string, unknown> = {
+        inputs: resolvedInputs,
+        model_id: "eleven_v3",
+    };
+    if (seed !== undefined) body.seed = seed;
+
+    log.info(
+        "Dialogue request: turns={turns}, voices={voices}, chars={chars}, format={format}",
+        {
+            turns: inputs.length,
+            voices: uniqueVoices.size,
+            chars: characterCount,
+            format: responseFormat,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                "Content-Type": "application/json",
+                Accept: "audio/mpeg",
+            },
+            body: JSON.stringify(body),
+        }),
+        endpoint,
+    );
+    const usageHeaders = buildUsageHeaders(
+        "eleven-dialogue",
+        createAudioTokenUsage(characterCount),
+    );
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
+}
+
+const ELEVENLABS_AUDIO_CREDITS_PER_SECOND = 12;
+
+export function getElevenLabsMeteredInputSeconds(
+    response: Response,
+    log: Logger,
+): number {
+    // The provider's `character-cost` header is its metering source for these
+    // audio-input APIs. Direct 1s and 61s probes returned 12 and 734 units for
+    // both Voice Changer and Voice Isolator, confirming approximately 12
+    // metering units per input second with no one-minute minimum. At the
+    // ElevenLabs Scale-plan rate of $0.166 per 1K credits, that reconciles to
+    // approximately $0.12 per input minute.
+    const characterCost = Number(response.headers.get("character-cost"));
+    if (!Number.isFinite(characterCost) || characterCost <= 0) {
+        log.error(
+            "ElevenLabs response missing valid character-cost metering: {characterCost}",
+            {
+                characterCost: response.headers.get("character-cost"),
+            },
+        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "ElevenLabs response did not include valid input-duration metering.",
+        });
+    }
+    return characterCost / ELEVENLABS_AUDIO_CREDITS_PER_SECOND;
+}
+
+export async function changeVoiceWithElevenLabs(opts: {
+    audio: File;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { audio, voice, responseFormat, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Voice Changer service is not configured (missing API key)",
+        });
+    }
+    if (audio.size > 50 * 1024 * 1024) {
+        throw new UpstreamError(413 as ContentfulStatusCode, {
+            message: "Voice Changer audio must be 50 MB or smaller.",
+        });
+    }
+    if (audio.type && !audio.type.startsWith("audio/")) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Voice Changer requires an audio file.",
+        });
+    }
+
+    const voiceId = resolveElevenLabsVoiceId(voice);
+    if (!voiceId || voiceId.length < 8) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
+    const formData = new FormData();
+    formData.append("audio", audio, audio.name || "audio");
+    formData.append("model_id", "eleven_multilingual_sts_v2");
+
+    log.info(
+        "Voice Changer request: voice={voice}, format={format}, bytes={bytes}",
+        {
+            voice,
+            format: responseFormat,
+            bytes: audio.size,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                Accept: "audio/*",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
+    const usageHeaders = {
+        ...buildUsageHeaders(
+            "eleven-voice-changer",
+            createAudioSecondsUsage(inputSeconds),
+        ),
+        "x-voice-changer-voice": voice,
+    };
+    log.info("Voice Changer success: inputSeconds={seconds}", {
+        seconds: inputSeconds,
+    });
+
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
+}
+
+export async function isolateVoiceWithElevenLabs(opts: {
+    audio: File;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { audio, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Voice Isolator service is not configured (missing API key)",
+        });
+    }
+    if (audio.size > 50 * 1024 * 1024) {
+        throw new UpstreamError(413 as ContentfulStatusCode, {
+            message: "Voice Isolator input must be 50 MB or smaller.",
+        });
+    }
+    if (
+        audio.type &&
+        !audio.type.startsWith("audio/") &&
+        !audio.type.startsWith("video/")
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Voice Isolator requires an audio or video file.",
+        });
+    }
+
+    const endpoint = "https://api.elevenlabs.io/v1/audio-isolation";
+    const formData = new FormData();
+    formData.append("audio", audio, audio.name || "audio");
+
+    log.info("Voice Isolator request: type={type}, bytes={bytes}", {
+        type: audio.type,
+        bytes: audio.size,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                Accept: "audio/mpeg",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
+
+    log.info("Voice Isolator success: inputSeconds={seconds}", {
+        seconds: inputSeconds,
+    });
+
+    return new Response(response.body, {
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...buildUsageHeaders(
+                "eleven-voice-isolator",
+                createAudioSecondsUsage(inputSeconds),
+            ),
         },
     });
 }
@@ -599,7 +985,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = "music_v2";
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -771,7 +1157,7 @@ export async function generateSoundEffect(opts: {
         });
     }
 
-    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -819,12 +1205,52 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-const QWEN_TTS_MODELS = [
-    "qwen-tts",
-    "qwen-tts-instruct",
-] as const satisfies readonly AudioModelName[];
+const DEEPINFRA_TTS_ENDPOINT =
+    "https://api.deepinfra.com/v1/openai/audio/speech";
+const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
+const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+const DEEPINFRA_TTS_CONFIGS = {
+    "csm-1b": {
+        modelId: "sesame/csm-1b",
+        voices: CSM_VOICES,
+        defaultVoice: "conversational_a",
+        maxCharacters: 200,
+    },
+    kokoro: {
+        modelId: "hexgrad/Kokoro-82M",
+        voices: KOKORO_VOICES,
+        defaultVoice: "af_alloy",
+        maxCharacters: 10_000,
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            voices: readonly string[];
+            defaultVoice: string;
+            maxCharacters: number;
+        }
+    >
+>;
 
-type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
+type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
+
+const QWEN_TTS_MODEL_IDS = {
+    "qwen-tts": "qwen3-tts-flash",
+    "qwen-tts-instruct": "qwen3-tts-instruct-flash",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+
+type LyriaInteractionResponse = {
+    status?: string;
+    outputs?: Array<{
+        type?: string;
+        mime_type?: string;
+        data?: string;
+    }>;
+};
 
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
@@ -844,13 +1270,92 @@ function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
 }
 
-export function isQwenTtsModel(model: string): model is QwenTtsModelName {
-    return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
+export async function generateLyria3Clip(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    responseFormat: string;
+    projectId: string;
+    accessToken: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        responseFormat,
+        projectId,
+        accessToken,
+        log,
+    } = opts;
+
+    if (responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `lyria-3-clip only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
+    if (durationSeconds !== undefined && durationSeconds !== 30) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "lyria-3-clip generates fixed 30-second clips; duration must be 30 or omitted.",
+        });
+    }
+    if (!projectId || !accessToken) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Lyria service is not configured",
+        });
+    }
+
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/interactions`;
+    const rawResponse = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            model: LYRIA_3_CLIP_MODEL_ID,
+            input: [{ type: "text", text: prompt }],
+        }),
+    });
+    const response = await ensureUpstreamOk(rawResponse, endpoint);
+    const result = (await response.json()) as LyriaInteractionResponse;
+    const audio = result.outputs?.find(
+        (output) =>
+            output.type === "audio" &&
+            output.mime_type === "audio/mpeg" &&
+            typeof output.data === "string",
+    );
+
+    if (result.status !== "completed" || !audio?.data) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Lyria returned no completed MP3 audio output",
+        });
+    }
+
+    const binary = atob(audio.data);
+    const audioBytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) {
+        audioBytes[index] = binary.charCodeAt(index);
+    }
+
+    log.info("Lyria success: {bytes} bytes", {
+        bytes: audioBytes.byteLength,
+    });
+
+    return new Response(audioBytes, {
+        status: 200,
+        headers: {
+            "Content-Type": "audio/mpeg",
+            ...buildUsageHeaders("lyria-3-clip", {
+                // Vertex charges one fixed-price unit per generated clip.
+                completionAudioTokens: 1,
+            }),
+        },
+    });
 }
 
 function requireTextToAudioModel(
     model: string,
-    definition: ModelDefinition<string>,
+    definition: ModelDefinition,
 ): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
@@ -1012,7 +1517,6 @@ async function parseSpeechRequest(c: AudioContext): Promise<
                 "extract_composition_plan",
             ),
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
-            style: (formData.get("style") as string | null) || undefined,
             instruct: (formData.get("instruct") as string | null) || undefined,
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
@@ -1046,14 +1550,14 @@ async function parseSpeechRequest(c: AudioContext): Promise<
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
-    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const modelId = QWEN_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1129,138 +1633,89 @@ export async function generateQwenTts(opts: {
     });
 }
 
-export async function generateAceStepMusic(opts: {
-    prompt: string;
-    style?: string;
-    durationSeconds?: number;
-    serviceUrl: string;
-    serviceToken: string;
+export async function generateDeepInfraSpeech(opts: {
+    modelName: DeepInfraTtsModelName;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, style, serviceUrl, serviceToken, log } = opts;
-    const duration = opts.durationSeconds ?? 15;
+    const { modelName, text, responseFormat, apiKey, log } = opts;
+    const config = DEEPINFRA_TTS_CONFIGS[modelName];
+    const inputCharacters = [...text].length;
 
-    if (prompt.length > 10000) {
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: `${modelName} speech is not configured (missing DEEPINFRA_API_KEY)`,
+        });
+    }
+
+    if (inputCharacters > config.maxCharacters) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+            message: `Input text too long: ${inputCharacters} characters. Maximum is ${config.maxCharacters}.`,
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
+    if (!(config.voices as readonly string[]).includes(voice)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
+        });
+    }
+
+    if (
+        !DEEPINFRA_AUDIO_FORMATS.includes(
+            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
         });
     }
 
     log.info(
-        "ACE-Step request: chars={chars}, duration={duration}, style={style}",
-        { chars: prompt.length, duration, style: style ?? "(auto)" },
+        "DeepInfra TTS request: model={model}, voice={voice}, format={format}, chars={chars}",
+        {
+            model: config.modelId,
+            voice,
+            format: responseFormat,
+            chars: inputCharacters,
+        },
     );
 
-    const authHeaders = { Authorization: `Bearer ${serviceToken}` };
-
-    const submitUrl = `${serviceUrl}/release_task`;
-    const rawSubmitResponse = await fetch(submitUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({
-            prompt: style ?? "",
-            lyrics: prompt,
-            audio_duration: duration,
-            batch_size: 1,
-            thinking: true,
-            audio_format: "mp3",
-        }),
-    });
-    const submitResponse = await ensureUpstreamOk(rawSubmitResponse, submitUrl);
-
-    const submitData = (await submitResponse.json()) as {
-        data?: { task_id?: string };
-    };
-    const taskId = submitData?.data?.task_id;
-    if (!taskId) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "ACE-Step did not return a task_id",
-        });
-    }
-
-    // Poll until done (status 1=success, 2=failed)
-    // CF Workers have wall-clock limits; cap at 120s (typical gen is 8-12s)
-    const maxPollTime = 120_000;
-    const pollInterval = 2_000;
-    const startTime = Date.now();
-    let audioPath: string | undefined;
-    let consecutiveErrors = 0;
-
-    while (Date.now() - startTime < maxPollTime) {
-        await new Promise((r) => setTimeout(r, pollInterval));
-
-        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
+    const response = await ensureUpstreamOk(
+        await fetch(DEEPINFRA_TTS_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json", ...authHeaders },
-            body: JSON.stringify({ task_id_list: [taskId] }),
-        });
-
-        if (!pollResponse.ok) {
-            if (++consecutiveErrors >= 3) {
-                const errorText = await pollResponse.text();
-                throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message:
-                        errorText ||
-                        `ACE-Step polling failed: ${pollResponse.status}`,
-                    upstreamStatus: pollResponse.status,
-                    responseBody: errorText,
-                });
-            }
-            continue;
-        }
-        consecutiveErrors = 0;
-
-        const pollData = (await pollResponse.json()) as {
-            data?: Array<{ task_id: string; status: number; result?: string }>;
-        };
-        const task = pollData?.data?.[0];
-        if (!task) continue;
-
-        if (task.status === 2) {
-            throw new UpstreamError(500 as ContentfulStatusCode, {
-                message: "ACE-Step generation failed",
-            });
-        }
-
-        if (task.status === 1 && task.result) {
-            const results = JSON.parse(task.result) as Array<{
-                file?: string;
-            }>;
-            if (results?.[0]?.file) {
-                audioPath = results[0].file;
-                break;
-            }
-        }
-    }
-
-    if (!audioPath) {
-        throw new UpstreamError(504 as ContentfulStatusCode, {
-            message: "ACE-Step generation timed out",
-        });
-    }
-
-    const audioUrl = `${serviceUrl}${audioPath}`;
-    const audioResponse = await ensureUpstreamOk(
-        await fetch(audioUrl, { headers: authHeaders }),
-        audioUrl,
-    );
-    const audioBuffer = await audioResponse.arrayBuffer();
-
-    // Use requested duration for billing (more accurate than byte-size heuristic)
-    const usageHeaders = buildUsageHeaders(
-        "acestep",
-        createCompletionAudioSecondsUsage(duration),
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: config.modelId,
+                input: text,
+                voice,
+                response_format: responseFormat,
+            }),
+        }),
+        DEEPINFRA_TTS_ENDPOINT,
     );
 
-    log.info("ACE-Step success: {bytes} bytes, {duration}s", {
-        bytes: audioBuffer.byteLength,
-        duration,
+    const usageHeaders = {
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(inputCharacters)),
+        "x-tts-voice": voice,
+    };
+
+    log.info("DeepInfra TTS success: model={model}, chars={chars}", {
+        model: config.modelId,
+        chars: inputCharacters,
     });
 
-    return new Response(audioBuffer, {
+    return new Response(response.body, {
         status: 200,
         headers: {
-            "Content-Type": "audio/mpeg",
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
             ...usageHeaders,
         },
     });
@@ -1575,6 +2030,7 @@ export async function generateStableAudio3Large(opts: {
 
 async function dispatchAudioGeneration(
     c: AudioContext,
+    model: string,
     opts: {
         text: string;
         voice: string;
@@ -1584,7 +2040,6 @@ async function dispatchAudioGeneration(
         seconds?: number;
         steps?: number;
         negativePrompt?: string;
-        style?: string;
         instrumental?: boolean;
         storeForInpainting?: boolean;
         extractCompositionPlan?: boolean;
@@ -1596,9 +2051,9 @@ async function dispatchAudioGeneration(
         promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
+        deepInfraApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
-        env: Env["Bindings"];
         log: Logger;
     },
 ): Promise<Response> {
@@ -1611,7 +2066,6 @@ async function dispatchAudioGeneration(
         seconds,
         steps,
         negativePrompt,
-        style,
         instrumental,
         storeForInpainting,
         extractCompositionPlan,
@@ -1623,27 +2077,13 @@ async function dispatchAudioGeneration(
         promptInfluence,
         apiKey,
         dashScopeApiKey,
+        deepInfraApiKey,
         falKey,
         stabilityApiKey,
-        env,
         log,
     } = opts;
 
-    if (c.var.model.resolved === "acestep") {
-        return withSafetyHeaders(
-            c,
-            await generateAceStepMusic({
-                prompt: text,
-                style,
-                durationSeconds: duration,
-                serviceUrl: env.MUSIC_SERVICE_URL,
-                serviceToken: env.PLN_GPU_TOKEN,
-                log,
-            }),
-        );
-    }
-
-    if (c.var.model.resolved === "elevenmusic") {
+    if (model === "elevenmusic") {
         return withSafetyHeaders(
             c,
             await generateMusic({
@@ -1662,7 +2102,32 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "stable-audio-3-medium") {
+    if (model === "lyria-3-clip") {
+        const googleEnvKeys = [
+            "GOOGLE_PRIVATE_KEY",
+            "GOOGLE_PRIVATE_KEY_ID",
+            "GOOGLE_CLIENT_EMAIL",
+        ] as const;
+        for (const key of googleEnvKeys) {
+            const value = c.env[key];
+            if (typeof value === "string") process.env[key] = value;
+        }
+        const accessToken = await googleCloudAuth.getAccessToken();
+
+        return withSafetyHeaders(
+            c,
+            await generateLyria3Clip({
+                prompt: text,
+                durationSeconds: duration,
+                responseFormat,
+                projectId: c.env.GOOGLE_PROJECT_ID,
+                accessToken: accessToken ?? "",
+                log,
+            }),
+        );
+    }
+
+    if (model === "stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Medium({
@@ -1677,7 +2142,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "stable-audio-3-large") {
+    if (model === "stable-audio-3-large") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Large({
@@ -1694,7 +2159,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "eleven-sfx") {
+    if (model === "eleven-sfx") {
         return withSafetyHeaders(
             c,
             await generateSoundEffect({
@@ -1709,34 +2174,53 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved as QwenTtsModelName,
-                modelId: c.var.model.definition.modelId,
-                text,
-                voice,
-                instruct,
-                apiKey: dashScopeApiKey,
-                log,
-            }),
-        );
+    switch (model) {
+        case "elevenlabs":
+        case "elevenflash":
+        case "eleven-multilingual-v2":
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    seed,
+                    apiKey,
+                    log,
+                }),
+            );
+        case "qwen-tts":
+        case "qwen-tts-instruct":
+            return withSafetyHeaders(
+                c,
+                await generateQwenTts({
+                    modelName: model,
+                    text,
+                    voice,
+                    instruct,
+                    apiKey: dashScopeApiKey,
+                    log,
+                }),
+            );
+        case "csm-1b":
+        case "kokoro":
+            return withSafetyHeaders(
+                c,
+                await generateDeepInfraSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: deepInfraApiKey,
+                    log,
+                }),
+            );
+        default:
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No audio provider route configured for model: ${model}`,
+            });
     }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved,
-            modelId: c.var.model.definition.modelId,
-            text,
-            voice,
-            responseFormat,
-            seed,
-            apiKey,
-            log,
-        }),
-    );
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
@@ -1762,32 +2246,340 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
 
     // Only the GET query schema permits the -1 "random seed" sentinel; map it to
     // undefined here so the generators only ever see a real seed or none.
-    return dispatchAudioGeneration(c, {
-        text,
-        voice: query.voice,
-        responseFormat: query.response_format,
-        seed: query.seed === -1 ? undefined : query.seed,
-        duration: query.duration,
-        seconds: query.seconds,
-        steps: query.steps,
-        negativePrompt: query.negative_prompt,
-        style: query.style,
-        instrumental: query.instrumental,
-        instruct: query.instruct,
-        loop: query.loop,
-        promptInfluence: query.prompt_influence,
-        apiKey,
-        dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-        falKey: c.env.FAL_KEY,
-        stabilityApiKey: c.env.STABILITY_API_KEY,
-        env: c.env,
-        log,
-    });
+    return withAudioFallback(c, (candidate) =>
+        dispatchAudioGeneration(c, candidate.id, {
+            text,
+            voice: query.voice,
+            responseFormat: query.response_format,
+            seed: query.seed === -1 ? undefined : query.seed,
+            duration: query.duration,
+            seconds: query.seconds,
+            steps: query.steps,
+            negativePrompt: query.negative_prompt,
+            instrumental: query.instrumental,
+            instruct: query.instruct,
+            loop: query.loop,
+            promptInfluence: query.prompt_influence,
+            apiKey,
+            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            falKey: c.env.FAL_KEY,
+            stabilityApiKey: c.env.STABILITY_API_KEY,
+            log,
+        }),
+    );
 }
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth(), frontendKeyRateLimit, balance)
+    .post(
+        "/dialogue",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Generate Multi-Speaker Dialogue",
+            description:
+                "Generate one audio track from ordered text and voice pairs. Supports preset voice names and custom ElevenLabs voice IDs, with up to 10 unique voices and 2,000 total characters.",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: {
+                            type: "object",
+                            required: ["inputs"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-dialogue",
+                                },
+                                inputs: {
+                                    type: "array",
+                                    minItems: 1,
+                                    items: {
+                                        type: "object",
+                                        required: ["text", "voice"],
+                                        properties: {
+                                            text: { type: "string" },
+                                            voice: {
+                                                type: "string",
+                                                description:
+                                                    "Preset voice name or custom ElevenLabs voice ID.",
+                                            },
+                                        },
+                                    },
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                },
+                                seed: {
+                                    type: "integer",
+                                    minimum: 0,
+                                    maximum: 4294967295,
+                                },
+                                safe: { type: "boolean" },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: "Success - Returns dialogue audio",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/opus": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/aac": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-dialogue",
+            supportedEndpoint: "/v1/audio/dialogue",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("dialogue");
+            await requireGenerationAccess(c.var, c.env);
+
+            let request: z.infer<typeof CreateDialogueRequestSchema>;
+            try {
+                request = CreateDialogueRequestSchema.parse(await c.req.json());
+            } catch (error) {
+                if (error instanceof z.ZodError) {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message:
+                            error.issues[0]?.message || "Invalid request body",
+                    });
+                }
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid JSON body",
+                });
+            }
+
+            const safeTexts = await applySafetyToTexts(
+                c,
+                request.inputs.map((input) => input.text),
+                request.safe,
+            );
+            const inputs = request.inputs.map((input, index) => ({
+                ...input,
+                text: safeTexts[index],
+            }));
+            const response = await generateElevenLabsDialogue({
+                inputs,
+                responseFormat: request.response_format,
+                seed: request.seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+            return withSafetyHeaders(c, response);
+        },
+    )
+    .post(
+        "/voice-changer",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Transform a Voice",
+            description:
+                "Transform the speaker identity in an audio file while preserving its words, timing, emotion, and delivery. Accepts preset voice names or custom ElevenLabs voice IDs.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["audio"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-voice-changer",
+                                },
+                                audio: {
+                                    type: "string",
+                                    format: "binary",
+                                    description:
+                                        "Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes.",
+                                },
+                                voice: {
+                                    type: "string",
+                                    default: "alloy",
+                                    description:
+                                        "Target preset voice name or custom ElevenLabs voice ID.",
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: "Success - Returns transformed speech",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/opus": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/aac": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-voice-changer",
+            supportedEndpoint: "/v1/audio/voice-changer",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("voice-changer");
+            await requireGenerationAccess(c.var, c.env);
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const audio = formData.get("audio");
+            if (!(audio instanceof File)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required audio file.",
+                });
+            }
+            const voice = formData.get("voice");
+            const responseFormat = formData.get("response_format");
+            const resolvedFormat =
+                typeof responseFormat === "string" && responseFormat !== ""
+                    ? responseFormat
+                    : "mp3";
+            if (
+                !["mp3", "opus", "aac", "wav", "pcm"].includes(resolvedFormat)
+            ) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "response_format must be mp3, opus, aac, wav, or pcm.",
+                });
+            }
+
+            return changeVoiceWithElevenLabs({
+                audio,
+                voice:
+                    typeof voice === "string" && voice !== "" ? voice : "alloy",
+                responseFormat: resolvedFormat,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+        },
+    )
+    .post(
+        "/voice-isolator",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Isolate Speech",
+            description:
+                "Remove music, ambient sound, and other background noise from an audio or video file while preserving spoken audio.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["audio"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-voice-isolator",
+                                },
+                                audio: {
+                                    type: "string",
+                                    format: "binary",
+                                    description:
+                                        "Source audio or video, up to 50 MB and at least 4.6 seconds long.",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns isolated speech as MP3 audio",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-voice-isolator",
+            supportedEndpoint: "/v1/audio/voice-isolator",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("voice-isolator");
+            await requireGenerationAccess(c.var, c.env);
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const audio = formData.get("audio");
+            if (!(audio instanceof File)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required audio file.",
+                });
+            }
+
+            return isolateVoiceWithElevenLabs({
+                audio,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+        },
+    )
     .post(
         "/music/upload",
         describeRoute({
@@ -1901,9 +2693,9 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
-                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
@@ -1926,12 +2718,17 @@ export const audioRoutes = new Hono<Env>()
                         "audio/wav": {
                             schema: { type: "string", format: "binary" },
                         },
+                        "audio/pcm": {
+                            schema: { type: "string", format: "binary" },
+                        },
                     },
                 },
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/v1/audio/speech",
+        }),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
@@ -1953,7 +2750,6 @@ export const audioRoutes = new Hono<Env>()
                 composition_plan,
                 reference_audio,
                 seed,
-                style,
                 instruct,
                 loop,
                 prompt_influence,
@@ -1975,32 +2771,182 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
-            return dispatchAudioGeneration(c, {
-                text: safeInput,
-                voice,
-                responseFormat: response_format,
-                seed,
-                duration,
-                seconds,
-                steps,
-                negativePrompt: negative_prompt,
-                style,
-                instrumental,
-                storeForInpainting: store_for_inpainting,
-                extractCompositionPlan: extract_composition_plan,
-                conditioningRef: conditioning_ref,
-                compositionPlan: composition_plan,
-                referenceAudio: reference_audio,
-                instruct,
-                loop,
-                promptInfluence: prompt_influence,
-                apiKey,
-                dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-                falKey: c.env.FAL_KEY,
-                stabilityApiKey: c.env.STABILITY_API_KEY,
-                env: c.env,
-                log,
-            });
+            return withAudioFallback(c, (candidate) =>
+                dispatchAudioGeneration(c, candidate.id, {
+                    text: safeInput,
+                    voice,
+                    responseFormat: response_format,
+                    seed,
+                    duration,
+                    seconds,
+                    steps,
+                    negativePrompt: negative_prompt,
+                    instrumental,
+                    storeForInpainting: store_for_inpainting,
+                    extractCompositionPlan: extract_composition_plan,
+                    conditioningRef: conditioning_ref,
+                    compositionPlan: composition_plan,
+                    referenceAudio: reference_audio,
+                    instruct,
+                    loop,
+                    promptInfluence: prompt_influence,
+                    apiKey,
+                    dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                    deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+                    falKey: c.env.FAL_KEY,
+                    stabilityApiKey: c.env.STABILITY_API_KEY,
+                    log,
+                }),
+            );
+        },
+    )
+    .post(
+        "/speech/with-timestamps",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Generate Speech with Timestamps",
+            description:
+                "Generate base64-encoded speech with character-level timing for the original and normalized text. Supports the elevenlabs, elevenflash, and eleven-multilingual-v2 models.",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: {
+                            type: "object",
+                            required: ["input"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "elevenlabs",
+                                    enum: [
+                                        "elevenlabs",
+                                        "elevenflash",
+                                        "eleven-multilingual-v2",
+                                    ],
+                                },
+                                input: {
+                                    type: "string",
+                                    maxLength: 10000,
+                                    description:
+                                        "Text to synthesize and align.",
+                                },
+                                voice: {
+                                    type: "string",
+                                    default: "alloy",
+                                    description:
+                                        "Preset voice name or custom ElevenLabs voice ID.",
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                    description:
+                                        "Encoding used for audio_base64.",
+                                },
+                                seed: {
+                                    type: "integer",
+                                    minimum: 0,
+                                    maximum: 4294967295,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns base64 audio and character timings",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                required: [
+                                    "audio_base64",
+                                    "alignment",
+                                    "normalized_alignment",
+                                ],
+                                properties: {
+                                    audio_base64: { type: "string" },
+                                    alignment: {
+                                        type: "object",
+                                        properties: {
+                                            characters: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                            },
+                                            character_start_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                            character_end_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                        },
+                                    },
+                                    normalized_alignment: {
+                                        type: "object",
+                                        properties: {
+                                            characters: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                            },
+                                            character_start_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                            character_end_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "elevenlabs",
+            supportedEndpoint: "/v1/audio/speech/with-timestamps",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("tts-timestamps");
+            await requireGenerationAccess(c.var, c.env);
+
+            const { input, safe, voice, response_format, seed } =
+                await parseSpeechRequest(c);
+            const modelName = c.var.model.resolved;
+            if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "Timestamped speech supports elevenlabs, elevenflash, and eleven-multilingual-v2.",
+                });
+            }
+            if (response_format === "flac") {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
+                });
+            }
+            const safeInput = await applySafety(c, input, safe);
+
+            return withAudioFallback(c, (candidate) =>
+                generateElevenLabsSpeechWithTimestamps({
+                    modelName: candidate.id as ElevenLabsTtsModelName,
+                    text: safeInput,
+                    voice,
+                    responseFormat: response_format,
+                    seed,
+                    apiKey: c.env.ELEVENLABS_API_KEY,
+                    log,
+                }),
+            );
         },
     )
     .post(
@@ -2018,7 +2964,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-1` — Alias for whisper-large-v3",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
-                "- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)",
+                "- `universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -2038,7 +2984,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -2170,110 +3116,89 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Route to ElevenLabs Scribe or Whisper based on model
-            if (c.var.model.resolved === "scribe") {
-                const elevenLabsApiKey = (
-                    c.env as unknown as { ELEVENLABS_API_KEY: string }
-                ).ELEVENLABS_API_KEY;
-                const response = await transcribeWithElevenLabs({
-                    file,
-                    language: language || undefined,
-                    responseFormat: responseFormat || undefined,
-                    apiKey: elevenLabsApiKey,
-                    log,
-                    numSpeakers: speakersExpected,
-                });
+            const result = await withAudioFallback(c, async (candidate) => {
+                if (candidate.id === "scribe") {
+                    return transcribeWithElevenLabs({
+                        file,
+                        language: language || undefined,
+                        responseFormat: responseFormat || undefined,
+                        apiKey: c.env.ELEVENLABS_API_KEY,
+                        log,
+                        numSpeakers: speakersExpected,
+                    });
+                }
 
-                // Override tracking with final response
-                c.var.track.overrideResponseTracking(response.clone());
-                return response;
-            }
+                if (
+                    candidate.id === "universal-2" ||
+                    candidate.id === "universal-3.5-pro"
+                ) {
+                    return transcribeWithAssemblyAi({
+                        file,
+                        language: language || undefined,
+                        prompt: prompt || undefined,
+                        responseFormat: responseFormat || undefined,
+                        temperature,
+                        model: candidate.id,
+                        apiKey: (
+                            c.env as unknown as {
+                                ASSEMBLYAI_API_KEY: string;
+                            }
+                        ).ASSEMBLYAI_API_KEY,
+                        log,
+                        speakersExpected,
+                    });
+                }
 
-            if (
-                c.var.model.resolved === "universal-2" ||
-                c.var.model.resolved === "universal-3-pro"
-            ) {
-                const assemblyAiApiKey = (
-                    c.env as unknown as { ASSEMBLYAI_API_KEY: string }
-                ).ASSEMBLYAI_API_KEY;
-                const response = await transcribeWithAssemblyAi({
-                    file,
-                    language: language || undefined,
-                    prompt: prompt || undefined,
-                    responseFormat: responseFormat || undefined,
-                    temperature,
-                    model: c.var.model.resolved,
-                    apiKey: assemblyAiApiKey,
-                    log,
-                    speakersExpected,
-                });
+                const ovhApiKey = c.env.OVHCLOUD_API_KEY;
+                if (!ovhApiKey) {
+                    throw new UpstreamError(500 as ContentfulStatusCode, {
+                        message:
+                            "Transcription service is not configured (missing API key)",
+                    });
+                }
+                validateWhisperResponseFormat(responseFormat);
 
-                c.var.track.overrideResponseTracking(response.clone());
-                return response;
-            }
+                // Rebuild the consumed multipart body for each upstream attempt.
+                const whisperFormData = new FormData();
+                const filename =
+                    file.name && file.name !== "blob" ? file.name : "audio.mp3";
+                whisperFormData.append("file", file, filename);
+                if (language) whisperFormData.append("language", language);
+                whisperFormData.append("response_format", "verbose_json");
+                whisperFormData.append("model", "whisper-large-v3");
+                whisperFormData.append("timestamp_granularities[]", "word");
 
-            // Default: Whisper (OVHcloud)
-            const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-            if (!ovhApiKey) {
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message:
-                        "Transcription service is not configured (missing API key)",
-                });
-            }
-            validateWhisperResponseFormat(responseFormat);
+                const whisperUrl =
+                    "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+                const response = await ensureUpstreamOk(
+                    await fetch(whisperUrl, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${ovhApiKey}` },
+                        body: whisperFormData,
+                    }),
+                    whisperUrl,
+                );
 
-            // Re-build formData for Whisper (Hono consumed the original body stream).
-            // Preserve filename — OVH needs the extension to detect format/duration.
-            const whisperFormData = new FormData();
-            const filename =
-                file.name && file.name !== "blob" ? file.name : "audio.mp3";
-            whisperFormData.append("file", file, filename);
-            if (language) whisperFormData.append("language", language);
-            // Always request verbose_json from OVH so usage.seconds (billing) and
-            // segments (srt/vtt) are present; reformat locally to the caller's
-            // requested response_format below. Forwarding e.g. `text` upstream
-            // would return a plain-text body and lose the usage object.
-            whisperFormData.append("response_format", "verbose_json");
-            whisperFormData.append("model", "whisper-large-v3");
-            whisperFormData.append("timestamp_granularities[]", "word");
-
-            // Thin proxy to OVHcloud Whisper
-            const whisperUrl =
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
-            const rawResponse = await fetch(whisperUrl, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${ovhApiKey}`,
-                },
-                body: whisperFormData,
+                let whisper: WhisperVerboseJson;
+                try {
+                    whisper = JSON.parse(await response.text());
+                } catch {
+                    throw new UpstreamError(502 as ContentfulStatusCode, {
+                        message:
+                            "Whisper returned an unexpected (non-JSON) response",
+                    });
+                }
+                const usageHeaders = buildUsageHeaders(
+                    candidate.id,
+                    createAudioSecondsUsage(extractWhisperUsage(whisper, log)),
+                );
+                return formatWhisperResponse(
+                    whisper,
+                    responseFormat,
+                    usageHeaders,
+                );
             });
-            const response = await ensureUpstreamOk(rawResponse, whisperUrl);
-
-            // OVH always returns verbose_json now; parse once, bill from it, then
-            // reformat to the caller's requested format.
-            const responseBody = await response.text();
-            let whisper: WhisperVerboseJson;
-            try {
-                whisper = JSON.parse(responseBody);
-            } catch {
-                throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message:
-                        "Whisper returned an unexpected (non-JSON) response",
-                });
-            }
-            const duration = extractWhisperUsage(whisper, log);
-            const usageHeaders = buildUsageHeaders(
-                c.var.model.resolved,
-                createAudioSecondsUsage(duration),
-            );
-
-            const result = formatWhisperResponse(
-                whisper,
-                responseFormat,
-                usageHeaders,
-            );
             c.var.track.overrideResponseTracking(result.clone());
-
             return result;
         },
     );

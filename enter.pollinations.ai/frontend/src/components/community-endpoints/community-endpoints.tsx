@@ -1,33 +1,54 @@
 import {
     Alert,
     Button,
+    FieldStack,
+    Input,
     Section,
     SproutIcon,
     Surface,
     TokensIcon,
 } from "@pollinations/ui";
-import { useCallback, useEffect, useState } from "react";
+import {
+    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
+    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+} from "@shared/community-endpoints.ts";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type CommunityEndpoint,
+    type CommunityProviderProfile,
     type EndpointPayload,
+    type FallbackModelOption,
     readError,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
+    // Allowlisted owners can make models public (set prices, list in /models).
+    // Everyone else can only create and edit private, owner-only models.
+    canPublish: boolean;
+    // Public community models offered as fallback targets in the dialog.
+    fallbackOptions: FallbackModelOption[];
 };
 
-export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
+export function CommunityEndpoints({
+    onChange,
+    canPublish,
+    fallbackOptions,
+}: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [providerName, setProviderName] = useState("");
+    const [providerUrl, setProviderUrl] = useState("");
+    const [isSavingProvider, setIsSavingProvider] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -37,8 +58,13 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
             setIsLoading(false);
             return;
         }
-        const body = (await response.json()) as { data: CommunityEndpoint[] };
+        const body = (await response.json()) as {
+            data: CommunityEndpoint[];
+            provider: CommunityProviderProfile;
+        };
         setEndpoints(body.data);
+        setProviderName(body.provider.name ?? "");
+        setProviderUrl(body.provider.url ?? "");
         setIsLoading(false);
     }, []);
 
@@ -95,6 +121,92 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         }
     }
 
+    async function handleProviderSubmit(
+        event: FormEvent<HTMLFormElement>,
+    ): Promise<void> {
+        event.preventDefault();
+        setIsSavingProvider(true);
+        setError(null);
+        try {
+            const response = await apiClient.account[
+                "my-models"
+            ].provider.$post({
+                json: { name: providerName, url: providerUrl },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const profile = (await response.json()) as CommunityProviderProfile;
+            setProviderName(profile.name ?? "");
+            setProviderUrl(profile.url ?? "");
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Provider profile update failed",
+            );
+        } finally {
+            setIsSavingProvider(false);
+        }
+    }
+
+    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
+        setTogglingId(endpoint.id);
+        setError(null);
+        try {
+            const response = await apiClient.account["my-models"][
+                ":id"
+            ].update.$post({
+                param: { id: endpoint.id },
+                json: { active: endpoint.disabled },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const updated = (await response.json()) as CommunityEndpoint;
+            setEndpoints((current) =>
+                current.map((item) =>
+                    item.id === updated.id ? updated : item,
+                ),
+            );
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Model status update failed",
+            );
+        } finally {
+            setTogglingId(null);
+        }
+    }
+
+    const privateModelGuidance = (
+        <>
+            Your models are private — callable only by you and shown only when{" "}
+            <strong>/models</strong> is authenticated with your API key. Enter
+            the upstream model ID manually, then test the saved model by calling
+            its model ID. Public publishing is allowlist-only. To request
+            publishing access for your account, submit a{" "}
+            <a
+                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                community model publisher allowlist request
+            </a>{" "}
+            form. You can register and test private models without approval. For
+            questions, ask in{" "}
+            <a
+                href="https://discord.gg/pollinations-ai-885844321461485618"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                Discord
+            </a>
+            .
+        </>
+    );
+
     return (
         <>
             <Section
@@ -105,6 +217,8 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                         open={createOpen}
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
+                        canPublish={canPublish}
+                        fallbackOptions={fallbackOptions}
                         trigger={
                             <Button
                                 type="button"
@@ -117,6 +231,64 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                     />
                 }
             >
+                {canPublish && !isLoading && (
+                    <Surface className="mb-3 p-4">
+                        <form
+                            className="flex flex-col gap-4"
+                            onSubmit={(event) =>
+                                void handleProviderSubmit(event)
+                            }
+                        >
+                            <div>
+                                <p className="text-sm font-semibold">
+                                    Provider profile
+                                </p>
+                                <p className="mt-0.5 text-xs text-theme-text-soft">
+                                    Shown as a link on all your public models.
+                                </p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FieldStack label="Provider name">
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                                <FieldStack label="Service URL">
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                            </div>
+                            <div>
+                                <Button
+                                    type="submit"
+                                    disabled={isSavingProvider}
+                                >
+                                    {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Surface>
+                )}
                 {error && (
                     <Alert intent="danger" className="mb-3">
                         {error}
@@ -134,9 +306,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 Register your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
-                                Expose an OpenAI-compatible endpoint as a
-                                community model with your own per-1M-token
-                                pricing.
+                                {canPublish
+                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
+                                    : privateModelGuidance}
                             </p>
                         </Surface>
                     ) : (
@@ -144,20 +316,32 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                isToggling={togglingId === endpoint.id}
+                                onToggle={() => void handleToggle(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />
                         ))
                     )}
                 </div>
-                <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Published community models appear in{" "}
-                        <strong>/models</strong> and are billed to callers at
-                        your per-1M-token pricing.
-                    </span>
-                </p>
+                {!isLoading && endpoints.length > 0 && (
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {canPublish ? (
+                                <>
+                                    Private models are callable only by you and
+                                    shown only when model lists use your API
+                                    key. Make one public to list it for everyone
+                                    in <strong>/models</strong> and bill callers
+                                    at your configured pricing.
+                                </>
+                            ) : (
+                                privateModelGuidance
+                            )}
+                        </span>
+                    </p>
+                )}
             </Section>
 
             <CommunityEndpointDialog
@@ -166,6 +350,8 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
+                canPublish={canPublish}
+                fallbackOptions={fallbackOptions}
             />
 
             <CommunityEndpointDeleteConfirmation

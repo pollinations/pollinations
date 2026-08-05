@@ -14,20 +14,21 @@ A community-curated list of app ideas. **Add your ideas via PR - we'll turn them
 2. **Add your ideas** to the appropriate categories below (add as many as you want!)
 3. **For each idea, include these details:**
 
-    ```markdown
-    ### [Your App Name]
+```markdown
+### [Your App Name]
 
-    **What it does:** Clear description of the app's purpose
-    **User story:** "As a [user], I want to [action] so that [benefit]"
-    **APIs needed:** text/image/both
-    **Key features:**
+**What it does:** Clear description of the app's purpose  
+**User story:** "As a [user], I want to [action] so that [benefit]"  
+**APIs needed:** text/image/both  
+**Key features:**
 
-    -   Feature 1
-    -   Feature 2
-    -   Feature 3
-        **Difficulty:** beginner/intermediate/advanced
-        **Bonus points:** Optional advanced features
-    ```
+-   Feature 1
+-   Feature 2
+-   Feature 3
+
+**Difficulty:** beginner/intermediate/advanced  
+**Bonus points:** Optional advanced features  
+```
 
 4. **Submit PR** with title: `Add app idea: [App Name]`
 5. **We'll create an issue** from your idea for others to build!
@@ -60,9 +61,10 @@ Check out these awesome collections:
 -   AI generates relevant image
 -   Add custom caption text
 -   Download/share meme
-    **Difficulty:** Beginner  
-    **Bonus points:** Meme template library, viral meme trends integration  
-    **Example:** [CatGPT](./example-catgpt/)
+
+**Difficulty:** Beginner  
+**Bonus points:** Meme template library, viral meme trends integration  
+**Example:** [CatGPT](./example-catgpt/)
 
 ### AI Story Illustrator
 
@@ -76,8 +78,9 @@ Check out these awesome collections:
 -   Generate illustration for each scene
 -   Download as PDF storybook
 -   Multiple art styles (watercolor, comic, realistic)
-    **Difficulty:** Intermediate  
-    **Bonus points:** Character consistency across scenes, page layout options, text overlay on images
+    
+**Difficulty:** Intermediate  
+**Bonus points:** Character consistency across scenes, page layout options, text overlay on images
 
 ### Motivational Poster Generator
 
@@ -91,8 +94,9 @@ Check out these awesome collections:
 -   Beautiful background image generation
 -   Typography overlay options
 -   Download in print-ready formats
-    **Difficulty:** Beginner  
-    **Bonus points:** Font selection, color scheme customization, batch generation
+
+**Difficulty:** Beginner  
+**Bonus points:** Font selection, color scheme customization, batch generation
 
 ### AI Fashion Design Studio
 
@@ -106,8 +110,9 @@ Check out these awesome collections:
 -   Color palette selection
 -   Generate multiple design variations
 -   Mix and match outfit combinations
-    **Difficulty:** Intermediate  
-    **Bonus points:** Seasonal trends integration, fabric pattern suggestions, mood board creation
+
+**Difficulty:** Intermediate  
+**Bonus points:** Seasonal trends integration, fabric pattern suggestions, mood board creation
 
 _Add your creative app ideas here! 👆_
 
@@ -124,8 +129,9 @@ _Add your creative app ideas here! 👆_
 -   Choose style/theme (tech, lifestyle, business, etc.)
 -   AI generates thumbnail image
 -   Download in multiple sizes (social media formats)
-    **Difficulty:** Beginner  
-    **Bonus points:** Brand color customization, text overlay options
+
+**Difficulty:** Beginner  
+**Bonus points:** Brand color customization, text overlay options
 
 ### Meeting Notes Visualizer
 
@@ -139,8 +145,9 @@ _Add your creative app ideas here! 👆_
 -   Generate flowcharts, mind maps, or org charts
 -   Export as PNG or SVG
 -   Highlight action items and deadlines
-    **Difficulty:** Advanced  
-    **Bonus points:** Integration with calendar, task assignment, version history
+
+**Difficulty:** Advanced  
+**Bonus points:** Integration with calendar, task assignment, version history
 
 ### Resume Enhancer with Visual CV
 
@@ -154,8 +161,9 @@ _Add your creative app ideas here! 👆_
 -   Generate professional headshot based on description
 -   Create visual CV layout
 -   Export in multiple formats (PDF, PNG)
-    **Difficulty:** Intermediate  
-    **Bonus points:** ATS optimization, industry-specific templates, LinkedIn formatting
+
+**Difficulty:** Intermediate  
+**Bonus points:** ATS optimization, industry-specific templates, LinkedIn formatting
 
 ### Social Media Content Calendar
 
@@ -169,8 +177,9 @@ _Add your creative app ideas here! 👆_
 -   Create images and captions for each post
 -   Preview calendar view
 -   Download all assets in organized folders
-    **Difficulty:** Advanced  
-    **Bonus points:** Hashtag suggestions, best posting time recommendations, analytics integration
+
+**Difficulty:** Advanced  
+**Bonus points:** Hashtag suggestions, best posting time recommendations, analytics integration
 
 _Add your productivity app ideas here! 👆_
 
@@ -187,8 +196,9 @@ _Add your productivity app ideas here! 👆_
 -   Players submit prompt guesses
 -   Score based on similarity to actual prompt
 -   Leaderboard and multiplayer support
-    **Difficulty:** Intermediate  
-    **Bonus points:** Daily challenges, themed rounds, hint system
+
+**Difficulty:** Intermediate  
+**Bonus points:** Daily challenges, themed rounds, hint system
 
 ### AI Dungeon Master
 
@@ -202,8 +212,9 @@ _Add your productivity app ideas here! 👆_
 -   Generate images for locations, characters, items
 -   Combat and inventory system
 -   Save/load game state
-    **Difficulty:** Advanced  
-    **Bonus points:** Multiplayer support, custom world creation, character sheet management
+
+**Difficulty:** Advanced  
+**Bonus points:** Multiplayer support, custom world creation, character sheet management
 
 ### AI Drawing Challenge
 
@@ -218,8 +229,9 @@ _Add your productivity app ideas here! 👆_
 -   Compare side-by-side
 -   Community voting on best interpretation
 -   Streak tracking and achievements
-    **Difficulty:** Intermediate  
-    **Bonus points:** Time-limited challenges, style categories, artist profiles
+
+**Difficulty:** Intermediate  
+**Bonus points:** Time-limited challenges, style categories, artist profiles
 
 ### Pet Evolution Simulator
 
@@ -233,8 +245,9 @@ _Add your productivity app ideas here! 👆_
 -   AI generates pet appearance based on evolution path
 -   Each pet is visually unique
 -   Pet personality development
-    **Difficulty:** Advanced  
-    **Bonus points:** Breeding system, mini-games, pet battles, social features
+
+**Difficulty:** Advanced  
+**Bonus points:** Breeding system, mini-games, pet battles, social features
 
 _Add your game ideas here! 👆_
 
@@ -252,8 +265,9 @@ _Add your game ideas here! 👆_
 -   Create flow diagrams for API calls
 -   Export as documentation
 -   Highlight important fields
-    **Difficulty:** Intermediate  
-    **Bonus points:** OpenAPI/Swagger integration, code snippet generation, multi-language support
+
+**Difficulty:** Intermediate  
+**Bonus points:** OpenAPI/Swagger integration, code snippet generation, multi-language support
 
 ### Commit Message Generator with Meme
 
@@ -267,8 +281,9 @@ _Add your game ideas here! 👆_
 -   Create matching programmer meme
 -   Copy commit message to clipboard
 -   Share meme on social media
-    **Difficulty:** Beginner  
-    **Bonus points:** Git integration, commit message templates, developer mood detection
+
+**Difficulty:** Beginner  
+**Bonus points:** Git integration, commit message templates, developer mood detection
 
 ### Code Architecture Diagram Generator
 
@@ -282,8 +297,9 @@ _Add your game ideas here! 👆_
 -   Generate class diagrams, flow charts
 -   Multiple diagram types (UML, ERD, sequence)
 -   Export in various formats
-    **Difficulty:** Advanced  
-    **Bonus points:** Multi-language support, interactive diagrams, refactoring suggestions
+
+**Difficulty:** Advanced  
+**Bonus points:** Multi-language support, interactive diagrams, refactoring suggestions
 
 _Add your dev tool ideas here! 👆_
 
@@ -301,8 +317,9 @@ _Add your dev tool ideas here! 👆_
 -   Create period-accurate illustrations
 -   Interactive timeline navigation
 -   Export as educational poster
-    **Difficulty:** Intermediate  
-    **Bonus points:** Quiz mode, multiple historical perspectives, primary source integration
+
+**Difficulty:** Intermediate  
+**Bonus points:** Quiz mode, multiple historical perspectives, primary source integration
 
 ### Kids' Story Creator
 
@@ -317,8 +334,9 @@ _Add your dev tool ideas here! 👆_
 -   Colorful illustrations for each page
 -   Read-aloud functionality
 -   Save and print storybook
-    **Difficulty:** Intermediate  
-    **Bonus points:** Parental controls, multiple languages, educational themes, sharing gallery
+
+**Difficulty:** Intermediate  
+**Bonus points:** Parental controls, multiple languages, educational themes, sharing gallery
 
 ### Science Concept Explainer
 
@@ -333,8 +351,9 @@ _Add your dev tool ideas here! 👆_
 -   Multiple difficulty levels
 -   Related concepts suggestions
 -   Study note export
-    **Difficulty:** Intermediate  
-    **Bonus points:** Interactive simulations, quiz generation, real-world applications, video explanations
+
+**Difficulty:** Intermediate  
+**Bonus points:** Interactive simulations, quiz generation, real-world applications, video explanations
 
 ### Language Learning Flashcards
 
@@ -349,8 +368,9 @@ _Add your dev tool ideas here! 👆_
 -   Spaced repetition system
 -   Progress tracking
 -   Audio pronunciation
-    **Difficulty:** Intermediate  
-    **Bonus points:** Mobile-friendly, offline mode, custom decks, gamification, pronunciation practice
+
+**Difficulty:** Intermediate  
+**Bonus points:** Mobile-friendly, offline mode, custom decks, gamification, pronunciation practice
 
 _Add your educational app ideas here! 👆_
 
@@ -368,8 +388,9 @@ _Add your educational app ideas here! 👆_
 -   Dream symbol analysis
 -   Timeline of dreams
 -   Pattern recognition in recurring themes
-    **Difficulty:** Intermediate  
-    **Bonus points:** Dream dictionary, mood tracking, sleep quality correlation, sharing anonymized dreams
+
+**Difficulty:** Intermediate  
+**Bonus points:** Dream dictionary, mood tracking, sleep quality correlation, sharing anonymized dreams
 
 ### AI Recipe Visualizer from Ingredients
 
@@ -383,8 +404,9 @@ _Add your educational app ideas here! 👆_
 -   Generate step-by-step cooking images
 -   Nutrition information
 -   Difficulty and time estimates
-    **Difficulty:** Advanced  
-    **Bonus points:** Dietary restrictions filter, shopping list for missing ingredients, save favorites
+
+**Difficulty:** Advanced  
+**Bonus points:** Dietary restrictions filter, shopping list for missing ingredients, save favorites
 
 ### Virtual Time Capsule
 
@@ -398,8 +420,9 @@ _Add your educational app ideas here! 👆_
 -   Generate images of predicted future
 -   Set unlock date (1 year, 5 years, 10 years)
 -   Email reminder when time comes
-    **Difficulty:** Intermediate  
-    **Bonus points:** Share with friends, compare predictions, historical trend analysis, social time capsules
+
+**Difficulty:** Intermediate  
+**Bonus points:** Share with friends, compare predictions, historical trend analysis, social time capsules
 
 ### Personality Color Palette Generator
 
@@ -413,8 +436,9 @@ _Add your educational app ideas here! 👆_
 -   Create artwork using personal colors
 -   Color psychology explanation
 -   Download palette for design use
-    **Difficulty:** Beginner  
-    **Bonus points:** Color harmony rules, brand kit generation, room design suggestions, outfit ideas
+
+**Difficulty:** Beginner  
+**Bonus points:** Color harmony rules, brand kit generation, room design suggestions, outfit ideas
 
 _Add your unique app ideas here! 👆_
 
@@ -431,8 +455,9 @@ _Add your unique app ideas here! 👆_
 -   Image posted directly in channel
 -   Style options (realistic, anime, artistic, etc.)
 -   Rate limiting per user
-    **Difficulty:** Intermediate  
-    **Bonus points:** Image galleries, user favorites, remix commands
+
+**Difficulty:** Intermediate  
+**Bonus points:** Image galleries, user favorites, remix commands
 
 _Add your bot ideas here! 👆_
 
@@ -449,8 +474,9 @@ _Add your bot ideas here! 👆_
 -   Customizable NPC personalities
 -   Context-aware responses
 -   Easy integration with Roblox Studio
-    **Difficulty:** Advanced  
-    **Bonus points:** Quest generation, emotion system, voice integration  
+
+**Difficulty:** Advanced  
+**Bonus points:** Quest generation, emotion system, voice integration  
     **Example:** [Roblox NPC Template](./roblox-npc-creator/)
 
 _Add your game integration ideas here! 👆_
@@ -466,8 +492,9 @@ _Add your game integration ideas here! 👆_
 -   AI generates multiple catchy title options
 -   SEO score and keyword optimization tips
 -   Copy or download title suggestions
-    **Difficulty:**Beginner
-    **Bonus points:** Auto generate blog intro paragraph or meta description
+
+**Difficulty:** Beginner  
+**Bonus points:** Auto generate blog intro paragraph or meta description
 
 ## 📝 How to Add Your Idea
 

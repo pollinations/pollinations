@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
   sqliteTable,
@@ -36,6 +37,9 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  // Public branding shared by every community model owned by this account.
+  communityProviderName: text("community_provider_name"),
+  communityProviderUrl: text("community_provider_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -199,10 +203,34 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
+  modality: text("modality").default("text").notNull(),
+  // Image endpoints only: "request" bills the fixed per-image price once per
+  // generation; "tokens" bills provider-returned image token usage. Detected
+  // by the registration probe.
+  imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
+    .default("request")
+    .notNull(),
+  // Legacy rollout column. Runtime capability is derived only from
+  // inputModalities; remove this in a follow-up after all workers run 0042 code.
+  legacySupportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  // Null for rows created before this column existed; read paths default to text.
+  inputModalities: text("input_modalities", { mode: "json" }).$type<
+    ModelInputModality[]
+  >(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  // Models default to private (owner-only and free). Public visibility is
+  // allowlist-gated and may be free or owner-priced.
+  visibility: text("visibility", { enum: ["private", "public"] })
+    .default("private")
+    .notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
@@ -211,6 +239,20 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionTextPrice: real("completion_text_price").notNull(),
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  completionImagePrice: real("completion_image_price").default(0).notNull(),
+  // Admin-only, off by default: it hands a third party spend authority over
+  // whoever called the model. See mintDelegatedToken in
+  // gen.pollinations.ai/src/text/communityEndpoint.ts.
+  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  // Ordered community model ids ("<github_username>/<name>") tried, one after
+  // the other, when this endpoint's upstream fails. The owner declares the
+  // whole list, so no other owner's choice can change where this model's
+  // traffic goes.
+  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
+    string[]
+  >(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

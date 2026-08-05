@@ -3,7 +3,12 @@ import { HttpError } from "./httpError.ts";
 
 const logServer = debug("pollinations:server");
 
-export const VALID_TYPES = ["flux", "zimage", "sana", "ltx2"] as const;
+// "sana" is the pool key for the dreamshaper workers. It keeps the old name on
+// purpose: /register rejects unknown types, so a worker cannot join a pool that
+// only exists once this change is deployed. Keeping the key lets workers
+// register first and the routing switch land on a populated pool, with no
+// window where requests hit an empty one.
+export const VALID_TYPES = ["flux", "zimage", "sana"] as const;
 export type ServerType = (typeof VALID_TYPES)[number];
 
 type ServerEntry = {
@@ -142,7 +147,7 @@ export const getNextServerUrl = async (
 ): Promise<string> => {
     const activeServers = await getRegisteredServers(type);
     if (activeServers.length === 0) {
-        throw new Error(`No active ${type} servers available`);
+        throw new HttpError(`No active ${type} servers available`, 503);
     }
     return chooseWeightedServer(activeServers);
 };

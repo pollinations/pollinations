@@ -10,6 +10,11 @@ import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 const log = getLogger(["test", "mock", "vcr"]);
 
+// Manual invalidation lever for model-request snapshots: bump when an
+// upstream model/deployment changes behind an unchanged public name and
+// provider, so stale recordings don't keep replaying.
+const MODEL_SNAPSHOT_VERSION = 1;
+
 // Limit binary/stream snapshot bodies to 16KB to avoid multi-MB video snapshots.
 // Tests only need enough data to verify content-type and minimum size.
 const MAX_SNAPSHOT_BODY_BYTES = 16 * 1024;
@@ -66,12 +71,15 @@ async function getSnapshotHash(request: Request): Promise<string> {
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
         hash.update(`${body.tool_choice}` || "");
-        // Include provider + modelId so snapshots auto-invalidate when a model
-        // migrates to a different backend (e.g. fireworks → azure).
+        // Include the provider so snapshots auto-invalidate when a model
+        // migrates to a different backend (e.g. fireworks → azure). The
+        // registry no longer carries provider-facing model IDs, so a
+        // same-provider deployment change won't shift the hash on its own —
+        // bump MODEL_SNAPSHOT_VERSION to invalidate model snapshots manually.
         try {
             const modelName = resolveModelName(body.model);
             const def = getRegistryModelDefinition(modelName);
-            hash.update(`${def.provider}:${def.modelId}`);
+            hash.update(`${def.provider}:v${MODEL_SNAPSHOT_VERSION}`);
         } catch {
             // Unknown model — hash stays request-only
         }

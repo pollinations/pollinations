@@ -111,7 +111,7 @@ const BYOPModal = ({ isOpen, onClose }) => {
                         )}
                         <a
                             className="byop-btn byop-btn-secondary"
-                            href="https://enter.pollinations.ai"
+                            href="https://enter.pollinations.ai/keys"
                             target="_blank"
                             rel="noreferrer noopener"
                         >

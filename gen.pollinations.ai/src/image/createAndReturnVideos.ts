@@ -5,12 +5,12 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
-    callPrunaVideo720API,
-    callPrunaVideo1080API,
-} from "./models/prunaModel.ts";
+    callHappyHorseAPI,
+    callOpenRouterGrokVideoAPI,
+} from "./models/openRouterVideoModel.ts";
+import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
@@ -20,10 +20,8 @@ import {
 import {
     callWanAPI,
     callWanFastAPI,
-    callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
-import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -58,23 +56,18 @@ export async function createAndReturnVideo(
         case "wan-pro":
             result = await callWanProAPI(prompt, safeParams);
             break;
-        case "wan-pro-1080p":
-            result = await callWanPro1080pAPI(prompt, safeParams);
-            break;
-        case "ltx-2":
-            result = await callLtx2API(prompt, safeParams);
-            break;
-        case "p-video-720p":
-            result = await callPrunaVideo720API(prompt, safeParams);
-            break;
-        case "p-video-1080p":
-            result = await callPrunaVideo1080API(prompt, safeParams);
+        case "p-video":
+            result = await callPrunaVideoAPI(prompt, safeParams);
             break;
         case "nova-reel":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
-            result = await callXaiVideoAPI(prompt, safeParams);
+        case "grok-imagine-video-1.5":
+            result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "happyhorse-1.1":
+            result = await callHappyHorseAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

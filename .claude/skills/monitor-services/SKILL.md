@@ -235,16 +235,47 @@ TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -
 for i in 1 2 3 4 5; do curl -s -o /dev/null -w "HTTP %{http_code}\n" --max-time 60 \
   "https://gen.pollinations.ai/image/verify_${i}_$(date +%s%N)?model=zimage&width=512&height=512&seed=$i" \
   -H "Authorization: Bearer $TOKEN"; done
-# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event, model_requested='zimage').
+# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event_v2, model_requested='zimage').
 ```
 
 The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
 
 ---
 
-### 6. Sana Sprint 1.6B Worker (GH200 - same host as LTX-2)
+### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090) + Sana Sprint (GH200)
 
-One worker registered as `sana` type with OVH legacy service via heartbeat.
+Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model, on two
+Vast 3090s load-balanced by observed latency. The GH200 Sana backend has been
+drained out of the pool.
+
+| Backend | Model | Host | Registered URL |
+|---------|-------|------|----------------|
+| dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46307858` | `https://dreamshaper-vast-01.pollinations.ai` |
+| dreamshaper-vast-02 | DreamShaper 8 LCM | Vast 3090 `46387155` | `https://dreamshaper-vast-02.pollinations.ai` |
+
+```bash
+# both members must be present, and the Vast one must show the HOSTNAME,
+# never a raw IP:port — gen cannot fetch a Vast IP:port, and the heartbeat
+# stays green while every request through it fails
+curl -s https://gen.pollinations.ai/register -H "authorization: Bearer $PLN_GPU_TOKEN" \
+  | python3 -c "import json,sys;[print(s['type'],s['url'],s.get('lastMs')) for s in json.load(sys.stdin)]"
+curl -s --max-time 10 https://dreamshaper-vast-01.pollinations.ai/health
+```
+
+Each host runs `WORKERS=3` uvicorn processes and sustains ~8 img/s; a single
+process plateaus at ~4.3 img/s with the GPU 26-45% idle, because the limit is
+the Python path (global lock, JPEG + base64), not the GPU. Combined ~16 img/s
+against a 5.72 img/s peak, so either card can carry production alone.
+
+If latency climbs steadily rather than spiking, that is a queue building because
+arrival exceeds service rate — check `WORKERS` is really >1 (`ps` shows
+`spawn_main` children) before adding hardware.
+
+Cloudflare bot protection 403s `User-Agent: Python-urllib/*` on these tunnel
+hostnames. Use curl or set a UA, or health checks will look broken when they
+are fine.
+
+Sana on the GH200, for reference:
 
 | Instance | GPU | Host | Port | SSH |
 |----------|-----|------|------|-----|
@@ -301,11 +332,18 @@ one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
 
 **Check:**
 ```bash
-# flux worker(s) registered:
+# flux worker(s) registered — the `url` field is the tunnel to probe, and
+# `lastMs` is the last request's duration (a healthy 5090 is single-digit
+# seconds; tens of seconds means the tunnel is degrading, see below):
 curl -s https://gen.pollinations.ai/register | grep -o '"type":"flux"[^}]*'
-# tunnel + worker up (expect 200):
-curl -s -o /dev/null -w "%{http_code}\n" https://flux-vast-01.pollinations.ai/docs
+# then probe THAT url (expect 200 in ~1s):
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "<url-from-registry>/docs"
 ```
+
+Registry health is NOT data-path health: the worker heartbeats fine even when
+the tunnel in front of it is too slow to serve. Always time the probe. If
+`/docs` (a static page) takes >5s, the tunnel is the problem, not the GPU —
+compare against the worker on localhost via SSH to confirm.
 
 **Pool vs Fireworks split** — invisible in Tinybird (`model_provider_used` is
 static registry data); read it from the worker log (SSH coords from

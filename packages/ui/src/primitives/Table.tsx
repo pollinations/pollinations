@@ -92,16 +92,23 @@ export const TableHeaderCell: FC<TableHeaderCellProps> = ({
     const content = (
         <>
             <span>{children}</span>
-            {active && sortDirection && (
-                <span aria-hidden="true">
-                    {sortDirection === "asc" ? "^" : "v"}
+            {onSort && (
+                <span
+                    aria-hidden="true"
+                    className="polli:inline-flex polli:w-3 polli:justify-center"
+                >
+                    {active && sortDirection
+                        ? sortDirection === "asc"
+                            ? "↑"
+                            : "↓"
+                        : ""}
                 </span>
             )}
         </>
     );
 
     const classes = cn(
-        "polli:px-3 polli:py-2 polli:font-bold polli:uppercase polli:tracking-wide",
+        "polli:px-3 polli:py-2 polli:font-bold polli:normal-case polli:tracking-wide",
         alignClasses[align],
         active && "polli:text-theme-text-strong",
         onSort &&

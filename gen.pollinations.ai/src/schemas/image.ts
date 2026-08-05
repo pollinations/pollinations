@@ -6,11 +6,6 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
-// Build list of valid model names: service IDs + all aliases
-const VALID_IMAGE_MODELS = [
-    ...Object.keys(IMAGE_SERVICES),
-    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-] as const;
 const NOVA_REEL_MODELS = new Set([
     "nova-reel",
     ...IMAGE_SERVICES["nova-reel"].aliases,
@@ -21,18 +16,15 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     model: z
         .preprocess(
             (val) => (val === "" ? undefined : val),
-            z
-                .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
-                .optional()
-                .default(DEFAULT_IMAGE_MODEL),
+            z.string().trim().min(1).optional().default(DEFAULT_IMAGE_MODEL),
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
+            "Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -42,7 +34,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
+                "Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()
@@ -89,17 +81,21 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance-2.0`, `wan-fast`, and `wan-pro`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+            "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
     }),
 
     // Video-specific params
+    resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
+        description:
+            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier.",
+    }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:

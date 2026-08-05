@@ -11,7 +11,7 @@
 
 import { getModel3dEnv } from "../env.ts";
 
-const API_BASE = "https://sharktide-lightning.hf.space/v1";
+const API_BASE = "https://api.inferenceport.ai/v1";
 
 export class InferenceportError extends Error {
     constructor(
@@ -111,8 +111,10 @@ async function inferenceportFetch<T>(
 }
 
 export function classifyInferenceportHttpStatus(httpStatus: number): number {
-    // 429 → 429 (rate limit). 402 → 402 (insufficient credits).
-    // Other 4xx/5xx → 502 (our config / upstream outage).
+    // 400/422 are request validation failures and should not count against
+    // model health. 429 → 429 (rate limit). 402 → 402 (credits).
+    if (httpStatus === 400 || httpStatus === 422) return 400;
     if (httpStatus === 429 || httpStatus === 402) return httpStatus;
+    // Other 4xx/5xx indicate our config or an upstream outage.
     return 502;
 }

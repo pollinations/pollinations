@@ -6,17 +6,17 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /account/profile` | GitHub username, image, tier, reset time |
+| `GET /account/profile` | GitHub username, image, and community model access |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
-| `/account/my-models` | Invite-only community model management |
+| `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
 ### GET /account/profile
 
-Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile`.
+Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed` are always included. `name` and `email` are included only when the API key has `account:profile`.
 
 ### GET /account/balance
 
@@ -40,4 +40,6 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/my-models
 
-Invite-only community text model management: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.
+Community text and image model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers must expose OpenAI-compatible `/v1/chat/completions`; image providers must expose `/v1/images/generations`. Image models are text-to-image only, and calls through `/v1/images/generations` must use `response_format: "b64_json"`; reference images and edits are not supported yet. The endpoint test selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
+
+Public publishing and the upstream inspection/test tools require `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. The form does not register individual models. API keys require `account:keys`. The dashboard and Account API support text and image registration; `polli my-models` currently supports text models only.

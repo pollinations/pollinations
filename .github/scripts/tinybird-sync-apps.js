@@ -4,7 +4,7 @@
  * Sync apps/APPS.md → Tinybird app_directory datasource.
  *
  * Atomically replaces the full table in one operation (mode=replace).
- * Runs daily via .github/workflows/tinybird-sync-apps.yml.
+ * Runs daily via .github/workflows/data-sync-app-catalog-tinybird.yml.
  *
  * Uses a single atomic replace instead of delete-all + append: the old
  * delete endpoint is an async job that returned 200 before completing, so it

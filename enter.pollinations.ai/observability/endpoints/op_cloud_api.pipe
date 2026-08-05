@@ -1,0 +1,47 @@
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        entry_id,
+        source,
+        start,
+        end,
+        vendor,
+        type,
+        model,
+        credit,
+        paid,
+        currency,
+        evidence,
+        formatDateTime(latest_recorded_at, '%F %T') AS recorded_at,
+        resource_sku,
+        resource_count,
+        resource_id,
+        resource_name
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(source, recorded_at) AS source,
+            argMax(start, recorded_at) AS start,
+            argMax(end, recorded_at) AS end,
+            argMax(vendor, recorded_at) AS vendor,
+            argMax(type, recorded_at) AS type,
+            argMax(model, recorded_at) AS model,
+            argMax(credit, recorded_at) AS credit,
+            argMax(paid, recorded_at) AS paid,
+            argMax(currency, recorded_at) AS currency,
+            argMax(evidence, recorded_at) AS evidence,
+            argMax(resource_sku, recorded_at) AS resource_sku,
+            argMax(resource_count, recorded_at) AS resource_count,
+            argMax(resource_id, recorded_at) AS resource_id,
+            argMax(resource_name, recorded_at) AS resource_name,
+            max(recorded_at) AS latest_recorded_at
+        FROM op_cloud
+        GROUP BY entry_id
+    )
+    WHERE NOT (credit = 0 AND paid = 0 AND positionCaseInsensitive(evidence, 'superseded') > 0)
+    ORDER BY start DESC, vendor, type, resource_name, resource_id
+
+TYPE ENDPOINT

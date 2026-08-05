@@ -124,7 +124,6 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
-    ModelTier,
     // Config
     PollinationsConfig,
     // Errors

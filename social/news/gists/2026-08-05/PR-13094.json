@@ -1,0 +1,36 @@
+{
+  "pr_number": 13094,
+  "title": "Add Pulse AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13094",
+  "merged_at": "2026-08-05T07:24:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pulse AI](https://github.com/XNet-NGO/pulse-ai) to chat\n- Pulse AI is a consumer AI assistant for Android that uses the Pollinations text API (gen.pollinations.ai/v1) for chat completions and the Pollinations image API (image.pollinations.ai) for on-demand i\n\nFixes #11263",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pulse joins the garden",
+    "blurb": "Pulse AI, an Android assistant powered by Pollinations chat and image APIs, has landed in the app garden. One more pocket-sized place for ideas to turn into words and pixels.",
+    "summary": "Added Pulse AI to the community app listings: an Android consumer assistant using gen.pollinations.ai/v1 for chat completions and image.pollinations.ai for on-demand image generation.",
+    "impact": "People can now discover Pulse AI as a Pollinations-powered Android app for chat and image generation from the same assistant.",
+    "keywords": [
+      "Pulse AI",
+      "Android",
+      "community app",
+      "chat API",
+      "image API",
+      "app directory"
+    ],
+    "visual_concept": "Depict Polli as a friendly Android-style mobile assistant guide in a cozy app garden, presenting a glowing phone that shows simple chat bubbles and a tiny generated landscape image. Add code-plants and pixel flowers to represent the two Pollinations APIs powering the app, with the eager CRT Monitor Robot peeking over the phone.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny Android-green gardener cap, proudly holding a glowing smartphone showing chat bubbles and a small generated landscape; a cute CRT monitor robot peeks beside her among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'PULSE AI', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13094.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny Android-green gardener cap, proudly holding a glowing smartphone showing chat bubbles and a small generated landscape; a cute CRT monitor robot peeks beside her among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'PULSE AI', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T07:25:45.019233+00:00",
+  "app_name": "Pulse AI",
+  "app_url": "https://github.com/XNet-NGO/pulse-ai"
+}

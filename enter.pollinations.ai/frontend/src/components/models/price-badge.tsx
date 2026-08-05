@@ -341,7 +341,7 @@ export const ModelPricingLedger: FC<{
                         </span>
                         <span className="min-w-0 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-theme-text-strong">
                             {displayedPrice.value}{" "}
-                            <span className="text-xs font-normal text-theme-text-muted">
+                            <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
                                 {price.unit === "token"
                                     ? `/${displayedPrice.tokenScale} tokens`
                                     : PRICE_LEDGER_UNIT[price.unit]}

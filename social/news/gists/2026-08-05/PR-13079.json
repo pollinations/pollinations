@@ -1,0 +1,34 @@
+{
+  "pr_number": 13079,
+  "title": "feat: add community provider profiles",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13079",
+  "merged_at": "2026-08-05T00:35:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Lets allowlisted community providers set one public name and HTTPS service link for all their models\n- Exposes the profile through the shared model registry as `brand` and optional `brand_url`\n- Links the provider name from community model rows in the Enter catalog\n- Adds the nullable D1 fields, generated migration, validation, and focused integration tests\n\nTests:\n- `npm run typecheck` in `enter.pollinations.ai`\n- `npm run typecheck` in `gen.pollinations.ai`\n- `npx vitest run src/community-endpoints.test.ts`\n- `npx vitest run test/pricing-data.test.ts`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Providers get a signpost",
+    "blurb": "Community providers can now put one public name and HTTPS home link beside every model they share. A small label for a model row; a much better trail back to its garden.",
+    "summary": "Allowlisted community providers can now configure a public `brand` name and optional HTTPS `brand_url`, which are published through the shared model registry and linked from their model rows in the Enter catalog.",
+    "impact": "Users browsing community models can see who provides them and follow a verified provider link, while providers get a consistent identity across all of their listed models.",
+    "keywords": [
+      "community providers",
+      "model registry",
+      "model catalog",
+      "provider profiles",
+      "brand_url",
+      "Enter"
+    ],
+    "visual_concept": "Depict a cozy community model catalog as a garden noticeboard: several code-plants have tidy provider name tags, with a small HTTPS link signpost leading from each row toward a friendly provider garden. Polli should be actively hanging a polished nameplate and link plaque, showing that one provider identity now travels with every model. Include a small eager monitor robot reading the catalog for extra discovery energy.",
+    "image_prompt": "A cozy pixel art community model garden where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny librarian scarf while hanging a provider nameplate and HTTPS link sign on a row of code-plants. A chunky CRT monitor robot happily reads a glowing model catalog beside her, with pixel flowers and vines around warm cream, mint, and lavender scenery; lime green (#ecf874) is prominent on the catalog glow and garden signs. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13079.jpg",
+    "prompt": "A cozy pixel art community model garden where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny librarian scarf while hanging a provider nameplate and HTTPS link sign on a row of code-plants. A chunky CRT monitor robot happily reads a glowing model catalog beside her, with pixel flowers and vines around warm cream, mint, and lavender scenery; lime green (#ecf874) is prominent on the catalog glow and garden signs. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-05T00:36:49.554002+00:00"
+}

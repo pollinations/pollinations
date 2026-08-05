@@ -4,10 +4,9 @@ import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
  *
- * Spawns the server over stdio, lists tools, and exercises a small slice
- * (auth + a live text + image-URL call) using a sk_ key from env.
+ * Spawns the server over stdio, lists tools, and exercises a small live slice.
  *
- *   POLLINATIONS_API_KEY=sk_xxx npm run test
+ *   POLLINATIONS_MCP_LIVE=1 POLLINATIONS_API_KEY=sk_xxx npm test
  */
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
@@ -15,37 +14,24 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
-
+const LIVE = process.env.POLLINATIONS_MCP_LIVE === "1";
 const EXPECTED_TOOLS = [
-    "analyzeVideo",
     "chatCompletion",
-    "clearApiKey",
-    "describeImage",
     "generateImage",
-    "generateImageBatch",
-    "generateImageUrl",
-    "generateText",
     "generateVideo",
-    "generateVideoUrl",
     "getBalance",
-    "getKeyInfo",
-    "getPricing",
     "getUsage",
-    "listAudioVoices",
-    "listImageModels",
+    "listModels",
     "listQuests",
-    "listTextModels",
-    "respondAudio",
-    "sayText",
-    "setApiKey",
+    "textToSpeech",
     "transcribeAudio",
-    "webSearch",
 ];
 
 const createTransport = () =>
     new StdioClientTransport({
         command: "node",
-        args: [path.join(__dirname, "pollinations-mcp.js")],
+        args: [path.join(__dirname, "src/index.js")],
+        env: KEY ? { POLLINATIONS_API_KEY: KEY } : undefined,
     });
 
 async function connectClient(options = {}) {
@@ -80,7 +66,12 @@ async function call(name, args = {}) {
     if (res.isError) {
         throw new Error(res.content?.[0]?.text || "tool error");
     }
-    return res.content?.[0]?.text;
+    return res.content || [];
+}
+
+async function callText(name, args = {}) {
+    const content = await call(name, args);
+    return content.find((item) => item.type === "text")?.text;
 }
 
 const client = await connectClient({
@@ -96,21 +87,38 @@ await step("modern protocol negotiation", () => {
 await step("modern listTools", async () => {
     const { tools } = await client.listTools();
     modernTools = tools;
-    const actual = tools.map(({ name }) => name).sort();
+    const actual = tools.map((tool) => tool.name).sort();
     if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
         throw new Error(`unexpected tools: ${actual.join(", ")}`);
+    }
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+    const videoRequired = byName.generateVideo.inputSchema.required || [];
+    if (!videoRequired.includes("model")) {
+        throw new Error("generateVideo.model must be required");
+    }
+    for (const name of [
+        "chatCompletion",
+        "generateImage",
+        "generateVideo",
+        "getUsage",
+        "textToSpeech",
+        "transcribeAudio",
+    ]) {
+        if (byName[name].inputSchema.additionalProperties === false) {
+            throw new Error(`${name} must pass unknown Gen parameters through`);
+        }
     }
     return `${tools.length} tools`;
 });
 
-await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+await step("listModels (unauthenticated)", () => callText("listModels"));
 
 const legacyClient = await connectClient();
 await step("legacy protocol fallback", async () => {
     const era = legacyClient.getProtocolEra();
     if (era !== "legacy") throw new Error(`expected legacy, received ${era}`);
     const { tools } = await legacyClient.listTools();
-    const actual = tools.map(({ name }) => name).sort();
+    const actual = tools.map((tool) => tool.name).sort();
     if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
         throw new Error(`unexpected tools: ${actual.join(", ")}`);
     }
@@ -119,35 +127,72 @@ await step("legacy protocol fallback", async () => {
 });
 await legacyClient.close();
 
-if (!KEY) {
+if (!LIVE || !KEY) {
     console.log(
-        "\nSkipping authenticated calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
+        "\nSkipping authenticated calls — set POLLINATIONS_MCP_LIVE=1 and POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
 } else {
-    await step("setApiKey", () => call("setApiKey", { key: KEY }));
-    await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("generateText", async () => {
-        const out = await call("generateText", {
-            prompt: "Reply with exactly: pong",
-            model: "openai-fast",
+    await step("chatCompletion", async () => {
+        const out = await callText("chatCompletion", {
+            messages: [
+                {
+                    role: "user",
+                    content: "Reply with exactly: pong",
+                },
+            ],
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
     });
-    await step("generateImageUrl", async () => {
-        const out = await call("generateImageUrl", {
+    await step("generateImage URL", async () => {
+        const out = await callText("generateImage", {
             prompt: "a small red apple",
             model: "flux",
             width: 256,
             height: 256,
+            output: "url",
         });
         if (!/pollinations\.ai/.test(out))
             throw new Error(`no URL: ${trim(out)}`);
         return out;
     });
-    await step("getBalance", () => call("getBalance"));
-    await step("listQuests", () => call("listQuests"));
-    await step("clearApiKey", () => call("clearApiKey"));
+    await step("textToSpeech", async () => {
+        const content = await call("textToSpeech", {
+            input: "MCP speech test.",
+            voice: "alloy",
+            response_format: "mp3",
+        });
+        const audio = content.find((item) => item.type === "audio");
+        if (!audio?.data) throw new Error("no audio content returned");
+        return `${audio.mimeType}, ${audio.data.length} base64 chars`;
+    });
+    await step("transcribeAudio", async () => {
+        const out = await callText("transcribeAudio", {
+            audioUrl:
+                "https://raw.githubusercontent.com/openai/whisper/main/tests/jfk.flac",
+            model: "whisper-large-v3",
+        });
+        if (!out) throw new Error("no transcription returned");
+        return "transcription returned";
+    });
+    await step("getBalance", async () => {
+        if (!(await callText("getBalance"))) {
+            throw new Error("no balance response returned");
+        }
+        return "balance response returned";
+    });
+    await step("getUsage", async () => {
+        if (!(await callText("getUsage", { days: 1, limit: 1 }))) {
+            throw new Error("no usage response returned");
+        }
+        return "usage response returned";
+    });
+    await step("listQuests", async () => {
+        if (!(await callText("listQuests"))) {
+            throw new Error("no quest response returned");
+        }
+        return "quest response returned";
+    });
 }
 
 await client.close();

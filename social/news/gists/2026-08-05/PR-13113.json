@@ -1,0 +1,34 @@
+{
+  "pr_number": 13113,
+  "title": "fix: set Myceli proxy timeout to 300 seconds",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13113",
+  "merged_at": "2026-08-05T11:17:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a manual production-only workflow for the `myceli.ai` zone.\n- Reads and reports the current `proxy_read_timeout` before changing it.\n- Sets the value to 300 seconds and verifies it through the Cloudflare API.\n- Fails without changing anything if the zone is missing, the setting is not editable, or the existing credential lacks permission.\n\nValidation: Prettier, `git diff --check`, and actionlint.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Five Minutes of Patience",
+    "blurb": "Myceli's Cloudflare proxy now waits up to 300 seconds before calling it quits. Some mushrooms take a little longer to grow.",
+    "summary": "Added a manual production-only workflow that verifies and sets the myceli.ai Cloudflare `proxy_read_timeout` to 300 seconds, with permission and editability checks before making changes.",
+    "impact": "Longer Myceli requests can now run for up to five minutes through the proxy, reducing avoidable timeout failures while safely verifying the live setting.",
+    "keywords": [
+      "myceli",
+      "cloudflare",
+      "proxy",
+      "timeout",
+      "reliability",
+      "production"
+    ],
+    "visual_concept": "Polli tends a cozy mycelium garden connected to a small Cloudflare-like gateway, while a retro CRT timer calmly counts to 300 seconds. The scene represents longer-running requests safely passing through a patient proxy, with glowing code-fungi and a visible verification checklist.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, patiently watering glowing code-mushrooms beside a retro CRT gateway displaying a chunky pixel timer reading \"300s\" and a small checkmark. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden gradients, with flowers and mycelium vines around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13113.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, patiently watering glowing code-mushrooms beside a retro CRT gateway displaying a chunky pixel timer reading \"300s\" and a small checkmark. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden gradients, with flowers and mycelium vines around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T11:18:49.182291+00:00"
+}

@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
@@ -136,6 +137,83 @@ async function waitForTinybirdRequests(
     }
 }
 
+async function openPaidRealtimeSession({
+    name,
+    model = "gpt-realtime-2",
+    referrer,
+}: {
+    name: string;
+    model?: string;
+    referrer?: string;
+}) {
+    const { key, userId } = await createTestApiKey({
+        name,
+        pollenBudget: 1,
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const upstream = mockOpenAIRealtime();
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${key}`,
+        Upgrade: "websocket",
+    };
+    if (referrer) headers.Referer = referrer;
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/v1/realtime?model=${model}`,
+        { headers },
+    );
+
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
+    upstream.server.accept();
+
+    return { client, ctx, upstream, userId };
+}
+
+type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
+
+async function closeRealtimeSession(session: PaidRealtimeSession) {
+    session.client.close();
+    session.upstream.server.close();
+    await waitOnExecutionContext(session.ctx);
+}
+
+async function closeAndReadTelemetry(session: PaidRealtimeSession) {
+    await closeRealtimeSession(session);
+    await waitForTinybirdRequests(session.upstream);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    return JSON.parse(
+        await session.upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+}
+
+const cachedModalityUsageEvent = JSON.stringify({
+    type: "response.done",
+    response: {
+        usage: {
+            input_tokens: 100,
+            output_tokens: 30,
+            input_token_details: {
+                text_tokens: 40,
+                audio_tokens: 50,
+                image_tokens: 10,
+                cached_tokens: 30,
+                cached_tokens_details: {
+                    text_tokens: 10,
+                    audio_tokens: 15,
+                    image_tokens: 5,
+                },
+            },
+            output_token_details: {
+                text_tokens: 20,
+                audio_tokens: 10,
+            },
+        },
+    },
+});
+
 async function expectClientEventRejected(
     paidApiKey: string,
     event: unknown,
@@ -222,6 +300,34 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     await expect(downstreamMessage).resolves.toBe(serverEvent);
 
     client.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+});
+
+test("routes the mini model through the working East US 2 deployment", async ({
+    paidApiKey,
+}) => {
+    const upstream = mockOpenAIRealtime();
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        "/v1/realtime?model=gpt-realtime-2.1-mini",
+        {
+            headers: {
+                Authorization: `Bearer ${paidApiKey}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    expect(upstream.request.url).toBe(
+        "https://myceli-prod-eastus2.openai.azure.com/openai/v1/realtime?model=gpt-realtime-2-1-mini",
+    );
+    expect(upstream.request.headers.get("api-key")).toBeTruthy();
+
+    response.webSocket?.accept();
+    upstream.server.accept();
+    response.webSocket?.close();
     upstream.server.close();
     await waitOnExecutionContext(ctx);
 });
@@ -359,36 +465,17 @@ test("closes instead of forwarding client input transcription events", async ({
 });
 
 test("closes instead of forwarding upstream input transcription events", async () => {
-    const { key, userId } = await createTestApiKey({
+    const session = await openPaidRealtimeSession({
         name: "upstream-transcription-realtime-key",
-        pollenBudget: 1,
-        user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockOpenAIRealtime();
-
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Upgrade: "websocket",
-            },
-        },
-    );
-
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
 
     let clientReceived = false;
-    client.addEventListener("message", () => {
+    session.client.addEventListener("message", () => {
         clientReceived = true;
     });
 
-    const closeEvent = nextClose(client);
-    upstream.server.send(
+    const closeEvent = nextClose(session.client);
+    session.upstream.server.send(
         JSON.stringify({
             type: "conversation.item.input_audio_transcription.delta",
             usage: { input_tokens: 10 },
@@ -400,42 +487,23 @@ test("closes instead of forwarding upstream input transcription events", async (
         reason: "Realtime input transcription is not supported yet.",
     });
     expect(clientReceived).toBe(false);
-    upstream.server.close();
-    await waitForTinybirdRequests(upstream);
-    await waitOnExecutionContext(ctx);
+    session.upstream.server.close();
+    await waitForTinybirdRequests(session.upstream);
+    await waitOnExecutionContext(session.ctx);
 
-    const user = await waitForPackBalanceBelow(userId, 1);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeLessThan(1);
-    expect(upstream.tinybirdRequests).toHaveLength(1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
     const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
+        await session.upstream.tinybirdRequests[0].text(),
     ) as Record<string, unknown>;
     expect(telemetry.tokenCountPromptText).toBe(10);
 });
 
 test("deducts aggregate session usage from paid pack balance on close", async () => {
-    const { key, userId } = await createTestApiKey({
+    const session = await openPaidRealtimeSession({
         name: "paid-budgeted-realtime-key",
-        pollenBudget: 1,
-        user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockOpenAIRealtime();
-
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Upgrade: "websocket",
-            },
-        },
-    );
-
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
 
     const usageEvent = JSON.stringify({
         type: "response.done",
@@ -462,25 +530,17 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
         },
     });
 
-    upstream.server.send(usageEvent);
-    upstream.server.send(usageEvent);
+    session.upstream.server.send(usageEvent);
+    session.upstream.server.send(usageEvent);
 
     await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(upstream.tinybirdRequests).toHaveLength(0);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
 
-    client.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
+    const telemetry = await closeAndReadTelemetry(session);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
 
-    const user = await waitForPackBalanceBelow(userId, 1);
-
-    const expectedCharge = 0.003553 * 2;
+    const expectedCharge = 0.003553 * 2 * 0.75;
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
     expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
@@ -494,31 +554,138 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
 
-test("falls back to aggregate realtime token totals when details are absent", async () => {
-    const { key, userId } = await createTestApiKey({
-        name: "aggregate-only-realtime-key",
-        pollenBudget: 1,
-        user: { tierBalance: 0, packBalance: 1 },
+test.each([
+    "gpt-realtime-2",
+    "gpt-realtime-2.1",
+] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
+    const session = await openPaidRealtimeSession({
+        name: `${model}-cache-realtime-key`,
+        model,
     });
-    const upstream = mockOpenAIRealtime();
 
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Upgrade: "websocket",
+    for (let eventCount = 0; eventCount < 2; eventCount++) {
+        const forwardedEvent = nextMessage(session.client);
+        session.upstream.server.send(cachedModalityUsageEvent);
+        await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    }
+
+    const telemetry = await closeAndReadTelemetry(session);
+
+    const expectedCost = 0.0023975 * 2;
+    const expectedCharge = expectedCost * 0.75;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(telemetry.resolvedModelRequested).toBe(model);
+    expect(telemetry.tokenCountPromptText).toBe(60);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountPromptAudio).toBe(70);
+    expect(telemetry.tokenCountPromptImage).toBe(10);
+    expect(telemetry.tokenCountCompletionText).toBe(40);
+    expect(telemetry.tokenCountCompletionAudio).toBe(20);
+    expect(telemetry.adjustmentUnits).toEqual({
+        "openai.realtime.cached_image_delta.v1": 10,
+    });
+    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
+    expect(
+        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+    ).toBeCloseTo(0.000001, 12);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+});
+
+test("bills mini cached audio and image tokens at their exact rates", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "mini-cache-realtime-key",
+        model: "gpt-realtime-2.1-mini",
+    });
+
+    for (let eventCount = 0; eventCount < 2; eventCount++) {
+        const forwardedEvent = nextMessage(session.client);
+        session.upstream.server.send(cachedModalityUsageEvent);
+        await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    }
+
+    const telemetry = await closeAndReadTelemetry(session);
+
+    const expectedCost = 0.0006255 * 2;
+    const expectedCharge = 0.00093825;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(telemetry.tokenCountPromptText).toBe(60);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountPromptAudio).toBe(70);
+    expect(telemetry.tokenCountPromptImage).toBe(10);
+    expect(telemetry.tokenCountCompletionText).toBe(40);
+    expect(telemetry.tokenCountCompletionAudio).toBe(20);
+    expect(telemetry.adjustmentUnits).toEqual({
+        "openai.realtime.cached_audio_delta.v1": 30,
+        "openai.realtime.cached_image_delta.v1": 10,
+    });
+    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
+    expect(
+        adjustmentCosts["openai.realtime.cached_audio_delta.v1"],
+    ).toBeCloseTo(0.0000072, 12);
+    expect(
+        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+    ).toBeCloseTo(0.0000002, 12);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+});
+
+test("uses the cached-text rate when cache details are absent", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "mini-missing-cache-details-key",
+        model: "gpt-realtime-2.1-mini",
+    });
+
+    const warn = vi.spyOn(getLogger(["hono", "realtime"]), "warn");
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 100,
+                output_tokens: 10,
+                input_token_details: {
+                    text_tokens: 100,
+                    cached_tokens: 30,
+                },
+                output_token_details: { text_tokens: 10 },
             },
         },
+    });
+    const firstForwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(usageEvent);
+    await expect(firstForwardedEvent).resolves.toBe(usageEvent);
+    const secondForwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(usageEvent);
+    await expect(secondForwardedEvent).resolves.toBe(usageEvent);
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(
+        "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
+        { model: "gpt-realtime-2.1-mini" },
     );
 
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
+    const telemetry = await closeAndReadTelemetry(session);
 
-    upstream.server.send(
+    const expectedCost = 0.0000678 * 2;
+    const expectedCharge = 0.00005085 * 2;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(telemetry.tokenCountPromptText).toBe(140);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountCompletionText).toBe(20);
+    expect(telemetry.adjustmentUnits).toBeUndefined();
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+});
+
+test("falls back to aggregate realtime token totals when details are absent", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "aggregate-only-realtime-key",
+    });
+
+    session.upstream.server.send(
         JSON.stringify({
             type: "response.done",
             response: {
@@ -530,48 +697,22 @@ test("falls back to aggregate realtime token totals when details are absent", as
         }),
     );
 
-    client.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
+    const telemetry = await closeAndReadTelemetry(session);
 
-    const expectedCharge = 0.0002;
-    const user = await waitForPackBalanceBelow(userId, 1);
+    const expectedCharge = 0.0002 * 0.75;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
     expect(telemetry.tokenCountPromptText).toBe(20);
     expect(telemetry.tokenCountCompletionText).toBe(5);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
 
 test("bills partial realtime token details from aggregate remainders", async () => {
-    const { key, userId } = await createTestApiKey({
+    const session = await openPaidRealtimeSession({
         name: "partial-detail-realtime-key",
-        pollenBudget: 1,
-        user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockOpenAIRealtime();
 
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Upgrade: "websocket",
-            },
-        },
-    );
-
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
-
-    upstream.server.send(
+    session.upstream.server.send(
         JSON.stringify({
             type: "response.done",
             response: {
@@ -592,18 +733,11 @@ test("bills partial realtime token details from aggregate remainders", async () 
         }),
     );
 
-    client.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
+    const telemetry = await closeAndReadTelemetry(session);
 
-    const expectedCharge = 0.003353;
-    const user = await waitForPackBalanceBelow(userId, 1);
+    const expectedCharge = 0.003353 * 0.75;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
     expect(telemetry.tokenCountPromptText).toBe(100);
     expect(telemetry.tokenCountPromptCached).toBe(20);
     expect(telemetry.tokenCountPromptAudio).toBe(10);
@@ -614,94 +748,40 @@ test("bills partial realtime token details from aggregate remainders", async () 
 });
 
 test("redacts credential query parameters from realtime referrer telemetry", async () => {
-    const { key } = await createTestApiKey({
+    const session = await openPaidRealtimeSession({
         name: "referrer-redaction-realtime-key",
-        pollenBudget: 1,
-        user: { packBalance: 1 },
+        referrer:
+            "https://app.example/call?key=pk_secret&token=t&api_key=a&access_token=b&apikey=c&bearerToken=d&ok=1",
     });
-    const upstream = mockOpenAIRealtime();
 
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Referer:
-                    "https://app.example/call?key=pk_secret&token=t&api_key=a&access_token=b&ok=1",
-                Upgrade: "websocket",
-            },
-        },
-    );
-
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
-
-    upstream.server.send(
+    session.upstream.server.send(
         JSON.stringify({
             type: "response.done",
             response: { usage: { input_tokens: 1, output_tokens: 1 } },
         }),
     );
 
-    client.close();
-    upstream.server.close();
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    await waitOnExecutionContext(ctx);
-
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    const telemetry = await closeAndReadTelemetry(session);
     expect(telemetry.referrerDomain).toBe("app.example");
     expect(telemetry.referrerUrl).toBe(
-        "https://app.example/call?key=%5Bredacted%5D&token=%5Bredacted%5D&api_key=%5Bredacted%5D&access_token=%5Bredacted%5D&ok=1",
+        "https://app.example/call?key=%5Bredacted%5D&token=%5Bredacted%5D&api_key=%5Bredacted%5D&access_token=%5Bredacted%5D&apikey=%5Bredacted%5D&bearerToken=%5Bredacted%5D&ok=1",
     );
 });
 
 test("omits invalid realtime referrers instead of storing raw credential strings", async () => {
-    const { key } = await createTestApiKey({
+    const session = await openPaidRealtimeSession({
         name: "invalid-referrer-realtime-key",
-        pollenBudget: 1,
-        user: { packBalance: 1 },
+        referrer: "not a url?key=pk_secret&token=t",
     });
-    const upstream = mockOpenAIRealtime();
 
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Referer: "not a url?key=pk_secret&token=t",
-                Upgrade: "websocket",
-            },
-        },
-    );
-
-    expect(response.status).toBe(101);
-    const client = response.webSocket;
-    if (!client) throw new Error("Expected downstream WebSocket");
-    client.accept();
-    upstream.server.accept();
-
-    upstream.server.send(
+    session.upstream.server.send(
         JSON.stringify({
             type: "response.done",
             response: { usage: { input_tokens: 1, output_tokens: 1 } },
         }),
     );
 
-    client.close();
-    upstream.server.close();
-    await waitForTinybirdRequests(upstream);
-    await waitOnExecutionContext(ctx);
-
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    const telemetry = await closeAndReadTelemetry(session);
     expect(telemetry.referrerUrl).toBeUndefined();
     expect(telemetry.referrerDomain).toBeUndefined();
 });
@@ -715,9 +795,13 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         data: { id: string; supported_endpoints?: string[] }[];
     };
     const realtimeModels = publicBody.data.filter((model) =>
-        ["gpt-realtime-2", "gpt-realtime-2.1"].includes(model.id),
+        [
+            "gpt-realtime-2",
+            "gpt-realtime-2.1",
+            "gpt-realtime-2.1-mini",
+        ].includes(model.id),
     );
-    expect(realtimeModels).toHaveLength(2);
+    expect(realtimeModels).toHaveLength(3);
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
@@ -734,6 +818,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
         "gpt-realtime-2.1",
+    );
+    expect(restrictedBody.data.map((model) => model.id)).not.toContain(
+        "gpt-realtime-2.1-mini",
     );
 });
 

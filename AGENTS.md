@@ -75,6 +75,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+- Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
 
 ## Secret Mutation Safety
 
@@ -83,7 +84,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
 - Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
 - Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
-- Required approval format: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+- For a first-time secret addition, require: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`
+- For replacing an existing secret, require: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
 - Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
@@ -189,25 +191,13 @@ npx vitest run test/file.test.ts
 ## Workflow Orchestration
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
-- Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
+- Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
-- Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
-- Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
-
-## Task Management
-
-1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
 
 ## Compact Instructions
 
 Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
-
-## Core Principles
-
-- Simplicity first — minimal code impact.
-- No laziness — find root causes, no temp fixes, senior standards.
-- Minimal impact — touch only what's necessary.
 
 ## Git Workflow
 

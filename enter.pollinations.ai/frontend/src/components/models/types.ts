@@ -40,6 +40,13 @@ export type ModelPriceLine = {
     unit: PriceUnit;
 };
 
+export type ModelPriceVariant = {
+    name: string;
+    label: string;
+    description: string;
+    prices: ModelPriceLine[];
+};
+
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
@@ -47,6 +54,7 @@ export type ModelPrice = {
     displayName?: string;
     description?: string;
     brand?: string;
+    brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
     capabilities: ModelCapability[];
@@ -57,11 +65,7 @@ export type ModelPrice = {
     inputSortPrice?: number;
     outputSortPrice?: number;
     prices: ModelPriceLine[];
+    priceVariants?: ModelPriceVariant[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
-};
-
-export type Modalities = {
-    input: string[];
-    output: string[];
 };

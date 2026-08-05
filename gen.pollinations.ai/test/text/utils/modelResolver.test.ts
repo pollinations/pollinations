@@ -63,18 +63,155 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Inkling to Together on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "inkling" });
+
+        expect(result.options.model).toBe("thinkingmachines/inkling-small");
+        expect(result.options.provider).toEqual({
+            only: ["Together"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Mercury to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "mercury" });
+
+        expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Nemotron directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "nemotron" });
+
+        expect(result.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Step Flash directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "step-flash" });
+
+        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Qwen3.7 Flash to Alibaba on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.7-flash",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Qwen3.8 Max to Alibaba without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "qwen3.8-max" });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "kimi-k3" });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
+        const result = resolveModelConfig(messages, { model: "deepseek" });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "command-a-plus",
+        });
+
+        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
+            "azure-model-name": "Cohere-command-a-plus-05-2026",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",
         "sonar-deep",
-    ])("resolves %s to the high-context Sonar preset", async (modelName) => {
+    ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
         const model = findModelByName(modelName);
 
-        expect(model?.name).toBe("perplexity-high");
-        const transformed = await model?.transform?.(messages, {});
-        expect(transformed?.options.web_search_options).toEqual({
+        expect(model?.name).toBe("perplexity-fast");
+        const result = resolveModelConfig(messages, {
+            model: modelName,
+            web_search_options: { search_context_size: "high" },
+        });
+        expect(result.options.model).toBe("sonar");
+        expect(result.options.web_search_options).toEqual({
             search_context_size: "high",
         });
+    });
+
+    it.each([
+        ["grok", undefined, "grok-4-20-non-reasoning"],
+        ["grok-4-20-reasoning", undefined, "grok-4-20-non-reasoning"],
+        ["grok", "high", "grok-4-20-reasoning"],
+        ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
+    ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {
+        const definition = findModelByName(model);
+        const transformed = await definition?.transform?.(messages, {
+            model,
+            reasoning_effort: reasoningEffort,
+        });
+        if (!transformed) throw new Error("Grok transform missing");
+
+        const result = resolveModelConfig(messages, transformed.options);
+        expect(result.options.model).toBe(deployment);
+        if (deployment === "grok-4-20-non-reasoning") {
+            expect(result.options.reasoning_effort).toBeUndefined();
+        }
     });
 
     it("marks missing model configs as 404 errors", () => {

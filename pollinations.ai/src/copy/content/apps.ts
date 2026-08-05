@@ -148,6 +148,3 @@ export const BADGE_FILTERS = [
         glow: "var(--primary-strong)",
     },
 ];
-
-// Combined for lookup
-export const ALL_FILTERS = [...GENRE_FILTERS, ...BADGE_FILTERS];

@@ -66,7 +66,10 @@ import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import {
+    GenerateImageRequestQueryParamsSchema,
+    GenerateVideoRequestQueryParamsSchema,
+} from "@/schemas/image.ts";
 import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -76,6 +79,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -102,7 +106,6 @@ const textBodyLimit = bodyLimit({
 });
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
-    resolveModel("generate.image"),
     track("generate.image"),
     imageCache,
     generationAccess,
@@ -151,8 +154,9 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         const response = await handleChatCompletionLocal(c, requestBody);
+        if (!response.ok) return response;
 
-        assertStreamContentType(c, response);
+        assertStreamContentType(c, response, c.var.upstreamRequestUrl);
 
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
@@ -168,8 +172,7 @@ const chatCompletionHandlers = factory.createHandlers(
             } catch (parseError) {
                 throw new UpstreamError(502, {
                     message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: new URL(c.req.url),
-                    upstreamStatus: response.status,
+                    requestUrl: c.var.upstreamRequestUrl,
                     responseBody: responseText,
                     cause: parseError,
                 });
@@ -190,14 +193,17 @@ const chatCompletionHandlers = factory.createHandlers(
 
 // Validate streaming responses: if client requested stream but upstream
 // returned non-SSE, throw rather than forwarding broken data.
-function assertStreamContentType(c: Context<Env>, response: Response): void {
+function assertStreamContentType(
+    c: Context<Env>,
+    response: Response,
+    upstreamRequestUrl: URL | undefined,
+): void {
     if (c.var.track.streamRequested) {
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/event-stream")) {
             throw new UpstreamError(502, {
                 message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: new URL(c.req.url),
-                upstreamStatus: response.status,
+                requestUrl: upstreamRequestUrl,
                 responseBody: contentType,
             });
         }
@@ -257,9 +263,9 @@ async function getVisibleModelEntriesForEventType(
     c: Context<Env>,
     eventType: GenerationModelEntry["eventType"],
 ) {
-    return (await getGenerationModelRegistry(c.env))
-        .visibleEntries(c.var.auth?.user?.id)
-        .filter((entry) => entry.eventType === eventType);
+    return (await getVisibleModelEntries(c)).filter(
+        (entry) => entry.eventType === eventType,
+    );
 }
 
 // "3d" models share the "generate.image" EventType with image/video models
@@ -662,16 +668,22 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const serviceDef = c.var.model.definition;
-            return generateEmbeddings(
-                c.env,
-                {
-                    ...requestBody,
-                    model: getEmbeddingProviderModelId(c.var.model.resolved),
-                },
-                serviceDef,
-                c.var.model.resolved,
+            const { response, servedEntry } = await withModelFallbackResponse(
+                c.var.model,
+                (candidate) =>
+                    generateEmbeddings(
+                        c.env,
+                        {
+                            ...requestBody,
+                            model: getEmbeddingProviderModelId(candidate.id),
+                        },
+                        candidate.definition ?? c.var.model.definition,
+                        candidate.id,
+                    ),
+                c.var.track?.failedCalls,
             );
+            if (servedEntry) c.set("servedModelEntry", servedEntry);
+            return response;
         },
     )
     .post(
@@ -707,7 +719,7 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(c, response);
+            assertStreamContentType(c, response, c.var.upstreamRequestUrl);
             return withSafetyHeaders(c, response);
         },
     )
@@ -828,6 +840,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
         ...imageVideoHandlers,
     )
     .get(
@@ -870,7 +883,8 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", GenerateImageRequestQueryParamsSchema),
+        validator("query", GenerateVideoRequestQueryParamsSchema),
+        resolveModel("generate.image", { defaultModel: "veo" }),
         ...imageVideoHandlers,
     )
     .get(
@@ -883,7 +897,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
@@ -969,7 +983,7 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                            "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -1054,7 +1068,9 @@ export const proxyRoutes = new Hono<Env>()
                 safe: SafeSchema,
             }),
         ),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/audio/{text}",
+        }),
         track("generate.audio"),
         audioCache,
         generationAccess,
@@ -1068,7 +1084,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models are text-to-image only and support `"b64_json"` only.',
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models support `"b64_json"` only.',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1099,7 +1115,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
-                "Community image models do not support edits yet.",
+                "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1115,7 +1131,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image"),
+        resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
         handleImageEdit,
     );

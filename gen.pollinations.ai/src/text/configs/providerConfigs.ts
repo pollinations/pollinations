@@ -30,24 +30,17 @@ function createOpenAICompatibleConfig(
     };
 }
 
-function extractAzureResourceName(endpoint: string | undefined): string {
-    if (!endpoint) return "pollinations";
-    return (
-        endpoint.match(
-            /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
-        )?.[1] ?? "pollinations"
-    );
-}
-
-function extractAzureDeploymentName(
-    endpoint: string | undefined,
-): string | null {
-    if (!endpoint) return null;
-    return endpoint.match(/\/deployments\/([^/]+)/)?.[1] ?? null;
-}
-
-function extractAzureApiVersion(endpoint: string | undefined): string {
-    return endpoint?.match(/api-version=([^&]+)/)?.[1] ?? "2024-08-01-preview";
+function parseAzureEndpoint(endpoint: string) {
+    const url = new URL(endpoint);
+    const resourceName = url.hostname.match(
+        /^([^.]+)\.(?:openai|cognitiveservices)\.azure\.com$/,
+    )?.[1];
+    const deploymentId = url.pathname.match(/\/deployments\/([^/]+)\//)?.[1];
+    const apiVersion = url.searchParams.get("api-version");
+    if (!resourceName || !deploymentId || !apiVersion) {
+        throw new Error(`Invalid Azure OpenAI endpoint: ${endpoint}`);
+    }
+    return { resourceName, deploymentId, apiVersion };
 }
 
 // =============================================================================
@@ -56,17 +49,17 @@ function extractAzureApiVersion(endpoint: string | undefined): string {
 
 export function createAzureModelConfig(
     apiKey: string | undefined,
-    endpoint: string | undefined,
-    modelName: string,
+    endpoint: string,
     overrides: ModelOverride = {},
 ): ProviderConfig {
-    const deploymentId = extractAzureDeploymentName(endpoint) || modelName;
+    const { resourceName, deploymentId, apiVersion } =
+        parseAzureEndpoint(endpoint);
     return {
         provider: "azure-openai",
         "azure-api-key": apiKey,
-        "azure-resource-name": extractAzureResourceName(endpoint),
+        "azure-resource-name": resourceName,
         "azure-deployment-id": deploymentId,
-        "azure-api-version": extractAzureApiVersion(endpoint),
+        "azure-api-version": apiVersion,
         "azure-model-name": deploymentId,
         authKey: apiKey,
         ...overrides,
@@ -95,6 +88,16 @@ export function createFireworksModelConfig(
     );
 }
 
+export function createDeepInfraModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.deepinfra.com/v1/openai",
+        process.env.DEEPINFRA_API_KEY,
+        overrides,
+    );
+}
+
 export function createOpenRouterModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -111,16 +114,6 @@ export function createVercelAIGatewayModelConfig(
     return createOpenAICompatibleConfig(
         "https://ai-gateway.vercel.sh/v1",
         process.env.AI_GATEWAY_API_KEY,
-        overrides,
-    );
-}
-
-export function createInceptionModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://api.inceptionlabs.ai/v1",
-        process.env.INCEPTION_API_KEY,
         overrides,
     );
 }

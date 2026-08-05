@@ -1,4 +1,4 @@
-import { remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
 import {
     normalizeOptions,
@@ -18,21 +18,35 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-// Attach Portkey's served fallback target as internal, non-enumerable metadata
-// so tracking can read completion.fallbackTarget while it stays out of every
-// JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
-// has no such field).
-function withFallbackTarget(
+function isClientInputError(details: unknown): boolean {
+    const serialized =
+        typeof details === "string" ? details : JSON.stringify(details);
+    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
+        serialized,
+    );
+}
+
+// Attach internal response metadata as non-enumerable properties so downstream
+// handling can use it without adding fields to OpenAI-compatible response bodies.
+function withResponseMetadata(
     completion: ChatCompletion,
     fallbackTarget: string | undefined,
+    requestUrl: URL,
 ): ChatCompletion {
-    if (fallbackTarget === undefined) return completion;
-    Object.defineProperty(completion, "fallbackTarget", {
-        value: fallbackTarget,
+    Object.defineProperty(completion, "upstreamRequestUrl", {
+        value: requestUrl,
         enumerable: false,
         configurable: true,
         writable: true,
     });
+    if (fallbackTarget !== undefined) {
+        Object.defineProperty(completion, "fallbackTarget", {
+            value: fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
+    }
     return completion;
 }
 
@@ -87,19 +101,24 @@ function extractErrorMessage(details: unknown): string | null {
 }
 
 function createApiError(
-    response: { status: number; statusText: string },
+    response: Response,
     details: unknown,
     modelName: string,
+    requestUrl: URL,
 ): ServiceError {
     const statusMessage = `${response.status} ${response.statusText}`;
     const detailMessage = extractErrorMessage(details);
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = remapUpstreamStatus(response.status);
+    error.status = isClientInputError(details)
+        ? 400
+        : remapUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
+    error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
     return error;
 }
 
@@ -111,6 +130,19 @@ function parseJsonSafe(text: string): unknown {
     }
 }
 
+function toServiceError(thrown: unknown): ServiceError {
+    return thrown instanceof Error
+        ? (thrown as ServiceError)
+        : (new Error(String(thrown), { cause: thrown }) as ServiceError);
+}
+
+function withUpstreamContext(thrown: unknown, requestUrl: URL): ServiceError {
+    const error = toServiceError(thrown);
+    error.requestUrl ??= requestUrl;
+    error.status ??= 502;
+    return error;
+}
+
 export async function genericOpenAIClient(
     messages: ChatMessage[],
     options: TransformOptions = {},
@@ -119,6 +151,7 @@ export async function genericOpenAIClient(
     const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,
@@ -144,6 +177,8 @@ export async function genericOpenAIClient(
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
+            normalizeFinishReasonAtTokenLimit:
+                _normalizeFinishReasonAtTokenLimit,
             portkeyGatewayUrl: _portkeyGatewayUrl,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
@@ -166,6 +201,7 @@ export async function genericOpenAIClient(
             typeof endpoint === "function"
                 ? endpoint(modelName, normalizedOptions)
                 : endpoint;
+        requestUrl = new URL(endpointUrl);
 
         const headers = {
             "Content-Type": "application/json",
@@ -174,20 +210,30 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(endpointUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(requestBody),
-        });
+        let response: Response;
+        try {
+            response = await fetch(endpointUrl, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(requestBody),
+            });
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText: string;
+            try {
+                errorText = await response.text();
+            } catch (thrown: unknown) {
+                throw withUpstreamContext(thrown, requestUrl);
+            }
             const errorDetails = parseJsonSafe(errorText) || errorText;
             errorLog(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName);
+            throw createApiError(response, errorDetails, modelName, requestUrl);
         }
 
         // Portkey reports which fallback target served the call via this header
@@ -203,7 +249,7 @@ export async function genericOpenAIClient(
             );
 
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return withFallbackTarget(
+            return withResponseMetadata(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
@@ -220,10 +266,39 @@ export async function genericOpenAIClient(
                     ],
                 },
                 fallbackTarget,
+                requestUrl,
             );
         }
 
-        const data = (await response.json()) as ChatCompletion;
+        let data: ChatCompletion;
+        try {
+            data = (await response.json()) as ChatCompletion;
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
+        if (data.error) {
+            const errorDetails =
+                typeof data.error === "string"
+                    ? { message: data.error }
+                    : data.error;
+            const error = new Error(
+                errorDetails.message || "Text generation failed",
+            ) as ServiceError;
+            error.status = isClientInputError(errorDetails)
+                ? 400
+                : typeof errorDetails.status === "number"
+                  ? remapUpstreamStatus(errorDetails.status)
+                  : 502;
+            error.upstreamStatus =
+                typeof errorDetails.status === "number"
+                    ? errorDetails.status
+                    : undefined;
+            error.details = errorDetails.details;
+            error.model = modelName;
+            error.requestUrl = requestUrl;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
+        }
         log(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
@@ -236,7 +311,17 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
-        return withFallbackTarget(
+        if (
+            _normalizeFinishReasonAtTokenLimit &&
+            formattedChoice.finish_reason === "stop" &&
+            typeof normalizedOptions.max_tokens === "number" &&
+            typeof data.usage?.completion_tokens === "number" &&
+            data.usage.completion_tokens >= normalizedOptions.max_tokens
+        ) {
+            formattedChoice.finish_reason = "length";
+        }
+
+        return withResponseMetadata(
             {
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
@@ -244,9 +329,10 @@ export async function genericOpenAIClient(
                 choices: [formattedChoice],
             },
             fallbackTarget,
+            requestUrl,
         );
     } catch (thrown: unknown) {
-        const error = thrown as ServiceError;
+        const error = toServiceError(thrown);
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,

@@ -8,22 +8,28 @@ import path from "node:path";
  *   POLLINATIONS_MCP_LIVE=1 POLLINATIONS_API_KEY=sk_xxx npm test
  */
 import { fileURLToPath } from "node:url";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
 const LIVE = process.env.POLLINATIONS_MCP_LIVE === "1";
 
-const transport = new StdioClientTransport({
-    command: "node",
-    args: [path.join(__dirname, "src/index.js")],
-    env: KEY ? { POLLINATIONS_API_KEY: KEY } : undefined,
-});
-const client = new Client(
-    { name: "mcp-smoke-test", version: "0.0.1" },
-    { capabilities: {} },
-);
+const createTransport = () =>
+    new StdioClientTransport({
+        command: "node",
+        args: [path.join(__dirname, "src/index.js")],
+        env: KEY ? { POLLINATIONS_API_KEY: KEY } : undefined,
+    });
+
+async function connectClient(options = {}) {
+    const client = new Client(
+        { name: "mcp-smoke-test", version: "0.0.1" },
+        { capabilities: {}, ...options },
+    );
+    await client.connect(createTransport());
+    return client;
+}
 
 const results = [];
 const trim = (s, n = 200) => {
@@ -55,7 +61,15 @@ async function callText(name, args = {}) {
     return content.find((item) => item.type === "text")?.text;
 }
 
-await client.connect(transport);
+const client = await connectClient({
+    versionNegotiation: { mode: "auto" },
+});
+
+await step("modern protocol negotiation", () => {
+    const era = client.getProtocolEra();
+    if (era !== "modern") throw new Error(`expected modern, received ${era}`);
+    return era;
+});
 
 await step("listTools", async () => {
     const { tools } = await client.listTools();
@@ -94,6 +108,18 @@ await step("listTools", async () => {
 });
 
 await step("listModels (unauthenticated)", () => callText("listModels"));
+
+const legacyClient = await connectClient();
+await step("legacy protocol connection", async () => {
+    const era = legacyClient.getProtocolEra();
+    if (era !== "legacy") throw new Error(`expected legacy, received ${era}`);
+    const { tools } = await legacyClient.listTools();
+    if (tools.length !== 8) {
+        throw new Error(`expected 8 tools, received ${tools.length}`);
+    }
+    return `${era}, ${tools.length} tools`;
+});
+await legacyClient.close();
 
 if (!LIVE || !KEY) {
     console.log(

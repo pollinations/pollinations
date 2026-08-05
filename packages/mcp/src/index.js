@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { pathToFileURL } from "node:url";
+import { McpServer } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { imageTools } from "./services/imageService.js";
@@ -17,7 +18,7 @@ Authentication is configured only with the POLLINATIONS_API_KEY environment vari
 
 Use chatCompletion for text and multimodal generation, including reasoning, tool use, web search, and media analysis. Use textToSpeech and transcribeAudio for the dedicated OpenAI-compatible audio endpoints. Use listModels to inspect the live registry. Gen validates models, aliases, modalities, and request parameters.`;
 
-async function startMcpServer() {
+export function buildServer() {
     const server = new McpServer({
         name: "pollinations-mcp",
         version: "3.0.0",
@@ -28,10 +29,12 @@ async function startMcpServer() {
         server.registerTool(name, { description, inputSchema }, handler);
     }
 
-    process.stdin.on("close", () => process.exit(0));
-    await server.connect(new StdioServerTransport());
-
-    console.error("Pollinations MCP Server running on stdio");
+    return server;
 }
 
-await startMcpServer();
+if (
+    process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+    serveStdio(() => buildServer());
+}

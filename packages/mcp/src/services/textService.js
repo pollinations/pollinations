@@ -60,7 +60,7 @@ export const textTools = [
     [
         "listModels",
         "Return the live Gen registry for all text, image, video, audio, realtime, embedding, and 3D models.",
-        {},
+        z.object({}),
         listModels,
     ],
 ];

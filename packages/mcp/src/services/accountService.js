@@ -33,7 +33,7 @@ export const accountTools = [
         "getBalance",
         "Get the authenticated key's available Pollen. Returns its remaining key budget when set; " +
             "otherwise returns account balances and requires 'account:usage'.",
-        {},
+        z.object({}),
         getBalance,
     ],
     [

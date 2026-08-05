@@ -311,11 +311,8 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (
-            model.flat_rate === false ||
-            promptTextTokens ||
-            promptImageTokens
-        ) {
+        const isFlatRate = model.flat_rate ?? !promptTextTokens;
+        if (!isFlatRate) {
             return {
                 ...price,
                 prices: priceLines(
@@ -342,12 +339,20 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
         }
         return {
             ...price,
-            prices: priceLines([
-                "output",
-                "image",
-                formatPrice(completionImageTokens, formatPriceFlat),
-                "request",
-            ]),
+            prices: priceLines(
+                [
+                    "input",
+                    "image",
+                    formatPrice(promptImageTokens, formatPriceFlat),
+                    "request",
+                ],
+                [
+                    "output",
+                    "image",
+                    formatPrice(completionImageTokens, formatPriceFlat),
+                    "request",
+                ],
+            ),
         };
     }
 

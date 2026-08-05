@@ -23,6 +23,7 @@ import {
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
 import {
+    formatDisplayPrice,
     formatPriceFlat,
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
@@ -107,6 +108,25 @@ test("formatPricePer1M renders each decimal branch and strips trailing zeros", (
     expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 -> 5 decimals
 });
 
+test("display prices stay compact and use a readable token scale", () => {
+    expect(formatDisplayPrice("2.0", true)).toEqual({
+        value: "2",
+        tokenScale: "M",
+    });
+    expect(formatDisplayPrice("120.0", true)).toEqual({
+        value: "0.12",
+        tokenScale: "K",
+    });
+    expect(formatDisplayPrice("0.083333333333")).toEqual({
+        value: "0.0833",
+        tokenScale: "M",
+    });
+    expect(formatDisplayPrice("0.00001")).toEqual({
+        value: "0.00001",
+        tokenScale: "M",
+    });
+});
+
 test("catalog prices format token rates through formatPricePer1M", () => {
     const sourceByName = new Map(
         getCatalogModels().map((model) => [model.name, model]),
@@ -122,9 +142,7 @@ test("catalog prices format token rates through formatPricePer1M", () => {
             continue;
 
         const pricing = sourceModel?.pricing;
-        const imageUsesTokenRows =
-            Number(pricing?.promptTextTokens) > 0 ||
-            Number(pricing?.promptImageTokens) > 0;
+        const imageUsesTokenRows = sourceModel?.flat_rate === false;
         const rows =
             sourceModel?.category === "image"
                 ? imageUsesTokenRows
@@ -147,6 +165,28 @@ test("catalog prices format token rates through formatPricePer1M", () => {
     }
 
     expect(checkedFields).toBeGreaterThan(0);
+});
+
+test("catalog distinguishes flat image rates from image-token rates", () => {
+    const models = getCatalogModels();
+    const prices = getCatalogModelPrices();
+    const grokInfo = models.find(({ name }) => name === "grok-imagine");
+    const nanoInfo = models.find(({ name }) => name === "nanobanana-pro");
+    const grokPrice = prices.find(({ name }) => name === "grok-imagine");
+    const nanoPrice = prices.find(({ name }) => name === "nanobanana-pro");
+
+    expect(grokInfo?.flat_rate).toBe(true);
+    expect(nanoInfo?.flat_rate).toBe(false);
+    expect(grokPrice?.prices).toEqual([
+        { direction: "input", kind: "image", price: "0.002", unit: "request" },
+        { direction: "output", kind: "image", price: "0.02", unit: "request" },
+    ]);
+    expect(nanoPrice?.prices).toContainEqual({
+        direction: "output",
+        kind: "image",
+        price: "120.0",
+        unit: "token",
+    });
 });
 
 test("catalog prices keep community text models flagged for display", () => {

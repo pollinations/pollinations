@@ -212,7 +212,11 @@ export function modelInfoFromDefinition(
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,
-        flat_rate: service.flatRate,
+        flat_rate:
+            service.flatRate ??
+            (service.category === "image"
+                ? service.cost.promptTextTokens === undefined
+                : undefined),
         added_date: service.addedDate,
     };
 }

@@ -396,6 +396,22 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("labels image pricing units without auth", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            flat_rate?: boolean;
+        }[];
+        expect(
+            models.find(({ name }) => name === "grok-imagine")?.flat_rate,
+        ).toBe(true);
+        expect(
+            models.find(({ name }) => name === "nanobanana-pro")?.flat_rate,
+        ).toBe(false);
+    });
+
     it("adds CORS headers on public model responses", async () => {
         const response = await fetchWorker("/image/models", envWithEnter(), {
             headers: { Origin: "https://pollinations.ai" },

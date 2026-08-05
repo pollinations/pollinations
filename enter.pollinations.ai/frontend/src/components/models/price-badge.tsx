@@ -9,6 +9,7 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { type FC, useState } from "react";
+import { formatDisplayPrice } from "./formatters.ts";
 import { PRICE_ICON } from "./model-icons.tsx";
 import type {
     ModelPrice,
@@ -30,8 +31,10 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     audioOut: "audio",
 };
 
-const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
-    token: "/M",
+const PRICE_UNIT_SUFFIX: Record<
+    Exclude<ModelPriceLine["unit"], "token">,
+    string
+> = {
     second: "/sec",
     request: "/gen",
 };
@@ -48,10 +51,12 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
-const PRICE_LEDGER_UNIT: Record<ModelPriceLine["unit"], string> = {
-    token: "P /M tokens",
-    second: "P /sec",
-    request: "P /gen",
+const PRICE_LEDGER_UNIT: Record<
+    Exclude<ModelPriceLine["unit"], "token">,
+    string
+> = {
+    second: "/sec",
+    request: "/gen",
 };
 
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
@@ -119,6 +124,7 @@ export const PriceBadgeList: FC<PriceBadgeListProps> = ({
 );
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
+    const displayedPrice = formatDisplayPrice(price, unit === "token");
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
@@ -140,8 +146,10 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
                 })}
             </span>
             <span>
-                {price}
-                {PRICE_UNIT_SUFFIX[unit]}
+                {displayedPrice.value}
+                {unit === "token"
+                    ? `/${displayedPrice.tokenScale}`
+                    : PRICE_UNIT_SUFFIX[unit]}
             </span>
         </Chip>
     );
@@ -307,22 +315,30 @@ export const ModelPricingLedger: FC<{
 
     return (
         <div className={cn("flex min-w-0 flex-col gap-1", className)}>
-            {pricing.prices.map((price) => (
-                <div
-                    key={`${price.direction}-${price.kind}-${price.unit}`}
-                    className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"
-                >
-                    <span className="text-xs text-theme-text-muted">
-                        {PRICE_LINE_LABELS[price.kind][price.direction]}
-                    </span>
-                    <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-theme-text-strong">
-                        {price.price}{" "}
-                        <span className="text-xs font-normal text-theme-text-muted">
-                            {PRICE_LEDGER_UNIT[price.unit]}
+            {pricing.prices.map((price) => {
+                const displayedPrice = formatDisplayPrice(
+                    price.price,
+                    price.unit === "token",
+                );
+                return (
+                    <div
+                        key={`${price.direction}-${price.kind}-${price.unit}`}
+                        className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"
+                    >
+                        <span className="text-xs text-theme-text-muted">
+                            {PRICE_LINE_LABELS[price.kind][price.direction]}
                         </span>
-                    </span>
-                </div>
-            ))}
+                        <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                            {displayedPrice.value}{" "}
+                            <span className="text-xs font-normal text-theme-text-muted">
+                                {price.unit === "token"
+                                    ? `/${displayedPrice.tokenScale} tokens`
+                                    : PRICE_LEDGER_UNIT[price.unit]}
+                            </span>
+                        </span>
+                    </div>
+                );
+            })}
             {pricing.adjustments.length > 0 && (
                 <div className="mt-1 border-t border-dashed border-divider pt-1">
                     {pricing.adjustments.map((adjustment) => (
@@ -333,10 +349,10 @@ export const ModelPricingLedger: FC<{
                             <span className="text-xs text-theme-text-muted">
                                 {adjustment.label}
                             </span>
-                            <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-theme-text-strong">
-                                {adjustment.price}{" "}
+                            <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                                {formatDisplayPrice(adjustment.price).value}{" "}
                                 <span className="text-xs font-normal text-theme-text-muted">
-                                    P /{formatAdjustmentUnit(adjustment)}
+                                    /{formatAdjustmentUnit(adjustment)}
                                 </span>
                             </span>
                         </div>

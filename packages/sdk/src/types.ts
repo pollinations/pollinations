@@ -790,6 +790,8 @@ export type ModelCapability =
 
 /** Model information */
 export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
     id?: string;
     name: string;
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */

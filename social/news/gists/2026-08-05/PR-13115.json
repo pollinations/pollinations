@@ -1,0 +1,33 @@
+{
+  "pr_number": 13115,
+  "title": "revert: remove Cloudflare timeout workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13115",
+  "merged_at": "2026-08-05T11:35:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the one-off Cloudflare timeout workflow added in #13113.\\n- Keeps the repository free of permanent infrastructure for a single zone-setting change.\\n- The timeout will be changed directly through the Cloudflare API instead.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One-Off Workflow, Composted",
+    "blurb": "The temporary Cloudflare timeout workflow has been packed away after doing its job. Zone settings will now be changed directly through the Cloudflare API, where this tiny bit of infrastructure belongs.",
+    "summary": "Removed the one-off GitHub Actions workflow for configuring the Cloudflare proxy timeout; the timeout will now be managed directly through the Cloudflare API.",
+    "impact": "Repository maintenance stays leaner, with no permanent workflow required for a single Cloudflare zone-setting change.",
+    "keywords": [
+      "cloudflare",
+      "github-actions",
+      "workflow",
+      "infrastructure",
+      "timeout"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy garden-shed server corner: she removes a small completed automation scroll from a flowering vine-covered terminal while a Cloudflare-like cloud control panel is adjusted directly with a tiny wrench. The visual metaphor is retiring temporary scaffolding after a job is complete, with code-plants and a prominent lime-green glow.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings, wearing a tiny gardener tool belt as she gently rolls up a completed workflow scroll beside a retro terminal and a small cloud-settings panel adjusted with a wrench; flowering code-plants grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and a warm cream garden-shed atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13115.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings, wearing a tiny gardener tool belt as she gently rolls up a completed workflow scroll beside a retro terminal and a small cloud-settings panel adjusted with a wrench; flowering code-plants grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and a warm cream garden-shed atmosphere."
+  },
+  "generated_at": "2026-08-05T11:36:59.162982+00:00"
+}

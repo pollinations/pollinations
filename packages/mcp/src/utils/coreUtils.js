@@ -159,7 +159,7 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
 
 /**
  * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
+ * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, maps
  * errors, and parses the JSON response.
  *
  * @param {Object} body - Request body (null/undefined fields are stripped)

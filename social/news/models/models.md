@@ -1,5 +1,127 @@
 # Pollinations Model Changelog
 
+## 2026-08-05
+
+### Added
+- `command-a-plus` (Cohere, text) — text/image input; tool calling and reasoning.
+- `inkling` (Thinking Machines, text) — text/image/audio input; tool calling and reasoning; paid-only.
+- `qwen3.8-max` (Qwen, text) — text/image/video input; tool calling and reasoning; paid-only.
+- `qwen3.7-flash` (Qwen, text) — text/image/video input; tool calling and reasoning; paid-only.
+- `vendouple/deepseek-v4` (OrchidLLM Proxy, text) — text input/output.
+- `vendouple/deepseek-v3.2` (OrchidLLM Proxy, text) — text input/output.
+- `vendouple/gemma-4-31b-sdft-heretic-rp` (OrchidLLM Proxy, text) — text/image input.
+- `gggff123/glm-5.2` (Community, text) — text input/output.
+- `Catniti/qwen3.7-flash` (Community, text) — text/image input.
+- `morriszdweck/osaii-api-smart` (Community, text) — text input/output.
+- `pollinations-router/polli` (Community, text) — text input/output.
+- `krea` (Krea, image) — text-to-image; paid-only.
+- `dreamshaper` (Lykon, image) — text-to-image.
+- `vendouple/wai-illustrious-xl` (OrchidLLM Proxy, image) — text-to-image.
+- `vendouple/uncensored-image-enhanced` (OrchidLLM Proxy, image) — text-to-image.
+- `grok-imagine-video-1.5` (xAI, video) — text/image-to-video with audio output; paid-only.
+- `p-video` (Pruna, video) — text/image-to-video; paid-only.
+- `universal-3.5-pro` (AssemblyAI, audio) — audio-to-text transcription.
+- `kokoro` (Hexgrad, audio) — text-to-speech; paid-only.
+
+### Changed
+- `mistral-small-3.2` — now paid-only.
+- `mistral` — now paid-only.
+- `gemma` — now paid-only.
+- `gemma-4-31b` — now paid-only.
+- `mimo-v2.5` — now paid-only.
+- `mimo-v2.5-pro` — now paid-only.
+- `llama-scout` — now paid-only.
+- `qwen-large` — now paid-only.
+- `qwen-vision` — now paid-only.
+- `qwen-vision-pro` — now paid-only.
+- `step-flash` — now paid-only.
+- `step-3.5-flash` — now paid-only.
+- `kimi-k3` — now free.
+- `qwen-image` — base image price cut ~15%; image-editing price remains 0.03 pollen.
+- `openai-3-small` — prompt token price cut ~25%.
+- `openai-3-large` — prompt token price cut ~25%.
+- `MarcosFRG/minimax-m3` — completion text price cut ~15%.
+- `CloudCompile/afforda-claude-haiku-4.5` — completion text price cut ~35%.
+- `vendouple/claude-opus-4-8` — completion text price cut ~20%.
+- `MarcosFRG/glm-5.2` — completion text price increased ~80%.
+- `vendouple/qwen3.8-max-preview` — completion text price increased ~25%.
+- `vendouple/kimi-k3:s2` — completion text price increased ~15%.
+- `gpt-5.4` — added long-context (>272K) pricing tier.
+- `openai-large` — added long-context (>272K) pricing tier.
+- `gpt-5.6-sol` — added long-context (>272K) pricing tier.
+- `gpt-5.6-terra` — added long-context (>272K) pricing tier.
+- `gpt-5.6-luna` — added long-context (>272K) pricing tier.
+- `grok-4.5` — added long-context (200K+) pricing tier.
+- `gemini-large` — added long-context (200K+) pricing tier.
+- `midijourney-large` — added long-context (>272K) pricing tier.
+- `veo` — added 1080p pricing tier and resolution.
+- `seedance-pro` — added 480p and 1080p pricing tiers and resolutions.
+- `wan-pro` — added 1080p text-to-video and image-to-video pricing tiers.
+- `grok` — added reasoning capability.
+- `MarcosFRG/gemma-4-31b` — added image input.
+- `MarcosFRG/gemini-2.5-flash-lite` — added image, audio, and video input.
+- `MarcosFRG/gemini-3-flash-preview` — added image, audio, and video input.
+- `sharktide/inferenceport-ai-gpt-4.1` — added image input.
+- `MarcosFRG/minimax-m3` — added image input.
+- `mikl-shortcuts/ministral-3` — added image and audio input.
+- `MarcosFRG/mimo-v2.5` — added image, audio, and video input.
+- `MarcosFRG/gemma-3-27b` — added image input.
+- `MarcosFRG/gemini-3.1-flash-lite` — added image, audio, and video input.
+- `Minor-fun/gemma-4-31B-it` — added image input.
+- `sharktide/inferenceport-ai-qwen-3.6-27b` — added image input.
+- `sharktide/inferenceport-ai-lightning-text-v2` — added image input.
+- `vendouple/kimi-k2.6` — added image input.
+- `YoannDev90/diffusiongemma-26b-a4b-it:free` — added image and video input.
+- `CloudCompile/agnes-2.0-flash` — added image input.
+- `sharktide/inferenceport-ai-codestral-2508` — added audio input.
+- `vendouple/kimi-k3:s2` — added image input.
+- `sharktide/inferenceport-ai-gemini-2.5-flash` — added image and audio input.
+- `MarcosFRG/glm-4.6v-flash` — added image input.
+- `MarcosFRG/gemini-3.1-pro-preview` — added image, audio, and video input.
+- `vendouple/kimi-k3` — added image input.
+
+### Removed
+- `grok-4-20-reasoning` (was: text)
+- `gemini-search-fast` (was: text)
+- `gemini-search-large` (was: text)
+- `perplexity-high` (was: text)
+- `morriszdweck/mercury-cheap` (was: text)
+- `vendouple/deepseek-v4-flash` (was: text)
+- `vendouple/gemma-4-31B` (was: text)
+- `sharktide/inferenceport-ai-kimi-k2.5` (was: text)
+- `Catniti/agnes-1.5-flash` (was: text)
+- `timemachine-studio/minimax-m3` (was: text)
+- `vendouple/unlocked-deepseek` (was: text)
+- `Catniti/openai-fast` (was: text)
+- `Catniti/claude-sonnet-4.6` (was: text)
+- `CloudCompile/grok-4.5` (was: text)
+- `Catniti/glm-4.7-flash` (was: text)
+- `Catniti/kimi-k2.6` (was: text)
+- `Catniti/command-r-plus` (was: text)
+- `YoannDev90/llama-3.1-8b-fast:free` (was: text)
+- `YoannDev90/laguna-xs-2.1:free` (was: text)
+- `YoannDev90/gemma-4-31b:free` (was: text)
+- `JustScriptzz/big-pickle` (was: text)
+- `Lorodn4x/qwen3.7-max` (was: text)
+- `sana` (was: image)
+- `Catniti/qwen-image-3.0-pro` (was: image)
+- `tomdacatto/seedream-5-pro` (was: image)
+- `tomdacatto/nano-banana-2` (was: image)
+- `tomdacatto/nano-banana-2-lite` (was: image)
+- `tomdacatto/nano-banana-pro` (was: image)
+- `tomdacatto/nano-banana` (was: image)
+- `tomdacatto/kling-image-3` (was: image)
+- `tomdacatto/grok-imagine` (was: image)
+- `tomdacatto/grok-imagine-quality` (was: image)
+- `vendouple/leonardo-phoenix` (was: image)
+- `Spit-fires/flux-schnell` (was: image)
+- `tomdacatto/gpt-image-2` (was: image)
+- `veo-1080p` (was: video)
+- `wan-pro-1080p` (was: video)
+- `p-video-720p` (was: video)
+- `p-video-1080p` (was: video)
+- `universal-3-pro` (was: audio)
+
 ## 2026-07-29
 
 ### Added

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13123,
+  "title": "Add Receipt Fortune Teller to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13123",
+  "merged_at": "2026-08-05T14:41:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Receipt Fortune Teller](https://oracle.shipr.app) to chat\n- Receipt Fortune Teller converts receipts, grocery lists, and small purchase lists into AI fortune readings and tarot-style card art. It uses submitted text to generate the results.\n\nFixes #11422",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Your receipts know things",
+    "blurb": "Receipt Fortune Teller has joined chat. Hand it a grocery list or tiny purchase spree, and it will read the omens hiding between the line items.",
+    "summary": "Added Receipt Fortune Teller to the chat app directory, a tool that turns submitted receipts, grocery lists, and small purchase lists into AI fortune readings with tarot-style card art.",
+    "impact": "People can now discover and use Receipt Fortune Teller to turn everyday shopping text into a whimsical reading and generated tarot-inspired visuals.",
+    "keywords": [
+      "community-app",
+      "chat",
+      "fortune-telling",
+      "receipts",
+      "tarot",
+      "creative-tools"
+    ],
+    "visual_concept": "Polli is visiting a cozy little pixel-art fortune booth, wearing a tiny purple wizard hat and holding a long grocery receipt. A friendly retro terminal displays a tarot card made from receipt symbols while grocery items, flowers, and small code-plants surround the booth; the scene makes the ordinary receipt feel like a mysterious but warm oracle.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink cheek blush, light blue wings, and a tiny purple wizard hat, presenting a long grocery receipt to a glowing retro fortune-teller terminal that creates a tarot-style card from receipt symbols. Lime green (#ecf874) appears prominently in the terminal glow and flower pots, with warm cream, lavender, mint, and peach gradients, pixel flowers and code-plants around a friendly garden fortune booth; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13123.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink cheek blush, light blue wings, and a tiny purple wizard hat, presenting a long grocery receipt to a glowing retro fortune-teller terminal that creates a tarot-style card from receipt symbols. Lime green (#ecf874) appears prominently in the terminal glow and flower pots, with warm cream, lavender, mint, and peach gradients, pixel flowers and code-plants around a friendly garden fortune booth; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T14:43:01.673602+00:00",
+  "app_name": "Receipt Fortune Teller",
+  "app_url": "https://oracle.shipr.app"
+}

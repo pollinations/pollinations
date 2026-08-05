@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✍️ Qisas Hook Lab](https://q8paradise.github.io/qisas-hook-lab) | Qisas Hook Lab is a bilingual Arabic/English writing workflow for developing responsible short-form stories. A user enters a subject and, after Pollinations OAuth 2.1 authorization with PKCE and BYOP, | [@q8paradise](https://github.com/q8paradise) |
 | [🖼️ Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) | Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat | [@mtonk](https://github.com/mtonk) |
 | [💬 chatty](https://chatty.ext.io) | simple chat ui that uses pollinations and new byop system [models are a bit outdated will prob update sometime] | [@smplstuff](https://github.com/smplstuff) |
 | [💬 Oracle of Chance](https://dramatise.site) | These are two apps I have created side by side, which are basically quite different. The main one, Oracle of Chance, is a search engine designed to work as a crystal ball, and to give precise YES/NO/M | [@yashok87](https://github.com/yashok87) |
@@ -29,7 +30,6 @@
 | [🖼️ Vtrace](https://vtrace-two.vercel.app) | raster image to vector SVG | [@ifankang](https://github.com/ifankang) |
 | [✍️ StoryStudio](https://eiigen.github.io/storystudio-app) | AI StoryStudio — A web-based storybook generator powered by Pollinations.ai. Enter any theme and get a fully illustrated multi-page story with AI-generated text, images, and optional audio narration. | [@eiigen](https://github.com/eiigen) |
 | [🛠️ AI Health Studio](https://kreggscode.github.io/health-analyzer-ai) | AI Health Studio is an AI-powered health and wellness web app that uses Pollinations AI APIs at its core: - **Chat Completions API** (POST gen.pollinations.ai/v1/chat/completions): Generates personali | [@kreggscode](https://github.com/kreggscode) |
-| [🛠️ Pollinations AI Studio](https://sashafilipov.github.io/pollinations-ai-studio) | Multimodal workspace for Pollinations.ai вЂ” chat with GPT/Claude/Gemini/DeepSeek via gen.pollinations.ai/v1/chat/completions , generate images via gen.pollinations.ai/image/{prompt} (Flux, Turbo, GPT | [@sashafilipov](https://github.com/sashafilipov) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

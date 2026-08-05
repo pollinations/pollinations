@@ -13,7 +13,9 @@ Committed (source of truth — edit here, then deploy):
   (see "Probe spend" below).
 - `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
   Final request outcomes count successful fallback rescues; image-provider 4xx
-  count as failures while ordinary client 4xx remain excluded.
+  count as failures while ordinary client 4xx remain excluded. Models at 80%
+  or better in the freshest 24h/48h window with at least 20 requests are
+  protected from delayed deactivation after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
   cycle gets a fresh Claude process and systemd starts the next one 15 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
@@ -121,7 +123,8 @@ Deactivation is automatic through either the acute-incident rule (sustained
 Tinybird-confirmed failure: <50% success on ≥100 non-client requests over 3+
 cycles, then a 24-hour grace and freshness check) or the once-daily rolling
 7-day floor (<70% final user-visible success across ≥20 provider-attributable
-requests). Successful fallback rescues count as successes in the 7-day rate.
+requests) with a current-health veto (≥80% in the freshest adequately sampled
+24h/48h window). Successful fallback rescues count as successes throughout.
 Reactivation is **narrowly** automatic as of 2026-07-20
 (thomash's call after the Jul 18–20 deactivation wave): the agent may undo
 *its own* deactivations (`disabled_by = 'monitor'`) when the owner reports a

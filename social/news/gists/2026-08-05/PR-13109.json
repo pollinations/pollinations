@@ -1,0 +1,35 @@
+{
+  "pr_number": 13109,
+  "title": "Add Cat Sticker Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13109",
+  "merged_at": "2026-08-05T10:18:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) to image\n- An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g\n\nFixes #11420",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Cats, now sticker-shaped",
+    "blurb": "A new community app turns real cat photos into WeChat-style cartoon stickers. The internet has found another efficient way to preserve feline expressions forever.",
+    "summary": "Added the Cat Sticker Generator community app, which analyzes uploaded cat photos for breed, fur color, eye color, and patterns to create WeChat-style cartoon stickers.",
+    "impact": "People can now turn a favorite cat photo into a personalized cartoon sticker through a listed pollinations.ai community app.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "cat-stickers",
+      "photo-to-cartoon",
+      "wechat"
+    ],
+    "visual_concept": "Depict Polli as a tiny sticker artist wearing a beret, carefully placing a cute WeChat-style cartoon cat sticker onto a glowing retro monitor. Surround the scene with a real-photo-style pixel cat portrait reference, a sheet of varied cat stickers, and small flowering code-plants to represent image generation and the community app garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, making a sheet of adorable WeChat-style cartoon cat stickers from a pixel cat portrait on a warm CRT monitor; include flowers and code-plants around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"CAT STICKERS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13109.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, making a sheet of adorable WeChat-style cartoon cat stickers from a pixel cat portrait on a warm CRT monitor; include flowers and code-plants around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"CAT STICKERS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T10:19:17.930399+00:00",
+  "app_name": "Cat Sticker Generator",
+  "app_url": "https://fantastic-dolphin-00911c.netlify.app"
+}

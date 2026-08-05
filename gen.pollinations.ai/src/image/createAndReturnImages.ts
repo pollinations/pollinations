@@ -12,6 +12,7 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterGeminiImageAPI,
@@ -54,8 +55,6 @@ import {
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
-
-const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
 
 // Loggers
 const logError = debug("pollinations:error");
@@ -223,10 +222,7 @@ export const callSelfHostedServer = async (
                 },
                 body: JSON.stringify(body),
             };
-            response =
-                poolType === "sana"
-                    ? await fetch(SANA_BACKEND_URL, requestInit)
-                    : await fetchFromWeightedServer(poolType, requestInit);
+            response = await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -826,6 +822,9 @@ const generateImage = async (
         case "klein":
             return await callFluxKleinAPI(prompt, safeParams);
 
+        case "krea":
+            return await callKreaImageAPI(prompt, safeParams);
+
         case "p-image":
             return await callPrunaImageAPI(prompt, safeParams);
 
@@ -857,7 +856,8 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "sana":
+        case "dreamshaper":
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":

@@ -18,9 +18,12 @@
 # Usage (on the instance):
 #   PLN_GPU_TOKEN=... \
 #   HF_TOKEN=... \
-#   CLOUDFLARED_TUNNEL_TOKEN=... \
 #   PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
 #   bash setup-vast.sh
+#
+# This defaults to an isolated canary: no registry heartbeat and no production
+# tunnel. After verification and human approval, provide the scoped tunnel
+# token, set HEARTBEAT_ENABLED=true and TUNNEL_ENABLED=true, then rerun setup.
 #
 # Required env details:
 #   HF_TOKEN          black-forest-labs/FLUX.1-schnell is gated (accept-terms);
@@ -36,6 +39,9 @@
 #                     additional load with 503 so the gateway falls back to
 #                     Replicate instead of building a long user-facing queue)
 #   SERVICE_TYPE      default flux
+#   HEARTBEAT_ENABLED default false; enable only for an approved production worker
+#   TUNNEL_ENABLED    default false; enable only after human promotion approval
+#   HF_HUB_DISABLE_XET default 1; standard HTTP is more reliable on Vast hosts
 #   GIT_BRANCH        default main
 #   SKIP_CLONE        use files already in $WORK_DIR (hosts w/ broken GitHub egress)
 #   WORK_DIR          default /workspace/pollinations
@@ -47,14 +53,23 @@ WORK_DIR="${WORK_DIR:-/workspace/pollinations}"
 QUANT_MODEL_PATH="${QUANT_MODEL_PATH:-mit-han-lab/svdq-fp4-flux.1-schnell}"
 MAX_PIXELS="${MAX_PIXELS:-1048576}"
 SERVICE_TYPE="${SERVICE_TYPE:-flux}"
+HEARTBEAT_ENABLED="${HEARTBEAT_ENABLED:-false}"
+TUNNEL_ENABLED="${TUNNEL_ENABLED:-false}"
+HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
+PUBLIC_HOSTNAME="${PUBLIC_HOSTNAME:-localhost}"
 PORT="${PORT:-8765}"
 SUDO=""
 [ "$(id -u)" != "0" ] && SUDO="sudo"
 
 log() { echo -e "\033[0;32m[setup-vast]\033[0m $1"; }
 
-if [ -z "$PLN_GPU_TOKEN" ] || [ -z "$HF_TOKEN" ] || [ -z "$CLOUDFLARED_TUNNEL_TOKEN" ] || [ -z "$PUBLIC_HOSTNAME" ]; then
-    echo "Usage: PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai bash setup-vast.sh" >&2
+if [ -z "${PLN_GPU_TOKEN:-}" ] || [ -z "${HF_TOKEN:-}" ]; then
+    echo "Usage: PLN_GPU_TOKEN=... HF_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai bash setup-vast.sh" >&2
+    exit 1
+fi
+
+if [ "$TUNNEL_ENABLED" = true ] && { [ -z "${CLOUDFLARED_TUNNEL_TOKEN:-}" ] || [ "$PUBLIC_HOSTNAME" = localhost ]; }; then
+    echo "TUNNEL_ENABLED=true requires CLOUDFLARED_TUNNEL_TOKEN and PUBLIC_HOSTNAME" >&2
     exit 1
 fi
 
@@ -67,15 +82,16 @@ esac
 
 log "Installing system packages..."
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq curl git screen python3.12-venv python3.12-dev
+$SUDO apt-get install -y -qq curl dnsutils git screen python3.12-venv python3.12-dev
 
 # CUDA forward-compat libs (shipped in cuda-13 images) fail on GeForce when the
 # host driver is older than the toolkit (CUDA Error 804) — always use the host
 # driver instead.
-if ls /usr/local/cuda*/compat/libcuda.so* >/dev/null 2>&1; then
+if find /usr/local -maxdepth 3 -path '/usr/local/cuda-*/compat/libcuda.so*' -print -quit 2>/dev/null | grep -q .; then
     log "Disabling CUDA forward-compat libs (using host driver)..."
     mkdir -p /root/cuda-compat-disabled
-    mv /usr/local/cuda*/compat/libcuda.so* /root/cuda-compat-disabled/
+    find /usr/local -maxdepth 3 -path '/usr/local/cuda-*/compat/libcuda.so*' \
+        -exec mv -t /root/cuda-compat-disabled/ {} +
     $SUDO ldconfig
 fi
 
@@ -90,16 +106,40 @@ fi
 # token-file keeps the remotely-managed tunnel token out of process listings.
 # It requires cloudflared 2025.4.0 or newer; fresh hosts install latest above.
 TUNNEL_TOKEN_FILE="$HOME/.cloudflared/tunnel-token"
+TUNNEL_ENABLED_FILE="$HOME/.cloudflared/tunnel-enabled"
+TUNNEL_DNS_FALLBACK_MARKER="$HOME/.cloudflared/use-local-doh"
+TUNNEL_RESOLV_BACKUP="/etc/resolv.conf.vast-original"
+TUNNEL_SRV_NAME="_v2-origintunneld._tcp.argotunnel.com"
 install -d -m 700 "$HOME/.cloudflared"
-printf '%s' "$CLOUDFLARED_TUNNEL_TOKEN" > "$TUNNEL_TOKEN_FILE"
-chmod 600 "$TUNNEL_TOKEN_FILE"
-unset CLOUDFLARED_TUNNEL_TOKEN
+if [ -n "${CLOUDFLARED_TUNNEL_TOKEN:-}" ]; then
+    printf '%s' "$CLOUDFLARED_TUNNEL_TOKEN" > "$TUNNEL_TOKEN_FILE"
+    chmod 600 "$TUNNEL_TOKEN_FILE"
+    unset CLOUDFLARED_TUNNEL_TOKEN
+fi
 
-log "Starting Cloudflare Tunnel for $PUBLIC_HOSTNAME..."
-screen -S cloudflared -X quit 2>/dev/null || true
-screen -dmS cloudflared bash -c "while true; do cloudflared tunnel run --token-file '$TUNNEL_TOKEN_FILE' 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done"
+if [ "$TUNNEL_ENABLED" = true ]; then
+    touch "$TUNNEL_ENABLED_FILE"
+else
+    rm -f "$TUNNEL_ENABLED_FILE"
+fi
+
+# A small subset of Vast hosts resolves A records but drops the SRV responses
+# cloudflared needs. Mark those hosts once so every reboot starts a local DoH
+# resolver before the tunnel. Hosts with working SRV DNS keep their resolver.
+if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
+    log "Reusing the local DoH fallback selected on this host"
+elif ! dig +time=3 +tries=1 +short SRV "$TUNNEL_SRV_NAME" | grep -q argotunnel.com; then
+    log "Vast DNS does not return Cloudflare Tunnel SRV records; enabling local DoH"
+    [ -s "$TUNNEL_RESOLV_BACKUP" ] || cp /etc/resolv.conf "$TUNNEL_RESOLV_BACKUP"
+    touch "$TUNNEL_DNS_FALLBACK_MARKER"
+fi
+
 PUBLIC_IP="$PUBLIC_HOSTNAME"
-PUBLIC_PORT=443
+if [ "$PUBLIC_HOSTNAME" = localhost ]; then
+    PUBLIC_PORT="$PORT"
+else
+    PUBLIC_PORT=443
+fi
 
 # Some Vast hosts have unreliable egress to GitHub; SKIP_CLONE=1 uses files
 # already placed in $WORK_DIR (e.g. scp'd from the operator's machine).
@@ -150,11 +190,12 @@ log "Writing run environment to $NUNCHAKU_DIR/.env.flux..."
     printf 'export PUBLIC_PORT=%q\n' "$PUBLIC_PORT"
     printf 'export PUBLIC_IP=%q\n' "$PUBLIC_IP"
     printf 'export SERVICE_TYPE=%q\n' "$SERVICE_TYPE"
+    printf 'export HEARTBEAT_ENABLED=%q\n' "$HEARTBEAT_ENABLED"
     printf 'export QUANT_MODEL_PATH=%q\n' "$QUANT_MODEL_PATH"
     printf 'export MAX_PIXELS=%q\n' "$MAX_PIXELS"
     printf 'export QUEUE_LIMIT=%q\n' "${QUEUE_LIMIT:-3}"
     printf 'export CUDA_VISIBLE_DEVICES=%q\n' "${CUDA_VISIBLE_DEVICES:-0}"
-    printf 'export HF_XET_HIGH_PERFORMANCE=1\n'
+    printf 'export HF_HUB_DISABLE_XET=%q\n' "$HF_HUB_DISABLE_XET"
 } > "$NUNCHAKU_DIR/.env.flux"
 chmod 600 "$NUNCHAKU_DIR/.env.flux"
 
@@ -168,19 +209,60 @@ EOF
 
 cat > /root/onstart.sh <<EOF
 #!/bin/bash
+set -euo pipefail
+
 screen -S flux -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+screen -S tunnel-dns -X quit 2>/dev/null || true
+
 screen -dmS flux bash -c 'while true; do /root/run-flux.sh 2>&1 | tee -a /tmp/flux.log; echo "[setup-vast] server exited, restarting in 5s" | tee -a /tmp/flux.log; sleep 5; done'
-screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel run --token-file "$TUNNEL_TOKEN_FILE" 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done'
+
+if [ ! -f "$TUNNEL_ENABLED_FILE" ]; then
+    echo "Production tunnel disabled; verify locally before promotion"
+    exit 0
+fi
+
+if [ ! -s "$TUNNEL_TOKEN_FILE" ]; then
+    echo "Production tunnel enabled but token file is missing" >> /tmp/cloudflared.log
+    exit 1
+fi
+
+if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
+    screen -dmS tunnel-dns bash -c 'while true; do cloudflared proxy-dns --address 127.0.0.1 --port 53 --upstream https://cloudflare-dns.com/dns-query --bootstrap https://162.159.36.1/dns-query --bootstrap https://162.159.46.1/dns-query >> /tmp/tunnel-dns.log 2>&1; sleep 5; done'
+
+    tunnel_dns_ready=false
+    for _ in \$(seq 1 20); do
+        if dig @127.0.0.1 +time=2 +tries=1 +short SRV "$TUNNEL_SRV_NAME" | grep -q argotunnel.com; then
+            {
+                printf 'nameserver 127.0.0.1\n'
+                grep -v '^nameserver ' "$TUNNEL_RESOLV_BACKUP" || true
+            } > /etc/resolv.conf
+            tunnel_dns_ready=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "\$tunnel_dns_ready" != true ]; then
+        echo "Local DoH did not become ready; production tunnel remains stopped" >> /tmp/tunnel-dns.log
+        exit 1
+    fi
+fi
+
+screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/docs >/dev/null; do echo "Waiting for Flux health before joining the production tunnel" >> /tmp/cloudflared.log; sleep 3; done; while true; do cloudflared tunnel --no-autoupdate run --token-file "$TUNNEL_TOKEN_FILE" >> /tmp/cloudflared.log 2>&1; sleep 5; done'
 EOF
 chmod 700 /root/run-flux.sh /root/onstart.sh
 
-log "Starting durable Flux and tunnel services (logs: /tmp/flux.log, /tmp/cloudflared.log)..."
+log "Starting durable Flux service (logs: /tmp/flux.log, /tmp/cloudflared.log)..."
 /root/onstart.sh
 
 log "Done. Model load takes 2-3 min on first start."
 log "  Logs:       tail -f /tmp/flux.log"
 log "  Attach:     screen -r flux   (detach: Ctrl+A, D)"
 log "  Local test: curl -s localhost:$PORT/docs >/dev/null && echo up"
-log "  Registered: curl -s https://gen.pollinations.ai/register | grep -o '$SERVICE_TYPE[^,]*'"
 log "  Canary:     POLLINATIONS_API_KEY=... bash verify-vast.sh"
+if [ "$TUNNEL_ENABLED" = true ]; then
+    log "  Registered: curl -s https://gen.pollinations.ai/register | grep -o '$SERVICE_TYPE[^,]*'"
+else
+    log "  Production heartbeat and tunnel are disabled pending human approval"
+fi

@@ -1,0 +1,37 @@
+{
+  "pr_number": 13090,
+  "title": "Add Qisas Hook Lab to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13090",
+  "merged_at": "2026-08-05T07:10:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Qisas Hook Lab](https://q8paradise.github.io/qisas-hook-lab) to writing\n- Qisas Hook Lab is a bilingual Arabic/English writing workflow for developing responsible short-form stories. A user enters a subject and, after Pollinations OAuth 2.1 authorization with PKCE and BYOP,\n\nFixes #12905",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stories Find Their Hook",
+    "blurb": "Qisas Hook Lab has joined the writing garden. Bring a subject, connect with Pollinations using OAuth and PKCE, and grow a responsible short-form story in Arabic or English.",
+    "summary": "Added Qisas Hook Lab to the Pollinations writing app directory, a bilingual Arabic/English workflow that uses Pollinations OAuth 2.1 with PKCE and BYOP to develop responsible short-form stories from a user-provided subject.",
+    "impact": "Writers can now discover Qisas Hook Lab through the Pollinations ecosystem and use its guided bilingual story-development workflow with their own Pollinations authorization.",
+    "keywords": [
+      "community app",
+      "writing",
+      "Arabic",
+      "English",
+      "OAuth 2.1",
+      "PKCE",
+      "storytelling"
+    ],
+    "visual_concept": "Depict Qisas Hook Lab as a cozy bilingual writing desk: an open notebook contains short story hooks in Arabic and English, while Polli, wearing a tiny writer's beret, carefully tends a sprouting ink-and-code plant. A friendly retro terminal shows a small key-and-checkmark symbol for OAuth authorization, surrounded by flowers and warm paper notes.",
+    "image_prompt": "A cozy pixel art writing nook where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny writer's beret, tends a code-plant growing from an open notebook filled with simple Arabic and English story-hook lines; a retro terminal nearby displays a small key and checkmark for secure OAuth access. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, garden flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13090.jpg",
+    "prompt": "A cozy pixel art writing nook where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny writer's beret, tends a code-plant growing from an open notebook filled with simple Arabic and English story-hook lines; a retro terminal nearby displays a small key and checkmark for secure OAuth access. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, garden flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T07:11:18.801605+00:00",
+  "app_name": "Qisas Hook Lab",
+  "app_url": "https://q8paradise.github.io/qisas-hook-lab"
+}

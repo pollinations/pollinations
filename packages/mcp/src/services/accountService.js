@@ -78,6 +78,12 @@ async function getUsage(params) {
     ]);
 }
 
+async function listQuests(_params) {
+    requireApiKey();
+    const data = await fetchJsonWithAuth(`${API_BASE_URL}/account/quests`);
+    return createMCPResponse([createTextContent(data, true)]);
+}
+
 export const accountTools = [
     [
         "getBalance",
@@ -119,5 +125,13 @@ export const accountTools = [
                 ),
         },
         getUsage,
+    ],
+    [
+        "listQuests",
+        "List quests and earned rewards for the authenticated account. " +
+            "Read-only; claiming rewards requires a dashboard session. " +
+            "Requires 'account:usage' permission.",
+        {},
+        listQuests,
     ],
 ];

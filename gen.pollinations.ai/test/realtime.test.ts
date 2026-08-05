@@ -182,6 +182,7 @@ async function closeRealtimeSession(session: PaidRealtimeSession) {
 
 async function closeAndReadTelemetry(session: PaidRealtimeSession) {
     await closeRealtimeSession(session);
+    await waitForTinybirdRequests(session.upstream);
     expect(session.upstream.tinybirdRequests).toHaveLength(1);
     return JSON.parse(
         await session.upstream.tinybirdRequests[0].text(),

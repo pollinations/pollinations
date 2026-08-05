@@ -148,7 +148,6 @@ API_TOOLS_SECTION = """- `github_overview` - Repo summary
 - `discord_search` - Search Discord server
 - `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.)"""
 
-# Keep TOOL_SYSTEM_PROMPT as backward-compatible alias (full Discord prompt)
 TOOL_SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + DISCORD_PROMPT_ADDON
 
 # Tools section for ADMIN users - full access
@@ -199,8 +198,6 @@ def get_tool_system_prompt(is_admin: bool = True, is_collaborator: bool = False,
     Returns:
         The formatted system prompt appropriate for the user's permission level and mode.
     """
-    from datetime import datetime
-
     current_utc = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     if mode == "api":
@@ -220,11 +217,3 @@ def get_tool_system_prompt(is_admin: bool = True, is_collaborator: bool = False,
         current_utc=current_utc,
         tools_section=tools_section,
     )
-
-
-# Keep static version for backwards compatibility (without dynamic time) - uses admin version
-TOOL_SYSTEM_PROMPT_STATIC = TOOL_SYSTEM_PROMPT.format(
-    repo_info=REPO_INFO,
-    current_utc="[dynamic]",
-    tools_section=ADMIN_TOOLS_SECTION,
-)

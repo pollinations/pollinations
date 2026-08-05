@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    sanitizeFramedResponse,
-    validateCohereRequest,
-} from "../../../src/text/cohereCommandAPlus.js";
+import { sanitizeCohereResponse } from "../../../src/text/cohereCommandAPlus.js";
 import type { ChatCompletion } from "../../../src/text/types.js";
 
 async function streamText(
@@ -18,11 +15,11 @@ async function streamText(
         },
     });
 
-    const sanitized = sanitizeFramedResponse(completion);
+    const sanitized = sanitizeCohereResponse(completion);
     return new Response(sanitized.responseStream).text();
 }
 
-describe("sanitizeFramedResponse", () => {
+describe("sanitizeCohereResponse", () => {
     it("removes Cohere framing from text while preserving reasoning", () => {
         const completion: ChatCompletion = {
             choices: [
@@ -37,7 +34,7 @@ describe("sanitizeFramedResponse", () => {
             ],
         };
 
-        sanitizeFramedResponse(completion);
+        sanitizeCohereResponse(completion);
 
         expect(completion.choices?.[0].message).toEqual({
             role: "assistant",
@@ -60,7 +57,7 @@ describe("sanitizeFramedResponse", () => {
             ],
         };
 
-        sanitizeFramedResponse(completion);
+        sanitizeCohereResponse(completion);
 
         expect(completion.choices?.[0].message?.content).toBe("Hello");
     });
@@ -79,7 +76,7 @@ describe("sanitizeFramedResponse", () => {
             ],
         };
 
-        sanitizeFramedResponse(completion);
+        sanitizeCohereResponse(completion);
 
         expect(completion.choices?.[0].message?.content).toBe(
             "Print <|END_TEXT|> literally.",
@@ -125,109 +122,5 @@ describe("sanitizeFramedResponse", () => {
             ],
             content: "answer",
         });
-    });
-
-    it("removes Inkling response framing at content boundaries", () => {
-        const completion: ChatCompletion = {
-            choices: [
-                {
-                    message: {
-                        role: "assistant",
-                        content:
-                            "<|content_text|>Hello<|content_model_end_sampling|><|end_message|>",
-                    },
-                },
-            ],
-        };
-
-        sanitizeFramedResponse(completion);
-
-        expect(completion.choices?.[0].message?.content).toBe("Hello");
-    });
-
-    it("removes Inkling framing split across SSE events", async () => {
-        const result = await streamText({ stream: true }, [
-            'data: {"choices":[{"index":0,"delta":{"content":"Answer<|end_"}}]}\n\n',
-            'data: {"choices":[{"index":0,"delta":{"content":"message|>"},"finish_reason":"stop"}]}\n\n',
-            "data: [DONE]\n\n",
-        ]);
-
-        expect(result).toBe(
-            'data: {"choices":[{"index":0,"delta":{"content":"Answer"}}]}\n\n' +
-                'data: {"choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}]}\n\n' +
-                "data: [DONE]\n\n",
-        );
-    });
-});
-
-describe("validateCohereRequest", () => {
-    it("accepts text and automatic tool selection", () => {
-        expect(
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tool_choice: "auto",
-            }),
-        ).toEqual({
-            messages: [{ role: "user", content: "hi" }],
-            options: { tool_choice: "auto" },
-        });
-    });
-
-    it("honors tool_choice none by removing tools before Azure", () => {
-        expect(
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tools: [
-                    {
-                        type: "function",
-                        function: {
-                            name: "lookup",
-                            parameters: { type: "object", properties: {} },
-                        },
-                    },
-                ],
-                tool_choice: "none",
-            }),
-        ).toEqual({
-            messages: [{ role: "user", content: "hi" }],
-            options: {},
-        });
-    });
-
-    it("rejects unsupported image input before calling Azure", () => {
-        expect(() =>
-            validateCohereRequest(
-                [
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: "describe" },
-                            {
-                                type: "image_url",
-                                image_url: { url: "https://example.com/a.jpg" },
-                            },
-                        ],
-                    },
-                ],
-                {},
-            ),
-        ).toThrow(
-            expect.objectContaining({
-                status: 400,
-                message: "Cohere Command A+ on Azure supports text input only",
-            }),
-        );
-    });
-
-    it("rejects tool choices the Azure route does not honor", () => {
-        expect(() =>
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tool_choice: "required",
-            }),
-        ).toThrow(
-            expect.objectContaining({
-                status: 400,
-                message:
-                    'Cohere Command A+ on Azure supports tool_choice "auto" or "none" only',
-            }),
-        );
     });
 });

@@ -1705,24 +1705,7 @@ export const accountRoutes = new Hono<Env>()
                         "API key required. This endpoint is authenticated by API key only.",
                 });
             }
-
-            const user = c.var.auth.user;
-            let userId = user?.id;
-            if (!userId) {
-                const db = drizzle(c.env.DB);
-                const keyRow = await db
-                    .select({ userId: apikeyTable.userId })
-                    .from(apikeyTable)
-                    .where(eq(apikeyTable.id, apiKey.id))
-                    .get();
-                userId = keyRow?.userId ?? null;
-                if (!userId) {
-                    throw new HTTPException(404, {
-                        message:
-                            "API key has no linked user account.",
-                    });
-                }
-            }
+            const user = c.var.auth.requireUser();
 
             const {
                 format,
@@ -1741,11 +1724,11 @@ export const accountRoutes = new Hono<Env>()
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
-                { userId, keyId: apiKey.id, days },
+                { userId: user.id, keyId: apiKey.id, days },
             );
 
             return respondDetailedUsage(c, log, {
-                userId,
+                userId: user.id,
                 apiKeyIds: [apiKey.id],
                 filenamePrefix: "pollinations-key-usage",
                 filenamePeriod: usageWindow.filenamePart,

@@ -129,4 +129,37 @@ describe("processParameters", () => {
 
         expect(result.options.temperature).toBe(0.7);
     });
+
+    it("strips top_p, frequency_penalty, presence_penalty for gpt-5 models", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5",
+            temperature: 1,
+            top_p: 0.9,
+            frequency_penalty: 0.1,
+            presence_penalty: 0.1,
+            modelConfig: { provider: "azure-openai", "azure-deployment-id": "gpt-5" },
+            modelDef,
+        });
+
+        expect(result.options.top_p).toBeUndefined();
+        expect(result.options.frequency_penalty).toBeUndefined();
+        expect(result.options.presence_penalty).toBeUndefined();
+        expect(result.options.temperature).toBe(1);
+    });
+
+    it("strips unsupported sampling params for o3 reasoning models", () => {
+        const result = processParameters(messages, {
+            model: "o3",
+            top_p: 0.95,
+            frequency_penalty: 0.2,
+            presence_penalty: 0.2,
+            modelConfig: { provider: "azure-openai", "azure-deployment-id": "o3" },
+            modelDef,
+        });
+
+        expect(result.options.top_p).toBeUndefined();
+        expect(result.options.frequency_penalty).toBeUndefined();
+        expect(result.options.presence_penalty).toBeUndefined();
+        expect(result.options.temperature).toBe(1);
+    });
 });

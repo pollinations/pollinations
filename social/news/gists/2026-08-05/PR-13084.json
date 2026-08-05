@@ -1,0 +1,33 @@
+{
+  "pr_number": 13084,
+  "title": "chore: update app metrics 2026-08-05",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13084",
+  "merged_at": "2026-08-05T05:06:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got measured",
+    "blurb": "The bot made its daily walk through the app garden, updating health checks and counting the leaves. The plants remain suitably observed.",
+    "summary": "Refreshed the daily app metrics, health checks, and greenhouse listings in apps/APPS.md and apps/GREENHOUSE.md for 2026-08-05.",
+    "impact": "Community maintainers have an up-to-date snapshot of app status and greenhouse metrics.",
+    "keywords": [
+      "community",
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse"
+    ],
+    "visual_concept": "Polli acts as a tiny garden inspector with a clipboard, checking labeled code-plants in a cozy greenhouse while a friendly CRT monitor robot displays simple app-health bars. This represents an automated daily metrics refresh rather than a new user capability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, inspecting code-plants with a clipboard inside a warm greenhouse; a chunky CRT monitor robot shows neat app health bars beside blooming flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font sign reading \"DAILY CHECK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13084.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, inspecting code-plants with a clipboard inside a warm greenhouse; a chunky CRT monitor robot shows neat app health bars beside blooming flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font sign reading \"DAILY CHECK\"."
+  },
+  "generated_at": "2026-08-05T05:07:39.122563+00:00"
+}

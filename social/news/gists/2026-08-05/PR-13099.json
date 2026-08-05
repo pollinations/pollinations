@@ -1,0 +1,34 @@
+{
+  "pr_number": 13099,
+  "title": "docs: update README — 2026-08-05",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13099",
+  "merged_at": "2026-08-05T08:28:09Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news in the garden",
+    "blurb": "The README's Latest News section got its daily tending. The front gate now points visitors at the newest bloom.",
+    "summary": "Updated the README's Latest News section for 2026-08-05 so repository visitors can find the current project update.",
+    "impact": "People landing on the repository will see the latest news entry in the README without digging through the commit compost.",
+    "keywords": [
+      "readme",
+      "documentation",
+      "news",
+      "repository"
+    ],
+    "visual_concept": "Polli tends a cozy garden noticeboard shaped like a README page, pinning up one fresh news note while small flowers and code-plants grow around it; the scene represents a regularly maintained project front page.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, carefully pinning a fresh note onto a garden noticeboard shaped like a README page. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading \"LATEST NEWS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13099.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, carefully pinning a fresh note onto a garden noticeboard shaped like a README page. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading \"LATEST NEWS\"."
+  },
+  "generated_at": "2026-08-05T08:29:11.636762+00:00"
+}

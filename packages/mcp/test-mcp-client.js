@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import assert from "node:assert/strict";
 import http from "node:http";
 import path from "node:path";
 /**
@@ -11,8 +12,8 @@ import path from "node:path";
  *   POLLINATIONS_API_KEY=sk_xxx npm run test
  */
 import { fileURLToPath } from "node:url";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { fetchWithAuth } from "./src/utils/coreUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -41,17 +42,50 @@ if (!KEY) {
     testBaseUrl = `http://127.0.0.1:${address.port}/api`;
 }
 
-const transport = new StdioClientTransport({
-    command: "node",
-    args: [path.join(__dirname, "pollinations-mcp.js")],
-    env: testBaseUrl ? { POLLINATIONS_BASE_URL: testBaseUrl } : undefined,
-});
-const client = new Client(
-    { name: "mcp-smoke-test", version: "0.0.1" },
-    { capabilities: {} },
-);
+const EXPECTED_TOOLS = [
+    "analyzeVideo",
+    "chatCompletion",
+    "clearApiKey",
+    "describeImage",
+    "generateImage",
+    "generateImageBatch",
+    "generateImageUrl",
+    "generateText",
+    "generateVideo",
+    "generateVideoUrl",
+    "getBalance",
+    "getKeyInfo",
+    "getPricing",
+    "getUsage",
+    "listAudioVoices",
+    "listImageModels",
+    "listQuests",
+    "listTextModels",
+    "respondAudio",
+    "sayText",
+    "setApiKey",
+    "transcribeAudio",
+    "webSearch",
+];
+
+const createTransport = () =>
+    new StdioClientTransport({
+        command: "node",
+        args: [path.join(__dirname, "pollinations-mcp.js")],
+        env: testBaseUrl ? { POLLINATIONS_BASE_URL: testBaseUrl } : undefined,
+    });
+
+async function connectClient(options = {}) {
+    const client = new Client(
+        { name: "mcp-smoke-test", version: "0.0.1" },
+        { capabilities: {}, ...options },
+    );
+    await client.connect(createTransport());
+    return client;
+}
 
 const results = [];
+let modernTools;
 const trim = (s, n = 200) => {
     const str = typeof s === "string" ? s : JSON.stringify(s);
     return str.length > n ? `${str.slice(0, n)}…` : str;
@@ -76,18 +110,41 @@ async function call(name, args = {}) {
     return res.content?.[0]?.text;
 }
 
-await client.connect(transport);
+const client = await connectClient({
+    versionNegotiation: { mode: "auto" },
+});
 
-await step("listTools", async () => {
+await step("modern protocol negotiation", () => {
+    const era = client.getProtocolEra();
+    if (era !== "modern") throw new Error(`expected modern, received ${era}`);
+    return era;
+});
+
+await step("modern listTools", async () => {
     const { tools } = await client.listTools();
-    if (tools.length < 15) throw new Error(`only ${tools.length} tools`);
-    if (!tools.some((tool) => tool.name === "listQuests")) {
-        throw new Error("listQuests is not registered");
+    modernTools = tools;
+    const actual = tools.map(({ name }) => name).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
+        throw new Error(`unexpected tools: ${actual.join(", ")}`);
     }
     return `${tools.length} tools`;
 });
 
 await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+
+const legacyClient = await connectClient();
+await step("legacy protocol fallback", async () => {
+    const era = legacyClient.getProtocolEra();
+    if (era !== "legacy") throw new Error(`expected legacy, received ${era}`);
+    const { tools } = await legacyClient.listTools();
+    const actual = tools.map(({ name }) => name).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
+        throw new Error(`unexpected tools: ${actual.join(", ")}`);
+    }
+    assert.deepEqual(tools, modernTools);
+    return `${era}, ${tools.length} tools`;
+});
+await legacyClient.close();
 
 if (!KEY) {
     await step("fetchWithAuth respects caller cancellation", async () => {

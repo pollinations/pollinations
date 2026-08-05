@@ -137,7 +137,7 @@ Without an API key, this runs an offline smoke test of the stdio connection, too
 
 ## System Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 
 ## API Reference
 

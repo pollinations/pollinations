@@ -7,9 +7,10 @@
 
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { McpServer } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import player from "play-sound";
+import { z } from "zod";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
@@ -92,6 +93,48 @@ All requests go through: ${apiBaseUrl}
 - Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
 }
 
+export function buildServer(apiBaseUrl = validateApiBaseUrl()) {
+    const server = new McpServer(
+        {
+            name: "pollinations-mcp",
+            version: SERVER_VERSION,
+            instructions: createServerInstructions(apiBaseUrl),
+        },
+        {
+            capabilities: {
+                tools: {},
+            },
+        },
+    );
+
+    // Register all tools
+    allTools.forEach((tool) => {
+        try {
+            // Tool format: [name, description, inputSchema, handler]
+            if (!Array.isArray(tool) || tool.length < 4) {
+                throw new Error(
+                    `Invalid tool format for ${tool[0] || "unknown"}`,
+                );
+            }
+            const [name, description, inputSchema, handler] = tool;
+            server.registerTool(
+                name,
+                { description, inputSchema: z.object(inputSchema) },
+                handler,
+            );
+        } catch (error) {
+            console.error(`Failed to register tool ${tool[0]}:`, error.message);
+        }
+    });
+
+    // Error handling
+    server.onerror = (error) => {
+        console.error(`Server error: ${error.message}`);
+    };
+
+    return server;
+}
+
 /**
  * Start the MCP server with STDIO transport
  */
@@ -105,44 +148,6 @@ export async function startMcpServer() {
         } catch (error) {
             console.error("Audio player not available:", error.message);
         }
-
-        // Create the MCP server
-        const server = new McpServer(
-            {
-                name: "pollinations-mcp",
-                version: SERVER_VERSION,
-                instructions: createServerInstructions(apiBaseUrl),
-            },
-            {
-                capabilities: {
-                    tools: {},
-                },
-            },
-        );
-
-        // Register all tools
-        allTools.forEach((tool) => {
-            try {
-                // Tool format: [name, description, inputSchema, handler]
-                if (!Array.isArray(tool) || tool.length < 4) {
-                    throw new Error(
-                        `Invalid tool format for ${tool[0] || "unknown"}`,
-                    );
-                }
-                const [name, description, inputSchema, handler] = tool;
-                server.tool(name, description, inputSchema, handler);
-            } catch (error) {
-                console.error(
-                    `Failed to register tool ${tool[0]}:`,
-                    error.message,
-                );
-            }
-        });
-
-        // Error handling
-        server.onerror = (error) => {
-            console.error(`Server error: ${error.message}`);
-        };
 
         // Exit the process if we reach uncaughtException — by definition the
         // program is already in an unknown state, and the existing log-only
@@ -167,9 +172,11 @@ export async function startMcpServer() {
         // one-stop signal that the client is gone.
         process.stdin.on("close", () => process.exit(0));
 
-        // Create and connect STDIO transport
-        const transport = new StdioServerTransport();
-        await server.connect(transport);
+        serveStdio(() => buildServer(apiBaseUrl), {
+            onerror: (error) => {
+                console.error(`Server error: ${error.message}`);
+            },
+        });
 
         console.error(
             `Pollinations MCP Server v${SERVER_VERSION} running on stdio`,

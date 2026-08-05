@@ -357,6 +357,24 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     return token;
 }
 
+export function communityEndpointErrorDetail(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
+        "error" in body &&
+        body.error &&
+        typeof body.error === "object" &&
+        "message" in body.error &&
+        typeof body.error.message === "string"
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
+}
+
 export function isCommunityEndpointOwnerAllowed(
     owner: CommunityEndpointOwnerLike | null | undefined,
 ): boolean {

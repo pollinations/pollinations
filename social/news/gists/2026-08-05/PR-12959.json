@@ -1,0 +1,34 @@
+{
+  "pr_number": 12959,
+  "title": "refactor: simplify GSoC frontend",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12959",
+  "merged_at": "2026-08-05T06:40:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shares the GSoC markdown shell used by the contributing and code-of-conduct pages.\n- Centralizes repeated frontmatter parsing for FAQs, mentors, projects, and timeline entries.\n- Removes unused navigation code, the React asset, navigation CSS, and dormant theme tokens.\n- Keeps rendered page behavior and parser output intact.\n- Net change: 14 files, 315 additions, 893 deletions.\n\nChecks:\n- `npm run build --prefix apps/gsoc`\n- Parser equivalence: 18 FAQs, 3 mentors, 6 projects, 10 timeline entries\n- Removed-symbol reference scan\n- `git diff --check`\n- GSoC lint improves from 15 existing errors on `main` to 14",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One shell, fewer crumbs",
+    "blurb": "The GSoC site tidied its garden shed: shared markdown pages now do the repeated work, while old navigation and theme leftovers have gone back to the compost.",
+    "summary": "Refactored the GSoC frontend around a shared MarkdownDocumentPage shell and centralized frontmatter parsing for 18 FAQs, 3 mentors, 6 projects, and 10 timeline entries without changing rendered output.",
+    "impact": "GSoC contributors get the same pages and parser results, with 893 lines of duplicate UI, unused navigation code, React assets, CSS, and dormant theme tokens removed from the maintenance path.",
+    "keywords": [
+      "gsoc",
+      "frontend",
+      "refactor",
+      "markdown",
+      "frontmatter",
+      "maintenance"
+    ],
+    "visual_concept": "A cozy GSoC garden-shed workspace where several paper markdown pages feed neatly into one shared filing shell, while Polli helps sort duplicate scraps into a compost bin. Small code-plants and a retro terminal represent the preserved parser output and a simpler frontend structure.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears tiny librarian glasses while filing several markdown documents into one shared wooden page shell; duplicate paper scraps go into a compost basket beside code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"SHARED SHELL\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12959.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears tiny librarian glasses while filing several markdown documents into one shared wooden page shell; duplicate paper scraps go into a compost basket beside code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"SHARED SHELL\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T06:41:42.741576+00:00"
+}

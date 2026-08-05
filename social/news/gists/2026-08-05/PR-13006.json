@@ -1,0 +1,35 @@
+{
+  "pr_number": 13006,
+  "title": "fix: route Flux fallback through registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13006",
+  "merged_at": "2026-08-05T00:48:22Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Moves the existing Vast → Replicate Flux fallback into the generic registry fallback system.\n- Keeps the public `flux` contract unchanged: Vast primary, Replicate backup, free access, multiplier 1, and $0.002/image.\n- Records failed Vast attempts separately and attributes successful fallback cost/provider data to Replicate ($0.003/image).\n- Keeps the internal route out of catalogs, filenames, and EXIF while preserving scoped-key access to public `flux`.\n\n## Why\n\nThe old catch-all adapter fallback hid which provider served a request and could mask non-operational errors. The generic path retries only eligible upstream failures and produces accurate attempt-level telemetry.\n\n## Confirmed model contract\n\n- Canonical name: `flux`\n- Aliases: none\n- Price multiplier: `1`\n- Paid-only: no\n- Pollinations-operated GPU: yes\n- Registry provider: Vast\n- Primary route: Pollinations Vast GPU pool → `black-forest-labs/FLUX.1-schnell`\n- Fallback: Replicate → `black-forest-labs/flux-schnell`; no further fallback\n\n## Validation\n\n- Full gen suite: 805/805 tests passed before the latest main merge.\n- Post-merge focused suite: 89/89 tests, typecheck, and Biome passed.\n- Enter aliases: 286/286; effective-price snapshot passed.\n- Live local E2E: three fresh 512×512 images passed in 1.84–2.31s; EXIF/catalog/cache retained public `flux` identity; billing logs showed $0.003 cost and $0.002 user price.\n- Latest main refresh: focused fallback/tracking 56/56, Enter registry/pricing 328/328, broader image/billing 250/250, gen typecheck, and Biome passed.\n- No secret changes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flux found its backup hive",
+    "blurb": "Flux now takes its Vast-to-Replicate detour through the proper registry path. Same public model, fewer mysterious tunnels, and every successful backup image knows where it came from.",
+    "summary": "Moved the public free `flux` model's Vast primary → Replicate `black-forest-labs/flux-schnell` fallback into the generic registry system, preserving its $0.002/image price while recording eligible Vast failures and Replicate's $0.003 fallback cost separately.",
+    "impact": "Users keep requesting `flux` exactly as before, while eligible upstream failures retry through Replicate with more reliable behavior and accurate provider-level billing and telemetry.",
+    "keywords": [
+      "flux",
+      "image-generation",
+      "fallback",
+      "registry",
+      "replicate",
+      "vast",
+      "telemetry"
+    ],
+    "visual_concept": "Depict the public Flux route as a cozy garden path: Polli guides a glowing image seed from a Vast GPU greenhouse to a clearly marked Replicate backup greenhouse when the first path is blocked by a harmless little cloud. Small ledger tiles and terminal sprouts show that the backup route is visible and correctly accounted for, while a `flux` sign remains unchanged at the garden entrance.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny route-planner cap as she guides a glowing image seed along a garden path from a Vast GPU greenhouse toward a friendly Replicate backup greenhouse; a pixel sign reads `flux`, with code-plants, flowers, and tiny cost ledger tiles nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13006.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny route-planner cap as she guides a glowing image seed along a garden path from a Vast GPU greenhouse toward a friendly Replicate backup greenhouse; a pixel sign reads `flux`, with code-plants, flowers, and tiny cost ledger tiles nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-05T00:49:46.729859+00:00"
+}

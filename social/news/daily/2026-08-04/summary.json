@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-04",
+  "period_start": "2026-08-04",
+  "period_end": "2026-08-04",
+  "title": "Model selection got simpler without breaking old links",
+  "summary": "A model-registry tuning day: cleaner model selection, more faithful Cohere requests, and API errors that say what actually happened.\n\nTrellis 2, Perplexity Sonar, Grok 4.20, and Gemini variants now resolve through cleaner canonical model entries and parameters. Retired IDs remain as safe aliases, while search, reasoning, and API-key behavior consistently follow the selected canonical model.\n\nInkling and Cohere proxy handling was simplified so native messages, reasoning effort, tools, tool choice, streaming, and supported image input reach Command A Plus with fewer translation layers. Azure-specific cleanup remains where it belongs.\n\nInvalid image URLs reported by Portkey now return HTTP 400 instead of being mistaken for provider failures. Developers get a useful client-side error, and model-health telemetry stops blaming models for malformed requests.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12978,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13032,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13043,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13063,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13074,
+      "date": "2026-08-04"
+    }
+  ],
+  "generated_at": "2026-08-05T07:03:30.409425+00:00"
+}

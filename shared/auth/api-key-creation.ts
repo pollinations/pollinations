@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
+import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import {
     isAllowedRedirectUrl,
@@ -89,28 +90,6 @@ export function validateRedirectUriFormat(redirectUri: string): void {
                 "Redirect URI must use https://, except http:// is allowed for loopback hosts",
         });
     }
-}
-
-export function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
-}
-
-function getRedirectUris(meta: Record<string, unknown>): string[] {
-    const list = meta.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
 }
 
 function cleanRedirectUris(redirectUris: string[]): string[] {

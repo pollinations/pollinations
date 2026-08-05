@@ -1,0 +1,35 @@
+{
+  "pr_number": 13087,
+  "title": "Add Oracle of Chance to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13087",
+  "merged_at": "2026-08-05T06:58:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Oracle of Chance](https://dramatise.site) to chat\n- These are two apps I have created side by side, which are basically quite different. The main one, Oracle of Chance, is a search engine designed to work as a crystal ball, and to give precise YES/NO/M\n\nFixes #12243",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The crystal ball is online",
+    "blurb": "Oracle of Chance has joined the app garden: a search engine that answers like a crystal ball. Ask the hive a yes-or-no question; the oracle will do its mysterious little computation.",
+    "summary": "Added Oracle of Chance, a crystal-ball-style search app for precise yes/no-style questions, to the community apps directory and greenhouse.",
+    "impact": "People browsing pollinations-powered projects can now discover Oracle of Chance at dramatise.site and try its unusual search interface.",
+    "keywords": [
+      "community",
+      "apps",
+      "oracle-of-chance",
+      "search",
+      "discovery"
+    ],
+    "visual_concept": "Depict Polli as a tiny fortune-teller with a lavender wizard hat, warmly consulting a glowing crystal ball beside a retro terminal. Inside the crystal ball, simple pixel text reads YES / NO / MAYBE, while code-vines and small flowers grow around the desk to show this is a community app joining the garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny lavender wizard hat, consulting a glowing crystal ball beside a retro computer in a flower-filled garden shed; the crystal ball softly shows pixel-font text: 'YES · NO · MAYBE'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-peach gradient background, chunky retro sprites, code-plants and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13087.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny lavender wizard hat, consulting a glowing crystal ball beside a retro computer in a flower-filled garden shed; the crystal ball softly shows pixel-font text: 'YES · NO · MAYBE'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-peach gradient background, chunky retro sprites, code-plants and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T06:59:57.743086+00:00",
+  "app_name": "Oracle of Chance",
+  "app_url": "https://dramatise.site"
+}

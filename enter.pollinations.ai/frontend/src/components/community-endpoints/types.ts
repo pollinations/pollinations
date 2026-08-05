@@ -16,6 +16,11 @@ import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
+
 export type CommunityEndpoint = {
     id: string;
     modelId: string;

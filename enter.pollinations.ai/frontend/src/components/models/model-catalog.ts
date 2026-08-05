@@ -20,6 +20,7 @@ export type ApiModelInfo = {
     id?: string;
     category?: ModelCategory;
     brand?: string;
+    brand_url?: string;
     community?: boolean;
     pricing?: ApiPricing;
     pricing_variants?: Array<{
@@ -210,6 +211,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
+        brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         capabilities: model.capabilities ?? [],

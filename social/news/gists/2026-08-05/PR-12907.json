@@ -1,0 +1,34 @@
+{
+  "pr_number": 12907,
+  "title": "refactor: simplify audio API routes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12907",
+  "merged_at": "2026-08-05T06:16:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes ElevenLabs WAV repair and response construction across TTS, dialogue, and voice-changing routes.\n- Reuses one immutable ElevenLabs voice-settings definition while preserving seeds, billing headers, streaming formats, and timestamped responses.\n- Simplifies AssemblyAI singleton model handling and bills the explicit registry candidate.\n- Preserves newer Kokoro/DeepInfra dispatch and generic audio fallback behavior after the current-main merge.\n- Removes 49 net lines across two audio routes.\n\nChecks:\n- ElevenLabs route tests: 24 passed\n- AssemblyAI transcription tests: 5 passed\n- Full Gen test suite and typecheck passed\n- Biome, `git diff --check`, and CodeQL passed",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The audio plumbing blooms",
+    "blurb": "The audio routes now share one tidy set of pipes instead of growing their own. Same voices, streams, timestamps, and billing headers; fewer places for a WAV to become mysterious.",
+    "summary": "Centralized ElevenLabs WAV repair, response construction, and immutable voice settings across TTS, dialogue, and voice-changing routes, while simplifying AssemblyAI model selection and preserving Kokoro, DeepInfra, streaming, seed, timestamp, and billing behavior.",
+    "impact": "Audio API consumers keep the same formats and route behavior, with shared internals making ElevenLabs and AssemblyAI handling easier to maintain reliably.",
+    "keywords": [
+      "audio",
+      "ElevenLabs",
+      "AssemblyAI",
+      "TTS",
+      "refactor",
+      "API routes"
+    ],
+    "visual_concept": "A cozy garden-shed audio workshop: Polli acts as a careful sound engineer, connecting several labeled audio pipes from TTS, dialogue, voice-changing, and transcription stations into one neat shared junction. Small WAV waveform flowers and code-vines show that multiple routes now use the same reliable plumbing; the monitor robot can inspect a clean streaming waveform.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed audio workshop where Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue translucent wings, and tiny engineer headphones carefully connects glowing waveform pipes from retro TTS, dialogue, voice-changing, and transcription terminals into one tidy shared junction; a curious CRT monitor robot watches a clean lime-green stream, surrounded by code-plants and small waveform flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12907.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed audio workshop where Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue translucent wings, and tiny engineer headphones carefully connects glowing waveform pipes from retro TTS, dialogue, voice-changing, and transcription terminals into one tidy shared junction; a curious CRT monitor robot watches a clean lime-green stream, surrounded by code-plants and small waveform flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T06:17:58.535693+00:00"
+}

@@ -662,6 +662,7 @@ export async function trackResponse(
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
                 modelUsed: modelCalled,
+                modelProviderUsed,
                 usage: {},
                 contentFilterResults,
             };

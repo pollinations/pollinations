@@ -1,0 +1,35 @@
+{
+  "pr_number": 13093,
+  "title": "Add Lumara to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13093",
+  "merged_at": "2026-08-05T07:21:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lumara](https://github.com/pinkpixel-dev/Lumara) to image\n- Lumara is a desktop application that brings the power of the Pollinations AI image generation ecosystem directly to your computer. Select from a variety of image models, apply artistic styles, optiona\n\nFixes #11357",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Lumara joins the garden",
+    "blurb": "Lumara has landed in the app garden: a desktop home for Pollinations image generation, model picking, and artistic styling. The pixels can now live a little closer to your keyboard.",
+    "summary": "Added Lumara to the Pollinations app directory, highlighting a desktop application for generating images with Pollinations models and optional artistic styles.",
+    "impact": "People looking for a desktop-first image workflow can now discover Lumara directly through the Pollinations community app listings.",
+    "keywords": [
+      "Lumara",
+      "desktop app",
+      "image generation",
+      "community apps",
+      "image models"
+    ],
+    "visual_concept": "Depict Lumara as a cozy desktop creative studio: a retro computer running an image-generation app with a small gallery of pastel pixel landscapes and model/style controls. Polli wears a tiny artist beret and warmly helps arrange image cards beside code-plants and blooming flowers, representing a new community desktop tool joining the ecosystem.",
+    "image_prompt": "A cozy pixel art desktop studio where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, hovers beside a chunky retro computer displaying a simple image-generation gallery and style palette; pixel flowers and code-plants bloom around the desk, with lime green (#ecf874) prominent across the screen glow and garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"LUMARA\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13093.jpg",
+    "prompt": "A cozy pixel art desktop studio where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, hovers beside a chunky retro computer displaying a simple image-generation gallery and style palette; pixel flowers and code-plants bloom around the desk, with lime green (#ecf874) prominent across the screen glow and garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"LUMARA\"."
+  },
+  "generated_at": "2026-08-05T07:22:13.564474+00:00",
+  "app_name": "Lumara",
+  "app_url": "https://github.com/pinkpixel-dev/Lumara"
+}

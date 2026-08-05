@@ -29,6 +29,7 @@ export type ApiModelInfo = {
         description: string;
         pricing: ApiPricing;
     }>;
+    pricing_default_label?: string;
     pricing_adjustments?: Array<{
         name: string;
         label: string;
@@ -538,7 +539,13 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             : [];
     });
 
-    return priceVariants?.length ? { ...basePrice, priceVariants } : basePrice;
+    return priceVariants?.length
+        ? {
+              ...basePrice,
+              priceVariants,
+              priceDefaultLabel: model.pricing_default_label,
+          }
+        : basePrice;
 }
 
 export function getModelPricesFromCatalog(

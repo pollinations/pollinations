@@ -47,6 +47,7 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
                     },
                 },
             ],
+            pricing_default_label: "Standard context",
             pricing_adjustments: [
                 {
                     name: "provider.adjustment.v1",
@@ -68,6 +69,7 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
 
     expect(model).toMatchObject({
         name: "any-model",
+        priceDefaultLabel: "Standard context",
         priceVariants: [
             {
                 name: "alternate",

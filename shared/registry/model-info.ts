@@ -58,6 +58,7 @@ export const ModelInfoSchema = z.object({
             }),
         )
         .optional(),
+    pricing_default_label: z.string().optional(),
     pricing_adjustments: z
         .array(
             z.object({
@@ -191,6 +192,7 @@ export function modelInfoFromDefinition(
                       },
                   )
                 : undefined,
+        pricing_default_label: service.defaultCostVariantLabel,
         pricing_adjustments: service.billing?.adjustments?.map((rule) =>
             pricingAdjustmentInfoFromRule(rule, service),
         ),

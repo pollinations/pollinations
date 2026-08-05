@@ -226,7 +226,10 @@ export const useModelPricingSelection = (
                       key: "pricing",
                       value: variantName,
                       options: [
-                          { value: "", label: "Default" },
+                          {
+                              value: "",
+                              label: model.priceDefaultLabel ?? "Base rate",
+                          },
                           ...model.priceVariants.map(({ name, label }) => ({
                               value: name,
                               label,

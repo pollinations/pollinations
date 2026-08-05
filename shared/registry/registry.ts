@@ -160,6 +160,9 @@ export type ModelDefinition = {
     // selector so /models and the dashboard can disclose when alternate rates
     // apply without attempting to serialize selector code.
     costVariantMetadata?: Record<string, CostVariantMetadata>;
+    // Public label for the base rate sheet selected when no named variant
+    // applies, such as "720p" or "≤272K context".
+    defaultCostVariantLabel?: string;
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection

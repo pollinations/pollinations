@@ -82,6 +82,7 @@ export type ModelPrice = {
     outputSortPrice?: number;
     prices: ModelPriceLine[];
     priceVariants?: ModelPriceVariant[];
+    priceDefaultLabel?: string;
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;

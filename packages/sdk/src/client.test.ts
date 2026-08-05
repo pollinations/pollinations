@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
+import {
+    chat,
+    configure,
+    generateAudio,
+    generateImage,
+    generateText,
+    generateVideo,
+    resetClient,
+} from "./helpers.js";
 import { PollinationsError } from "./types.js";
 
 // Build a minimal Response-like object good enough for the client paths.
@@ -72,9 +81,62 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    resetClient();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+});
+
+describe("Convenience helpers", () => {
+    beforeEach(() => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+    });
+
+    it("makes one request per media helper without inventing a seed", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await generateImage("a cat");
+        await generateVideo("a cat running");
+        await generateAudio("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("seed")).toBe(false);
+        }
+    });
+
+    it("makes one request per text helper without inventing a seed", async () => {
+        const response = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "test",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+
+        await generateText("hello");
+        await generateText("hello", { raw: true });
+        await chat([{ role: "user", content: "hello" }]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).seed)).toEqual([
+            undefined,
+            undefined,
+            undefined,
+        ]);
+    });
 });
 
 // Helper: pull the seed query param from an image/video GET URL.

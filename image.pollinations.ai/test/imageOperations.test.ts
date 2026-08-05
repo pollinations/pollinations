@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import {
@@ -61,5 +62,18 @@ describe("Pollinations logo", () => {
             Math.min(...logoStats.channels.map(({ min }) => min)),
         ).toBeLessThan(16);
         expect(Math.max(...logoStats.channels.map(({ max }) => max))).toBe(255);
+    });
+});
+
+describe("rate-limit fallback", () => {
+    it("ships a square JPEG suitable for embedded image responses", async () => {
+        const fallback = await fs.readFile(
+            new URL("../assets/rate-limit-fallback.jpg", import.meta.url),
+        );
+        const metadata = await sharp(fallback).metadata();
+
+        expect(metadata.format).toBe("jpeg");
+        expect(metadata.width).toBe(1024);
+        expect(metadata.height).toBe(1024);
     });
 });

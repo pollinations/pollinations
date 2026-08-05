@@ -265,7 +265,7 @@ const ATTRIBUTION_HEADERS = {
 };
 
 export function withAttributionHeaders(response) {
-    if (!response.ok) {
+    if (!response.ok && response.status !== 429) {
         return response;
     }
 

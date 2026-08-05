@@ -55,6 +55,9 @@ const QUEUE_CONFIG = {
 const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
 const logAuth = debug("pollinations:auth");
+const rateLimitFallbackImage = fs.readFileSync(
+    new URL("../assets/rate-limit-fallback.jpg", import.meta.url),
+);
 
 export const currentJobs = [];
 
@@ -611,24 +614,19 @@ const checkCacheAndGenerate = async (
             return;
         }
 
-        // Return error images instead of JSON - more useful for embedded images
-        // 429 = rate limit image, other errors = generic error image
-        const errorImageName = statusCode === 429 ? "ratelimiterror.jpeg" : "othererror.jpeg";
-        const imagePath = new URL(`../assets/${errorImageName}`, import.meta.url).pathname;
-        try {
-            const imageBuffer = fs.readFileSync(imagePath);
+        // Keep embedded images useful when the anonymous legacy API is busy.
+        if (statusCode === 429) {
             res.writeHead(200, {
                 "Content-Type": "image/jpeg",
-                "Content-Length": imageBuffer.length,
+                "Content-Length": rateLimitFallbackImage.length,
                 "X-Error-Type": errorType,
-                "X-Rate-Limited": statusCode === 429 ? "true" : "false",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "X-Rate-Limited": "true",
+                "X-Pollinations-Rate-Limit-Fallback": "true",
+                "X-Pollinations-Dashboard": "https://enter.pollinations.ai",
+                "Cache-Control": "no-store",
             });
-            res.end(imageBuffer);
+            res.end(rateLimitFallbackImage);
             return;
-        } catch (imgError) {
-            logError("Failed to read error image:", imgError);
-            // Fall through to JSON response if image read fails
         }
 
         // Extract debug info from error if available

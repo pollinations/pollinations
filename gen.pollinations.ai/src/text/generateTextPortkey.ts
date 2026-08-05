@@ -4,7 +4,6 @@ import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
-import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
@@ -19,7 +18,6 @@ export const log = debug("pollinations:portkey");
 const clientConfig = {
     defaultOptions: {
         model: "openai-fast",
-        jsonMode: false,
     },
 };
 
@@ -53,7 +51,6 @@ export async function generateTextPortkey(
         state = await resolveModelConfig(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
-        state = await sanitizeMessages(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 

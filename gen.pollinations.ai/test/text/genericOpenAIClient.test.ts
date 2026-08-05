@@ -153,6 +153,7 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     tool_calls: [{ id: "call_1", type: "function" }],
                     content: null,
+                    provider_message_option: "kept",
                 },
             ],
             {
@@ -187,9 +188,9 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     content: null,
                     tool_calls: [{ id: "call_1", type: "function" }],
+                    provider_message_option: "kept",
                 },
             ],
-            stream: false,
             tools: [
                 {
                     type: "function",
@@ -207,7 +208,7 @@ describe("genericOpenAIClient", () => {
         });
     });
 
-    it("drops invalid optional message names before sending upstream", async () => {
+    it("keeps narrow message repairs without rebuilding messages", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
@@ -253,6 +254,16 @@ describe("genericOpenAIClient", () => {
                 { role: "user", name: "foo.bar", content: "dot" },
                 { role: "assistant", name: "a@b", content: "at" },
                 { role: "system", name: "a".repeat(65), content: "long" },
+                {
+                    role: "user",
+                    content: "  ",
+                    provider_message_option: "kept",
+                },
+                { role: "assistant", provider_message_option: "kept" },
+                {
+                    role: "assistant",
+                    tool_calls: [{ id: "call_1", type: "function" }],
+                },
             ],
             { model: "provider-model" },
             { endpoint: "https://portkey.test/chat" },
@@ -266,6 +277,21 @@ describe("genericOpenAIClient", () => {
             { role: "user", content: "dot" },
             { role: "assistant", content: "at" },
             { role: "system", content: "long" },
+            {
+                role: "user",
+                content: "Please provide a response.",
+                provider_message_option: "kept",
+            },
+            {
+                role: "assistant",
+                content: "",
+                provider_message_option: "kept",
+            },
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [{ id: "call_1", type: "function" }],
+            },
         ]);
     });
 

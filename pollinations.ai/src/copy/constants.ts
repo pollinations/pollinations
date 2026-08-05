@@ -3,8 +3,6 @@
 
 export const COPY_CONSTANTS = {
     // External data sources
-    newsFilePath:
-        "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md",
     appsFilePath:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/apps/APPS.md",
 

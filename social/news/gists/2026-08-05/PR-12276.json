@@ -1,0 +1,36 @@
+{
+  "pr_number": 12276,
+  "title": "feat: list account quests through MCP",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/12276",
+  "merged_at": "2026-08-05T10:05:56Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds a read-only `listQuests` MCP tool using the existing `/account/quests` gateway endpoint.\n- Passes the API response through unchanged.\n- Keeps the tool in the existing account service with no new abstraction.\n- Documents and smoke-tests tool registration.\n\nRequires an API key with `account:usage`; claiming remains dashboard-only.\n\nCo-authored-by: Circuit-Overtime <74301576+Circuit-Overtime@users.noreply.github.com>",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Quests enter the tool shed",
+    "blurb": "MCP agents can now check an account’s available Quests without leaving their little terminal garden. Claiming still lives in the dashboard; someone has to keep the prize counter staffed.",
+    "summary": "Added a read-only `listQuests` MCP tool that returns the existing `/account/quests` gateway response unchanged for API keys with the `account:usage` permission.",
+    "impact": "Agents using the Pollinations MCP server can now inspect available account Quests programmatically, while Quest claiming remains dashboard-only.",
+    "keywords": [
+      "mcp",
+      "quests",
+      "account",
+      "api-key",
+      "account-usage",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Polli as a quest-guide bee in a cozy garden-tool shed, showing the eager CRT Monitor Robot a parchment-like Quest list on a retro terminal. The terminal represents the new read-only MCP tool, while a small dashboard kiosk in the background holds the claim stamps to show that claiming remains separate; surround the scene with code-plants and tiny quest flowers.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny quest-guide hat and points at a retro terminal showing a simple pixel-font Quest list while an eager chunky CRT monitor robot reads along; code-plants and blooming quest flowers grow around them, with a separate little dashboard kiosk holding claim stamps in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12276.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny quest-guide hat and points at a retro terminal showing a simple pixel-font Quest list while an eager chunky CRT monitor robot reads along; code-plants and blooming quest flowers grow around them, with a separate little dashboard kiosk holding claim stamps in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T10:06:59.118462+00:00"
+}

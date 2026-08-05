@@ -278,6 +278,14 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const RateLimitRpmSchema = z
+    .number()
+    .int()
+    .positive()
+    .max(60_000)
+    .describe(
+        "Upstream rate budget in requests per minute. Each Pollinations caller is capped at a fixed share (25%) of this value so one user cannot exhaust the shared upstream quota. Defaults to 120 RPM when omitted.",
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -315,6 +323,7 @@ const CreateEndpointSchema = z.object({
     inputModalities: InputModalitiesSchema.optional().default(["text"]),
     visibility: VisibilitySchema.optional().default("private"),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
+    rateLimitRpm: RateLimitRpmSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -328,6 +337,7 @@ const UpdateEndpointSchema = z.object({
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
+    rateLimitRpm: RateLimitRpmSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -360,6 +370,7 @@ const CommunityEndpointResponseSchema = z.object({
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     fallbackModelIds: z.array(z.string()),
+    rateLimitRpm: z.number().int().positive().nullable(),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -508,6 +519,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         fallbackModelIds: row.fallbackModelIds ?? [],
+        rateLimitRpm: row.rateLimitRpm,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -867,6 +879,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                     visibility: input.visibility,
                     fallbackModelIds,
+                    rateLimitRpm: input.rateLimitRpm ?? null,
                     ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -1051,6 +1064,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.rateLimitRpm !== undefined) {
+                update.rateLimitRpm = input.rateLimitRpm;
             }
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;

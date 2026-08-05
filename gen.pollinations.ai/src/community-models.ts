@@ -81,6 +81,7 @@ export async function getCommunityModelRegistryEntries(
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
             fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
+            rateLimitRpm: schema.communityEndpoint.rateLimitRpm,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
         })
@@ -114,6 +115,7 @@ export async function getCommunityModelRegistryEntries(
             visibility: row.visibility,
             delegatesGeneration: row.delegatesGeneration,
             fallbackModelIds: row.fallbackModelIds ?? [],
+            rateLimitRpm: row.rateLimitRpm,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

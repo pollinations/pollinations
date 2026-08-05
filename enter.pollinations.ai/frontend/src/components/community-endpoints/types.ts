@@ -38,6 +38,9 @@ export type CommunityEndpoint = {
     visibility: CommunityEndpointVisibility;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
+    // Upstream rate budget in requests/minute, or null when the owner did not
+    // declare one (falls back to a default on the gateway).
+    rateLimitRpm: number | null;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -85,6 +88,8 @@ export type EndpointFormState = {
     bearerToken: string;
     // Public community model ids, tried in the order listed.
     fallbackModelIds: string[];
+    // Upstream requests/minute; empty keeps the endpoint default.
+    rateLimitRpm: string;
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -98,6 +103,7 @@ export type EndpointPayload = {
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     fallbackModelIds: string[];
+    rateLimitRpm?: number;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -134,6 +140,7 @@ export const emptyForm: EndpointFormState = {
     upstreamModel: "",
     bearerToken: "",
     fallbackModelIds: [],
+    rateLimitRpm: "",
     ...emptyPriceForm,
 };
 
@@ -221,6 +228,9 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         fallbackModelIds: endpoint.fallbackModelIds ?? [],
+        rateLimitRpm: endpoint.rateLimitRpm
+            ? String(endpoint.rateLimitRpm)
+            : "",
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -308,6 +318,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
     const imagePricing =
         form.modality === "image" ? form.imagePricing : "request";
+    const rateLimitRpm = formRateLimitRpmToNumber(form.rateLimitRpm);
     return {
         modality: form.modality,
         imagePricing,
@@ -322,8 +333,34 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         // never satisfy the same-or-lower rule — clear them alongside prices.
         fallbackModelIds:
             form.visibility === "public" ? form.fallbackModelIds : [],
+        ...(rateLimitRpm !== undefined ? { rateLimitRpm } : {}),
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
+}
+
+const MAX_COMMUNITY_RATE_LIMIT_RPM = 60_000;
+
+export function isValidRateLimitRpm(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    if (!/^\d+$/.test(trimmed)) return false;
+    const parsed = Number(trimmed);
+    return (
+        Number.isInteger(parsed) &&
+        parsed >= 1 &&
+        parsed <= MAX_COMMUNITY_RATE_LIMIT_RPM
+    );
+}
+
+function formRateLimitRpmToNumber(value: string): number | undefined {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    if (!isValidRateLimitRpm(trimmed)) {
+        throw new Error(
+            "Rate limit must be a positive whole number of requests per minute, up to 60,000",
+        );
+    }
+    return Number(trimmed);
 }
 
 /** Keep the public model id in sync with the provider model until edited. */

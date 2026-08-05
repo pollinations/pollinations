@@ -128,6 +128,7 @@ function createCommunityEndpoint(
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
         fallbackModelIds: [],
+        rateLimitRpm: null,
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({

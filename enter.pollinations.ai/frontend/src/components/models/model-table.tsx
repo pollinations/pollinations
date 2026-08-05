@@ -347,17 +347,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div className="@container">
-            {/* Column headers (sortable) */}
+            {/* Generation estimate header */}
             <div className="hidden items-center pb-2 pr-8 @2xl:pointer-fine:flex">
-                <button
-                    type="button"
-                    onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
-                >
-                    <span className="text-sm font-bold text-ink-900">
-                        Model {sortArrow("name")}
-                    </span>
-                </button>
+                <div className="min-w-6 flex-1" />
                 <Tooltip
                     triggerAs="span"
                     content={
@@ -383,32 +375,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         </div>
                     </button>
                 </Tooltip>
-                <div className="flex w-[240px] shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => onSort("input")}
-                        className="w-1/2 cursor-pointer text-center hover:text-theme-text-base"
-                    >
-                        <div className="text-sm font-bold text-ink-900">
-                            Input {sortArrow("input")}
-                        </div>
-                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            pollen
-                        </div>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onSort("output")}
-                        className="w-1/2 cursor-pointer text-center hover:text-theme-text-base"
-                    >
-                        <div className="text-sm font-bold text-ink-900">
-                            Output {sortArrow("output")}
-                        </div>
-                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            pollen
-                        </div>
-                    </button>
-                </div>
+                <div className="w-[240px] shrink-0" />
             </div>
 
             {/* Tab content — the selected modality */}

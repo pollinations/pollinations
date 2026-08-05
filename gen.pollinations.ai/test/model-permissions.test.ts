@@ -76,6 +76,31 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
+test("media routes own their endpoint-specific model defaults", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["zimage"],
+        user: { packBalance: 100 },
+    });
+
+    const videoResponse = await fetchWorker("/video/test", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    const editResponse = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt: "make it blue",
+            image: "https://example.test/cat.png",
+        }),
+    });
+
+    expect(videoResponse.status).toBe(403);
+    expect(editResponse.status).toBe(403);
+});
+
 test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,

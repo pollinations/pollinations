@@ -254,6 +254,105 @@ describe("Pollinations media upload", () => {
     });
 });
 
+describe("Pollinations server-owned defaults", () => {
+    it("omits unset models from URL requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await client.image("a cat");
+        await client.video("a cat running");
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("model")).toBe(
+                false,
+            );
+        }
+    });
+
+    it("omits unset models from JSON requests", async () => {
+        const client = newClient();
+        const completion = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "server-default",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "audio/mpeg",
+                }),
+            );
+
+        await client.imageGenerate("a cat");
+        await client.imageEdit("make it blue", {
+            image: "https://example.test/cat.png",
+        });
+        await client.text("hello");
+        for await (const _ of client.textStream("hello")) {
+            // consume stream
+        }
+        await client.chat([{ role: "user", content: "hello" }]);
+        for await (const _ of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            // consume stream
+        }
+        await client.audioSpeech("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(7);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).model)).toEqual(
+            Array(7).fill(undefined),
+        );
+        expect(bodyOf(fetchMock.mock.calls[6]).voice).toBeUndefined();
+    });
+
+    it("omits an unset transcription model", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(new ArrayBuffer(8));
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect((request.body as FormData).has("model")).toBe(false);
+    });
+});
+
 describe("Pollinations seed handling", () => {
     it("passes seed and model-specific video duration through URL requests", async () => {
         const client = newClient();

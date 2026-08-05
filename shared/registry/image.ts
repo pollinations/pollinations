@@ -52,7 +52,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "FLUX.1 Kontext",
+        title: "FLUX.1 Kontext Pro",
         description:
             "Edits an existing image from plain instructions — swap, restyle, refine",
         inputModalities: ["text", "image"],
@@ -74,7 +74,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
-        title: "NanoBanana",
+        title: "Nano Banana",
         description:
             "Quick image generation and editing that follows instructions well",
         inputModalities: ["text", "image"],
@@ -96,7 +96,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(3), // text/reasoning output tokens
             completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
         },
-        title: "NanoBanana 2",
+        title: "Nano Banana 2",
         description:
             "Sharper detail and better text rendering in generated and edited images",
         inputModalities: ["text", "image"],
@@ -118,7 +118,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
-        title: "NanoBanana 2 Lite",
+        title: "Nano Banana 2 Lite",
         description:
             "Speedy, affordable image generation and editing for everyday use",
         inputModalities: ["text", "image"],
@@ -142,7 +142,7 @@ export const IMAGE_SERVICES = {
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
-        title: "NanoBanana Pro",
+        title: "Nano Banana Pro",
         description:
             "Studio-quality images up to 4K, with reasoning for tricky prompts",
         inputModalities: ["text", "image"],
@@ -212,7 +212,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "Seedream 4.5 Pro",
+        title: "Seedream 4.5",
         description: "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -338,6 +338,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         provider: "vast",
+        fallbacks: ["flux-replicate"],
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -345,10 +346,26 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.002, // per image
         },
-        title: "Flux Schnell",
+        title: "FLUX.1 Schnell",
         description: "Fast, high-quality images at a tiny cost",
         inputModalities: ["text"],
         outputModalities: ["image"],
+    },
+    "flux-replicate": {
+        aliases: [],
+        provider: "replicate",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-01").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.003, // per image
+        },
+        title: "Flux Schnell (Replicate)",
+        description: "Fast, high-quality images at a tiny cost",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        hidden: true,
     },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
@@ -445,7 +462,7 @@ export const IMAGE_SERVICES = {
             },
         ),
         resolutions: ["720p", "480p", "1080p"],
-        title: "Seedance Pro-Fast",
+        title: "Seedance 1.0 Pro Fast",
         description: "Video from text or a start image at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
@@ -640,7 +657,7 @@ export const IMAGE_SERVICES = {
                 },
             },
         ),
-        title: "Qwen Image Plus",
+        title: "Qwen Image",
         description:
             "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],

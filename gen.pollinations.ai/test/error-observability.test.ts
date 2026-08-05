@@ -424,21 +424,41 @@ describe("error observability", () => {
                 }
                 return Response.json(
                     { error: { message: "provider rate limited" } },
-                    { status: 429 },
+                    {
+                        status: 429,
+                        headers: {
+                            authorization: "Bearer must-not-be-recorded",
+                            "set-cookie": "session=must-not-be-recorded",
+                            "x-debug-detail": "x".repeat(600),
+                            "x-generation-id": "gen-openrouter-test",
+                            "x-portkey-last-used-option-index":
+                                "config.targets[1]",
+                            "x-portkey-provider": "openrouter",
+                            "x-portkey-retry-attempt-count": "2",
+                            "x-portkey-trace-id": "portkey-trace-test",
+                        },
+                    },
                 );
             },
         );
 
         const ctx = createExecutionContext();
-        const response = await createTextTestApp().fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+        const incomingRequest = new Request(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
                     model: "openai-fast",
                     messages: [{ role: "user", content: "test" }],
                 }),
-            }),
+            },
+        );
+        Object.defineProperty(incomingRequest, "cf", {
+            value: { colo: "FRA" },
+        });
+        const response = await createTextTestApp().fetch(
+            incomingRequest,
             {
                 AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
                 ENVIRONMENT: "test",
@@ -465,13 +485,32 @@ describe("error observability", () => {
             },
         });
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             status: 502,
             error_code: "BAD_GATEWAY",
+            edge_colo: "FRA",
             upstream_host: "portkey.test",
             upstream_status: 429,
         });
+        expect(JSON.parse(tinybirdPayload.upstream_headers as string)).toEqual({
+            authorization: "[redacted]",
+            "content-type": "application/json",
+            "set-cookie": "[redacted]",
+            "x-debug-detail": "x".repeat(600),
+            "x-generation-id": "gen-openrouter-test",
+            "x-portkey-last-used-option-index": "config.targets[1]",
+            "x-portkey-provider": "openrouter",
+            "x-portkey-retry-attempt-count": "2",
+            "x-portkey-trace-id": "portkey-trace-test",
+        });
+        expect(tinybirdPayload.upstream_headers).not.toContain(
+            "must-not-be-recorded",
+        );
     });
 
     it("attributes provider error envelopes to the gateway", async () => {

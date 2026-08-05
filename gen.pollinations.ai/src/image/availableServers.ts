@@ -147,7 +147,7 @@ export const getNextServerUrl = async (
 ): Promise<string> => {
     const activeServers = await getRegisteredServers(type);
     if (activeServers.length === 0) {
-        throw new Error(`No active ${type} servers available`);
+        throw new HttpError(`No active ${type} servers available`, 503);
     }
     return chooseWeightedServer(activeServers);
 };

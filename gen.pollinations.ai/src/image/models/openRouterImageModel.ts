@@ -318,7 +318,7 @@ function resolveSeedreamProAspectRatio(
         !(SEEDREAM_PRO_ASPECT_RATIOS as readonly string[]).includes(requested)
     ) {
         throw new HttpError(
-            `aspectRatio "${requested}" is not supported by Seedream 4.5 Pro. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
+            `aspectRatio "${requested}" is not supported by Seedream 4.5. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
             400,
         );
     }
@@ -331,7 +331,7 @@ export async function callOpenRouterSeedreamProAPI(
 ): Promise<ImageGenerationResult> {
     if (safeParams.image.length > 14) {
         throw new HttpError(
-            `Seedream 4.5 Pro supports at most 14 reference images (received ${safeParams.image.length}).`,
+            `Seedream 4.5 supports at most 14 reference images (received ${safeParams.image.length}).`,
             400,
         );
     }

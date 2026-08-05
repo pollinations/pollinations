@@ -1,8 +1,8 @@
 body {
     background: linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%);
-    color: var(--text-primary, #f5f5f4);
+    color: #f5f5f4;
     margin: 0;
-    font-family: var(--font-body, "DM Sans", sans-serif);
+    font-family: "DM Sans", sans-serif;
     min-height: 100vh;
     position: relative;
 }
@@ -32,7 +32,7 @@ body::before {
     box-shadow:
         10px 10px 20px rgba(0, 0, 0, 0.3),
         -10px -10px 20px rgba(163, 230, 53, 0.05);
-    color: var(--lime, #a3e635);
+    color: #a3e635;
     border: 1px solid rgba(163, 230, 53, 0.2);
     outline: none;
     transition: all 0.2s ease-in-out;
@@ -42,7 +42,7 @@ body::before {
     box-shadow:
         5px 5px 10px rgba(0, 0, 0, 0.3),
         -5px -5px 10px rgba(163, 230, 53, 0.08);
-    color: var(--sage, #86efac);
+    color: #86efac;
     border-color: rgba(163, 230, 53, 0.3);
 }
 

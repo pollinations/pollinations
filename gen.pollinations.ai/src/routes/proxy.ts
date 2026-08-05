@@ -66,7 +66,10 @@ import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import {
+    GenerateImageRequestQueryParamsSchema,
+    GenerateVideoRequestQueryParamsSchema,
+} from "@/schemas/image.ts";
 import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -103,7 +106,6 @@ const textBodyLimit = bodyLimit({
 });
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
-    resolveModel("generate.image"),
     track("generate.image"),
     imageCache,
     generationAccess,
@@ -838,6 +840,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
         ...imageVideoHandlers,
     )
     .get(
@@ -880,7 +883,8 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", GenerateImageRequestQueryParamsSchema),
+        validator("query", GenerateVideoRequestQueryParamsSchema),
+        resolveModel("generate.image", { defaultModel: "veo" }),
         ...imageVideoHandlers,
     )
     .get(
@@ -1127,7 +1131,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image"),
+        resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
         handleImageEdit,
     );

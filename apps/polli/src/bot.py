@@ -7,17 +7,13 @@ import logging
 import random
 
 import aiohttp
-import discord
 from discord.ext import commands, tasks
 
-from .utils.regex import re
-from .core.config import config
+import discord
+
+from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
-from .integrations.github.client import github_manager
-from .integrations.github.handlers import TOOL_HANDLERS
-from .integrations.github.auth import github_app_auth, init_github_app
-from .integrations.github.graphql import github_graphql
-from .integrations.github.pull_requests import github_pr_manager
+from .core.config import config
 from .discord.media import (
     BLOCK_LATEX_PATTERN,
     PIL_AVAILABLE,
@@ -29,9 +25,14 @@ from .discord.media import (
     send_code_block,
     truncate_long_decimals,
 )
-from .ai.client import pollinations_client
+from .integrations.github.auth import github_app_auth, init_github_app
+from .integrations.github.client import github_manager
+from .integrations.github.graphql import github_graphql
+from .integrations.github.handlers import TOOL_HANDLERS
+from .integrations.github.pull_requests import github_pr_manager
 from .integrations.subscriptions import init_notifier
 from .integrations.webhook_server import start_webhook_server, stop_webhook_server
+from .utils.regex import re
 
 logger = logging.getLogger(__name__)
 
@@ -397,19 +398,6 @@ def extract_media_urls(
     return image_urls, video_urls, file_urls
 
 
-def extract_attachment_urls(message: discord.Message) -> list[str]:
-    """
-    Extract ALL attachment URLs from Discord message (legacy, returns combined list).
-    Use extract_media_urls() for separated image/video/file lists.
-    """
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-    return image_urls + video_urls + file_urls
-
-
-# Keep old name for backward compatibility
-extract_image_urls = extract_attachment_urls
-
-
 async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
     """
     Fetch message history from a thread and format for AI context.
@@ -541,12 +529,10 @@ class PolliBot(commands.Bot):
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
         # Register render_visual handler (always available).
-        # Old tool name aliased for back-compat with cached AI sessions.
-        from .integrations.charts import data_visualization, render_visual
+        from .integrations.charts import render_visual
 
         pollinations_client.register_tool_handler("render_visual", render_visual)
-        pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered render_visual tool handler (data_visualization alias)")
+        logger.info("Registered render_visual tool handler")
 
         # Register discord_search handler (full guild search capabilities)
         from .discord.search import tool_discord_search
@@ -856,13 +842,15 @@ async def on_message(message: discord.Message):
                 _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
-        image_urls = extract_image_urls(message)
+        image_urls, video_urls, file_urls = extract_media_urls(message)
+        attachment_urls = image_urls + video_urls + file_urls
 
-        # If no text but replying or has images, let AI handle it
-        if not text and not image_urls:
-            text = "[User mentioned bot - respond to the conversation context]"
-        if not text and image_urls:
-            text = "[User attached screenshot(s)]"
+        if not text:
+            text = (
+                "[User attached media/files]"
+                if attachment_urls
+                else "[User mentioned bot - respond to the conversation context]"
+            )
 
         # Create session if needed (handles bot restart scenario)
         if not session:
@@ -874,10 +862,16 @@ async def on_message(message: discord.Message):
                 user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=topic,
-                image_urls=image_urls,
+                image_urls=attachment_urls,
             )
 
-        await handle_thread_message(message, session)
+        await handle_thread_message(
+            message,
+            session,
+            image_urls,
+            video_urls,
+            file_urls,
+        )
         return
 
     # Extract message text
@@ -1173,7 +1167,13 @@ async def handle_inline_polli_mention(message: discord.Message):
             await message.reply("Sorry, I encountered an error processing your request.", mention_author=False)
 
 
-async def handle_thread_message(message: discord.Message, session: ConversationSession):
+async def handle_thread_message(
+    message: discord.Message,
+    session: ConversationSession,
+    image_urls: list[str],
+    video_urls: list[str],
+    file_urls: list[str],
+):
     """Handle a message in an existing thread."""
     # Type guard: this function is only called for thread messages
     if not isinstance(message.channel, discord.Thread):
@@ -1181,8 +1181,6 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         return
 
     channel = message.channel  # Now typed as discord.Thread
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-
     # Add to session
     session_manager.add_to_session(
         session=session,
@@ -1597,7 +1595,7 @@ async def _send_chunk(
                 await channel.send(chunk, files=files_to_send)
             elif files_to_send:
                 await channel.send(files=files_to_send)
-    
+
     while attachments:
         files_to_send = attachments[:10]
         attachments[:] = attachments[10:]

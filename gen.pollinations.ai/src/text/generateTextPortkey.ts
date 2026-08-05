@@ -1,6 +1,6 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
-import { sanitizeFramedResponse } from "./cohereCommandAPlus.js";
+import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
@@ -75,7 +75,7 @@ export async function generateTextPortkey(
         state.options,
         requestConfig,
     );
-    return modelDef && ["command-a-plus", "inkling"].includes(modelDef.name)
-        ? sanitizeFramedResponse(completion)
+    return modelDef?.name === "command-a-plus"
+        ? sanitizeCohereResponse(completion)
         : completion;
 }

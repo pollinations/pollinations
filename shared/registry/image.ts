@@ -338,6 +338,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         provider: "vast",
+        fallbacks: ["flux-replicate"],
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -349,6 +350,22 @@ export const IMAGE_SERVICES = {
         description: "Fast, high-quality images at a tiny cost",
         inputModalities: ["text"],
         outputModalities: ["image"],
+    },
+    "flux-replicate": {
+        aliases: [],
+        provider: "replicate",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-01").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.003, // per image
+        },
+        title: "Flux Schnell (Replicate)",
+        description: "Fast, high-quality images at a tiny cost",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        hidden: true,
     },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],

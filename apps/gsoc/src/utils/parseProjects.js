@@ -1,4 +1,4 @@
-import fm from "front-matter";
+import { parseFrontmatterDocuments } from "./parseFrontmatterDocuments.js";
 
 /**
  * Parse projects from PROJECTS.md using front-matter for YAML frontmatter
@@ -11,22 +11,11 @@ import fm from "front-matter";
  * Description content here.
  */
 export async function parseProjects(url = "/GSOC/PROJECTS.md") {
-    const response = await fetch(url);
-    const text = await response.text();
-
-    // Match complete frontmatter blocks: ---\nyaml\n---\nbody
-    // Each match captures: full block with frontmatter + body until next --- or end
-    const regex = /---\n([\s\S]*?)\n---\n([\s\S]*?)(?=\n---\n|$)/g;
     const projects = [];
 
-    for (const match of text.matchAll(regex)) {
-        const [, yaml, body] = match;
-        // Reconstruct as valid frontmatter string for fm()
-        const fmString = `---\n${yaml}\n---\n${body}`;
-        const { attributes } = fm(fmString);
-
+    for (const { attributes, body } of await parseFrontmatterDocuments(url)) {
         if (attributes.title) {
-            const paragraphs = body.trim().split("\n\n").filter(Boolean);
+            const paragraphs = body.split("\n\n").filter(Boolean);
             projects.push({
                 ...attributes,
                 technologies: attributes.technologies?.split(", ") || [],

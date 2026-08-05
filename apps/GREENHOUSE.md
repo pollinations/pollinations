@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **852** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **853** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ ImageGenerator.MAUI](https://github.com/MR-444/ImageGenerator.MAUI) | ImageGenerator.MAUI is an open-source (MIT) Windows desktop image-generation app built with .NET MAUI. Users pick a model, enter a prompt, and generate images; every saved image embeds the full prompt | [@MR-444](https://github.com/MR-444) |  | 🫧 |
 | [🖼️ Batch Imagine](https://batchimagine.netlify.app) | **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API. | [@Shawaiz-Hussain](https://github.com/Shawaiz-Hussain) |  | 🫧 |
 | [✍️ Qisas Hook Lab](https://q8paradise.github.io/qisas-hook-lab) | Qisas Hook Lab is a bilingual Arabic/English writing workflow for developing responsible short-form stories. A user enters a subject and, after Pollinations OAuth 2.1 authorization with PKCE and BYOP, | [@q8paradise](https://github.com/q8paradise) |  | 🫧 |
 | [🖼️ Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) | Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat | [@mtonk](https://github.com/mtonk) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 Lumina Chat](https://lumina.magnified.cc) | Lumina is an AI chat application designed to provide a seamless and flexible interface for interacting with large language models. The app includes built-in support for Pollinations.AI as a default pr | [@kokofixcomputers](https://github.com/kokofixcomputers) | 1 | 🫧 |
 | [💬 MyEntMap](https://mymap.qvlit.com) | MyEntMap is a multilingual (zh/vi/en, auto-detected) food & entertainment map for Ho Chi Minh City. It uses the Pollinations API in three ways: (1) auto-generating Ghibli-watercolor store photos with | [@yukyotsai](https://github.com/yukyotsai) |  | 🫧 |
 | [🖼️ Vtrace](https://vtrace-two.vercel.app) | raster image to vector SVG | [@ifankang](https://github.com/ifankang) |  | 🫧 |
-| [✍️ StoryStudio](https://eiigen.github.io/storystudio-app) | AI StoryStudio — A web-based storybook generator powered by Pollinations.ai. Enter any theme and get a fully illustrated multi-page story with AI-generated text, images, and optional audio narration. | [@eiigen](https://github.com/eiigen) |  | 🏵️ 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💅 nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | [@rodriguetg](https://github.com/rodriguetg) |  | 🐝 |
 | [⚡ FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | [@urea](https://github.com/urea) |  | 🐝 |
 
-<details><summary>Show all 206 apps</summary>
+<details><summary>Show all 207 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -129,6 +129,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧑‍🎨 Pollinations Avatar Gen - Reforged](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ ImageGenerator.MAUI](https://github.com/MR-444/ImageGenerator.MAUI) | ImageGenerator.MAUI is an open-source (MIT) Windows desktop image-generation app built with .NET MAUI. Users pick a model, enter a prompt, and generate images; every saved image embeds the full prompt | [@MR-444](https://github.com/MR-444) |  | 🫧 |
 | [🖼️ Batch Imagine](https://batchimagine.netlify.app) | **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API. | [@Shawaiz-Hussain](https://github.com/Shawaiz-Hussain) |  | 🫧 |
 | [🖼️ Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) | Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat | [@mtonk](https://github.com/mtonk) |  | 🫧 |
 | [🖼️ Vtrace](https://vtrace-two.vercel.app) | raster image to vector SVG | [@ifankang](https://github.com/ifankang) |  | 🫧 |

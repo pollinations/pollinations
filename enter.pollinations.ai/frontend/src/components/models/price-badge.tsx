@@ -360,9 +360,9 @@ export const ModelPricingLedger: FC<{
                             <span className="text-xs text-theme-text-muted">
                                 {adjustment.label}
                             </span>
-                            <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                            <span className="min-w-0 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-theme-text-strong">
                                 {formatDisplayPrice(adjustment.price).value}{" "}
-                                <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                                <span className="text-xs font-normal text-theme-text-muted">
                                     /{formatAdjustmentUnit(adjustment)}
                                 </span>
                             </span>

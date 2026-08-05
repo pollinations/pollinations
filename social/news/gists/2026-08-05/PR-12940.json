@@ -1,0 +1,35 @@
+{
+  "pr_number": 12940,
+  "title": "refactor: remove dead application code",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12940",
+  "merged_at": "2026-08-05T07:27:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes unused Chat components, CSS, assets, accent storage, and a no-op serialization layer.\n- Removes unused Reimagine compatibility services/types, Discord scaffolding, and main-frontend news/icons/UI primitives.\n- Removes 3,072 net lines across 35 files (58 additions, 3,130 deletions).\n\nChecks:\n- Chat production build and nested-image storage round-trip\n- Chat lint improves from 14 existing findings on `main` to 13\n- Discord TypeScript build\n- Main frontend TypeScript and production build\n- Reimagine changed-file typecheck has the same three pre-existing errors as `main`\n- Repository-wide removed-symbol/import scan\n- Biome and `git diff --check`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The dead code compost heap",
+    "blurb": "3,072 lines of unused scaffolding have been returned to the garden. The surviving code has more room to grow.",
+    "summary": "Removed 3,072 net lines of unused Chat components and styling, Reimagine compatibility services and types, Discord scaffolding, and dormant main-site news and UI primitives across 35 files.",
+    "impact": "Chat, Reimagine, the Discord bot, and the main frontend keep their existing behavior while carrying less obsolete code, fewer stale imports, and a smaller maintenance surface.",
+    "keywords": [
+      "refactor",
+      "dead-code",
+      "cleanup",
+      "chat",
+      "reimagine",
+      "frontend",
+      "maintenance"
+    ],
+    "visual_concept": "Polli is a careful garden keeper in a tiny tool belt, pruning dry branches labeled as old UI components from a thriving code-garden. A friendly CRT monitor robot holds a compost bin of retired code snippets while healthy lime-green code-plants remain in the background, representing a cleaner repository without changing the living product.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully pruning faded code-branches into a compost bin held by a cheerful CRT monitor robot; fresh code-plants and flowers grow from lime green (#ecf874) pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12940.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully pruning faded code-branches into a compost bin held by a cheerful CRT monitor robot; fresh code-plants and flowers grow from lime green (#ecf874) pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-08-05T07:28:19.643136+00:00"
+}

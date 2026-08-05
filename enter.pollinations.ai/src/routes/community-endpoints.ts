@@ -238,7 +238,7 @@ async function resolveFallbackModelId(
           })
         : undefined;
     if (!target) {
-        throw new HTTPException(400, {
+        throw new HTTPException(404, {
             message: `Fallback target ${fallbackModelId} does not exist`,
         });
     }

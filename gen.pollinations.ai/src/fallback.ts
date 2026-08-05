@@ -234,6 +234,7 @@ export function linkFallbackEntries(
                 ) {
                     continue;
                 }
+                if (targetEndpoint?.delegatesGeneration) continue;
                 if (!isUsableCommunityFallback(entry, target)) continue;
             }
             if (targets.some((linked) => linked.id === target.id)) continue;

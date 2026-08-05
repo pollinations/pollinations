@@ -1,0 +1,35 @@
+{
+  "pr_number": 12950,
+  "title": "refactor: simplify media upload flow",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12950",
+  "merged_at": "2026-08-05T06:10:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Simplifies catalog upload plumbing by removing a redundant tag-error wrapper, unused insert return value, and duplicate response state.\n- Derives authentication directly from API keys in the packaging and makeup apps.\n- Removes unreachable upload-source and response-shape fallbacks while preserving canonical media URLs and tags.\n- Removes 51 net lines across the service and its consumers; supersedes #12961.\n\nChecks:\n- Biome on all four changed files\n- Media Worker integration suite: 29 tests\n- Packaging app TypeScript and production build\n- Virtual Makeup production build",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less plumbing, same pixels",
+    "blurb": "The media upload pipes got a quiet cleanup: fewer wrappers, fewer duplicate states, and the same canonical images arriving where they belong. Polli found 51 lines hiding behind the shed.",
+    "summary": "Simplified catalog media uploads across the Media Worker, Product Packaging Designer, and Virtual Makeup apps by deriving auth from API keys and removing redundant error, response-state, and unreachable fallback handling.",
+    "impact": "Packaging and makeup uploads retain their canonical media URLs and tags while the clients and service share a smaller, more direct upload path.",
+    "keywords": [
+      "media",
+      "uploads",
+      "catalog",
+      "api-keys",
+      "product-packaging-designer",
+      "virtual-makeup",
+      "refactor"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy garden irrigation system that represents media-upload plumbing: several unnecessary pipe loops have been removed, leaving one clear pipe from two creative app stations to a catalog garden. A tiny retro terminal shows a key icon flowing directly into a photo-tagged seed packet, while code-plants and labeled image tiles make the preserved URL-and-tag path visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, happily removing extra loops from a garden-like media upload pipe while one clean path carries photo-tagged seed packets from two retro creative workstations into a blooming catalog garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; subtle pixel-font terminal text reads “API KEY → MEDIA”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12950.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, happily removing extra loops from a garden-like media upload pipe while one clean path carries photo-tagged seed packets from two retro creative workstations into a blooming catalog garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; subtle pixel-font terminal text reads “API KEY → MEDIA”."
+  },
+  "generated_at": "2026-08-05T06:11:25.359541+00:00"
+}

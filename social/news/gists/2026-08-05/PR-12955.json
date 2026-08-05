@@ -1,0 +1,34 @@
+{
+  "pr_number": 12955,
+  "title": "refactor: simplify realtime configuration and request handling",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12955",
+  "merged_at": "2026-08-05T08:43:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shares realtime model metadata, cached-modality billing adjustments, token-cost tables, and one WebSocket session harness.\n- Centralizes credential query redaction for logger and realtime telemetry, including `apikey` and `bearerToken` aliases.\n- Preserves model IDs, prices, billing counters, request flow, telemetry fields, invalid-referrer handling, and non-credential query parameters.\n- Waits for mocked telemetry before the consolidated test helper reads it, preventing leaked session settlement during test teardown.\n- Removes 253 net lines across six files and supersedes #12915 and #12929.\n\nChecks:\n- 54/54 affected Worker tests: realtime, error observability, and safety\n- Gen TypeScript typecheck\n- Biome 2.3.10 on all six changed files\n- Exact normalized comparison of realtime registry and billing outputs against `main`\n- Credential-redaction alias, duplicate-parameter, immutability, and safe-URL matrix\n- `git diff --check origin/main...HEAD`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One hive, fewer wires",
+    "blurb": "Realtime plumbing has been gathered into one tidy little nest. Same model routes and billing behavior, with fewer places for configuration to wander off.",
+    "summary": "Centralized realtime model metadata, cached-modality billing adjustments, token-cost tables, WebSocket session handling, and credential-query redaction across the Gen Worker’s realtime paths.",
+    "impact": "Realtime requests retain the same model IDs, prices, counters, telemetry fields, referrer handling, and query parameters while the shared implementation is easier to keep consistent.",
+    "keywords": [
+      "realtime",
+      "websocket",
+      "billing",
+      "telemetry",
+      "registry",
+      "refactor"
+    ],
+    "visual_concept": "Polli tidies several tangled realtime WebSocket cables into one shared glowing registry cabinet, while a CRT monitor robot watches the same signals flow cleanly through labeled pipes. Small code-plants and flowers represent the consolidated shared metadata and billing tables.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny electrician tool belt, carefully organizing tangled WebSocket cables into one glowing lime green (#ecf874) registry cabinet while a chunky CRT monitor robot happily watches clean data pulses travel through the wires. Code-plants and pastel flowers grow around the terminal in a warm cream, mint, lavender, and peach workshop; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12955.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny electrician tool belt, carefully organizing tangled WebSocket cables into one glowing lime green (#ecf874) registry cabinet while a chunky CRT monitor robot happily watches clean data pulses travel through the wires. Code-plants and pastel flowers grow around the terminal in a warm cream, mint, lavender, and peach workshop; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T08:44:10.696587+00:00"
+}

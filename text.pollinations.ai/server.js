@@ -25,6 +25,7 @@ import {
     checkAndLogMonitoredStrings,
     extractTextFromMessages,
 } from "./utils/stringMonitor.js";
+import { sendRateLimitFallback } from "./rateLimitFallback.js";
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
@@ -532,6 +533,10 @@ export async function sendErrorResponse(
     }
 
     try {
+        if (responseStatus === 429) {
+            sendRateLimitFallback(res);
+            return;
+        }
         res.status(responseStatus).json(errorResponse);
     } catch (error) {
         console.error("Error sending error response:", error);

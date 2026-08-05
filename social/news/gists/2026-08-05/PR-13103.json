@@ -1,0 +1,34 @@
+{
+  "pr_number": 13103,
+  "title": "refactor(sdk): return raw model registry data",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13103",
+  "merged_at": "2026-08-05T14:01:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Returns `/models` entries unchanged, preserving server order, snake-case names, and fields added after an SDK release.\n- Removes the parallel `ModelCatalogItem` DTO, field defaults/renames, SDK category sorting, and display-ready pricing labels.\n- Moves model ID fallback, known-category ordering, pricing labels, and selector sorting into the React/playground/UI consumers that display them.\n- Retains the authenticated allow-set needed by the current app access UI. Net change: 226 fewer lines.\n\nChecks:\n- SDK: 30 tests, typecheck, and build\n- UI: 6 tests, typecheck, and build\n- React modules and playground: typecheck and Vite builds\n- Biome and `git diff --check`\n- Live `/models`: 227 raw entries; first entry retained all 15 server fields",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The catalog stopped gardening",
+    "blurb": "The SDK now hands model registry entries over exactly as the server grew them. No surprise pruning, relabeling, or alphabetizing by a helpful little middle layer.",
+    "summary": "The SDK now returns raw `/models` registry entries in server order, preserving snake_case names and all fields—including fields added after an SDK release—while React, playground, and UI consumers handle display sorting and pricing labels locally.",
+    "impact": "Developers can use the full live model metadata from the 227-entry registry without waiting for an SDK DTO update, while model pickers retain their familiar curated ordering and labels.",
+    "keywords": [
+      "sdk",
+      "models",
+      "model-registry",
+      "api",
+      "metadata",
+      "playground"
+    ],
+    "visual_concept": "Depict the model registry as a flourishing garden of labeled seed packets and data flowers, each kept in its original arrangement rather than being rearranged into decorative rows. Polli, wearing tiny librarian glasses, gently passes an unedited catalog scroll from a retro terminal to a helpful CRT robot, while the display shelf nearby neatly sorts only the flowers meant for visitors.",
+    "image_prompt": "A cozy pixel art garden-library where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carries an untouched model-catalog scroll from a lime green (#ecf874) retro terminal to a cheerful CRT monitor robot, while raw data-flower entries grow in their original server order and a tidy selector shelf sorts display cards nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'RAW /models', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13103.jpg",
+    "prompt": "A cozy pixel art garden-library where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carries an untouched model-catalog scroll from a lime green (#ecf874) retro terminal to a cheerful CRT monitor robot, while raw data-flower entries grow in their original server order and a tidy selector shelf sorts display cards nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'RAW /models', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T14:07:24.655371+00:00"
+}

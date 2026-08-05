@@ -79,7 +79,7 @@ The smoke test always lists tools and models. Live mode also exercises chat comp
 
 ## Requirements and Links
 
-- Node.js 20 or later
+- Node.js 20.0.0 or higher
 - [API documentation](https://gen.pollinations.ai/docs)
 - [GitHub issues](https://github.com/pollinations/pollinations/issues)
 

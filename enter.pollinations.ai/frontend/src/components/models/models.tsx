@@ -21,7 +21,10 @@ import {
     useRef,
     useState,
 } from "react";
-import { CommunityEndpoints } from "../community-endpoints";
+import {
+    CommunityEndpoints,
+    publicCommunityFallbackOptions,
+} from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -143,7 +146,8 @@ export const Models: FC<ModelsProps> = ({
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),
@@ -350,6 +354,7 @@ export const Models: FC<ModelsProps> = ({
             {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
+                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

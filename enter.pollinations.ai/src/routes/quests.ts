@@ -16,7 +16,7 @@ import type {
     QuestCard,
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
-import { hasAccountReadPermission } from "./account-permissions.ts";
+import { requireAccountPermission } from "./account-permissions.ts";
 
 // Bumped to v24: six-month membership and established GitHub are now available.
 const CACHE_KEY = "quests:catalog:v24";
@@ -67,17 +67,6 @@ const claimRewardResponseSchema = z.object({
     newBalance: z.number().nullable(),
     reward: rewardSchema,
 });
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
-}
 
 function formatRewardTimestamp(value: Date | number | string): string {
     return value instanceof Date
@@ -200,7 +189,7 @@ export const questsRoutes = new Hono<Env>()
                 message: "Authentication required to view quest rewards",
             });
             const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB);
             const rewardRows = await db

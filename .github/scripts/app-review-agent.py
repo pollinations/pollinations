@@ -16,7 +16,7 @@ import requests
 
 ISSUE_NUMBER = os.environ.get("ISSUE_NUMBER", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
-GH_BOT_LOGIN = os.environ.get("GH_BOT_LOGIN", "")
+GH_BOT_ID = os.environ.get("GH_BOT_ID", "")
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 
@@ -289,7 +289,7 @@ def replace_review_comment(body):
             comment
             for comment in reversed(comments)
             if COMMENT_MARKER in comment.get("body", "")
-            and (not GH_BOT_LOGIN or comment["user"]["login"] == GH_BOT_LOGIN)
+            and str(comment["user"]["id"]) == GH_BOT_ID
         ),
         None,
     )
@@ -318,8 +318,12 @@ def set_status_label(label=None):
 
 
 def main():
-    if not all((ISSUE_NUMBER.isdigit(), GH_TOKEN, POLLINATIONS_API_KEY)):
-        raise ValueError("ISSUE_NUMBER, GH_TOKEN, and POLLINATIONS_API_KEY are required")
+    if not all(
+        (ISSUE_NUMBER.isdigit(), GH_TOKEN, GH_BOT_ID.isdigit(), POLLINATIONS_API_KEY)
+    ):
+        raise ValueError(
+            "ISSUE_NUMBER, GH_TOKEN, numeric GH_BOT_ID, and POLLINATIONS_API_KEY are required"
+        )
     validation = json.loads(VALIDATION_RESULT)
     set_status_label()
     if validation.get("system_error"):

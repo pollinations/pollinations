@@ -3,6 +3,8 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as baseTest } from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
@@ -14,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 import { applyGeminiTaskInstruction } from "../../src/embeddings/input.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
+import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-2";
@@ -28,8 +31,7 @@ const TEST_QWEN_MODEL = "qwen3-embedding-8b";
 const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
-const OPENAI_HOST = "api.openai.com";
-const COHERE_AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
+const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
 const FIREWORKS_HOST = "api.fireworks.ai";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
@@ -78,7 +80,7 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
-        openai: createOpenAIMock(),
+        azureOpenAI: createAzureOpenAIMock(),
         cohereAzure: createCohereAzureMock(),
         fireworks: createFireworksMock(),
         vertex: createVertexMock(),
@@ -137,15 +139,29 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
-    const state: { requests: unknown[]; urls: string[] } = {
+function createAzureOpenAIMock(): MockAPI<{
+    requests: unknown[];
+    urls: string[];
+    apiKeys: (string | null)[];
+    authorization: (string | null)[];
+    failModel?: string;
+}> {
+    const state: {
+        requests: unknown[];
+        urls: string[];
+        apiKeys: (string | null)[];
+        authorization: (string | null)[];
+        failModel?: string;
+    } = {
         requests: [],
         urls: [],
+        apiKeys: [],
+        authorization: [],
     };
     return {
         state,
         handlerMap: {
-            [OPENAI_HOST]: async (request) => {
+            [AZURE_HOST]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -153,6 +169,14 @@ function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                 };
                 state.urls.push(request.url);
                 state.requests.push(body);
+                if (body.model === state.failModel) {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
+                state.apiKeys.push(request.headers.get("api-key"));
+                state.authorization.push(request.headers.get("authorization"));
 
                 const inputs = body.input ?? [];
                 const dimensions =
@@ -182,6 +206,9 @@ function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
         reset: () => {
             state.requests = [];
             state.urls = [];
+            state.failModel = undefined;
+            state.apiKeys = [];
+            state.authorization = [];
         },
     };
 }
@@ -197,7 +224,7 @@ function createCohereAzureMock(): MockAPI<{
     return {
         state,
         handlerMap: {
-            [COHERE_AZURE_HOST]: async (request) => {
+            [AZURE_HOST]: async (request) => {
                 const body = (await request.json()) as {
                     input?: (string | { image: string; text?: string })[];
                     input_type?: string;
@@ -358,6 +385,46 @@ describe("POST /v1/embeddings", () => {
         expect(events[0].totalPrice).toBeGreaterThan(0);
     });
 
+    test("uses the shared fallback loop for embeddings", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        const source = getRegistryModelDefinition(TEST_OPENAI_SMALL_MODEL);
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = [TEST_OPENAI_LARGE_MODEL];
+            resetGenerationModelRegistryCache();
+            await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
+            mocks.azureOpenAI.state.failModel =
+                TEST_OPENAI_SMALL_PROVIDER_MODEL;
+
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({ model: TEST_OPENAI_SMALL_MODEL }),
+            });
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            expect(response.headers.get("x-model-used")).toBe(
+                TEST_OPENAI_LARGE_MODEL,
+            );
+            expect(mocks.azureOpenAI.state.requests).toMatchObject([
+                { model: TEST_OPENAI_SMALL_PROVIDER_MODEL },
+                { model: TEST_OPENAI_LARGE_PROVIDER_MODEL },
+            ]);
+            await wait();
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
+    });
+
     test("uses the provider model id and supports custom dimensions", async ({
         paidApiKey: apiKey,
         mocks,
@@ -492,11 +559,11 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("supports direct OpenAI text-embedding-3-small", async ({
+    test("supports Azure OpenAI text-embedding-3-small", async ({
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -529,13 +596,15 @@ describe("POST /v1/embeddings", () => {
             TEST_OPENAI_SMALL_MODEL,
         );
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
-        expect(mocks.openai.state.requests).toEqual([
+        expect(mocks.azureOpenAI.state.requests).toEqual([
             {
                 model: TEST_OPENAI_SMALL_PROVIDER_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             },
         ]);
+        expect(mocks.azureOpenAI.state.apiKeys).toEqual(["test-azure-api-key"]);
+        expect(mocks.azureOpenAI.state.authorization).toEqual([null]);
 
         await wait();
 
@@ -547,15 +616,17 @@ describe("POST /v1/embeddings", () => {
             resolvedModelRequested: TEST_OPENAI_SMALL_MODEL,
             modelUsed: TEST_OPENAI_SMALL_MODEL,
             tokenCountPromptText: 8,
+            totalCost: 0.00000016,
+            totalPrice: 0.00000012,
             isBilledUsage: true,
         });
     });
 
-    test("supports direct OpenAI text-embedding-3-large", async ({
+    test("supports Azure OpenAI text-embedding-3-large", async ({
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -581,7 +652,7 @@ describe("POST /v1/embeddings", () => {
         expect(data.model).toBe(TEST_OPENAI_LARGE_MODEL);
         expect(data.data).toHaveLength(1);
         expect(data.data[0].embedding).toHaveLength(256);
-        expect(mocks.openai.state.requests).toEqual([
+        expect(mocks.azureOpenAI.state.requests).toEqual([
             {
                 model: TEST_OPENAI_LARGE_PROVIDER_MODEL,
                 input: [TEST_EMBEDDING_INPUT],
@@ -589,6 +660,18 @@ describe("POST /v1/embeddings", () => {
             },
         ]);
         await wait();
+
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelRequested: TEST_OPENAI_LARGE_MODEL,
+            resolvedModelRequested: TEST_OPENAI_LARGE_MODEL,
+            modelUsed: TEST_OPENAI_LARGE_MODEL,
+            tokenCountPromptText: 4,
+            totalCost: 0.00000052,
+            totalPrice: 0.00000039,
+            isBilledUsage: true,
+        });
     });
 
     test("supports Cohere Embed v4 through Azure", async ({
@@ -794,7 +877,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -810,7 +893,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("supports dimensions up to 1536");
-        expect(mocks.openai.state.requests).toHaveLength(0);
+        expect(mocks.azureOpenAI.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -856,11 +939,11 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("rejects multimodal input for direct OpenAI embeddings", async ({
+    test("rejects multimodal input for Azure OpenAI embeddings", async ({
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -883,15 +966,15 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("text input only");
-        expect(mocks.openai.state.requests).toHaveLength(0);
+        expect(mocks.azureOpenAI.state.requests).toHaveLength(0);
         await wait();
     });
 
-    test("rejects Gemini task hints for direct OpenAI embeddings", async ({
+    test("rejects Gemini task hints for Azure OpenAI embeddings", async ({
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -907,7 +990,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("task_type");
-        expect(mocks.openai.state.requests).toHaveLength(0);
+        expect(mocks.azureOpenAI.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -915,7 +998,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -931,7 +1014,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("input_type");
-        expect(mocks.openai.state.requests).toHaveLength(0);
+        expect(mocks.azureOpenAI.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -1053,7 +1136,10 @@ describe("POST /v1/embeddings", () => {
         const body = await response.text();
 
         expect(response.status).toBe(400);
-        expect(body).toContain("Failed to fetch image");
+        // Refused by the URL guard before any fetch, and coded so a caller can
+        // branch on it rather than on the prose.
+        expect(body).toContain("Invalid image URL");
+        expect(body).toContain("invalid_image_url");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

@@ -435,9 +435,9 @@ curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=
 
 #### `GET` `/image/{prompt}` — Generate Image
 
-Generate an image from a text prompt. Returns JPEG or PNG.
+Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -457,7 +457,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `image/jpeg`, `image/png` — Success - Returns the generated image
+📤 **Response** · `200` · `image/jpeg`, `image/png`, `image/svg+xml` — Success - Returns the generated image
 
 💻 **Example**
 
@@ -1157,6 +1157,7 @@ List private and public community models owned by the authenticated account. API
 | `data[].id` * | `string` | — |
 | `data[].modelId` * | `string` | — |
 | `data[].name` * | `string` | — |
+| `data[].title` * | `string` | — |
 | `data[].description` * | `string` \| `null` | — |
 | `data[].modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `data[].imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1198,7 +1199,8 @@ Register a private or public community text or image model. Private is the defau
 | Field | Type | Description |
 |---|---|---|
 | `name` * | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` * | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` * | `string` | — |
@@ -1224,6 +1226,7 @@ Register a private or public community text or image model. Private is the defau
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1353,7 +1356,8 @@ Update a community model owned by the authenticated account. Changing visibility
 | Field | Type | Description |
 |---|---|---|
 | `name` | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
@@ -1379,6 +1383,7 @@ Update a community model owned by the authenticated account. Changing visibility
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -2155,6 +2160,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
+| `data[].media_type` | `string` | MIME type for non-raster output such as image/svg+xml |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |

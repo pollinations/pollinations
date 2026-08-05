@@ -1,12 +1,22 @@
+import { UpstreamError } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { closestAspectRatio, closestByRatio } from "../utils/aspectRatio.ts";
+import {
+    closestAspectRatio,
+    closestByRatio,
+    closestRatioLogSpace,
+} from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
+import {
+    base64ToBuffer,
+    downloadUserImage,
+    readImageDimensions,
+    toDataUri,
+} from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
@@ -14,14 +24,75 @@ const logError = debug("pollinations:openrouter-image:error");
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
+const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
+const SVG_MEDIA_TYPE = "image/svg+xml";
+const SEEDREAM_PRO_ASPECT_RATIOS = [
+    "1:1",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16",
+    "3:2",
+    "2:3",
+    "21:9",
+] as const;
+type SeedreamProAspectRatio = (typeof SEEDREAM_PRO_ASPECT_RATIOS)[number];
+// Seed rejects normalized 2K landscape/portrait dimensions below 3,686,400px.
+// These are its canonical 2K presets and preserve the previous route's output
+// ratios without silently promoting every non-square request to 4K.
+const SEEDREAM_PRO_2K_SIZES: Record<SeedreamProAspectRatio, string> = {
+    "1:1": "2048x2048",
+    "4:3": "2304x1728",
+    "3:4": "1728x2304",
+    "16:9": "2560x1440",
+    "9:16": "1440x2560",
+    "3:2": "2496x1664",
+    "2:3": "1664x2496",
+    "21:9": "3024x1296",
+};
+type GeminiImageConfig = {
+    upstreamModel: string;
+    provider: string;
+    maxReferenceImages: number;
+    generator: string;
+    resolution: "none" | "tiered" | "1K";
+    reasoning: boolean;
+};
 const GEMINI_IMAGE_CONFIGS = {
     nanobanana: {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
         generator: "Vertex AI Gemini 2.5 Flash Image",
+        resolution: "none",
+        reasoning: false,
     },
-} as const;
+    "nanobanana-2": {
+        upstreamModel: "google/gemini-3.1-flash-image",
+        provider: "google-vertex/global",
+        maxReferenceImages: 14,
+        generator: "Vertex AI Gemini 3.1 Flash Image",
+        resolution: "tiered",
+        reasoning: true,
+    },
+    "nanobanana-2-lite": {
+        upstreamModel: "google/gemini-3.1-flash-lite-image",
+        provider: "google-vertex/global",
+        maxReferenceImages: 14,
+        generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
+        resolution: "1K",
+        reasoning: true,
+    },
+    "nanobanana-pro": {
+        upstreamModel: "google/gemini-3-pro-image",
+        provider: "google-ai-studio/global",
+        maxReferenceImages: 14,
+        generator: "Google AI Studio Gemini 3 Pro Image",
+        resolution: "tiered",
+        reasoning: false,
+    },
+} as const satisfies Record<string, GeminiImageConfig>;
 const GEMINI_ASPECT_RATIOS = [
     { ratio: 1, label: "1:1" },
     { ratio: 16 / 9, label: "16:9" },
@@ -61,6 +132,34 @@ interface OpenRouterImageUsage {
         reasoning_tokens?: number;
         image_tokens?: number;
     };
+}
+
+function requireOpenRouterImageApiKey(): string {
+    const apiKey = getImageEnv("OPENROUTER_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "OPENROUTER_API_KEY environment variable is required",
+            500,
+        );
+    }
+    return apiKey;
+}
+
+async function postOpenRouterImage(
+    apiKey: string,
+    requestBody: Record<string, unknown>,
+    errorLabel: string,
+): Promise<OpenRouterImageResponse> {
+    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        errorLabel,
+    });
+    return (await response.json()) as OpenRouterImageResponse;
 }
 
 function isTokenCount(value: unknown): value is number {
@@ -103,7 +202,7 @@ function buildOpenRouterNoImageError(data: OpenRouterImageResponse): HttpError {
         providerMessage ||
             (isContentRejection
                 ? "Image generation rejected by content policy"
-                : "OpenRouter Gemini image API returned no image"),
+                : "OpenRouter image API returned no image"),
         isContentRejection ? 400 : 502,
         data,
         OPENROUTER_IMAGE_URL,
@@ -156,18 +255,163 @@ export function mapOpenRouterGeminiImageUsage(
     return mapped;
 }
 
+function resolveGeminiImageResolution(
+    config: GeminiImageConfig,
+    safeParams: ImageParams,
+): "1K" | "2K" | "4K" | undefined {
+    if (config.resolution === "none") return undefined;
+    if (config.resolution === "1K") return "1K";
+
+    const totalPixels = safeParams.width * safeParams.height;
+    const tiers = [
+        { name: "1K" as const, pixels: 1024 * 1024 },
+        { name: "2K" as const, pixels: 1920 * 1080 },
+        { name: "4K" as const, pixels: 3840 * 2160 },
+    ];
+    return tiers.reduce((closest, tier) =>
+        Math.abs(tier.pixels - totalPixels) <
+        Math.abs(closest.pixels - totalPixels)
+            ? tier
+            : closest,
+    ).name;
+}
+
+function resolveGeminiReasoningEffort(
+    config: GeminiImageConfig,
+    safeParams: ImageParams,
+): "low" | "high" | undefined {
+    if (!config.reasoning || safeParams.reasoning === "balanced") {
+        return undefined;
+    }
+    return safeParams.reasoning === "fast" ? "low" : "high";
+}
+
+function resolveSeedreamProAspectRatio(
+    safeParams: ImageParams,
+    referenceDimensions?: { width: number; height: number },
+): SeedreamProAspectRatio | "auto" {
+    const requested = safeParams.aspectRatio;
+    if (!requested) {
+        if (referenceDimensions) {
+            return closestRatioLogSpace(
+                referenceDimensions.width,
+                referenceDimensions.height,
+                SEEDREAM_PRO_ASPECT_RATIOS,
+            );
+        }
+        return closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            SEEDREAM_PRO_ASPECT_RATIOS,
+        );
+    }
+    if (requested === "adaptive") {
+        if (!referenceDimensions) return "auto";
+        return closestRatioLogSpace(
+            referenceDimensions.width,
+            referenceDimensions.height,
+            SEEDREAM_PRO_ASPECT_RATIOS,
+        );
+    }
+    if (
+        requested === "9:21" ||
+        !(SEEDREAM_PRO_ASPECT_RATIOS as readonly string[]).includes(requested)
+    ) {
+        throw new HttpError(
+            `aspectRatio "${requested}" is not supported by Seedream 4.5. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
+            400,
+        );
+    }
+    return requested as SeedreamProAspectRatio;
+}
+
+export async function callOpenRouterSeedreamProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 14) {
+        throw new HttpError(
+            `Seedream 4.5 supports at most 14 reference images (received ${safeParams.image.length}).`,
+            400,
+        );
+    }
+
+    const apiKey = requireOpenRouterImageApiKey();
+
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const firstImage = downloadedImages[0];
+    // OpenRouter's "auto" currently defaults to square instead of matching a
+    // reference image, so derive the first reference's ratio as the old route did.
+    const referenceDimensions = firstImage
+        ? (readImageDimensions(firstImage.buffer, firstImage.mimeType) ??
+          undefined)
+        : undefined;
+    const inputReferences = downloadedImages.map((downloaded) => ({
+        type: "image_url",
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
+    }));
+
+    const aspectRatio = resolveSeedreamProAspectRatio(
+        safeParams,
+        referenceDimensions,
+    );
+    const use4K = Math.max(safeParams.width, safeParams.height) > 2048;
+    const requestBody: Record<string, unknown> = {
+        model: SEEDREAM_PRO_MODEL,
+        prompt,
+        n: 1,
+        ...(use4K
+            ? { resolution: "4K", aspect_ratio: aspectRatio }
+            : aspectRatio === "auto"
+              ? { resolution: "2K", aspect_ratio: "auto" }
+              : { size: SEEDREAM_PRO_2K_SIZES[aspectRatio] }),
+        provider: {
+            only: ["seed"],
+            allow_fallbacks: false,
+        },
+    };
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Seedream image generation request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    logOps("Seedream 4.5 Pro generation complete", {
+        referenceImages: safeParams.image.length,
+        providerUsage: data.usage,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "seedream-pro",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
+}
+
 export async function callOpenRouterGrokImagineProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
-
+    const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
@@ -188,16 +432,11 @@ export async function callOpenRouterGrokImagineProAPI(
         ];
     }
 
-    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "OpenRouter image generation request failed",
-    });
-    const data = (await response.json()) as OpenRouterImageResponse;
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter image generation request failed",
+    );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         throw new HttpError(
@@ -248,13 +487,7 @@ export async function callOpenRouterGeminiImageAPI(
         );
     }
 
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
+    const apiKey = requireOpenRouterImageApiKey();
 
     const requestBody: Record<string, unknown> = {
         model: config.upstreamModel,
@@ -271,6 +504,10 @@ export async function callOpenRouterGeminiImageAPI(
             allow_fallbacks: false,
         },
     };
+    const resolution = resolveGeminiImageResolution(config, safeParams);
+    if (resolution) requestBody.resolution = resolution;
+    const reasoningEffort = resolveGeminiReasoningEffort(config, safeParams);
+    if (reasoningEffort) requestBody.reasoning_effort = reasoningEffort;
 
     if (safeParams.image.length > 0) {
         const inputReferences = [];
@@ -283,16 +520,11 @@ export async function callOpenRouterGeminiImageAPI(
         requestBody.input_references = inputReferences;
     }
 
-    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "OpenRouter Gemini image generation request failed",
-    });
-    const data = (await response.json()) as OpenRouterImageResponse;
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Gemini image generation request failed",
+    );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         throw buildOpenRouterNoImageError(data);
@@ -332,6 +564,89 @@ export async function callOpenRouterGeminiImageAPI(
         trackingData: {
             actualModel: safeParams.model,
             usage,
+        },
+    };
+}
+
+export async function callOpenRouterRecraftVectorAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const referenceImage = safeParams.image?.[0];
+    const requestBody: Record<string, unknown> = {
+        model: RECRAFT_VECTOR_MODEL,
+        prompt,
+        n: 1,
+        provider: {
+            only: ["recraft"],
+            allow_fallbacks: false,
+        },
+    };
+
+    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+
+    if (referenceImage) {
+        requestBody.input_references = [
+            {
+                type: "image_url",
+                image_url: { url: referenceImage },
+            },
+        ];
+    }
+
+    let data: OpenRouterImageResponse;
+    try {
+        data = await postOpenRouterImage(
+            apiKey,
+            requestBody,
+            "OpenRouter vector generation request failed",
+        );
+    } catch (error) {
+        if (error instanceof HttpError && error.status === 429) {
+            throw new UpstreamError(429, {
+                message:
+                    "Recraft vector generation is at capacity. Please retry shortly.",
+                requestUrl: new URL(OPENROUTER_IMAGE_URL),
+                upstreamStatus: 429,
+                cause: error,
+            });
+        }
+        throw error;
+    }
+    const generatedImage = data.data?.[0];
+    if (!generatedImage?.b64_json) {
+        throw new HttpError(
+            "OpenRouter image API returned no vector",
+            502,
+            data,
+            OPENROUTER_IMAGE_URL,
+        );
+    }
+    if (generatedImage.media_type !== SVG_MEDIA_TYPE) {
+        throw new HttpError(
+            `OpenRouter image API returned unsupported media type: ${generatedImage.media_type || "missing"}`,
+            502,
+            data,
+            OPENROUTER_IMAGE_URL,
+        );
+    }
+
+    logOps("Recraft vector generation complete", {
+        edit: Boolean(referenceImage),
+        providerUsage: data.usage,
+    });
+
+    return {
+        buffer: base64ToBuffer(generatedImage.b64_json),
+        mimeType: SVG_MEDIA_TYPE,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "recraft-v4.1-vector",
+            // OpenRouter bills this endpoint a fixed $0.08 per output image.
+            usage: { completionImageTokens: 1 },
         },
     };
 }

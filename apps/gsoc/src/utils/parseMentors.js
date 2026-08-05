@@ -1,16 +1,9 @@
-import fm from "front-matter";
-export async function parseMentors(url = "/GSOC/MENTORS.md") {
-    const response = await fetch(url);
-    const text = await response.text();
+import { parseFrontmatterDocuments } from "./parseFrontmatterDocuments.js";
 
-    const regex = /---\n([\s\S]*?)\n---\n([\s\S]*?)(?=\n---\n|$)/g;
+export async function parseMentors(url = "/GSOC/MENTORS.md") {
     const mentors = [];
 
-    for (const match of text.matchAll(regex)) {
-        const [, yaml, body] = match;
-        const fmString = `---\n${yaml}\n---\n${body}`;
-        const { attributes } = fm(fmString);
-
+    for (const { attributes, body } of await parseFrontmatterDocuments(url)) {
         if (attributes.name) {
             mentors.push({
                 id: attributes.id,
@@ -25,7 +18,7 @@ export async function parseMentors(url = "/GSOC/MENTORS.md") {
                 linkedin: attributes.linkedin,
                 github: attributes.github,
                 email: attributes.email,
-                longDescription: body.trim(),
+                longDescription: body,
             });
         }
     }

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12968,
+  "title": "ci: simplify maintainer automation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12968",
+  "merged_at": "2026-08-05T07:43:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Simplifies code-indexer coordination, CodeQL compatibility, Tinybird query setup, project classification/backfills, app metrics, and app-review label handling.\n- Shares Buffer staging and Reddit VPS deployment between daily and weekly social publishers while keeping platform choices explicit.\n- Removes 163 net lines across 18 files without changing active success, failure, or skip behavior.\n\nSafety checks:\n- Updated cleanly to current `main`; final diff remains 18 files (+239/−402).\n- Verified all four app-review labels already exist with the expected definitions.\n- Proved app-metric helper output equivalence against `main` for empty, duplicate, and invalid-key rows.\n- Exercised classifier forwarding, code-indexer success/partial-failure behavior, social success/skip/exception paths, and Tinybird query arguments.\n- Passed Python compileall, actionlint, YAML alias parsing, shell syntax, Node syntax, Biome, stale-reference scan, and `git diff --check`.\n- Exact-head CI and all six current/legacy CodeQL matrix jobs pass.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less choreography, same dance",
+    "blurb": "The maintenance bees untangled a few workflow vines without changing where anything lands. Same checks, fewer moving parts, slightly less YAML folklore.",
+    "summary": "Simplified code-indexer coordination, CodeQL workflows, Tinybird query setup, project backfills, app metrics, review-label handling, and shared Buffer/Reddit publishing helpers while preserving existing success, failure, and skip behavior.",
+    "impact": "Maintainers get the same CI, app-review, metrics, and daily/weekly social publishing behavior with 163 fewer net lines to maintain.",
+    "keywords": [
+      "ci",
+      "automation",
+      "codeql",
+      "tinybird",
+      "app-metrics",
+      "social-publishing",
+      "maintenance"
+    ],
+    "visual_concept": "A cozy garden-shed control room where Polli tidies a tangled set of workflow vines into a few clean shared paths between two small retro publishing terminals labeled Daily and Weekly; a CRT monitor robot happily verifies that all indicator lights remain green. The visual metaphor is simplification without behavior change: fewer cables, the same destinations, with code-plants and Tinybird-style query scrolls nearby.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where the cute Polli bee mascot, wearing a tiny maintainer tool belt, gently organizes tangled workflow vines into neat shared cables connecting two retro terminals labeled “DAILY” and “WEEKLY”; a chunky CRT monitor robot watches green check lights while code-plants and a small query scroll grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, Polli has a yellow body with dark brown stripes, pink blush, light blue wings, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12968.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where the cute Polli bee mascot, wearing a tiny maintainer tool belt, gently organizes tangled workflow vines into neat shared cables connecting two retro terminals labeled “DAILY” and “WEEKLY”; a chunky CRT monitor robot watches green check lights while code-plants and a small query scroll grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, Polli has a yellow body with dark brown stripes, pink blush, light blue wings, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T07:44:21.061148+00:00"
+}

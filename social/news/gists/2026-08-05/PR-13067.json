@@ -1,0 +1,34 @@
+{
+  "pr_number": 13067,
+  "title": "fix: return 400 for Trellis validation errors",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13067",
+  "merged_at": "2026-08-05T00:28:18Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Maps InferencePort HTTP 400 and 422 validation failures to public HTTP 400 for Trellis.\n- Keeps authentication, routing, rate-limit, and upstream server failures on their existing paths.\n- Adds adapter and worker-level coverage proving invalid image dimensions no longer surface as 502.\n\n## Root cause\n\nThe InferencePort client mapped every upstream status except 402 and 429 to 502. InferencePort documents 422 as a request validation error and may return 400 for invalid image properties, so client mistakes polluted official model health.\n\n## Validation\n\n- `npx biome check --write` on changed files\n- `npx vitest run test/model3d` (32 tests)\n- `npm run typecheck`\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bad dimensions, honest answer",
+    "blurb": "Trellis now tells you when an image request needs fixing instead of blaming the whole hive. Invalid dimensions get a useful 400, while actual upstream trouble stays on its own path.",
+    "summary": "Trellis now maps InferencePort's 400 and 422 image-validation responses to public HTTP 400 responses instead of incorrectly returning 502.",
+    "impact": "Developers submitting invalid image dimensions receive a clear client-error response they can correct, while real auth, routing, rate-limit, and upstream failures keep their existing status handling.",
+    "keywords": [
+      "trellis",
+      "model3d",
+      "validation",
+      "http-400",
+      "inferenceport",
+      "error-handling"
+    ],
+    "visual_concept": "Polli acts as a careful workshop inspector beside a cozy 3D-model printer: a malformed pixel cube with mismatched dimensions is gently tagged \"400\" rather than triggering a dramatic broken-server alarm. A small CRT monitor robot displays a neat dimension ruler, with code-plants and flowers reinforcing that valid inputs grow into models.",
+    "image_prompt": "A cozy pixel art 3D-model workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue wings, and tiny engineer goggles, gently measures a wonky pixel cube beside a retro printer; a helpful CRT monitor robot shows a clear pixel-font \"400\" and a dimension ruler, while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13067.jpg",
+    "prompt": "A cozy pixel art 3D-model workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue wings, and tiny engineer goggles, gently measures a wonky pixel cube beside a retro printer; a helpful CRT monitor robot shows a clear pixel-font \"400\" and a dimension ruler, while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T00:29:25.420072+00:00"
+}

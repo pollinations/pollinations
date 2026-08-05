@@ -1,0 +1,36 @@
+{
+  "pr_number": 13089,
+  "title": "Add Sparkle Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13089",
+  "merged_at": "2026-08-05T07:06:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) to image\n- Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat\n\nFixes #12863",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Jewels, but make them sparkle",
+    "blurb": "Sparkle Studio joined the garden: draw a jewel, describe a jewel, then let AI give it the shiny treatment. Tiny designers now have a very serious jewelry workshop.",
+    "summary": "Added Sparkle Studio to the community app directory, a kid-friendly web app that turns jewelry sketches or descriptions into polished photorealistic renders using Pollinations.",
+    "impact": "People can now discover Sparkle Studio through Pollinations' app listings and turn rough jewelry ideas into sparkling rendered designs.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "jewelry",
+      "kids",
+      "creative-tools",
+      "sparkle-studio"
+    ],
+    "visual_concept": "Depict Sparkle Studio as a cozy tiny jewelry workbench: a child's crayon-like sketch of a necklace becomes a polished sparkling gem render on a retro monitor. Polli wears a miniature jeweler's loupe and carefully dusts glitter over the transformation, surrounded by pastel flowers and code-plants in lime green pots.",
+    "image_prompt": "A cozy pixel art jewelry workshop where Polli, the cute yellow striped bee mascot with pink blush, light blue wings, and a tiny jeweler's loupe, turns a childlike necklace sketch into a polished sparkling gem on a glowing retro CRT monitor. Lime green (#ecf874) flower pots hold little code-plants beside pastel gems and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “SPARKLE STUDIO”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13089.jpg",
+    "prompt": "A cozy pixel art jewelry workshop where Polli, the cute yellow striped bee mascot with pink blush, light blue wings, and a tiny jeweler's loupe, turns a childlike necklace sketch into a polished sparkling gem on a glowing retro CRT monitor. Lime green (#ecf874) flower pots hold little code-plants beside pastel gems and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “SPARKLE STUDIO”."
+  },
+  "generated_at": "2026-08-05T07:07:24.146994+00:00",
+  "app_name": "Sparkle Studio",
+  "app_url": "https://sparkle-studio-pollinations-a031.onbelmo.uk"
+}

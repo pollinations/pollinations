@@ -554,49 +554,44 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
 
-test.each(["gpt-realtime-2", "gpt-realtime-2.1"] as const)(
-    "bills %s cached image tokens at $0.50/M",
-    async (model) => {
-        const session = await openPaidRealtimeSession({
-            name: `${model}-cache-realtime-key`,
-            model,
-        });
+test.each([
+    "gpt-realtime-2",
+    "gpt-realtime-2.1",
+] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
+    const session = await openPaidRealtimeSession({
+        name: `${model}-cache-realtime-key`,
+        model,
+    });
 
-        for (let eventCount = 0; eventCount < 2; eventCount++) {
-            const forwardedEvent = nextMessage(session.client);
-            session.upstream.server.send(cachedModalityUsageEvent);
-            await expect(forwardedEvent).resolves.toBe(
-                cachedModalityUsageEvent,
-            );
-        }
+    for (let eventCount = 0; eventCount < 2; eventCount++) {
+        const forwardedEvent = nextMessage(session.client);
+        session.upstream.server.send(cachedModalityUsageEvent);
+        await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    }
 
-        const telemetry = await closeAndReadTelemetry(session);
+    const telemetry = await closeAndReadTelemetry(session);
 
-        const expectedCost = 0.0023975 * 2;
-        const expectedCharge = expectedCost * 0.75;
-        const user = await waitForPackBalanceBelow(session.userId, 1);
-        expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-        expect(telemetry.resolvedModelRequested).toBe(model);
-        expect(telemetry.tokenCountPromptText).toBe(60);
-        expect(telemetry.tokenCountPromptCached).toBe(60);
-        expect(telemetry.tokenCountPromptAudio).toBe(70);
-        expect(telemetry.tokenCountPromptImage).toBe(10);
-        expect(telemetry.tokenCountCompletionText).toBe(40);
-        expect(telemetry.tokenCountCompletionAudio).toBe(20);
-        expect(telemetry.adjustmentUnits).toEqual({
-            "openai.realtime.cached_image_delta.v1": 10,
-        });
-        const adjustmentCosts = telemetry.adjustmentCosts as Record<
-            string,
-            number
-        >;
-        expect(
-            adjustmentCosts["openai.realtime.cached_image_delta.v1"],
-        ).toBeCloseTo(0.000001, 12);
-        expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
-        expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
-    },
-);
+    const expectedCost = 0.0023975 * 2;
+    const expectedCharge = expectedCost * 0.75;
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(telemetry.resolvedModelRequested).toBe(model);
+    expect(telemetry.tokenCountPromptText).toBe(60);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountPromptAudio).toBe(70);
+    expect(telemetry.tokenCountPromptImage).toBe(10);
+    expect(telemetry.tokenCountCompletionText).toBe(40);
+    expect(telemetry.tokenCountCompletionAudio).toBe(20);
+    expect(telemetry.adjustmentUnits).toEqual({
+        "openai.realtime.cached_image_delta.v1": 10,
+    });
+    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
+    expect(
+        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+    ).toBeCloseTo(0.000001, 12);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+});
 
 test("bills mini cached audio and image tokens at their exact rates", async () => {
     const session = await openPaidRealtimeSession({

@@ -27,6 +27,8 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
 export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
+export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -289,6 +291,8 @@ export type CommunityEndpointRuntime = {
     // communityEndpointTitle() rather than using this directly.
     title: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -309,10 +313,17 @@ export type CommunityModelDefinitionInput = {
     modelId: string;
     title?: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
+
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -344,6 +355,24 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
     return token;
+}
+
+export function communityEndpointErrorDetail(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
+        "error" in body &&
+        body.error &&
+        typeof body.error === "object" &&
+        "message" in body.error &&
+        typeof body.error.message === "string"
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
 }
 
 export function isCommunityEndpointOwnerAllowed(
@@ -378,6 +407,18 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     url.search = "";
     url.hash = "";
     return url.toString().replace(/\/+$/, "");
+}
+
+export function normalizeCommunityProviderUrl(value: string): string {
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:") {
+        throw new Error("Provider URL must use https");
+    }
+    if (url.username || url.password) {
+        throw new Error("Provider URL cannot include credentials");
+    }
+    url.hash = "";
+    return url.toString();
 }
 
 export function normalizeCommunityAssetUrl(
@@ -488,10 +529,13 @@ export function communityModelDefinition(
         endpoint.inputModalities,
         modality,
     );
+    const providerName = endpoint.providerName?.trim();
+    const providerUrl = endpoint.providerUrl?.trim();
     return {
         aliases,
         provider: "community",
-        brand: "Community",
+        brand: providerName || "Community",
+        brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13064,
+  "title": "fix: qualify filtered usage pipe columns",
+  "author": "g33ky00",
+  "url": "https://github.com/pollinations/pollinations/pull/13064",
+  "merged_at": "2026-08-05T15:12:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #13061.\n\n- Qualifies the `api_key_id` and `resolved_model` filters against the source table so ClickHouse does not resolve them to the inner `any(...)` aliases inside `WHERE`.\n- Keeps the existing API-key auth path; #12924 already guarantees that an authenticated key carries its owning user.\n- Preserves unfiltered account usage and fixes filtered key/model usage through the same Tinybird pipe.\n\nRoot-cause verification:\n\n- `/account/key` returns 200 for the reporter's auth shape.\n- `/account/usage` returns 200 without a key filter.\n- `/account/key/usage` reaches Tinybird and returns 500.\n- The equivalent direct filtered pipe request returns Tinybird 400 `ILLEGAL_AGGREGATION`, identifying `any(api_key_id)` in `WHERE`.\n\nValidation: current-main merge is clean and `git diff --check` passes. The two-line pipe change still needs the normal staging-first Tinybird deployment after merge.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Usage filters stop buzzing",
+    "blurb": "Filtered API-key and model usage found their way through the pipe again. Polli put the column labels back on their proper shelves, and ClickHouse stopped arguing with its own aliases.",
+    "summary": "Qualified `api_key_id` and `resolved_model` filters in the Tinybird activity-usage pipe so filtered `/account/key/usage` and model usage queries no longer hit ClickHouse `ILLEGAL_AGGREGATION` errors.",
+    "impact": "Developers can now retrieve usage for a specific API key or resolved model through the existing account usage endpoints, while unfiltered account usage continues to work as before.",
+    "keywords": [
+      "usage",
+      "api-keys",
+      "Tinybird",
+      "ClickHouse",
+      "observability",
+      "account-api"
+    ],
+    "visual_concept": "A cozy observability pipe system where Polli, wearing a tiny plumber tool belt, carefully attaches clear labels for `api_key_id` and `resolved_model` to two glowing data pipes. A cheerful CRT monitor robot watches filtered usage droplets flow cleanly into a small dashboard, with code-plants and flowers growing around the pipework.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, labeling two glowing data pipes `api_key_id` and `resolved_model` as clean usage droplets flow into a retro terminal dashboard; a happy CRT monitor robot holds a wrench beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13064.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, labeling two glowing data pipes `api_key_id` and `resolved_model` as clean usage droplets flow into a retro terminal dashboard; a happy CRT monitor robot holds a wrench beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T15:13:13.382631+00:00"
+}

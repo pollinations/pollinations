@@ -72,7 +72,7 @@ const formatAdjustmentUnit = ({
     "label" | "kind" | "quantity" | "unit" | "suffix"
 >): string => {
     const quantityLabel = compactNumber.format(quantity);
-    if (label === "Search") return `${quantityLabel} REQ`;
+    if (label === "Search") return `${quantityLabel} request`;
     if (kind === "cache_storage") return `${quantityLabel} tokens`;
     return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
 };

@@ -4,6 +4,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     CSM_VOICES,
+    KOKORO_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -34,6 +35,10 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import {
+    type FallbackCandidate,
+    withModelFallbackResponse,
+} from "../fallback.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
 
@@ -58,7 +63,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -156,6 +161,19 @@ const CreateDialogueRequestSchema = z
     .meta({ $id: "CreateDialogueRequest" });
 
 type AudioContext = Context<Env>;
+
+async function withAudioFallback(
+    c: AudioContext,
+    attempt: (candidate: FallbackCandidate) => Promise<Response>,
+): Promise<Response> {
+    const { response, servedEntry } = await withModelFallbackResponse(
+        c.var.model,
+        attempt,
+        c.var.track?.failedCalls,
+    );
+    if (servedEntry) c.set("servedModelEntry", servedEntry);
+    return response;
+}
 type SimpleAudioQuery = {
     safe?: SafeValue;
     duration?: number;
@@ -1224,8 +1242,33 @@ const QWEN_TTS_ENDPOINT =
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
-const DEEPINFRA_CSM_MODEL_ID = "sesame/csm-1b";
-const CSM_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+const DEEPINFRA_TTS_CONFIGS = {
+    "csm-1b": {
+        modelId: "sesame/csm-1b",
+        voices: CSM_VOICES,
+        defaultVoice: "conversational_a",
+        maxCharacters: 200,
+    },
+    kokoro: {
+        modelId: "hexgrad/Kokoro-82M",
+        voices: KOKORO_VOICES,
+        defaultVoice: "af_alloy",
+        maxCharacters: 10_000,
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            voices: readonly string[];
+            defaultVoice: string;
+            maxCharacters: number;
+        }
+    >
+>;
+
+type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
 
 const QWEN_TTS_MODEL_IDS = {
     "qwen-tts": "qwen3-tts-flash",
@@ -1624,49 +1667,56 @@ export async function generateQwenTts(opts: {
     });
 }
 
-export async function generateCsmSpeech(opts: {
+export async function generateDeepInfraSpeech(opts: {
+    modelName: DeepInfraTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, responseFormat, apiKey, log } = opts;
+    const { modelName, text, responseFormat, apiKey, log } = opts;
+    const config = DEEPINFRA_TTS_CONFIGS[modelName];
+    const inputCharacters = [...text].length;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "CSM speech is not configured (missing DEEPINFRA_API_KEY)",
+            message: `${modelName} speech is not configured (missing DEEPINFRA_API_KEY)`,
         });
     }
 
-    if (text.length > 200) {
+    if (inputCharacters > config.maxCharacters) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 200.`,
+            message: `Input text too long: ${inputCharacters} characters. Maximum is ${config.maxCharacters}.`,
         });
     }
 
-    const voice = opts.voice === "alloy" ? "conversational_a" : opts.voice;
-    if (!CSM_VOICES.includes(voice as (typeof CSM_VOICES)[number])) {
+    const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
+    if (!(config.voices as readonly string[]).includes(voice)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for csm-1b: ${opts.voice}. Supported voices: ${CSM_VOICES.join(", ")}.`,
+            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
         });
     }
 
     if (
-        !CSM_AUDIO_FORMATS.includes(
-            responseFormat as (typeof CSM_AUDIO_FORMATS)[number],
+        !DEEPINFRA_AUDIO_FORMATS.includes(
+            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
         )
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for csm-1b: ${responseFormat}. Supported formats: ${CSM_AUDIO_FORMATS.join(", ")}.`,
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
         });
     }
 
-    log.info("CSM request: voice={voice}, format={format}, chars={chars}", {
-        voice,
-        format: responseFormat,
-        chars: text.length,
-    });
+    log.info(
+        "DeepInfra TTS request: model={model}, voice={voice}, format={format}, chars={chars}",
+        {
+            model: config.modelId,
+            voice,
+            format: responseFormat,
+            chars: inputCharacters,
+        },
+    );
 
     const response = await ensureUpstreamOk(
         await fetch(DEEPINFRA_TTS_ENDPOINT, {
@@ -1676,7 +1726,7 @@ export async function generateCsmSpeech(opts: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: DEEPINFRA_CSM_MODEL_ID,
+                model: config.modelId,
                 input: text,
                 voice,
                 response_format: responseFormat,
@@ -1686,11 +1736,14 @@ export async function generateCsmSpeech(opts: {
     );
 
     const usageHeaders = {
-        ...buildUsageHeaders("csm-1b", createAudioTokenUsage(text.length)),
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(inputCharacters)),
         "x-tts-voice": voice,
     };
 
-    log.info("CSM success: {chars} characters", { chars: text.length });
+    log.info("DeepInfra TTS success: model={model}, chars={chars}", {
+        model: config.modelId,
+        chars: inputCharacters,
+    });
 
     return new Response(response.body, {
         status: 200,
@@ -2011,6 +2064,7 @@ export async function generateStableAudio3Large(opts: {
 
 async function dispatchAudioGeneration(
     c: AudioContext,
+    model: string,
     opts: {
         text: string;
         voice: string;
@@ -2063,7 +2117,7 @@ async function dispatchAudioGeneration(
         log,
     } = opts;
 
-    if (c.var.model.resolved === "elevenmusic") {
+    if (model === "elevenmusic") {
         return withSafetyHeaders(
             c,
             await generateMusic({
@@ -2082,7 +2136,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "lyria-3-clip") {
+    if (model === "lyria-3-clip") {
         const googleEnvKeys = [
             "GOOGLE_PRIVATE_KEY",
             "GOOGLE_PRIVATE_KEY_ID",
@@ -2107,7 +2161,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "stable-audio-3-medium") {
+    if (model === "stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Medium({
@@ -2122,7 +2176,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "stable-audio-3-large") {
+    if (model === "stable-audio-3-large") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Large({
@@ -2139,7 +2193,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "eleven-sfx") {
+    if (model === "eleven-sfx") {
         return withSafetyHeaders(
             c,
             await generateSoundEffect({
@@ -2154,14 +2208,14 @@ async function dispatchAudioGeneration(
         );
     }
 
-    switch (c.var.model.resolved) {
+    switch (model) {
         case "elevenlabs":
         case "elevenflash":
         case "eleven-multilingual-v2":
             return withSafetyHeaders(
                 c,
                 await generateElevenLabsSpeech({
-                    modelName: c.var.model.resolved,
+                    modelName: model,
                     text,
                     voice,
                     responseFormat,
@@ -2175,7 +2229,7 @@ async function dispatchAudioGeneration(
             return withSafetyHeaders(
                 c,
                 await generateQwenTts({
-                    modelName: c.var.model.resolved,
+                    modelName: model,
                     text,
                     voice,
                     instruct,
@@ -2184,9 +2238,11 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "csm-1b":
+        case "kokoro":
             return withSafetyHeaders(
                 c,
-                await generateCsmSpeech({
+                await generateDeepInfraSpeech({
+                    modelName: model,
                     text,
                     voice,
                     responseFormat,
@@ -2196,7 +2252,7 @@ async function dispatchAudioGeneration(
             );
         default:
             throw new UpstreamError(500 as ContentfulStatusCode, {
-                message: `No audio provider route configured for model: ${c.var.model.resolved}`,
+                message: `No audio provider route configured for model: ${model}`,
             });
     }
 }
@@ -2224,26 +2280,28 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
 
     // Only the GET query schema permits the -1 "random seed" sentinel; map it to
     // undefined here so the generators only ever see a real seed or none.
-    return dispatchAudioGeneration(c, {
-        text,
-        voice: query.voice,
-        responseFormat: query.response_format,
-        seed: query.seed === -1 ? undefined : query.seed,
-        duration: query.duration,
-        seconds: query.seconds,
-        steps: query.steps,
-        negativePrompt: query.negative_prompt,
-        instrumental: query.instrumental,
-        instruct: query.instruct,
-        loop: query.loop,
-        promptInfluence: query.prompt_influence,
-        apiKey,
-        dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-        deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-        falKey: c.env.FAL_KEY,
-        stabilityApiKey: c.env.STABILITY_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, (candidate) =>
+        dispatchAudioGeneration(c, candidate.id, {
+            text,
+            voice: query.voice,
+            responseFormat: query.response_format,
+            seed: query.seed === -1 ? undefined : query.seed,
+            duration: query.duration,
+            seconds: query.seconds,
+            steps: query.steps,
+            negativePrompt: query.negative_prompt,
+            instrumental: query.instrumental,
+            instruct: query.instruct,
+            loop: query.loop,
+            promptInfluence: query.prompt_influence,
+            apiKey,
+            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            falKey: c.env.FAL_KEY,
+            stabilityApiKey: c.env.STABILITY_API_KEY,
+            log,
+        }),
+    );
 }
 
 export const audioRoutes = new Hono<Env>()
@@ -2747,31 +2805,33 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
-            return dispatchAudioGeneration(c, {
-                text: safeInput,
-                voice,
-                responseFormat: response_format,
-                seed,
-                duration,
-                seconds,
-                steps,
-                negativePrompt: negative_prompt,
-                instrumental,
-                storeForInpainting: store_for_inpainting,
-                extractCompositionPlan: extract_composition_plan,
-                conditioningRef: conditioning_ref,
-                compositionPlan: composition_plan,
-                referenceAudio: reference_audio,
-                instruct,
-                loop,
-                promptInfluence: prompt_influence,
-                apiKey,
-                dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-                deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-                falKey: c.env.FAL_KEY,
-                stabilityApiKey: c.env.STABILITY_API_KEY,
-                log,
-            });
+            return withAudioFallback(c, (candidate) =>
+                dispatchAudioGeneration(c, candidate.id, {
+                    text: safeInput,
+                    voice,
+                    responseFormat: response_format,
+                    seed,
+                    duration,
+                    seconds,
+                    steps,
+                    negativePrompt: negative_prompt,
+                    instrumental,
+                    storeForInpainting: store_for_inpainting,
+                    extractCompositionPlan: extract_composition_plan,
+                    conditioningRef: conditioning_ref,
+                    compositionPlan: composition_plan,
+                    referenceAudio: reference_audio,
+                    instruct,
+                    loop,
+                    promptInfluence: prompt_influence,
+                    apiKey,
+                    dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                    deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+                    falKey: c.env.FAL_KEY,
+                    stabilityApiKey: c.env.STABILITY_API_KEY,
+                    log,
+                }),
+            );
         },
     )
     .post(
@@ -2910,15 +2970,17 @@ export const audioRoutes = new Hono<Env>()
             }
             const safeInput = await applySafety(c, input, safe);
 
-            return generateElevenLabsSpeechWithTimestamps({
-                modelName: modelName as ElevenLabsTtsModelName,
-                text: safeInput,
-                voice,
-                responseFormat: response_format,
-                seed,
-                apiKey: c.env.ELEVENLABS_API_KEY,
-                log,
-            });
+            return withAudioFallback(c, (candidate) =>
+                generateElevenLabsSpeechWithTimestamps({
+                    modelName: candidate.id as ElevenLabsTtsModelName,
+                    text: safeInput,
+                    voice,
+                    responseFormat: response_format,
+                    seed,
+                    apiKey: c.env.ELEVENLABS_API_KEY,
+                    log,
+                }),
+            );
         },
     )
     .post(
@@ -3088,110 +3150,89 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Route to ElevenLabs Scribe or Whisper based on model
-            if (c.var.model.resolved === "scribe") {
-                const elevenLabsApiKey = (
-                    c.env as unknown as { ELEVENLABS_API_KEY: string }
-                ).ELEVENLABS_API_KEY;
-                const response = await transcribeWithElevenLabs({
-                    file,
-                    language: language || undefined,
-                    responseFormat: responseFormat || undefined,
-                    apiKey: elevenLabsApiKey,
-                    log,
-                    numSpeakers: speakersExpected,
-                });
+            const result = await withAudioFallback(c, async (candidate) => {
+                if (candidate.id === "scribe") {
+                    return transcribeWithElevenLabs({
+                        file,
+                        language: language || undefined,
+                        responseFormat: responseFormat || undefined,
+                        apiKey: c.env.ELEVENLABS_API_KEY,
+                        log,
+                        numSpeakers: speakersExpected,
+                    });
+                }
 
-                // Override tracking with final response
-                c.var.track.overrideResponseTracking(response.clone());
-                return response;
-            }
+                if (
+                    candidate.id === "universal-2" ||
+                    candidate.id === "universal-3.5-pro"
+                ) {
+                    return transcribeWithAssemblyAi({
+                        file,
+                        language: language || undefined,
+                        prompt: prompt || undefined,
+                        responseFormat: responseFormat || undefined,
+                        temperature,
+                        model: candidate.id,
+                        apiKey: (
+                            c.env as unknown as {
+                                ASSEMBLYAI_API_KEY: string;
+                            }
+                        ).ASSEMBLYAI_API_KEY,
+                        log,
+                        speakersExpected,
+                    });
+                }
 
-            if (
-                c.var.model.resolved === "universal-2" ||
-                c.var.model.resolved === "universal-3.5-pro"
-            ) {
-                const assemblyAiApiKey = (
-                    c.env as unknown as { ASSEMBLYAI_API_KEY: string }
-                ).ASSEMBLYAI_API_KEY;
-                const response = await transcribeWithAssemblyAi({
-                    file,
-                    language: language || undefined,
-                    prompt: prompt || undefined,
-                    responseFormat: responseFormat || undefined,
-                    temperature,
-                    model: c.var.model.resolved,
-                    apiKey: assemblyAiApiKey,
-                    log,
-                    speakersExpected,
-                });
+                const ovhApiKey = c.env.OVHCLOUD_API_KEY;
+                if (!ovhApiKey) {
+                    throw new UpstreamError(500 as ContentfulStatusCode, {
+                        message:
+                            "Transcription service is not configured (missing API key)",
+                    });
+                }
+                validateWhisperResponseFormat(responseFormat);
 
-                c.var.track.overrideResponseTracking(response.clone());
-                return response;
-            }
+                // Rebuild the consumed multipart body for each upstream attempt.
+                const whisperFormData = new FormData();
+                const filename =
+                    file.name && file.name !== "blob" ? file.name : "audio.mp3";
+                whisperFormData.append("file", file, filename);
+                if (language) whisperFormData.append("language", language);
+                whisperFormData.append("response_format", "verbose_json");
+                whisperFormData.append("model", "whisper-large-v3");
+                whisperFormData.append("timestamp_granularities[]", "word");
 
-            // Default: Whisper (OVHcloud)
-            const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-            if (!ovhApiKey) {
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message:
-                        "Transcription service is not configured (missing API key)",
-                });
-            }
-            validateWhisperResponseFormat(responseFormat);
+                const whisperUrl =
+                    "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+                const response = await ensureUpstreamOk(
+                    await fetch(whisperUrl, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${ovhApiKey}` },
+                        body: whisperFormData,
+                    }),
+                    whisperUrl,
+                );
 
-            // Re-build formData for Whisper (Hono consumed the original body stream).
-            // Preserve filename — OVH needs the extension to detect format/duration.
-            const whisperFormData = new FormData();
-            const filename =
-                file.name && file.name !== "blob" ? file.name : "audio.mp3";
-            whisperFormData.append("file", file, filename);
-            if (language) whisperFormData.append("language", language);
-            // Always request verbose_json from OVH so usage.seconds (billing) and
-            // segments (srt/vtt) are present; reformat locally to the caller's
-            // requested response_format below. Forwarding e.g. `text` upstream
-            // would return a plain-text body and lose the usage object.
-            whisperFormData.append("response_format", "verbose_json");
-            whisperFormData.append("model", "whisper-large-v3");
-            whisperFormData.append("timestamp_granularities[]", "word");
-
-            // Thin proxy to OVHcloud Whisper
-            const whisperUrl =
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
-            const rawResponse = await fetch(whisperUrl, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${ovhApiKey}`,
-                },
-                body: whisperFormData,
+                let whisper: WhisperVerboseJson;
+                try {
+                    whisper = JSON.parse(await response.text());
+                } catch {
+                    throw new UpstreamError(502 as ContentfulStatusCode, {
+                        message:
+                            "Whisper returned an unexpected (non-JSON) response",
+                    });
+                }
+                const usageHeaders = buildUsageHeaders(
+                    candidate.id,
+                    createAudioSecondsUsage(extractWhisperUsage(whisper, log)),
+                );
+                return formatWhisperResponse(
+                    whisper,
+                    responseFormat,
+                    usageHeaders,
+                );
             });
-            const response = await ensureUpstreamOk(rawResponse, whisperUrl);
-
-            // OVH always returns verbose_json now; parse once, bill from it, then
-            // reformat to the caller's requested format.
-            const responseBody = await response.text();
-            let whisper: WhisperVerboseJson;
-            try {
-                whisper = JSON.parse(responseBody);
-            } catch {
-                throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message:
-                        "Whisper returned an unexpected (non-JSON) response",
-                });
-            }
-            const duration = extractWhisperUsage(whisper, log);
-            const usageHeaders = buildUsageHeaders(
-                c.var.model.resolved,
-                createAudioSecondsUsage(duration),
-            );
-
-            const result = formatWhisperResponse(
-                whisper,
-                responseFormat,
-                usageHeaders,
-            );
             c.var.track.overrideResponseTracking(result.clone());
-
             return result;
         },
     );

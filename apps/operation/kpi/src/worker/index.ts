@@ -16,9 +16,6 @@ type Env = {
     TINYBIRD_READ_TOKEN: string;
     TINYBIRD_API: string;
     GITHUB_TOKEN?: string;
-    GITHUB_APP_ID?: string;
-    GITHUB_APP_PRIVATE_KEY?: string;
-    GITHUB_APP_INSTALLATION_ID?: string;
     GITHUB_REPO: string;
     DASHBOARD_PASSWORD?: string;
     __STATIC_CONTENT: KVNamespace;
@@ -386,99 +383,20 @@ app.get("/api/kpi/user-segments", async (c) => {
     return c.json({ data: result.data });
 });
 
-// GitHub App JWT auth for higher rate limits (15k/hr vs 5k/hr)
-// Falls back to GITHUB_TOKEN (PAT) if app credentials aren't configured
-async function getGitHubToken(env: Env): Promise<string | null> {
-    // Try GitHub App auth first
-    if (
-        env.GITHUB_APP_ID &&
-        env.GITHUB_APP_PRIVATE_KEY &&
-        env.GITHUB_APP_INSTALLATION_ID
-    ) {
-        try {
-            const now = Math.floor(Date.now() / 1000);
-            const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }))
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-            const payload = btoa(
-                JSON.stringify({
-                    iat: now - 30,
-                    exp: now + 600,
-                    iss: env.GITHUB_APP_ID,
-                }),
-            )
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-
-            // Import RSA private key for signing
-            const pemBody = env.GITHUB_APP_PRIVATE_KEY.replace(
-                /-----BEGIN RSA PRIVATE KEY-----/,
-                "",
-            )
-                .replace(/-----END RSA PRIVATE KEY-----/, "")
-                .replace(/\s/g, "");
-            const binaryKey = Uint8Array.from(atob(pemBody), (c) =>
-                c.charCodeAt(0),
-            );
-            const cryptoKey = await crypto.subtle.importKey(
-                "pkcs8",
-                binaryKey,
-                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-                false,
-                ["sign"],
-            );
-
-            const sigData = new TextEncoder().encode(`${header}.${payload}`);
-            const signature = await crypto.subtle.sign(
-                "RSASSA-PKCS1-v1_5",
-                cryptoKey,
-                sigData,
-            );
-            const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-
-            const jwtToken = `${header}.${payload}.${sig}`;
-
-            // Exchange JWT for installation token
-            const res = await fetch(
-                `https://api.github.com/app/installations/${env.GITHUB_APP_INSTALLATION_ID}/access_tokens`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${jwtToken}`,
-                        Accept: "application/vnd.github+json",
-                        "User-Agent": "KPI-Dashboard",
-                    },
-                },
-            );
-
-            if (res.ok) {
-                const data = (await res.json()) as { token: string };
-                return data.token;
-            }
-            console.error(`[GitHub App] Token exchange failed: ${res.status}`);
-        } catch (e) {
-            console.error(
-                `[GitHub App] Auth failed, falling back to PAT: ${e}`,
-            );
-        }
-    }
-
-    return env.GITHUB_TOKEN || null;
-}
-
-// GitHub: App submissions — weekly counts from issue labels
-app.get("/api/kpi/app-submissions", async (c) => {
-    const token = await getGitHubToken(c.env);
+function githubHeaders(env: Env): Record<string, string> {
     const headers: Record<string, string> = {
         "User-Agent": "KPI-Dashboard",
         Accept: "application/vnd.github+json",
     };
-    if (token) headers.Authorization = `token ${token}`;
+    if (env.GITHUB_TOKEN) {
+        headers.Authorization = `token ${env.GITHUB_TOKEN}`;
+    }
+    return headers;
+}
+
+// GitHub: App submissions — weekly counts from issue labels
+app.get("/api/kpi/app-submissions", async (c) => {
+    const headers = githubHeaders(c.env);
 
     const repo = c.env.GITHUB_REPO;
     const since = DATA_START_DATE;
@@ -515,13 +433,7 @@ app.get("/api/kpi/app-submissions", async (c) => {
 
 // GitHub: Stars
 app.get("/api/kpi/github", async (c) => {
-    const token = await getGitHubToken(c.env);
-    const headers: Record<string, string> = {
-        "User-Agent": "KPI-Dashboard",
-    };
-    if (token) {
-        headers.Authorization = `token ${token}`;
-    }
+    const headers = githubHeaders(c.env);
 
     const res = await fetch(
         `https://api.github.com/repos/${c.env.GITHUB_REPO}`,

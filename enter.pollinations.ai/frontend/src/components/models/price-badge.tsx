@@ -62,11 +62,20 @@ const PRICE_LEDGER_UNIT: Record<
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
 
 const formatAdjustmentUnit = ({
+    label,
+    kind,
     quantity,
     unit,
     suffix,
-}: Pick<ModelPriceAdjustment, "quantity" | "unit" | "suffix">): string =>
-    `${compactNumber.format(quantity)} ${unit}${suffix ? ` · ${suffix}` : ""}`;
+}: Pick<
+    ModelPriceAdjustment,
+    "label" | "kind" | "quantity" | "unit" | "suffix"
+>): string => {
+    const quantityLabel = compactNumber.format(quantity);
+    if (label === "Search") return `${quantityLabel} REQ`;
+    if (kind === "cache_storage") return `${quantityLabel} tokens`;
+    return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
+};
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
     subKinds: PriceKind[];
@@ -353,7 +362,7 @@ export const ModelPricingLedger: FC<{
                             </span>
                             <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-theme-text-strong">
                                 {formatDisplayPrice(adjustment.price).value}{" "}
-                                <span className="text-xs font-normal text-theme-text-muted">
+                                <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
                                     /{formatAdjustmentUnit(adjustment)}
                                 </span>
                             </span>

@@ -130,7 +130,7 @@ Spawns the server over stdio, lists tools, and exercises a small live slice (aut
 
 ## System Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 
 ## API Reference
 

@@ -106,6 +106,13 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
             .filter((id) => id.length > 0);
     }
 
+    if (opts.inputModalities !== undefined) {
+        body.inputModalities = String(opts.inputModalities)
+            .split(",")
+            .map((modality) => modality.trim())
+            .filter((modality) => modality.length > 0);
+    }
+
     if (includeRequired) {
         for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
@@ -178,6 +185,10 @@ const create = addPriceOptions(
         .option(
             "--fallback-models <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -214,6 +225,10 @@ const update = addPriceOptions(
         .option(
             "--fallback-models <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();

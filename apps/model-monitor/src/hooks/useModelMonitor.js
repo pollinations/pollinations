@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
@@ -62,7 +62,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [endpointStatus, setEndpointStatus] = useState({
         catalog: null,
     });
-    const intervalRef = useRef(null);
     const error = healthError || catalogError;
 
     // Fetch model list from gen.pollinations.ai
@@ -215,29 +214,10 @@ export function useModelMonitor(aggregationWindow = "60m") {
         fetchHealthStats();
     }, [fetchModels, fetchHealthStats]);
 
-    // Initial fetch
     useEffect(() => {
         refresh();
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [refresh]);
-
-    // Polling - always active
-    useEffect(() => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-        }
-
-        intervalRef.current = setInterval(refresh, pollInterval);
-
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
+        const interval = setInterval(refresh, pollInterval);
+        return () => clearInterval(interval);
     }, [refresh, pollInterval]);
 
     return {

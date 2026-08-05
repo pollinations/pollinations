@@ -6,6 +6,41 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("uses a configured service-binding fetcher", async () => {
+        const fetcher = vi.fn(async () =>
+            Response.json({
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        const globalFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("unexpected public fetch"));
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://portkey.myceli.ai/v1/chat/completions",
+                fetcher,
+            },
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(fetcher).toHaveBeenCalledWith(
+            "https://portkey.myceli.ai/v1/chat/completions",
+            expect.objectContaining({ method: "POST" }),
+        );
+        expect(globalFetch).not.toHaveBeenCalled();
+        expect(completion.choices?.[0]?.message?.content).toBe("ok");
+    });
+
     it("normalizes provider stop to length at the configured token limit", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 
@@ -425,19 +460,22 @@ describe("genericOpenAIClient", () => {
     it.each([
         '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
         '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',
-    ])("maps malformed media in a successful error envelope to 400: %s", async (message) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: { message } }),
-        );
+    ])(
+        "maps malformed media in a successful error envelope to 400: %s",
+        async (message) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({ error: { message } }),
+            );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-    });
+            await expect(
+                genericOpenAIClient(
+                    [{ role: "user", content: "hello" }],
+                    { model: "provider-model" },
+                    { endpoint: "https://portkey.test/chat" },
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+        },
+    );
 
     it("maps invalid upstream JSON to 502 with gateway context", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

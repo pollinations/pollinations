@@ -1,0 +1,34 @@
+{
+  "pr_number": 12974,
+  "title": "refactor: simplify Polli internals and integrations",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12974",
+  "merged_at": "2026-08-05T07:56:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes GitHub App, PAT, and project-PAT selection while preserving App-first behavior and project diagnostics.\n- Normalizes webhook mention actors and routes five single-URL scrape actions through one dispatcher without changing options, errors, or fallbacks.\n- Removes unused AI-client formatters plus legacy prompt, attachment, and data-visualization aliases; the active `render_visual` path is unchanged.\n- Extracts Discord thread media once and passes separated image, video, and file lists into the existing processing path.\n- Removes 172 net lines across 12 Polli files.\n\nValidation:\n- Merged current `main` without conflicts; no newer main commit touched `apps/polli`.\n- Polli unittest discovery: 7 passed.\n- Ruff lint, Python compile, diff checks, and removed-symbol repository scans passed.\n- Side-by-side behavior matrices passed for GitHub auth selection (5 configurations), scraper dispatch (21 scenarios), and webhook contexts/prompts (5 event families).\n- Previous head passed both CI / Pull request checks and CI / CodeQL; fresh exact-head checks are required before merge.",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli sheds some exoskeleton",
+    "blurb": "Polli's wiring got a careful tidy: fewer old aliases, one path for scrapes, and GitHub credentials chosen in one place. Same helpful bot, less attic.",
+    "summary": "Refactored the Polli app by centralizing GitHub App/PAT/project-PAT selection, routing five single-URL scraper actions through one dispatcher, and removing 172 net lines of unused AI and integration code while preserving existing behavior.",
+    "impact": "Polli keeps its App-first GitHub authentication, scraper options and fallbacks, and Discord media-processing behavior, with simpler internals for future changes.",
+    "keywords": [
+      "polli",
+      "refactor",
+      "github-auth",
+      "web-scraper",
+      "discord",
+      "integrations"
+    ],
+    "visual_concept": "Depict Polli as a careful maintainer in a cozy garden-shed workshop, sorting several GitHub credential keys into one labeled toolbox while a single irrigation pipe feeds five small URL-shaped code-plants. A retro terminal and neatly bundled Discord image, video, and file sprites suggest consolidated integrations; the scene should communicate cleanup without implying a user-visible feature change.",
+    "image_prompt": "A cozy pixel art garden-shed workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt and neatly sorts GitHub key tokens into one toolbox beside five URL-shaped code-plants fed by one pipe. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, retro terminal glow, tiny flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12974.jpg",
+    "prompt": "A cozy pixel art garden-shed workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt and neatly sorts GitHub key tokens into one toolbox beside five URL-shaped code-plants fed by one pipe. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, retro terminal glow, tiny flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T07:57:39.567956+00:00"
+}

@@ -262,11 +262,48 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
     return buffer; // no data chunk found
 }
 
+async function buildElevenLabsAudioResponse(
+    response: Response,
+    responseFormat: string,
+    headers: Record<string, string>,
+): Promise<Response> {
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    // ElevenLabs streams WAV with placeholder RIFF sizes, so WAV must be
+    // buffered and repaired. Other formats keep streaming from upstream.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...headers,
+            },
+        });
+    }
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...headers,
+        },
+    });
+}
+
 const ELEVENLABS_TTS_MODEL_IDS = {
     elevenlabs: "eleven_v3",
     elevenflash: "eleven_flash_v2_5",
     "eleven-multilingual-v2": "eleven_multilingual_v2",
 } as const satisfies Partial<Record<AudioModelName, string>>;
+
+const ELEVENLABS_TTS_VOICE_SETTINGS = {
+    stability: 0.5,
+    similarity_boost: 0.75,
+    style: 0.0,
+    use_speaker_boost: true,
+} as const;
 
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
@@ -314,19 +351,12 @@ export async function generateElevenLabsSpeech(opts: {
 
     const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
 
-    const elevenLabsBody: Record<string, unknown> = {
+    const elevenLabsBody = {
         text,
         model_id: modelId,
-        voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.0,
-            use_speaker_boost: true,
-        },
+        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        ...(opts.seed === undefined ? {} : { seed: opts.seed }),
     };
-    if (opts.seed !== undefined) {
-        elevenLabsBody.seed = opts.seed;
-    }
 
     const rawResponse = await fetch(elevenLabsUrl, {
         method: "POST",
@@ -339,8 +369,6 @@ export async function generateElevenLabsSpeech(opts: {
     });
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-
     const usageHeaders = {
         ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
         "x-tts-voice": voice,
@@ -348,28 +376,7 @@ export async function generateElevenLabsSpeech(opts: {
 
     log.info("TTS success: {chars} characters", { chars: text.length });
 
-    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
-    // which requires buffering the body. Audio is small (input capped at 10000
-    // chars) so this is cheap; all other formats keep streaming.
-    if (responseFormat === "wav") {
-        const audioBuffer = fixWavHeader(await response.arrayBuffer());
-        return new Response(audioBuffer, {
-            status: 200,
-            headers: {
-                "Content-Type": contentType,
-                "Content-Length": String(audioBuffer.byteLength),
-                ...usageHeaders,
-            },
-        });
-    }
-
-    return new Response(response.body, {
-        status: 200,
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
-    });
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
 }
 
 export async function generateElevenLabsSpeechWithTimestamps(opts: {
@@ -404,17 +411,12 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${outputFormat}`;
-    const body: Record<string, unknown> = {
+    const body = {
         text,
         model_id: modelId,
-        voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.0,
-            use_speaker_boost: true,
-        },
+        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        ...(seed === undefined ? {} : { seed }),
     };
-    if (seed !== undefined) body.seed = seed;
 
     log.info(
         "Timestamped TTS request: voice={voice}, format={format}, chars={chars}",
@@ -534,25 +536,7 @@ export async function generateElevenLabsDialogue(opts: {
         "eleven-dialogue",
         createAudioTokenUsage(characterCount),
     );
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-
-    if (responseFormat === "wav") {
-        const audioBuffer = fixWavHeader(await response.arrayBuffer());
-        return new Response(audioBuffer, {
-            headers: {
-                "Content-Type": contentType,
-                "Content-Length": String(audioBuffer.byteLength),
-                ...usageHeaders,
-            },
-        });
-    }
-
-    return new Response(response.body, {
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
-    });
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
 }
 
 const ELEVENLABS_AUDIO_CREDITS_PER_SECOND = 12;
@@ -649,29 +633,11 @@ export async function changeVoiceWithElevenLabs(opts: {
         ),
         "x-voice-changer-voice": voice,
     };
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-
     log.info("Voice Changer success: inputSeconds={seconds}", {
         seconds: inputSeconds,
     });
 
-    if (responseFormat === "wav") {
-        const audioBuffer = fixWavHeader(await response.arrayBuffer());
-        return new Response(audioBuffer, {
-            headers: {
-                "Content-Type": contentType,
-                "Content-Length": String(audioBuffer.byteLength),
-                ...usageHeaders,
-            },
-        });
-    }
-
-    return new Response(response.body, {
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
-    });
+    return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
 }
 
 export async function isolateVoiceWithElevenLabs(opts: {

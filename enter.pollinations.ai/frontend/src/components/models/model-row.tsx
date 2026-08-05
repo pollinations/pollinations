@@ -257,7 +257,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </Tooltip>
             </div>
 
-            <div className="w-[clamp(260px,30%,320px)] shrink-0 px-3 py-3">
+            <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
                 <ModelPricingLedger pricing={pricing} />
             </div>
         </Surface>

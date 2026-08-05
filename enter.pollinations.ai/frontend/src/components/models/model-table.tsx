@@ -375,7 +375,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         </div>
                     </button>
                 </Tooltip>
-                <div className="w-[clamp(260px,30%,320px)] shrink-0" />
+                <div className="w-[clamp(320px,32%,360px)] shrink-0" />
             </div>
 
             {/* Tab content — the selected modality */}

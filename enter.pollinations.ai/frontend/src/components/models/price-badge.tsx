@@ -333,9 +333,9 @@ export const ModelPricingLedger: FC<{
                 return (
                     <div
                         key={`${price.direction}-${price.kind}-${price.unit}`}
-                        className="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-1.5 py-0.5"
+                        className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-1.5 py-0.5"
                     >
-                        <span className="flex items-center gap-1.5 text-xs text-theme-text-muted">
+                        <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
                             <PriceIcon className="h-3.5 w-3.5 shrink-0" />
                             {PRICE_LINE_LABELS[price.kind][price.direction]}
                         </span>
@@ -355,9 +355,9 @@ export const ModelPricingLedger: FC<{
                     {pricing.adjustments.map((adjustment) => (
                         <div
                             key={adjustment.name}
-                            className="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-1.5 py-0.5"
+                            className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-1.5 py-0.5"
                         >
-                            <span className="text-xs text-theme-text-muted">
+                            <span className="whitespace-nowrap text-xs text-theme-text-muted">
                                 {adjustment.label}
                             </span>
                             <span className="min-w-0 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-theme-text-strong">

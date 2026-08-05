@@ -274,6 +274,8 @@ const url = await imageUrl('a sunset');
 
 ### Options
 
+Defaults are applied by the API; the SDK sends only options you provide.
+
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `model` | string | `'zimage'` | Model to use |

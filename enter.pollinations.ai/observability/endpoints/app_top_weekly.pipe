@@ -2,7 +2,7 @@ DESCRIPTION >
     Top registered apps by verified app-attributed request count over the last
     7 days. Counts BYOP requests minted through redirect-auth for a registered
     publishable App Key, then restricts to apps whose OWNER is published in the
-    public community showcase (app_directory, synced daily from apps/APPS.md).
+    public community showcase (app_directory, synced daily from apps/apps.json).
     The owner is a public showcase contributor; the returned app_url/app_name is
     the registered redirect-auth app, which may be any of that owner's apps and
     is not necessarily itself a showcase row. Output columns (app_url, app_name,

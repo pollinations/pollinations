@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Check all app URLs in apps/APPS.md and remove confirmed dead ones.
+ * Check all app URLs in apps/apps.json and remove confirmed dead ones.
  *
  * Checks every app URL 3 times with a 5-minute delay between rounds.
  * Only removes apps that return 404/410 in ALL 3 rounds.
- * Edits APPS.md in place — the calling workflow handles git/PR.
+ * Edits apps.json in place — the calling workflow handles git/PR.
  *
  * Usage: node .github/scripts/app-remove-dead.js [--dry-run] [--verbose]
  */
 
-const fs = require("node:fs");
 const { execFile } = require("node:child_process");
-const { APPS_FILE, parseApps: parseAppsTable } = require("./lib/parse-apps.js");
+const { readApps, writeApps } = require("./lib/app-catalog.js");
 
 const ROUNDS = 3;
 const DELAY_MS = 5 * 60 * 1000; // 5 minutes between rounds
@@ -24,18 +23,18 @@ const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const verbose = args.includes("--verbose");
 
-function parseApps() {
-    const { lines, apps } = parseAppsTable();
+function loadApps() {
+    const catalog = readApps();
     return {
-        lines,
-        apps: apps.map(({ lineIndex, name, webUrl, repoUrl }) => ({
-            lineIndex,
-            name,
+        catalog,
+        apps: catalog.map((app, index) => ({
+            index,
+            name: app.name,
             // Use web URL if available, otherwise fall back to repo URL
-            url: webUrl.startsWith("http")
-                ? webUrl
-                : repoUrl.startsWith("http")
-                  ? repoUrl
+            url: app.url?.startsWith("http")
+                ? app.url
+                : app.repositoryUrl?.startsWith("http")
+                  ? app.repositoryUrl
                   : null,
         })),
     };
@@ -127,14 +126,14 @@ function sleep(ms) {
 async function main() {
     console.log("🔗 Dead App Checker\n");
 
-    const { apps, lines } = parseApps();
+    const { apps, catalog } = loadApps();
     const appsWithUrls = apps.filter((a) => a.url?.startsWith("http"));
     console.log(`Found ${appsWithUrls.length} apps with URLs to check`);
 
     // Track how many times each app returns a dead code
     const failCounts = new Map();
     for (const app of appsWithUrls) {
-        failCounts.set(app.lineIndex, 0);
+        failCounts.set(app.index, 0);
     }
 
     for (let round = 1; round <= ROUNDS; round++) {
@@ -142,10 +141,7 @@ async function main() {
 
         for (const { app, code } of results) {
             if (DEAD_CODES.has(code)) {
-                failCounts.set(
-                    app.lineIndex,
-                    failCounts.get(app.lineIndex) + 1,
-                );
+                failCounts.set(app.index, failCounts.get(app.index) + 1);
             }
         }
 
@@ -157,7 +153,7 @@ async function main() {
 
     // Only remove apps that failed ALL rounds
     const deadApps = appsWithUrls.filter(
-        (app) => failCounts.get(app.lineIndex) === ROUNDS,
+        (app) => failCounts.get(app.index) === ROUNDS,
     );
 
     console.log(`\n📊 Results`);
@@ -179,11 +175,9 @@ async function main() {
         return;
     }
 
-    // Remove dead app lines from APPS.md
-    const deadLineIndices = new Set(deadApps.map((a) => a.lineIndex));
-    const newLines = lines.filter((_, idx) => !deadLineIndices.has(idx));
-    fs.writeFileSync(APPS_FILE, newLines.join("\n"));
-    console.log(`\nRemoved ${deadApps.length} apps from APPS.md`);
+    const deadIndices = new Set(deadApps.map((app) => app.index));
+    writeApps(catalog.filter((_, index) => !deadIndices.has(index)));
+    console.log(`\nRemoved ${deadApps.length} apps from apps.json`);
 }
 
 main().catch((err) => {

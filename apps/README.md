@@ -2,6 +2,9 @@
 
 Contains quest based community built projects and the app collection that has been submitted to pollinations & has successfully been reviewed and merged by a maintainer. 
 
+- `deployments.json` configures apps deployed from this repository.
+- `apps.json` is the community showcase catalog.
+
 
 ## Submit Your App
 
@@ -17,7 +20,7 @@ Apps are those are built from [QUEST] are **auto-deployed to Cloudflare Pages** 
 **What happens:**
 1. PWA assets generated (favicon, og-image, manifest)
 2. Dependencies installed
-3. App built (if `buildCommand` in `apps.json`)
+3. App built (if `buildCommand` in `deployments.json`)
 4. Deployed to Cloudflare Pages
 
 ### Adding a New App
@@ -27,7 +30,7 @@ Apps are those are built from [QUEST] are **auto-deployed to Cloudflare Pages** 
 cp -r apps/_templates/react apps/my-app
 ```
 
-#### 2. Register in `apps.json`
+#### 2. Register in `deployments.json`
 ```json
 {
   "my-app": {
@@ -42,7 +45,7 @@ cp -r apps/_templates/react apps/my-app
 
 #### 3. Push to main
 ```bash
-git add apps/my-app apps/apps.json
+git add apps/my-app apps/deployments.json
 git commit -m "Add my-app"
 git push
 ```
@@ -142,7 +145,7 @@ Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](ht
 ## Community Showcase
 
 - 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category
-- 📋 [**All Apps**](APPS.md) — Full table for community created apps.
+- 📋 [**All Apps**](apps.json) — Full community app catalog.
 - 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
 - ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 

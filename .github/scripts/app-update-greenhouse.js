@@ -3,15 +3,15 @@
 /**
  * Generate apps/GREENHOUSE.md — a curated highlight reel from all categories.
  *
- * Reads apps/APPS.md (source of truth) and writes:
+ * Reads apps/apps.json (source of truth) and writes:
  *   apps/GREENHOUSE.md  – top apps per category + label highlights
  *   README.md            – updates "Recent Apps" section in repo root
  *
  * Usage: node .github/scripts/app-update-greenhouse.js
  */
 
-const fs = require("fs");
-const { APPS_FILE, parseApps: parseAppsTable } = require("./lib/parse-apps.js");
+const fs = require("node:fs");
+const { CATALOG_FILE, readApps } = require("./lib/app-catalog.js");
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
@@ -35,28 +35,20 @@ const CATEGORIES = [
 
 // ── Parse ───────────────────────────────────────────────────────────────────
 
-function parseApps() {
-    return parseAppsTable().apps.map((app) => {
-        let stars = 0;
-        const m = app.stars.match(/⭐([\d.]+)(k)?/);
-        if (m) {
-            stars = parseFloat(m[1]);
-            if (m[2] === "k") stars *= 1000;
-            stars = Math.round(stars);
-        }
-
+function loadApps() {
+    return readApps().map((app) => {
         return {
             emoji: app.emoji,
             name: app.name,
-            url: app.webUrl,
+            url: app.url,
             description: app.description,
             category: app.category.toLowerCase(),
             github: app.githubUsername,
-            repo: app.repoUrl,
-            stars,
+            repo: app.repositoryUrl,
+            stars: app.repositoryStars || 0,
             approvedDate: app.approvedDate,
-            byop: app.byop === "true",
-            requests24h: parseInt(app.requests24h, 10) || 0,
+            byop: app.byop,
+            requests24h: app.requests24h,
         };
     });
 }
@@ -146,7 +138,7 @@ function generateGarden(apps) {
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
-📋 [Full app table](APPS.md) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
+📋 [Full app catalog](apps.json) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 
 ---
 
@@ -237,8 +229,8 @@ ${rows.join("\n")}
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-const apps = parseApps();
-console.log(`Parsed ${apps.length} apps from ${APPS_FILE}`);
+const apps = loadApps();
+console.log(`Parsed ${apps.length} apps from ${CATALOG_FILE}`);
 
 fs.writeFileSync(GARDEN_FILE, generateGarden(apps));
 console.log(`  ✅ Generated ${GARDEN_FILE}`);

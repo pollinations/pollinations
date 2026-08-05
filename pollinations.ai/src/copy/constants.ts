@@ -4,7 +4,7 @@
 export const COPY_CONSTANTS = {
     // External data sources
     appsFilePath:
-        "https://raw.githubusercontent.com/pollinations/pollinations/production/apps/APPS.md",
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/apps/apps.json",
 
     // API
     apiBaseUrl: "gen.pollinations.ai",

@@ -10,6 +10,7 @@ Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
+import json
 import os
 import re
 import sys
@@ -83,48 +84,33 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
     return summary, filenames
 
 
-# ── APPS.md lookup ──────────────────────────────────────────────────
+# ── App catalog lookup ──────────────────────────────────────────────
 
 def lookup_newest_app() -> Optional[Dict]:
-    """Read apps/APPS.md and return the newest app's name and URL.
+    """Read apps/apps.json and return the newest app's name and URL.
 
-    APPS.md is sorted newest-first, so the first data row is the newest app.
+    The catalog is sorted newest-first, so the first entry is the newest app.
     Returns {"app_name": str, "app_url": str} or None.
     """
     repo_root = get_repo_root()
-    apps_path = os.path.join(repo_root, "apps", "APPS.md")
+    apps_path = os.path.join(repo_root, "apps", "apps.json")
     if not os.path.exists(apps_path):
         return None
 
     with open(apps_path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+        apps = json.load(f)
 
-    # Find the header and first data row (skip header + separator)
-    data_lines = [l.strip() for l in lines if l.strip().startswith("|") and not l.strip().startswith("| -")]
-    if len(data_lines) < 2:
+    if not apps:
         return None
 
-    # Parse header to find column indices
-    header_cols = [c.strip() for c in data_lines[0].split("|")]
-    # First data row (newest app)
-    row_cols = [c.strip() for c in data_lines[1].split("|")]
-
-    def col_val(name):
-        try:
-            idx = header_cols.index(name)
-            return row_cols[idx] if idx < len(row_cols) else ""
-        except ValueError:
-            return ""
-
-    name = col_val("Name")
-    web_url = col_val("Web_URL")
-    github_repo_url = col_val("Github_Repository_URL")
+    newest = apps[0]
+    name = newest.get("name")
 
     if not name:
         return None
 
     # Prefer Web_URL, fall back to Github_Repository_URL
-    app_url = web_url or github_repo_url
+    app_url = newest.get("url") or newest.get("repositoryUrl")
     if not app_url:
         return None
 
@@ -189,7 +175,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     # Detect app submissions: only add app link when a new app was actually added
     # App submission branches are "auto/app-{issue}-{slug}", metrics are "auto/app-metrics-{date}"
     branch = pr_data.get("head", {}).get("ref", "")
-    is_app_pr = "apps/APPS.md" in changed_files and re.match(r"auto/app-\d+", branch)
+    is_app_pr = "apps/apps.json" in changed_files and re.match(r"auto/app-\d+", branch)
     if is_app_pr:
         app_info = lookup_newest_app()
         if app_info:

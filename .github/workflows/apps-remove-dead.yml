@@ -42,14 +42,14 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet apps/APPS.md; then
+          if git diff --quiet apps/apps.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
 
             # Extract dead app list for PR body (only lines after the 🗑️ marker)
             DEAD_LIST=$(sed -n '/Dead apps:/,/^$/p' /tmp/dead-apps.log | grep '|' | sed 's/^ */- /' || true)
-            COUNT=$(git diff apps/APPS.md | grep '^-|' | grep -v '^\-\-\-' | wc -l | tr -d ' ')
+            COUNT=$(sed -n 's/^Removed \([0-9][0-9]*\) apps from apps.json$/\1/p' /tmp/dead-apps.log | tail -1)
 
             {
               echo "dead_list<<EOF"
@@ -69,7 +69,7 @@ jobs:
           COUNT="${{ steps.changes.outputs.count }}"
 
           git checkout -b "$BRANCH"
-          git add apps/APPS.md
+          git add apps/apps.json
           git commit -m "chore: remove ${COUNT} dead apps (${DATE})"
           git push -u origin "$BRANCH"
 

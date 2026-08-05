@@ -1,0 +1,34 @@
+{
+  "pr_number": 13096,
+  "title": "fix: strip unsupported reasoning parameters",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13096",
+  "merged_at": "2026-08-05T08:33:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes `top_p`, `presence_penalty`, and `frequency_penalty` before GPT-5/o-series requests reach the provider.\n- Keeps the existing `temperature = 1` normalization.\n- Preserves sampling parameters for non-reasoning Azure models.\n- Adds regression coverage for GPT-5.5, GPT-5.6, o3, and GPT-4.1.\n\nRoot cause: reasoning deployments reject these optional sampling parameters, so valid client requests were returning Azure 400 `unsupported_parameter` errors.\n\nValidation:\n- 152 text-transform tests pass\n- Typecheck passes\n- Authenticated local `openai-large` E2E with all three parameters returned HTTP 200 and `OK`\n\nNo pricing, registry, routing, secret, Tinybird, or deployment changes. The Azure multiplier discrepancy is intentionally separate.\n\nFixes #13081",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Reasoning gets less baggage",
+    "blurb": "The reasoning models were being handed knobs they do not support. The gateway now quietly puts top_p and penalty settings back in the tool drawer, so GPT-5 and o-series requests can get on with thinking.",
+    "summary": "The text gateway now strips top_p, presence_penalty, and frequency_penalty from GPT-5/o-series Azure requests while retaining temperature=1 normalization and preserving those sampling parameters for non-reasoning Azure models.",
+    "impact": "Clients can send their usual optional sampling fields to GPT-5.5, GPT-5.6, o3, and other reasoning deployments without Azure returning 400 unsupported_parameter errors.",
+    "keywords": [
+      "azure",
+      "reasoning-models",
+      "gpt-5",
+      "o-series",
+      "parameters",
+      "api"
+    ],
+    "visual_concept": "Polli, wearing tiny mechanic goggles, tidies unsupported parameter knobs labeled top_p and penalties out of a cozy retro terminal's input tray before a thoughtful glowing reasoning-model garden can process the request. A CRT monitor robot watches the cleaned request travel successfully through a lime-green cable toward blooming code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny mechanic goggles, gently placing little parameter knobs labeled “top_p” and “penalties” into a tool box beside a retro terminal, while a clean request flows through a prominent lime green (#ecf874) cable into blooming code-plants; a cheerful CRT monitor robot watches with square pixel eyes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes, with Polli’s pink blush, light blue wings, and a warm cream garden-shed background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13096.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny mechanic goggles, gently placing little parameter knobs labeled “top_p” and “penalties” into a tool box beside a retro terminal, while a clean request flows through a prominent lime green (#ecf874) cable into blooming code-plants; a cheerful CRT monitor robot watches with square pixel eyes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes, with Polli’s pink blush, light blue wings, and a warm cream garden-shed background."
+  },
+  "generated_at": "2026-08-05T08:34:15.918263+00:00"
+}

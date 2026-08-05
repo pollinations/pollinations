@@ -8,7 +8,7 @@ the model server and Cloudflare Tunnel in `screen` restart loops.
 ## Cloudflare preparation
 
 Create a remotely-managed tunnel in the authoritative Pollinations Cloudflare
-account before provisioning the Vast host:
+account before production promotion:
 
 1. Route a stable hostname such as `flux-vast-NN.pollinations.ai` to
    `http://localhost:8765`.
@@ -26,15 +26,32 @@ On a fresh Vast RTX 5090 instance:
 ```bash
 PLN_GPU_TOKEN=... \
 HF_TOKEN=... \
-CLOUDFLARED_TUNNEL_TOKEN=... \
 PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
 bash setup-vast.sh
 ```
 
-The tunnel token is written to a mode `0600` token file and is not included in
-the `cloudflared` process arguments. Model and server settings are persisted in
-the ignored `.env.flux` file. The setup also installs `/root/onstart.sh`, which
-Vast runs after a container restart to restore both supervised services.
+This is canary-safe by default: the model starts locally, while registry
+heartbeat and the production tunnel remain disabled. Model and server settings
+are persisted in the ignored `.env.flux` file. The setup also installs
+`/root/onstart.sh`, which Vast runs after a container restart.
+
+After the canary passes and a human approves promotion, rerun setup with the
+same model tokens plus the scoped tunnel token:
+
+```bash
+PLN_GPU_TOKEN=... \
+HF_TOKEN=... \
+CLOUDFLARED_TUNNEL_TOKEN=... \
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
+HEARTBEAT_ENABLED=true \
+TUNNEL_ENABLED=true \
+bash setup-vast.sh
+```
+
+The tunnel token is written to a mode `0600` file and never included in the
+`cloudflared` process arguments. The tunnel waits for local model health before
+joining production. Hosts that cannot resolve Cloudflare SRV records
+automatically use a local DNS-over-HTTPS resolver.
 
 ## Verify before traffic cutover
 
@@ -42,15 +59,23 @@ A healthy `/docs` response and registry heartbeat are control-plane checks;
 they do not prove that `gen.pollinations.ai` can reach the tunnel. Replicate can
 otherwise hide a broken Vast route.
 
-Run the end-to-end canary on the Vast host with a valid Pollinations API key:
+Before promotion, expose the worker through a dedicated test-only endpoint and
+compare that external path with localhost. Never use the production hostname
+for this step:
 
 ```bash
-POLLINATIONS_API_KEY=... bash verify-vast.sh
+CANARY_URL=https://<test-only-hostname> bash verify-vast.sh
 ```
 
-The canary creates a unique uncached prompt, generates it directly on Vast and
-through the public Flux route with the same seed, and compares decoded pixels.
-Do not destroy the old worker until this passes on the replacement.
+The canary creates a unique uncached prompt, generates it locally and through
+the external endpoint with the same seed, and compares decoded pixels. Do not
+change production routing until this passes and a human explicitly approves
+the promotion. After cutover, run `verify-vast.sh` with
+`POLLINATIONS_API_KEY` and no `CANARY_URL`, confirm real production requests
+are served by the replacement, then drain and immediately destroy the old
+worker.
+The fleet-wide qualification and approval policy is documented in
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
 ## Operations
 
@@ -63,7 +88,9 @@ screen -r cloudflared
 ```
 
 The setup defaults are `QUEUE_LIMIT=3`, `MAX_PIXELS=1048576`, and
-`mit-han-lab/svdq-fp4-flux.1-schnell`. Override them only through the documented
+`mit-han-lab/svdq-fp4-flux.1-schnell`. Hugging Face Xet is disabled by default
+because stalled Xet connections were observed on Vast; standard HTTP resumes
+reliably from partial downloads. Override defaults only through the documented
 environment variables in `setup-vast.sh`.
 
 `QUEUE_LIMIT=3` means one request can run while two wait. Additional requests

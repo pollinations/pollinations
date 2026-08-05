@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -31,11 +32,10 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import {
-    hasAccountReadPermission,
-    hasDirectAccountPermission,
+    hasAccountPermission,
+    requireAccountPermission,
 } from "./account-permissions.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
-import { parseMetadata } from "./metadata-utils.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -82,33 +82,6 @@ export function resolveUsageTargetUserId(
         userId: debugUserId,
         overridden: debugUserId !== currentUserId,
     };
-}
-
-/**
- * Require that the caller has `account:keys` permission.
- * Session-authenticated users (no apiKey) are always allowed.
- */
-function requireKeysPermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return; // session auth — always allowed
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
 }
 
 // Schema for creating an API key via the API
@@ -820,8 +793,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
-            const includeProfilePII =
-                !apiKey || hasAccountReadPermission(apiKey, "profile");
+            const includeProfilePII = hasAccountPermission(apiKey, "profile");
 
             const db = drizzle(c.env.DB);
             const users = await db
@@ -879,7 +851,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB, { schema });
             const [cards, rewardRows] = await Promise.all([
@@ -974,7 +946,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // Beyond that, reading account balance requires usage or admin.
-            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
+            if (!hasAccountPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
@@ -1031,7 +1003,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1115,7 +1087,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1217,7 +1189,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const { limit, days, granularity, period } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
@@ -1289,7 +1261,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const { format, days, granularity, period } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
@@ -1359,7 +1331,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const db = drizzle(c.env.DB);
             const keys = await db
@@ -1434,7 +1406,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const {
                 name,
@@ -1493,7 +1465,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const callerKey = c.var.auth.apiKey;
-            requireKeysPermission(callerKey);
+            requireAccountPermission(callerKey, "keys");
 
             const { id } = c.req.param();
 

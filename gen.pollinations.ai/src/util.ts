@@ -20,8 +20,9 @@ export function safeRound(amount: number, precision: number = 6): number {
     return Math.round(amount * factor) / factor;
 }
 
-export function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
+export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes =
+        buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
     let binary = "";
     const chunkSize = 0x8000;
 

@@ -4,6 +4,8 @@ import time
 import aiohttp
 import jwt
 
+from ...core.config import config
+
 logger = logging.getLogger(__name__)
 
 TOKEN_REFRESH_BUFFER = 300
@@ -77,7 +79,21 @@ def init_github_app(app_id: str, private_key: str, installation_id: str):
     logger.info(f"GitHub App auth initialized (App ID: {app_id}, Installation: {installation_id})")
 
 
-async def get_github_token() -> str | None:
+def has_github_auth() -> bool:
+    return github_app_auth is not None or bool(config.github.token)
+
+
+async def get_github_token(*, for_projects: bool = False) -> str | None:
     if github_app_auth:
-        return await github_app_auth.get_token()
-    return None
+        token = await github_app_auth.get_token()
+        if token:
+            if for_projects:
+                logger.debug("Using GitHub App token for project operation")
+            return token
+    if for_projects:
+        if config.github.project_pat:
+            logger.debug("Falling back to GITHUB_PROJECT_PAT for project operation")
+            return config.github.project_pat
+        logger.warning("ProjectV2 operation: No GitHub App or GITHUB_PROJECT_PAT configured")
+        return None
+    return config.github.token or None

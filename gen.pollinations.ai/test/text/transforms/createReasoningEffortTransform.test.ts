@@ -75,12 +75,18 @@ describe("createReasoningEffortTransform — strip", () => {
 });
 
 describe("reasoning_effort model wiring", () => {
+    it("leaves Inkling reasoning and tool schemas to OpenRouter", () => {
+        expect(findModelByName("inkling")?.transform).toBeUndefined();
+    });
+
     it.each([
         "glm",
         "kimi",
         "kimi-code",
+        "kimi-k3",
         "deepseek",
         "qwen-large",
+        "qwen3.7-flash",
         "longcat",
         "nemotron",
         "minimax",
@@ -108,7 +114,6 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "grok",
         "mistral-large",
         "llama",
         "qwen-coder",
@@ -119,5 +124,9 @@ describe("reasoning_effort model wiring", () => {
             reasoning_effort: "high",
         });
         expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it("passes Command A+ requests through without a model-specific transform", () => {
+        expect(findModelByName("command-a-plus")?.transform).toBeUndefined();
     });
 });

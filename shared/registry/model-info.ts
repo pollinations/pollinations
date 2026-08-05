@@ -40,10 +40,24 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
+    brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    pricing_variants: z
+        .array(
+            z.object({
+                name: z.string(),
+                label: z.string(),
+                description: z.string(),
+                pricing: z
+                    .record(z.string(), z.string())
+                    .and(z.object({ currency: z.literal("pollen") })),
+            }),
+        )
+        .optional(),
+    resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -111,8 +125,32 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
+        brand_url: service.brandUrl,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants:
+            service.costVariants && service.costVariantMetadata
+                ? Object.entries(service.costVariants).map(
+                      ([name, variantCost]) => {
+                          const metadata = service.costVariantMetadata?.[name];
+                          return {
+                              name,
+                              label: metadata?.label ?? name,
+                              description: metadata?.description ?? name,
+                              pricing: pricingInfoFromDefinition(
+                                  getPriceDefinitionForModel({
+                                      ...service,
+                                      cost: {
+                                          ...service.cost,
+                                          ...variantCost,
+                                      },
+                                  }),
+                              ),
+                          };
+                      },
+                  )
+                : undefined,
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

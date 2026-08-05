@@ -1,6 +1,10 @@
 import { SELF } from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
+    getRegistryModelDefinition,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
+import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
     RESTRICTED_TEST_MODELS,
@@ -72,7 +76,35 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
-test("filters gemini-fast by paid balance", async ({ apiKey, paidApiKey }) => {
+test("media routes own their endpoint-specific model defaults", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["zimage"],
+        user: { packBalance: 100 },
+    });
+
+    const videoResponse = await fetchWorker("/video/test", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    const editResponse = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt: "make it blue",
+            image: "https://example.test/cat.png",
+        }),
+    });
+
+    expect(videoResponse.status).toBe(403);
+    expect(editResponse.status).toBe(403);
+});
+
+test("filters OpenRouter text models by paid balance", async ({
+    apiKey,
+    paidApiKey,
+}) => {
     const freeResponse = await fetchWorker("/v1/models", {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -89,13 +121,25 @@ test("filters gemini-fast by paid balance", async ({ apiKey, paidApiKey }) => {
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
+    const openRouterModelNames = getVisibleTextModels().filter(
+        (model) => getRegistryModelDefinition(model).provider === "openrouter",
+    );
+    const freeModelNames = new Set(freeModels.data.map((model) => model.id));
+    const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
-    expect(freeModels.data.some((model) => model.id === "gemini-fast")).toBe(
-        false,
+    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(
+        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+    ).toBe(true);
+    expect(
+        openRouterModelNames.every((model) => paidModelNames.has(model)),
+    ).toBe(true);
+
+    const generation = await fetchWorker(
+        "/text/paid-only-check?model=mistral",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
     );
-    expect(paidModels.data.some((model) => model.id === "gemini-fast")).toBe(
-        true,
-    );
+    expect(generation.status).toBe(402);
 });
 
 test("filters paid-only audio models by paid balance", async ({
@@ -140,6 +184,12 @@ test("filters paid-only audio models by paid balance", async ({
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
+    expect(freeModels.some((model) => model.name === "universal-3.5-pro")).toBe(
+        true,
+    );
+    expect(paidModels.some((model) => model.name === "universal-3.5-pro")).toBe(
+        true,
+    );
 });
 
 test("requires paid balance for Recraft vector", async ({

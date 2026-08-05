@@ -11,6 +11,9 @@ Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
 - `probe.mjs` — one probe sweep across all community models, cost-weighted
   (see "Probe spend" below).
+- `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
+  Final request outcomes count successful fallback rescues; image-provider 4xx
+  count as failures while ordinary client 4xx remain excluded.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
   cycle gets a fresh Claude process and systemd starts the next one 15 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
@@ -57,11 +60,13 @@ immediately.
 ```bash
 scp apps/operation/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
+scp apps/operation/community-monitor/seven-day-health.mjs \
+  community-monitor:/home/ubuntu/monitor/
 scp apps/operation/community-monitor/community-monitor.service \
   community-monitor:/tmp/community-monitor.service
 ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
   /etc/systemd/system/community-monitor.service && \
-  chmod +x /home/ubuntu/monitor/{probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
+  chmod +x /home/ubuntu/monitor/{probe.mjs,seven-day-health.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
   sudo systemctl daemon-reload && \
   sudo systemctl restart community-monitor"
 ```
@@ -112,15 +117,17 @@ monitor offline.
 
 ## Authority split
 
-Deactivation is automatic — the agent can take a community model offline on
-its own once CYCLE.md's rule (b) is met (sustained Tinybird-confirmed
-failure: <50% success on ≥100 non-4xx requests over 3+ cycles, then a
-24-hour grace period after the owner ping, then a freshness check that
-must show the model failing across the entire last day). Reactivation is **narrowly** automatic as of 2026-07-20
+Deactivation is automatic through either the acute-incident rule (sustained
+Tinybird-confirmed failure: <50% success on ≥100 non-client requests over 3+
+cycles, then a 24-hour grace and freshness check) or the once-daily rolling
+7-day floor (<70% final user-visible success across ≥20 provider-attributable
+requests). Successful fallback rescues count as successes in the 7-day rate.
+Reactivation is **narrowly** automatic as of 2026-07-20
 (thomash's call after the Jul 18–20 deactivation wave): the agent may undo
 *its own* deactivations (`disabled_by = 'monitor'`) when the owner reports a
 fix or an upstream quota window has reset, at most once per model per 48h.
 Rows disabled by a human — including anything disabled during an
 abuse/billing incident — remain exclusively a human maintainer's call, no
-exceptions. There is still no self-serve dashboard reactivate path (see
+exceptions. Seven-day-floor deactivations are also human-only to reactivate.
+There is still no self-serve dashboard reactivate path (see
 PR #12193) — owners' "test and save" does nothing.

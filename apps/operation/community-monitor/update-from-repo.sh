@@ -33,6 +33,7 @@ install_from_main() {
 
 install_from_main CYCLE.md 0644
 install_from_main probe.mjs 0755
+install_from_main seven-day-health.mjs 0755
 install_from_main loop.sh 0755
 install_from_main healthcheck.sh 0755
 install_from_main leaderboard/build-leaderboard.mjs 0644

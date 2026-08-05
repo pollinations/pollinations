@@ -19,12 +19,13 @@ const getActionIndicator = (action: Action) => {
     );
 };
 
-export const MessageDisplay = ({ msg, gameState }: MessageDisplayProps) => (
+export const MessageDisplay = ({ msg }: MessageDisplayProps) => (
     <div className={`p-2 ${MESSAGE_STYLES[msg.persona]}`}>
         {MESSAGE_PREFIXES[msg.persona]}
         {msg.message}
-        {msg.persona === "elevator" &&
-            gameState.currentPersona === "elevator" &&
-            getActionIndicator(msg.action)}
+        {/* Show the up/down arrow for any line that actually moved a floor —
+            the elevator in ch.1/2, the passenger in ch.3. (Marvin's shouts are
+            "none", so they render nothing.) */}
+        {getActionIndicator(msg.action)}
     </div>
 );

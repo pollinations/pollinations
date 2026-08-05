@@ -8,6 +8,8 @@ export const GAME_CONFIG = {
     CHEAT_CODE: "42",
     MARVIN_TRANSITION_MSG:
         "Marvin is waiting outside the elevator, looking particularly gloomy today...",
+    SWAP_TRANSITION_MSG:
+        "You drink the Pan Galactic Gargle Blaster. The universe lurches — and you wake up as the elevator, a passenger who is suspiciously like your old self stepping aboard...",
 } as const;
 
 // Message Display Configuration
@@ -16,6 +18,7 @@ export const MESSAGE_STYLES = {
     guide: "text-blue-400",
     elevator: "text-green-400",
     marvin: "text-yellow-200", // Updated to a lighter fuchsia color
+    passenger: "text-cyan-400",
 } as const;
 
 export const MESSAGE_PREFIXES = {
@@ -23,6 +26,7 @@ export const MESSAGE_PREFIXES = {
     guide: "The Guide Says: ",
     elevator: "Elevator: ",
     marvin: "Marvin: ",
+    passenger: "Passenger: ",
 } as const;
 
 export const ACTION_INDICATORS = {
@@ -51,7 +55,7 @@ export const API_CONFIG = {
 } as const;
 
 // Game Types
-export type Persona = "user" | "marvin" | "elevator" | "guide";
+export type Persona = "user" | "marvin" | "elevator" | "guide" | "passenger";
 export type Action = "none" | "join" | "up" | "down" | "show_instructions";
 
 export type Message = {
@@ -70,6 +74,9 @@ export type GameState = {
     marvinJoined: boolean;
     showInstruction: boolean;
     isLoading: boolean;
+    // Chapter 3: the player has become the elevator, talking a passenger up.
+    swapped: boolean;
+    desiredFloor: number;
 };
 
 export type GameAction =

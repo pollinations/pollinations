@@ -1,0 +1,34 @@
+{
+  "pr_number": 12924,
+  "title": "refactor: centralize API-key auth, metadata, and account permissions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12924",
+  "merged_at": "2026-08-05T08:17:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes API-key loading/status checks and metadata normalization across auth, routes, OAuth, lookup, and billing.\n- Centralizes session-aware `account:profile`, `account:usage`, and `account:keys` permission checks.\n- Preserves response shapes, permission errors, metadata defaults, session bypass, banned/staging checks, key budgets, BYOP attribution, and agent-run inheritance.\n- Removes 134 net lines across 14 files.\n\nSafety fixes and validation:\n- Merged current `main` without conflicts.\n- Fixed the stale provider-profile call to the removed permission helper; this was the current head’s CI typecheck failure.\n- Enter typecheck and production frontend build passed.\n- Biome passed on all 13 surviving changed sources (two pre-existing optional-chain warnings only); diff and removed-reference scans passed.\n- Focused auth/permissions suite: 97 passed; the same four obsolete-fixture failures reproduce unchanged on `main` because `/api/auth/api-key/create` is intentionally blocked with 405.\n- Dedicated expired-key rejection test passed.\n- Valid secret/publishable/restricted keys, delegated run tokens, metadata, profile/usage permissions, OAuth, device flow, and quests are covered by the passing tests.\n- Fresh exact-head CI and CodeQL are required before merge.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One keyring to rule them",
+    "blurb": "The hive put its API keys back on one tidy hook. Auth, metadata, and account permissions now share the same set of careful checks instead of growing their own tiny key cupboards.",
+    "summary": "Centralized API-key loading, status validation, metadata normalization, and session-aware account profile, usage, and keys permissions across Enter auth, OAuth, billing, lookup, device flow, quests, and routes while preserving existing response shapes and key behaviors.",
+    "impact": "Secret, publishable, and restricted keys, delegated run tokens, expired-key rejection, BYOP attribution, budgets, and account permissions now receive consistent handling throughout the API.",
+    "keywords": [
+      "api keys",
+      "authentication",
+      "permissions",
+      "metadata",
+      "billing",
+      "enter api"
+    ],
+    "visual_concept": "A cozy garden-shed key station represents centralized API-key handling: one labeled keyring routes different key types through orderly paths to profile, usage, billing, OAuth, and device-flow terminals. Polli acts as the observant keeper with a tiny keyring and gardener tool belt, while a CRT monitor robot happily verifies each route; code-plants and flowers make the shared auth layer feel like healthy infrastructure rather than a security bunker.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt and carefully hangs secret, publishable, and restricted API keys on one glowing central keyring; a cute chunky CRT-monitor robot routes the keys to small profile, usage, billing, OAuth, and device terminals beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font sign reading \"ONE KEYRING\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12924.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt and carefully hangs secret, publishable, and restricted API keys on one glowing central keyring; a cute chunky CRT-monitor robot routes the keys to small profile, usage, billing, OAuth, and device terminals beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font sign reading \"ONE KEYRING\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T08:18:05.328087+00:00"
+}

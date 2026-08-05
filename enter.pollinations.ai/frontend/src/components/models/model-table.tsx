@@ -25,7 +25,12 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import {
+    getModelPriceBadges,
+    PriceBadgeList,
+    PriceVariantDetails,
+    PriceVariantDisclosure,
+} from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
 export type SectionType = ModelCategory;
@@ -202,6 +207,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 showAlpha={showAlpha}
                                 alphaTooltip={false}
                             />
+                            <PriceVariantDisclosure
+                                variants={model.priceVariants}
+                            />
                             <span className="inline-flex shrink-0 items-center gap-1">
                                 <BalanceAccessChip
                                     access={balanceAccess}
@@ -253,6 +261,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             model={model}
                             direction="output"
                         />
+                        {model.priceVariants?.length ? (
+                            <div className="mt-2 rounded-lg bg-theme-bg-subtle px-3 py-2">
+                                <PriceVariantDetails
+                                    variants={model.priceVariants}
+                                />
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             )}

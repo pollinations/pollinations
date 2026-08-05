@@ -61,6 +61,8 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Named conditional pricing sheet selected for this billed request. */
+    costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     /**

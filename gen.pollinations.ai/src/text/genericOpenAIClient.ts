@@ -1,4 +1,4 @@
-import { remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
 import {
     normalizeOptions,
@@ -18,10 +18,10 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-function isUnsupportedInputError(details: unknown): boolean {
+function isClientInputError(details: unknown): boolean {
     const serialized =
         typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input/i.test(
+    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
         serialized,
     );
 }
@@ -90,7 +90,7 @@ function extractErrorMessage(details: unknown): string | null {
 }
 
 function createApiError(
-    response: { status: number; statusText: string },
+    response: Response,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -100,13 +100,14 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = isUnsupportedInputError(details)
+    error.status = isClientInputError(details)
         ? 400
         : remapUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
     error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
     return error;
 }
 
@@ -270,10 +271,11 @@ export async function genericOpenAIClient(
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;
-            error.status =
-                typeof errorDetails.status === "number"
-                    ? remapUpstreamStatus(errorDetails.status)
-                    : 502;
+            error.status = isClientInputError(errorDetails)
+                ? 400
+                : typeof errorDetails.status === "number"
+                  ? remapUpstreamStatus(errorDetails.status)
+                  : 502;
             error.upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status
@@ -281,6 +283,7 @@ export async function genericOpenAIClient(
             error.details = errorDetails.details;
             error.model = modelName;
             error.requestUrl = requestUrl;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
         log(

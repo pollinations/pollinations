@@ -23,6 +23,9 @@ export const Generate3dRequestQueryParamsSchema = z.object({
             description:
                 "Model to use. See /3d/models for the full list and per-model input requirements.",
         }),
+    resolution: z.enum(["low", "medium", "high"]).optional().meta({
+        description: "Output detail for `trellis-2`. Defaults to `low`.",
+    }),
     image: z
         .string()
         .transform((value: string) => {

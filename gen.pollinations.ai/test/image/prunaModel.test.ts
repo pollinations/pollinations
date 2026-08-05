@@ -5,8 +5,7 @@ import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
-    callPrunaVideo720API,
-    callPrunaVideo1080API,
+    callPrunaVideoAPI,
 } from "../../src/image/models/prunaModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -185,7 +184,7 @@ describe("prunaModel - p-video", () => {
             video_output_duration_seconds: 5,
         });
 
-        const result = await callPrunaVideo720API("a butterfly on a flower", {
+        const result = await callPrunaVideoAPI("a butterfly on a flower", {
             ...baseParams,
             width: 1280,
             height: 720,
@@ -204,20 +203,21 @@ describe("prunaModel - p-video", () => {
         expect(input.image).toBeUndefined();
         expect(result.mimeType).toBe("video/mp4");
         expect(result.durationSeconds).toBe(5);
-        expect(result.trackingData?.actualModel).toBe("p-video-720p");
+        expect(result.trackingData?.actualModel).toBe("p-video");
         expect(result.trackingData?.usage?.completionVideoSeconds).toBe(5);
     });
 
-    it("locks resolution to 1080p and tags the 1080p model", async () => {
+    it("passes an explicit 1080p resolution", async () => {
         const requests: ProviderRequest[] = [];
         mockPrunaFetch(requests, {
             predict_time: 8,
             video_output_duration_seconds: 5,
         });
 
-        // height=720 must NOT downgrade the 1080p model — resolution is locked.
-        const result = await callPrunaVideo1080API("a butterfly on a flower", {
+        // Resolution is explicit and independent of width/height.
+        const result = await callPrunaVideoAPI("a butterfly on a flower", {
             ...baseParams,
+            resolution: "1080p",
             width: 1280,
             height: 720,
             duration: 5,
@@ -225,7 +225,7 @@ describe("prunaModel - p-video", () => {
 
         const input = inputOf(requests[0]);
         expect(input.resolution).toBe("1080p");
-        expect(result.trackingData?.actualModel).toBe("p-video-1080p");
+        expect(result.trackingData?.actualModel).toBe("p-video");
         expect(result.trackingData?.usage?.completionVideoSeconds).toBe(5);
     });
 
@@ -233,7 +233,7 @@ describe("prunaModel - p-video", () => {
         const requests: ProviderRequest[] = [];
         mockPrunaFetch(requests);
 
-        await callPrunaVideo720API("animate this", {
+        await callPrunaVideoAPI("animate this", {
             ...baseParams,
             image: ["https://example.com/frame.jpg"],
         });

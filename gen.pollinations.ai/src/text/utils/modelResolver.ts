@@ -39,7 +39,7 @@ export function resolveModelConfig(
     }
 
     const config = (
-        typeof rawConfig === "function" ? rawConfig() : rawConfig
+        typeof rawConfig === "function" ? rawConfig(options) : rawConfig
     ) as Record<string, unknown>;
 
     const usedModel = (config.model ||

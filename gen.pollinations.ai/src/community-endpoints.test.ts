@@ -26,6 +26,7 @@ import {
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityProviderUrl,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
@@ -50,7 +51,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { communityImageSupportedEndpoints } from "./community-models.ts";
+import {
+    communityImageSupportedEndpoints,
+    getCommunityModelRegistryEntries,
+} from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import {
     getGenerationModelRegistry,
@@ -436,6 +440,18 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("normalizes public community provider URLs", () => {
+        expect(
+            normalizeCommunityProviderUrl(" https://example.com/models#top "),
+        ).toBe("https://example.com/models");
+        expect(() =>
+            normalizeCommunityProviderUrl("http://example.com"),
+        ).toThrow("Provider URL must use https");
+        expect(() =>
+            normalizeCommunityProviderUrl("https://user:pass@example.com"),
+        ).toThrow("Provider URL cannot include credentials");
+    });
+
     it("uses the community endpoint description as the model title", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
@@ -466,6 +482,20 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
         );
+    });
+
+    it("projects a provider profile onto the community model brand", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            title: "OpenAI Fast",
+            description: null,
+            providerName: "Example AI",
+            providerUrl: "https://example.com/",
+            ...communityEndpointPrices({}),
+        });
+
+        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
     it("falls back to the model name when title and description are unset", () => {
@@ -2668,7 +2698,68 @@ fixtureTest(
             }),
         );
         expect(listResponse.status).toBe(200);
-        await expect(listResponse.json()).resolves.toEqual({ data: [] });
+        await expect(listResponse.json()).resolves.toEqual({
+            data: [],
+            provider: { name: null, url: null },
+        });
+
+        const incompleteProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ name: "Example AI", url: "" }),
+                },
+            ),
+        );
+        expect(incompleteProviderResponse.status).toBe(400);
+
+        const insecureProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "http://example.com",
+                    }),
+                },
+            ),
+        );
+        expect(insecureProviderResponse.status).toBe(400);
+
+        const providerResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                    }),
+                },
+            ),
+        );
+        expect(providerResponse.status).toBe(200);
+        await expect(providerResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+        });
 
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -2906,13 +2997,26 @@ fixtureTest(
         expect(secondListResponse.status).toBe(200);
         const secondList = (await secondListResponse.json()) as {
             data: Record<string, unknown>[];
+            provider: { name: string | null; url: string | null };
         };
         expect(secondList.data).toHaveLength(1);
+        expect(secondList.provider).toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+        });
         expect(secondList.data[0]).toMatchObject({
             title: "Updated Model Title",
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env.DB)
+        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        expect(registryEntry?.info).toMatchObject({
+            brand: "Example AI",
+            brand_url: "https://example.com/",
+        });
     },
 );
 

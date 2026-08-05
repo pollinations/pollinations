@@ -242,8 +242,20 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             brandLogoPath ? "pl-[42px]" : "pl-0",
                         )}
                     >
-                        <div className="min-w-0 w-fit max-w-full rounded-lg bg-theme-bg-subtle px-3 py-2">
-                            <ModelId name={model.name} />
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <div className="min-w-0 w-fit max-w-full rounded-lg bg-theme-bg-subtle px-3 py-2">
+                                <ModelId name={model.name} />
+                            </div>
+                            {model.brandUrl && model.brand && (
+                                <a
+                                    href={model.brandUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                                >
+                                    {model.brand}
+                                </a>
+                            )}
                         </div>
                         {modelDescription && (
                             <p className="mb-2 text-sm leading-relaxed text-theme-text-muted">

@@ -6,7 +6,7 @@
 
 ## AI Agents
 
-- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `polli` in issues/PRs. Whitelisted users only.
+- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `!polli` in issues/PRs. Whitelisted users only.
 
 ## Issue Automation Pipeline
 
@@ -70,7 +70,7 @@ Priority is only set on Support items. The AI picks one of two values; `Urgent` 
 
 | Priority | Who applies it | When |
 | -------- | -------------- | ---- |
-| `Urgent` | `project-manager.py` (override) | Issue author's GitHub ID matches a paid Stripe customer (`paid_customers.json` Tinybird endpoint) |
+| `Urgent` | `project_manager.py` (override) | Issue author's GitHub ID matches a paid Stripe customer (`paid_customers.json` Tinybird endpoint) |
 | `High`   | AI | Bugs breaking functionality, blocking issues, billing problems, outages |
 | `Low`    | AI | Minor issues, cosmetic bugs, questions, docs, feature requests, integration help |
 
@@ -126,7 +126,7 @@ flowchart TD
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[User mentions 'polli' in issue/PR/comment] --> B{User whitelisted?}
+    A[User mentions '!polli' in issue/PR/comment] --> B{User whitelisted?}
     B -->|No| C[Posts unauthorized message]
     B -->|Yes| D[repo-polli-assistant.yml]
     D --> E[Starts pollinations.ai router]
@@ -138,9 +138,9 @@ flowchart TD
 
 | Script                 | Purpose        | AI Model                  | Trigger               |
 | ---------------------- | -------------- | ------------------------- | --------------------- |
-| `project-manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
+| `project_manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
 
-**project-manager.py details:**
+**project_manager.py details:**
 
 - Retry: 3 attempts with exponential backoff + random seed
 - Timeout: 5 minutes for AI, 30s for GraphQL
@@ -166,12 +166,12 @@ flowchart TD
 
 | Label          | Purpose                                          | Applied by           |
 | -------------- | ------------------------------------------------ | -------------------- |
-| `DEV-BUG`      | Something is broken                              | `project-manager.py` |
-| `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
-| `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
-| `DEV-DOCS`     | Documentation - dev docs, API docs, READMEs      | `project-manager.py` |
-| `DEV-INFRA`    | Infrastructure - CI/CD, deployments, monitoring  | `project-manager.py` |
-| `DEV-CHORE`    | Maintenance - dependency updates, cleanup        | `project-manager.py` |
+| `DEV-BUG`      | Something is broken                              | `project_manager.py` |
+| `DEV-FEATURE`  | New functionality request                        | `project_manager.py` |
+| `DEV-TRACKING` | Meta-issue tracking other items                  | `project_manager.py` |
+| `DEV-DOCS`     | Documentation - dev docs, API docs, READMEs      | `project_manager.py` |
+| `DEV-INFRA`    | Infrastructure - CI/CD, deployments, monitoring  | `project_manager.py` |
+| `DEV-CHORE`    | Maintenance - dependency updates, cleanup        | `project_manager.py` |
 | `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
 
 ### Support Labels
@@ -180,30 +180,30 @@ flowchart TD
 
 | Label          | Purpose             | Applied by           |
 | -------------- | ------------------- | -------------------- |
-| `.BUG`         | Something broken    | `project-manager.py` |
-| `.OUTAGE`      | Service down        | `project-manager.py` |
-| `.QUESTION`    | How-to/usage        | `project-manager.py` |
-| `.REQUEST`     | Feature request     | `project-manager.py` |
-| `.DOCS`        | Documentation issue | `project-manager.py` |
-| `.INTEGRATION` | SDK/API integration | `project-manager.py` |
+| `.BUG`         | Something broken    | `project_manager.py` |
+| `.OUTAGE`      | Service down        | `project_manager.py` |
+| `.QUESTION`    | How-to/usage        | `project_manager.py` |
+| `.REQUEST`     | Feature request     | `project_manager.py` |
+| `.DOCS`        | Documentation issue | `project_manager.py` |
+| `.INTEGRATION` | SDK/API integration | `project_manager.py` |
 
 **SERVICE (pick 1 or more):**
 
 | Label     | Purpose               | Applied by           |
 | --------- | --------------------- | -------------------- |
-| `IMAGE`   | Image generation      | `project-manager.py` |
-| `TEXT`    | Text/chat completion  | `project-manager.py` |
-| `AUDIO`   | Audio/TTS             | `project-manager.py` |
-| `VIDEO`   | Video generation      | `project-manager.py` |
-| `API`     | API/SDK general       | `project-manager.py` |
-| `WEB`     | Website/dashboard     | `project-manager.py` |
-| `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
-| `BILLING` | Payment/credit card   | `project-manager.py` |
-| `ACCOUNT` | Account/login/auth    | `project-manager.py` |
+| `IMAGE`   | Image generation      | `project_manager.py` |
+| `TEXT`    | Text/chat completion  | `project_manager.py` |
+| `AUDIO`   | Audio/TTS             | `project_manager.py` |
+| `VIDEO`   | Video generation      | `project_manager.py` |
+| `API`     | API/SDK general       | `project_manager.py` |
+| `WEB`     | Website/dashboard     | `project_manager.py` |
+| `CREDITS` | Pollen balance and usage quota issues | `project_manager.py` |
+| `BILLING` | Payment/credit card   | `project_manager.py` |
+| `ACCOUNT` | Account/login/auth    | `project_manager.py` |
 
 ### News Labels
 
-The `NEWS` label is used by the social pipeline (`social/` workflows), not by Project Manager routing. Issues/PRs carrying it are skipped by `project-manager.py` and don't land on any project board.
+The `NEWS` label is used by the social pipeline (`social/` workflows), not by Project Manager routing. Issues/PRs carrying it are skipped by `project_manager.py` and don't land on any project board.
 
 | Label  | Purpose                | Applied by                                          |
 | ------ | ---------------------- | --------------------------------------------------- |

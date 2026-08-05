@@ -2,8 +2,8 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printResult,
     printSuccess,
     printTable,
@@ -40,10 +40,12 @@ interface MyModel {
     id: string;
     modelId: string;
     name: string;
+    title: string;
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
+    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -62,10 +64,9 @@ function readPriceOptions(opts: Record<string, unknown>) {
         if (opts[key] === undefined) continue;
         const value = Number(opts[key]);
         if (!Number.isFinite(value) || value < 0) {
-            printError(
+            fail(
                 `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} must be a non-negative number`,
             );
-            process.exit(1);
         }
         prices[key] = value;
     }
@@ -78,6 +79,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     };
     const fields = [
         ["name", "name"],
+        ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
@@ -90,19 +92,33 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
 
     if (opts.visibility !== undefined) {
         if (opts.visibility !== "private" && opts.visibility !== "public") {
-            printError("--visibility must be 'private' or 'public'");
-            process.exit(1);
+            fail("--visibility must be 'private' or 'public'");
         }
         body.visibility = opts.visibility;
     }
 
+    // An empty string clears the list, which is why this checks for the flag
+    // being present rather than for a truthy value.
+    if (opts.fallbackModels !== undefined) {
+        body.fallbackModelIds = String(opts.fallbackModels)
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
+    }
+
+    if (opts.inputModalities !== undefined) {
+        body.inputModalities = String(opts.inputModalities)
+            .split(",")
+            .map((modality) => modality.trim())
+            .filter((modality) => modality.length > 0);
+    }
+
     if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
-                printError(
+                fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
-                process.exit(1);
             }
         }
     }
@@ -119,12 +135,23 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            title: model.title,
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
+            fallbacks: model.fallbackModelIds?.join(", ") || "-",
             description: model.description ?? "-",
         })),
-        ["id", "model", "visibility", "upstream", "base_url", "description"],
+        [
+            "id",
+            "model",
+            "title",
+            "visibility",
+            "upstream",
+            "base_url",
+            "fallbacks",
+            "description",
+        ],
     );
 }
 
@@ -138,10 +165,7 @@ const list = new Command("list")
             });
             printModels(res.data ?? []);
         } catch (err) {
-            printError(
-                `Failed to list my models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to list my models", err);
         }
     });
 
@@ -149,6 +173,7 @@ const create = addPriceOptions(
     new Command("create")
         .description("Register an OpenAI-compatible model endpoint")
         .requiredOption("--name <name>", "Model name")
+        .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
@@ -156,6 +181,14 @@ const create = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -171,10 +204,7 @@ const create = addPriceOptions(
             printModels([created]);
         }
     } catch (err) {
-        printError(
-            `Failed to create model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to create model", err);
     }
 });
 
@@ -183,6 +213,7 @@ const update = addPriceOptions(
         .description("Update one of your models")
         .argument("<id>", "Model id")
         .option("--name <name>", "Model name")
+        .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
@@ -190,6 +221,14 @@ const update = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();
@@ -208,10 +247,7 @@ const update = addPriceOptions(
             printModels([updated]);
         }
     } catch (err) {
-        printError(
-            `Failed to update model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to update model", err);
     }
 });
 
@@ -231,10 +267,7 @@ const remove = new Command("delete")
             printSuccess(`Model deleted: ${id}`);
             if (getOutputMode() === "json") printResult({ id });
         } catch (err) {
-            printError(
-                `Failed to delete model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to delete model", err);
         }
     });
 
@@ -264,10 +297,7 @@ const models = new Command("models")
                     ["model"],
                 );
         } catch (err) {
-            printError(
-                `Failed to fetch upstream models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch upstream models", err);
         }
     });
 
@@ -293,10 +323,7 @@ const test = new Command("test")
             );
             printResult(res);
         } catch (err) {
-            printError(
-                `Failed to test model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to test model", err);
         }
     });
 

@@ -36,6 +36,11 @@ describe("community endpoint OpenAI service", () => {
     it("sends the bearer token when testing an endpoint", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
+            if (request.url.endsWith("/images/edits")) {
+                return Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                });
+            }
             expect(request.url).toBe(
                 "https://api.example.com/v1/chat/completions",
             );
@@ -94,7 +99,15 @@ describe("community endpoint OpenAI service", () => {
     });
 
     it("detects token billing when image endpoints return OpenAI usage", async () => {
+        let editRequested = false;
         const fetchMock = vi.fn(async (input, init) => {
+            const url = input instanceof Request ? input.url : String(input);
+            if (url.endsWith("/images/edits")) {
+                editRequested = true;
+                return Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                });
+            }
             const request = new Request(input, init);
             expect(request.url).toBe(
                 "https://api.example.com/v1/images/generations",
@@ -148,19 +161,27 @@ describe("community endpoint OpenAI service", () => {
                 completionImageTokens: 1056,
             },
             imagePricing: "tokens",
+            inputModalities: ["text", "image"],
         });
 
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(editRequested).toBe(true);
     });
 
-    it("accepts image endpoints without OpenAI token usage", async () => {
+    it("accepts generation-only image endpoints without OpenAI token usage", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () =>
-                Response.json({
+            vi.fn(async (input) => {
+                if (String(input).endsWith("/images/edits")) {
+                    return Response.json(
+                        { error: { message: "Not supported" } },
+                        { status: 405 },
+                    );
+                }
+                return Response.json({
                     data: [{ b64_json: "iVBORw0KGgo=" }],
-                }),
-            ),
+                });
+            }),
         );
 
         await expect(
@@ -173,6 +194,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
+            inputModalities: ["text"],
         });
     });
 
@@ -203,6 +225,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
+            inputModalities: ["text", "image"],
         });
     });
 

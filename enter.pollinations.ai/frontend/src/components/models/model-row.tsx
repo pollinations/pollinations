@@ -20,7 +20,11 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import {
+    getModelPriceBadges,
+    PriceBadgeList,
+    PriceVariantDisclosure,
+} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -171,6 +175,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
+                        <PriceVariantDisclosure
+                            variants={model.priceVariants}
+                        />
                         <BalanceAccessChip
                             access={balanceAccess}
                             className="whitespace-nowrap"
@@ -178,6 +185,24 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <ModelId name={model.name} />
+                        {model.brandUrl && model.brand && (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="text-theme-text-muted"
+                                >
+                                    ·
+                                </span>
+                                <a
+                                    href={model.brandUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                                >
+                                    {model.brand}
+                                </a>
+                            </>
+                        )}
                     </div>
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (

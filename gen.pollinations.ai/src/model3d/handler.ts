@@ -3,6 +3,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import { HttpError } from "../image/httpError.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
 import {
@@ -22,13 +23,26 @@ export async function generate3dResponse(
     syncModel3dEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "");
     const safeParams = parseModel3dParams(c, body);
+    c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
-        const result = await createAndReturnModel3d(originalPrompt, safeParams);
-        assertNonEmptyMedia(result);
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(originalPrompt, safeParams, result),
-        });
+        const { response, servedEntry } = await withModelFallbackResponse(
+            c.var.model,
+            async (candidate) => {
+                const params = { ...safeParams, model: candidate.id };
+                const result = await createAndReturnModel3d(
+                    originalPrompt,
+                    params,
+                );
+                assertNonEmptyMedia(result);
+                return new Response(bufferToUint8Array(result.buffer), {
+                    headers: mediaHeaders(originalPrompt, params, result),
+                });
+            },
+            c.var.track?.failedCalls,
+        );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+        return response;
     } catch (error) {
         throw3dError(error);
     }
@@ -68,6 +82,7 @@ export function parseModel3dParams(
 ): Model3dParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const mergedParams = {
+        resolution: "low",
         ...queryParams,
         ...body,
         model: c.var.model.resolved,
@@ -129,6 +144,8 @@ export function throw3dError(error: unknown): never {
     if (error instanceof HttpError) {
         throw new UpstreamError(remapUpstreamStatus(error.status), {
             message: error.message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             upstreamStatus: error.status,
             responseBody: JSON.stringify({ message: error.message }),
             cause: error,

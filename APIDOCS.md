@@ -435,9 +435,9 @@ curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=
 
 #### `GET` `/image/{prompt}` — Generate Image
 
-Generate an image from a text prompt. Returns JPEG or PNG.
+Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -457,7 +457,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `image/jpeg`, `image/png` — Success - Returns the generated image
+📤 **Response** · `200` · `image/jpeg`, `image/png`, `image/svg+xml` — Success - Returns the generated image
 
 💻 **Example**
 
@@ -609,7 +609,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/music/upload" \
 
 Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d
 
@@ -691,17 +691,17 @@ Generate speech or music from text via a simple GET request.
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Music generation:** Set `model=elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
+**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `text` * | `path` | `string` | Text to convert to speech, or a music description when model=elevenmusic |
+| `text` * | `path` | `string` | Text to convert to speech, or a music description for a music-generation model |
 | `voice` | `query` | `string` | Voice to use for speech generation (TTS only) · default: `"alloy"` |
-| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format (TTS only). CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only. · default: `"mp3"` |
-| `model` | `query` | `string` | Audio model: TTS (default) or elevenmusic for music generation |
-| `duration` | `query` | `string` | Music duration in seconds, 3-300 (elevenmusic only) |
+| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only. · default: `"mp3"` |
+| `model` | `query` | `string` | Audio model: TTS (default) or a music-generation model such as lyria-3-clip |
+| `duration` | `query` | `string` | Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30) |
 | `seconds` | `query` | `number` | Audio duration in seconds for stable-audio-3-medium/large, 1-380 · range: `1…380` |
 | `steps` | `query` | `integer` | Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for stable-audio-3-large |
@@ -1157,6 +1157,7 @@ List private and public community models owned by the authenticated account. API
 | `data[].id` * | `string` | — |
 | `data[].modelId` * | `string` | — |
 | `data[].name` * | `string` | — |
+| `data[].title` * | `string` | — |
 | `data[].description` * | `string` \| `null` | — |
 | `data[].modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `data[].imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1198,7 +1199,8 @@ Register a private or public community text or image model. Private is the defau
 | Field | Type | Description |
 |---|---|---|
 | `name` * | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` * | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` * | `string` | — |
@@ -1224,6 +1226,7 @@ Register a private or public community text or image model. Private is the defau
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1353,7 +1356,8 @@ Update a community model owned by the authenticated account. Changing visibility
 | Field | Type | Description |
 |---|---|---|
 | `name` | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
@@ -1379,6 +1383,7 @@ Update a community model owned by the authenticated account. Changing visibility
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -2155,6 +2160,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
+| `data[].media_type` | `string` | MIME type for non-raster output such as image/svg+xml |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |

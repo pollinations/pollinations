@@ -62,9 +62,13 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
     };
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiSearchCost = calculateCost("gemini-search", usage, {
-        usage: {
-            server_tool_use_details: { web_search_requests: 1 },
-        },
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["current news"],
+                },
+            },
+        ],
     });
 
     expect(geminiSearchCost.totalCost).toBeGreaterThan(
@@ -130,6 +134,12 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
+});
+
+test("Amazon Nova media models use the Bedrock registry provider", () => {
+    for (const model of ["nova-canvas", "nova-reel"] as const) {
+        expect(getRegistryModelDefinition(model).provider).toBe("bedrock");
+    }
 });
 
 test("DeepSeek V4 models are billed at provider cost", () => {

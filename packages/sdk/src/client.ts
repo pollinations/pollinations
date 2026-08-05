@@ -48,7 +48,7 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
-const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
+const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -233,6 +233,17 @@ export class Pollinations {
 
     private async handleErrorResponse(response: Response): Promise<never> {
         throw await pollinationsErrorFromResponse(response);
+    }
+
+    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            signal,
+        );
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<T>;
     }
 
     private buildQueryParams(
@@ -605,7 +616,7 @@ export class Pollinations {
 
     /**
      * Generate a video and return it as binary data.
-     * Note: Video generation can take several minutes - timeout is set to 10 minutes.
+     * Note: Video generation can take several minutes - timeout is set to 20 minutes.
      *
      * @example
      * ```ts
@@ -1075,17 +1086,7 @@ export class Pollinations {
      * ```
      */
     async textModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/text/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
     }
 
     /**
@@ -1098,17 +1099,7 @@ export class Pollinations {
      * ```
      */
     async imageModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/image/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
     }
 
     /**
@@ -1120,17 +1111,7 @@ export class Pollinations {
      * ```
      */
     async models(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/v1/models`);
     }
 
     // ============================================================================
@@ -1443,15 +1424,10 @@ export class Pollinations {
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
-        const response = await fetchWithTimeout(
+        return this.getJson<UserInfo>(
             `${AUTH_BASE_URL}/api/device/userinfo`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UserInfo>;
     }
 
     // ============================================================================
@@ -1468,14 +1444,7 @@ export class Pollinations {
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/profile`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountProfile>;
+        return this.getJson<AccountProfile>(`${this.baseUrl}/account/profile`);
     }
 
     /**
@@ -1488,14 +1457,7 @@ export class Pollinations {
      * ```
      */
     async accountBalance(): Promise<AccountBalance> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/balance`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountBalance>;
+        return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
     }
 
     /**
@@ -1519,14 +1481,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        return this.getJson<UsageResponse>(url);
     }
 
     /**
@@ -1552,14 +1507,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<DailyUsageResponse>;
+        return this.getJson<DailyUsageResponse>(url);
     }
 
     /**
@@ -1572,14 +1520,7 @@ export class Pollinations {
      * ```
      */
     async validateKey(): Promise<KeyInfo> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/key`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<KeyInfo>;
+        return this.getJson<KeyInfo>(`${this.baseUrl}/account/key`);
     }
 
     /**
@@ -1604,14 +1545,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        return this.getJson<UsageResponse>(url);
     }
 
     // ============================================================================
@@ -1628,15 +1562,10 @@ export class Pollinations {
      * ```
      */
     async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
-        const response = await fetchWithTimeout(
+        const body = await this.getJson<{ data?: AccountKey[] }>(
             `${this.baseUrl}/account/keys`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        const body = (await response.json()) as { data?: AccountKey[] };
         return body.data || [];
     }
 

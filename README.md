@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [💬 Arika](https://arika.hizumi.in) | Arika provides a conversational AI experience designed to feel more human and less robotic. | [@02th](https://github.com/02th) |
-| [🖼️ Ai Anime Legends Generator](https://anime.caasexpresss.com) | Ai Anime Legends Generator generates anime legends using AI. | [@Caas2023](https://github.com/Caas2023) |
-| [🖼️ Silenos Visual Production & Illustration Studio](https://www.silenos.es/ilustrador/) | Centraliza literatura, contenido creativo y desarrollo técnico en la plataforma silenos.es con un enfoque minimalista y preciso, priorizando el contenido puro y arquitecturas lógicas. | [@todoh](https://github.com/todoh) |
-| [📚 studybuddy](https://studybuddy-deploy2026.streamlit.app/) | studybuddy is an AI-powered learner assistant that helps students study using their own notes. | [@jmwdpk](https://github.com/jmwdpk) |
-| [🧑‍💻 Code Canvas Complete](https://code-canvas-complete-production.up.railway.app/) | Code Canvas is an all-in-one browser-based IDE with a built-in AI assistant for code generation, debugging, and explanation. It integrates Pollinations.ai as a Bring-Your-Own-Key (BYOK) AI provider, a | [@TopProjectsCreator](https://github.com/TopProjectsCreator) |
-| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |
-| [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |
-| [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |
-| [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |
-| [🧠 AINewsForge](Not public) | AINewsForge is an agentic system built with LangGraph that fetches news, generates LinkedIn posts, verifies claims, creates cover images, reviews quality, and publishes to LinkedIn. | [@Ravnoor17](https://github.com/Ravnoor17) |
+| [🖼️ Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) | An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g | [@Vigor-Zhong](https://github.com/Vigor-Zhong) |
+| [🛠️ Agentic Automation](https://pollinations-chat-kohl.vercel.app) | Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI | [@SopuluA](https://github.com/SopuluA) |
+| [💬 Pulse AI](https://github.com/XNet-NGO/pulse-ai) | Pulse AI is a consumer AI assistant for Android that uses the Pollinations text API (gen.pollinations.ai/v1) for chat completions and the Pollinations image API (image.pollinations.ai) for on-demand i | [@xnet-admin-1](https://github.com/xnet-admin-1) |
+| [🖼️ Lumara](https://github.com/pinkpixel-dev/Lumara) | Lumara is a desktop application that brings the power of the Pollinations AI image generation ecosystem directly to your computer. Select from a variety of image models, apply artistic styles, optiona | [@sizzlebop](https://github.com/sizzlebop) |
+| [🖼️ ImageGenerator.MAUI](https://github.com/MR-444/ImageGenerator.MAUI) | ImageGenerator.MAUI is an open-source (MIT) Windows desktop image-generation app built with .NET MAUI. Users pick a model, enter a prompt, and generate images; every saved image embeds the full prompt | [@MR-444](https://github.com/MR-444) |
+| [🖼️ Batch Imagine](https://batchimagine.netlify.app) | **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API. | [@Shawaiz-Hussain](https://github.com/Shawaiz-Hussain) |
+| [✍️ Qisas Hook Lab](https://q8paradise.github.io/qisas-hook-lab) | Qisas Hook Lab is a bilingual Arabic/English writing workflow for developing responsible short-form stories. A user enters a subject and, after Pollinations OAuth 2.1 authorization with PKCE and BYOP, | [@q8paradise](https://github.com/q8paradise) |
+| [🖼️ Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) | Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat | [@mtonk](https://github.com/mtonk) |
+| [💬 chatty](https://chatty.ext.io) | simple chat ui that uses pollinations and new byop system [models are a bit outdated will prob update sometime] | [@smplstuff](https://github.com/smplstuff) |
+| [💬 Oracle of Chance](https://dramatise.site) | These are two apps I have created side by side, which are basically quite different. The main one, Oracle of Chance, is a search engine designed to work as a crystal ball, and to give precise YES/NO/M | [@yashok87](https://github.com/yashok87) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-07-22** – **🎨 Community image endpoints** Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})
-- **2026-07-22** – **🚀 Gemini 3.6 Flash** Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-07-22** – **🤖 Laguna S 2.1** `laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-07-22** – **🎨 Anime Legends Generator** Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com) <!-- app -->
-- **2026-07-22** – **✨ Arika** A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in) <!-- app -->
-- **2026-07-20** – **✨ Better embeddings, including multimodal search** Gemini Embedding 2 now uses its GA endpoint, with role-aware Cohere requests and combined text-image embeddings for less approximate vector search.
-- **2026-07-20** – **💡 Model pickers now speak human** All 132 model descriptions were rewritten around practical trade-offs—quality, speed, cost, and capabilities—so apps can help people choose without making them read provider lore. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-07-20** – **🚀 Community model publishing has a front door** Prospective publishers can now request allowlist access for public text, image, embedding, speech, and transcription models; private models still need no invitation. [Request access](https://github.com/pollinations/pollinations/issues/new/choose)
-- **2026-07-19** – **⚡ Z-Image gets two RTX 5090 hives** Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)
-- **2026-07-16** – **🚀 GPT Realtime 2.1** `gpt-realtime-2.1` is now the default realtime model, giving voice and live-interaction builders a newer verified endpoint while `gpt-realtime-2` remains available. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-04** – **✨ Command A Plus, less translation** Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus.
+- **2026-08-03** – **🎨 Krea 2 Medium** Krea joins the image API: generate square, wide, or tall images with `krea-2`, aspect-ratio mapping, and seed support. [Try it](https://pollinations.ai/play)
+- **2026-08-03** – **🎥 Grok Imagine Video 1.5** Generate 480p, 720p, or 1080p video clips with synchronized audio through the unified API. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-03** – **🤖 Qwen3.8 Max** A new Alibaba-routed multimodal model for text, image, and video inputs—available as `qwen3.8-max`. [Available models](https://gen.pollinations.ai/v1/models)
+- **2026-07-31** – **✨ Fallback routing for community models** Model owners can nominate up to three compatible backups, so text and image generations can keep moving when an upstream model goes sideways. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-31** – **⚡ Faster DreamShaper image generation** The Sana pool now runs parallel workers per GPU, roughly doubling concurrent throughput. More pixels, less queue. [Try it](https://pollinations.ai/play)
+- **2026-07-30** – **🎵 Sharper speech-to-text** Transcription now runs on AssemblyAI Universal-3.5 Pro at the same base rate, with plain text, SRT, and VTT output still available. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-30** – **🤖 Cohere Command A+** Call `command-a-plus` for 128K-context chat, reasoning, JSON, streaming, and automatic tool use—with Quest Pollen access. [Available models](https://gen.pollinations.ai/v1/models)
+- **2026-07-30** – **🚀 Qwen3.7 Flash** A fast paid model for text, images, video, tools, reasoning, streaming, and prompt-cache-aware workloads is now available as `qwen3.7-flash`. [Try the playground](https://pollinations.ai/play)
+- **2026-07-30** – **✨ Weaver joins the model catalog** The Polli media agent is now `weaver`: discover it via `/v1/models` and invoke it through `voodoohop/weaver`.
 ---
 
 ## 🌱 Introduction
@@ -386,7 +386,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
-- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `open-code-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
+- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `opencode-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
 
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
@@ -426,3 +426,4 @@ pollinations.ai is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the pollinations.ai team
+

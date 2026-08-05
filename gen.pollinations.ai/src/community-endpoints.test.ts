@@ -1,22 +1,32 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
+    communityEndpointTitle,
+    communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityProviderUrl,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
@@ -25,7 +35,11 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import {
+    calculateUsageBilling,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -37,8 +51,15 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import {
+    communityImageSupportedEndpoints,
+    getCommunityModelRegistryEntries,
+} from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
-import { resetGenerationModelRegistryCache } from "./model-registry.ts";
+import {
+    getGenerationModelRegistry,
+    resetGenerationModelRegistryCache,
+} from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
@@ -49,6 +70,7 @@ const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
+const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
@@ -56,6 +78,10 @@ function isPortkeyChatCompletionsRequest(request: Request): boolean {
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/generations");
+}
+
+function isCommunityImageEditsRequest(request: Request): boolean {
+    return new URL(request.url).pathname.endsWith("/images/edits");
 }
 
 beforeEach(() => {
@@ -186,6 +212,109 @@ function isBillingFetch(request: Request): boolean {
     );
 }
 
+/** Tinybird ingest bodies are newline-delimited JSON, one row per event. */
+function parseIngestedEvents(body: string): Record<string, unknown>[] {
+    return body
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+}
+
+async function createCommunityFallbackPair({
+    prefix,
+    modality = "text",
+    primaryName = "primary",
+    fallbackName = "cheap",
+}: {
+    prefix: string;
+    modality?: CommunityEndpointModality;
+    primaryName?: string;
+    fallbackName?: string;
+}) {
+    const primaryToken = "sk_primary_token";
+    const fallbackToken = "sk_fallback_token";
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const primaryOwner = `${prefix}-primary-${suffix}`;
+    const fallbackOwner = `${prefix}-fallback-${suffix}`;
+    const primaryUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: primaryOwner,
+    });
+    const fallbackUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: fallbackOwner,
+    });
+    const primaryModelId = communityModelId(primaryOwner, primaryName);
+    const fallbackModelId = communityModelId(fallbackOwner, fallbackName);
+    const primaryHostname = `${prefix}-primary.example.com`;
+    const fallbackHostname = `${prefix}-fallback.example.com`;
+    const primaryHost = `https://${primaryHostname}/v1`;
+    const fallbackHost = `https://${fallbackHostname}/v1`;
+    const primaryUpstreamModel = `${primaryName}-upstream`;
+    const fallbackUpstreamModel = `${fallbackName}-upstream`;
+    const priceFields = (price: number) =>
+        modality === "image"
+            ? {
+                  promptTextPrice: 0,
+                  completionTextPrice: 0,
+                  completionImagePrice: price,
+              }
+            : { promptTextPrice: price, completionTextPrice: price };
+    const [primaryPrice, fallbackPrice] =
+        modality === "image"
+            ? [0.02, 0.01]
+            : [0.2 / 1_000_000, 0.1 / 1_000_000];
+
+    await db.insert(communityEndpointTable).values([
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: primaryUserId,
+            visibility: "public",
+            name: primaryName,
+            modality,
+            baseUrl: primaryHost,
+            upstreamModel: primaryUpstreamModel,
+            bearerTokenCiphertext: await encryptSecret(
+                primaryToken,
+                env.BETTER_AUTH_SECRET,
+            ),
+            ...priceFields(primaryPrice),
+            fallbackModelIds: [fallbackModelId],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: fallbackUserId,
+            visibility: "public",
+            name: fallbackName,
+            modality,
+            baseUrl: fallbackHost,
+            upstreamModel: fallbackUpstreamModel,
+            bearerTokenCiphertext: await encryptSecret(
+                fallbackToken,
+                env.BETTER_AUTH_SECRET,
+            ),
+            ...priceFields(fallbackPrice),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]);
+
+    return {
+        primaryModelId,
+        fallbackModelId,
+        primaryHost,
+        fallbackHost,
+        primaryHostname,
+        fallbackHostname,
+        primaryUpstreamModel,
+        fallbackUpstreamModel,
+        primaryToken,
+        fallbackToken,
+    };
+}
+
 describe("community endpoint helpers", () => {
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         expect(
@@ -262,6 +391,9 @@ describe("community endpoint helpers", () => {
         expect(communityImageGenerationsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/images/generations",
         );
+        expect(communityImageEditsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/images/edits",
+        );
         expect(
             communityChatCompletionsUrl(
                 "https://api.example.com/v1/chat/completions",
@@ -270,6 +402,16 @@ describe("community endpoint helpers", () => {
         expect(
             communityImageGenerationsUrl(
                 "https://api.example.com/v1/images/generations",
+            ),
+        ).toBe("https://api.example.com/v1/images/generations");
+        expect(
+            communityImageEditsUrl(
+                "https://api.example.com/v1/images/generations",
+            ),
+        ).toBe("https://api.example.com/v1/images/edits");
+        expect(
+            communityImageGenerationsUrl(
+                "https://api.example.com/v1/images/edits",
             ),
         ).toBe("https://api.example.com/v1/images/generations");
         expect(
@@ -298,6 +440,18 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("normalizes public community provider URLs", () => {
+        expect(
+            normalizeCommunityProviderUrl(" https://example.com/models#top "),
+        ).toBe("https://example.com/models");
+        expect(() =>
+            normalizeCommunityProviderUrl("http://example.com"),
+        ).toThrow("Provider URL must use https");
+        expect(() =>
+            normalizeCommunityProviderUrl("https://user:pass@example.com"),
+        ).toThrow("Provider URL cannot include credentials");
+    });
+
     it("uses the community endpoint description as the model title", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
@@ -315,6 +469,53 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("prefers a stored title over the description", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            title: "OpenAI Fast",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({ promptTextPrice: 0.1 }),
+        });
+
+        expect(modelDefinition.title).toBe("OpenAI Fast");
+        // Description stays its own field so both can render independently.
+        expect(modelDefinition.description).toBe(
+            "OpenAI via community endpoint",
+        );
+    });
+
+    it("projects a provider profile onto the community model brand", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            title: "OpenAI Fast",
+            description: null,
+            providerName: "Example AI",
+            providerUrl: "https://example.com/",
+            ...communityEndpointPrices({}),
+        });
+
+        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.brandUrl).toBe("https://example.com/");
+    });
+
+    it("falls back to the model name when title and description are unset", () => {
+        expect(
+            communityEndpointTitle({
+                modelId: "voodoohop/openai",
+                title: null,
+                description: null,
+            }),
+        ).toBe("openai");
+        // Whitespace-only titles are treated as unset rather than rendering blank.
+        expect(
+            communityEndpointTitle({
+                modelId: "voodoohop/openai",
+                title: "   ",
+                description: "Community endpoint",
+            }),
+        ).toBe("Community endpoint");
+    });
+
     it("builds community image models with one fixed per-image price", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
@@ -329,17 +530,27 @@ describe("community endpoint helpers", () => {
 
         expect(definition).toMatchObject({
             category: "image",
+            inputModalities: ["text"],
             flatRate: true,
             cost: { completionImageTokens: 0.03 },
         });
         expect(definition.cost).not.toHaveProperty("promptTextTokens");
         expect(
-            calculateUsageBilling(
-                modelId,
-                { completionImageTokens: 1 },
-                definition,
-            ).price.totalPrice,
+            calculateUsageBilling({
+                model: modelId,
+                usage: { completionImageTokens: 1 },
+                servedBy: definition,
+            }).price.totalPrice,
         ).toBe(0.03);
+    });
+
+    it("advertises image edits only for models with image input", () => {
+        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
+            "/v1/images/edits",
+        );
+        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
+            "/v1/images/edits",
+        );
     });
 
     it("builds token-priced community image models when the probe detected usage", () => {
@@ -349,6 +560,7 @@ describe("community endpoint helpers", () => {
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
+            inputModalities: ["text", "image"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.000005,
                 promptImagePrice: 0.00001,
@@ -358,6 +570,7 @@ describe("community endpoint helpers", () => {
 
         expect(definition).toMatchObject({
             category: "image",
+            inputModalities: ["text", "image"],
             flatRate: false,
             cost: {
                 promptTextTokens: 0.000005,
@@ -366,15 +579,15 @@ describe("community endpoint helpers", () => {
             },
         });
         expect(
-            calculateUsageBilling(
-                modelId,
-                {
+            calculateUsageBilling({
+                model: modelId,
+                usage: {
                     promptTextTokens: 100,
                     promptImageTokens: 0,
                     completionImageTokens: 1000,
                 },
-                definition,
-            ).price.totalPrice,
+                servedBy: definition,
+            }).price.totalPrice,
         ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
     });
 
@@ -391,6 +604,91 @@ describe("community endpoint helpers", () => {
         expect(Object.keys(definition)).toHaveLength(
             communityEndpointPriceFieldsForModality("text").length,
         );
+    });
+
+    it('defaults input modalities to ["text"] when not declared', () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("preserves explicitly declared input modalities", () => {
+        const definition = communityModelDefinition({
+            modelId: "marcosfrgames08/glm-4.6v-flash",
+            description: "Vision model",
+            inputModalities: ["image", "video"],
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["image", "video"]);
+    });
+
+    it("filters inputs that image endpoints cannot accept", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            inputModalities: ["text", "audio"],
+            ...communityEndpointPrices({
+                promptTextPrice: 0.2,
+                completionImagePrice: 0.03,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    describe("fallback target pricing", () => {
+        const uniformPrices = (price: number) =>
+            communityEndpointPrices(
+                Object.fromEntries(
+                    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                        field.key,
+                        price,
+                    ]),
+                ),
+            );
+
+        it("allows an equally priced target", () => {
+            expect(
+                isCommunityFallbackPricingAllowed(
+                    uniformPrices(0.5),
+                    uniformPrices(0.5),
+                ),
+            ).toBe(true);
+        });
+
+        it("allows a target that is cheaper on every field", () => {
+            expect(
+                isCommunityFallbackPricingAllowed(
+                    uniformPrices(0.5),
+                    uniformPrices(0.25),
+                ),
+            ).toBe(true);
+        });
+
+        it("rejects a target that is more expensive on any single field", () => {
+            // Every price column, so a newly added one cannot silently escape
+            // the same-or-lower rule.
+            for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+                expect(
+                    isCommunityFallbackPricingAllowed(uniformPrices(0.5), {
+                        ...uniformPrices(0.5),
+                        [field.key]: 0.51,
+                    }),
+                ).toBe(false);
+            }
+        });
     });
 
     describe("community image endpoint billing", () => {
@@ -416,12 +714,16 @@ describe("community endpoint helpers", () => {
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
+                title: "GPT Image",
                 description: null,
+                delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
+                inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                fallbackModelIds: [],
                 disabledAt: null,
                 disabledReason: null,
                 bearerTokenCiphertext: await encryptSecret(
@@ -507,6 +809,89 @@ describe("community endpoint helpers", () => {
                 message: expect.stringContaining("image token usage"),
             });
         });
+
+        it("forwards edits as multipart and bills provider image-token usage", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === TEST_INPUT_IMAGE_URL) {
+                    return new Response(new Uint8Array(TEST_PNG_BYTES));
+                }
+
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/images/edits",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("gpt-image-1");
+                expect(formData.get("prompt")).toBe("make it blue");
+                expect(formData.get("size")).toBe("1024x1024");
+                expect(formData.get("quality")).toBe("medium");
+                expect(formData.get("image")).toBeInstanceOf(File);
+
+                return Response.json({
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                    usage: {
+                        input_tokens: 54,
+                        output_tokens: 1056,
+                        total_tokens: 1110,
+                        input_tokens_details: {
+                            text_tokens: 12,
+                            image_tokens: 42,
+                        },
+                    },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityImageEndpoint(
+                await imageEndpoint("tokens"),
+                "make it blue",
+                { ...imageParams, image: [TEST_INPUT_IMAGE_URL] },
+                secret,
+            );
+
+            expect(result.trackingData?.usage).toEqual({
+                promptTextTokens: 12,
+                promptImageTokens: 42,
+                completionImageTokens: 1056,
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("preserves an upstream unsupported-edit error", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === TEST_INPUT_IMAGE_URL) {
+                        return new Response(new Uint8Array(TEST_PNG_BYTES));
+                    }
+                    return Response.json(
+                        { error: { message: "Image edits are not supported" } },
+                        { status: 405 },
+                    );
+                }),
+            );
+
+            await expect(
+                callCommunityImageEndpoint(
+                    await imageEndpoint("request"),
+                    "make it blue",
+                    { ...imageParams, image: [TEST_INPUT_IMAGE_URL] },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 405,
+                message: expect.stringContaining(
+                    "Image edits are not supported",
+                ),
+            });
+        });
     });
 
     it("builds Portkey gateway context with the saved token", async () => {
@@ -516,12 +901,16 @@ describe("community endpoint helpers", () => {
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
             name: "openai",
+            title: "OpenAI",
             description: null,
             modality: "text",
             imagePricing: "request",
+            inputModalities: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            delegatesGeneration: false,
+            fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -561,6 +950,93 @@ describe("community endpoint helpers", () => {
         });
         expect(context.modelDef).toBe(modelDefinition);
         expect(context).not.toHaveProperty("messages");
+    });
+
+    describe("delegated agent endpoints", () => {
+        const secret = "test-secret";
+
+        async function agentEndpoint(
+            overrides: Partial<CommunityEndpointRuntime> = {},
+        ): Promise<CommunityEndpointRuntime> {
+            return {
+                id: "agent-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/agent",
+                name: "agent",
+                title: "Agent",
+                description: null,
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: null,
+                baseUrl: "https://agent.example.com/v1",
+                upstreamModel: "agent",
+                visibility: "public",
+                delegatesGeneration: true,
+                disabledAt: null,
+                disabledReason: null,
+                fallbackModelIds: [],
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({}),
+                ...overrides,
+            };
+        }
+
+        async function contextFor(
+            endpoint: CommunityEndpointRuntime,
+            parentApiKeyId?: string,
+        ) {
+            return communityEndpointGatewayContext(
+                endpoint,
+                communityModelDefinition(endpoint),
+                { messages: [{ role: "user", content: "make a video" }] },
+                secret,
+                "https://portkey.test",
+                "sk_user_key",
+                parentApiKeyId,
+            );
+        }
+
+        it("authenticates as a run token, not the caller's or owner's key", async () => {
+            const endpoint = await agentEndpoint();
+            const context = await contextFor(endpoint, "parent-key-id");
+
+            const token = String(context.modelConfig?.authKey);
+            expect(token).toMatch(/^ag_/);
+            expect(token).not.toContain("sk_user_key");
+            // The owner's saved bearer is replaced, never sent alongside — the
+            // endpoint must not receive a credential it could spend as its own.
+            expect(token).not.toContain("sk_saved_token");
+
+            const claims = await verifyAgentRunToken(token, secret);
+            expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+        });
+
+        it("sends the saved bearer when the endpoint is not flagged", async () => {
+            const endpoint = await agentEndpoint({
+                delegatesGeneration: false,
+            });
+            const context = await contextFor(endpoint, "parent-key-id");
+            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+        });
+
+        it("refuses to delegate when there is no key to bill", async () => {
+            const endpoint = await agentEndpoint();
+            await expect(contextFor(endpoint, undefined)).rejects.toThrow(
+                "no API key to bill",
+            );
+        });
+
+        it("refuses to delegate from an endpoint that charges a price", async () => {
+            const endpoint = await agentEndpoint({
+                ...communityEndpointPrices({ promptTextPrice: 0.1 }),
+            });
+            await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
+                "is not free",
+            );
+        });
     });
 });
 
@@ -610,6 +1086,10 @@ fixtureTest(
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
+                    // The upstream names itself, as a real provider does. Our
+                    // id has to win over it, or a community model is recorded
+                    // under whatever its owner happens to proxy.
+                    model: "gpt-4.1-mini",
                     choices: [
                         {
                             index: 0,
@@ -649,10 +1129,15 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
+        // Billing and analytics read the header, and it names OUR model even
+        // though the upstream called itself something else.
         expect(response.headers.get("x-model-used")).toBe(modelId);
         const body = await response.json();
-        expect(body).not.toHaveProperty("model");
+        // The OpenAI-compatible body still echoes the upstream's own name,
+        // which is what a provider's response carries. It disagrees with the
+        // header on purpose today; see the follow-up issue on aligning them.
         expect(body).toMatchObject({
+            model: "gpt-4.1-mini",
             choices: [{ message: { content: "ok" } }],
             usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 },
         });
@@ -676,8 +1161,8 @@ fixtureTest(
         );
         expect(legacyResponse.status).toBe(200);
         const legacyBody = await legacyResponse.json();
-        expect(legacyBody).not.toHaveProperty("model");
         expect(legacyBody).toMatchObject({
+            model: "gpt-4.1-mini",
             choices: [{ message: { content: "ok" } }],
         });
 
@@ -1316,13 +1801,14 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
+                    title: "Denied Public Endpoint",
                     description: "Denied public community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1340,6 +1826,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: privateModelName,
+                    title: "Private Endpoint",
                     description: "Private community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -1373,8 +1860,8 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.1,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00001,
                     }),
                 },
             ),
@@ -1573,13 +2060,14 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: modelName,
+                    title: "Pollinations Upstream",
                     description: "Pollinations upstream through community API",
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1599,8 +2087,8 @@ fixtureTest(
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.1,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
         });
 
         const testResponse = await fetchEnterApi(
@@ -1699,6 +2187,15 @@ fixtureTest(
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
+            if (
+                request.url === TEST_INPUT_IMAGE_URL ||
+                request.url.startsWith("data:image/png;base64,")
+            ) {
+                return new Response(new Uint8Array(TEST_PNG_BYTES), {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+
             if (request.url === TEST_COMMUNITY_IMAGE_URL) {
                 expect(request.headers.get("authorization")).toBeNull();
                 expect(request.redirect).toBe("manual");
@@ -1753,6 +2250,40 @@ fixtureTest(
                 });
             }
 
+            if (isCommunityImageEditsRequest(request)) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_image_upstream",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("gpt-image-1");
+                expect(formData.get("n")).toBe("1");
+                expect(formData.get("image")).toBeInstanceOf(File);
+
+                const prompt = formData.get("prompt");
+                if (prompt === "make it blue") {
+                    expect(formData.get("size")).toBe("512x512");
+                    expect(formData.get("quality")).toBe("high");
+                } else if (prompt === "turn it red") {
+                    expect(formData.get("size")).toBe("384x640");
+                    expect(formData.get("quality")).toBe("medium");
+                } else if (prompt === "Add a small blue dot to the image.") {
+                    expect(formData.get("size")).toBe("1024x1024");
+                    expect(formData.get("quality")).toBe("medium");
+                } else {
+                    throw new Error(
+                        `Unexpected edit prompt: ${String(prompt)}`,
+                    );
+                }
+
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+
             if (isBillingFetch(request)) {
                 return Response.json({ data: [] });
             }
@@ -1760,6 +2291,36 @@ fixtureTest(
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Image Endpoint",
+            description: "OpenAI-compatible image endpoint",
+            modality: "image",
+            inputModalities: ["text", "image"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1/images/generations",
+            upstreamModel: "gpt-image-1",
+            bearerToken: "Bearer sk_image_upstream",
+            promptTextPrice: 0.000002,
+            completionImagePrice: 0.03,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text", "audio"],
+                }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
 
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -1769,17 +2330,7 @@ fixtureTest(
                     "Content-Type": "application/json",
                     Cookie: await signedSessionCookie(sessionToken),
                 },
-                body: JSON.stringify({
-                    name: modelName,
-                    description: "OpenAI-compatible image endpoint",
-                    modality: "image",
-                    visibility: "public",
-                    baseUrl: "https://api.example.com/v1/images/generations",
-                    upstreamModel: "gpt-image-1",
-                    bearerToken: "Bearer sk_image_upstream",
-                    promptTextPrice: 0.000002,
-                    completionImagePrice: 0.03,
-                }),
+                body: JSON.stringify(registrationPayload),
             }),
         );
 
@@ -1788,6 +2339,7 @@ fixtureTest(
             id: string;
             modelId: string;
             modality: string;
+            inputModalities: string[];
             baseUrl: string;
             upstreamModel: string;
             promptTextPrice: number;
@@ -1796,6 +2348,7 @@ fixtureTest(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
+            inputModalities: ["text", "image"],
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
@@ -1820,9 +2373,11 @@ fixtureTest(
         );
         expect(testResponse.status).toBe(200);
         await expect(testResponse.json()).resolves.toMatchObject({
-            message: "Endpoint responded with image data",
+            message:
+                "Generation and editing endpoints responded with image data",
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
+            inputModalities: ["text", "image"],
         });
 
         const simpleImageResponse = await SELF.fetch(
@@ -1884,6 +2439,52 @@ fixtureTest(
             },
         });
 
+        const editFormData = new FormData();
+        editFormData.append("model", registered.modelId);
+        editFormData.append("prompt", "make it blue");
+        editFormData.append("size", "512x512");
+        editFormData.append("quality", "hd");
+        editFormData.append(
+            "image",
+            new Blob([new Uint8Array(TEST_PNG_BYTES)], { type: "image/png" }),
+            "source.png",
+        );
+        const openaiEditResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: editFormData,
+            }),
+        );
+        expect(openaiEditResponse.status).toBe(200);
+        await expect(openaiEditResponse.json()).resolves.toMatchObject({
+            data: [{ b64_json: TEST_PNG_BASE64 }],
+            usage: {
+                input_tokens: 0,
+                output_tokens: 1,
+                total_tokens: 1,
+            },
+        });
+
+        const simpleEditResponse = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/turn%20it%20red?model=${encodeURIComponent(
+                    registered.modelId,
+                )}&image=${encodeURIComponent(TEST_INPUT_IMAGE_URL)}&width=384&height=640`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+        expect(simpleEditResponse.status).toBe(200);
+        expect(simpleEditResponse.headers.get("content-type")).toBe(
+            "image/png",
+        );
+        expect(
+            simpleEditResponse.headers.get("x-usage-completion-image-tokens"),
+        ).toBe("1");
+        expect(
+            Array.from(new Uint8Array(await simpleEditResponse.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+
         const urlImageResponse = await SELF.fetch(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
@@ -1943,6 +2544,7 @@ fixtureTest(
             name: string;
             category?: string;
             community?: boolean;
+            input_modalities?: string[];
             flat_rate?: boolean;
             pricing?: Record<string, string>;
         }[];
@@ -1954,6 +2556,7 @@ fixtureTest(
         const openaiModels = (await openaiModelsResponse.json()) as {
             data: {
                 id: string;
+                input_modalities?: string[];
                 supported_endpoints?: string[];
             }[];
         };
@@ -1965,6 +2568,7 @@ fixtureTest(
             name: registered.modelId,
             category: "image",
             community: true,
+            input_modalities: ["text", "image"],
             flat_rate: true,
             pricing: {
                 currency: "pollen",
@@ -1981,14 +2585,13 @@ fixtureTest(
         const openaiModel = openaiModels.data.find(
             (model) => model.id === registered.modelId,
         );
+        expect(openaiModel?.input_modalities).toEqual(["text", "image"]);
         expect(openaiModel?.supported_endpoints).toEqual(
             expect.arrayContaining([
                 "/v1/images/generations",
+                "/v1/images/edits",
                 "/image/{prompt}",
             ]),
-        );
-        expect(openaiModel?.supported_endpoints).not.toContain(
-            "/v1/images/edits",
         );
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
@@ -1996,11 +2599,53 @@ fixtureTest(
             ),
         ).toHaveLength(4);
         expect(
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isCommunityImageEditsRequest(new Request(input, init)),
+            ),
+        ).toHaveLength(3);
+        expect(
             fetchMock.mock.calls.filter(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
         ).toHaveLength(3);
+
+        const maximumImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
+                    }),
+                },
+            ),
+        );
+        expect(maximumImagePriceResponse.status).toBe(200);
+
+        const excessiveImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice:
+                            MAX_COMMUNITY_PRICE_PER_IMAGE + 0.01,
+                    }),
+                },
+            ),
+        );
+        expect(excessiveImagePriceResponse.status).toBe(400);
     },
 );
 
@@ -2053,7 +2698,68 @@ fixtureTest(
             }),
         );
         expect(listResponse.status).toBe(200);
-        await expect(listResponse.json()).resolves.toEqual({ data: [] });
+        await expect(listResponse.json()).resolves.toEqual({
+            data: [],
+            provider: { name: null, url: null },
+        });
+
+        const incompleteProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ name: "Example AI", url: "" }),
+                },
+            ),
+        );
+        expect(incompleteProviderResponse.status).toBe(400);
+
+        const insecureProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "http://example.com",
+                    }),
+                },
+            ),
+        );
+        expect(insecureProviderResponse.status).toBe(400);
+
+        const providerResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                    }),
+                },
+            ),
+        );
+        expect(providerResponse.status).toBe(200);
+        await expect(providerResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+        });
 
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -2065,6 +2771,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "my-test-model",
+                    title: "My Test Model",
                     description: "Account API model",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -2113,20 +2820,22 @@ fixtureTest(
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
+                        title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.2,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00002,
                     }),
                 },
             ),
         );
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
+            title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00002,
             disabled: true,
             disabledReason: "was failing",
         });
@@ -2221,15 +2930,15 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: 0.3 }),
+                    body: JSON.stringify({ promptTextPrice: 0.00003 }),
                 },
             ),
         );
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
-            promptTextPrice: 0.3,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
         });
 
         // Making the model private clears all owner-set prices.
@@ -2288,10 +2997,26 @@ fixtureTest(
         expect(secondListResponse.status).toBe(200);
         const secondList = (await secondListResponse.json()) as {
             data: Record<string, unknown>[];
+            provider: { name: string | null; url: string | null };
         };
         expect(secondList.data).toHaveLength(1);
+        expect(secondList.provider).toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+        });
+        expect(secondList.data[0]).toMatchObject({
+            title: "Updated Model Title",
+        });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env.DB)
+        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        expect(registryEntry?.info).toMatchObject({
+            brand: "Example AI",
+            brand_url: "https://example.com/",
+        });
     },
 );
 
@@ -2324,6 +3049,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "price-floor-test",
+                    title: "Price Floor Test",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
@@ -2362,6 +3088,22 @@ fixtureTest(
         await expect(minimumResponse.json()).resolves.toMatchObject({
             promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
         });
+
+        const maximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(maximumResponse.status).toBe(200);
+        await expect(maximumResponse.json()).resolves.toMatchObject({
+            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+        });
+
+        const aboveMaximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN * 1.01,
+        );
+        expect(aboveMaximumResponse.status).toBe(400);
+        expect(await aboveMaximumResponse.text()).toContain(
+            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+        );
 
         const belowMinimumResponse = await updatePrice(
             MIN_COMMUNITY_PRICE_PER_TOKEN / 10,
@@ -2465,6 +3207,7 @@ fixtureTest("rejects a community model name containing a slash", async () => {
             },
             body: JSON.stringify({
                 name: "inferenceport.ai/gpt-oss-20b",
+                title: "Slash Name",
                 description: "name with a slash",
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-oss-20b",
@@ -2475,3 +3218,1111 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest("validates community fallback targets on write", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
+    const otherOwnerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: otherOwnerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const bearerTokenCiphertext = await encryptSecret(
+        "sk_saved_token",
+        env.BETTER_AUTH_SECRET,
+    );
+    const targetNames = {
+        cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
+        priv: `private-${crypto.randomUUID().slice(0, 8)}`,
+        otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
+        disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
+        image: `image-${crypto.randomUUID().slice(0, 8)}`,
+        pricey: `pricey-${crypto.randomUUID().slice(0, 8)}`,
+    };
+    for (const target of [
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.cheap,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "cheap-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: otherOwnerUserId,
+            visibility: "private",
+            name: targetNames.otherPrivate,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "other-private-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.disabled,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "disabled-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            disabledAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "private",
+            name: targetNames.priv,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "private-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.image,
+            modality: "image",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "image-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            completionImagePrice: 0.01,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.pricey,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "pricey-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.5 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ] satisfies (typeof communityEndpointTable.$inferInsert)[]) {
+        await db.insert(communityEndpointTable).values(target);
+    }
+
+    const enterApi = await createEnterCommunityApi();
+    const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
+    const createWithFallback = async (
+        name: string,
+        ...fallbackModelIds: string[]
+    ) =>
+        fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Primary",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "primary-upstream",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                    promptTextPrice: 0.2 / 1_000_000,
+                    completionTextPrice: 0.2 / 1_000_000,
+                    fallbackModelIds,
+                }),
+            }),
+        );
+
+    const selfReference = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, primaryName),
+    );
+    expect(selfReference.status).toBe(400);
+    expect(await selfReference.text()).toContain(
+        "Fallback target cannot be the model itself",
+    );
+
+    const missing = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, "does-not-exist"),
+    );
+    expect(missing.status).toBe(400);
+    expect(await missing.text()).toContain("does not exist");
+
+    const privateTarget = await createWithFallback(
+        `${primaryName}-private`,
+        communityModelId(ownerGithubUsername, targetNames.priv),
+    );
+    expect(privateTarget.status).toBe(200);
+    await expect(privateTarget.json()).resolves.toMatchObject({
+        fallbackModelIds: [
+            communityModelId(ownerGithubUsername, targetNames.priv),
+        ],
+    });
+
+    const otherPrivateTarget = await createWithFallback(
+        `${primaryName}-other-private`,
+        communityModelId(otherOwnerGithubUsername, targetNames.otherPrivate),
+    );
+    expect(otherPrivateTarget.status).toBe(400);
+    expect(await otherPrivateTarget.text()).toContain(
+        "must be public or owned by you",
+    );
+
+    const disabledTarget = await createWithFallback(
+        `${primaryName}-disabled`,
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
+    expect(disabledTarget.status).toBe(400);
+    expect(await disabledTarget.text()).toContain("must be active");
+
+    const wrongModality = await createWithFallback(
+        `${primaryName}-modality`,
+        communityModelId(ownerGithubUsername, targetNames.image),
+    );
+    expect(wrongModality.status).toBe(400);
+    expect(await wrongModality.text()).toContain("is a image model, not text");
+
+    const overPriced = await createWithFallback(
+        `${primaryName}-price`,
+        communityModelId(ownerGithubUsername, targetNames.pricey),
+    );
+    expect(overPriced.status).toBe(400);
+    const overPricedMessage = await overPriced.text();
+    expect(overPricedMessage).toContain("completionTextPrice");
+    expect(overPricedMessage).toContain("exceeds this model's");
+    // Only the offending field is named — promptTextPrice is within budget.
+    expect(overPricedMessage).not.toContain("promptTextPrice");
+
+    const cheapModelId = communityModelId(
+        ownerGithubUsername,
+        targetNames.cheap,
+    );
+    const accepted = await createWithFallback(primaryName, cheapModelId);
+    expect(accepted.status).toBe(200);
+    const created = (await accepted.json()) as {
+        id: string;
+        modelId: string;
+        fallbackModelIds: string[];
+    };
+    expect(created.fallbackModelIds).toEqual([cheapModelId]);
+
+    // One bad id fails the whole list, so a partial order is never stored.
+    const partiallyBad = await createWithFallback(
+        `${primaryName}-partial`,
+        cheapModelId,
+        communityModelId(ownerGithubUsername, "does-not-exist"),
+    );
+    expect(partiallyBad.status).toBe(400);
+    expect(await partiallyBad.text()).toContain("does not exist");
+
+    const duplicated = await createWithFallback(
+        `${primaryName}-dup`,
+        cheapModelId,
+        cheapModelId,
+    );
+    expect(duplicated.status).toBe(400);
+    expect(await duplicated.text()).toContain("listed more than once");
+
+    // The dashboard's dropdown is built from this list, so anything it offers
+    // must be acceptable to the update endpoint above — same rule, one function.
+    const candidates = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `http://localhost:3000/api/community-endpoints/${created.id}/fallback-candidates`,
+            { headers: { Cookie: await signedSessionCookie(sessionToken) } },
+        ),
+    );
+    expect(candidates.status).toBe(200);
+    const { data: eligible } = (await candidates.json()) as { data: string[] };
+    expect(eligible).toContain(cheapModelId);
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.priv),
+    );
+    // Never itself, and never a target the write path would reject.
+    expect(eligible).not.toContain(created.modelId);
+    for (const rejected of [
+        targetNames.image,
+        targetNames.pricey,
+        targetNames.disabled,
+    ]) {
+        expect(eligible).not.toContain(
+            communityModelId(ownerGithubUsername, rejected),
+        );
+    }
+
+    // An empty array clears the stored targets.
+    const cleared = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({ fallbackModelIds: [] }),
+            },
+        ),
+    );
+    expect(cleared.status).toBe(200);
+    await expect(cleared.json()).resolves.toMatchObject({
+        fallbackModelIds: [],
+    });
+});
+
+fixtureTest(
+    "links community fallback targets in the generation registry",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_saved_token",
+            env.BETTER_AUTH_SECRET,
+        );
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const name = (label: string) => `${label}-${suffix}`;
+        const id = (label: string) =>
+            communityModelId(ownerGithubUsername, name(label));
+        const endpoint = (
+            label: string,
+            values: Partial<typeof communityEndpointTable.$inferInsert>,
+        ) => ({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public" as const,
+            name: name(label),
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: `${label}-upstream`,
+            bearerTokenCiphertext,
+            promptTextPrice: 0.2 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...values,
+        });
+
+        // Inserted one at a time: D1 caps the bound variables per statement.
+        for (const row of [
+            endpoint("valid-primary", {
+                fallbackModelIds: [id("valid-target")],
+            }),
+            endpoint("valid-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("disabled-primary", {
+                fallbackModelIds: [id("disabled-target")],
+            }),
+            endpoint("disabled-target", {
+                disabledAt: new Date(),
+                disabledReason: "repeated upstream 500s",
+            }),
+            endpoint("deleted-primary", {
+                fallbackModelIds: [
+                    communityModelId(ownerGithubUsername, "never-existed"),
+                ],
+            }),
+            endpoint("repriced-primary", {
+                fallbackModelIds: [id("repriced-target")],
+            }),
+            // Priced above its primary since the fallback was configured.
+            endpoint("repriced-target", {
+                completionTextPrice: 0.5 / 1_000_000,
+            }),
+            endpoint("second-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("third-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("fourth-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("multi-primary", {
+                fallbackModelIds: [id("valid-target"), id("second-target")],
+                // Its own targets declare fallbacks too; none of them may leak
+                // into this model's routing.
+            }),
+            endpoint("greedy-primary", {
+                fallbackModelIds: [
+                    id("valid-target"),
+                    id("second-target"),
+                    id("third-target"),
+                    id("fourth-target"),
+                ],
+            }),
+            endpoint("gappy-primary", {
+                fallbackModelIds: [
+                    id("valid-target"),
+                    communityModelId(ownerGithubUsername, "never-existed"),
+                    id("second-target"),
+                ],
+            }),
+            endpoint("image-primary", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.02,
+                fallbackModelIds: [id("image-target")],
+            }),
+            endpoint("image-target", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.01,
+            }),
+            endpoint("image-request-primary", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                // 0.02 Pollen per generated image.
+                completionImagePrice: 0.02,
+                fallbackModelIds: [id("image-tokens-target")],
+            }),
+            // Switched itself to token pricing after being picked as a target:
+            // the same column now means Pollen per token (0.00005 = the 50
+            // Pollen/1M cap), so the raw numbers are no longer comparable and
+            // a 1568-token image would bill 0.0784 against a 0.02 quote.
+            endpoint("image-tokens-target", {
+                modality: "image",
+                imagePricing: "tokens",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.00005,
+            }),
+        ]) {
+            await db.insert(communityEndpointTable).values(row);
+        }
+
+        resetGenerationModelRegistryCache();
+        const registry = await getGenerationModelRegistry(env);
+
+        const fallbackIds = (model: string) =>
+            registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
+
+        expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
+        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
+        expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
+
+        // Same image pricing mode on both sides: the price columns mean the
+        // same thing, so the link stands.
+        expect(fallbackIds(id("image-primary"))).toEqual([id("image-target")]);
+        // Different modes: comparing per-image against per-token prices is
+        // meaningless, so the link is dropped rather than billed across units.
+        expect(fallbackIds(id("image-request-primary"))).toBeUndefined();
+
+        // The declared list is kept in order, and only what this owner
+        // declared: a target's own list is never appended.
+        expect(fallbackIds(id("multi-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+        ]);
+        // Over the cap: the extras are dropped rather than the request
+        // spending an unbounded number of upstream timeouts.
+        expect(fallbackIds(id("greedy-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+            id("third-target"),
+        ]);
+        // A dead id in the middle is skipped, keeping the survivors' order.
+        expect(fallbackIds(id("gappy-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+        ]);
+    },
+);
+
+fixtureTest(
+    "uses the served model's transform for a registry fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const ownerGithubUsername = `transform-owner-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const fallbackModelId = communityModelId(
+            ownerGithubUsername,
+            `plain-${suffix}`,
+        );
+
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: `plain-${suffix}`,
+            baseUrl: "https://plain.example.com/v1",
+            upstreamModel: "plain-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_plain_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const source = getRegistryModelDefinition("qwen-coder");
+        const previousFallbacks = source.fallbacks;
+        try {
+            source.fallbacks = [fallbackModelId];
+            resetGenerationModelRegistryCache();
+
+            const messageRoles: string[][] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (isPortkeyChatCompletionsRequest(request)) {
+                        const body = (await request.json()) as {
+                            messages: { role: string }[];
+                        };
+                        messageRoles.push(
+                            body.messages.map((message) => message.role),
+                        );
+                        if (
+                            request.headers.get("x-portkey-custom-host") !==
+                            "https://plain.example.com/v1"
+                        ) {
+                            return Response.json(
+                                { error: { message: "rate limited" } },
+                                { status: 429 },
+                            );
+                        }
+                        return Response.json({
+                            id: "chatcmpl_fallback_transform",
+                            object: "chat.completion",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "ok",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage: {
+                                prompt_tokens: 1,
+                                completion_tokens: 1,
+                                total_tokens: 2,
+                            },
+                        });
+                    }
+                    if (isBillingFetch(request)) {
+                        return Response.json({ data: [] });
+                    }
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }),
+            );
+
+            const response = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-coder",
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+            expect(messageRoles).toEqual([["system", "user"], ["user"]]);
+        } finally {
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
+    },
+);
+
+fixtureTest(
+    "serves a failed community model from its fallback and bills the fallback",
+    async ({ apiKey }) => {
+        const {
+            primaryModelId,
+            fallbackModelId,
+            primaryHost,
+            fallbackHost,
+            primaryUpstreamModel,
+            fallbackUpstreamModel,
+            primaryToken,
+            fallbackToken,
+        } = await createCommunityFallbackPair({
+            prefix: "text-success",
+        });
+
+        // Read inside the mock: request bodies cannot cross isolates.
+        const gatewayCalls: {
+            customHost: string | null;
+            bearerToken: string | null;
+            upstreamModel: string | null;
+        }[] = [];
+        const ingestedEvents: Record<string, unknown>[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                const customHost = request.headers.get("x-portkey-custom-host");
+                gatewayCalls.push({
+                    customHost,
+                    bearerToken: request.headers.get("authorization"),
+                    upstreamModel: request.headers.get("x-portkey-model"),
+                });
+                // The primary is rate limited — the failure the fallback exists
+                // for.
+                if (customHost === primaryHost) {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json({
+                    id: "chatcmpl_fallback",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        // The served model, not the requested one, is reported as used.
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+
+        // Each endpoint is called once, in the order the owner declared, and
+        // each attempt carries only its own endpoint's credential.
+        expect(gatewayCalls).toEqual([
+            {
+                customHost: primaryHost,
+                bearerToken: `Bearer ${primaryToken}`,
+                upstreamModel: primaryUpstreamModel,
+            },
+            {
+                customHost: fallbackHost,
+                bearerToken: `Bearer ${fallbackToken}`,
+                upstreamModel: fallbackUpstreamModel,
+            },
+        ]);
+
+        // Two rows for the one request: the primary's failure, unbilled, and the
+        // model that served. Without the first, a model rescued on every request
+        // reads as healthy. The 429 is recorded as the 502 the caller would have
+        // seen, so it counts as a server error rather than the caller's fault.
+        await vi.waitFor(() => expect(ingestedEvents).toHaveLength(2));
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.responseStatus,
+                event.isBilledUsage,
+            ]),
+        ).toContainEqual([primaryModelId, 502, false]);
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.responseStatus,
+                event.isBilledUsage,
+            ]),
+        ).toContainEqual([fallbackModelId, 200, true]);
+        // Both rows belong to the same request, so the pair can be joined.
+        expect(
+            new Set(ingestedEvents.map((event) => event.requestId)).size,
+        ).toBe(1);
+    },
+);
+
+fixtureTest(
+    "names the model that failed last when every candidate fails",
+    async ({ apiKey }) => {
+        const { primaryModelId, fallbackModelId } =
+            await createCommunityFallbackPair({
+                prefix: "text-all-fail",
+            });
+
+        const ingestedEvents: Record<string, unknown>[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                // Nothing rescues this request: every endpoint is rate limited.
+                return Response.json(
+                    { error: { message: "rate limited" } },
+                    { status: 429 },
+                );
+            }
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(502);
+
+        // Two upstream calls, two rows, and each names the model it reached.
+        // The row that records how the request ended must name the fallback:
+        // naming the primary would count it twice and leave a permanently
+        // broken fallback invisible in every per-model view.
+        // A 5xx also emits an unrelated server-error event to Tinybird, so
+        // narrow to the generation rows.
+        const generationRows = () =>
+            ingestedEvents.filter((event) => "requestId" in event);
+        await vi.waitFor(() => expect(generationRows()).toHaveLength(2));
+        expect(
+            generationRows().map((event) => [
+                event.modelUsed,
+                event.isFinal,
+                event.isBilledUsage,
+            ]),
+        ).toEqual(
+            expect.arrayContaining([
+                [primaryModelId, false, false],
+                [fallbackModelId, true, false],
+            ]),
+        );
+        // Both rows belong to the same request, so the pair can be joined.
+        expect(
+            new Set(generationRows().map((event) => event.requestId)).size,
+        ).toBe(1);
+    },
+);
+
+fixtureTest(
+    "retries a failed community image endpoint against its fallback",
+    async ({ apiKey }) => {
+        const {
+            primaryModelId,
+            fallbackModelId,
+            primaryHostname,
+            fallbackHostname,
+        } = await createCommunityFallbackPair({
+            prefix: "image-retry",
+            modality: "image",
+            primaryName: "primary-image",
+            fallbackName: "cheap-image",
+        });
+
+        const upstreamHosts: string[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isCommunityImageGenerationsRequest(request)) {
+                const host = new URL(request.url).host;
+                upstreamHosts.push(host);
+                if (host === primaryHostname) {
+                    return Response.json(
+                        { error: "upstream down" },
+                        {
+                            status: 500,
+                        },
+                    );
+                }
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("image/png");
+        expect(upstreamHosts).toEqual([primaryHostname, fallbackHostname]);
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        expect(
+            Array.from(new Uint8Array(await response.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+    },
+);
+
+fixtureTest(
+    "tries every declared image fallback and bills the model that served",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owners = ["one", "two", "three"].map(
+            (label) => `chain-${label}-${suffix}`,
+        );
+        const userIds: string[] = [];
+        for (const owner of owners) {
+            userIds.push(
+                await createTestUser({
+                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubUsername: owner,
+                }),
+            );
+        }
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_image_upstream",
+            env.BETTER_AUTH_SECRET,
+        );
+        // Descending prices, as the same-or-lower rule requires of every target.
+        const prices = [0.03, 0.02, 0.01];
+        const modelIds = owners.map((owner, index) =>
+            communityModelId(owner, `chain-image-${index}`),
+        );
+
+        for (const [index, owner] of owners.entries()) {
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: userIds[index],
+                visibility: "public" as const,
+                name: `chain-image-${index}`,
+                modality: "image",
+                baseUrl: `https://${owner}.example.com/v1`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: prices[index],
+                // The primary declares BOTH fallbacks itself; neither target
+                // declares anything, so nothing but this list is followed.
+                ...(index === 0
+                    ? { fallbackModelIds: [modelIds[1], modelIds[2]] }
+                    : {}),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const upstreamHosts: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isCommunityImageGenerationsRequest(request)) {
+                    const host = new URL(request.url).host;
+                    upstreamHosts.push(host);
+                    // Only the last link works, so a 200 proves both hops ran.
+                    if (host !== `${owners[2]}.example.com`) {
+                        return Response.json(
+                            { error: "upstream down" },
+                            { status: 500 },
+                        );
+                    }
+                    return Response.json({
+                        created: 1,
+                        data: [{ b64_json: TEST_PNG_BASE64 }],
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(modelIds[0])}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        // In declared order, each endpoint contacted exactly once — no model
+        // is ever retried against itself.
+        expect(upstreamHosts).toEqual(
+            owners.map((owner) => `${owner}.example.com`),
+        );
+        expect(response.headers.get("x-model-used")).toBe(modelIds[2]);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[2]",
+        );
+        expect(
+            Array.from(new Uint8Array(await response.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+
+        // The OpenAI-compatible route replaces the generated response with
+        // JSON, so it has to carry the fallback marker across itself —
+        // otherwise tracking reads the rescue as a plain first-try success.
+        const openaiResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelIds[0],
+                    prompt: "green sprout",
+                }),
+            }),
+        );
+
+        expect(openaiResponse.status).toBe(200);
+        expect(openaiResponse.headers.get("x-model-used")).toBe(modelIds[2]);
+        expect(openaiResponse.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[2]",
+        );
+    },
+);
+
+fixtureTest(
+    "does not replay image caller errors or moderation refusals on the fallback",
+    async ({ apiKey }) => {
+        const { primaryModelId, primaryHostname } =
+            await createCommunityFallbackPair({
+                prefix: "image-strict",
+                modality: "image",
+                primaryName: "strict-image",
+                fallbackName: "loose-image",
+            });
+        let upstreamHosts: string[] = [];
+        let primaryFailure = {
+            status: 400,
+            body: { error: { message: "size must be at most 1536x1536" } },
+        };
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isCommunityImageGenerationsRequest(request)) {
+                const host = new URL(request.url).host;
+                upstreamHosts.push(host);
+                if (host === primaryHostname) {
+                    return Response.json(primaryFailure.body, {
+                        status: primaryFailure.status,
+                    });
+                }
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const generate = async () => {
+            const response = await SELF.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
+                    { headers: { Authorization: `Bearer ${apiKey}` } },
+                ),
+            );
+            // Drain before asserting: an unread body keeps the isolate alive.
+            await response.arrayBuffer();
+            return response;
+        };
+
+        // A caller error cannot succeed on a replay: the fallback is never
+        // called and the primary's own 400 reaches the client.
+        const callerError = await generate();
+        expect(callerError.status).toBe(400);
+        expect(upstreamHosts).toEqual([primaryHostname]);
+
+        // A moderation refusal must not be routed around, whatever status the
+        // provider wrapped it in — it stays a 422 content-policy rejection.
+        upstreamHosts = [];
+        primaryFailure = {
+            status: 500,
+            body: {
+                error: { message: "Prompt flagged by our content filter" },
+            },
+        };
+        const moderationRefusal = await generate();
+        expect(moderationRefusal.status).toBe(422);
+        expect(upstreamHosts).toEqual([primaryHostname]);
+    },
+);
+
+fixtureTest(
+    "does not serve a fallback the API key is not allowed to use",
+    async () => {
+        const { primaryModelId, fallbackModelId, primaryHost } =
+            await createCommunityFallbackPair({
+                prefix: "scoped",
+            });
+
+        // Scoped to the primary only — calling the fallback directly is a 403.
+        const { key } = await createTestApiKey({
+            allowedModels: [primaryModelId],
+            user: { tierBalance: 100 },
+        });
+
+        const gatewayCalls: {
+            config: string | null;
+            provider: string | null;
+            customHost: string | null;
+        }[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                gatewayCalls.push({
+                    config: request.headers.get("x-portkey-config"),
+                    provider: request.headers.get("x-portkey-provider"),
+                    customHost: request.headers.get("x-portkey-custom-host"),
+                });
+                return Response.json({
+                    id: "chatcmpl_primary",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(gatewayCalls).toHaveLength(1);
+        // No strategy/targets config: the request runs against the primary
+        // alone, so the key can never be served the model it cannot call.
+        expect(gatewayCalls[0].config).toBeNull();
+        expect(gatewayCalls[0].provider).toBe("openai");
+        expect(gatewayCalls[0].customHost).toBe(primaryHost);
+
+        // The same key calling the fallback directly is refused.
+        const direct = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: fallbackModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(direct.status).toBe(403);
+    },
+);

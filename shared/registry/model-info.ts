@@ -40,14 +40,29 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
+    brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    pricing_variants: z
+        .array(
+            z.object({
+                name: z.string(),
+                label: z.string(),
+                description: z.string(),
+                pricing: z
+                    .record(z.string(), z.string())
+                    .and(z.object({ currency: z.literal("pollen") })),
+            }),
+        )
+        .optional(),
+    resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
+    supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
@@ -110,13 +125,38 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
+        brand_url: service.brandUrl,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants:
+            service.costVariants && service.costVariantMetadata
+                ? Object.entries(service.costVariants).map(
+                      ([name, variantCost]) => {
+                          const metadata = service.costVariantMetadata?.[name];
+                          return {
+                              name,
+                              label: metadata?.label ?? name,
+                              description: metadata?.description ?? name,
+                              pricing: pricingInfoFromDefinition(
+                                  getPriceDefinitionForModel({
+                                      ...service,
+                                      cost: {
+                                          ...service.cost,
+                                          ...variantCost,
+                                      },
+                                  }),
+                              ),
+                          };
+                      },
+                  )
+                : undefined,
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,

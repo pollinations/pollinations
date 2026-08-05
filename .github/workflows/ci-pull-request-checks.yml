@@ -132,6 +132,13 @@ jobs:
             echo "✅ No type errors in changed files"
           fi
 
+      - name: Test Enter billing registry
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: |
+          mkdir -p dist/client
+          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts
+
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |

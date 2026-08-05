@@ -58,7 +58,7 @@ export function UserMenu() {
                 <span className="max-w-[140px] truncate">{displayName}</span>
                 {balance !== null && (
                     <span className="text-accent-strong">
-                        {balance.balance.toFixed(1)} {copy.pollenUnit}
+                        {balance.total.toFixed(1)} {copy.pollenUnit}
                     </span>
                 )}
             </button>
@@ -93,7 +93,7 @@ export function UserMenu() {
                                 {copy.balanceLabel}
                             </span>
                             <span className="font-headline text-xs font-black text-dark">
-                                {balance.balance.toFixed(2)} {copy.pollenUnit}
+                                {balance.total.toFixed(2)} {copy.pollenUnit}
                             </span>
                         </div>
                     )}

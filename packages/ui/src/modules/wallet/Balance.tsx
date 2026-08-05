@@ -15,7 +15,7 @@ export function Balance({ className }: BalanceProps = {}) {
             data-polli="balance"
             className={cn("polli:tabular-nums", className)}
         >
-            {formatPollen(balance.balance)} pollen
+            {formatPollen(balance.total)} pollen
         </Chip>
     );
 }

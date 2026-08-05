@@ -20,7 +20,7 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 
 ### GET /account/balance
 
-Returns remaining pollen. If the API key has a budget, returns key budget instead. Full account balance requires `account:usage`.
+Returns `total`, Quest Pollen (`allowance`), paid Pollen (`pack`), and `currency`. If the API key has a budget, that budget is returned as `total` and `pack`, with zero `allowance`. Full account balance requires `account:usage`.
 
 ### GET /account/quests
 

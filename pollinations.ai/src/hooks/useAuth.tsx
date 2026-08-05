@@ -20,7 +20,7 @@ interface UserProfile {
 }
 
 interface UserBalance {
-    balance: number;
+    total: number;
 }
 
 // Split into three contexts to minimize re-renders:
@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     },
                 );
                 const data = await response.json();
-                setBalance({ balance: data.balance });
+                setBalance({ total: data.total });
             } catch (err) {
                 console.debug(
                     "[useAuth] Balance fetch failed:",

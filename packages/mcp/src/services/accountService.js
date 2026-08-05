@@ -13,7 +13,7 @@ async function getBalance(_params) {
     return createMCPResponse([
         createTextContent(
             {
-                pollen: data.balance,
+                ...data,
                 note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,

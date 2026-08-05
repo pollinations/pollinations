@@ -3,7 +3,6 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { balance } from "../middleware/balance.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -34,27 +33,6 @@ const BALANCE_TODAY_CACHE_TTL = 60; // seconds
  */
 export const customerRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
-    .use("*", balance)
-    .get(
-        "/balance",
-        describeRoute({
-            tags: ["👤 Account"],
-            description:
-                "Get detailed balance breakdown for the current user (Quest Pollen, paid).",
-            hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const { tierBalance, packBalance } = await c.var.balance.getBalance(
-                user.id,
-            );
-
-            return c.json({
-                tierBalance,
-                packBalance,
-            });
-        },
-    )
     .get(
         "/balance/today",
         describeRoute({

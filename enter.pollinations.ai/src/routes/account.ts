@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -685,11 +686,12 @@ const profileResponseSchema = z.object({
 });
 
 const balanceResponseSchema = z.object({
-    balance: z
+    total: z
         .number()
-        .describe(
-            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
-        ),
+        .describe("Total remaining pollen balance (allowance + pack)"),
+    allowance: z.number().describe("Quest Pollen balance"),
+    pack: z.number().describe("Purchased pack balance (paid pollen)"),
+    currency: z.literal("pollen").describe("Currency denomination"),
 });
 
 const accountQuestRewardSchema = z.object({
@@ -970,7 +972,12 @@ export const accountRoutes = new Hono<Env>()
 
             // Keys with a budget always see their own budget — no scope needed.
             if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
+                return c.json({
+                    total: apiKey.pollenBalance,
+                    allowance: 0,
+                    pack: apiKey.pollenBalance,
+                    currency: "pollen",
+                });
             }
 
             // Beyond that, reading account balance requires usage or admin.
@@ -981,20 +988,17 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            const { tierBalance, packBalance } = await getUserBalance(
+                drizzle(c.env.DB),
+                user.id,
+            );
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
-
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json({
+                total: tierBalance + packBalance,
+                allowance: tierBalance,
+                pack: packBalance,
+                currency: "pollen",
+            });
         },
     )
     .get(

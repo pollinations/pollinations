@@ -36,22 +36,6 @@ export async function getUserBalance(
 }
 
 /**
- * Get the total positive balance across relevant buckets.
- * For paid-only models: pack only.
- */
-export function getAvailableBalance(
-    balances: UserBalance,
-    isPaidOnly = false,
-): number {
-    if (isPaidOnly) {
-        return Math.max(0, balances.packBalance);
-    }
-    return (
-        Math.max(0, balances.tierBalance) + Math.max(0, balances.packBalance)
-    );
-}
-
-/**
  * Map a deduction bucket to its meter id/slug pair. The balances sub-object
  * differs per call site, so this returns only the id/slug pair.
  */

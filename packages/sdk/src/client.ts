@@ -1483,8 +1483,8 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const { balance } = await pollinations.accountBalance();
-     * console.log(`Balance: ${balance} pollen`);
+     * const { total, allowance, pack } = await pollinations.accountBalance();
+     * console.log(`Balance: ${total} pollen (${allowance} allowance + ${pack} paid)`);
      * ```
      */
     async accountBalance(): Promise<AccountBalance> {

@@ -58,12 +58,18 @@ async function fetchCatalogModels(
     return rawModels as ModelInfo[];
 }
 
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+    return value.slice(0, end);
+}
+
 export async function fetchModelCatalog({
     apiKey,
     baseUrl = DEFAULT_BASE_URL,
     signal,
 }: FetchModelCatalogOptions = {}): Promise<ModelCatalog> {
-    const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+    const normalizedBaseUrl = trimTrailingSlashes(baseUrl);
 
     // Two calls to the same /models endpoint, on purpose: the anonymous call
     // returns the full public catalog (`models`); the authenticated call returns

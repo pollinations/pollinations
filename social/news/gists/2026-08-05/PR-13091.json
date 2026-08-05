@@ -1,0 +1,36 @@
+{
+  "pr_number": 13091,
+  "title": "Add Batch Imagine to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13091",
+  "merged_at": "2026-08-05T07:13:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Batch Imagine](https://batchimagine.netlify.app) to image\n- **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API.\n\nFixes #11278",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Images, in bunches",
+    "blurb": "Batch Imagine joined the garden: a free, open-source batch image generator built with React, Vite, and the Pollinations API. One prompt is nice; a whole patch of variations is nicer.",
+    "summary": "Added Batch Imagine, a free open-source React + Vite app that generates AI images in batches through the Pollinations.ai API, to the community app listings.",
+    "impact": "People looking to create many image variations can now discover Batch Imagine directly through Pollinations' app directory.",
+    "keywords": [
+      "community",
+      "Batch Imagine",
+      "image generation",
+      "React",
+      "Vite",
+      "apps"
+    ],
+    "visual_concept": "Depict Polli as a cheerful garden worker wearing a tiny tool belt, tending a row of blooming image-flowers that each display a different pixel-art landscape. A friendly CRT monitor robot helps sort the generated pictures into neat batches beside a retro terminal, making the batch-generation idea immediately visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a garden where rows of lime green (#ecf874) flower pots bloom into small framed AI image variations; a cute CRT monitor robot sorts the pictures into labeled batches beside a retro computer. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradient background, code-vines and tiny flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'BATCH IMAGINE', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13091.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a garden where rows of lime green (#ecf874) flower pots bloom into small framed AI image variations; a cute CRT monitor robot sorts the pictures into labeled batches beside a retro computer. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradient background, code-vines and tiny flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'BATCH IMAGINE', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-05T07:14:26.790411+00:00",
+  "app_name": "Batch Imagine",
+  "app_url": "https://batchimagine.netlify.app"
+}

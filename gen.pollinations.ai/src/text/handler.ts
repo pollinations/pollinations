@@ -117,13 +117,14 @@ function gatewayContext(
 ): Promise<TransformOptions> | TransformOptions {
     const { communityEndpoint, definition } = candidate;
     // A fallback must resolve transforms from the model that will actually run.
-    const candidateRequest = candidate.entry
-        ? { ...requestData, model: candidate.id }
-        : requestData;
+    const candidateRequest =
+        candidate.id !== c.var.model.resolved
+            ? { ...requestData, model: candidate.id }
+            : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
-    if (!communityEndpoint || !definition) {
+    if (!communityEndpoint) {
         return withGatewayContext(c, candidateRequest);
     }
     return communityEndpointGatewayContext(
@@ -399,7 +400,7 @@ async function generateTextResponse(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
                 ),
-            c.var.track?.failedCalls,
+            c.var.track?.attempts,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -409,12 +410,6 @@ async function generateTextResponse(
             completion.fallbackTarget = `config.targets[${index}]`;
         }
 
-        // Cost and the owner reward follow what actually served, so record the
-        // serving entry before the response (streaming included) leaves the
-        // handler.
-        const servedEntry = candidate.entry;
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
-
         // Only override the provider's own name where it is misleading. A
         // community endpoint reports its upstream — "gemini-2.0-flash" for what
         // everyone calls "alice/pro" — and after a rescue that upstream belongs
@@ -422,8 +417,7 @@ async function generateTextResponse(
         // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
         // which is strictly more information, so leave it alone.
         const servedModelId =
-            servedEntry?.id ??
-            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
+            index > 0 || candidate.communityEndpoint ? candidate.id : undefined;
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert

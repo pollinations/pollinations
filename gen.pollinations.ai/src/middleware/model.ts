@@ -34,12 +34,6 @@ export type ModelVariables = {
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
-    /**
-     * Set by the generation handlers when the fallback target actually served
-     * the request. Cost and the community owner reward follow it; the price the
-     * caller pays does not — that stays the listing they asked for.
-     */
-    servedModelEntry?: GenerationModelEntry;
     formData?: FormData;
 };
 

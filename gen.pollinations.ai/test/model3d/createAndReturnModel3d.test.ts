@@ -182,3 +182,33 @@ workerTest(
         }
     },
 );
+
+workerTest(
+    "returns 400 for Inferenceport validation failures",
+    async ({ paidApiKey }) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("public_model_stats.json")) {
+                    return Response.json({ data: [] });
+                }
+                if (
+                    request.url.includes("/v0/events?name=generation_event_v2")
+                ) {
+                    return new Response("", { status: 202 });
+                }
+                return Response.json(
+                    { detail: "Invalid image dimensions" },
+                    { status: 422 },
+                );
+            },
+        );
+
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/3d/invalid-${crypto.randomUUID()}?model=trellis-2&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
+            { headers: { Authorization: `Bearer ${paidApiKey}` } },
+        );
+
+        expect(response.status).toBe(400);
+    },
+);

@@ -1,0 +1,35 @@
+{
+  "pr_number": 13088,
+  "title": "Add chatty to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13088",
+  "merged_at": "2026-08-05T07:02:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [chatty](https://chatty.ext.io) to chat\n- simple chat ui that uses pollinations and new byop system [models are a bit outdated will prob update sometime]\n\nFixes #12701",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A chatty new flower",
+    "blurb": "Chatty has joined the chat garden: a simple conversational UI built on Pollinations and the new BYOP system. The models may be due for a future watering, but the interface is already blooming.",
+    "summary": "Added Chatty, a simple chat interface at chatty.ext.io that uses Pollinations and the new BYOP system, to the community app directories.",
+    "impact": "People looking for a lightweight Pollinations-powered chat UI can now discover Chatty directly from the project’s app listings.",
+    "keywords": [
+      "community-app",
+      "chat",
+      "byop",
+      "apps-directory",
+      "chatty"
+    ],
+    "visual_concept": "Depict Chatty as a cozy retro chat terminal growing from a flower pot, with friendly speech bubbles and small code-plants around it. Polli should hover beside the terminal wearing tiny headphones, warmly tending the new chat flower; the monitor robot can eagerly watch messages appear on screen.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny headphones while tending a flower pot holding a retro chat terminal labeled \"CHATTY.\" A cute CRT monitor robot watches friendly chat bubbles bloom into code-flowers beside her; prominently use lime green (#ecf874), warm cream, mint, lavender, and peach with dark purple (#110518) outlines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13088.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny headphones while tending a flower pot holding a retro chat terminal labeled \"CHATTY.\" A cute CRT monitor robot watches friendly chat bubbles bloom into code-flowers beside her; prominently use lime green (#ecf874), warm cream, mint, lavender, and peach with dark purple (#110518) outlines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-05T07:03:31.780518+00:00",
+  "app_name": "chatty",
+  "app_url": "https://chatty.ext.io"
+}

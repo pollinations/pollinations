@@ -20,8 +20,15 @@ export type ApiModelInfo = {
     id?: string;
     category?: ModelCategory;
     brand?: string;
+    brand_url?: string;
     community?: boolean;
     pricing?: ApiPricing;
+    pricing_variants?: Array<{
+        name: string;
+        label: string;
+        description: string;
+        pricing: ApiPricing;
+    }>;
     title?: string;
     description?: string;
     input_modalities?: string[];
@@ -85,6 +92,21 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         : pricePerSecond.toFixed(4);
 };
 
+// A 200 response with an empty array, a non-array body, or entries that all
+// lack an identifiable name/id is indistinguishable from "no models" to the
+// caller — it must be treated as a fetch failure, not a valid empty catalog,
+// so the UI surfaces an error instead of silently rendering an empty table.
+export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Model catalog response was empty or malformed");
+    }
+    const models = data as ApiModelInfo[];
+    if (!models.some((model) => getCatalogModelId(model))) {
+        throw new Error("Model catalog response had no usable model entries");
+    }
+    return models;
+}
+
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 
 export async function fetchModelCatalog(
@@ -93,14 +115,20 @@ export async function fetchModelCatalog(
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
         .then(({ config }) =>
-            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
+            // Without a timeout a stalled edge leaves this promise pending
+            // forever, which renders as an empty table with no error.
+            fetch(`${config.genBaseUrl}/models`, {
+                cache: "no-store",
+                signal: AbortSignal.timeout(15_000),
+            }),
         )
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch models (${response.status})`);
             }
-            return response.json() as Promise<ApiModelInfo[]>;
+            return response.json();
         })
+        .then(parseModelCatalogResponse)
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -183,6 +211,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
+        brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         capabilities: model.capabilities ?? [],
@@ -199,7 +228,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     };
 }
 
-function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const price = baseModelPrice(model);
     if (!price) return null;
 
@@ -463,6 +492,31 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             ],
         ),
     };
+}
+
+function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+    const basePrice = modelPriceFromPricing(model);
+    if (!basePrice) return null;
+
+    const priceVariants = model.pricing_variants?.flatMap((variant) => {
+        const variantPrice = modelPriceFromPricing({
+            ...model,
+            pricing: variant.pricing,
+            pricing_variants: undefined,
+        });
+        return variantPrice
+            ? [
+                  {
+                      name: variant.name,
+                      label: variant.label,
+                      description: variant.description,
+                      prices: variantPrice.prices,
+                  },
+              ]
+            : [];
+    });
+
+    return priceVariants?.length ? { ...basePrice, priceVariants } : basePrice;
 }
 
 export function getModelPricesFromCatalog(

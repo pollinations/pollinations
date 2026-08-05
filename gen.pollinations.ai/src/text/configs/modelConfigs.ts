@@ -164,6 +164,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "qwen/qwen3.8-max": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-max",
+            defaultOptions: {
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen/qwen3.7-flash": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",
@@ -190,6 +200,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: {
                 provider: {
                     only: ["atlas-cloud/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "thinkingmachines/inkling-small": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling-small",
+            defaultOptions: {
+                provider: {
+                    only: ["Together"],
                     allow_fallbacks: false,
                 },
             },
@@ -230,9 +250,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
-    "accounts/fireworks/models/deepseek-v4-flash": () =>
+    "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash",
+            model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({

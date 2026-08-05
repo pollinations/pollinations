@@ -17,6 +17,7 @@ const logError = debug("pollinations:openrouter-video:error");
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
+const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -146,10 +147,12 @@ export async function callOpenRouterGrokVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
+    const isVersion15 = safeParams.model === "grok-imagine-video-1.5";
+    const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
-        model: GROK_VIDEO_MODEL,
+        model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,
         prompt,
-        resolution: "720p",
+        resolution,
         duration,
     };
 
@@ -182,7 +185,7 @@ export async function callOpenRouterGrokVideoAPI(
         mimeType: "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "grok-video-pro",
+            actualModel: safeParams.model,
             usage: {
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,

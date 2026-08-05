@@ -12,6 +12,7 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterGeminiImageAPI,
@@ -802,6 +803,9 @@ const generateImage = async (
 
         case "klein":
             return await callFluxKleinAPI(prompt, safeParams);
+
+        case "krea":
+            return await callKreaImageAPI(prompt, safeParams);
 
         case "p-image":
             return await callPrunaImageAPI(prompt, safeParams);

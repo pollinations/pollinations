@@ -68,6 +68,14 @@ export function processParameters(
     if (/^(o[134](-mini|-preview)?|gpt-5)/i.test(model)) {
         log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;
+
+        // Azure rejects extra sampling params for these models.
+        for (const param of ["top_p", "frequency_penalty", "presence_penalty"] as const) {
+            if (updatedOptions[param] !== undefined) {
+                log(`Stripping ${param} for reasoning/GPT-5 model: ${model}`);
+                delete updatedOptions[param];
+            }
+        }
     }
 
     // Claude Opus 4.7+, and Fable 5 reject non-default sampling params.

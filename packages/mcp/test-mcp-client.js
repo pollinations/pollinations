@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import assert from "node:assert/strict";
 import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
@@ -14,6 +15,17 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
 const LIVE = process.env.POLLINATIONS_MCP_LIVE === "1";
+const EXPECTED_TOOLS = [
+    "chatCompletion",
+    "generateImage",
+    "generateVideo",
+    "getBalance",
+    "getUsage",
+    "listModels",
+    "listQuests",
+    "textToSpeech",
+    "transcribeAudio",
+];
 
 const createTransport = () =>
     new StdioClientTransport({
@@ -32,6 +44,7 @@ async function connectClient(options = {}) {
 }
 
 const results = [];
+let modernTools;
 const trim = (s, n = 200) => {
     const str = typeof s === "string" ? s : JSON.stringify(s);
     return str.length > n ? `${str.slice(0, n)}…` : str;
@@ -71,20 +84,11 @@ await step("modern protocol negotiation", () => {
     return era;
 });
 
-await step("listTools", async () => {
+await step("modern listTools", async () => {
     const { tools } = await client.listTools();
-    const expected = [
-        "chatCompletion",
-        "generateImage",
-        "generateVideo",
-        "getBalance",
-        "getUsage",
-        "listModels",
-        "textToSpeech",
-        "transcribeAudio",
-    ];
+    modernTools = tools;
     const actual = tools.map((tool) => tool.name).sort();
-    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
         throw new Error(`unexpected tools: ${actual.join(", ")}`);
     }
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
@@ -110,13 +114,15 @@ await step("listTools", async () => {
 await step("listModels (unauthenticated)", () => callText("listModels"));
 
 const legacyClient = await connectClient();
-await step("legacy protocol connection", async () => {
+await step("legacy protocol fallback", async () => {
     const era = legacyClient.getProtocolEra();
     if (era !== "legacy") throw new Error(`expected legacy, received ${era}`);
     const { tools } = await legacyClient.listTools();
-    if (tools.length !== 8) {
-        throw new Error(`expected 8 tools, received ${tools.length}`);
+    const actual = tools.map((tool) => tool.name).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
+        throw new Error(`unexpected tools: ${actual.join(", ")}`);
     }
+    assert.deepEqual(tools, modernTools);
     return `${era}, ${tools.length} tools`;
 });
 await legacyClient.close();
@@ -180,6 +186,12 @@ if (!LIVE || !KEY) {
             throw new Error("no usage response returned");
         }
         return "usage response returned";
+    });
+    await step("listQuests", async () => {
+        if (!(await callText("listQuests"))) {
+            throw new Error("no quest response returned");
+        }
+        return "quest response returned";
     });
 }
 

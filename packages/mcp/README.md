@@ -1,6 +1,6 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for generating images, videos, text, and audio with pollinations.ai, plus checking Pollen balance and usage.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for generating images, videos, text, and audio with pollinations.ai, plus checking Pollen balance, usage, and quests.
 
 All requests go through `https://gen.pollinations.ai`. Gen owns model defaults, aliases, capabilities, validation, and errors; the MCP server keeps a small tool surface and wraps responses for MCP.
 
@@ -48,6 +48,7 @@ Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool callin
 | --- | --- |
 | `getBalance` | Get the key budget or, with `account:usage`, account balances |
 | `getUsage` | Get usage for the authenticated key |
+| `listQuests` | Return quests and earned rewards for the authenticated account |
 
 The model registry responses include the current names, aliases, capabilities, and pricing supplied by Gen.
 
@@ -74,7 +75,7 @@ npm test
 POLLINATIONS_MCP_LIVE=1 POLLINATIONS_API_KEY=sk_… npm test
 ```
 
-The smoke test always lists tools and models. Live mode also exercises chat completion, image URL generation, text-to-speech, transcription, balance, and usage.
+The smoke test always lists tools and models. Live mode also exercises chat completion, image URL generation, text-to-speech, transcription, balance, usage, and quests.
 
 ## Requirements and Links
 

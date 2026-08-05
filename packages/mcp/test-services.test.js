@@ -296,6 +296,7 @@ test("account tools return raw responses and pass usage query parameters", async
         days: 2,
         cursor: "next",
     });
+    const quests = await handlers.listQuests();
 
     assert.deepEqual(JSON.parse(balance.content[0].text), {
         server_field: "preserved",
@@ -303,11 +304,15 @@ test("account tools return raw responses and pass usage query parameters", async
     assert.deepEqual(JSON.parse(usage.content[0].text), {
         server_field: "preserved",
     });
+    assert.deepEqual(JSON.parse(quests.content[0].text), {
+        server_field: "preserved",
+    });
     assert.equal(requests[0], "https://gen.pollinations.ai/account/balance");
     assert.equal(
         requests[1],
         "https://gen.pollinations.ai/account/key/usage?days=2&cursor=next",
     );
+    assert.equal(requests[2], "https://gen.pollinations.ai/account/quests");
 });
 
 test("upstream status and message are preserved without local policy", async () => {

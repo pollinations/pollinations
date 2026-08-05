@@ -294,7 +294,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("early_adopter", {
         state: "available",
-        rewardAmount: 1,
+        rewardAmount: 2,
         balanceBucket: "tier",
     });
     expect(byId.get("early_adopter")?.title).toBe(
@@ -302,7 +302,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     );
     expectStableCatalogFields("github_established", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 3,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("app_paid_request", {
@@ -927,7 +927,7 @@ test("six-month account quest records once after the threshold", async ({
         {
             questId: "early_adopter",
             userId: user.id,
-            pollenAmount: 1,
+            pollenAmount: 2,
             balanceBucket: "tier",
         },
     ]);
@@ -1183,7 +1183,7 @@ test("github established-account quest records once per GitHub identity", async 
         {
             idempotencyKey: `quest:github_established:github:${user.githubId}`,
             userId: user.id,
-            pollenAmount: 2,
+            pollenAmount: 3,
             balanceBucket: "tier",
         },
     ]);

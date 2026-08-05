@@ -167,7 +167,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     description: "Sign in with a GitHub account that is at least one year old.",
     category: "contribute",
     scope: "perSubject",
-    rewardAmount: 2,
+    rewardAmount: 3,
     balanceBucket: "tier",
 };
 

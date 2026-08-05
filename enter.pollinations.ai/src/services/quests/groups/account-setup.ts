@@ -62,7 +62,7 @@ const sixMonthAccountQuest: QuestDefinition = {
     description: "Your Pollinations account is older than six months.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 2,
     balanceBucket: "tier",
 };
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12958,
+  "title": "chore: remove unused Micro app",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12958",
+  "merged_at": "2026-08-05T06:31:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the unused `apps/micro` email microservice, including its routes, examples, tests, configuration, and standalone lockfile.\n- Removes the stale Micro catalog entry from `apps/APPS.md` and regenerates `apps/GREENHOUSE.md`.\n- Audit found no imports, callers, deployment registration, workspace entry, or external service references.\n- Net change: 32 files, 2 additions, 6,054 deletions.\n\nChecks:\n- `node .github/scripts/app-update-greenhouse.js`\n- `git diff --check`\n- Repository-wide stale-reference scan",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less abandoned hive",
+    "blurb": "The unused Micro email app has been carefully composted: routes, examples, tests, config, and its catalog entry are gone. No callers were found, so the garden has a little more room to grow.",
+    "summary": "Removed the unused apps/micro email microservice and its 32 associated routes, examples, tests, configuration files, standalone lockfile, and stale catalog references after a repository-wide audit found no callers or deployment registration.",
+    "impact": "Developers get a cleaner app catalog and repository with no stale Micro service surface to maintain, while active Pollinations services remain unchanged.",
+    "keywords": [
+      "apps",
+      "cleanup",
+      "micro",
+      "email",
+      "repository-maintenance",
+      "catalog"
+    ],
+    "visual_concept": "Depict Polli as a gentle garden caretaker tidying an unused tiny email-server shed from the community-app garden, with a retired envelope sign being placed into a compost bin while healthy code-plants and flowers remain. The scene represents safe removal after confirming nothing depends on the old service.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully composting a small retired email-server shed marked with a simple pixel envelope while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and warm cream pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-12958.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully composting a small retired email-server shed marked with a simple pixel envelope while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and warm cream pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-05T06:32:59.089364+00:00"
+}

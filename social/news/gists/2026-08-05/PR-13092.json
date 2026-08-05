@@ -1,0 +1,36 @@
+{
+  "pr_number": 13092,
+  "title": "Add ImageGenerator.MAUI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13092",
+  "merged_at": "2026-08-05T07:17:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ImageGenerator.MAUI](https://github.com/MR-444/ImageGenerator.MAUI) to image\n- ImageGenerator.MAUI is an open-source (MIT) Windows desktop image-generation app built with .NET MAUI. Users pick a model, enter a prompt, and generate images; every saved image embeds the full prompt\n\nFixes #11432",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A MAUI flower blooms",
+    "blurb": "ImageGenerator.MAUI joined the image garden: a Windows desktop app for picking a model, writing a prompt, and keeping the full prompt tucked inside every saved image.",
+    "summary": "Added ImageGenerator.MAUI, an MIT-licensed .NET MAUI Windows desktop image-generation app where users select a model, enter a prompt, and save images with their full prompts embedded.",
+    "impact": "Windows creators now have another open-source desktop route into Pollinations image generation, with prompt metadata preserved inside each saved result.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "windows",
+      "dotnet-maui",
+      "open-source",
+      "prompts"
+    ],
+    "visual_concept": "Depict a cozy Windows desktop-style retro workstation in a flower-filled garden shed, with Polli wearing tiny developer headphones beside a CRT monitor showing an image generator UI with a model selector and prompt box. A freshly generated pixel landscape is being saved into a glowing picture frame, with a small prompt-scroll tucked into the frame to symbolize embedded prompt metadata; code-plants and lime-green blossoms reinforce the open-source app garden.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed workspace: Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny developer headphones, helps save a generated picture from a chunky retro Windows desktop monitor showing a simple model selector and prompt box; a little prompt scroll is visibly embedded in the framed image. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around the desk, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-05/PR-13092.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed workspace: Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny developer headphones, helps save a generated picture from a chunky retro Windows desktop monitor showing a simple model selector and prompt box; a little prompt scroll is visibly embedded in the framed image. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around the desk, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-05T07:18:03.768309+00:00",
+  "app_name": "ImageGenerator.MAUI",
+  "app_url": "https://github.com/MR-444/ImageGenerator.MAUI"
+}

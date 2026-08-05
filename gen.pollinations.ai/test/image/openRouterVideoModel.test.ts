@@ -253,6 +253,31 @@ describe("OpenRouter Grok Video Pro", () => {
         });
     });
 
+    it.each([
+        [undefined, "720p"],
+        ["480p", "480p"],
+        ["1080p", "1080p"],
+    ] as const)("routes 1.5 resolution %s as %s", async (resolution, expectedResolution) => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests);
+
+        const result = await callOpenRouterGrokVideoAPI(
+            "a calm ocean at sunrise",
+            {
+                ...baseParams,
+                model: "grok-imagine-video-1.5",
+                resolution,
+            },
+        );
+
+        expect(requests[0]).toMatchObject({
+            model: "x-ai/grok-imagine-video-1.5",
+            resolution: expectedResolution,
+        });
+        expect(result.trackingData?.actualModel).toBe("grok-imagine-video-1.5");
+    });
+
     it("forwards one start frame and derives ratio from explicit dimensions", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];

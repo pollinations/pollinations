@@ -98,6 +98,18 @@ export type BillingAdjustmentRule = {
     kind: string;
     unit: string;
     unitCost: number;
+    publicPricing: {
+        label: string;
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    };
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module

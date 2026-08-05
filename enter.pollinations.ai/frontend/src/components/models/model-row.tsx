@@ -20,11 +20,7 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import {
-    getModelPriceBadges,
-    PriceBadgeList,
-    PriceVariantDisclosure,
-} from "./price-badge.tsx";
+import { ModelPricingLedger } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -98,8 +94,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 {balanceLabel}
             </span>
         );
-    const inputPriceBadges = getModelPriceBadges(model, "input");
-    const outputPriceBadges = getModelPriceBadges(model, "output");
     const modelNameTooltip = (
         <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
             {modelDescription && <span>{modelDescription}</span>}
@@ -174,9 +168,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
-                        />
-                        <PriceVariantDisclosure
-                            variants={model.priceVariants}
                         />
                         <BalanceAccessChip
                             access={balanceAccess}
@@ -260,20 +251,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </Tooltip>
             </div>
 
-            {/* Input prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={inputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
-            </div>
-
-            {/* Output prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={outputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
+            <div className="w-[240px] shrink-0 px-3 py-3">
+                <ModelPricingLedger model={model} />
             </div>
         </Surface>
     );

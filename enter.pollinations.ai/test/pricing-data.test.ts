@@ -8,6 +8,7 @@ import {
     getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
+    modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import {
     calculateBillingAdjustments,
@@ -479,10 +480,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
-// Billing internals are intentionally NOT exposed in the public /models schema
-// (v1). Public model info carries only token pricing — assert the billing
-// object is absent so a future re-exposure is a deliberate, tested change.
-test("Gemini billing internals are not exposed in public model catalog", () => {
+test("public model catalog exposes Gemini billing prices without internals", () => {
     const geminiSearchFast = getTextModelsInfo().find(
         (model) => model.name === "gemini-flash-lite-3.5",
     );
@@ -494,6 +492,17 @@ test("Gemini billing internals are not exposed in public model catalog", () => {
     expect(geminiLarge).toBeDefined();
     expect(geminiSearchFast).not.toHaveProperty("billing");
     expect(geminiLarge).not.toHaveProperty("billing");
+    expect(geminiLarge?.pricing_adjustments).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                label: "Search",
+                price: "14",
+                currency: "pollen",
+                quantity: 1_000,
+                unit: "search requests",
+            }),
+        ]),
+    );
 });
 
 test("Perplexity request search fees are added by declarative billing rules", () => {
@@ -624,9 +633,9 @@ test("independent Vertex Gemini Search detects streamed grounding", () => {
     ).toBeCloseTo(0.535, 8);
 });
 
-// Billing rules live on the private ModelDefinition (drive the fee), but are
-// NOT surfaced in the public /models schema. Assert both facts.
-test("Perplexity billing rules carry per-tier request fees privately only", () => {
+// Executable billing stays private; the public catalog receives only the
+// display-safe price metadata asserted below.
+test("Perplexity billing keeps executable rules private", () => {
     const perplexityFees = [
         [
             "perplexity",
@@ -680,9 +689,41 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
         expect(adjustment?.countUnits({})).toBe(1);
     }
 
-    // Public catalog exposes token pricing only — no billing internals.
+    // Public catalog exposes display-safe pricing, never executable billing.
     for (const model of getTextModelsInfo()) {
         expect(model).not.toHaveProperty("billing");
+    }
+});
+
+test("every billing adjustment has public catalog metadata", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        const rules = definition.billing?.adjustments ?? [];
+        const adjustments = modelInfoFromDefinition(
+            model,
+            definition,
+        ).pricing_adjustments;
+
+        expect(
+            adjustments?.length ?? 0,
+            `${model}: every billing rule must be publicly visible`,
+        ).toBe(rules.length);
+
+        for (const rule of rules) {
+            expect(rule.publicPricing.label.trim()).not.toBe("");
+            expect(rule.publicPricing.quantity).toBeGreaterThan(0);
+            expect(rule.publicPricing.unit.trim()).not.toBe("");
+            expect(
+                Number(
+                    adjustments?.find(({ name }) => name === rule.id)?.price,
+                ),
+            ).toBeCloseTo(
+                rule.unitCost *
+                    rule.publicPricing.quantity *
+                    definition.priceMultiplier,
+                10,
+            );
+        }
     }
 });
 

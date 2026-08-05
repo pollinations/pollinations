@@ -29,6 +29,22 @@ export type ApiModelInfo = {
         description: string;
         pricing: ApiPricing;
     }>;
+    pricing_adjustments?: Array<{
+        name: string;
+        label: string;
+        kind: string;
+        price: string;
+        currency: "pollen";
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    }>;
     title?: string;
     description?: string;
     input_modalities?: string[];
@@ -225,6 +241,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         inputSortPrice,
         outputSortPrice,
         prices: [],
+        priceAdjustments: model.pricing_adjustments,
     };
 }
 

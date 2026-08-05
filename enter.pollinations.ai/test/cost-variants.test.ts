@@ -548,6 +548,11 @@ describe("selection safety and composition", () => {
                             kind: "test",
                             unit: "request",
                             unitCost: 0.1,
+                            publicPricing: {
+                                label: "Test",
+                                quantity: 1,
+                                unit: "request",
+                            },
                             countUnits: () => 1,
                         },
                     ],

@@ -1,10 +1,19 @@
-import { Chip, Tooltip } from "@pollinations/ui";
-import type { FC } from "react";
+import {
+    Button,
+    CheckIcon,
+    ChevronIcon,
+    Chip,
+    cn,
+    Dropdown,
+    DropdownItem,
+    Tooltip,
+} from "@pollinations/ui";
+import { type FC, useState } from "react";
 import { PRICE_ICON } from "./model-icons.tsx";
 import type {
     ModelPrice,
+    ModelPriceAdjustment,
     ModelPriceLine,
-    ModelPriceVariant,
     PriceDirection,
     PriceKind,
 } from "./types.ts";
@@ -26,6 +35,33 @@ const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
     second: "/sec",
     request: "/gen",
 };
+
+const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
+    text: { input: "Text in", output: "Text out" },
+    image: { input: "Image in", output: "Image out" },
+    "3d": { input: "3D in", output: "3D out" },
+    cached: { input: "Cached in", output: "Cached out" },
+    cacheWrite: { input: "Cache write", output: "Cache write" },
+    reasoning: { input: "Reasoning in", output: "Reasoning out" },
+    video: { input: "Video in", output: "Video out" },
+    audioIn: { input: "Audio in", output: "Audio in" },
+    audioOut: { input: "Audio out", output: "Audio out" },
+};
+
+const PRICE_LEDGER_UNIT: Record<ModelPriceLine["unit"], string> = {
+    token: "P /M tokens",
+    second: "P /sec",
+    request: "P /gen",
+};
+
+const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
+
+const formatAdjustmentUnit = ({
+    quantity,
+    unit,
+    suffix,
+}: Pick<ModelPriceAdjustment, "quantity" | "unit" | "suffix">): string =>
+    `${compactNumber.format(quantity)} ${unit}${suffix ? ` · ${suffix}` : ""}`;
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
     subKinds: PriceKind[];
@@ -117,37 +153,172 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     );
 };
 
-export const PriceVariantDetails: FC<{
-    variants: ModelPriceVariant[];
-}> = ({ variants }) => (
-    <div className="flex max-w-[360px] flex-col gap-3 text-left">
-        {variants.map((variant) => (
-            <div key={variant.name} className="flex flex-col gap-1.5">
-                <span className="font-medium text-theme-text-strong">
-                    {variant.label}
-                </span>
-                <span className="text-xs leading-relaxed text-theme-text-muted">
-                    {variant.description}
-                </span>
-                <PriceBadgeList
-                    badges={groupPriceBadges(variant.prices)}
-                    className="flex flex-wrap gap-1"
-                />
-            </div>
-        ))}
-    </div>
-);
+export const ModelPricingLedger: FC<{
+    model: ModelPrice;
+    className?: string;
+}> = ({ model, className }) => {
+    const [variantName, setVariantName] = useState("");
+    const adjustmentOptionGroups = new Map<
+        string,
+        Array<{ value: string; label: string; default?: boolean }>
+    >();
 
-export const PriceVariantDisclosure: FC<{
-    variants?: ModelPriceVariant[];
-}> = ({ variants }) => {
-    if (!variants?.length) return null;
+    for (const adjustment of model.priceAdjustments ?? []) {
+        const option = adjustment.option;
+        if (!option) continue;
+        const options = adjustmentOptionGroups.get(option.group) ?? [];
+        if (!options.some(({ value }) => value === option.value)) {
+            options.push(option);
+            adjustmentOptionGroups.set(option.group, options);
+        }
+    }
+
+    const [adjustmentOptions, setAdjustmentOptions] = useState<
+        Record<string, string>
+    >(() =>
+        Object.fromEntries(
+            [...adjustmentOptionGroups].map(([group, options]) => [
+                group,
+                options.find((option) => option.default)?.value ??
+                    options[0]?.value,
+            ]),
+        ),
+    );
+    const selectedVariant = model.priceVariants?.find(
+        ({ name }) => name === variantName,
+    );
+    const prices = selectedVariant?.prices ?? model.prices;
+    const adjustments = (model.priceAdjustments ?? []).filter(
+        ({ option }) =>
+            !option || adjustmentOptions[option.group] === option.value,
+    );
+    const dropdowns = [
+        ...(model.priceVariants?.length
+            ? [
+                  {
+                      key: "pricing",
+                      value: variantName,
+                      options: [
+                          { value: "", label: "Default" },
+                          ...model.priceVariants.map(({ name, label }) => ({
+                              value: name,
+                              label,
+                          })),
+                      ],
+                      onSelect: setVariantName,
+                  },
+              ]
+            : []),
+        ...[...adjustmentOptionGroups].map(([group, options]) => ({
+            key: group,
+            value: adjustmentOptions[group],
+            options,
+            onSelect: (value: string) =>
+                setAdjustmentOptions((current) => ({
+                    ...current,
+                    [group]: value,
+                })),
+        })),
+    ];
+
+    if (!prices.length && !adjustments.length) return null;
 
     return (
-        <Tooltip content={<PriceVariantDetails variants={variants} />}>
-            <Chip intent="neutral" size="sm" className="whitespace-nowrap">
-                Tiered pricing
-            </Chip>
-        </Tooltip>
+        <div className={cn("flex min-w-0 flex-col gap-1", className)}>
+            {dropdowns.length > 0 && (
+                <div className="flex flex-wrap justify-end gap-1 pb-1">
+                    {dropdowns.map((dropdown) => {
+                        const selected = dropdown.options.find(
+                            ({ value }) => value === dropdown.value,
+                        );
+                        return (
+                            <Dropdown
+                                key={dropdown.key}
+                                align="end"
+                                className="w-max min-w-40 p-1"
+                                trigger={(open) => (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        aria-label={`Pricing option for ${model.displayName ?? model.name}`}
+                                        className="max-w-52 justify-between gap-2 text-xs tabular-nums"
+                                    >
+                                        <span className="truncate">
+                                            {selected?.label}
+                                        </span>
+                                        <ChevronIcon expanded={open} />
+                                    </Button>
+                                )}
+                            >
+                                {(close) => (
+                                    <div role="menu">
+                                        {dropdown.options.map((option) => {
+                                            const isSelected =
+                                                option.value === dropdown.value;
+                                            return (
+                                                <DropdownItem
+                                                    key={option.value}
+                                                    role="menuitemradio"
+                                                    aria-checked={isSelected}
+                                                    onClick={() => {
+                                                        dropdown.onSelect(
+                                                            option.value,
+                                                        );
+                                                        close();
+                                                    }}
+                                                >
+                                                    <span className="flex-1">
+                                                        {option.label}
+                                                    </span>
+                                                    {isSelected && (
+                                                        <CheckIcon className="h-3.5 w-3.5" />
+                                                    )}
+                                                </DropdownItem>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Dropdown>
+                        );
+                    })}
+                </div>
+            )}
+            {prices.map((price) => (
+                <div
+                    key={`${price.direction}-${price.kind}-${price.unit}`}
+                    className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"
+                >
+                    <span className="text-xs text-theme-text-muted">
+                        {PRICE_LINE_LABELS[price.kind][price.direction]}
+                    </span>
+                    <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-theme-text-strong">
+                        {price.price}{" "}
+                        <span className="text-xs font-normal text-theme-text-muted">
+                            {PRICE_LEDGER_UNIT[price.unit]}
+                        </span>
+                    </span>
+                </div>
+            ))}
+            {adjustments.length > 0 && (
+                <div className="mt-1 border-t border-dashed border-divider pt-1">
+                    {adjustments.map((adjustment) => (
+                        <div
+                            key={adjustment.name}
+                            className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 py-0.5"
+                        >
+                            <span className="text-xs text-theme-text-muted">
+                                {adjustment.label}
+                            </span>
+                            <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-theme-text-strong">
+                                {adjustment.price}{" "}
+                                <span className="text-xs font-normal text-theme-text-muted">
+                                    P /{formatAdjustmentUnit(adjustment)}
+                                </span>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 };

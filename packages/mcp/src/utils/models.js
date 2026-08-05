@@ -1,6 +1,7 @@
 import { getAuthHeaders } from "./authUtils.js";
 
-const API_BASE_URL = "https://gen.pollinations.ai";
+const RAW_BASE = process.env.POLLINATIONS_BASE_URL || "https://gen.pollinations.ai";
+const API_BASE_URL = RAW_BASE.replace(/\/+$/, "");
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map();

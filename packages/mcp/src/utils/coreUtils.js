@@ -1,6 +1,7 @@
 import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 
-export const API_BASE_URL = "https://gen.pollinations.ai";
+const RAW_BASE = process.env.POLLINATIONS_BASE_URL || "https://gen.pollinations.ai";
+export const API_BASE_URL = RAW_BASE.replace(/\/+$/, "");
 
 /**
  * @param {Array} content - Array of content objects (text, image, etc.)

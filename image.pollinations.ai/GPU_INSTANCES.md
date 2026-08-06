@@ -1,19 +1,19 @@
 # GPU Instances
 
-Last updated: 2026-08-02
+Last updated: 2026-08-06
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.361111/hr all-in | **ACTIVE — production** (Replicate fallback) |
+| Flux (FP4) | 2 | RTX 5090 + RTX PRO 4000 Blackwell | Vast.ai | $0.648889/hr all-in | **ACTIVE — two production** (Replicate fallback) |
 | Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
 
-At capture time, the six running Vast instances cost **$1.572222/hr** in total.
-All six are production workers; there is no isolated canary left running.
+At capture time, the seven running Vast instances cost **$1.860000/hr** in total.
+All seven are production workers; there is no isolated canary left running.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -79,15 +79,38 @@ is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.
 
-## Provider: Vast.ai — Flux (RTX 5090, FP4)
+## Provider: Vast.ai — Flux (RTX 5090 + RTX PRO 4000 Blackwell, FP4)
 
-One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Replicate fallback
+Two single-GPU instances, each fronted by a named Cloudflare Tunnel. Flux
+routes pool-first with automatic Replicate fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
 | flux-vast-04 | 46491202 | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — named tunnel `flux-vast-04.pollinations.ai` |
+| flux-vast-06 | 47018211 | RTX PRO 4000 Blackwell 24 GB | $0.287778/hr | ACTIVE (promoted 2026-08-06) — named tunnel `flux-vast-06.pollinations.ai` |
+
+Instance `47018211` adds production capacity slot 2 while instance `46491202`
+remains active. The Ontario host is machine `53737`, has Vast reliability
+`0.9944`, and costs **$207.20 per 30-day month** in Vast credits. At the
+account's 50% credit acquisition cost, that is about **$103.60/month cash
+equivalent**. The two-worker FLUX pool costs `$0.648889/hr` all-in.
+
+Qualification on the RTX PRO 4000 passed authentication rejection, dimension
+limits, 512x512 and 1024x1024 generation, model and tunnel restart recovery,
+and isolated external routing. Direct load completed 30/30 1024x1024 requests
+at 29.54 images/minute with 6.12s p50 and 8.17s p95; external load completed
+15/15 at 29.84 images/minute with 6.06s p50 and 8.06s p95. After promotion,
+the worker received four attributed production requests within 25 seconds;
+the final log sample contained 104 successful `/generate` responses and zero
+5xx, OOM, CUDA, or traceback errors. The original RTX 5090 stayed healthy
+throughout the additive cutover.
+
+The canary exposed a pre-existing queue caveat: the synchronous inference call
+blocks the FastAPI event loop, so `QUEUE_LIMIT=3` does not currently guarantee
+fast 503 shedding under concurrent load. Treat the two-worker pool as the
+capacity guard and keep Replicate enabled as fallback until queue admission is
+hardened separately.
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
@@ -154,10 +177,10 @@ curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_
 POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
 ```
 
-**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
-`QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Replicate instead of making users
-wait in a long queue.
+**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024
+(`MAX_PIXELS=1048576`). `QUEUE_LIMIT=3` is configured, but the synchronous
+inference path currently prevents it from reliably shedding concurrent load;
+Replicate remains the overflow and failure fallback.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
 

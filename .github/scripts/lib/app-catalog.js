@@ -22,12 +22,17 @@ const NULLABLE_STRING_FIELDS = [
     "issueUrl",
     "approvedDate",
 ];
-const CATALOG_FIELDS = new Set([
+const OPTIONAL_NULLABLE_STRING_FIELDS = ["screenshotUrl"];
+const REQUIRED_FIELDS = new Set([
     ...REQUIRED_STRING_FIELDS,
     ...NULLABLE_STRING_FIELDS,
     "repositoryStars",
     "byop",
     "requests24h",
+]);
+const CATALOG_FIELDS = new Set([
+    ...REQUIRED_FIELDS,
+    ...OPTIONAL_NULLABLE_STRING_FIELDS,
 ]);
 
 function validateApps(apps, filePath = CATALOG_FILE) {
@@ -45,7 +50,7 @@ function validateApps(apps, filePath = CATALOG_FILE) {
                 throw new Error(`${label}.${field} is not a catalog field`);
             }
         }
-        for (const field of CATALOG_FIELDS) {
+        for (const field of REQUIRED_FIELDS) {
             if (!(field in app)) {
                 throw new Error(`${label}.${field} is required`);
             }
@@ -55,7 +60,11 @@ function validateApps(apps, filePath = CATALOG_FILE) {
                 throw new Error(`${label}.${field} must be a non-empty string`);
             }
         }
-        for (const field of NULLABLE_STRING_FIELDS) {
+        for (const field of [
+            ...NULLABLE_STRING_FIELDS,
+            ...OPTIONAL_NULLABLE_STRING_FIELDS,
+        ]) {
+            if (!(field in app)) continue;
             if (
                 app[field] !== null &&
                 (typeof app[field] !== "string" || !app[field].trim())
@@ -64,6 +73,14 @@ function validateApps(apps, filePath = CATALOG_FILE) {
                     `${label}.${field} must be null or a non-empty string`,
                 );
             }
+        }
+        if (
+            app.screenshotUrl &&
+            !app.screenshotUrl.startsWith("https://media.pollinations.ai/")
+        ) {
+            throw new Error(
+                `${label}.screenshotUrl must use https://media.pollinations.ai/`,
+            );
         }
         if (
             app.repositoryStars !== null &&

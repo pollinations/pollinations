@@ -20,7 +20,7 @@ export function LiveApps() {
                     (app) =>
                         isBuzz(app) &&
                         Boolean(app.description) &&
-                        appCover(app.name) !== null,
+                        appCover(app.name, app.screenshot_url) !== null,
                 )
                 .slice()
                 .sort(sortApps)

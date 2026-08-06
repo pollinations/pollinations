@@ -225,7 +225,7 @@ function AppsPage() {
                                     ? `by ${lead.github_username}`
                                     : "community built"
                             }
-                            image={appCover(lead.name)}
+                            image={appCover(lead.name, lead.screenshot_url)}
                             action={
                                 <span className="text-sm font-semibold text-theme-text-soft">
                                     Open ↗

@@ -11,11 +11,12 @@ const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co/v0/pipes";
 const PUBLIC_READ_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-/** One row of the community app directory — i.e. a row of apps/APPS.md. */
+/** One row of the community app directory synced from apps/catalog.json. */
 export type DirectoryApp = {
     emoji: string;
     name: string;
     web_url: string;
+    screenshot_url: string;
     description: string;
     language: string;
     category: string;

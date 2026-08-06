@@ -65,7 +65,7 @@ const sixMonthAccountQuest: QuestDefinition = {
     rewardAmount: 1,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
+    state: "available",
 };
 
 const legacyFirstTopUpQuest: QuestDefinition = {

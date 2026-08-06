@@ -31,11 +31,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type {
-    ModelScope,
-    ModelSortDirection,
-    ModelSortKey,
-} from "./model-search.ts";
+import type { ModelScope } from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -82,13 +78,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
 };
 
-const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
-};
-
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
@@ -127,8 +116,6 @@ export const Models: FC<ModelsProps> = ({
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const lastPushedSearchRef = useRef(urlSearch);
-    const sortKey = modelSearch.sort ?? "perPollen";
-    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -244,26 +231,6 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const onSort = (key: ModelSortKey) => {
-        const nextDirection =
-            key === sortKey
-                ? sortDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : DEFAULT_SORT_DIRECTIONS[key];
-
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                sort: key === "perPollen" ? undefined : key,
-                dir:
-                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
-                        ? undefined
-                        : nextDirection,
-            }),
-        });
-    };
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -365,9 +332,6 @@ export const Models: FC<ModelsProps> = ({
                             textModels={sectionModels.text}
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
-                            sortKey={sortKey}
-                            sortDir={sortDir}
-                            onSort={onSort}
                         />
                     </div>
                 )}

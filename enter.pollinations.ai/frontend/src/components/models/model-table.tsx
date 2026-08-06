@@ -1,6 +1,5 @@
-import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
 import { type FC, useState } from "react";
-import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -14,12 +13,8 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelId, ModelRow } from "./model-row.tsx";
-import type {
-    ModelCategory,
-    ModelSortDirection,
-    ModelSortKey,
-} from "./model-search.ts";
+import { ModelId, ModelRow, PerPollenEstimate } from "./model-row.tsx";
+import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
     BalanceAccessChip,
@@ -44,40 +39,6 @@ type UnifiedModelTableProps = {
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-    sortKey: ModelSortKey;
-    sortDir: ModelSortDirection;
-    onSort: (key: ModelSortKey) => void;
-};
-
-const sortModels = (
-    models: ModelPrice[],
-    sortKey: ModelSortKey,
-    sortDir: ModelSortDirection,
-) => {
-    const sign = sortDir === "asc" ? 1 : -1;
-    return [...models].sort((a, b) => {
-        if (sortKey === "name") {
-            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
-            return an < bn ? -sign : an > bn ? sign : 0;
-        }
-        const av =
-            sortKey === "perPollen"
-                ? (calculatePerPollenValue(a) ?? -1)
-                : sortKey === "input"
-                  ? (a.inputSortPrice ?? -1)
-                  : (a.outputSortPrice ?? -1);
-        const bv =
-            sortKey === "perPollen"
-                ? (calculatePerPollenValue(b) ?? -1)
-                : sortKey === "input"
-                  ? (b.inputSortPrice ?? -1)
-                  : (b.outputSortPrice ?? -1);
-        // Missing values always sort last regardless of direction
-        if (av < 0 && bv >= 0) return 1;
-        if (bv < 0 && av >= 0) return -1;
-        return (av - bv) * sign;
-    });
 };
 
 export const sectionLabels: Record<SectionType, string> = {
@@ -93,27 +54,19 @@ export const sectionLabels: Record<SectionType, string> = {
 
 // --- Tab content ---
 
-type TabContentProps = {
-    models: ModelPrice[];
-    sortKey: ModelSortKey;
-    sortDir: ModelSortDirection;
-};
-
-const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
-    const sorted = sortModels(models, sortKey, sortDir);
-
+const TabContent: FC<{ models: ModelPrice[] }> = ({ models }) => {
     return (
         <>
             {/* Desktop cards */}
             <div className="hidden gap-2 pb-1 @2xl:pointer-fine:flex @2xl:pointer-fine:flex-col">
-                {sorted.map((model) => (
+                {models.map((model) => (
                     <ModelRow key={model.name} model={model} />
                 ))}
             </div>
 
             {/* Mobile list */}
             <div className="pb-1 @2xl:pointer-fine:hidden">
-                {sorted.map((model) => (
+                {models.map((model) => (
                     <MobileModelRow key={model.name} model={model} />
                 ))}
             </div>
@@ -141,7 +94,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
     const pricing = useModelPricingSelection(model);
 
-    const perPollen = calculatePerPollen(model);
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
@@ -208,14 +160,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     access={balanceAccess}
                                     className="whitespace-nowrap"
                                 />
-                                <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                                    <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
-                                        {perPollen}
-                                    </span>
-                                    <span className="text-[10px] font-medium leading-none text-theme-text-muted">
-                                        gen/pollen
-                                    </span>
-                                </span>
+                                <PerPollenEstimate model={model} />
                             </span>
                         </div>
                     </div>
@@ -317,9 +262,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     realtimeModels,
     embeddingModels,
     activeTab,
-    sortKey,
-    sortDir,
-    onSort,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "all", models: allModels },
@@ -334,50 +276,20 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     const activeSection = sections.find((s) => s.type === activeTab);
 
-    const sortArrow = (key: ModelSortKey) =>
-        sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
-
     return (
         <div className="@container">
-            {/* Generation estimate header */}
-            <div className="hidden items-center pb-2 pr-8 @2xl:pointer-fine:flex">
-                <div className="min-w-6 flex-1" />
-                <Tooltip
-                    triggerAs="span"
-                    content={
-                        <span className="block w-[220px] whitespace-normal leading-snug">
-                            Based on{" "}
-                            <span className="font-semibold text-theme-text-strong">
-                                average usage
-                            </span>
-                            . Actual costs vary with modality and output.
-                        </span>
-                    }
-                >
-                    <button
-                        type="button"
-                        onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
-                    >
-                        <div className="text-sm font-bold text-ink-900">
-                            1 pollen {sortArrow("perPollen")}
-                        </div>
-                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈ gen
-                        </div>
-                    </button>
-                </Tooltip>
-                <div className="w-[clamp(320px,32%,360px)] shrink-0" />
+            <div className="mb-3">
+                <p className="text-sm font-semibold text-theme-text-strong">
+                    Generations per Pollen
+                </p>
+                <p className="text-xs text-theme-text-muted">
+                    Estimated from each model’s average usage over the last 7
+                    days. Actual usage varies.
+                </p>
             </div>
 
             {/* Tab content — the selected modality */}
-            {activeSection && (
-                <TabContent
-                    models={activeSection.models}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                />
-            )}
+            {activeSection && <TabContent models={activeSection.models} />}
         </div>
     );
 };

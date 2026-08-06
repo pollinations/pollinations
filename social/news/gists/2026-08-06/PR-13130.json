@@ -1,0 +1,33 @@
+{
+  "pr_number": 13130,
+  "title": "chore: update app metrics 2026-08-06",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13130",
+  "merged_at": "2026-08-06T05:06:42Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got watered",
+    "blurb": "The bot made its daily walk through the app garden, refreshing health checks and growth notes. Even the weeds have metrics now.",
+    "summary": "Refreshed the daily app metrics, health-check records, and greenhouse status tables in apps/APPS.md and apps/GREENHOUSE.md for 2026-08-06.",
+    "impact": "Community maintainers have current visibility into app activity and health across the apps garden.",
+    "keywords": [
+      "community",
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse"
+    ],
+    "visual_concept": "A cozy community app garden represented by labeled code-plants and tiny health-status flowers. Polli, wearing a gardener hat and carrying a clipboard, checks plant tags beside a greenhouse dashboard; the scene conveys routine maintenance rather than a new product capability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, updating a clipboard beside a warm glass greenhouse full of code-plants with small healthy status tags. Lime green (#ecf874) appears prominently on glowing planters and a retro garden monitor, with pastel flowers and vines throughout; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13130.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, updating a clipboard beside a warm glass greenhouse full of code-plants with small healthy status tags. Lime green (#ecf874) appears prominently on glowing planters and a retro garden monitor, with pastel flowers and vines throughout; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-06T05:07:40.064709+00:00"
+}

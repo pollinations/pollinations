@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-05",
+  "period_start": "2026-08-05",
+  "period_end": "2026-08-05",
+  "generated_at": "2026-08-06T07:03:28.616100+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-05/images/reddit.jpg"
+    }
+  ],
+  "title": "23 PRs: SDK cleanup, Quests, and app profiles",
+  "text": "23 PRs merged today. The visible part is another batch of projects finding their way into the directory: Oracle of Chance, chatty, Pulse AI, Receipt Fortune Teller, Sparkle Studio, Batch Imagine, ImageGenerator.MAUI, Lumara, Cat Sticker Generator, Qisas Hook Lab, and Agentic Automation.\n\nThe less visible work is probably more useful long-term. API-key authentication, metadata handling, and account permissions are now centralized instead of being reproduced in several places. Account Quests can now be listed through MCP. Community providers gained profiles, so models can carry an identifiable label rather than appearing as anonymous plumbing.\n\nGeneration behavior also got less surprising: Flux fallback now goes through the registry, unsupported reasoning parameters are stripped, Trellis validation errors return 400s, and the Myceli proxy timeout is now 300 seconds.\n\nSDK changes are intentionally boring: raw model registry data is returned directly, convenience helpers make one request, and request defaults are deferred to Gen. Fewer invisible decisions by the client library.\n\nREADME update: https://github.com/pollinations/pollinations\n\nRelevant code and open issues: https://github.com/pollinations/pollinations/pulls\n\nIf you use MCP, the SDK, or community providers, the interesting question is whether these boundaries now match how you expected them to work. They should; software has historically enjoyed proving otherwise."
+}

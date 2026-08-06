@@ -38,6 +38,7 @@ export const MODEL3D_SERVICES = {
                     description: "Maximum output detail.",
                 },
             },
+            "Low resolution",
         ),
         title: "Trellis 2",
         description: "Image-to-3D generation with selectable output detail",

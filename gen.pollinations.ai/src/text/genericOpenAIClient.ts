@@ -148,7 +148,12 @@ export async function genericOpenAIClient(
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
+    const {
+        endpoint,
+        defaultOptions = {},
+        additionalHeaders = {},
+        fetcher = fetch,
+    } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     let requestUrl: URL | undefined;
@@ -212,7 +217,7 @@ export async function genericOpenAIClient(
 
         let response: Response;
         try {
-            response = await fetch(endpointUrl, {
+            response = await fetcher(endpointUrl, {
                 method: "POST",
                 headers,
                 body: JSON.stringify(requestBody),

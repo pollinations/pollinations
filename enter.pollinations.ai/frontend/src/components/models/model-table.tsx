@@ -1,6 +1,5 @@
-import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
 import { type FC, useState } from "react";
-import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -14,24 +13,19 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelId, ModelRow } from "./model-row.tsx";
-import type {
-    ModelCategory,
-    ModelSortDirection,
-    ModelSortKey,
-} from "./model-search.ts";
+import { ModelId, ModelRow, PerPollenEstimate } from "./model-row.tsx";
+import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
 import {
-    getModelPriceBadges,
-    PriceBadgeList,
-    PriceVariantDetails,
-    PriceVariantDisclosure,
+    ModelPricingControls,
+    ModelPricingLedger,
+    useModelPricingSelection,
 } from "./price-badge.tsx";
-import type { ModelPrice, PriceDirection } from "./types.ts";
+import type { ModelPrice } from "./types.ts";
 
 export type SectionType = ModelCategory;
 
@@ -41,46 +35,10 @@ type UnifiedModelTableProps = {
     videoModels: ModelPrice[];
     model3dModels: ModelPrice[];
     textModels: ModelPrice[];
-    communityTextModels: ModelPrice[];
-    communityImageModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-    sortKey: ModelSortKey;
-    sortDir: ModelSortDirection;
-    onSort: (key: ModelSortKey) => void;
-};
-
-const sortModels = (
-    models: ModelPrice[],
-    sortKey: ModelSortKey,
-    sortDir: ModelSortDirection,
-) => {
-    const sign = sortDir === "asc" ? 1 : -1;
-    return [...models].sort((a, b) => {
-        if (sortKey === "name") {
-            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
-            return an < bn ? -sign : an > bn ? sign : 0;
-        }
-        const av =
-            sortKey === "perPollen"
-                ? (calculatePerPollenValue(a) ?? -1)
-                : sortKey === "input"
-                  ? (a.inputSortPrice ?? -1)
-                  : (a.outputSortPrice ?? -1);
-        const bv =
-            sortKey === "perPollen"
-                ? (calculatePerPollenValue(b) ?? -1)
-                : sortKey === "input"
-                  ? (b.inputSortPrice ?? -1)
-                  : (b.outputSortPrice ?? -1);
-        // Missing values always sort last regardless of direction
-        if (av < 0 && bv >= 0) return 1;
-        if (bv < 0 && av >= 0) return -1;
-        return (av - bv) * sign;
-    });
 };
 
 export const sectionLabels: Record<SectionType, string> = {
@@ -91,34 +49,24 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
-    "community-text": "Community Text",
-    "community-image": "Community Image",
     embedding: "Embedding",
 };
 
 // --- Tab content ---
 
-type TabContentProps = {
-    models: ModelPrice[];
-    sortKey: ModelSortKey;
-    sortDir: ModelSortDirection;
-};
-
-const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
-    const sorted = sortModels(models, sortKey, sortDir);
-
+const TabContent: FC<{ models: ModelPrice[] }> = ({ models }) => {
     return (
         <>
             {/* Desktop cards */}
             <div className="hidden gap-2 pb-1 @2xl:pointer-fine:flex @2xl:pointer-fine:flex-col">
-                {sorted.map((model) => (
+                {models.map((model) => (
                     <ModelRow key={model.name} model={model} />
                 ))}
             </div>
 
             {/* Mobile list */}
             <div className="pb-1 @2xl:pointer-fine:hidden">
-                {sorted.map((model) => (
+                {models.map((model) => (
                     <MobileModelRow key={model.name} model={model} />
                 ))}
             </div>
@@ -144,8 +92,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
+    const pricing = useModelPricingSelection(model);
 
-    const perPollen = calculatePerPollen(model);
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
@@ -207,22 +155,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 showAlpha={showAlpha}
                                 alphaTooltip={false}
                             />
-                            <PriceVariantDisclosure
-                                variants={model.priceVariants}
-                            />
                             <span className="inline-flex shrink-0 items-center gap-1">
                                 <BalanceAccessChip
                                     access={balanceAccess}
                                     className="whitespace-nowrap"
                                 />
-                                <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                                    <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
-                                        {perPollen}
-                                    </span>
-                                    <span className="text-[10px] font-medium leading-none text-theme-text-muted">
-                                        gen/pollen
-                                    </span>
-                                </span>
+                                <PerPollenEstimate model={model} />
                             </span>
                         </div>
                     </div>
@@ -242,7 +180,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             brandLogoPath ? "pl-[42px]" : "pl-0",
                         )}
                     >
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <div className="flex min-w-0 flex-col items-start gap-1.5">
                             <div className="min-w-0 w-fit max-w-full rounded-lg bg-theme-bg-subtle px-3 py-2">
                                 <ModelId name={model.name} />
                             </div>
@@ -262,57 +200,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
-                        <MobilePriceGroup
-                            label="In"
-                            model={model}
-                            direction="input"
+                        <ModelPricingControls model={model} pricing={pricing} />
+                        <ModelPricingLedger
+                            pricing={pricing}
+                            className="w-full"
                         />
-
-                        <MobilePriceGroup
-                            label="Out"
-                            model={model}
-                            direction="output"
-                        />
-                        {model.priceVariants?.length ? (
-                            <div className="mt-2 rounded-lg bg-theme-bg-subtle px-3 py-2">
-                                <PriceVariantDetails
-                                    variants={model.priceVariants}
-                                />
-                            </div>
-                        ) : null}
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-// --- Mobile price group ---
-
-type MobilePriceGroupProps = {
-    label: string;
-    model: ModelPrice;
-    direction: PriceDirection;
-};
-
-const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
-    label,
-    model,
-    direction,
-}) => {
-    const badges = getModelPriceBadges(model, direction);
-
-    if (badges.length === 0) return null;
-
-    return (
-        <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
-            <span className="text-xs font-bold text-theme-text-muted uppercase tracking-wide">
-                {label}
-            </span>
-            <PriceBadgeList
-                badges={badges}
-                className="flex min-w-0 flex-wrap justify-end gap-1"
-            />
         </div>
     );
 };
@@ -363,15 +258,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     model3dModels,
     textModels,
-    communityTextModels,
-    communityImageModels,
     audioModels,
     realtimeModels,
     embeddingModels,
     activeTab,
-    sortKey,
-    sortDir,
-    onSort,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "all", models: allModels },
@@ -381,88 +271,15 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
-        { type: "community-text", models: communityTextModels },
-        { type: "community-image", models: communityImageModels },
         { type: "embedding", models: embeddingModels },
     ];
 
     const activeSection = sections.find((s) => s.type === activeTab);
 
-    const sortArrow = (key: ModelSortKey) =>
-        sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
-
     return (
         <div className="@container">
-            {/* Column headers (sortable) */}
-            <div className="hidden items-center pb-2 pr-8 @2xl:pointer-fine:flex">
-                <button
-                    type="button"
-                    onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
-                >
-                    <span className="text-sm font-bold text-ink-900">
-                        Model {sortArrow("name")}
-                    </span>
-                </button>
-                <Tooltip
-                    triggerAs="span"
-                    content={
-                        <span className="block w-[220px] whitespace-normal leading-snug">
-                            Based on{" "}
-                            <span className="font-semibold text-theme-text-strong">
-                                average usage
-                            </span>
-                            . Actual costs vary with modality and output.
-                        </span>
-                    }
-                >
-                    <button
-                        type="button"
-                        onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
-                    >
-                        <div className="text-sm font-bold text-ink-900">
-                            1 pollen {sortArrow("perPollen")}
-                        </div>
-                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈ gen
-                        </div>
-                    </button>
-                </Tooltip>
-                <button
-                    type="button"
-                    onClick={() => onSort("input")}
-                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Input {sortArrow("input")}
-                    </div>
-                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onSort("output")}
-                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Output {sortArrow("output")}
-                    </div>
-                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </button>
-            </div>
-
             {/* Tab content — the selected modality */}
-            {activeSection && (
-                <TabContent
-                    models={activeSection.models}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                />
-            )}
+            {activeSection && <TabContent models={activeSection.models} />}
         </div>
     );
 };

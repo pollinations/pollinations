@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const {
-    buildRow,
+    buildApp,
     inferPlatform,
     parseSubmission,
     validateSubmission,
@@ -62,16 +62,19 @@ test("infers known distribution platforms", () => {
     assert.equal(inferPlatform("Example CLI", "", "command-line tool"), "cli");
 });
 
-test("builds the canonical APPS.md row", () => {
-    const row = buildRow(parseSubmission(BODY), {
+test("builds the canonical catalog app", () => {
+    const app = buildApp(parseSubmission(BODY), {
         githubUsername: "example",
         githubUserId: 123,
         submittedDate: "2026-07-01",
         issueUrl: "https://github.com/pollinations/pollinations/issues/1",
         approvedDate: "2026-07-02",
     });
-    assert.equal(row.split("|").length - 1, 19);
-    assert.match(row, /@example \| 123/);
+    assert.equal(app.githubUsername, "example");
+    assert.equal(app.githubUserId, "123");
+    assert.equal(app.repositoryStars, null);
+    assert.equal(app.byop, false);
+    assert.equal(app.requests24h, 0);
 });
 
 test("publisher validation uses the approval snapshot and tolerates deleted users", () => {
@@ -113,6 +116,7 @@ if (args[0] === "issue" && args[1] === "list") {
                 ISSUE_CREATED_AT: "2026-07-01T00:00:00Z",
                 ISSUE_URL:
                     "https://github.com/pollinations/pollinations/issues/1",
+                APPROVED_DATE: "2026-07-02",
             },
         },
     );
@@ -120,5 +124,27 @@ if (args[0] === "issue" && args[1] === "list") {
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.ok(result.stdout.endsWith("\n"));
-    assert.equal(JSON.parse(result.stdout).submission.name, "Sunflower Studio");
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.submission.name, "Sunflower Studio");
+    assert.deepEqual(output.app, {
+        emoji: "🖼️",
+        name: "Sunflower Studio",
+        url: "https://example.com/app",
+        description:
+            "Creates images with the Pollinations API for collaborative design work.",
+        language: "en",
+        category: "image",
+        platform: "web",
+        githubUsername: "example",
+        githubUserId: "123",
+        repositoryUrl: "https://github.com/example/sunflower",
+        repositoryStars: null,
+        discordUsername: "sunflower",
+        other: null,
+        submittedDate: "2026-07-01",
+        issueUrl: "https://github.com/pollinations/pollinations/issues/1",
+        approvedDate: "2026-07-02",
+        byop: false,
+        requests24h: 0,
+    });
 });

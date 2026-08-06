@@ -44,7 +44,12 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [savedProvider, setSavedProvider] =
+        useState<CommunityProviderProfile>({ name: null, url: null });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
+    const providerIsSaved =
+        providerName === (savedProvider.name ?? "") &&
+        providerUrl === (savedProvider.url ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -65,6 +70,7 @@ export function CommunityEndpoints({
         setEndpoints(body.data);
         setProviderName(body.provider.name ?? "");
         setProviderUrl(body.provider.url ?? "");
+        setSavedProvider(body.provider);
         setIsLoading(false);
     }, []);
 
@@ -137,6 +143,7 @@ export function CommunityEndpoints({
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
+            setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
             setError(
@@ -240,15 +247,13 @@ export function CommunityEndpoints({
                             }
                         >
                             <div>
-                                <p className="text-sm font-semibold">
-                                    Provider profile
-                                </p>
+                                <p className="text-sm font-semibold">Brand</p>
                                 <p className="mt-0.5 text-xs text-theme-text-soft">
-                                    Shown as a link on all your public models.
+                                    Shown on all your public models.
                                 </p>
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <FieldStack label="Provider name">
+                                <FieldStack label="Name">
                                     <Input
                                         name="community-provider-name"
                                         value={providerName}
@@ -262,7 +267,7 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Service URL">
+                                <FieldStack label="Website">
                                     <Input
                                         type="url"
                                         name="community-provider-url"
@@ -281,7 +286,9 @@ export function CommunityEndpoints({
                             <div>
                                 <Button
                                     type="submit"
-                                    disabled={isSavingProvider}
+                                    disabled={
+                                        isSavingProvider || providerIsSaved
+                                    }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
                                 </Button>

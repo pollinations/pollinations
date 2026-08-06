@@ -460,22 +460,19 @@ describe("genericOpenAIClient", () => {
     it.each([
         '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
         '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',
-    ])(
-        "maps malformed media in a successful error envelope to 400: %s",
-        async (message) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json({ error: { message } }),
-            );
+    ])("maps malformed media in a successful error envelope to 400: %s", async (message) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { message } }),
+        );
 
-            await expect(
-                genericOpenAIClient(
-                    [{ role: "user", content: "hello" }],
-                    { model: "provider-model" },
-                    { endpoint: "https://portkey.test/chat" },
-                ),
-            ).rejects.toMatchObject({ status: 400 });
-        },
-    );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
 
     it("maps invalid upstream JSON to 502 with gateway context", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

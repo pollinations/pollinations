@@ -1,0 +1,34 @@
+{
+  "pr_number": 13135,
+  "title": "fix: standardize community model UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13135",
+  "merged_at": "2026-08-06T11:44:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses the Community logo for every community model, independent of optional brand metadata.\n- Places brand links consistently below model slugs on desktop and mobile.\n- Renames Provider Profile to Brand and disables Save until its values change.\n- Uses `@pollinations/ui` tabs and dropdowns throughout Add Model, including a checkmark for the selected modality.\n- Applies the standard danger treatment to Cancel.\n- Keeps branding presentation-only; routing, pricing, and ownership are unchanged.\n\nChecks:\n- `npx biome check --write ...`\n- `npx vitest run test/pricing-data.test.ts` — 35 passed\n- `npx tsc --noEmit`\n- Verified on `https://staging.enter.pollinations.ai/models`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One badge to bind them",
+    "blurb": "Community models now wear the same little community badge, even when their brand metadata has other ideas. The model garden is tidier, and the buttons have learned manners.",
+    "summary": "Standardized the community-model interface so every community model uses the Community logo, brand links sit below model slugs on desktop and mobile, and the Add Model flow uses shared @pollinations/ui tabs and modality dropdowns.",
+    "impact": "People browsing or adding community models get a more consistent model table and editor, with clearer Brand settings, selected-modality checkmarks, a disabled-until-changed Save button, and standard danger styling for Cancel.",
+    "keywords": [
+      "community-models",
+      "model-ui",
+      "branding",
+      "add-model",
+      "enter",
+      "design-system"
+    ],
+    "visual_concept": "Polli is tending a neatly organized garden of community-model seed packets, each marked with the same Community flower badge while small brand-name plaques sit consistently beneath them. A friendly CRT monitor robot helps sort modality tabs and dropdown labels, representing the cleaned-up Add Model interface.",
+    "image_prompt": "A cozy pixel art garden workbench where Polli, the cute yellow bee mascot with dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small smile, light-blue rounded wings, and a tiny gardener apron, carefully arranges community-model seed packets with matching Community flower badges and brand plaques beneath each label; a chunky CRT monitor robot holds a dropdown with a checkmark. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13135.jpg",
+    "prompt": "A cozy pixel art garden workbench where Polli, the cute yellow bee mascot with dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small smile, light-blue rounded wings, and a tiny gardener apron, carefully arranges community-model seed packets with matching Community flower badges and brand plaques beneath each label; a chunky CRT monitor robot holds a dropdown with a checkmark. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-06T11:45:55.411027+00:00"
+}

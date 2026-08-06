@@ -31,6 +31,11 @@ function cachedTokenAdjustment(
         kind: `cached_${modality}_input`,
         unit: "token",
         unitCost: (rate - cachedTextRate) / PER_MILLION,
+        publicPricing: {
+            label: `Cached ${modality} input`,
+            quantity: PER_MILLION,
+            unit: "tokens",
+        },
         countUnits: (output) => countCachedTokens(output, modality),
     };
 }

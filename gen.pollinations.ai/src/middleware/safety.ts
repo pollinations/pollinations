@@ -18,8 +18,8 @@ import {
     type BedrockResponse,
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
-import { classifyTriggers } from "@/utils/safety-features.ts";
 import { detectSecretsInTexts } from "@/utils/redact-secrets.ts";
+import { classifyTriggers } from "@/utils/safety-features.ts";
 
 type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
@@ -173,8 +173,7 @@ function resolveSafeValue(
     if (providedSafe !== undefined && providedSafe !== null) {
         return providedSafe;
     }
-    const explicit =
-        c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+    const explicit = c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
     if (explicit !== undefined && explicit !== null) {
         return explicit;
     }

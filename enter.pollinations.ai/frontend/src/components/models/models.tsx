@@ -12,7 +12,6 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import pollinationsMarkUrl from "@pollinations/ui/brand/mark.svg";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -70,11 +69,6 @@ const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
     community: "Community",
-};
-
-const SCOPE_LOGOS: Record<ModelScope, string> = {
-    pollinations: pollinationsMarkUrl,
-    community: "/brand-logos/community.svg",
 };
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -315,20 +309,6 @@ export const Models: FC<ModelsProps> = ({
                                     }
                                 >
                                     <span className="inline-flex items-center gap-1.5">
-                                        <span
-                                            aria-hidden="true"
-                                            className="h-5 w-5 shrink-0 bg-current opacity-55"
-                                            style={{
-                                                maskImage: `url(${SCOPE_LOGOS[scope]})`,
-                                                WebkitMaskImage: `url(${SCOPE_LOGOS[scope]})`,
-                                                maskRepeat: "no-repeat",
-                                                WebkitMaskRepeat: "no-repeat",
-                                                maskPosition: "center",
-                                                WebkitMaskPosition: "center",
-                                                maskSize: "contain",
-                                                WebkitMaskSize: "contain",
-                                            }}
-                                        />
                                         {SCOPE_LABELS[scope]}
                                         {scope === "community" && (
                                             <Chip intent="alpha" size="sm">
@@ -345,7 +325,6 @@ export const Models: FC<ModelsProps> = ({
                                     key={section}
                                     active={activeTab === section}
                                     onClick={() => setActiveTab(section)}
-                                    size="sm"
                                 >
                                     {sectionLabels[section]}
                                 </TabButton>

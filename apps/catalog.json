@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🤖",
+    "name": "Whisper",
+    "url": "https://play.google.com/store/apps/details?id=com.leiver.whisper_android",
+    "description": "This application allows users to use different AI models to analyze the screen and audio requests through an overlay, using Pollinations AI",
+    "language": "en",
+    "category": "bots",
+    "platform": "android",
+    "githubUsername": "Okonorff",
+    "githubUserId": "170251440",
+    "repositoryUrl": "https://github.com/Okonorff/Whisper-App",
+    "repositoryStars": null,
+    "discordUsername": "_No response_ Pollinations AI is used here: https://github.com/Okonorff/Whisper-",
+    "other": null,
+    "submittedDate": "2026-07-23",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/12706",
+    "approvedDate": "2026-08-06",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Receipt Fortune Teller",
     "url": "https://oracle.shipr.app",

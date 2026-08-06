@@ -1,0 +1,34 @@
+{
+  "pr_number": 13140,
+  "title": "feat: separate official and community models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13140",
+  "merged_at": "2026-08-06T12:53:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Separates the model catalog into Official and Community scopes, with Official as the default.\n- Limits Community filters to All, Text, and Image while keeping one contextual search.\n- Preserves search queries across scopes and resets incompatible modality filters.\n- Uses the large Package UI scope controls introduced by #13141.\n\nStacked on #13141; merge the Package UI PR first.\n\nChecks:\n- `npx tsc --noEmit`\n- `npx vitest run test/model-categories.test.ts`\n- Verified locally and on [staging](https://staging.enter.pollinations.ai/models)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two gardens, one search",
+    "blurb": "The model garden now has two paths: Official models up front, Community models nearby. Polli kept the search basket intact while moving between them, because losing a good query is how software becomes haunted.",
+    "summary": "The model catalog now separates Official and Community scopes, opens on Official by default, keeps a shared search query across both, and limits Community filtering to All, Text, and Image.",
+    "impact": "Users can find supported models more directly while still browsing community offerings, with incompatible modality filters reset cleanly when switching scopes.",
+    "keywords": [
+      "model catalog",
+      "official models",
+      "community models",
+      "search",
+      "filters",
+      "frontend"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden split into two clearly labeled paths: a tidy Official greenhouse and a friendly Community flower patch. Polli wears a tiny librarian hat and carries one search magnifying glass between the paths, while a retro terminal keeps the same glowing search query visible; small Text and Image seed packets represent the Community filter options.",
+    "image_prompt": "A cozy pixel art model garden with two large package-style signposts, \"OFFICIAL\" above a neat greenhouse and \"COMMUNITY\" above a flower-filled patch, connected by one glowing search bar; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian hat and carrying a magnifying glass as she moves between the paths. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and Text/Image seed packets, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13140.jpg",
+    "prompt": "A cozy pixel art model garden with two large package-style signposts, \"OFFICIAL\" above a neat greenhouse and \"COMMUNITY\" above a flower-filled patch, connected by one glowing search bar; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian hat and carrying a magnifying glass as she moves between the paths. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and Text/Image seed packets, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-06T12:55:15.539547+00:00"
+}

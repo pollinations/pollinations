@@ -36,6 +36,54 @@ test("validates and round-trips catalog apps", () => {
     fs.rmSync(directory, { recursive: true, force: true });
 });
 
+test("accepts an optional screenshot URL", () => {
+    assert.deepEqual(validateApps([{ ...APP, screenshotUrl: null }]), [
+        { ...APP, screenshotUrl: null },
+    ]);
+    assert.deepEqual(
+        validateApps([
+            {
+                ...APP,
+                screenshotUrl: "https://media.pollinations.ai/example",
+            },
+        ]),
+        [
+            {
+                ...APP,
+                screenshotUrl: "https://media.pollinations.ai/example",
+            },
+        ],
+    );
+    assert.throws(
+        () => validateApps([{ ...APP, screenshotUrl: 42 }]),
+        /screenshotUrl must be null or a non-empty string/,
+    );
+    assert.throws(
+        () =>
+            validateApps([
+                { ...APP, screenshotUrl: "https://example.com/screenshot" },
+            ]),
+        /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
+    );
+    assert.throws(
+        () =>
+            validateApps([
+                {
+                    ...APP,
+                    screenshotUrl: "https://media.pollinations.ai/example ",
+                },
+            ]),
+        /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
+    );
+    assert.throws(
+        () =>
+            validateApps([
+                { ...APP, screenshotUrl: "https://media.pollinations.ai/" },
+            ]),
+        /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
+    );
+});
+
 test("rejects missing and wrong-typed fields", () => {
     assert.throws(
         () => validateApps([{ ...APP, name: "" }]),

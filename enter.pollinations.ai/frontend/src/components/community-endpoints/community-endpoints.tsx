@@ -247,15 +247,13 @@ export function CommunityEndpoints({
                             }
                         >
                             <div>
-                                <p className="text-sm font-semibold">
-                                    Provider profile
-                                </p>
+                                <p className="text-sm font-semibold">Brand</p>
                                 <p className="mt-0.5 text-xs text-theme-text-soft">
-                                    Shown as a link on all your public models.
+                                    Shown on all your public models.
                                 </p>
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <FieldStack label="Provider name">
+                                <FieldStack label="Name">
                                     <Input
                                         name="community-provider-name"
                                         value={providerName}
@@ -269,7 +267,7 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Service URL">
+                                <FieldStack label="Website">
                                     <Input
                                         type="url"
                                         name="community-provider-url"

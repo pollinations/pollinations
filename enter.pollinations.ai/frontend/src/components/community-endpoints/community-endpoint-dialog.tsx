@@ -432,8 +432,11 @@ export function CommunityEndpointDialog({
                                         updateForm("modality", modality)
                                     }
                                     size="sm"
-                                    className="min-w-20 capitalize"
+                                    className="min-w-20 gap-1.5 capitalize"
                                 >
+                                    {form.modality === modality && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
                                     {modality}
                                 </TabButton>
                             ))}

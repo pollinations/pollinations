@@ -35,24 +35,6 @@ jobs:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
-      - name: Ensure app review labels
-        env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_ISSUE: ${{ github.event.issue.number }}
-          INPUT_ISSUE: ${{ inputs.issue_number }}
-        run: |
-          gh label create APP-SUBMISSION --repo "$GITHUB_REPOSITORY" --color 7057ff --description "Community app submission" --force
-          gh label create APP-NEEDS-INFO --repo "$GITHUB_REPOSITORY" --color d876e3 --description "App submission needs more information" --force
-          gh label create APP-REVIEW --repo "$GITHUB_REPOSITORY" --color fbca04 --description "App submission ready for human review" --force
-          gh label create APP-APPROVED --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "App submission approved for publishing" --force
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            ISSUE_NUMBER="$INPUT_ISSUE"
-          else
-            ISSUE_NUMBER="$EVENT_ISSUE"
-          fi
-          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label APP-SUBMISSION
-
       - name: Resolve issue
         id: issue
         env:
@@ -66,6 +48,7 @@ jobs:
           else
             ISSUE_NUMBER="$EVENT_ISSUE"
           fi
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label APP-SUBMISSION
           ISSUE_AUTHOR=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" --jq .user.login)
           echo "number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
           echo "author=$ISSUE_AUTHOR" >> "$GITHUB_OUTPUT"

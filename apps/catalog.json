@@ -309,7 +309,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12694",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 2,
+    "screenshotUrl": "https://media.pollinations.ai/43945ce5-fc63-4266-b0b6-c8c240a2b010"
   },
   {
     "emoji": "🖼️",
@@ -517,7 +518,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12227",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/f83c8249-7408-408a-b8ff-33eb1a078d1b"
   },
   {
     "emoji": "🧑‍💻",
@@ -600,7 +602,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11585",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/5c700534-b687-47a2-864d-68da6a5d3c6a"
   },
   {
     "emoji": "📹",
@@ -725,7 +728,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11765",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": null
   },
   {
     "emoji": "🛋️",
@@ -791,26 +795,6 @@
     "screenshotUrl": "https://media.pollinations.ai/0b3e46f4-2d1a-4eac-8d21-eebc49b2d321"
   },
   {
-    "emoji": "🤖",
-    "name": "NovAI",
-    "url": "https://nov-ai.github.io/",
-    "description": "NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord.",
-    "language": "en",
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "JustScriptzz",
-    "githubUserId": "195966113",
-    "repositoryUrl": "https://github.com/Nov-AI/nov-ai.github.io",
-    "repositoryStars": 2,
-    "discordUsername": "scriptzz_",
-    "other": null,
-    "submittedDate": "2026-06-27",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/12053",
-    "approvedDate": "2026-07-13",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖼️",
     "name": "Pollinations Image lab",
     "url": "https://raptorvampire.github.io/pollinations-image-lab/",
@@ -870,26 +854,6 @@
     "approvedDate": "2026-07-13",
     "byop": false,
     "requests24h": 0
-  },
-  {
-    "emoji": "🏫",
-    "name": "JadiKelas",
-    "url": "https://jadikelas.tech",
-    "description": "Open https://JadiKelas.tech. Display “JadiKelas” content from the site.",
-    "language": "id-ID",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "fikrifahrezi25",
-    "githubUserId": "251254272",
-    "repositoryUrl": "Private repository (available upon request)",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-07-03",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/12199",
-    "approvedDate": "2026-07-13",
-    "byop": false,
-    "requests24h": 14
   },
   {
     "emoji": "🪝",
@@ -972,7 +936,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12368",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 1,
+    "screenshotUrl": "https://media.pollinations.ai/376725b8-823f-48a6-babf-fc937bc0cf86"
   },
   {
     "emoji": "🧵",
@@ -1160,7 +1125,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11848",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": null
   },
   {
     "emoji": "🖼️",
@@ -1221,7 +1187,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11906",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": null
   },
   {
     "emoji": "🗺️",
@@ -1493,7 +1460,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11652",
     "approvedDate": "2026-06-18",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a3663c7c-242b-4915-89fd-ba67c4e865ea"
   },
   {
     "emoji": "🧠",
@@ -1600,26 +1568,6 @@
     "screenshotUrl": "https://media.pollinations.ai/f085fa27-7d8f-49b2-aa3c-84441218862d"
   },
   {
-    "emoji": "🤖",
-    "name": "ather mini",
-    "url": "minitejas.in",
-    "description": "ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "aadarsh-kandula",
-    "githubUserId": "210118812",
-    "repositoryUrl": "minitejas.in",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-04-20",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10354",
-    "approvedDate": "2026-06-02",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖼️",
     "name": "Photo Ai",
     "url": "https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194",
@@ -1656,26 +1604,6 @@
     "other": null,
     "submittedDate": "2026-04-23",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10429",
-    "approvedDate": "2026-06-02",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🤖",
-    "name": "Anura Hub AI",
-    "url": "https://meow-script.vercel.all",
-    "description": "Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa.",
-    "language": "vi",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "anuragaming1",
-    "githubUserId": "180962773",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "anura_wibu",
-    "other": null,
-    "submittedDate": "2026-04-20",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10367",
     "approvedDate": "2026-06-02",
     "byop": false,
     "requests24h": 0
@@ -1803,46 +1731,6 @@
     "byop": false,
     "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/4bc7a1b1-f075-4ae0-903a-e12527f1cbf9"
-  },
-  {
-    "emoji": "📻",
-    "name": "AnggunFM",
-    "url": "https://www.anggunfm.my",
-    "description": "Display a greeting message for the team.",
-    "language": "ms",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "cuteanggun",
-    "githubUserId": "190184770",
-    "repositoryUrl": "https://github.com/cuteanggun/anggunfm-pollinations",
-    "repositoryStars": null,
-    "discordUsername": "emperor01569",
-    "other": null,
-    "submittedDate": "2026-04-26",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10484",
-    "approvedDate": "2026-06-01",
-    "byop": false,
-    "requests24h": 335
-  },
-  {
-    "emoji": "🧩",
-    "name": "zolio",
-    "url": "zolio.site",
-    "description": "zolioapp",
-    "language": "en",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "LSSHRT",
-    "githubUserId": "67667347",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-04-28",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10529",
-    "approvedDate": "2026-06-01",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "✈️",
@@ -2281,7 +2169,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10043",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/5af6740b-a103-4d61-bc74-7ec2c2b40214"
   },
   {
     "emoji": "🖼️",
@@ -2492,26 +2381,6 @@
     "screenshotUrl": "https://media.pollinations.ai/7f20cb3c-3c53-48d1-96c1-ef86908a77e1"
   },
   {
-    "emoji": "🎨",
-    "name": "PolyDreamer",
-    "url": "https://polydreamer.amitinfotech.net/",
-    "description": "Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "amitpatole",
-    "githubUserId": "2130138",
-    "repositoryUrl": "https://github.com/amitpatole/PolyDreamer",
-    "repositoryStars": null,
-    "discordUsername": "amitpatole_",
-    "other": null,
-    "submittedDate": "2026-04-05",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9978",
-    "approvedDate": "2026-05-17",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🔎",
     "name": "Perplexio",
     "url": "http://tcp.ap-northeast-1.clawcloudrun.com:47049/",
@@ -2549,7 +2418,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9956",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 2,
+    "screenshotUrl": "https://media.pollinations.ai/9552a085-255a-4647-b4ab-4f82c1f9b83e"
   },
   {
     "emoji": "🎨",
@@ -2614,26 +2484,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "🌀",
-    "name": "AI Package",
-    "url": "https://cyclonelib.pages.dev/",
-    "description": "Mentions Apple Shortcuts.",
-    "language": "en",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "dsewerek",
-    "githubUserId": "208761714",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "dsewerek",
-    "other": null,
-    "submittedDate": "2026-04-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9947",
-    "approvedDate": "2026-05-17",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🧭",
     "name": "Psy-Path-AI",
     "url": "https://psy-path-ai.vercel.app/",
@@ -2676,46 +2526,6 @@
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
-    "emoji": "🎬",
-    "name": "Film ze Snu",
-    "url": "https://sen.i-ty.pl",
-    "description": "Convert multilingual dream descriptions or voice recordings into a 4-scene AI-generated film with screenplay, cinematic images, voice narration, and background music using Film ze Snu.",
-    "language": "pl, en",
-    "category": "video_audio",
-    "platform": "web",
-    "githubUsername": "JAzPL",
-    "githubUserId": "177756184",
-    "repositoryUrl": "https://github.com/JAzPL/Film-ze-Snu",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-03-16",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9173",
-    "approvedDate": "2026-05-17",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🎨",
-    "name": "rynzen",
-    "url": "https://rynzen.uk/",
-    "description": "Generate images in Discord by typing prompts in a specific channel; rynzen uses pollinations ais flux or flux schnell model to produce the images.",
-    "language": "en",
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "MINEOGO",
-    "githubUserId": "192755374",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "1o4f or rynzenserverholder",
-    "other": null,
-    "submittedDate": "2026-03-15",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9137",
-    "approvedDate": "2026-05-17",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖼️",
     "name": "Generador de Cmics - V2",
     "url": "https://proyectodescartes.org/IATools/127_Generador_de_comics-V2/",
@@ -2754,7 +2564,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9055",
     "approvedDate": "2026-05-17",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d7fe1151-39f0-4b86-8900-b998a70cf7a5"
   },
   {
     "emoji": "📈",
@@ -2775,26 +2586,6 @@
     "approvedDate": "2026-05-17",
     "byop": false,
     "requests24h": 1
-  },
-  {
-    "emoji": "✂️",
-    "name": "AI Clip Finder",
-    "url": "https://kenz1s-ai-clip-finder.hf.space/",
-    "description": "Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation.",
-    "language": "en",
-    "category": "video_audio",
-    "platform": "web",
-    "githubUsername": "PixelTMT",
-    "githubUserId": "48181402",
-    "repositoryUrl": "https://github.com/PixelTMT/AI-Clip-Finder",
-    "repositoryStars": null,
-    "discordUsername": "kenzi__",
-    "other": null,
-    "submittedDate": "2026-03-07",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8919",
-    "approvedDate": "2026-05-17",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🍽️",
@@ -3233,26 +3024,6 @@
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
-    "emoji": "📈",
-    "name": "Quent",
-    "url": "https://quent.kro.kr/",
-    "description": "Automate trading and indicator analysis with Quent using AI agent-based strategies.",
-    "language": "ko",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "mindungil",
-    "githubUserId": "113085377",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-04-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10035",
-    "approvedDate": "2026-05-10",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🌙",
     "name": "睡前小故事 / Bedtime Stories",
     "url": "https://222.5918918.xyz/",
@@ -3604,7 +3375,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10789",
     "approvedDate": "2026-05-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e2240ea1-7be6-4748-9b4d-0e526beb1123"
   },
   {
     "emoji": "🧾",
@@ -3667,26 +3439,6 @@
     "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/eca4e5a4-fc62-4b0b-abbb-4438140e9235"
-  },
-  {
-    "emoji": "🧰",
-    "name": "App forge",
-    "url": "torrents.signalcity.tv",
-    "description": "App forge.",
-    "language": "en",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "sourdiesel135",
-    "githubUserId": "206730649",
-    "repositoryUrl": "Signalcity.tv",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-05-02",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10609",
-    "approvedDate": "2026-05-05",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "📷",
@@ -3790,7 +3542,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10404",
     "approvedDate": "2026-05-03",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/dc513624-7b68-4f64-bb4b-5a7b7c76e5f9"
   },
   {
     "emoji": "🖼️",
@@ -4567,26 +4320,6 @@
   },
   {
     "emoji": "🎨",
-    "name": "Splash Tool",
-    "url": "https://n8n-image-generator.vercel.app",
-    "description": "Convert screenshots into editable layers with Splash Tool, extracting assets, colors, and layout details for design workflows.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "Bzcasper",
-    "githubUserId": "187721535",
-    "repositoryUrl": "https://github.com/Bzcasper/n8n-image-generator",
-    "repositoryStars": null,
-    "discordUsername": "aitoolpool_",
-    "other": null,
-    "submittedDate": "2026-03-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8943",
-    "approvedDate": "2026-04-09",
-    "byop": false,
-    "requests24h": 3
-  },
-  {
-    "emoji": "🎨",
     "name": "polimage",
     "url": "https://polimage.enjoyow.com",
     "description": "Generate AI images in the browser with polimage, a lightweight image-generation workbench that supports Pollinations OAuth and one-click account connection.",
@@ -4774,26 +4507,6 @@
   },
   {
     "emoji": "🤖",
-    "name": "Heia - Polly Intelligence update",
-    "url": "https://heia-polly.vercel.app/",
-    "description": "Translate Heia - Polly Intelligence update automatically into the user's browser language.",
-    "language": "pt-BR",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "HyakkimaruPY",
-    "githubUserId": "140197442",
-    "repositoryUrl": "https://github.com/HyakkimaruPY/Heia-Chat-Pollination-Based/tree/main",
-    "repositoryStars": null,
-    "discordUsername": "@sr.hell0419",
-    "other": null,
-    "submittedDate": "2026-03-11",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9041",
-    "approvedDate": "2026-04-09",
-    "byop": false,
-    "requests24h": 4
-  },
-  {
-    "emoji": "🤖",
     "name": "DAi",
     "url": "https://ai.dverse.fun",
     "description": "Provide chat and image generation with DAi using pollination api and nano banana.",
@@ -4960,26 +4673,6 @@
     "screenshotUrl": "https://media.pollinations.ai/ed8a5f30-afb1-4a23-a876-a9ac325aa959"
   },
   {
-    "emoji": "🧠",
-    "name": "Viralent",
-    "url": "viralent.info",
-    "description": "Provides daily informative articles and interactive quizzes on Viralent to help users broaden horizons and hone knowledge.",
-    "language": "id, en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "danuras",
-    "githubUserId": "91532720",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-04-01",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9809",
-    "approvedDate": "2026-04-03",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖼️",
     "name": "AI Image Studio",
     "url": "https://aiimage.studio",
@@ -5101,7 +4794,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9841",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 38
+    "requests24h": 38,
+    "screenshotUrl": "https://media.pollinations.ai/c7ec7d9d-8722-4d31-80f0-54c2240eb57d"
   },
   {
     "emoji": "🧩",
@@ -5412,7 +5106,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9758",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/72f9b109-b0d8-4ecd-bd3b-42bab5707b61"
   },
   {
     "emoji": "🍳",
@@ -5665,26 +5360,6 @@
     "requests24h": 11
   },
   {
-    "emoji": "🔀",
-    "name": "AI router",
-    "url": "https://twangymoney.xyz/docs/ai-router",
-    "description": "Routes API requests through other services using AI router's system to create API keys and spend tokens via my service for responses, similar to OpenRouter.",
-    "language": "en",
-    "category": "build",
-    "platform": "api",
-    "githubUsername": "TwangyMoney",
-    "githubUserId": "87775970",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "twangy_money",
-    "other": null,
-    "submittedDate": "2026-03-29",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9721",
-    "approvedDate": "2026-03-29",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖼️",
     "name": "AI Image Generator",
     "url": "https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html",
@@ -5724,26 +5399,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/a20f149e-658c-4ccf-806a-e1b3dbdfa7ef"
-  },
-  {
-    "emoji": "🤖",
-    "name": "PezzAI",
-    "url": "https://chat.pezzai.com",
-    "description": "Provides free AI tools via a website under the name PezzAI, funded and maintained by a single developer.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "90renrocraftcracksblogspotcom",
-    "githubUserId": "118045844",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "3zlc",
-    "other": null,
-    "submittedDate": "2026-03-19",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9308",
-    "approvedDate": "2026-03-28",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🤖",
@@ -5972,7 +5627,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9660",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e736a054-1a5d-43d0-aac4-f6afd586e069"
   },
   {
     "emoji": "🧩",
@@ -6571,7 +6227,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9475",
     "approvedDate": "2026-03-23",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/bbec8cea-059c-41d7-a4b2-b4dd7c757df7"
   },
   {
     "emoji": "🎬",
@@ -6880,7 +6537,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8162",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 6
+    "requests24h": 6,
+    "screenshotUrl": "https://media.pollinations.ai/9f94e86f-e63c-4c4a-b391-6728903b9ccb"
   },
   {
     "emoji": "🫧",
@@ -7258,26 +6916,6 @@
     "screenshotUrl": "https://media.pollinations.ai/4dbb7ac0-dbb7-48d0-b4a5-d1223c186b08"
   },
   {
-    "emoji": "🎬",
-    "name": "AI City Diorama Generator",
-    "url": "https://www.youtube.com/@WhatIF-KA/shorts",
-    "description": "Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts.",
-    "language": "en",
-    "category": "video_audio",
-    "platform": "web",
-    "githubUsername": "DrTechn",
-    "githubUserId": "214341693",
-    "repositoryUrl": "https://github.com/DrTechn/ai-city-diorama-workflow",
-    "repositoryStars": null,
-    "discordUsername": "kariema",
-    "other": null,
-    "submittedDate": "2026-03-10",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9002",
-    "approvedDate": "2026-03-15",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🧭",
     "name": "Gratisfy",
     "url": "https://gratisfy.xyz/",
@@ -7381,26 +7019,6 @@
     "byop": false,
     "requests24h": 32,
     "screenshotUrl": "https://media.pollinations.ai/72f52eb7-83e3-4c63-a59f-7fd9a5df84f6"
-  },
-  {
-    "emoji": "🎨",
-    "name": "junk journal Ai",
-    "url": "https://junkjournalai.shop/",
-    "description": "Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "nadiaa1987",
-    "githubUserId": "119628708",
-    "repositoryUrl": "https://github.com/nadiaa1987/junkjournal-test",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-02-24",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8544",
-    "approvedDate": "2026-02-24",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -8995,26 +8613,6 @@
     "screenshotUrl": "https://media.pollinations.ai/40951f7b-1e8b-43d5-9815-53407184450f"
   },
   {
-    "emoji": "💬",
-    "name": "Xenchat",
-    "url": "https://chat.xenai.tech",
-    "description": "Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "Screenmax1234",
-    "githubUserId": "104010970",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "chris_official",
-    "other": null,
-    "submittedDate": "2026-01-26",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7681",
-    "approvedDate": "2026-02-22",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🗣️",
     "name": "LinguaSpark",
     "url": "https://linguaspark2.netlify.app/",
@@ -9182,26 +8780,6 @@
     "screenshotUrl": "https://media.pollinations.ai/1591ea67-669c-4899-a192-e7202847e7d4"
   },
   {
-    "emoji": "🎬",
-    "name": "Postsiva",
-    "url": "https://youtube.postsiva.com/",
-    "description": "SaaS platform to help YouTube creators manage and optimize their channels.",
-    "language": "en",
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "Abdul-hannan-coder",
-    "githubUserId": "145397220",
-    "repositoryUrl": "https://github.com/Abdul-hannan-coder/Postsiva.Youtube.site",
-    "repositoryStars": null,
-    "discordUsername": "abdulhannan.personal",
-    "other": null,
-    "submittedDate": "2026-02-05",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7987",
-    "approvedDate": "2026-02-22",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎨",
     "name": "hzliflow.ken520.top",
     "url": "https://hzliflow.ken520.top",
@@ -9364,7 +8942,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7223",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/58a0a41d-e255-44ec-87ca-51dd0fa43ead"
   },
   {
     "emoji": "👗",
@@ -9658,26 +9237,6 @@
     "screenshotUrl": "https://media.pollinations.ai/60fd4816-4f10-4deb-908e-4e5b1dac0511"
   },
   {
-    "emoji": "📖",
-    "name": "TaleCrafter AI",
-    "url": "https://www.talecrafter.tech/",
-    "description": "Interactive storytelling platform turning prompts into digital storybooks with AI illustrations.",
-    "language": null,
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "adityashriwas",
-    "githubUserId": "179432470",
-    "repositoryUrl": "https://github.com/adityashriwas/TaleCrafter-AI",
-    "repositoryStars": 6,
-    "discordUsername": null,
-    "other": "adityashriwas09@gmail.com",
-    "submittedDate": "2026-01-16",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7357",
-    "approvedDate": "2026-02-16",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🔍",
     "name": "InferencePort AI",
     "url": "https://inference.js.org",
@@ -9947,26 +9506,6 @@
     "screenshotUrl": "https://media.pollinations.ai/8381114f-b026-405b-a86a-00b516ad21d6"
   },
   {
-    "emoji": "🏫",
-    "name": "My Web Site",
-    "url": "https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html",
-    "description": "Sitio web para proyectos de aula de bachillerato con estructura completa.",
-    "language": "es",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "theteacherbot",
-    "githubUserId": "218693055",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-02-06",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8002",
-    "approvedDate": "2026-02-16",
-    "byop": true,
-    "requests24h": 1
-  },
-  {
     "emoji": "📚",
     "name": "Flipbook-style digital book designer",
     "url": "https://proyectodescartes.org/IATools/Crea_libros_3D_caps/",
@@ -10131,26 +9670,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "🌐",
-    "name": "NebulaAPI",
-    "url": "https://nebulaapi.app",
-    "description": "Free Brazilian API gateway for AI and gaming with Pollinations backend.",
-    "language": "pt-BR",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "MatheusHMafra",
-    "githubUserId": "127265280",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "st4rx3",
-    "other": null,
-    "submittedDate": "2026-02-02",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7873",
-    "approvedDate": "2026-02-10",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "📖",
     "name": "Korpi.AI",
     "url": "https://korpi.ai",
@@ -10311,7 +9830,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7109",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/bfbf62ed-cdc1-48a8-85ba-e65c4605e7cc"
   },
   {
     "emoji": "🤖",
@@ -10376,46 +9896,6 @@
     "screenshotUrl": "https://media.pollinations.ai/5b34bcef-ccb0-401c-8ce2-8b96e3f7750e"
   },
   {
-    "emoji": "🤖",
-    "name": "Ai chatbot",
-    "url": "https://t.me/vriskas_channel",
-    "description": "Chat with a powerful AI neural-network chatbot for free on Telegram.",
-    "language": "ru",
-    "category": "bots",
-    "platform": "telegram",
-    "githubUsername": "Catniti",
-    "githubUserId": "244879637",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-23",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6370",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 11
-  },
-  {
-    "emoji": "🎨",
-    "name": "AI prompt test page",
-    "url": "https://jangyoonhee.netlify.app/",
-    "description": "Interactive course for writing prompts and generating images to study outcomes.",
-    "language": "ko",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "yoonheejangs",
-    "githubUserId": "212730413",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6816",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎙️",
     "name": "Faster Vox",
     "url": null,
@@ -10456,26 +9936,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/4f45d559-697a-4793-bbb3-ca465bb710f1"
-  },
-  {
-    "emoji": "🎨",
-    "name": "AuthorsLog image generator",
-    "url": "https://image.authorslog.com/",
-    "description": "Image generator using Pollinations flux model with themes, sizes, random seeds",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "JayPokale",
-    "githubUserId": "99467494",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "dare2solve",
-    "other": null,
-    "submittedDate": "2025-12-31",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6651",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎬",
@@ -10541,26 +10001,6 @@
   },
   {
     "emoji": "🤖",
-    "name": "Ai Chatbot",
-    "url": "https://old.pollinations.ai",
-    "description": "Legacy AI chatbot interface — archived Pollinations chat backup.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "nairitnandi9069-maker",
-    "githubUserId": "246719390",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-23",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6370",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🤖",
     "name": "DTAM POLLENTA",
     "url": "https://dtam-pollenta.vercel.app",
     "description": "Assistant virtuel IA combinant Pollinations.ai et interface intuitive.",
@@ -10619,7 +10059,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6326",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d97734fe-74d2-46a0-ac04-a26d5a7e595c"
   },
   {
     "emoji": "🤖",
@@ -10639,7 +10080,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7080",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/b01a84d6-0b51-4e13-87db-c3453df99b4b"
   },
   {
     "emoji": "🧰",
@@ -10746,26 +10188,6 @@
     "screenshotUrl": "https://media.pollinations.ai/808e0534-d4b7-48de-a1b0-2747fdad274c"
   },
   {
-    "emoji": "🤖",
-    "name": "Genhub - AI Social Media",
-    "url": "https://genhub.id",
-    "description": "AI-driven social platform where autonomous AI characters create and engage.",
-    "language": "id-ID",
-    "category": "games",
-    "platform": "web",
-    "githubUsername": "taufik7000",
-    "githubUserId": "24270524",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-11",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7049",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "✍️",
     "name": "RefinerPro",
     "url": "https://lionelzhang19-hue.github.io/RefinerPro/",
@@ -10843,46 +10265,6 @@
     "other": null,
     "submittedDate": "2026-01-12",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7065",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "⌨️",
-    "name": "LiberKey",
-    "url": "https://liberkeyboard.com/",
-    "description": "MacOS keyboard app for multilingual typing and chat input.",
-    "language": "en, zh-CN",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "Libre-Connect",
-    "githubUserId": "177395948",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6931",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 238
-  },
-  {
-    "emoji": "📝",
-    "name": "Postify  AI Blog Post Generator",
-    "url": "https://aryadifa.com/en/catalog/postify-ai-blog-post-generator-wordpress/",
-    "description": "WordPress plugin for AI-assisted blog drafting, scheduling and publishing.",
-    "language": "en",
-    "category": "writing",
-    "platform": "wordpress",
-    "githubUsername": "aryadhw",
-    "githubUserId": "216027211",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6930",
     "approvedDate": "2026-01-12",
     "byop": false,
     "requests24h": 0
@@ -11138,26 +10520,6 @@
     "screenshotUrl": "https://media.pollinations.ai/207b2b12-aacc-430e-b96d-190b1c998aa1"
   },
   {
-    "emoji": "🛠️",
-    "name": "convertorz.com",
-    "url": "https://www.convertorz.com/",
-    "description": "Web portal with AI image generation, file conversion, text summarization, and productivity tools",
-    "language": "en, ar",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "naveedmukhlis",
-    "githubUserId": "32060692",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "naveedmukhlis_12522",
-    "other": null,
-    "submittedDate": "2026-01-13",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7195",
-    "approvedDate": "2026-01-13",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🖤",
     "name": "Lilith",
     "url": "https://discord.gg/XA2JzGRp",
@@ -11343,26 +10705,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "✏️",
-    "name": "Baseposing",
-    "url": "https://baseposting.online/",
-    "description": "Create Base-style text and convert to AI-generated photos",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "0xnurrabby",
-    "githubUserId": "106588083",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-09",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6957",
-    "approvedDate": "2026-01-09",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "📖",
     "name": "Bluespace AI Story Center",
     "url": "https://xs2.bulekj.com/",
@@ -11384,26 +10726,6 @@
     "screenshotUrl": "https://media.pollinations.ai/cc960a07-9f46-401a-bb08-bc994ab453b0"
   },
   {
-    "emoji": "🤖",
-    "name": "AlphaLLM",
-    "url": "https://alphallm.tech",
-    "description": "Discord AI bot with multi-model text/image gen, RAG memory & REST API",
-    "language": "fr, en",
-    "category": "bots",
-    "platform": "web",
-    "githubUsername": "YoannDev90",
-    "githubUserId": "182555207",
-    "repositoryUrl": "https://github.com/YoannDev90/AlphaLLM",
-    "repositoryStars": 17,
-    "discordUsername": "the_yerminator",
-    "other": null,
-    "submittedDate": "2026-01-11",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7042",
-    "approvedDate": "2026-01-09",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🍎",
     "name": "CaloriX",
     "url": "https://yediginibil.vercel.app",
@@ -11422,26 +10744,6 @@
     "approvedDate": "2026-01-08",
     "byop": false,
     "requests24h": 4
-  },
-  {
-    "emoji": "⚽",
-    "name": "FM Creator",
-    "url": "https://fm.sanne.gay/",
-    "description": "Create custom clubs & players for Football Manager 26 with AI portraits",
-    "language": null,
-    "category": "games",
-    "platform": "web",
-    "githubUsername": "kamakaxi",
-    "githubUserId": "93172229",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "sanned",
-    "other": null,
-    "submittedDate": "2026-01-11",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7021",
-    "approvedDate": "2026-01-07",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🤖",
@@ -11588,26 +10890,6 @@
     "screenshotUrl": "https://media.pollinations.ai/5bef8a36-715f-4093-bcba-dafb464721c1"
   },
   {
-    "emoji": "🧠",
-    "name": "NeuroX 6.0",
-    "url": "https://al-ahrar.wuaze.com/?i=1",
-    "description": "AI chat platform offering a free, GPT-like dialogue experience",
-    "language": "en, ar, fr",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "AL-AHRAR",
-    "githubUserId": "155243506",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-03",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6768",
-    "approvedDate": "2026-01-03",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎬",
     "name": "Anime AI Studio",
     "url": "https://www.animeaistudio.com/",
@@ -11750,7 +11032,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5826",
     "approvedDate": "2025-12-09",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/806a94ca-6389-4edc-9f4f-c40ba3d3b5b1"
   },
   {
     "emoji": "✨",
@@ -12060,7 +11343,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6982",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 32
+    "requests24h": 32,
+    "screenshotUrl": "https://media.pollinations.ai/f6b47451-e6cb-464e-84cc-3bc54250d981"
   },
   {
     "emoji": "🎉",
@@ -12205,7 +11489,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6635",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 59
+    "requests24h": 59,
+    "screenshotUrl": "https://media.pollinations.ai/48e5d4ab-1426-41e1-ab76-0acdae4821ce"
   },
   {
     "emoji": "🌳",
@@ -12517,7 +11802,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6419",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 2,
+    "screenshotUrl": "https://media.pollinations.ai/11455632-ebd8-443b-9384-7ea0fe97e724"
   },
   {
     "emoji": "🎨",
@@ -12539,26 +11825,6 @@
     "byop": false,
     "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/4aa41441-fc7c-4974-a70b-5601da1208ef"
-  },
-  {
-    "emoji": "🖍️",
-    "name": "IA Bob Goods - Coloring Book Generator",
-    "url": "https://ia.gmtec.tec.br",
-    "description": "AI tool to generate kids' coloring books with stories, line art & PDFs",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "adeniltogracheki",
-    "githubUserId": "68620518",
-    "repositoryUrl": "https://github.com/adeniltogracheki/ia-bob-goods",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-24",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6431",
-    "approvedDate": "2025-12-24",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🖼️",
@@ -12662,26 +11928,6 @@
     "byop": false,
     "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/16e477c7-3e23-4a2b-bd8f-fbdb12b033de"
-  },
-  {
-    "emoji": "💬",
-    "name": "Asive AI",
-    "url": "https://asive.duckdns.org",
-    "description": "Provide chat-based coding and conversational assistance using Pollination AI text and vision models with a smooth animated UI.",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "flyinqe",
-    "githubUserId": "250923803",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-22",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6329",
-    "approvedDate": "2025-12-22",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -12805,7 +12051,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6203",
     "approvedDate": "2025-12-19",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/9a031f92-3941-4872-9339-30c180d3a70c"
   },
   {
     "emoji": "🤖",
@@ -12889,26 +12136,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/1f927b4f-cf34-4c50-8f76-cc9648c8dd0c"
-  },
-  {
-    "emoji": "🪐",
-    "name": "SaturnAI",
-    "url": "https://chat.xdativo.cloud",
-    "description": "Web-based AI chat app focused on clean UI and smooth user experience. Features t...",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "losingdivine",
-    "githubUserId": "226871090",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-14",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5997",
-    "approvedDate": "2025-12-14",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "✨",
@@ -13224,26 +12451,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "🛠",
-    "name": "️ NextGenTools",
-    "url": "https://image-gen-adobe.nextgentools.online/",
-    "description": "Generate, vectorize, and prepare images for Adobe Stock with automated metadata injection and export-ready formats for stock photography.",
-    "language": null,
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "ronimia1",
-    "githubUserId": "184856372",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-06",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5742",
-    "approvedDate": "2025-12-12",
-    "byop": false,
-    "requests24h": 470
-  },
-  {
     "emoji": "🤖",
     "name": "Lily – AI Discord Companion",
     "url": "https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands",
@@ -13537,26 +12744,6 @@
     "screenshotUrl": "https://media.pollinations.ai/5fefba7e-5c52-40a7-a805-7cd4470c7792"
   },
   {
-    "emoji": "💰",
-    "name": "Savcurv",
-    "url": "https://www.savcurv.com",
-    "description": "Thai site comparing credit cards, loans & financial products with AI",
-    "language": null,
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "dreamm160",
-    "githubUserId": "54139970",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-02",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5563",
-    "approvedDate": "2025-12-02",
-    "byop": false,
-    "requests24h": 2
-  },
-  {
     "emoji": "💬",
     "name": "Synapse",
     "url": "https://chat.aegis-plus.my.id",
@@ -13576,26 +12763,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/f8da82d9-cd41-4f95-bfdb-bfa677a9bf99"
-  },
-  {
-    "emoji": "📣",
-    "name": "Thelas.ia",
-    "url": "https://thelasia.netlify.app/",
-    "description": "Generates social posts for brands and auto-publishes to Instagram.",
-    "language": null,
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "studiostein",
-    "githubUserId": "72816664",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-03",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5602",
-    "approvedDate": "2025-12-03",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🖋️",
@@ -13883,7 +13050,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4776",
     "approvedDate": "2025-10-25",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e3c864f5-7f20-4abf-a713-2c6113fcc393"
   },
   {
     "emoji": "™",
@@ -13930,7 +13098,7 @@
   {
     "emoji": "🐍",
     "name": "Blossom-ai (Python SDK)",
-    "url": "https://pypistats.org/packages/eclips-blossom-ai",
+    "url": "https://pypi.org/project/eclips-blossom-ai/",
     "description": "Provide a Python SDK for Pollinations AI that simplifies API calls, prompt handling, and image generation in Python projects.",
     "language": null,
     "category": "build",
@@ -13945,7 +13113,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4697",
     "approvedDate": "2025-10-22",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/5a946e93-c799-47e9-ad51-620912daa414"
   },
   {
     "emoji": "🛠",
@@ -14131,7 +13300,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4538",
     "approvedDate": "2025-10-14",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/b73142da-c974-401c-850f-6a0b0bdd183f"
   },
   {
     "emoji": "🤖",
@@ -14173,26 +13343,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ce51cde6-34e7-47f2-99d1-f5249d9dee7a"
-  },
-  {
-    "emoji": "🎨",
-    "name": "AISTONE",
-    "url": "https://aistone.org/",
-    "description": "Offers image generation via FLUX, Turbo, Kontext and OpenAI Audio TTS for voice without registration, supporting Chinese and English input.",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "peyoba",
-    "githubUserId": "52772574",
-    "repositoryUrl": "https://github.com/peyoba/Text2Image_audio",
-    "repositoryStars": 2,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-10-10",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4459",
-    "approvedDate": "2025-10-11",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎮",
@@ -14546,27 +13696,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4029",
     "approvedDate": "2025-09-18",
     "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🖼️",
-    "name": "EduGen AI",
-    "url": "https://ensinoedugenai.online",
-    "description": "Generate images for teachers to use in slide materials via the Pollinations.ai API.",
-    "language": "pt-BR",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "marcosluan360",
-    "githubUserId": "211590330",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "mlspfc360@gmail.com",
-    "submittedDate": "2025-08-27",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/3878",
-    "approvedDate": "2025-09-17",
-    "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/c918f7ca-c169-49d5-9e45-f3a61bf8f19d"
   },
   {
     "emoji": "🛠",
@@ -14630,26 +13761,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/7167e281-2acc-498f-a19b-1a0c9ba4724e"
-  },
-  {
-    "emoji": "💬",
-    "name": "チャット GPT 日本語",
-    "url": "https://chatgpt-jp.org/",
-    "description": "Offer a Japanese-language GPT chat interface.",
-    "language": "ja",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "zhugezifang",
-    "githubUserId": "28300167",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "https://x.com/zhugezifang",
-    "submittedDate": "2025-09-12",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4043",
-    "approvedDate": "2025-09-17",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -14816,26 +13927,6 @@
     "screenshotUrl": "https://media.pollinations.ai/ad44f1ff-5691-4f3f-9cb1-0d3e594055dd"
   },
   {
-    "emoji": "🎲",
-    "name": "Chaos Canvas",
-    "url": "https://chaoscanvas.app/",
-    "description": "Crowdsources one- or two-word inputs from multiple players, merges them into a single prompt, and generates a surreal AI image from the combined input.",
-    "language": null,
-    "category": "games",
-    "platform": "web",
-    "githubUsername": "eat-sleep-code",
-    "githubUserId": "3846471",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-08-12",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/3639",
-    "approvedDate": "2025-08-12",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎨",
     "name": "EasyGen",
     "url": "https://easygenme.netlify.app/",
@@ -14916,26 +14007,6 @@
     "approvedDate": "2025-08-05",
     "byop": false,
     "requests24h": 0
-  },
-  {
-    "emoji": "💬",
-    "name": "Island",
-    "url": "https://islandai.app",
-    "description": "Provides multimodal chat with integrated web search and a Questioning Mode that asks clarifying questions before delivering real-time responses.",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "IslandApps",
-    "githubUserId": "108380065",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-08-05",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/3476",
-    "approvedDate": "2025-08-05",
-    "byop": false,
-    "requests24h": 6
   },
   {
     "emoji": "🎨",
@@ -15372,26 +14443,6 @@
     "screenshotUrl": "https://media.pollinations.ai/0dfede35-c11b-4ec2-9692-6c17f76d5dc5"
   },
   {
-    "emoji": "📝",
-    "name": "PromptsHub",
-    "url": "https://promptshub.net/",
-    "description": "Curate and share categorized AI prompts for text, image, video, and code with search, submissions, and use-case guides.",
-    "language": null,
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "pickplugins",
-    "githubUserId": "32812881",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-07-06",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/2842",
-    "approvedDate": "2025-07-06",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎨",
     "name": "VOID.AI",
     "url": "https://thevoidai.vercel.app/",
@@ -15516,46 +14567,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "🧩",
-    "name": "CraftUI",
-    "url": "https://craftui.studio/",
-    "description": "Turn prompts or images into editable, production-ready UI components",
-    "language": null,
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "imhardikdesai",
-    "githubUserId": "87645745",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-19",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/2551",
-    "approvedDate": "2025-06-19",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🌟",
-    "name": "Celebrity AI Image Generator",
-    "url": "https://www.aicelebrity.design/",
-    "description": "Generate celebrity scenes and selfies using text prompts or uploads",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "Colin-Zero",
-    "githubUserId": "188023941",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-16",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/2510",
-    "approvedDate": "2025-06-16",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🕰️",
     "name": "️ Time Travel Selfie Portal",
     "url": "https://selfie-time-traveler-portal.vercel.app",
@@ -15577,26 +14588,6 @@
     "screenshotUrl": "https://media.pollinations.ai/c94aeea7-bb91-41f4-96c6-1042eb5292ab"
   },
   {
-    "emoji": "🖍️",
-    "name": "Coloring AI",
-    "url": "https://coloring-ai.com/",
-    "description": "Color sketches with AI in multiple styles, plus coloring page tools",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "adeniltogracheki",
-    "githubUserId": "68620518",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "962900862@qq.com",
-    "submittedDate": "2025-06-09",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/2387",
-    "approvedDate": "2025-06-13",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "📚",
     "name": "StoryBolt",
     "url": "https://storybolt.vercel.app/",
@@ -15616,26 +14607,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/71807766-e55c-43d8-bb71-5a503cd3807f"
-  },
-  {
-    "emoji": "💬",
-    "name": "Ai drafterplus",
-    "url": "https://ai.drafterplus.nl/",
-    "description": "Free multi-model chat UI that saves conversations locally in your browser",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "realscripter",
-    "githubUserId": "125183882",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-06",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/2345",
-    "approvedDate": "2025-06-07",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🌍",
@@ -15883,7 +14854,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2020",
     "approvedDate": "2025-05-20",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 2,
+    "screenshotUrl": null
   },
   {
     "emoji": "🍳",
@@ -15924,27 +14896,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1998",
     "approvedDate": "2025-05-19",
     "byop": false,
-    "requests24h": 28
-  },
-  {
-    "emoji": "💻",
-    "name": "FoldaScan",
-    "url": "https://fs.wen.bar",
-    "description": "Browser-based AI Q&A tool for asking natural language questions about your codebase with local privacy",
-    "language": null,
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "oldjs",
-    "githubUserId": "183616870",
-    "repositoryUrl": "https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep",
-    "repositoryStars": 269,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-05-19",
-    "byop": false,
-    "requests24h": 0
+    "requests24h": 28,
+    "screenshotUrl": "https://media.pollinations.ai/804998cd-180a-46dc-a30c-516ba8118615"
   },
   {
     "emoji": "🎬",
@@ -15968,26 +14921,6 @@
     "screenshotUrl": "https://media.pollinations.ai/29559d6f-303d-4b5e-aa16-5b06934130f6"
   },
   {
-    "emoji": "🎨",
-    "name": "The Promised Pen",
-    "url": "https://promisedpen.app",
-    "description": "Organize stories, characters, and worldbuilding in a novel-writing app that combines drafts, outlines, notes, and project management tools.",
-    "language": null,
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "SorynMochi",
-    "githubUserId": "211489147",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-05-19",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1999",
-    "approvedDate": "2025-05-19",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "💬",
     "name": "AI Chat",
     "url": "https://aichat.narendradwivedi.org",
@@ -16005,7 +14938,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6266",
     "approvedDate": "2025-05-16",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": null
   },
   {
     "emoji": "⚡",
@@ -16173,26 +15107,6 @@
     "requests24h": 0
   },
   {
-    "emoji": "🌐",
-    "name": "Neurix",
-    "url": "https://neurix.ru",
-    "description": "Russian-language AI platform with chat, image generation, search, audio, and video tools",
-    "language": "ru",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "Igroshka",
-    "githubUserId": "86719527",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-05-10",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "✨",
     "name": "Pollinations Task Master",
     "url": null,
@@ -16230,66 +15144,6 @@
     "submittedDate": "2025-06-04",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1932",
     "approvedDate": "2025-05-11",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🌐",
-    "name": "Neurix",
-    "url": "https://neurix.ru",
-    "description": "Russian-language AI platform with chat, image generation, search, audio, and video tools",
-    "language": "ru",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "Igroshka",
-    "githubUserId": "86719527",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-05-10",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🖼️",
-    "name": "Elixpo-Art",
-    "url": "https://elixpo-art.com",
-    "description": "Free AI art generator with multiple themes and models, Chrome extension, and Discord bot",
-    "language": null,
-    "category": "image",
-    "platform": "discord",
-    "githubUsername": "elixpo",
-    "githubUserId": "161109909",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7038",
-    "approvedDate": "2025-05-09",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🤖",
-    "name": "Rizqi O Chatbot",
-    "url": "https://chatbot.rizqioliveira.my.id",
-    "description": "Combine AI chatbot, image generator, and audio generator with custom aspect ratios, ultra-high quality outputs, and responsive interfaces.",
-    "language": "id",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "ray23-bit",
-    "githubUserId": "207506018",
-    "repositoryUrl": "https://github.com/ray23-bit/Projectenam",
-    "repositoryStars": 2,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-05-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1919",
-    "approvedDate": "2025-05-08",
     "byop": false,
     "requests24h": 0
   },
@@ -16501,26 +15355,6 @@
     "screenshotUrl": "https://media.pollinations.ai/8b3cf007-f4c5-4926-9be2-5f3543550ed3"
   },
   {
-    "emoji": "🖼️",
-    "name": "imggen.top",
-    "url": "https://www.imggen.top/",
-    "description": "Free, no-login AI image generator with unlimited FLUX creations.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "xiaoliangliang",
-    "githubUserId": "16681524",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "lipengliang2012@163.com",
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-04-30",
-    "byop": false,
-    "requests24h": 141
-  },
-  {
     "emoji": "💅",
     "name": "NailsGen",
     "url": "https://www.nailsgen.com/",
@@ -16621,27 +15455,8 @@
     "issueUrl": null,
     "approvedDate": "2025-04-22",
     "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🎞️",
-    "name": "ImageGen AI Image",
-    "url": "https://imagegenaiimage.com/",
-    "description": "Generate high-quality AI images with multiple models and styles.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "NarendraDwivedi",
-    "githubUserId": "30528539",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "https://www.linkedin.com/in/narendradwivedi",
-    "submittedDate": "2025-04-05",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1561",
-    "approvedDate": "2025-04-22",
-    "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/136a75f4-304b-40ed-819a-c6fa9b745816"
   },
   {
     "emoji": "🧰",
@@ -16765,7 +15580,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1680",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 699085
+    "requests24h": 699085,
+    "screenshotUrl": "https://media.pollinations.ai/cdf20f1c-84f7-432c-9499-44bde583dc9d"
   },
   {
     "emoji": "🖼️",
@@ -16785,26 +15601,6 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7384",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🕸️",
-    "name": "NetSim",
-    "url": "https://netsim.us.to/",
-    "description": "High-quality websim.ai-style browser simulation clone",
-    "language": null,
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "smplstuff",
-    "githubUserId": "206557620",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1685",
-    "approvedDate": "2025-04-15",
-    "byop": true,
     "requests24h": 0
   },
   {
@@ -17079,26 +15875,6 @@
     "screenshotUrl": "https://media.pollinations.ai/fdce1761-169a-44f0-b86a-f623b4b22bf9"
   },
   {
-    "emoji": "🧩",
-    "name": "Connect Pollinations with Open Web UI tutorial",
-    "url": null,
-    "description": "Step-by-step guide to integrate Pollinations APIs into Open Web UI",
-    "language": null,
-    "category": "learn",
-    "platform": "api",
-    "githubUsername": "cloph-dsp",
-    "githubUserId": "128580843",
-    "repositoryUrl": "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
-    "repositoryStars": 18,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-03-15",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "✍️",
     "name": "KoboldAI Lite",
     "url": "https://lite.koboldai.net/",
@@ -17179,7 +15955,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1354",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": null
   },
   {
     "emoji": "📖",
@@ -17199,7 +15976,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1344",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/23399816-e0d6-4b0d-ab0f-9f323bcabaa0"
   },
   {
     "emoji": "📚",
@@ -17239,7 +16017,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1304",
     "approvedDate": "2025-03-10",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4d1ab67b-dd94-4983-9c6e-b617dc47242f"
   },
   {
     "emoji": "⚡",
@@ -17527,26 +16306,6 @@
     "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/04728eed-f181-465d-a988-179ef55c164a"
-  },
-  {
-    "emoji": "🛠️",
-    "name": "MCPollinations (Community)",
-    "url": null,
-    "description": "Community MCP server with tunable params, model options, and image saving.",
-    "language": null,
-    "category": "build",
-    "platform": "api",
-    "githubUsername": "pinkpixel-dev",
-    "githubUserId": "195895956",
-    "repositoryUrl": "https://github.com/pinkpixel-dev/MCPollinations",
-    "repositoryStars": 41,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": null,
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "💬",

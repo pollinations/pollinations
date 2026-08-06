@@ -1,0 +1,34 @@
+{
+  "pr_number": 13144,
+  "title": "feat: add deterministic API model ordering",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13144",
+  "merged_at": "2026-08-06T15:02:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Orders Official models by modality: text, image, video, 3D, audio, realtime, then embedding.\n- Places each category’s configured default first, then stable models before alpha/preview models, with newest additions first and model ID as the final tie-break.\n- Places Community models after Official models, ordered by registration date and then model ID; Community creation time is exposed through existing `added_date` metadata.\n- Applies ordering once in the generation registry so `/models`, `/v1/models`, modality catalogs, visibility, permission, and balance filters preserve the same sequence.\n- Keeps alias resolution tied to declaration order, independent of catalog presentation sorting.\n\nVisible ordering changes: Community text models move from the second group to the end, and audio now appears before realtime.\n\nChecks: `npx vitest run src/community-endpoints.test.ts`; `npx vitest run test/openapi-json.test.ts`; `npm run typecheck`; Biome on changed files.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The model shelf is sorted",
+    "blurb": "The model catalog got a careful bit of garden tending. Official blooms now appear by modality and maturity, while community creations gather together at the end instead of wandering through the text patch.",
+    "summary": "The generation registry now deterministically orders Official models by modality (text, image, video, 3D, audio, realtime, embedding), puts each modality default and stable/newer models first, and lists Community models afterward by registration date.",
+    "impact": "Users and API clients will see the same predictable model sequence across /models, /v1/models, modality catalogs, visibility, permission, and balance-filtered results, with audio now preceding realtime and Community text models grouped at the end.",
+    "keywords": [
+      "model catalog",
+      "api",
+      "model registry",
+      "ordering",
+      "community models",
+      "modalities"
+    ],
+    "visual_concept": "A cozy model-library garden: Polli acts as a meticulous librarian/gardener arranging labeled seed packets on shelves by modality, with Official flowers in clearly ordered rows and Community seedlings in a welcoming final bed. A CRT monitor robot can admire the tidy catalog while subtle signs show text, image, video, 3D, audio, realtime, and embedding symbols.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully arranging glowing model-seed packets on a garden shelf in the order text, image, video, 3D, audio, realtime, embedding; a friendly CRT monitor robot watches beside a final community seedling bed. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font sign reading \"SORTED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13144.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully arranging glowing model-seed packets on a garden shelf in the order text, image, video, 3D, audio, realtime, embedding; a friendly CRT monitor robot watches beside a final community seedling bed. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font sign reading \"SORTED\"."
+  },
+  "generated_at": "2026-08-06T15:03:40.323372+00:00"
+}

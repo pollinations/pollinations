@@ -82,7 +82,7 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
     ) : (
         <span className="flex flex-col gap-0.5">
             <span>
-                ≈ {value} {unitLabels[model.type] ?? "requests"} / pollen
+                ≈ {value} {unitLabels[model.type] ?? "requests"} /pollen
             </span>
             {balanceLabel}
         </span>
@@ -95,7 +95,7 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
                     {value}
                 </span>
                 <span className="text-xs font-normal text-theme-text-muted">
-                    {isFree ? "free" : "gen / pollen"}
+                    {isFree ? "free" : "gen /pollen"}
                 </span>
             </span>
         </Tooltip>

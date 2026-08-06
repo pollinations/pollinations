@@ -14,23 +14,10 @@ export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 export const MODEL_SCOPES = ["pollinations", "community"] as const;
 export type ModelScope = (typeof MODEL_SCOPES)[number];
 
-export const MODEL_SORT_KEYS = [
-    "name",
-    "perPollen",
-    "input",
-    "output",
-] as const;
-export type ModelSortKey = (typeof MODEL_SORT_KEYS)[number];
-
-export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
-export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
-
 export type ModelSearch = {
     scope?: ModelScope;
     category?: ModelCategory;
     q?: string;
-    sort?: ModelSortKey;
-    dir?: ModelSortDirection;
 };
 
 function includes<T extends string>(
@@ -63,13 +50,5 @@ export function validateModelSearch(
             typeof search.q === "string" && search.q.length > 0
                 ? search.q
                 : undefined,
-        sort:
-            includes(MODEL_SORT_KEYS, search.sort) &&
-            search.sort !== "perPollen"
-                ? search.sort
-                : undefined,
-        dir: includes(MODEL_SORT_DIRECTIONS, search.dir)
-            ? search.dir
-            : undefined,
     };
 }

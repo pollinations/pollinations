@@ -1,0 +1,103 @@
+{
+  "date": "2026-08-05",
+  "period_start": "2026-08-05",
+  "period_end": "2026-08-05",
+  "title": "Eleven more ways to find Pollinations in the wild",
+  "summary": "A community harvest: eleven new apps, sturdier generation routes, and API tooling that reveals more while guessing less.\n\nThe community directory grew across chat, image, writing, Android, desktop, and no-code workflows: from Batch Imagine and jewelry rendering to bilingual story tools, cat stickers, receipt tarot, and a visual agent-automation builder. The app garden is becoming usefully strange.\n\nMCP agents can now inspect available account Quests with the new read-only listQuests tool, while filtered per-key and per-model usage queries work again. API-key validation, permissions, metadata, delegated tokens, and account access are also now handled consistently across the platform.\n\nFlux fallback routing now goes through the shared registry for more resilient image generation; Trellis reports invalid image inputs as useful 400s; and Azure reasoning models quietly ignore sampling fields they do not support. Myceli requests also have room to finish, with a five-minute proxy timeout.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 12276,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 12924,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13006,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13064,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13067,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13079,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13087,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13088,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13089,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13090,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13091,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13092,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13093,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13094,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13096,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13099,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13103,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13104,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13106,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13108,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13109,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13113,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13123,
+      "date": "2026-08-05"
+    }
+  ],
+  "generated_at": "2026-08-06T07:03:28.616100+00:00"
+}

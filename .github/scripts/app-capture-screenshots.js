@@ -53,6 +53,28 @@ function readNonNegativeInteger(name, fallback) {
     return value;
 }
 
+function calculateDailyBatch(totalTargets, batchSize, now = new Date()) {
+    if (!Number.isInteger(totalTargets) || totalTargets < 0) {
+        throw new Error("totalTargets must be a non-negative integer");
+    }
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+        throw new Error("batchSize must be a positive integer");
+    }
+
+    const batchCount = Math.ceil(totalTargets / batchSize);
+    if (batchCount === 0) {
+        return { batchCount: 0, batchIndex: 0, offset: 0 };
+    }
+
+    const epochDay = Math.floor(now.getTime() / 86_400_000);
+    const batchIndex = epochDay % batchCount;
+    return {
+        batchCount,
+        batchIndex,
+        offset: batchIndex * batchSize,
+    };
+}
+
 function slugify(value) {
     return value
         .normalize("NFKD")
@@ -471,11 +493,12 @@ async function reviewCaptures(captures, concurrency, token, model) {
 async function main() {
     const concurrency = readPositiveInteger("concurrency", DEFAULT_CONCURRENCY);
     const timeoutMs = readPositiveInteger("timeout", DEFAULT_TIMEOUT_MS);
-    const offset = readNonNegativeInteger("offset", 0);
+    let offset = readNonNegativeInteger("offset", 0);
     const limit = getArgument("limit")
         ? readPositiveInteger("limit")
         : Number.POSITIVE_INFINITY;
     const mode = getArgument("mode") || "refresh";
+    const rotateDaily = process.argv.includes("--rotate-daily");
     const publish = process.argv.includes("--publish");
     const shouldReview = !process.argv.includes("--no-review");
     const reviewModel =
@@ -489,6 +512,17 @@ async function main() {
 
     const apps = readApps();
     const selection = selectTargets(apps, mode);
+    let dailyBatch = null;
+    if (rotateDaily) {
+        if (!Number.isFinite(limit)) {
+            throw new Error("--rotate-daily requires --limit");
+        }
+        if (getArgument("offset") !== undefined) {
+            throw new Error("--rotate-daily cannot be combined with --offset");
+        }
+        dailyBatch = calculateDailyBatch(selection.targets.length, limit);
+        offset = dailyBatch.offset;
+    }
     const targets = selection.targets.slice(offset, offset + limit);
     const runId = new Date().toISOString().replace(/[:.]/g, "-");
     const outputDirectory = path.resolve(
@@ -498,8 +532,11 @@ async function main() {
     );
     fs.mkdirSync(outputDirectory, { recursive: true });
 
+    const batchLabel = dailyBatch
+        ? `, daily batch ${dailyBatch.batchIndex + 1}/${dailyBatch.batchCount}`
+        : "";
     console.log(
-        `Selected ${targets.length}/${selection.targets.length} unique ${mode} targets (${VIEWPORT.width}x${VIEWPORT.height}, concurrency ${concurrency})`,
+        `Selected ${targets.length}/${selection.targets.length} unique ${mode} targets (${VIEWPORT.width}x${VIEWPORT.height}, concurrency ${concurrency}${batchLabel})`,
     );
 
     const batchStartedAt = Date.now();
@@ -614,6 +651,7 @@ async function main() {
         approved: approvedCaptures.length,
         catalogRowsUpdated,
         concurrency,
+        dailyBatch,
         durationMs: Date.now() - batchStartedAt,
         failures,
         finishedAt: new Date().toISOString(),
@@ -663,6 +701,7 @@ if (require.main === module) {
 
 module.exports = {
     applyMediaUrls,
+    calculateDailyBatch,
     resolveTarget,
     selectTargets,
     validateReview,

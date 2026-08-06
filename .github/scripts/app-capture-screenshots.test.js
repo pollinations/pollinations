@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
     applyMediaUrls,
+    calculateDailyBatch,
     resolveTarget,
     selectTargets,
     validateReview,
@@ -136,4 +137,26 @@ test("validates visual review decisions", () => {
             }),
         /invalid decision/,
     );
+});
+
+test("rotates deterministic daily batches across the target set", () => {
+    const first = calculateDailyBatch(
+        839,
+        100,
+        new Date("2026-08-06T12:00:00Z"),
+    );
+    const next = calculateDailyBatch(
+        839,
+        100,
+        new Date("2026-08-07T12:00:00Z"),
+    );
+
+    assert.equal(first.batchCount, 9);
+    assert.equal(first.offset, first.batchIndex * 100);
+    assert.equal(next.batchIndex, (first.batchIndex + 1) % first.batchCount);
+    assert.deepEqual(calculateDailyBatch(0, 100), {
+        batchCount: 0,
+        batchIndex: 0,
+        offset: 0,
+    });
 });

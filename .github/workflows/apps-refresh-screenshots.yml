@@ -2,7 +2,7 @@ name: Apps / Refresh screenshots
 
 on:
   schedule:
-    - cron: "0 2 1,16 * *" # Approximately every 15 days at 02:00 UTC
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -12,9 +12,9 @@ on:
           - refresh
           - missing
           - all
-        default: refresh
+        default: missing
       limit:
-        description: Maximum screenshots (blank on schedules means all refreshes)
+        description: Maximum screenshots for a manual run
         type: number
         default: 100
 
@@ -25,7 +25,7 @@ concurrency:
 jobs:
   refresh-screenshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 45
     permissions:
       contents: write
       pull-requests: write
@@ -59,10 +59,15 @@ jobs:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
           CAPTURE_MODE: ${{ inputs.mode || 'refresh' }}
           CAPTURE_LIMIT: ${{ inputs.limit }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
         run: |
-          args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
-          if [[ -n "$CAPTURE_LIMIT" ]]; then
-            args+=(--limit="$CAPTURE_LIMIT")
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
+            args=(--mode=all --limit=100 --rotate-daily --concurrency=4 --publish)
+          else
+            args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
+            if [[ -n "$CAPTURE_LIMIT" ]]; then
+              args+=(--limit="$CAPTURE_LIMIT")
+            fi
           fi
           npm run apps:capture-screenshots -- "${args[@]}"
 

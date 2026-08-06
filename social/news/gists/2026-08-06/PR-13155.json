@@ -1,0 +1,34 @@
+{
+  "pr_number": 13155,
+  "title": "docs: record second FLUX Vast worker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13155",
+  "merged_at": "2026-08-06T22:53:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records Vast instance 47018211 as the second production FLUX worker.\n- Updates the FLUX pool and total Vast fleet burn to $0.648889/hour and $1.860000/hour.\n- Captures the RTX PRO 4000 qualification, production attribution, and zero-error evidence.\n- Corrects the documented QUEUE_LIMIT behavior; Replicate remains the fallback.\n\nValidation:\n- Both FLUX production hostnames return HTTP 200 and appear in the registry.\n- Instance 47018211 received attributed production requests after promotion.\n- Final worker log sample: 104 successful generations; zero 5xx, OOM, CUDA, or traceback errors.\n- git diff --check\n- Biome does not process Markdown files.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A second FLUX flower blooms",
+    "blurb": "The FLUX garden has another production worker tending pixels. Its RTX PRO 4000 has already handled 104 clean generations without a single dramatic traceback.",
+    "summary": "Documented Vast instance 47018211 as the second production FLUX worker, including RTX PRO 4000 qualification, verified request attribution, corrected QUEUE_LIMIT behavior, and Replicate fallback details.",
+    "impact": "The image service now has a clearly recorded two-worker FLUX pool with validated production capacity and documented fallback behavior for reliable generation routing.",
+    "keywords": [
+      "FLUX",
+      "Vast",
+      "GPU",
+      "image-generation",
+      "worker-pool",
+      "documentation"
+    ],
+    "visual_concept": "Depict Polli as a tiny server gardener in a tool belt welcoming a second cozy RTX-powered FLUX worker into a greenhouse-like image-generation garden. Two retro GPU server pots glow beside healthy code-plants, while a small Replicate backup watering can rests nearby; the two-worker setup and clean successful output are represented by two blooming flowers and a terminal showing a simple green “200”.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending two chunky retro GPU server planters in a warm image-generation greenhouse; both servers glow lime green (#ecf874) and grow blooming code-plants, while a small backup watering can labeled “REPLICATE” sits nearby and a terminal displays “200”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13155.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending two chunky retro GPU server planters in a warm image-generation greenhouse; both servers glow lime green (#ecf874) and grow blooming code-plants, while a small backup watering can labeled “REPLICATE” sits nearby and a terminal displays “200”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-06T23:11:45.344849+00:00"
+}

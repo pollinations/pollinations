@@ -44,7 +44,12 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [savedProvider, setSavedProvider] =
+        useState<CommunityProviderProfile>({ name: null, url: null });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
+    const providerIsSaved =
+        providerName === (savedProvider.name ?? "") &&
+        providerUrl === (savedProvider.url ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -65,6 +70,7 @@ export function CommunityEndpoints({
         setEndpoints(body.data);
         setProviderName(body.provider.name ?? "");
         setProviderUrl(body.provider.url ?? "");
+        setSavedProvider(body.provider);
         setIsLoading(false);
     }, []);
 
@@ -137,6 +143,7 @@ export function CommunityEndpoints({
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
+            setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
             setError(
@@ -281,7 +288,9 @@ export function CommunityEndpoints({
                             <div>
                                 <Button
                                     type="submit"
-                                    disabled={isSavingProvider}
+                                    disabled={
+                                        isSavingProvider || providerIsSaved
+                                    }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
                                 </Button>

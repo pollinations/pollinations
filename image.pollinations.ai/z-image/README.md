@@ -41,6 +41,11 @@ local-only. Creating that marker and starting `/root/onstart.sh` is the
 production canary step: it waits for local `/health` and then joins the shared
 tunnel pool, where it may immediately receive live traffic.
 
+Automated replacement preparation must stop before joining the shared
+production tunnel. Follow the fleet-wide qualification and human approval
+policy in
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
+
 Run direct verification first, then start the tunnel and benchmark the real
 Z-Image pipeline:
 

@@ -12,6 +12,7 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterGeminiImageAPI,
@@ -56,8 +57,6 @@ import {
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
-const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
-
 // Loggers
 const logError = debug("pollinations:error");
 const logPerf = debug("pollinations:perf");
@@ -94,7 +93,6 @@ export type ImageGenerationResult = {
 export type AuthResult = {
     tokenAuth: boolean;
     userId: string | null;
-    username: string | null;
 };
 
 function safeTokenCount(value: unknown): number {
@@ -225,10 +223,7 @@ export const callSelfHostedServer = async (
                 },
                 body: JSON.stringify(body),
             };
-            response =
-                poolType === "sana"
-                    ? await fetch(SANA_BACKEND_URL, requestInit)
-                    : await fetchFromWeightedServer(poolType, requestInit);
+            response = await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -243,7 +238,10 @@ export const callSelfHostedServer = async (
 
         if (!response.ok) {
             logError("Error from server. input was", body);
-            throw new Error(`Server responded with ${response.status}`);
+            throw new HttpError(
+                `Server responded with ${response.status}`,
+                response.status,
+            );
         }
 
         const jsonResponse = await response.json();
@@ -254,7 +252,7 @@ export const callSelfHostedServer = async (
 
         if (!image) {
             logError("image is null");
-            throw new Error("image is null");
+            throw new HttpError("Image server returned no image", 502);
         }
 
         logOps("decoding base64 image");
@@ -275,27 +273,6 @@ export const callSelfHostedServer = async (
     } catch (e) {
         logError("Error in callSelfHostedServer:", e);
         throw e;
-    }
-};
-
-/**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Replicate when
- * no worker is registered or the pool request fails.
- * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
- * workerd it broke every pool request (all traffic silently fell back to
- * Fireworks for ~1.5h on 2026-07-02) while passing in the local test runtime.
- */
-export const callFluxWithFallback = async (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> => {
-    try {
-        return await callSelfHostedServer(prompt, safeParams, "flux");
-    } catch (error) {
-        // Log the full error (not just message) so unexpected error types
-        // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Replicate:", error);
-        return await callReplicateFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -828,6 +805,9 @@ const generateImage = async (
         case "klein":
             return await callFluxKleinAPI(prompt, safeParams);
 
+        case "krea":
+            return await callKreaImageAPI(prompt, safeParams);
+
         case "p-image":
             return await callPrunaImageAPI(prompt, safeParams);
 
@@ -859,11 +839,15 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "sana":
+        case "dreamshaper":
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
-            return await callFluxWithFallback(prompt, safeParams);
+            return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "flux-replicate":
+            return await callReplicateFluxSchnellAPI(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch
@@ -942,6 +926,7 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
+    metadataModel = safeParams.model,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
@@ -962,7 +947,10 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
+        const metadataObj = prepareMetadata(prompt, originalPrompt, {
+            ...safeParams,
+            model: metadataModel,
+        });
 
         // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
         const processedBuffer =

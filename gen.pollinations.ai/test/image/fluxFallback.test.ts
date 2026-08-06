@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isRetryableFallbackError } from "../../src/fallback.ts";
 import {
     __resetLatencyStateForTests,
     registerServer,
@@ -6,10 +7,9 @@ import {
 } from "../../src/image/availableServers.ts";
 import {
     type AuthResult,
-    callFluxWithFallback,
+    callSelfHostedServer,
     createAndReturnImageCached,
 } from "../../src/image/createAndReturnImages.ts";
-import { syncImageEnv } from "../../src/image/env.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import { setImagesBinding } from "../../src/image/utils/imageTransform.ts";
 
@@ -84,7 +84,6 @@ const poolResponse = (bytes: Uint8Array = JPEG_BYTES) =>
 const userInfo: AuthResult = {
     tokenAuth: false,
     userId: null,
-    username: null,
 };
 
 // A PNG header is enough to carry dimensions through the pipeline and read
@@ -136,12 +135,6 @@ function fakeImagesBinding(): ImagesBinding {
 beforeEach(() => {
     setServerRegistryBinding(makeKv(), "test");
     __resetLatencyStateForTests();
-    syncImageEnv(
-        {
-            REPLICATE_API_TOKEN: "replicate-test-key",
-        } as unknown as CloudflareBindings,
-        ["REPLICATE_API_TOKEN"] as never[],
-    );
 });
 
 afterEach(() => {
@@ -149,12 +142,16 @@ afterEach(() => {
     setImagesBinding(undefined);
 });
 
-describe("callFluxWithFallback", () => {
+describe("Flux primary route", () => {
     it("serves from the self-hosted flux pool when a worker is registered", async () => {
         await registerServer("https://gpu1.example", "flux");
         const calls = mockFetch(() => poolResponse());
 
-        const result = await callFluxWithFallback("a red apple", fluxParams);
+        const result = await callSelfHostedServer(
+            "a red apple",
+            fluxParams,
+            "flux",
+        );
 
         expect(calls).toEqual(["https://gpu1.example/generate"]);
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
@@ -163,63 +160,33 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData?.actualModel).toBe("flux");
     });
 
-    it("falls back to Replicate when no flux worker is registered", async () => {
-        const calls = mockFetch((url) =>
-            new URL(url).hostname === "api.replicate.com"
-                ? new Response(
-                      JSON.stringify({
-                          id: "prediction-1",
-                          status: "succeeded",
-                          output: ["https://replicate.delivery/output.jpg"],
-                          metrics: { predict_time: 0.5 },
-                      }),
-                      { status: 201 },
-                  )
-                : new Response(JPEG_BYTES, { status: 200 }),
-        );
+    it("marks an empty pool as a retryable upstream failure", async () => {
+        let error: unknown;
+        try {
+            await callSelfHostedServer("a red apple", fluxParams, "flux");
+        } catch (caught) {
+            error = caught;
+        }
 
-        const result = await callFluxWithFallback("a red apple", fluxParams);
-
-        expect(calls).toEqual([
-            "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
-            "https://replicate.delivery/output.jpg",
-        ]);
-        expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
-            true,
-        );
-        expect(result.isMature).toBe(false);
+        expect(error).toMatchObject({ status: 503 });
+        expect(isRetryableFallbackError(error)).toBe(true);
     });
 
-    it("falls back to Replicate when the pool request fails", async () => {
+    it("preserves a pool 5xx as a retryable upstream failure", async () => {
         await registerServer("https://gpu1.example", "flux");
-        const calls = mockFetch((url) => {
-            const hostname = new URL(url).hostname;
-            if (hostname === "gpu1.example") {
-                return new Response("CUDA error", { status: 500 });
-            }
-            if (hostname === "api.replicate.com") {
-                return new Response(
-                    JSON.stringify({
-                        id: "prediction-2",
-                        status: "succeeded",
-                        output: ["https://replicate.delivery/output.jpg"],
-                        metrics: { predict_time: 0.5 },
-                    }),
-                    { status: 201 },
-                );
-            }
-            return new Response(JPEG_BYTES, { status: 200 });
-        });
-
-        const result = await callFluxWithFallback("a red apple", fluxParams);
-
-        expect(calls).toHaveLength(3);
-        expect(calls[0]).toBe("https://gpu1.example/generate");
-        expect(calls[1]).toContain("api.replicate.com");
-        expect(calls[2]).toBe("https://replicate.delivery/output.jpg");
-        expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
-            true,
+        const calls = mockFetch(
+            () => new Response("CUDA error", { status: 500 }),
         );
+        let error: unknown;
+        try {
+            await callSelfHostedServer("a red apple", fluxParams, "flux");
+        } catch (caught) {
+            error = caught;
+        }
+
+        expect(calls).toEqual(["https://gpu1.example/generate"]);
+        expect(error).toMatchObject({ status: 500 });
+        expect(isRetryableFallbackError(error)).toBe(true);
     });
 });
 

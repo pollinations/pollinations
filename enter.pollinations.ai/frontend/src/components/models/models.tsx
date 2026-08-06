@@ -21,15 +21,21 @@ import {
     useRef,
     useState,
 } from "react";
-import { CommunityEndpoints } from "../community-endpoints";
+import {
+    CommunityEndpoints,
+    publicCommunityFallbackOptions,
+} from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayCategory } from "./model-categories.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
+import type {
+    ModelScope,
+    ModelSortDirection,
+    ModelSortKey,
+} from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -46,7 +52,7 @@ type ModelsProps = {
     canPublish?: boolean;
 };
 
-const SECTION_ORDER: SectionType[] = [
+const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
     "image",
     "video",
@@ -54,10 +60,16 @@ const SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "text",
-    "community-text",
-    "community-image",
     "embedding",
 ];
+
+const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const SCOPE_LABELS: Record<ModelScope, string> = {
+    pollinations: "Official",
+    community: "Community",
+};
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -67,8 +79,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    "community-text": "community text",
-    "community-image": "community image",
     embedding: "embedding",
 };
 
@@ -97,15 +107,11 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
-        "community-text": [],
-        "community-image": [],
         embedding: [],
     };
 
     for (const model of models) {
-        categorized[getModelDisplayCategory(model.type, model.community)].push(
-            model,
-        );
+        categorized[model.type].push(model);
     }
     return categorized;
 }
@@ -116,6 +122,7 @@ export const Models: FC<ModelsProps> = ({
 }) => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
@@ -130,10 +137,20 @@ export const Models: FC<ModelsProps> = ({
         [catalogModels, stats],
     );
     const query = search.trim().toLowerCase();
+    const scopedModels = useMemo(
+        () =>
+            allModels.filter(
+                (model) =>
+                    Boolean(model.community) === (activeScope === "community"),
+            ),
+        [activeScope, allModels],
+    );
     const filteredModels = useMemo(
         () =>
-            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
-        [allModels, query],
+            query
+                ? scopedModels.filter((model) => matchesQuery(model, query))
+                : scopedModels,
+        [query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -143,7 +160,8 @@ export const Models: FC<ModelsProps> = ({
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),
@@ -158,7 +176,16 @@ export const Models: FC<ModelsProps> = ({
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
+    const sectionOrder =
+        activeScope === "community"
+            ? COMMUNITY_SECTION_ORDER
+            : POLLINATIONS_SECTION_ORDER;
+    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
+    const searchTarget =
+        activeTab === "all"
+            ? `${scopeLabel} models`
+            : `${scopeLabel} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -198,6 +225,21 @@ export const Models: FC<ModelsProps> = ({
             search: (previous) => ({
                 ...previous,
                 category: category === "all" ? undefined : category,
+            }),
+        });
+    };
+
+    const setActiveScope = (scope: ModelScope) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                scope: scope === "pollinations" ? undefined : scope,
+                category:
+                    scope === "community" &&
+                    previous.category !== "text" &&
+                    previous.category !== "image"
+                        ? undefined
+                        : previous.category,
             }),
         });
     };
@@ -252,30 +294,42 @@ export const Models: FC<ModelsProps> = ({
                 }
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-wrap gap-1.5">
-                        {SECTION_ORDER.map((section) => (
-                            <TabButton
-                                key={section}
-                                active={activeTab === section}
-                                onClick={() => setActiveTab(section)}
-                                ariaLabel={
-                                    section === "community-text" ||
-                                    section === "community-image"
-                                        ? `${sectionLabels[section]} alpha models`
-                                        : undefined
-                                }
-                            >
-                                <span className="inline-flex items-center gap-1.5">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {SCOPE_ORDER.map((scope) => (
+                                <TabButton
+                                    key={scope}
+                                    active={activeScope === scope}
+                                    onClick={() => setActiveScope(scope)}
+                                    size="lg"
+                                    ariaLabel={
+                                        scope === "community"
+                                            ? "Community alpha models"
+                                            : undefined
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {SCOPE_LABELS[scope]}
+                                        {scope === "community" && (
+                                            <Chip intent="alpha" size="sm">
+                                                Alpha
+                                            </Chip>
+                                        )}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {sectionOrder.map((section) => (
+                                <TabButton
+                                    key={section}
+                                    active={activeTab === section}
+                                    onClick={() => setActiveTab(section)}
+                                >
                                     {sectionLabels[section]}
-                                    {(section === "community-text" ||
-                                        section === "community-image") && (
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    )}
-                                </span>
-                            </TabButton>
-                        ))}
+                                </TabButton>
+                            ))}
+                        </div>
                     </div>
                     <div className="relative w-full sm:w-72">
                         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
@@ -284,8 +338,8 @@ export const Models: FC<ModelsProps> = ({
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onBlur={() => pushSearch(search)}
-                            placeholder={`Search ${searchLabel} models…`}
-                            aria-label={`Search ${searchLabel} models`}
+                            placeholder={`Search ${searchTarget}…`}
+                            aria-label={`Search ${searchTarget}`}
                             className="w-full pl-9"
                         />
                     </div>
@@ -297,8 +351,7 @@ export const Models: FC<ModelsProps> = ({
                 )}
                 {query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {sectionLabels[activeTab].toLowerCase()} models match
-                        “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -310,12 +363,6 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityTextModels={
-                                sectionModels["community-text"]
-                            }
-                            communityImageModels={
-                                sectionModels["community-image"]
-                            }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
                             sortKey={sortKey}
@@ -335,7 +382,7 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/M</strong> — per million tokens.
+                            <strong>/K · /M</strong> — token rates.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -350,6 +397,7 @@ export const Models: FC<ModelsProps> = ({
             {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
+                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

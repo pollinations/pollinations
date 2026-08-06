@@ -20,7 +20,11 @@ import {
     BalanceAccessChip,
     ModelStatusChips,
 } from "./model-status-chips.tsx";
-import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import {
+    ModelPricingControls,
+    ModelPricingLedger,
+    useModelPricingSelection,
+} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -68,6 +72,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
+    const pricing = useModelPricingSelection(model);
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly ? (
@@ -94,8 +99,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 {balanceLabel}
             </span>
         );
-    const inputPriceBadges = getModelPriceBadges(model, "input");
-    const outputPriceBadges = getModelPriceBadges(model, "output");
     const modelNameTooltip = (
         <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
             {modelDescription && <span>{modelDescription}</span>}
@@ -176,9 +179,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             className="whitespace-nowrap"
                         />
                     </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <ModelId name={model.name} />
-                    </div>
+                    <ModelId name={model.name} />
+                    {model.brandUrl && model.brand && (
+                        <a
+                            href={model.brandUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                        >
+                            {model.brand}
+                        </a>
+                    )}
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -221,6 +232,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </div>
                         </div>
                     )}
+                    <ModelPricingControls model={model} pricing={pricing} />
                 </div>
             </div>
 
@@ -235,20 +247,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </Tooltip>
             </div>
 
-            {/* Input prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={inputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
-            </div>
-
-            {/* Output prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={outputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
+            <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
+                <ModelPricingLedger pricing={pricing} />
             </div>
         </Surface>
     );

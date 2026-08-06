@@ -520,6 +520,7 @@ discord_search_client = DiscordSearchClient()
 
 async def tool_discord_search(
     action: str,
+    top_n: int,
     query: str | None = None,
     channel_id: int | str | None = None,
     channel_name: str | None = None,
@@ -534,7 +535,6 @@ async def tool_discord_search(
     has: str | None = None,
     before: str | None = None,
     after: str | None = None,
-    limit: int = 50,
     sort_by: str = "timestamp",
     sort_order: str = "desc",
     author_type: str | None = None,
@@ -544,9 +544,10 @@ async def tool_discord_search(
     mentions: int | str | None = None,
     mention_everyone: bool | None = None,
     offset: int = 0,
-    _context: dict = None,
+    _context: dict | None = None,
     **kwargs,
 ) -> dict[str, Any]:
+    result_count = max(1, min(top_n, 100))
     if not _context:
         return {"error": "No context provided - cannot access Discord guild"}
     guild = _context.get("discord_guild")
@@ -668,7 +669,7 @@ async def tool_discord_search(
             attachment_extension=attachment_extension,
             mentions=mentions,
             mention_everyone=mention_everyone,
-            limit=limit,
+            limit=result_count,
             offset=offset,
             accessible_channel_ids=accessible_channel_ids,
         )
@@ -679,14 +680,14 @@ async def tool_discord_search(
             query=query,
             user_id=user_id,
             role_id=role_id,
-            limit=limit,
+            limit=result_count,
         )
     elif action == "channels":
         return await discord_search_client.search_channels(
             guild=guild,
             query=query,
             channel_type=channel_type,
-            limit=limit,
+            limit=result_count,
             can_view_channel=can_view_channel,
         )
     elif action == "threads":
@@ -694,7 +695,7 @@ async def tool_discord_search(
             guild=guild,
             query=query,
             include_archived=include_archived,
-            limit=limit,
+            limit=result_count,
             can_view_channel=can_view_channel,
         )
     elif action == "roles":
@@ -702,7 +703,7 @@ async def tool_discord_search(
             guild=guild,
             query=query,
             include_members=include_members,
-            limit=limit,
+            limit=result_count,
         )
     elif action == "history":
         if not channel_id:
@@ -723,7 +724,7 @@ async def tool_discord_search(
         after_id = int(after) if after else None
         return await discord_search_client.get_channel_history(
             channel=channel,
-            limit=limit,
+            limit=result_count,
             before=before_id,
             after=after_id,
         )
@@ -740,8 +741,8 @@ async def tool_discord_search(
         return await discord_search_client.get_message_context(
             channel=channel,
             message_id=message_id,
-            before_count=min(limit // 2, 10),
-            after_count=min(limit // 2, 10),
+            before_count=min(result_count // 2, 10),
+            after_count=min(result_count // 2, 10),
         )
     elif action == "thread_history":
         if not thread_id:
@@ -757,7 +758,7 @@ async def tool_discord_search(
         before_id = int(before) if before else None
         return await discord_search_client.get_thread_history(
             thread=thread,
-            limit=limit,
+            limit=result_count,
             before=before_id,
         )
     else:

@@ -6,8 +6,8 @@ import { sanitizeString } from "../util.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:replicate-flux:ops");
@@ -68,15 +68,7 @@ export async function callReplicateFluxSchnellAPI(
         });
     } catch (error) {
         logError("Replicate FLUX.1 Schnell prediction failed:", error);
-        if (error instanceof ReplicateError) {
-            throw new HttpError(
-                `Replicate FLUX generation failed: ${error.message}`,
-                error.status ?? 500,
-                undefined,
-                error.url,
-            );
-        }
-        throw error;
+        throw toReplicateHttpError(error, "Replicate FLUX generation failed");
     }
 
     if (outputUrls.length === 0) {

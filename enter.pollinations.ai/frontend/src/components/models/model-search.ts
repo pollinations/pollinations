@@ -6,12 +6,13 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
-    "community-text",
-    "community-image",
     "embedding",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
+
+export const MODEL_SCOPES = ["pollinations", "community"] as const;
+export type ModelScope = (typeof MODEL_SCOPES)[number];
 
 export const MODEL_SORT_KEYS = [
     "name",
@@ -25,6 +26,7 @@ export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
 export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
 
 export type ModelSearch = {
+    scope?: ModelScope;
     category?: ModelCategory;
     q?: string;
     sort?: ModelSortKey;
@@ -41,11 +43,21 @@ function includes<T extends string>(
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
+    const scope = includes(MODEL_SCOPES, search.scope)
+        ? search.scope
+        : "pollinations";
+    const category = includes(MODEL_CATEGORIES, search.category)
+        ? search.category
+        : "all";
+
     return {
+        scope: scope === "community" ? scope : undefined,
         category:
-            includes(MODEL_CATEGORIES, search.category) &&
-            search.category !== "all"
-                ? search.category
+            category !== "all" &&
+            (scope !== "community" ||
+                category === "text" ||
+                category === "image")
+                ? category
                 : undefined,
         q:
             typeof search.q === "string" && search.q.length > 0

@@ -54,7 +54,68 @@ export const CSM_VOICES = [
     "read_speech_d",
 ] as const;
 
-export const AUDIO_VOICES = [...ELEVENLABS_VOICES, ...CSM_VOICES];
+export const KOKORO_VOICES = [
+    "af_alloy",
+    "af_aoede",
+    "af_bella",
+    "af_heart",
+    "af_jessica",
+    "af_kore",
+    "af_nicole",
+    "af_nova",
+    "af_river",
+    "af_sarah",
+    "af_sky",
+    "am_adam",
+    "am_echo",
+    "am_eric",
+    "am_fenrir",
+    "am_liam",
+    "am_michael",
+    "am_onyx",
+    "am_puck",
+    "am_santa",
+    "bf_alice",
+    "bf_emma",
+    "bf_isabella",
+    "bf_lily",
+    "bm_daniel",
+    "bm_fable",
+    "bm_george",
+    "bm_lewis",
+    "ef_dora",
+    "em_alex",
+    "em_santa",
+    "ff_siwis",
+    "hf_alpha",
+    "hf_beta",
+    "hm_omega",
+    "hm_psi",
+    "if_sara",
+    "im_nicola",
+    "jf_alpha",
+    "jf_gongitsune",
+    "jf_nezumi",
+    "jf_tebukuro",
+    "jm_kumo",
+    "pf_dora",
+    "pm_alex",
+    "pm_santa",
+    "zf_xiaobei",
+    "zf_xiaoni",
+    "zf_xiaoxiao",
+    "zf_xiaoyi",
+    "zm_yunjian",
+    "zm_yunxi",
+    "zm_yunxia",
+    "zm_yunyang",
+] as const;
+
+export const AUDIO_VOICES = [
+    ...ELEVENLABS_VOICES,
+    ...CSM_VOICES,
+    ...KOKORO_VOICES,
+];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
@@ -228,7 +289,7 @@ export const AUDIO_SERVICES = {
             // Vertex bills a fixed $0.04 for each 30-second generated clip.
             completionAudioTokens: 0.04,
         },
-        title: "Lyria 3 Clip",
+        title: "Lyria 3 Clip Preview",
         description:
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
@@ -300,8 +361,13 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    "universal-3-pro": {
+    "universal-3.5-pro": {
         aliases: [
+            "universal-3-pro",
+            "universal-3-5-pro",
+            "assemblyai-universal-3.5-pro",
+            "assemblyai-universal-3-5-pro",
+            "assemblyai-u3.5-pro",
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
@@ -312,11 +378,12 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // AssemblyAI Universal-3 Pro: $0.21/hour
+            // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
-        title: "AssemblyAI Universal-3 Pro",
-        description: "Top-accuracy transcription you can steer with prompts",
+        title: "AssemblyAI Universal-3.5 Pro",
+        description:
+            "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -397,7 +464,7 @@ export const AUDIO_SERVICES = {
             // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
             completionAudioTokens: 0.0115 / 1000,
         },
-        title: "Qwen3-TTS Instruct",
+        title: "Qwen3-TTS Instruct Flash",
         description:
             "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],
@@ -421,6 +488,25 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...CSM_VOICES],
+    },
+    kokoro: {
+        aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m"],
+        provider: "deepinfra",
+        brand: "Hexgrad",
+        category: "audio",
+        addedDate: new Date("2026-07-31").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra bills hexgrad/Kokoro-82M at $0.62 per 1M input characters.
+            completionAudioTokens: 0.62 / 1_000_000,
+        },
+        title: "Kokoro 82M",
+        description:
+            "Lightweight multilingual speech across 54 voices and eight languages",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...KOKORO_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
 

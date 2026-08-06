@@ -2,15 +2,15 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/catalog.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the row to `apps/APPS.md`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `apps/catalog.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `apps/catalog.json`, run `node .github/scripts/app-update-greenhouse.js`.
 
-APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
+Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
 Platforms (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
 
@@ -29,7 +29,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `APPS.md`
+- `apps/` — Community apps + `catalog.json`
 - `social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
@@ -75,6 +75,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+- Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
 
 ## Secret Mutation Safety
 
@@ -190,25 +191,13 @@ npx vitest run test/file.test.ts
 ## Workflow Orchestration
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
-- Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
+- Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
-- Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
-- Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
-
-## Task Management
-
-1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
 
 ## Compact Instructions
 
 Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
-
-## Core Principles
-
-- Simplicity first — minimal code impact.
-- No laziness — find root causes, no temp fixes, senior standards.
-- Minimal impact — touch only what's necessary.
 
 ## Git Workflow
 

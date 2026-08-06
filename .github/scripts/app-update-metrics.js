@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Update app metrics in apps/APPS.md:
+ * Update app metrics in apps/catalog.json:
  *   - GitHub stars (from GitHub API)
  *   - BYOP status (from Tinybird — apps using secret API keys)
  *   - Request count in last 24h (from Tinybird — by referrer domain)
@@ -16,9 +16,8 @@
  *   TINYBIRD_READ_TOKEN  Optional, for BYOP + request metrics (skipped if missing)
  */
 
-const fs = require("fs");
-const https = require("https");
-const { APPS_FILE, parseApps, setCell } = require("./lib/parse-apps.js");
+const https = require("node:https");
+const { CATALOG_FILE, readApps, writeApps } = require("./lib/app-catalog.js");
 
 const GITHUB_API = "api.github.com";
 const TINYBIRD_HOST = "api.europe-west2.gcp.tinybird.co";
@@ -44,33 +43,34 @@ function extractHostname(url) {
     }
 }
 
-function parseAppsMarkdown() {
-    const { lines, headerIdx, apps: rows } = parseApps();
-
-    const apps = rows.map((row) => {
+function loadApps() {
+    const catalog = readApps();
+    const apps = catalog.map((app) => {
         // GitHub info is optional — some apps don't have repos
         let owner = null;
         let repo = null;
-        const match = row.repoUrl.match(/github\.com\/([^/]+)\/([^/\s]+)/);
+        const match = app.repositoryUrl?.match(
+            /github\.com\/([^/]+)\/([^/\s]+)/,
+        );
         if (match) {
             owner = match[1];
             repo = match[2].replace(/\.git$/, "");
         }
 
         return {
-            lineIdx: row.lineIndex,
+            catalogApp: app,
             owner,
             repo,
-            repoUrl: row.repoUrl,
-            currentStars: row.stars,
-            webUrlHostname: extractHostname(row.webUrl),
-            githubUsername: row.githubUsername.replace(/^@/, ""),
-            currentBYOP: row.byop,
-            currentRequests: row.requests24h,
+            webUrlHostname: extractHostname(app.url),
+            githubUsername: app.githubUsername,
+            githubUserId: app.githubUserId,
+            currentStars: app.repositoryStars,
+            currentBYOP: app.byop,
+            currentRequests: app.requests24h,
         };
     });
 
-    return { lines, headerIdx, apps };
+    return { catalog, apps };
 }
 
 function fetchRepoStars(owner, repo) {
@@ -198,64 +198,18 @@ function fetchTinybirdPipe(pipeName) {
     });
 }
 
-/**
- * Fetch BYOP hostnames from Tinybird pipe — api_key_name values that look like hostnames.
- * Returns Set<string> of hostnames for BYOP apps.
- */
-async function fetchBYOPHostnames() {
-    const result = await fetchTinybirdPipe("app_byop_hostnames");
-    if (!result || !result.data) return new Set();
-
-    const hostnames = new Set();
-    for (const row of result.data) {
-        const name = row.hostname;
-        if (name) {
-            hostnames.add(name);
-        }
-    }
-    return hostnames;
+async function fetchTinybirdValues(pipeName, field) {
+    const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
+    return new Set(rows.map((row) => row[field]).filter(Boolean));
 }
 
-/**
- * Fetch request counts by GitHub username from Tinybird pipe — last 24 hours.
- * Returns Map<string, number> mapping github_username -> request count.
- */
-async function fetchRequestCounts() {
-    const result = await fetchTinybirdPipe("app_request_counts");
-    if (!result || !result.data) return new Map();
-
-    const counts = new Map();
-    for (const row of result.data) {
-        const username = row.github_username;
-        if (username) {
-            counts.set(username, row.requests);
-        }
-    }
-    return counts;
-}
-
-/**
- * Fetch request counts by BYOP hostname from Tinybird pipe — last 24 hours.
- * Counts ALL requests through a BYOP app's API key (all end users).
- * Returns Map<string, number> mapping hostname -> request count.
- */
-async function fetchBYOPRequestCounts() {
-    const result = await fetchTinybirdPipe("app_byop_request_counts");
-    if (!result || !result.data) return new Map();
-
-    const counts = new Map();
-    for (const row of result.data) {
-        const hostname = row.hostname;
-        if (hostname) {
-            counts.set(hostname, row.requests);
-        }
-    }
-    return counts;
-}
-
-function formatStars(count) {
-    if (count === 0) return "";
-    return `⭐${count}`;
+async function fetchTinybirdCounts(pipeName, keyField) {
+    const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
+    return new Map(
+        rows
+            .filter((row) => row[keyField])
+            .map((row) => [String(row[keyField]), row.requests]),
+    );
 }
 
 async function main() {
@@ -267,7 +221,7 @@ async function main() {
         );
     }
 
-    const { lines, headerIdx, apps } = parseAppsMarkdown();
+    const { catalog, apps } = loadApps();
 
     console.log(`Found ${apps.length} apps\n`);
 
@@ -282,9 +236,9 @@ async function main() {
             `${colors.cyan}Fetching Tinybird metrics...${colors.reset}`,
         );
         [byopHostnames, requestCounts, byopRequestCounts] = await Promise.all([
-            fetchBYOPHostnames(),
-            fetchRequestCounts(),
-            fetchBYOPRequestCounts(),
+            fetchTinybirdValues("app_byop_hostnames", "hostname"),
+            fetchTinybirdCounts("app_request_counts", "github_user_id"),
+            fetchTinybirdCounts("app_byop_request_counts", "hostname"),
         ]);
         console.log(
             `  BYOP hostnames: ${byopHostnames.size}, GitHub users with requests: ${requestCounts.size}, BYOP hostnames with requests: ${byopRequestCounts.size}\n`,
@@ -333,24 +287,26 @@ async function main() {
                     );
                 }
                 stats.starsDeleted++;
-                changes.push({
-                    app,
-                    field: "stars",
-                    newValue: "❌ deleted",
-                });
+                if (app.currentStars !== null) {
+                    changes.push({
+                        app,
+                        field: "stars",
+                        newValue: null,
+                    });
+                }
             } else {
-                const newStarsStr = formatStars(result.stars);
-                if (newStarsStr !== app.currentStars) {
+                const newStars = result.stars || null;
+                if (newStars !== app.currentStars) {
                     if (verbose) {
                         console.log(
-                            `${colors.green}⭐ ${app.owner}/${app.repo}: ${app.currentStars || "(none)"} → ${newStarsStr || "(none)"}${colors.reset}`,
+                            `${colors.green}⭐ ${app.owner}/${app.repo}: ${app.currentStars || "(none)"} → ${newStars || "(none)"}${colors.reset}`,
                         );
                     }
                     stats.starsUpdated++;
                     changes.push({
                         app,
                         field: "stars",
-                        newValue: newStarsStr,
+                        newValue: newStars,
                     });
                 } else {
                     stats.starsUnchanged++;
@@ -364,7 +320,7 @@ async function main() {
         // --- BYOP (match hostname against Tinybird secret key names) ---
         if (hasTinybird && app.webUrlHostname) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
-            const newBYOP = isBYOP ? "true" : "";
+            const newBYOP = isBYOP;
             if (newBYOP !== app.currentBYOP) {
                 if (verbose) {
                     console.log(
@@ -378,7 +334,7 @@ async function main() {
 
         // --- Requests ---
         // BYOP apps: count ALL requests through the app's API key (by hostname)
-        // Non-BYOP apps: count requests by the developer's GitHub username
+        // Non-BYOP apps: count requests by the developer's GitHub user ID
         if (hasTinybird) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
             let count = 0;
@@ -386,11 +342,11 @@ async function main() {
             if (isBYOP && app.webUrlHostname) {
                 count = byopRequestCounts.get(app.webUrlHostname) || 0;
                 label = app.webUrlHostname;
-            } else if (app.githubUsername) {
-                count = requestCounts.get(app.githubUsername) || 0;
+            } else if (app.githubUserId) {
+                count = requestCounts.get(app.githubUserId) || 0;
                 label = app.githubUsername;
             }
-            const newRequests = count > 0 ? String(count) : "";
+            const newRequests = count;
             if (newRequests !== app.currentRequests) {
                 if (verbose) {
                     console.log(
@@ -409,19 +365,21 @@ async function main() {
 
     if (!verbose) console.log("\n");
 
-    // Apply changes to lines
+    // Apply changes to the catalog and write it once.
     if (!dryRun && changes.length > 0) {
-        const cellField = {
-            stars: "stars",
+        const catalogField = {
+            stars: "repositoryStars",
             byop: "byop",
             requests: "requests24h",
         };
         for (const { app, field, newValue } of changes) {
-            setCell(lines, headerIdx, app.lineIdx, cellField[field], newValue);
+            app.catalogApp[catalogField[field]] = newValue;
         }
 
-        fs.writeFileSync(APPS_FILE, lines.join("\n"));
-        console.log(`${colors.green}✅ Updated ${APPS_FILE}${colors.reset}\n`);
+        writeApps(catalog);
+        console.log(
+            `${colors.green}✅ Updated ${CATALOG_FILE}${colors.reset}\n`,
+        );
     }
 
     // Summary

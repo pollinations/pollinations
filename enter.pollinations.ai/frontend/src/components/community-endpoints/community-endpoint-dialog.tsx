@@ -886,6 +886,7 @@ export function CommunityEndpointDialog({
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
+                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}

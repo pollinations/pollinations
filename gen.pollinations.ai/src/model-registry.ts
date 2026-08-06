@@ -44,14 +44,14 @@ const CATEGORY_ORDER: Record<Category, number> = {
     realtime: 5,
     embedding: 6,
 };
-const DEFAULT_MODELS = new Set<string>([
-    DEFAULT_TEXT_MODEL,
-    DEFAULT_IMAGE_MODEL,
-    DEFAULT_3D_MODEL,
-    DEFAULT_AUDIO_MODEL,
-    DEFAULT_REALTIME_MODEL,
-    DEFAULT_EMBEDDING_MODEL,
-]);
+const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
+    text: DEFAULT_TEXT_MODEL,
+    image: DEFAULT_IMAGE_MODEL,
+    "3d": DEFAULT_3D_MODEL,
+    audio: DEFAULT_AUDIO_MODEL,
+    realtime: DEFAULT_REALTIME_MODEL,
+    embedding: DEFAULT_EMBEDDING_MODEL,
+};
 
 export type GenerationModelEntry = {
     id: string;
@@ -153,9 +153,11 @@ function compareModelEntries(
             CATEGORY_ORDER[right.definition.category];
         if (categoryDifference !== 0) return categoryDifference;
 
+        const defaultModel =
+            DEFAULT_MODEL_BY_CATEGORY[left.definition.category];
         const defaultDifference =
-            Number(DEFAULT_MODELS.has(right.id)) -
-            Number(DEFAULT_MODELS.has(left.id));
+            Number(right.id === defaultModel) -
+            Number(left.id === defaultModel);
         if (defaultDifference !== 0) return defaultDifference;
 
         const alphaDifference =
@@ -175,9 +177,9 @@ function buildRegistry(
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
-    const entries = sourceEntries
-        .map((entry) => ({ ...entry }))
-        .sort(compareModelEntries);
+    const entries = sourceEntries.map((entry) => ({ ...entry }));
+    // Build lookup keys before presentation sorting so duplicate aliases keep
+    // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -192,6 +194,7 @@ function buildRegistry(
         }
     }
     linkFallbackEntries(entries, byIdOrAlias);
+    entries.sort(compareModelEntries);
 
     return {
         resolve: (model) => {

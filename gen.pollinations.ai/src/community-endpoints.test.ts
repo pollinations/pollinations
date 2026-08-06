@@ -1731,11 +1731,11 @@ fixtureTest(
                 (model) => model.category === category,
             );
             const defaultModel = defaults[category];
-            const hasDefault = models.some(
-                (model) => model.name === defaultModel,
-            );
-            if (hasDefault) expect(models[0]?.name).toBe(defaultModel);
-            const remainingModels = hasDefault ? models.slice(1) : models;
+            if (defaultModel !== undefined) {
+                expect(models[0]?.name).toBe(defaultModel);
+            }
+            const remainingModels =
+                defaultModel === undefined ? models : models.slice(1);
             expect(remainingModels).toEqual(
                 [...remainingModels].sort(
                     (left, right) =>

@@ -1,3 +1,7 @@
+- **2026-08-05** – **🎯 Quests enter MCP** Agents can now inspect available account Quests with the read-only `listQuests` tool—useful work, now queryable by machines too. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
+- **2026-08-05** – **✨ Visual agent workflows** Build multi-step AI automations in Flow with drag-and-drop agents, HTTP requests, conditions, transforms, and outputs. [Try it](https://pollinations-chat-kohl.vercel.app) <!-- app -->
+- **2026-08-05** – **🎨 Jewelry sketches, rendered** Sparkle Studio turns jewelry descriptions or rough sketches into polished photorealistic designs. [Try it](https://sparkle-studio-pollinations-a031.onbelmo.uk) <!-- app -->
+- **2026-08-05** – **🐱 Cats, now sticker-shaped** Upload a cat photo and turn its fur, eyes, and general feline bureaucracy into personalized cartoon stickers. [Try it](https://fantastic-dolphin-00911c.netlify.app) <!-- app -->
 - **2026-08-04** – **✨ Command A Plus, less translation** Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus.
 - **2026-08-03** – **🎨 Krea 2 Medium** Krea joins the image API: generate square, wide, or tall images with `krea-2`, aspect-ratio mapping, and seed support. [Try it](https://pollinations.ai/play)
 - **2026-08-03** – **🎥 Grok Imagine Video 1.5** Generate 480p, 720p, or 1080p video clips with synchronized audio through the unified API. [API Docs](https://gen.pollinations.ai/docs)

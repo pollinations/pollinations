@@ -42,14 +42,14 @@ jobs:
             PACKAGE_CANDIDATES=$(CHANGED="$CHANGED" node .github/scripts/detect-package-consumers.js)
           fi
 
-          # Keep only directly changed apps registered in apps.json (source of truth).
-          # Package consumers are already emitted from apps.json by detect-package-consumers.js.
+          # Keep only directly changed apps registered in deployments.json (source of truth).
+          # Package consumers are already emitted from deployments.json by detect-package-consumers.js.
           APPS=""
           for app in $APP_CANDIDATES; do
-            if [ -n "$app" ] && node -e "const c=require('./apps/apps.json'); if(!c['$app']) process.exit(1);" 2>/dev/null; then
+            if [ -n "$app" ] && node -e "const c=require('./apps/deployments.json'); if(!c['$app']) process.exit(1);" 2>/dev/null; then
               APPS="$APPS $app"
             else
-              echo "⏭️ $app not in apps.json, skipping"
+              echo "⏭️ $app not in deployments.json, skipping"
             fi
           done
           APPS=$(printf "%s\n%s\n" "$APPS" "$PACKAGE_CANDIDATES" | xargs -n1 | sort -u | xargs)

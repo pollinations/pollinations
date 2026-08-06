@@ -179,27 +179,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             className="whitespace-nowrap"
                         />
                     </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <ModelId name={model.name} />
-                        {model.brandUrl && model.brand && (
-                            <>
-                                <span
-                                    aria-hidden="true"
-                                    className="text-theme-text-muted"
-                                >
-                                    ·
-                                </span>
-                                <a
-                                    href={model.brandUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                                >
-                                    {model.brand}
-                                </a>
-                            </>
-                        )}
-                    </div>
+                    <ModelId name={model.name} />
+                    {model.brandUrl && model.brand && (
+                        <a
+                            href={model.brandUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                        >
+                            {model.brand}
+                        </a>
+                    )}
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">

@@ -294,6 +294,19 @@ test("catalog models resolve brand logo SVG assets", () => {
     expect(missingLogos).toEqual([]);
 });
 
+test("community models use the community logo regardless of provider brand", () => {
+    expect(
+        getModelBrandLogoPath({
+            name: "owner/model",
+            type: "text",
+            community: true,
+            brand: "Custom Provider",
+            capabilities: [],
+            prices: [],
+        }),
+    ).toBe("/brand-logos/community.svg");
+});
+
 test("model info exposes public capabilities without raw implementation flags", () => {
     let checkedCapabilities = 0;
 

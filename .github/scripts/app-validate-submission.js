@@ -2,7 +2,7 @@
 
 const { execFileSync } = require("node:child_process");
 const {
-    buildRow,
+    buildApp,
     findCatalogDuplicate,
     parseSubmission,
     validateSubmission,
@@ -53,7 +53,7 @@ function main() {
     );
     if (duplicate) {
         errors.push(
-            `This app appears to already be listed as ${duplicate.name} in apps/APPS.md.`,
+            `This app appears to already be listed as ${duplicate.name} in apps/catalog.json.`,
         );
     }
     const pendingIssues = JSON.parse(
@@ -80,8 +80,8 @@ function main() {
             [
                 {
                     name: parsed.name,
-                    webUrl: parsed.appUrl,
-                    repoUrl: parsed.repoUrl,
+                    url: parsed.appUrl,
+                    repositoryUrl: parsed.repoUrl,
                     githubUserId: candidate.author?.id || "",
                 },
             ],
@@ -109,7 +109,7 @@ function main() {
         errors,
         submission,
         metadata,
-        row: errors.length === 0 ? buildRow(submission, metadata) : "",
+        app: errors.length === 0 ? buildApp(submission, metadata) : null,
     };
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.valid) process.exitCode = 2;

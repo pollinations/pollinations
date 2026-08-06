@@ -65,6 +65,23 @@ test("accepts an optional screenshot URL", () => {
             ]),
         /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
     );
+    assert.throws(
+        () =>
+            validateApps([
+                {
+                    ...APP,
+                    screenshotUrl: "https://media.pollinations.ai/example ",
+                },
+            ]),
+        /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
+    );
+    assert.throws(
+        () =>
+            validateApps([
+                { ...APP, screenshotUrl: "https://media.pollinations.ai/" },
+            ]),
+        /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
+    );
 });
 
 test("rejects missing and wrong-typed fields", () => {

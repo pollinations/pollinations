@@ -23,6 +23,8 @@ const NULLABLE_STRING_FIELDS = [
     "approvedDate",
 ];
 const OPTIONAL_NULLABLE_STRING_FIELDS = ["screenshotUrl"];
+const SCREENSHOT_URL_PATTERN =
+    /^https:\/\/media\.pollinations\.ai\/[^/?#\s][^\s]*$/;
 const REQUIRED_FIELDS = new Set([
     ...REQUIRED_STRING_FIELDS,
     ...NULLABLE_STRING_FIELDS,
@@ -76,7 +78,7 @@ function validateApps(apps, filePath = CATALOG_FILE) {
         }
         if (
             app.screenshotUrl &&
-            !app.screenshotUrl.startsWith("https://media.pollinations.ai/")
+            !SCREENSHOT_URL_PATTERN.test(app.screenshotUrl)
         ) {
             throw new Error(
                 `${label}.screenshotUrl must use https://media.pollinations.ai/`,

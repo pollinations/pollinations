@@ -1,0 +1,112 @@
+name: Apps / Refresh screenshots
+
+on:
+  schedule:
+    - cron: "0 2 1,16 * *" # Approximately every 15 days at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Screenshot set to process
+        type: choice
+        options:
+          - refresh
+          - missing
+          - all
+        default: refresh
+      limit:
+        description: Maximum screenshots (blank on schedules means all refreshes)
+        type: number
+        default: 100
+
+concurrency:
+  group: app-screenshot-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.pollinations-ai.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Capture and upload screenshots
+        env:
+          COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
+          CAPTURE_MODE: ${{ inputs.mode || 'refresh' }}
+          CAPTURE_LIMIT: ${{ inputs.limit }}
+        run: |
+          args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
+          if [[ -n "$CAPTURE_LIMIT" ]]; then
+            args+=(--limit="$CAPTURE_LIMIT")
+          fi
+          npm run apps:capture-screenshots -- "${args[@]}"
+
+      - name: Validate catalog
+        run: node -e 'require("./.github/scripts/lib/app-catalog.js").readApps()'
+
+      - name: Upload capture report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshot-report
+          path: temp/app-screenshots/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check for catalog changes
+        id: changes
+        run: |
+          if git diff --quiet -- apps/catalog.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure git
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+      - name: Create refresh PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="auto/app-screenshots-${DATE}-${GITHUB_RUN_ID}"
+
+          git checkout -b "$BRANCH"
+          git add apps/catalog.json
+          git commit -m "chore: refresh app screenshots (${DATE})"
+          git push -u origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "chore: refresh app screenshots (${DATE})" \
+            --body "Refreshes community app screenshots stored on media.pollinations.ai.")
+          gh pr merge "$PR_URL" --auto --squash --delete-branch

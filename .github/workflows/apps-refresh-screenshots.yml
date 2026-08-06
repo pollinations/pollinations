@@ -16,7 +16,7 @@ on:
       limit:
         description: Maximum screenshots for a manual run
         type: number
-        default: 100
+        default: 50
 
 concurrency:
   group: app-screenshot-refresh
@@ -27,21 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     steps:
-      - name: Generate Pollinations AI token
-        id: pollinations-ai
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.pollinations-ai.outputs.token }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -62,12 +54,10 @@ jobs:
           IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
         run: |
           if [[ "$IS_SCHEDULED" == "true" ]]; then
-            args=(--mode=all --limit=100 --rotate-daily --concurrency=4 --publish)
+            args=(--mode=all --limit=50 --rotate-daily --concurrency=4 --publish)
           else
             args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
-            if [[ -n "$CAPTURE_LIMIT" ]]; then
-              args+=(--limit="$CAPTURE_LIMIT")
-            fi
+            args+=(--limit="${CAPTURE_LIMIT:-50}")
           fi
           npm run apps:capture-screenshots -- "${args[@]}"
 
@@ -79,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-screenshot-report
-          path: temp/app-screenshots/
+          path: temp/app-screenshots/**/report.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -92,16 +82,28 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Generate repository write token
+        if: steps.changes.outputs.changed == 'true'
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
       - name: Configure git
         if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: |
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
       - name: Create refresh PR
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
           BRANCH="auto/app-screenshots-${DATE}-${GITHUB_RUN_ID}"
@@ -113,5 +115,8 @@ jobs:
 
           PR_URL=$(gh pr create \
             --title "chore: refresh app screenshots (${DATE})" \
-            --body "Refreshes community app screenshots stored on media.pollinations.ai.")
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+            --body "Refreshes community app screenshots stored on media.pollinations.ai. Review the capture report at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before merging.")
+
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
+            gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          fi

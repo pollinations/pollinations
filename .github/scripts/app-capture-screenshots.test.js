@@ -5,6 +5,7 @@ const {
     calculateDailyBatch,
     resolveTarget,
     selectTargets,
+    toCaptureTarget,
     validateReview,
 } = require("./app-capture-screenshots.js");
 
@@ -159,4 +160,29 @@ test("rotates deterministic daily batches across the target set", () => {
         batchIndex: 0,
         offset: 0,
     });
+});
+
+test("removes stale capture fields before a retry", () => {
+    assert.deepEqual(
+        toCaptureTarget({
+            catalogIndices: [12],
+            key: "website:https://app.test",
+            name: "Retry app",
+            names: ["Retry app"],
+            screenshotBytes: 12345,
+            screenshotPath: "/tmp/old.png",
+            source: "website",
+            status: 200,
+            success: true,
+            targetUrl: "https://app.test",
+        }),
+        {
+            catalogIndices: [12],
+            key: "website:https://app.test",
+            name: "Retry app",
+            names: ["Retry app"],
+            source: "website",
+            targetUrl: "https://app.test",
+        },
+    );
 });

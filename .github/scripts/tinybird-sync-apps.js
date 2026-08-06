@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Sync apps/apps.json → Tinybird app_directory datasource.
+ * Sync apps/catalog.json → Tinybird app_directory datasource.
  *
  * Atomically replaces the full table in one operation (mode=replace).
  * Runs daily via .github/workflows/data-sync-app-catalog-tinybird.yml.
@@ -102,7 +102,7 @@ async function replaceAllRows(rows) {
 
 async function main() {
     const rows = catalogRows();
-    console.log(`Parsed ${rows.length} apps from apps.json`);
+    console.log(`Parsed ${rows.length} apps from catalog.json`);
 
     if (rows.length === 0) {
         console.error("Error: No apps found — refusing to sync empty table");

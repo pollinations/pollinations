@@ -91,7 +91,7 @@ jobs:
           node .github/scripts/app-update-greenhouse.js
           git config user.name "$BOT_LOGIN"
           git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
-          git add apps/apps.json apps/GREENHOUSE.md README.md
+          git add apps/catalog.json apps/GREENHOUSE.md README.md
           git commit -m "Add ${APP_NAME} to ${APP_CATEGORY}
 
           Co-authored-by: ${ISSUE_AUTHOR} <${USER_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>

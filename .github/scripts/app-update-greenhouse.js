@@ -3,7 +3,7 @@
 /**
  * Generate apps/GREENHOUSE.md — a curated highlight reel from all categories.
  *
- * Reads apps/apps.json (source of truth) and writes:
+ * Reads apps/catalog.json (source of truth) and writes:
  *   apps/GREENHOUSE.md  – top apps per category + label highlights
  *   README.md            – updates "Recent Apps" section in repo root
  *
@@ -138,7 +138,7 @@ function generateGarden(apps) {
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
-📋 [Full app catalog](apps.json) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
+🌐 [Browse all apps on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 
 ---
 

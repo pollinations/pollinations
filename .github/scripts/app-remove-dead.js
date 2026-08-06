@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Check all app URLs in apps/apps.json and remove confirmed dead ones.
+ * Check all app URLs in apps/catalog.json and remove confirmed dead ones.
  *
  * Checks every app URL 3 times with a 5-minute delay between rounds.
  * Only removes apps that return 404/410 in ALL 3 rounds.
- * Edits apps.json in place — the calling workflow handles git/PR.
+ * Edits catalog.json in place — the calling workflow handles git/PR.
  *
  * Usage: node .github/scripts/app-remove-dead.js [--dry-run] [--verbose]
  */
@@ -177,7 +177,7 @@ async function main() {
 
     const deadIndices = new Set(deadApps.map((app) => app.index));
     writeApps(catalog.filter((_, index) => !deadIndices.has(index)));
-    console.log(`\nRemoved ${deadApps.length} apps from apps.json`);
+    console.log(`\nRemoved ${deadApps.length} apps from catalog.json`);
 }
 
 main().catch((err) => {

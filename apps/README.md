@@ -3,7 +3,7 @@
 Contains quest based community built projects and the app collection that has been submitted to pollinations & has successfully been reviewed and merged by a maintainer. 
 
 - `deployments.json` configures apps deployed from this repository.
-- `apps.json` is the community showcase catalog.
+- `catalog.json` is the community showcase catalog.
 
 
 ## Submit Your App
@@ -145,7 +145,7 @@ Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](ht
 ## Community Showcase
 
 - 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category
-- 📋 [**All Apps**](apps.json) — Full community app catalog.
+- 📋 [**All Apps**](https://pollinations.ai/apps) — Browse the full community app catalog.
 - 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
 - ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 

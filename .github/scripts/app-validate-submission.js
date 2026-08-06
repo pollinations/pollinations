@@ -53,7 +53,7 @@ function main() {
     );
     if (duplicate) {
         errors.push(
-            `This app appears to already be listed as ${duplicate.name} in apps/apps.json.`,
+            `This app appears to already be listed as ${duplicate.name} in apps/catalog.json.`,
         );
     }
     const pendingIssues = JSON.parse(

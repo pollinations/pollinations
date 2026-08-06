@@ -47,7 +47,7 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet apps/apps.json apps/GREENHOUSE.md README.md; then
+          if git diff --quiet apps/catalog.json apps/GREENHOUSE.md README.md; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -58,7 +58,7 @@ jobs:
         run: |
           BRANCH="auto/app-metrics-$(date -u +%Y-%m-%d)"
           git checkout -b "$BRANCH"
-          git add apps/apps.json apps/GREENHOUSE.md README.md
+          git add apps/catalog.json apps/GREENHOUSE.md README.md
           git commit -m "chore: update app metrics, health, and greenhouse"
           git push -f origin "$BRANCH"
 

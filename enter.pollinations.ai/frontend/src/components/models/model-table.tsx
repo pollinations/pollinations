@@ -26,12 +26,11 @@ import {
     ModelStatusChips,
 } from "./model-status-chips.tsx";
 import {
-    getModelPriceBadges,
-    PriceBadgeList,
-    PriceVariantDetails,
-    PriceVariantDisclosure,
+    ModelPricingControls,
+    ModelPricingLedger,
+    useModelPricingSelection,
 } from "./price-badge.tsx";
-import type { ModelPrice, PriceDirection } from "./types.ts";
+import type { ModelPrice } from "./types.ts";
 
 export type SectionType = ModelCategory;
 
@@ -144,6 +143,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
+    const pricing = useModelPricingSelection(model);
 
     const perPollen = calculatePerPollen(model);
     return (
@@ -207,9 +207,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 showAlpha={showAlpha}
                                 alphaTooltip={false}
                             />
-                            <PriceVariantDisclosure
-                                variants={model.priceVariants}
-                            />
                             <span className="inline-flex shrink-0 items-center gap-1">
                                 <BalanceAccessChip
                                     access={balanceAccess}
@@ -262,57 +259,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
-                        <MobilePriceGroup
-                            label="In"
-                            model={model}
-                            direction="input"
+                        <ModelPricingControls model={model} pricing={pricing} />
+                        <ModelPricingLedger
+                            pricing={pricing}
+                            className="w-full"
                         />
-
-                        <MobilePriceGroup
-                            label="Out"
-                            model={model}
-                            direction="output"
-                        />
-                        {model.priceVariants?.length ? (
-                            <div className="mt-2 rounded-lg bg-theme-bg-subtle px-3 py-2">
-                                <PriceVariantDetails
-                                    variants={model.priceVariants}
-                                />
-                            </div>
-                        ) : null}
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-// --- Mobile price group ---
-
-type MobilePriceGroupProps = {
-    label: string;
-    model: ModelPrice;
-    direction: PriceDirection;
-};
-
-const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
-    label,
-    model,
-    direction,
-}) => {
-    const badges = getModelPriceBadges(model, direction);
-
-    if (badges.length === 0) return null;
-
-    return (
-        <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
-            <span className="text-xs font-bold text-theme-text-muted uppercase tracking-wide">
-                {label}
-            </span>
-            <PriceBadgeList
-                badges={badges}
-                className="flex min-w-0 flex-wrap justify-end gap-1"
-            />
         </div>
     );
 };
@@ -393,17 +347,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div className="@container">
-            {/* Column headers (sortable) */}
+            {/* Generation estimate header */}
             <div className="hidden items-center pb-2 pr-8 @2xl:pointer-fine:flex">
-                <button
-                    type="button"
-                    onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
-                >
-                    <span className="text-sm font-bold text-ink-900">
-                        Model {sortArrow("name")}
-                    </span>
-                </button>
+                <div className="min-w-6 flex-1" />
                 <Tooltip
                     triggerAs="span"
                     content={
@@ -429,30 +375,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         </div>
                     </button>
                 </Tooltip>
-                <button
-                    type="button"
-                    onClick={() => onSort("input")}
-                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Input {sortArrow("input")}
-                    </div>
-                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onSort("output")}
-                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Output {sortArrow("output")}
-                    </div>
-                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </button>
+                <div className="w-[clamp(320px,32%,360px)] shrink-0" />
             </div>
 
             {/* Tab content — the selected modality */}

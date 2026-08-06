@@ -87,13 +87,13 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
 # ── App catalog lookup ──────────────────────────────────────────────
 
 def lookup_newest_app() -> Optional[Dict]:
-    """Read apps/apps.json and return the newest app's name and URL.
+    """Read apps/catalog.json and return the newest app's name and URL.
 
     The catalog is sorted newest-first, so the first entry is the newest app.
     Returns {"app_name": str, "app_url": str} or None.
     """
     repo_root = get_repo_root()
-    apps_path = os.path.join(repo_root, "apps", "apps.json")
+    apps_path = os.path.join(repo_root, "apps", "catalog.json")
     if not os.path.exists(apps_path):
         return None
 
@@ -175,7 +175,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     # Detect app submissions: only add app link when a new app was actually added
     # App submission branches are "auto/app-{issue}-{slug}", metrics are "auto/app-metrics-{date}"
     branch = pr_data.get("head", {}).get("ref", "")
-    is_app_pr = "apps/apps.json" in changed_files and re.match(r"auto/app-\d+", branch)
+    is_app_pr = "apps/catalog.json" in changed_files and re.match(r"auto/app-\d+", branch)
     if is_app_pr:
         app_info = lookup_newest_app()
         if app_info:

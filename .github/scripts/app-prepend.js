@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Prepend a new app entry to apps/apps.json
+ * Prepend a new app entry to apps/catalog.json
  *
  * Usage: node .github/scripts/app-prepend.js
  *
@@ -22,4 +22,4 @@ const apps = readApps();
 apps.unshift(JSON.parse(newApp));
 writeApps(apps);
 
-console.log("✅ Prepended new entry to apps/apps.json");
+console.log("✅ Prepended new entry to apps/catalog.json");

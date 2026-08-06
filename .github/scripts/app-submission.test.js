@@ -116,6 +116,7 @@ if (args[0] === "issue" && args[1] === "list") {
                 ISSUE_CREATED_AT: "2026-07-01T00:00:00Z",
                 ISSUE_URL:
                     "https://github.com/pollinations/pollinations/issues/1",
+                APPROVED_DATE: "2026-07-02",
             },
         },
     );
@@ -142,7 +143,7 @@ if (args[0] === "issue" && args[1] === "list") {
         other: null,
         submittedDate: "2026-07-01",
         issueUrl: "https://github.com/pollinations/pollinations/issues/1",
-        approvedDate: new Date().toISOString().slice(0, 10),
+        approvedDate: "2026-07-02",
         byop: false,
         requests24h: 0,
     });

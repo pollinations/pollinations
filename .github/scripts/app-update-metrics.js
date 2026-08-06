@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Update app metrics in apps/apps.json:
+ * Update app metrics in apps/catalog.json:
  *   - GitHub stars (from GitHub API)
  *   - BYOP status (from Tinybird — apps using secret API keys)
  *   - Request count in last 24h (from Tinybird — by referrer domain)
@@ -287,11 +287,13 @@ async function main() {
                     );
                 }
                 stats.starsDeleted++;
-                changes.push({
-                    app,
-                    field: "stars",
-                    newValue: null,
-                });
+                if (app.currentStars !== null) {
+                    changes.push({
+                        app,
+                        field: "stars",
+                        newValue: null,
+                    });
+                }
             } else {
                 const newStars = result.stars || null;
                 if (newStars !== app.currentStars) {

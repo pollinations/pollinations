@@ -185,7 +185,7 @@ def is_generated(text: str) -> bool:
     """True for machine-written files — minified bundles and files that say so themselves.
 
     These chunk fine, but indexing them buries real code under build output, so they are
-    skipped on content rather than on size: a large hand-written file (apps.json, a long
+    skipped on content rather than on size: a large hand-written file (catalog.json, a long
     doc) is worth indexing, a small minified one is not.
     """
     lines = text.split("\n", GENERATED_MARKER_SCAN_LINES)

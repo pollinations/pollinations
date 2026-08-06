@@ -146,11 +146,19 @@ function selectTargets(apps, mode) {
         if (existing) {
             existing.catalogIndices.push(catalogIndex);
             existing.names.push(app.name);
+            existing.context.categories.push(app.category);
+            existing.context.descriptions.push(app.description);
+            existing.context.platforms.push(app.platform);
             continue;
         }
 
         byTarget.set(key, {
             catalogIndices: [catalogIndex],
+            context: {
+                categories: [app.category],
+                descriptions: [app.description],
+                platforms: [app.platform],
+            },
             key,
             name: app.name,
             names: [app.name],
@@ -162,18 +170,64 @@ function selectTargets(apps, mode) {
     return { skipped, targets: [...byTarget.values()] };
 }
 
-async function dismissConsent(page) {
-    const consentButton = page
-        .getByRole("button", {
-            name: /^(accept all|accept all cookies|allow all|i agree)$/i,
-        })
-        .first();
+function selectTargetsByUrl(targets, targetUrls) {
+    if (!Array.isArray(targetUrls) || targetUrls.length === 0) {
+        throw new Error("--targets-file must contain a non-empty JSON array");
+    }
 
-    try {
-        await consentButton.click({ timeout: 1500 });
-        await page.waitForTimeout(500);
-    } catch {
-        // Most targets do not show a consent prompt.
+    const requested = new Set();
+    for (const targetUrl of targetUrls) {
+        if (!isHttpUrl(targetUrl)) {
+            throw new Error(
+                "--targets-file entries must be absolute HTTP(S) URLs",
+            );
+        }
+        requested.add(targetUrl);
+    }
+
+    const selected = targets.filter((target) =>
+        requested.has(target.targetUrl),
+    );
+    const found = new Set(selected.map((target) => target.targetUrl));
+    const missing = [...requested].filter((targetUrl) => !found.has(targetUrl));
+    if (missing.length > 0) {
+        throw new Error(
+            `--targets-file URLs not found in catalog: ${missing.join(", ")}`,
+        );
+    }
+
+    return selected;
+}
+
+async function clickFirstMatchingButton(page, name) {
+    for (const frame of page.frames()) {
+        try {
+            await frame.getByRole("button", { name }).first().click({
+                timeout: 750,
+            });
+            return true;
+        } catch {
+            // Try the next frame.
+        }
+    }
+    return false;
+}
+
+async function dismissOverlays(page) {
+    const dismissButton =
+        /^(accept|accept all|accept all cookies|allow all|i agree|agree|ok|okay|got it|aceptar|aceptar todo|aceitar|aceitar todos|tout accepter|alle akzeptieren|close|dismiss|skip|skip intro|not now|maybe later|no thanks|continue as guest|×|✕|x)$/i;
+
+    for (let attempts = 0; attempts < 4; attempts++) {
+        if (!(await clickFirstMatchingButton(page, dismissButton))) break;
+        await page.waitForTimeout(400);
+    }
+}
+
+async function wakeSleepingApp(page) {
+    const wakeButton =
+        /^(wake up|wake up this space|restart this space|yes, get this app back up!?|get this app back up!?)$/i;
+    if (await clickFirstMatchingButton(page, wakeButton)) {
+        await page.waitForTimeout(10000);
     }
 }
 
@@ -202,10 +256,12 @@ async function prepareRepository(page) {
 }
 
 async function preparePageForCapture(page, source) {
-    await dismissConsent(page);
+    await wakeSleepingApp(page);
+    await dismissOverlays(page);
     await resetScroll(page);
     if (source === "repository") await prepareRepository(page);
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(750);
+    await dismissOverlays(page);
 }
 
 function screenshotFilename(target, suffix = "") {
@@ -330,7 +386,14 @@ async function reviewScreenshot(result, token, model) {
                             content: [
                                 {
                                     type: "text",
-                                    text: `Project: ${result.name}. Source: ${result.source}. Review this candidate cover.`,
+                                    text: [
+                                        `Project: ${result.names.join(", ")}.`,
+                                        `Description: ${result.context.descriptions.join(" | ")}.`,
+                                        `Platform: ${result.context.platforms.join(", ")}.`,
+                                        `Category: ${result.context.categories.join(", ")}.`,
+                                        `Source: ${result.source}.`,
+                                        "Use this catalog context to judge whether the screenshot matches the project, then review the candidate cover.",
+                                    ].join(" "),
                                 },
                                 {
                                     type: "image_url",
@@ -481,6 +544,7 @@ function combineReview(captureResult, review) {
 function toCaptureTarget(result) {
     return {
         catalogIndices: result.catalogIndices,
+        context: result.context,
         key: result.key,
         name: result.name,
         names: result.names,
@@ -517,6 +581,7 @@ async function main() {
         getArgument("review-model") ||
         process.env.SCREENSHOT_REVIEW_MODEL ||
         DEFAULT_REVIEW_MODEL;
+    const targetsFile = getArgument("targets-file");
     const token = process.env.COMMUNITY_APP_MANAGEMENT_KEY;
     if ((publish || shouldReview) && !token) {
         throw new Error("COMMUNITY_APP_MANAGEMENT_KEY missing");
@@ -524,6 +589,17 @@ async function main() {
 
     const apps = readApps();
     const selection = selectTargets(apps, mode);
+    const selectedTargets = targetsFile
+        ? selectTargetsByUrl(
+              selection.targets,
+              JSON.parse(
+                  fs.readFileSync(
+                      path.resolve(process.cwd(), targetsFile),
+                      "utf8",
+                  ),
+              ),
+          )
+        : selection.targets;
     let dailyBatch = null;
     if (rotateDaily) {
         if (!Number.isFinite(limit)) {
@@ -532,10 +608,10 @@ async function main() {
         if (getArgument("offset") !== undefined) {
             throw new Error("--rotate-daily cannot be combined with --offset");
         }
-        dailyBatch = calculateDailyBatch(selection.targets.length, limit);
+        dailyBatch = calculateDailyBatch(selectedTargets.length, limit);
         offset = dailyBatch.offset;
     }
-    const targets = selection.targets.slice(offset, offset + limit);
+    const targets = selectedTargets.slice(offset, offset + limit);
     const runId = new Date().toISOString().replace(/[:.]/g, "-");
     const outputDirectory = path.resolve(
         process.cwd(),
@@ -548,7 +624,7 @@ async function main() {
         ? `, daily batch ${dailyBatch.batchIndex + 1}/${dailyBatch.batchCount}`
         : "";
     console.log(
-        `Selected ${targets.length}/${selection.targets.length} unique ${mode} targets (${VIEWPORT.width}x${VIEWPORT.height}, concurrency ${concurrency}${batchLabel})`,
+        `Selected ${targets.length}/${selectedTargets.length} unique ${mode} targets (${VIEWPORT.width}x${VIEWPORT.height}, concurrency ${concurrency}${batchLabel})`,
     );
 
     const batchStartedAt = Date.now();
@@ -678,7 +754,8 @@ async function main() {
         selectedTargets: targets.length,
         skipped: selection.skipped,
         timeoutMs,
-        totalTargets: selection.targets.length,
+        totalTargets: selectedTargets.length,
+        targetsFile: targetsFile || null,
         uploads,
         viewport: VIEWPORT,
     };
@@ -716,6 +793,7 @@ module.exports = {
     calculateDailyBatch,
     resolveTarget,
     selectTargets,
+    selectTargetsByUrl,
     toCaptureTarget,
     validateReview,
 };

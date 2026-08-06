@@ -5,6 +5,7 @@ const {
     calculateDailyBatch,
     resolveTarget,
     selectTargets,
+    selectTargetsByUrl,
     toCaptureTarget,
     validateReview,
 } = require("./app-capture-screenshots.js");
@@ -87,10 +88,26 @@ test("prefers a live app URL and falls back to a repository URL", () => {
 test("selects missing screenshots, deduplicates targets, and reports omissions", () => {
     const { skipped, targets } = selectTargets(
         [
-            { name: "One", screenshotUrl: null, url: "https://app.test" },
-            { name: "Duplicate", url: "https://app.test" },
             {
+                category: "chat",
+                description: "The first app",
+                name: "One",
+                platform: "web",
+                screenshotUrl: null,
+                url: "https://app.test",
+            },
+            {
+                category: "chat",
+                description: "The duplicate app",
+                name: "Duplicate",
+                platform: "web",
+                url: "https://app.test",
+            },
+            {
+                category: "build",
+                description: "A repository app",
                 name: "Repository",
+                platform: "library",
                 repositoryUrl: "https://github.com/example/repo",
             },
             { name: "No target" },
@@ -106,6 +123,11 @@ test("selects missing screenshots, deduplicates targets, and reports omissions",
     assert.equal(targets.length, 2);
     assert.deepEqual(targets[0].catalogIndices, [0, 1]);
     assert.equal(targets[0].source, "website");
+    assert.deepEqual(targets[0].context, {
+        categories: ["chat", "chat"],
+        descriptions: ["The first app", "The duplicate app"],
+        platforms: ["web", "web"],
+    });
     assert.equal(targets[1].source, "repository");
     assert.deepEqual(skipped, [
         {
@@ -114,6 +136,27 @@ test("selects missing screenshots, deduplicates targets, and reports omissions",
             reason: "No website or repository URL",
         },
     ]);
+});
+
+test("selects an explicit non-contiguous target URL list", () => {
+    const targets = [
+        { name: "One", targetUrl: "https://one.test" },
+        { name: "Two", targetUrl: "https://two.test" },
+        { name: "Three", targetUrl: "https://three.test" },
+    ];
+
+    assert.deepEqual(
+        selectTargetsByUrl(targets, ["https://three.test", "https://one.test"]),
+        [targets[0], targets[2]],
+    );
+    assert.throws(
+        () => selectTargetsByUrl(targets, ["https://missing.test"]),
+        /not found in catalog/,
+    );
+    assert.throws(
+        () => selectTargetsByUrl(targets, []),
+        /non-empty JSON array/,
+    );
 });
 
 test("validates visual review decisions", () => {
@@ -167,6 +210,11 @@ test("removes stale capture fields before a retry", () => {
         toCaptureTarget({
             catalogIndices: [12],
             key: "website:https://app.test",
+            context: {
+                categories: ["chat"],
+                descriptions: ["A useful app"],
+                platforms: ["web"],
+            },
             name: "Retry app",
             names: ["Retry app"],
             screenshotBytes: 12345,
@@ -178,6 +226,11 @@ test("removes stale capture fields before a retry", () => {
         }),
         {
             catalogIndices: [12],
+            context: {
+                categories: ["chat"],
+                descriptions: ["A useful app"],
+                platforms: ["web"],
+            },
             key: "website:https://app.test",
             name: "Retry app",
             names: ["Retry app"],

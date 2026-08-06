@@ -11,7 +11,7 @@
  * URL. Lists round-trip as comma-separated values.
  */
 
-/** Mirrors the Category column in apps/APPS.md. */
+/** Mirrors the category field in apps/catalog.json. */
 export const APP_CATEGORIES = [
     "image",
     "chat",

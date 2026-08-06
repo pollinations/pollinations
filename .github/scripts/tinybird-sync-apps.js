@@ -36,6 +36,7 @@ function catalogRows() {
             emoji: app.emoji,
             name: app.name,
             web_url: app.url || "",
+            screenshot_url: app.screenshotUrl || "",
             description: app.description,
             language: app.language || "",
             category: app.category,

@@ -15,6 +15,7 @@ SQL >
         emoji,
         name,
         web_url,
+        screenshot_url,
         description,
         language,
         category,

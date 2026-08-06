@@ -35,10 +35,16 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateUsageBilling,
     getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -1611,6 +1617,158 @@ fixtureTest(
                     ]),
                 }),
             ]),
+        );
+    },
+);
+
+fixtureTest(
+    "orders every model catalog for practical discovery",
+    async ({ restrictedApiKey }) => {
+        const ownerGithubUsername = `order-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const newestDate = new Date("2100-01-02T00:00:00Z");
+        const tiedDate = new Date("2100-01-01T00:00:00Z");
+        for (const [name, createdAt] of [
+            ["newest", newestDate],
+            ["a-tie", tiedDate],
+            ["b-tie", tiedDate],
+        ] as const) {
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name,
+                description: `Ordering test ${name}`,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-4.1-mini",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt,
+                updatedAt: createdAt,
+            });
+        }
+
+        const [allResponse, openaiResponse, textResponse, restrictedResponse] =
+            await Promise.all([
+                SELF.fetch("https://gen.pollinations.ai/models"),
+                SELF.fetch("https://gen.pollinations.ai/v1/models"),
+                SELF.fetch("https://gen.pollinations.ai/text/models"),
+                SELF.fetch("https://gen.pollinations.ai/models", {
+                    headers: {
+                        Authorization: `Bearer ${restrictedApiKey}`,
+                    },
+                }),
+            ]);
+
+        expect(allResponse.status).toBe(200);
+        expect(openaiResponse.status).toBe(200);
+        expect(textResponse.status).toBe(200);
+        expect(restrictedResponse.status).toBe(200);
+
+        type ListedModel = {
+            name: string;
+            category: string;
+            community?: boolean;
+            alpha?: boolean;
+            added_date?: number;
+        };
+        const allModels = (await allResponse.json()) as ListedModel[];
+        const openaiModels = (await openaiResponse.json()) as {
+            data: { id: string }[];
+        };
+        const textModels = (await textResponse.json()) as ListedModel[];
+        const restrictedModels =
+            (await restrictedResponse.json()) as ListedModel[];
+        const officialModels = allModels.filter((model) => !model.community);
+        const communityModels = allModels.filter((model) => model.community);
+        const allNames = allModels.map((model) => model.name);
+
+        expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        expect(textModels.map((model) => model.name)).toEqual(
+            allModels
+                .filter((model) => model.category === "text")
+                .map((model) => model.name),
+        );
+        expect(allNames).toEqual([
+            ...officialModels.map((model) => model.name),
+            ...communityModels.map((model) => model.name),
+        ]);
+
+        const categoryOrder = [
+            "text",
+            "image",
+            "video",
+            "3d",
+            "audio",
+            "realtime",
+            "embedding",
+        ];
+        expect([
+            ...new Set(officialModels.map((model) => model.category)),
+        ]).toEqual(
+            categoryOrder.filter((category) =>
+                officialModels.some((model) => model.category === category),
+            ),
+        );
+
+        const defaults: Record<string, string> = {
+            text: DEFAULT_TEXT_MODEL,
+            image: DEFAULT_IMAGE_MODEL,
+            "3d": DEFAULT_3D_MODEL,
+            audio: DEFAULT_AUDIO_MODEL,
+            realtime: DEFAULT_REALTIME_MODEL,
+            embedding: DEFAULT_EMBEDDING_MODEL,
+        };
+        for (const category of categoryOrder) {
+            const models = officialModels.filter(
+                (model) => model.category === category,
+            );
+            const defaultModel = defaults[category];
+            const hasDefault = models.some(
+                (model) => model.name === defaultModel,
+            );
+            if (hasDefault) expect(models[0]?.name).toBe(defaultModel);
+            const remainingModels = hasDefault ? models.slice(1) : models;
+            expect(remainingModels).toEqual(
+                [...remainingModels].sort(
+                    (left, right) =>
+                        Number(left.alpha === true) -
+                            Number(right.alpha === true) ||
+                        (right.added_date ?? 0) - (left.added_date ?? 0) ||
+                        (left.name < right.name
+                            ? -1
+                            : left.name > right.name
+                              ? 1
+                              : 0),
+                ),
+            );
+        }
+
+        expect(communityModels.slice(0, 3)).toMatchObject([
+            {
+                name: communityModelId(ownerGithubUsername, "newest"),
+                added_date: newestDate.getTime(),
+            },
+            {
+                name: communityModelId(ownerGithubUsername, "a-tie"),
+                added_date: tiedDate.getTime(),
+            },
+            {
+                name: communityModelId(ownerGithubUsername, "b-tie"),
+                added_date: tiedDate.getTime(),
+            },
+        ]);
+
+        const restrictedNames = restrictedModels.map((model) => model.name);
+        expect(restrictedNames).toEqual(
+            allNames.filter((name) => restrictedNames.includes(name)),
         );
     },
 );

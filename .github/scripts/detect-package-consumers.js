@@ -19,7 +19,7 @@ function detectPackageConsumers(changedFiles, repoRoot = DEFAULT_REPO_ROOT) {
 
     if (changedPackages.size === 0) return [];
 
-    const appsPath = path.join(repoRoot, "apps", "apps.json");
+    const appsPath = path.join(repoRoot, "apps", "deployments.json");
     const apps = JSON.parse(fs.readFileSync(appsPath, "utf8"));
 
     return Object.keys(apps)

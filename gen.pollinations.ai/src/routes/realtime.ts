@@ -11,6 +11,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type BillingAdjustment,
@@ -69,12 +70,6 @@ const REALTIME_ROUTES: Record<
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
 };
-const CREDENTIAL_QUERY_PARAMS = new Set([
-    "access_token",
-    "api_key",
-    "key",
-    "token",
-]);
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
@@ -87,8 +82,6 @@ type RealtimeCacheUsage = {
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyName?: string;
     apiKeyType?: "secret" | "publishable";
@@ -419,16 +412,6 @@ function extractReferrerHeader(c: Context<Env>): {
     }
 }
 
-function redactCredentialQueryParams(url: URL): string {
-    const redacted = new URL(url);
-    for (const param of redacted.searchParams.keys()) {
-        if (CREDENTIAL_QUERY_PARAMS.has(param.toLowerCase())) {
-            redacted.searchParams.set(param, "[redacted]");
-        }
-    }
-    return redacted.toString();
-}
-
 function getPostDeductionBalances(
     payerBucket: "tier" | "pack" | null,
     balances: { tierBalance: number; packBalance: number },
@@ -471,8 +454,6 @@ function createRealtimeTrackingEvent(args: {
         ipHash: args.tracking.ipHash,
         userId: args.tracking.userId,
         userTier: args.tracking.userTier,
-        userGithubId: args.tracking.userGithubId,
-        userGithubUsername: args.tracking.userGithubUsername,
         apiKeyId: args.tracking.apiKeyId,
         apiKeyName: args.tracking.apiKeyName,
         apiKeyType: args.tracking.apiKeyType,
@@ -511,12 +492,12 @@ async function settleRealtimeSession(
         return;
     }
 
-    const { cost, price, adjustments } = calculateUsageBilling(
-        tracking.resolvedModelRequested,
+    const { cost, price, adjustments } = calculateUsageBilling({
+        model: tracking.resolvedModelRequested,
         usage,
-        tracking.modelDefinition,
-        { realtimeCache: tracking.cacheUsage },
-    );
+        servedBy: tracking.modelDefinition,
+        output: { realtimeCache: tracking.cacheUsage },
+    });
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;
@@ -712,8 +693,6 @@ async function createRealtimeBillingContext(
     return {
         userId: user.id,
         userTier: user.tier,
-        userGithubId: user.githubId ? String(user.githubId) : undefined,
-        userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: c.var.auth.apiKey?.id,
         apiKeyName: c.var.auth.apiKey?.name,
         apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",

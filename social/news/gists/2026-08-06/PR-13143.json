@@ -1,0 +1,34 @@
+{
+  "pr_number": 13143,
+  "title": "feat: simplify model pricing list",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13143",
+  "merged_at": "2026-08-06T14:17:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the obsolete model sorting state, URL parameters, and clickable generation header.\n- Changes the default from generations-per-Pollen sorting to the curated order returned by the public model catalog, without client-side reordering.\n- Shows each estimate as a two-line `gen per pollen` value on desktop and mobile.\n- Labels only explicitly free models as free and adds specific tooltips for free and unavailable usage data.\n- Adds a compact explanation of the rolling 7-day usage estimate.\n\nThe previous card layout retained a single sortable column after its other headers disappeared, leaving sorting behavior without a complete visible control.\n\nChecks:\n- `npx tsc --noEmit`\n- `npx vitest run test/model-calculations.test.ts test/model-categories.test.ts`\n- Browser verification for finite, free, and unavailable states",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model shelf got tidy",
+    "blurb": "The model list stopped pretending one lonely number was a whole sorting interface. It now follows the catalog’s curated order, with usage estimates that explain themselves.",
+    "summary": "Simplified the public model pricing list by removing obsolete URL-based sorting, preserving the curated catalog order, and displaying rolling 7-day generation estimates as two-line “gen per pollen” values with clear free and unavailable-state tooltips.",
+    "impact": "Users can scan models in the intended catalog order and understand whether an estimate is free, available, or still being calculated without relying on a leftover sortable header.",
+    "keywords": [
+      "model-catalog",
+      "pricing",
+      "pollen",
+      "model-list",
+      "frontend",
+      "usage-estimates"
+    ],
+    "visual_concept": "Depict Polli as a careful garden librarian with tiny reading glasses, arranging labeled seed packets on a cozy curated shelf rather than sorting them with a broken lever. Each packet represents a model and has a small two-line generation-per-Pollen label; a retro terminal explains the rolling 7-day estimate, while flowers and code-plants make the catalog feel like a well-tended garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully arranging model seed packets in a curated garden shelf while a small retro monitor displays a simple two-line pixel label, “GEN / POLLEN,” and a gentle “7 DAY EST.” note. Lime green (#ecf874) appears prominently in glowing pots and shelf accents, with code-plants, pastel flowers, warm cream and lavender gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; Polli looks quietly pleased that the shelf is finally in order."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13143.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully arranging model seed packets in a curated garden shelf while a small retro monitor displays a simple two-line pixel label, “GEN / POLLEN,” and a gentle “7 DAY EST.” note. Lime green (#ecf874) appears prominently in glowing pots and shelf accents, with code-plants, pastel flowers, warm cream and lavender gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; Polli looks quietly pleased that the shelf is finally in order."
+  },
+  "generated_at": "2026-08-06T14:18:08.182138+00:00"
+}

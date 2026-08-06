@@ -29,7 +29,11 @@ export const Route = createFileRoute("/_dashboard")({
     staleTime: DASHBOARD_DATA_STALE_TIME,
     beforeLoad: async () => {
         const result = await getDashboardSession();
-        if (result.error) throw new Error("Authentication failed.");
+        if (result.error) {
+            dashboardSessionPromise = null;
+            dashboardSessionExpiresAt = 0;
+            throw new Error("Authentication failed.");
+        }
         return { user: result.data?.user ?? null };
     },
     loader: async ({ context }) => {

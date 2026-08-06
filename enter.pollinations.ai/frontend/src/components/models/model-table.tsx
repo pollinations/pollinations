@@ -1,5 +1,5 @@
 import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
-import { type FC, useEffect, useRef, useState } from "react";
+import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -55,27 +55,29 @@ export const sectionLabels: Record<SectionType, string> = {
 
 // --- Tab content ---
 
-const DESKTOP_TABLE_MIN_WIDTH = 42 * 16;
+// Matches Tailwind's @2xl container breakpoint while respecting the user's
+// root font size instead of assuming 1rem is always 16px.
+const DESKTOP_TABLE_MIN_REM = 42;
 const INITIAL_MODEL_COUNT = 24;
 const MODEL_BATCH_SIZE = 24;
 
 function useDesktopModelTable() {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isDesktop, setIsDesktop] = useState(
-        () =>
-            window.matchMedia("(pointer: fine)").matches &&
-            window.innerWidth >= DESKTOP_TABLE_MIN_WIDTH,
-    );
+    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
         const pointerQuery = window.matchMedia("(pointer: fine)");
         const updateLayout = () => {
+            const rootFontSize = Number.parseFloat(
+                window.getComputedStyle(document.documentElement).fontSize,
+            );
             setIsDesktop(
                 pointerQuery.matches &&
-                    container.clientWidth >= DESKTOP_TABLE_MIN_WIDTH,
+                    container.clientWidth >=
+                        DESKTOP_TABLE_MIN_REM * rootFontSize,
             );
         };
         const observer = new ResizeObserver(updateLayout);
@@ -93,12 +95,21 @@ function useDesktopModelTable() {
     return { containerRef, isDesktop };
 }
 
-const TabContent: FC<{ models: ModelPrice[]; isDesktop: boolean }> = ({
-    models,
-    isDesktop,
-}) => {
-    const [visibleCount, setVisibleCount] = useState(INITIAL_MODEL_COUNT);
+const TabContent: FC<{
+    models: ModelPrice[];
+    isDesktop: boolean;
+    resetKey: string;
+}> = ({ models, isDesktop, resetKey }) => {
+    const [pagination, setPagination] = useState({
+        key: resetKey,
+        count: INITIAL_MODEL_COUNT,
+    });
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    if (pagination.key !== resetKey) {
+        setPagination({ key: resetKey, count: INITIAL_MODEL_COUNT });
+    }
+    const visibleCount =
+        pagination.key === resetKey ? pagination.count : INITIAL_MODEL_COUNT;
     const visibleModels = models.slice(0, visibleCount);
     const Row = isDesktop ? ModelRow : MobileModelRow;
 
@@ -109,15 +120,21 @@ const TabContent: FC<{ models: ModelPrice[]; isDesktop: boolean }> = ({
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (!entry?.isIntersecting) return;
-                setVisibleCount((count) =>
-                    Math.min(count + MODEL_BATCH_SIZE, models.length),
-                );
+                setPagination((current) => ({
+                    key: resetKey,
+                    count: Math.min(
+                        (current.key === resetKey
+                            ? current.count
+                            : INITIAL_MODEL_COUNT) + MODEL_BATCH_SIZE,
+                        models.length,
+                    ),
+                }));
             },
             { rootMargin: "600px" },
         );
         observer.observe(loadMore);
         return () => observer.disconnect();
-    }, [models.length]);
+    }, [models.length, resetKey]);
 
     return (
         <>
@@ -340,11 +357,11 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div ref={containerRef}>
             {/* Tab content — the selected modality */}
-            {activeSection && (
+            {activeSection && isDesktop !== null && (
                 <TabContent
-                    key={listKey}
                     models={activeSection.models}
                     isDesktop={isDesktop}
+                    resetKey={listKey}
                 />
             )}
         </div>

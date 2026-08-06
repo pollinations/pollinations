@@ -67,7 +67,7 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
-    pollinations: "Pollinations",
+    pollinations: "Official",
     community: "Community",
 };
 

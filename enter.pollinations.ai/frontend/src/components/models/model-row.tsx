@@ -78,11 +78,11 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
     const tooltip = isFree ? (
         "This model is free to use."
     ) : isUnavailable ? (
-        "Recent usage data is unavailable, so generations per Pollen cannot be estimated."
+        "Recent usage data is unavailable, so this estimate cannot be calculated."
     ) : (
         <span className="flex flex-col gap-0.5">
             <span>
-                ≈ {value} {unitLabels[model.type] ?? "requests"} per pollen
+                ≈ {value} {unitLabels[model.type] ?? "requests"} / pollen
             </span>
             {balanceLabel}
         </span>
@@ -94,8 +94,8 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
                 <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                     {value}
                 </span>
-                <span className="text-[10px] font-medium leading-none text-theme-text-muted">
-                    {isFree ? "free" : "gen per pollen"}
+                <span className="text-xs font-normal text-theme-text-muted">
+                    {isFree ? "free" : "gen / pollen"}
                 </span>
             </span>
         </Tooltip>
@@ -254,7 +254,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; keep the number itself visually neutral. */}
+            {/* Generation estimate — fixed width; keep the number visually neutral. */}
             <div className="w-[90px] text-center shrink-0">
                 <PerPollenEstimate model={model} />
             </div>

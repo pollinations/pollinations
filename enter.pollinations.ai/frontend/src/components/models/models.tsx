@@ -360,9 +360,9 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>Gen per pollen</strong> — estimated from
-                            each model’s average usage over the last 7 days;
-                            actual usage varies.
+                            <strong>Gen / pollen</strong> — how many generations
+                            you can make with 1 Pollen, estimated from average
+                            usage over the last 7 days.
                         </span>
                     </p>
                 </div>

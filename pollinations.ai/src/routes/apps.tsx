@@ -10,10 +10,9 @@ import {
     sortApps,
     useAppDirectory,
 } from "../data/publicStats";
-// Hand-picked, and the only editorial thing on the page — every badge in
-// APPS.md is computed from traffic or recency, so none of them can say "we
-// think this is good". JSON because scripts/generate-app-art.mjs reads the
-// same list to decide which apps get cover art.
+// Hand-picked, and the only editorial thing on the page — every badge in the
+// catalog is computed from traffic or recency, so none can say "we think this
+// is good".
 import SPOTLIGHT from "../data/spotlight.json";
 import { AppCard, AppHero, AppTile } from "../ui/apps/cards";
 import { appCover } from "../ui/apps/cover";

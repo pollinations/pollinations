@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Sync apps/APPS.md → Tinybird app_directory datasource.
+ * Sync apps/catalog.json → Tinybird app_directory datasource.
  *
  * Atomically replaces the full table in one operation (mode=replace).
  * Runs daily via .github/workflows/data-sync-app-catalog-tinybird.yml.
@@ -17,7 +17,7 @@
  *   TINYBIRD_SYNC_TOKEN  Required — Tinybird token with DATASOURCES:CREATE on app_directory
  */
 
-const { parseApps } = require("./lib/parse-apps.js");
+const { readApps } = require("./lib/app-catalog.js");
 
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "app_directory";
@@ -29,40 +29,30 @@ if (!TOKEN) {
     process.exit(1);
 }
 
-// Canonical parser fields → snake_case field names for Tinybird
-const FIELD_MAP = [
-    ["emoji", "emoji"],
-    ["name", "name"],
-    ["webUrl", "web_url"],
-    ["description", "description"],
-    ["language", "language"],
-    ["category", "category"],
-    ["platform", "platform"],
-    ["githubUsername", "github_username"],
-    ["githubUserId", "github_user_id"],
-    ["repoUrl", "github_repository_url"],
-    ["stars", "github_repository_stars"],
-    ["discord", "discord_username"],
-    ["other", "other"],
-    ["submittedDate", "submitted_date"],
-    ["issueUrl", "issue_url"],
-    ["approvedDate", "approved_date"],
-    ["byop", "byop"],
-    ["requests24h", "requests_24h"],
-];
-
-function parseAppsMarkdown() {
+function catalogRows() {
     const rows = [];
-    for (const app of parseApps().apps) {
-        const row = {};
-        for (const [field, name] of FIELD_MAP) {
-            row[name] = app[field];
-        }
-
-        // Strip @ prefix from github_username
-        if (row.github_username.startsWith("@")) {
-            row.github_username = row.github_username.slice(1);
-        }
+    for (const app of readApps()) {
+        const row = {
+            emoji: app.emoji,
+            name: app.name,
+            web_url: app.url || "",
+            description: app.description,
+            language: app.language || "",
+            category: app.category,
+            platform: app.platform,
+            github_username: app.githubUsername || "",
+            github_user_id: app.githubUserId || "",
+            github_repository_url: app.repositoryUrl || "",
+            github_repository_stars:
+                app.repositoryStars === null ? "" : `⭐${app.repositoryStars}`,
+            discord_username: app.discordUsername || "",
+            other: app.other || "",
+            submitted_date: app.submittedDate || "",
+            issue_url: app.issueUrl || "",
+            approved_date: app.approvedDate || "",
+            byop: app.byop ? "true" : "",
+            requests_24h: app.requests24h ? String(app.requests24h) : "",
+        };
 
         // Skip rows with no category and no github_user_id
         if (!row.category && !row.github_user_id) continue;
@@ -111,8 +101,8 @@ async function replaceAllRows(rows) {
 }
 
 async function main() {
-    const rows = parseAppsMarkdown();
-    console.log(`Parsed ${rows.length} apps from APPS.md`);
+    const rows = catalogRows();
+    console.log(`Parsed ${rows.length} apps from catalog.json`);
 
     if (rows.length === 0) {
         console.error("Error: No apps found — refusing to sync empty table");

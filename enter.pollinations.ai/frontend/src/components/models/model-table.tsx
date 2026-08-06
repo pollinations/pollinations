@@ -278,16 +278,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div className="@container">
-            <div className="mb-3">
-                <p className="text-sm font-semibold text-theme-text-strong">
-                    Generations per Pollen
-                </p>
-                <p className="text-xs text-theme-text-muted">
-                    Estimated from each model’s average usage over the last 7
-                    days. Actual usage varies.
-                </p>
-            </div>
-
             {/* Tab content — the selected modality */}
             {activeSection && <TabContent models={activeSection.models} />}
         </div>

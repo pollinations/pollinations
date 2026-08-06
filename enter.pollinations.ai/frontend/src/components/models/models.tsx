@@ -11,6 +11,7 @@ import {
     TabButton,
     TokensIcon,
     TrendUpIcon,
+    UsageIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -31,11 +32,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type {
-    ModelScope,
-    ModelSortDirection,
-    ModelSortKey,
-} from "./model-search.ts";
+import type { ModelScope } from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -82,13 +79,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
 };
 
-const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
-};
-
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
@@ -127,8 +117,6 @@ export const Models: FC<ModelsProps> = ({
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const lastPushedSearchRef = useRef(urlSearch);
-    const sortKey = modelSearch.sort ?? "perPollen";
-    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -244,26 +232,6 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const onSort = (key: ModelSortKey) => {
-        const nextDirection =
-            key === sortKey
-                ? sortDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : DEFAULT_SORT_DIRECTIONS[key];
-
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                sort: key === "perPollen" ? undefined : key,
-                dir:
-                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
-                        ? undefined
-                        : nextDirection,
-            }),
-        });
-    };
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -365,9 +333,6 @@ export const Models: FC<ModelsProps> = ({
                             textModels={sectionModels.text}
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
-                            sortKey={sortKey}
-                            sortDir={sortDir}
-                            onSort={onSort}
                         />
                     </div>
                 )}
@@ -382,7 +347,8 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/K · /M</strong> — token rates.
+                            <strong>/K · /M</strong> — rates per thousand or
+                            million tokens.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -390,6 +356,14 @@ export const Models: FC<ModelsProps> = ({
                         <span>
                             <strong>/sec</strong> — per second of video/audio;
                             TTS is estimated from text length.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>gen /pollen</strong> — how many generations
+                            you can make with 1 Pollen, estimated from average
+                            usage over the last 7 days.
                         </span>
                     </p>
                 </div>

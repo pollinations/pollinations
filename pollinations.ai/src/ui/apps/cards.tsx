@@ -9,7 +9,7 @@ import {
     platformsOf,
 } from "../../data/publicStats";
 import { ArrowLink, Card, PixelBadge } from "../site/kit";
-import { appCover } from "./cover";
+import { appCover, isAppScreenshot } from "./cover";
 
 /**
  * The three shapes an app takes on this site. They live together because
@@ -38,7 +38,7 @@ export function AppTile({
     imageClassName?: string;
     className?: string;
 }) {
-    const cover = appCover(app.name);
+    const cover = appCover(app.name, app.screenshot_url);
 
     return (
         <Card
@@ -56,7 +56,7 @@ export function AppTile({
                     loading="lazy"
                     width={1200}
                     height={600}
-                    className={`block w-full bg-theme-bg-subtle object-cover ${imageClassName}`}
+                    className={`block w-full bg-theme-bg-subtle object-cover ${isAppScreenshot(cover) ? "object-top" : "object-center"} ${imageClassName}`}
                 />
             ) : (
                 <div
@@ -113,7 +113,7 @@ export function AppHero({
                     loading="lazy"
                     width={1200}
                     height={600}
-                    className="block aspect-[2/1] w-full bg-theme-bg-subtle object-cover sm:h-60 sm:aspect-auto"
+                    className={`block aspect-[2/1] w-full bg-theme-bg-subtle object-cover sm:h-60 sm:aspect-auto ${isAppScreenshot(image) ? "object-top" : "object-center"}`}
                 />
             ) : (
                 <div

@@ -12,3 +12,14 @@ declare module "*.css?raw" {
     const content: string;
     export default content;
 }
+
+declare module "*.wasm" {
+    const wasmModule: {
+        readonly default: WebAssembly.Module;
+        readonly [key: string]:
+            | CallableFunction
+            | WebAssembly.Module
+            | undefined;
+    };
+    export = wasmModule;
+}

@@ -19,6 +19,7 @@ import {
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
+import { detectSecretsInTexts } from "@/utils/redact-secrets.ts";
 
 type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
@@ -49,10 +50,28 @@ export async function applySafetyToTexts(
     const features = getRequestFeatures(safeValue);
     if (features.size === 0) return texts;
 
+    setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
+
+    // Secrets are scanned locally over the full request text. No window and
+    // no Bedrock call, so an unscanned prefix cannot leak a secret past the
+    // scan, and a Bedrock outage does not disable secret blocking.
+    if (features.has("secrets")) {
+        const triggered = detectSecretsInTexts(texts);
+        if (triggered.size > 0) {
+            throw safetyError(400, "content_blocked", {
+                message: "Request blocked by safety filter",
+                safety: {
+                    applied: [...features],
+                    triggered: [...triggered],
+                },
+            });
+        }
+        features.delete("secrets");
+        if (features.size === 0) return texts;
+    }
+
     const guardrailInputs = selectGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
-
-    setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
 
     let response: BedrockResponse;
     try {
@@ -154,7 +173,18 @@ function resolveSafeValue(
     if (providedSafe !== undefined && providedSafe !== null) {
         return providedSafe;
     }
-    return c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+    const explicit =
+        c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+    if (explicit !== undefined && explicit !== null) {
+        return explicit;
+    }
+    // Community models are opt-out by default: privacy + secrets are enabled
+    // unless the caller explicitly disables safety. An explicit `safe=false`
+    // or `safe=0` above short-circuits to empty features.
+    if (c.var.model?.communityEndpoint) {
+        return "privacy,secrets";
+    }
+    return undefined;
 }
 
 export function withSafetyHeaders(

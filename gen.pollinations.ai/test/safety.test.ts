@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
@@ -46,6 +47,15 @@ function safetyApp() {
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            if (c.req.query("__community") === "1") {
+                c.set("model", {
+                    requested: "community-model",
+                    resolved: "community-model",
+                    definition: {} as ModelVariables["model"]["definition"],
+                    communityEndpoint:
+                        {} as ModelVariables["model"]["communityEndpoint"],
+                });
+            }
             await next();
         })
         .get("/scan/:text", async (c) => {
@@ -137,6 +147,88 @@ describe("applySafety", { timeout: 30000 }, () => {
         );
 
         expect(await response.text()).toBe("hello");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("blocks secrets locally without a Bedrock call", async () => {
+        const response = await safetyApp().request(
+            "/scan/AKIAIOSFODNN7EXAMPLE?safe=secrets",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "safety_error",
+                code: "content_blocked",
+                safety: {
+                    applied: ["secrets"],
+                    triggered: ["AWS_ACCESS_KEY"],
+                },
+            },
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("blocks secrets across the full text, not just the Bedrock window", async () => {
+        const prefix = `${"safe prefix ".repeat(100)}`;
+        const text = `${prefix}AKIAIOSFODNN7EXAMPLE`;
+        const response = await safetyApp().request(
+            `/scan/${encodeURIComponent(text)}?safe=secrets`,
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("enables privacy,secrets by default for community models", async () => {
+        const response = await safetyApp().request(
+            "/scan/AKIAIOSFODNN7EXAMPLE?__community=1",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "safety_error",
+                code: "content_blocked",
+                safety: {
+                    applied: ["privacy", "secrets"],
+                    triggered: ["AWS_ACCESS_KEY"],
+                },
+            },
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("sends clean community text to Bedrock for privacy with default-on", async () => {
+        const response = await safetyApp().request(
+            "/scan/hello?__community=1",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("hello");
+        expect(response.headers.get("X-Safety-Applied")).toBe(
+            "privacy,secrets",
+        );
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("honors explicit safe=false opt-out on community models", async () => {
+        const response = await safetyApp().request(
+            "/scan/AKIAIOSFODNN7EXAMPLE?__community=1&safe=false",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("AKIAIOSFODNN7EXAMPLE");
         expect(fetchMock).not.toHaveBeenCalled();
     });
 

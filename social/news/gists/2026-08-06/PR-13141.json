@@ -1,0 +1,33 @@
+{
+  "pr_number": 13141,
+  "title": "feat: add large tab button size",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13141",
+  "merged_at": "2026-08-06T12:37:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a reusable `lg` size to the shared Package UI `TabButton`.\n- Uses the existing size map without changing the default `md` behavior.\n- Enables larger high-level selectors while preserving current tabs.\n\nChecks:\n- `npm run typecheck`\n- `npm run test`\n- `npm run build`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tabs got room to breathe",
+    "blurb": "The shared tab buttons grew a new large size. Bigger selectors for the moments when a tiny rectangle is simply not enough.",
+    "summary": "Added a reusable `lg` size to the shared Package UI `TabButton`, preserving the existing `md` default for current tabs.",
+    "impact": "Interfaces using the shared UI package can now offer larger high-level tab selectors without changing existing tab layouts.",
+    "keywords": [
+      "ui",
+      "tabs",
+      "components",
+      "design-system",
+      "package-ui"
+    ],
+    "visual_concept": "Polli, wearing tiny designer glasses, carefully places a larger lime-green tab on a cozy retro interface while small code-plants grow around the monitor; the scene represents a shared UI component gaining an optional larger control without disturbing existing tabs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny designer glasses, adjusting a large lime green (#ecf874) tab button on a warm CRT monitor while smaller tabs sit neatly beside it and code-plants sprout from pots below. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'LG TAB'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13141.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny designer glasses, adjusting a large lime green (#ecf874) tab button on a warm CRT monitor while smaller tabs sit neatly beside it and code-plants sprout from pots below. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'LG TAB'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-06T12:38:48.603451+00:00"
+}

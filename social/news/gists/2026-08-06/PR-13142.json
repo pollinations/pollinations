@@ -1,0 +1,34 @@
+{
+  "pr_number": 13142,
+  "title": "feat: add app screenshot URL contract",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13142",
+  "merged_at": "2026-08-06T13:25:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds an optional, validated `screenshotUrl` field to `apps/catalog.json`; URLs must be non-root, whitespace-free `media.pollinations.ai` object URLs.\n- Carries the field through the Tinybird app directory datasource, sync job, and public endpoint.\n- Seeds seven unique screenshots across eight matching catalog rows and restores CatGPT’s live URL/platform.\n- Keeps existing catalog entries and consumers compatible when no screenshot is present.\n\nChecks:\n- Catalog validation and all app tests\n- Biome\n- Tinybird definition parsing\n- HTTP 200 + `image/webp` for all eight uploads\n\nDeployment:\n- Tinybird definitions are deployed and verified in staging and production.\n- Merging this PR triggers the catalog sync; dispatch it manually only if that run does not complete.\n- The website consumer is the immediate follow-up.\n\nRetention:\n- Media objects expire after 30 days and organic traffic is not the retention strategy.\n- Website-v2 already deduplicates catalog rows by name.\n- A separate scheduled screenshot job will recapture/re-upload on a roughly 15-day cadence and must land before the initial uploads expire in early September.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The app garden gets portraits",
+    "blurb": "The app directory can now carry little window-views of what people are building. Seven apps have already sat still long enough for a screenshot, which is unusually cooperative behavior for software.",
+    "summary": "Added an optional validated screenshotUrl contract to apps/catalog.json, syncing non-root media.pollinations.ai object URLs through the Tinybird app-directory datasource and public endpoint, with seven screenshots seeded across eight catalog rows.",
+    "impact": "Directory consumers can now display verified WebP app screenshots when available while existing catalog entries remain fully compatible without a screenshotUrl.",
+    "keywords": [
+      "app-directory",
+      "screenshots",
+      "catalog",
+      "Tinybird",
+      "public-api",
+      "media"
+    ],
+    "visual_concept": "Depict the app directory as a cozy greenhouse gallery: small retro CRT frames show distinct app screenshots growing among labeled code-plants. Polli, wearing a tiny curator beret, carefully hangs a fresh screenshot in a frame while the eager monitor robot admires the organized collection; the visual metaphor is that catalog entries have gained reliable visual portraits.",
+    "image_prompt": "A cozy pixel-art greenhouse app gallery where seven small retro CRT picture frames display different tiny app-screen landscapes among flowering code-plants and vines, with lime green (#ecf874) prominently glowing from the directory terminal. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret and hangs a new screenshot frame beside an eager chunky monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-06/PR-13142.jpg",
+    "prompt": "A cozy pixel-art greenhouse app gallery where seven small retro CRT picture frames display different tiny app-screen landscapes among flowering code-plants and vines, with lime green (#ecf874) prominently glowing from the directory terminal. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret and hangs a new screenshot frame beside an eager chunky monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-06T13:27:39.066290+00:00"
+}

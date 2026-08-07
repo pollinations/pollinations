@@ -85,6 +85,10 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
  </picture>
 </a>
 
+## 🚀 Getting Started
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)
+
 ### Quick Start (3 Steps)
 
 1️⃣ **Get your API key**  
@@ -101,11 +105,6 @@ Pollinations supports:
 
 3️⃣ **Make your first request**  
 Use one of the examples below to generate your first AI output in seconds.
-
-
-## 🚀 Getting Started
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)
 
 ### Image Generation
 
@@ -140,6 +139,22 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
 ```
 
 Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
+
+### Video Generation
+
+```bash
+curl 'https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?key=YOUR_API_KEY' -o video.mp4
+```
+
+Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]`/`image[1]` to pass start/end reference frames. See available video models and capabilities at [gen.pollinations.ai/image/models](https://gen.pollinations.ai/image/models).
+
+### 3D Generation
+
+```bash
+curl 'https://gen.pollinations.ai/3d/a%20rusty%20robot?key=YOUR_API_KEY' -o model.glb
+```
+
+Pass reference image URL(s) via the `image` parameter for image-to-3D models. See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
 
 ### MCP Server for AI Assistants
 
@@ -176,7 +191,7 @@ AI assistants can:
 - Access all pollinations.ai models and services
 - List available models, voices, and capabilities
 
-**For more advanced usage, check out our [API documentation](APIDOCS.md).**
+**For more advanced usage, check out our full API docs — [APIDOCS.md](./APIDOCS.md) or the live docs at [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).**
 
 ## 🔐 Authentication
 
@@ -220,74 +235,11 @@ See [full API docs](APIDOCS.md) for detailed authentication information.
 
 Our web interface is user-friendly and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating!
 
-### API
-
-Use our API directly in your browser or applications:
-
-    https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes?key=YOUR_API_KEY
-
-Replace the description with your own, and you'll get a unique image based on your words!
-
-Here's an example of a generated image:
+Here are some examples of what you can generate:
 
 <p align="center"><img src="https://media.pollinations.ai/9e0df3b04d27666c" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" /></p>
 
 <p align="center"><img src="https://media.pollinations.ai/ec34c8a3c45c42d9" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" /></p>
-
-## 🎨 Examples
-
-### Image Generation
-
-Python code to download the generated image:
-
-    import requests
-
-    def download_image(prompt):
-        url = f"https://gen.pollinations.ai/image/{prompt}?key=YOUR_API_KEY"
-        response = requests.get(url)
-        with open('generated_image.jpg', 'wb') as file:
-            file.write(response.content)
-        print('Image downloaded!')
-
-    download_image("a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes")
-
-### Text Generation
-
-To generate text:
-
-    https://gen.pollinations.ai/text/What%20is%20artificial%20intelligence?key=YOUR_API_KEY
-
-### Audio Generation
-
-Generate speech from text:
-
-    https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=alloy&key=YOUR_API_KEY
-
-Or use the OpenAI TTS-compatible endpoint:
-
-```bash
-curl 'https://gen.pollinations.ai/v1/audio/speech' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "alloy"}' \
-  -o speech.mp3
-```
-
-### Video Generation
-
-```bash
-curl 'https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?key=YOUR_API_KEY' -o video.mp4
-```
-
-Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]`/`image[1]` to pass start/end reference frames. See available video models and capabilities at [gen.pollinations.ai/image/models](https://gen.pollinations.ai/image/models).
-
-### 3D Generation
-
-```bash
-curl 'https://gen.pollinations.ai/3d/a%20rusty%20robot?key=YOUR_API_KEY' -o model.glb
-```
-
-Pass reference image URL(s) via the `image` parameter for image-to-3D models. See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
 
 ## 🛠️ Integration
 

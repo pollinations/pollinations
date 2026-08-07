@@ -134,7 +134,9 @@ Spawns the server over stdio, lists tools, and exercises a small live slice (aut
 
 ## API Reference
 
-All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
+All requests go through `https://gen.pollinations.ai` by default. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
+
+Set `POLLINATIONS_BASE_URL` to point the MCP server at a self-hosted or alternate Pollinations gateway.
 
 ## License
 

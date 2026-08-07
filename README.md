@@ -236,7 +236,7 @@ Add this to your MCP client configuration:
 npx @pollinations/mcp
 ```
 
-Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.
+A community alternative, [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations), is also available.
 
 AI assistants can:
 

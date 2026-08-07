@@ -6,11 +6,11 @@
   
   <p><strong>Open-source AI for people who make things.</strong></p>
 
-[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations/stargazers)
-[![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
-[![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
+[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=for-the-badge&logo=github)](https://github.com/pollinations/pollinations/stargazers)
+[![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
+[![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
 
-[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
 </div>
 
@@ -113,7 +113,7 @@ Use one of the examples below to generate your first AI output in seconds.
 curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
 ```
 
-Or visit [pollinations.ai](https://pollinations.ai) for an interactive experience.
+Or visit [pollinations.ai/play](https://pollinations.ai/play) for an interactive experience.
 
 ### Text Generation
 
@@ -417,7 +417,7 @@ The best way to support pollinations.ai is by using our product! Get your API ke
 
 ## 📣 Stay Connected
 [News & FAQ](https://enter.pollinations.ai/news) ·
-[𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
+[𝕏 Twitter](https://x.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License
 

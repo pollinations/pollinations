@@ -4,8 +4,8 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { parseMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
+    atomicAdjustApiKeyBalance,
     atomicCreditUserBalance,
-    atomicDeductApiKeyBalance,
     atomicDeductUserBalance,
     type Bucket,
 } from "./deduction.ts";
@@ -45,6 +45,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
+    apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
@@ -133,12 +134,18 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         userId,
         apiKeyId,
         apiKeyPollenBalance,
+        apiKeyReservedAmount,
         byopClientKeyId,
         modelPaidOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
 
-    if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
+    const isBillable = isBilledUsage && totalPrice != null && totalPrice !== 0;
+
+    if (!isBillable) {
+        if (apiKeyId && apiKeyReservedAmount) {
+            await settleApiKeyBalance(db, apiKeyId, -apiKeyReservedAmount);
+        }
         return {
             markup: null,
             communityModelReward: null,
@@ -167,6 +174,19 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     let postDeductionPackBalance: number | null = null;
 
     try {
+        // API key budgets are decremented by the amount the user authorized the
+        // app to spend, including BYOP markup when it applies. Settled before
+        // the payer wallet so admission's reservation is never left held.
+        if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
+            await settleApiKeyBalance(
+                db,
+                apiKeyId,
+                roundPollenLedgerAmount(
+                    billedPrice - (apiKeyReservedAmount ?? 0),
+                ),
+            );
+        }
+
         if (userId) {
             const deduction = await deductUserBalance(
                 db,
@@ -176,12 +196,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
-        }
-
-        // API key budgets are decremented by the amount the user authorized the
-        // app to spend, including BYOP markup when it applies.
-        if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
-            await deductApiKeyBalance(db, apiKeyId, billedPrice);
         }
 
         if (markup) {
@@ -306,24 +320,24 @@ function hasApiKeyBudget(
     return typeof balance === "number";
 }
 
-async function deductApiKeyBalance(
+async function settleApiKeyBalance(
     db: DrizzleD1Database,
     apiKeyId: string,
-    amount: number,
+    delta: number,
 ): Promise<void> {
     try {
-        const { ok } = await atomicDeductApiKeyBalance(db, apiKeyId, amount);
+        const { ok } = await atomicAdjustApiKeyBalance(db, apiKeyId, delta);
         if (!ok) {
             throw new Error(
-                `API key budget deduction affected 0 rows for ${apiKeyId}`,
+                `API key budget settlement affected 0 rows for ${apiKeyId}`,
             );
         }
-        log.debug("Decremented {price} pollen from API key {keyId} budget", {
-            price: amount,
+        log.debug("Settled {delta} pollen against API key {keyId} budget", {
+            delta,
             keyId: apiKeyId,
         });
     } catch (error) {
-        log.error("Failed to decrement API key budget for {keyId}: {error}", {
+        log.error("Failed to settle API key budget for {keyId}: {error}", {
             keyId: apiKeyId,
             error: error instanceof Error ? error.message : error,
         });

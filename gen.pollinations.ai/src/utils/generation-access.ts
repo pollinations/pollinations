@@ -1,7 +1,9 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
 import { isFreeCommunityEndpoint } from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
@@ -37,16 +39,27 @@ export async function checkBalance(
         communityEndpoint !== undefined &&
         isFreeCommunityEndpoint(communityEndpoint);
 
-    const apiKeyBudget = auth.apiKey?.pollenBalance;
+    const apiKey = auth.apiKey;
     const requiredBudget = Math.max(0, estimatedCost);
+    // Reserved, not just compared: the balance read at auth time is a snapshot,
+    // so concurrent requests on one key would all clear a plain check and only
+    // discover the budget was gone at settlement, well after they were served.
     if (
         !isFreeCommunityModel &&
-        typeof apiKeyBudget === "number" &&
-        apiKeyBudget <= requiredBudget
+        apiKey &&
+        typeof apiKey.pollenBalance === "number"
     ) {
-        throw new HTTPException(402, {
-            message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
-        });
+        const { ok, reserved } = await atomicReserveApiKeyBalance(
+            drizzle(env.DB),
+            apiKey.id,
+            requiredBudget,
+        );
+        if (!ok) {
+            throw new HTTPException(402, {
+                message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKey.pollenBalance).toFixed(4)}.`,
+            });
+        }
+        balance.apiKeyReservation = { apiKeyId: apiKey.id, amount: reserved };
     }
 
     const userBalance = await balance.getBalance(auth.user.id);

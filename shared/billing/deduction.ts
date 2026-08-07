@@ -67,26 +67,58 @@ export async function atomicDeductUserBalance(
 }
 
 /**
- * Atomically deducts pollen from API key balance.
+ * Atomically reserves pollen from an API key budget at admission time.
+ *
+ * The headroom check and the decrement are one statement, so concurrent
+ * requests on the same key cannot all be admitted off the same stale read.
+ * `>` rather than `>=` keeps the boundary the preflight check has always used.
  * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
  * (= unlimited budget) are never touched — no COALESCE needed here.
  *
  * @param db - Drizzle database instance
- * @param apiKeyTable - API key table
- * @param apiKeyId - API key ID to deduct from
- * @param amount - Amount of pollen to deduct
- * @returns Promise that resolves when deduction is complete
+ * @param apiKeyId - API key ID to reserve against
+ * @param amount - Estimated cost of the request
+ * @returns `reserved` is the amount held, or 0 when the budget cannot cover it
  */
-export async function atomicDeductApiKeyBalance(
+export async function atomicReserveApiKeyBalance(
     db: DrizzleD1Database,
     apiKeyId: string,
     amount: number,
-): Promise<{ ok: boolean }> {
-    if (amount <= 0) return { ok: true };
-
+): Promise<{ ok: boolean; reserved: number }> {
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
 			SET pollen_balance = pollen_balance - ${amount}
+			WHERE id = ${apiKeyId}
+			AND pollen_balance IS NOT NULL
+			AND pollen_balance > ${amount}
+		`);
+
+    const ok = (result.meta.changes ?? 0) > 0;
+    return { ok, reserved: ok ? amount : 0 };
+}
+
+/**
+ * Atomically applies a signed adjustment to an API key balance, settling what
+ * `atomicReserveApiKeyBalance` held: a positive delta charges the shortfall
+ * when the actual price came in above the reservation, a negative one refunds.
+ * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
+ * (= unlimited budget) are never touched — no COALESCE needed here.
+ *
+ * @param db - Drizzle database instance
+ * @param apiKeyId - API key ID to adjust
+ * @param delta - Signed pollen amount: positive charges, negative refunds
+ * @returns Promise that resolves when the adjustment is complete
+ */
+export async function atomicAdjustApiKeyBalance(
+    db: DrizzleD1Database,
+    apiKeyId: string,
+    delta: number,
+): Promise<{ ok: boolean }> {
+    if (delta === 0) return { ok: true };
+
+    const result = await db.run(sql`
+			UPDATE ${apiKeyTable}
+			SET pollen_balance = pollen_balance - ${delta}
 			WHERE id = ${apiKeyId}
 			AND pollen_balance IS NOT NULL
 		`);

@@ -1812,6 +1812,8 @@ fixtureTest(
             "/v1/audio/transcriptions",
             {
                 ...env,
+                // Blank the whisper key so a rejection regression fails here
+                // instead of reaching the live provider.
                 OVHCLOUD_API_KEY: "",
             } as unknown as CloudflareBindings,
             {

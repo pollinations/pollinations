@@ -153,13 +153,15 @@ describe("docs routes", () => {
         };
         const model3dBodySchema =
             model3dRequestBody.content["application/json"].schema;
-        expect(Object.keys(model3dBodySchema.properties)).toEqual([
-            "model",
-            "image",
-            "resolution",
-            "seed",
-        ]);
+        expect(Object.keys(model3dBodySchema.properties)).toHaveLength(4);
+        expect(Object.keys(model3dBodySchema.properties)).toEqual(
+            expect.arrayContaining(["model", "image", "resolution", "seed"]),
+        );
         expect(model3dBodySchema.properties.safe).toBeUndefined();
+        expect(
+            (model3dBodySchema.properties.resolution as { default?: string })
+                .default,
+        ).toBe("low");
         expect(model3dBodySchema.additionalProperties).toBe(false);
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();

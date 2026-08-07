@@ -920,7 +920,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model With JSON",
             description:
-                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution.",
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. POST requests bypass the server-side media cache, so repeated requests regenerate and are billed. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -946,7 +946,18 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", Generate3dRequestQueryParamsSchema),
+        validator(
+            "query",
+            z
+                .object({
+                    key: z.string().optional().meta({
+                        description:
+                            "API key (alternative to Authorization header)",
+                    }),
+                    safe: SafeSchema,
+                })
+                .strict(),
+        ),
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),

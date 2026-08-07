@@ -77,23 +77,31 @@ export const Generate3dRequestBodySchema = z
             .optional()
             .refine(
                 (value) => {
+                    if (value === undefined) return true;
                     const urls = Array.isArray(value) ? value : [value];
                     return urls.every(
                         (url) =>
-                            url === undefined ||
                             url.startsWith("http://") ||
                             url.startsWith("https://"),
                     );
                 },
                 { message: "Invalid image URL." },
             )
+            .transform((value) => {
+                if (value === undefined || Array.isArray(value)) return value;
+                return [value];
+            })
             .meta({
                 description:
-                    "Reference image URL or URLs for image-to-3D generation.",
+                    "Reference image URL or array of URLs for image-to-3D generation. A string is treated as one complete URL.",
             }),
-        resolution: z.enum(["low", "medium", "high"]).optional().meta({
-            description: "Output detail for `trellis-2`. Defaults to `low`.",
-        }),
+        resolution: z
+            .enum(["low", "medium", "high"])
+            .optional()
+            .default("low")
+            .meta({
+                description: "Output detail for `trellis-2`.",
+            }),
         seed: z.number().int().optional().meta({
             description:
                 "Seed for varied generations. Passed to models that support it.",

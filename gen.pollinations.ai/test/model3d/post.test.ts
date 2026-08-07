@@ -197,7 +197,7 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
         },
         body: JSON.stringify({
             model: "hyper3d-rodin",
-            image: "https://example.com/reference.jpg",
+            image: "https://example.com/reference.jpg?crop=1,2",
             seed: 42,
         }),
     });
@@ -205,7 +205,7 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     expect(response.status).toBe(200);
     expect(mocks.fal.state.bodies).toEqual([
         {
-            image_urls: ["https://example.com/reference.jpg"],
+            image_urls: ["https://example.com/reference.jpg?crop=1,2"],
             prompt: expect.any(String),
             seed: 42,
         },
@@ -218,9 +218,13 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     });
 }, 10_000);
 
-test("POST /3d preserves authentication and rejects ignored JSON fields", async ({
+test("POST /3d preserves authentication and rejects ignored parameters", async ({
     apiKey,
 }) => {
+    syncModel3dEnvironment({
+        ...env,
+        INFERENCEPORT_API_KEY: "ip_test_token",
+    } as CloudflareBindings);
     await mocks.enable("tinybird", "inferenceport");
     const body = {
         model: "trellis-2",
@@ -234,6 +238,17 @@ test("POST /3d preserves authentication and rejects ignored JSON fields", async 
         body: JSON.stringify(body),
     });
     expect(unauthenticated.status).toBe(401);
+
+    const queryAuthenticated = await fetch3d(
+        `/3d/query-auth?key=${apiKey}&safe=false`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        },
+    );
+    expect(queryAuthenticated.status).toBe(200);
+    await queryAuthenticated.arrayBuffer();
 
     for (const invalidBody of [
         { ...body, safe: true },
@@ -253,7 +268,24 @@ test("POST /3d preserves authentication and rejects ignored JSON fields", async 
         expect(response.status).toBe(400);
     }
 
-    expect(mocks.inferenceport.state.bodies).toHaveLength(0);
+    for (const query of [
+        "model=hyper3d-rodin",
+        `image=${encodeURIComponent("https://example.com/other.jpg")}`,
+        "resolution=high",
+        "seed=42",
+    ]) {
+        const response = await fetch3d(`/3d/query-validation?${query}`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+        expect(response.status).toBe(400);
+    }
+
+    expect(mocks.inferenceport.state.bodies).toHaveLength(1);
 });
 
 test("GET /3d keeps query behavior and Trellis resolution", async ({

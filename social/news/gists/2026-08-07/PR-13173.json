@@ -1,0 +1,34 @@
+{
+  "pr_number": 13173,
+  "title": "fix: remove gpt-image-2 region failover",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13173",
+  "merged_at": "2026-08-07T21:39:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- A read timeout means Azure may have completed the image and billed us for it even though we never saw the response. Failing over then generated and paid for a second one.\n- Narrows `isRetryableGPTImageError` to cases where no image can have been produced: an account-level block, and a 429.\n- Drops `status >= 500` (which matched 524), plus the `TypeError`/unparseable-body paths — all ambiguous about whether work was done.\n- 7 days: 12 requests at p50 **250.6s** — two full generations each, booked in our telemetry as zero cost. gpt-image-2 already runs at a loss (249.11 cost vs 186.84 revenue over 5,261 images), so the duplicates are pure waste.\n- Adds a test pinning that a 524 does not fail over. `npx vitest run test/image/gptImageRouting.test.ts` — 5 passed.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01D3UjxnjfYc3EX8jYvgnGwa",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No second bloom",
+    "blurb": "GPT Image 2 has learned not to plant the same flower twice when Azure goes quiet. Ambiguous timeouts now stop cleanly instead of wandering off to make a surprise duplicate.",
+    "summary": "GPT Image 2 failover now retries only Azure account-level blocks and 429 responses, while 524 timeouts, 5xx errors, TypeErrors, and unparseable responses no longer trigger a second image generation.",
+    "impact": "Requests with ambiguous Azure completion states will avoid silently launching a duplicate GPT Image 2 generation, while clear account-block and rate-limit cases can still retry.",
+    "keywords": [
+      "gpt-image-2",
+      "azure",
+      "image-generation",
+      "failover",
+      "timeouts",
+      "routing"
+    ],
+    "visual_concept": "Depict the difference between a finished-but-lost image request and a genuine retry: Polli carefully places a single completed pixel flower in a garden while a sleepy retro terminal shows a small \"524\" rain cloud and a closed backup path. The scene should communicate restraint rather than failure, with one healthy image-flower and no duplicate bloom.",
+    "image_prompt": "A cozy pixel-art garden workstation where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf and carefully tends one glowing image-flower beside a retro terminal showing a small pixel-font \"524\" rain cloud; a second empty flowerpot has a gentle closed-path sign, while code-vines curl around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13173.jpg",
+    "prompt": "A cozy pixel-art garden workstation where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf and carefully tends one glowing image-flower beside a retro terminal showing a small pixel-font \"524\" rain cloud; a second empty flowerpot has a gentle closed-path sign, while code-vines curl around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-07T21:40:14.538571+00:00"
+}

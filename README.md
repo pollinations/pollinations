@@ -378,6 +378,8 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`apps/`](./apps/): Community apps and the app catalog (`catalog.json`, `GREENHOUSE.md`).
 
+- [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service — upload files and get a URL to use with Pollinations models, with public tag galleries.
+
 - [`social/`](./social/): Discord, Reddit, and GitHub automation.
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.

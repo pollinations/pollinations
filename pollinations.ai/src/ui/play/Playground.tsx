@@ -1,8 +1,8 @@
 import {
     fetchModelCatalog,
     type ModelCatalog,
-    type ModelCatalogItem,
     type ModelCategory,
+    type ModelInfo,
     Pollinations,
 } from "@pollinations/sdk";
 import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
@@ -47,6 +47,39 @@ const EMPTY_CATALOG: ModelCatalog = {
     models: [],
     allowedModelIds: new Set(),
 };
+
+type PlaygroundModel = {
+    id: string;
+    title: string;
+    category: ModelCategory;
+    community: boolean;
+    description?: string;
+    inputModalities: string[];
+    outputModalities: string[];
+    videoCapabilities: string[];
+    maxReferenceImages?: number;
+    voices: string[];
+    paidOnly: boolean;
+};
+
+function playgroundModel(model: ModelInfo): PlaygroundModel | null {
+    const id = model.id ?? model.name;
+    if (!id || !model.category) return null;
+
+    return {
+        id,
+        title: model.title ?? model.name,
+        category: model.category,
+        community: model.community ?? false,
+        description: model.description,
+        inputModalities: model.input_modalities ?? [],
+        outputModalities: model.output_modalities ?? [],
+        videoCapabilities: model.video_capabilities ?? [],
+        maxReferenceImages: model.max_reference_images,
+        voices: model.voices ?? [],
+        paidOnly: model.paid_only ?? false,
+    };
+}
 
 const CATEGORY_ORDER: ModelCategory[] = ["image", "video", "text", "audio"];
 const AUDIO_UPLOAD_ACCEPT = "audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm";
@@ -165,7 +198,7 @@ function errorMessage(error: unknown): string {
 }
 
 function isAudioTranscriptionModel(
-    model: ModelCatalogItem | undefined,
+    model: PlaygroundModel | undefined,
 ): boolean {
     return (
         model?.category === "audio" &&
@@ -174,7 +207,7 @@ function isAudioTranscriptionModel(
     );
 }
 
-function isTextToAudioModel(model: ModelCatalogItem | undefined): boolean {
+function isTextToAudioModel(model: PlaygroundModel | undefined): boolean {
     return (
         model?.category === "audio" &&
         model.inputModalities.includes("text") &&
@@ -182,7 +215,7 @@ function isTextToAudioModel(model: ModelCatalogItem | undefined): boolean {
     );
 }
 
-function referenceImageLimit(model: ModelCatalogItem | undefined): number {
+function referenceImageLimit(model: PlaygroundModel | undefined): number {
     if (!model?.inputModalities.includes("image")) return 0;
     return model.maxReferenceImages ?? 0;
 }
@@ -218,7 +251,7 @@ function ModalityModelPicker({
     onSelectCategory,
     onSelectModel,
 }: {
-    models: ModelCatalogItem[];
+    models: PlaygroundModel[];
     activeCategory: ModelCategory;
     selectedModel: string;
     isLoading: boolean;
@@ -229,10 +262,9 @@ function ModalityModelPicker({
     const currentModel = models.find((model) => model.id === selectedModel);
 
     return (
-        <div
-            role="group"
+        <fieldset
             aria-label="Modality and model"
-            className="flex flex-wrap gap-2"
+            className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
         >
             {CATEGORY_ORDER.map((category) => {
                 const active = category === activeCategory;
@@ -325,7 +357,7 @@ function ModalityModelPicker({
                     </Dropdown>
                 );
             })}
-        </div>
+        </fieldset>
     );
 }
 
@@ -578,7 +610,13 @@ export function Playground() {
     // official catalog, and owner/model entries would double the list. Every
     // pick below goes through this so state never lands on a hidden model.
     const visibleModels = useMemo(
-        () => catalog.models.filter((model) => !model.community),
+        () =>
+            catalog.models
+                .map(playgroundModel)
+                .filter(
+                    (model): model is PlaygroundModel =>
+                        model !== null && !model.community,
+                ),
         [catalog.models],
     );
 

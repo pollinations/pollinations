@@ -1,0 +1,34 @@
+{
+  "pr_number": 13059,
+  "title": "fix: declare and enforce transcription endpoints",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13059",
+  "merged_at": "2026-08-07T17:06:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Declares `/v1/audio/transcriptions` for `whisper`, `scribe`, `universal-2`, and `universal-3.5-pro` in the shared registry.\n- Makes `/models`, `/audio/models`, and `/v1/models` report the same endpoint data.\n- Enforces the transcription endpoint during model resolution, so invalid TTS/music model IDs return 400 before reaching a provider.\n- Removes the `requireTextToAudioModel` guard: registry enforcement now rejects every model it could catch, making it dead code.\n- Preserves valid routes, providers, aliases, access, pricing, and billing.\n\nBehavior changes:\n- STT models on `/audio/{text}` and `/v1/audio/speech` still 400, but the error message format changes to `Model \"x\" cannot be used on <endpoint>. Supported endpoints: ...`.\n- STT model IDs on the music endpoint now 400 at model resolution (`available only on: /v1/audio/transcriptions`) instead of reaching the handler.\n\nTests:\n- `npx vitest run test/index.test.ts` (50 passed)\n- Audio VCR tests (passed)\n- Gen typecheck and Biome (passed)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The audio garden has fences",
+    "blurb": "The audio registry now knows which flowers belong in the transcription bed. Send a music model to speech-to-text and it gets a clear little signpost before wandering into a provider.",
+    "summary": "Declared `/v1/audio/transcriptions` for Whisper, Scribe, Universal-2, and Universal-3.5-Pro in the shared audio registry, unified endpoint reporting across `/models`, `/audio/models`, and `/v1/models`, and enforced endpoint compatibility during model resolution.",
+    "impact": "Developers now get consistent model metadata and an immediate 400 explaining supported endpoints when a TTS, music, or transcription model is used on the wrong audio route.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "speech-to-text",
+      "model-registry",
+      "api-validation",
+      "endpoints"
+    ],
+    "visual_concept": "A cozy audio garden with clearly labeled paths for transcription, speech, and music models: Polli acts as a gentle park ranger, placing a sign that directs microphone-shaped transcription flowers to the correct `/v1/audio/transcriptions` plot while keeping a misplaced music-note seedling from entering it. A CRT monitor robot can display matching endpoint listings, representing the three model-listing endpoints now agreeing.",
+    "image_prompt": "In a cozy pixel-art audio garden, Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears a tiny ranger hat and points a microphone-shaped flower toward a sign reading `/v1/audio/transcriptions`, while a cute CRT monitor robot shows matching model lists and music-note seedlings follow their own path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13059.jpg",
+    "prompt": "In a cozy pixel-art audio garden, Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears a tiny ranger hat and points a microphone-shaped flower toward a sign reading `/v1/audio/transcriptions`, while a cute CRT monitor robot shows matching model lists and music-note seedlings follow their own path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-07T17:07:25.362230+00:00"
+}

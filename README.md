@@ -110,7 +110,7 @@ Use one of the examples below to generate your first AI output in seconds.
 ### Image Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
+curl -H "Authorization: Bearer YOUR_API_KEY" 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
 ```
 
 Or visit [pollinations.ai/play](https://pollinations.ai/play) for an interactive experience.
@@ -118,7 +118,7 @@ Or visit [pollinations.ai/play](https://pollinations.ai/play) for an interactive
 ### Text Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/text/Hello%20world'
+curl 'https://gen.pollinations.ai/text/Hello%20world?key=YOUR_API_KEY'
 ```
 
 ### Audio Generation
@@ -224,7 +224,7 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Use our API directly in your browser or applications:
 
-    https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
+    https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes?key=YOUR_API_KEY
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
@@ -243,7 +243,7 @@ Python code to download the generated image:
     import requests
 
     def download_image(prompt):
-        url = f"https://gen.pollinations.ai/image/{prompt}"
+        url = f"https://gen.pollinations.ai/image/{prompt}?key=YOUR_API_KEY"
         response = requests.get(url)
         with open('generated_image.jpg', 'wb') as file:
             file.write(response.content)
@@ -255,7 +255,7 @@ Python code to download the generated image:
 
 To generate text:
 
-    https://gen.pollinations.ai/text/What%20is%20artificial%20intelligence?
+    https://gen.pollinations.ai/text/What%20is%20artificial%20intelligence?key=YOUR_API_KEY
 
 ### Audio Generation
 

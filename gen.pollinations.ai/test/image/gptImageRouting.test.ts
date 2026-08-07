@@ -58,17 +58,14 @@ afterEach(() => {
 });
 
 describe("gpt-image-2 Azure routing", () => {
-    it("spreads requests across all Azure endpoints", async () => {
+    it("round robins across all Azure endpoints", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
             urls.push(String(input));
             return successResponse();
         });
-        // Lowest and highest draw, so every region is reachable.
-        const random = vi.spyOn(Math, "random");
 
-        for (const draw of [0, 0.999]) {
-            random.mockReturnValueOnce(draw);
+        for (let index = 0; index < EXPECTED_HOSTS.size; index++) {
             await callGPTImage("test", params, userInfo, "gpt-image-2");
         }
 

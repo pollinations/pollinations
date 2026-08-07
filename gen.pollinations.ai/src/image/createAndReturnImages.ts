@@ -348,15 +348,14 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
 };
 
-/**
- * Spreads load across the model's Azure regions. Picked at random rather than
- * round robin: a module-level counter lives per isolate, so every fresh isolate
- * restarts it at the first region and no counter is shared across the ones
- * running concurrently.
- */
-function pickGPTImageConfig(model: string): GPTImageConfig {
+let gptImageEndpointIndex = 0;
+
+/** Round robins the Azure regions to spread load. One region per request. */
+function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
-    return configs[Math.floor(Math.random() * configs.length)];
+    const config = configs[gptImageEndpointIndex % configs.length];
+    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    return config;
 }
 
 const callGPTImageWithEndpoint = async (
@@ -630,7 +629,7 @@ export const callGPTImage = async (
     // One region, one attempt. Azure bills a generation it completed even when
     // we never saw the response, so a second region would pay for a second
     // image to answer a request the caller has already been told failed.
-    const config = pickGPTImageConfig(model);
+    const config = nextGPTImageConfig(model);
     try {
         return await callGPTImageWithEndpoint(
             prompt,

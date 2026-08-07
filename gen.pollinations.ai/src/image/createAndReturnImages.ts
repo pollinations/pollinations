@@ -25,7 +25,6 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
-import { callReplicateFluxSchnellAPI } from "./models/replicateFluxModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -844,9 +843,6 @@ const generateImage = async (
 
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
-
-        case "flux-replicate":
-            return await callReplicateFluxSchnellAPI(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch

@@ -338,7 +338,6 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         provider: "vast",
-        fallbacks: ["flux-replicate"],
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),

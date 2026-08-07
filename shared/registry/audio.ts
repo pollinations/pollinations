@@ -347,6 +347,25 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "grok-transcribe": {
+        aliases: [],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST speech-to-text: $0.10/hour.
+            promptAudioSeconds: 0.1 / 3600,
+        },
+        title: "Grok Transcribe",
+        description:
+            "Fast multilingual speech recognition with word timestamps, speaker labels, and text formatting",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],
         provider: "assemblyai",

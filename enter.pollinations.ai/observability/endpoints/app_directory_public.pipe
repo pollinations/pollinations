@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Public community app directory — the apps/APPS.md showcase synced daily into
+    Public community app directory — the apps/catalog.json showcase synced daily into
     Tinybird (app_directory). Every field here is already published on the
     Pollinations website, so this endpoint is gated by the public read token.
     Returns the full directory; filter or paginate client-side with the
@@ -15,6 +15,7 @@ SQL >
         emoji,
         name,
         web_url,
+        screenshot_url,
         description,
         language,
         category,

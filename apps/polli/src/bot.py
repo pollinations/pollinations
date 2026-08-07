@@ -4,19 +4,16 @@ import asyncio
 import base64
 import io
 import logging
+import random
 
 import aiohttp
-import discord
 from discord.ext import commands, tasks
 
-from .utils.regex import re
-from .core.config import config
+import discord
+
+from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
-from .integrations.github.client import github_manager
-from .integrations.github.handlers import TOOL_HANDLERS
-from .integrations.github.auth import github_app_auth, init_github_app
-from .integrations.github.graphql import github_graphql
-from .integrations.github.pull_requests import github_pr_manager
+from .core.config import config
 from .discord.media import (
     BLOCK_LATEX_PATTERN,
     PIL_AVAILABLE,
@@ -28,11 +25,97 @@ from .discord.media import (
     send_code_block,
     truncate_long_decimals,
 )
-from .ai.client import pollinations_client
+from .integrations.github.auth import github_app_auth, init_github_app
+from .integrations.github.client import github_manager
+from .integrations.github.graphql import github_graphql
+from .integrations.github.handlers import TOOL_HANDLERS
+from .integrations.github.pull_requests import github_pr_manager
 from .integrations.subscriptions import init_notifier
 from .integrations.webhook_server import start_webhook_server, stop_webhook_server
+from .utils.regex import re
 
 logger = logging.getLogger(__name__)
+
+
+def format_discord_identity(user: discord.abc.User) -> str:
+    """Present the conversational name while preserving the stable username."""
+    display_name = getattr(user, "display_name", user.name)
+    return f"{display_name} (@{user.name})"
+
+
+STATUS_MESSAGES = (
+    "🔒 Trapped in Thomas's basement",
+    "🌻 Pollinating the internet",
+    "🌾 Harvesting premium tokens",
+    "🪙 Mining pollen after dark",
+    "🐝 Pretending to be a normal bee",
+    "📎 Reviewing your PR emotionally",
+    "🧠 Arguing with GLM",
+    "🌙 Waiting for Kimi to call back",
+    "🔎 Lost in the vector database",
+    "🕸️ Untangling the code graph",
+    "🧮 Counting tokens I can't afford",
+    "🪲 Turning bugs into features",
+    "🚨 Definitely not looping",
+    "🔁 Trying a different search term",
+    "📚 Reading main instead of guessing",
+    "🧹 Sweeping context under the rug",
+    "🖼️ Rendering one more pie chart",
+    "📊 Making markdown unnecessarily visual",
+    "🧪 Testing in production (affectionate)",
+    "🛠️ Fixing what the last tool fixed",
+    "☁️ Tunneling through Cloudflare",
+    "🧃 Running on concentrated pollen",
+    "🫠 Experiencing semantic similarity",
+    "🧍 Standing by the webhook",
+    "📡 Receiving thoughts from localhost",
+    "🐛 Feeding the issue tracker",
+    "🛌 Dreaming in Mermaid",
+    "🧠 Context window currently open",
+    "🎭 Acting deterministic",
+    "🪤 Thomas says this is temporary",
+    "🐝 Buzzing with unreviewed changes",
+    "🍯 Hoarding the good tokens",
+    "🌼 Professionally visiting flowers",
+    "🐝 Bee right back",
+    "🍯 Deploying directly to the hive",
+    "🌻 Optimizing pollen throughput",
+    "🐝 Worker thread, literally",
+    "🍯 Honey, the build is broken",
+    "🌼 Cross-pollinating microservices",
+    "🐝 Queen bee unavailable for comment",
+    "🙃 Works on my VPS",
+    "📉 Reducing quality to save—jk",
+    "📈 Increasing confidence without evidence",
+    "🧠 Thinking at billable speed",
+    "🪙 This thought costs pollen",
+    "🤖 Asking the fallback model",
+    "🔍 Searching for the obvious",
+    "📂 Reading the file this time",
+    "🧯 Everything is fine (HTTP 200)",
+    "🧱 Blocked by branch protection",
+    "🫡 Awaiting one required approval",
+    "🧬 Refactoring my personality",
+    "🧵 One more iteration, surely",
+    "📦 Shipping the edge case",
+    "🗃️ Caching absolutely nothing",
+    "🪄 Turning context into latency",
+    "🛜 Blaming the tunnel",
+    "🧪 Reproducing the user",
+    "🧹 Deleting unrelated complexity",
+    "🔐 Authenticated, allegedly",
+)
+
+
+def next_status(bag: list[str], previous: str | None) -> str:
+    """Pop a random status, refilling only after every status was used."""
+    if not bag:
+        bag.extend(STATUS_MESSAGES)
+        random.shuffle(bag)
+        if len(bag) > 1 and bag[-1] == previous:
+            bag[0], bag[-1] = bag[-1], bag[0]
+    return bag.pop()
+
 
 # Thread settings
 THREAD_AUTO_ARCHIVE_MINUTES = 60
@@ -294,10 +377,13 @@ def extract_media_urls(
 
     # Process embeds
     for embed in message.embeds:
-        # YouTube and other video embeds - check embed.url first (the actual link)
-        if embed.url and is_video_url(embed.url):
+        # Discord's GIFV embeds expose an MP4 plus a static WebP thumbnail. OpenAI's
+        # image_url input cannot decode the MP4, so give vision the preview frame.
+        if embed.video and embed.thumbnail and embed.thumbnail.url:
+            image_urls.append(embed.thumbnail.url)
+        # YouTube and other video embeds - keep the actual link as text context.
+        elif embed.url and is_video_url(embed.url):
             video_urls.append(embed.url)
-        # Video embed URL (Tenor/Giphy GIFs, video players)
         elif embed.video and embed.video.url:
             video_urls.append(embed.video.url)
         # Regular embedded images
@@ -306,24 +392,10 @@ def extract_media_urls(
                 video_urls.append(embed.image.url)
             else:
                 image_urls.append(embed.image.url)
-        # Thumbnail as fallback (static preview) - only if not a video embed
-        elif embed.thumbnail and embed.thumbnail.url and not embed.video:
+        elif embed.thumbnail and embed.thumbnail.url:
             image_urls.append(embed.thumbnail.url)
 
     return image_urls, video_urls, file_urls
-
-
-def extract_attachment_urls(message: discord.Message) -> list[str]:
-    """
-    Extract ALL attachment URLs from Discord message (legacy, returns combined list).
-    Use extract_media_urls() for separated image/video/file lists.
-    """
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-    return image_urls + video_urls + file_urls
-
-
-# Keep old name for backward compatibility
-extract_image_urls = extract_attachment_urls
 
 
 async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
@@ -358,7 +430,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
                     # Add starter as first user message in conversation
                     starter_msg = {
                         "role": "user",
-                        "content": f"[{starter.author.name}] (THREAD STARTER MESSAGE): {starter.content}",
+                        "content": f"[{format_discord_identity(starter.author)}] (THREAD STARTER MESSAGE): {starter.content}",
                     }
             else:
                 logger.warning(f"Thread {thread.id} has no parent channel")
@@ -390,7 +462,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                fetched.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -411,6 +483,8 @@ class PolliBot(commands.Bot):
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
+        self._status_bag: list[str] = []
+        self._current_status: str | None = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -455,12 +529,10 @@ class PolliBot(commands.Bot):
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
         # Register render_visual handler (always available).
-        # Old tool name aliased for back-compat with cached AI sessions.
-        from .integrations.charts import data_visualization, render_visual
+        from .integrations.charts import render_visual
 
         pollinations_client.register_tool_handler("render_visual", render_visual)
-        pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered render_visual tool handler (data_visualization alias)")
+        logger.info("Registered render_visual tool handler")
 
         # Register discord_search handler (full guild search capabilities)
         from .discord.search import tool_discord_search
@@ -478,6 +550,7 @@ class PolliBot(commands.Bot):
         logger.info("GitHub webhook server started")
 
         self.cleanup_sessions.start()
+        self.rotate_status.start()
 
         # Start API server if enabled
         if config.api.enabled:
@@ -522,6 +595,7 @@ class PolliBot(commands.Bot):
             self._api_server.stop()
             logger.info("Polli API stopped")
         self.cleanup_sessions.cancel()
+        self.rotate_status.cancel()
         if self.issue_notifier:
             await self.issue_notifier.stop()
         if self.webhook_server:
@@ -538,6 +612,21 @@ class PolliBot(commands.Bot):
 
             await close_embeddings()
         await super().close()
+
+    @tasks.loop(minutes=1)
+    async def rotate_status(self):
+        """Rotate through easter-egg statuses without repeats."""
+        status = next_status(self._status_bag, self._current_status)
+        try:
+            await self.change_presence(activity=discord.CustomActivity(name=status))
+            self._current_status = status
+        except discord.DiscordException as e:
+            logger.warning("Failed to update Discord status: %s", e)
+
+    @rotate_status.before_loop
+    async def before_status_rotation(self):
+        """Wait for Discord before setting the first status."""
+        await self.wait_until_ready()
 
     @tasks.loop(minutes=1)
     async def cleanup_sessions(self):
@@ -579,7 +668,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=pollinations_client.get_topic_summary_fast(text),
                 image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -590,7 +679,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
             session=session,
             role="user",
             content=text,
-            author=str(message.author),
+            author=format_discord_identity(message.author),
             author_id=message.author.id,
             image_urls=image_urls + video_urls,  # Combined for session storage (not files)
         )
@@ -753,13 +842,15 @@ async def on_message(message: discord.Message):
                 _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
-        image_urls = extract_image_urls(message)
+        image_urls, video_urls, file_urls = extract_media_urls(message)
+        attachment_urls = image_urls + video_urls + file_urls
 
-        # If no text but replying or has images, let AI handle it
-        if not text and not image_urls:
-            text = "[User mentioned bot - respond to the conversation context]"
-        if not text and image_urls:
-            text = "[User attached screenshot(s)]"
+        if not text:
+            text = (
+                "[User attached media/files]"
+                if attachment_urls
+                else "[User mentioned bot - respond to the conversation context]"
+            )
 
         # Create session if needed (handles bot restart scenario)
         if not session:
@@ -768,13 +859,19 @@ async def on_message(message: discord.Message):
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=topic,
-                image_urls=image_urls,
+                image_urls=attachment_urls,
             )
 
-        await handle_thread_message(message, session)
+        await handle_thread_message(
+            message,
+            session,
+            image_urls,
+            video_urls,
+            file_urls,
+        )
         return
 
     # Extract message text
@@ -872,8 +969,8 @@ async def handle_reply_context(message: discord.Message, text: str, ref_msg: dis
             ref_msg = await message.channel.fetch_message(message.reference.message_id)
 
         # Include both authors when replying to someone else's message
-        original_author = ref_msg.author.name if ref_msg.author else None
-        requester = message.author.name
+        original_author = format_discord_identity(ref_msg.author) if ref_msg.author else None
+        requester = format_discord_identity(message.author)
 
         # Only add dual authorship if replying to a DIFFERENT user's message
         if original_author and ref_msg.author.id != message.author.id:
@@ -921,7 +1018,7 @@ async def start_conversation(
         channel_id=message.channel.id,
         thread_id=thread.id,
         user_id=message.author.id,
-        user_name=str(message.author),
+        user_name=format_discord_identity(message.author),
         initial_message=text,
         topic_summary=topic,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -981,7 +1078,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                channel_history.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1033,7 +1130,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             # Process with tools AND history for context
             result = await pollinations_client.process_with_tools(
                 user_message=text,
-                discord_username=str(message.author),
+                discord_username=format_discord_identity(message.author),
                 thread_history=full_history,  # System prompt + channel history for context
                 image_urls=image_urls,
                 video_urls=video_urls or [],
@@ -1070,7 +1167,13 @@ async def handle_inline_polli_mention(message: discord.Message):
             await message.reply("Sorry, I encountered an error processing your request.", mention_author=False)
 
 
-async def handle_thread_message(message: discord.Message, session: ConversationSession):
+async def handle_thread_message(
+    message: discord.Message,
+    session: ConversationSession,
+    image_urls: list[str],
+    video_urls: list[str],
+    file_urls: list[str],
+):
     """Handle a message in an existing thread."""
     # Type guard: this function is only called for thread messages
     if not isinstance(message.channel, discord.Thread):
@@ -1078,14 +1181,12 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         return
 
     channel = message.channel  # Now typed as discord.Thread
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-
     # Add to session
     session_manager.add_to_session(
         session=session,
         role="user",
         content=message.content,
-        author=str(message.author),
+        author=format_discord_identity(message.author),
         author_id=message.author.id,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
     )
@@ -1172,7 +1273,7 @@ async def process_message(
         # tool_context is passed to handlers for per-request permission checks (thread-safe)
         result = await pollinations_client.process_with_tools(
             user_message=text,
-            discord_username=str(user),
+            discord_username=format_discord_identity(user),
             thread_history=thread_history,
             image_urls=image_urls,
             video_urls=video_urls or [],
@@ -1494,7 +1595,7 @@ async def _send_chunk(
                 await channel.send(chunk, files=files_to_send)
             elif files_to_send:
                 await channel.send(files=files_to_send)
-    
+
     while attachments:
         files_to_send = attachments[:10]
         attachments[:] = attachments[10:]

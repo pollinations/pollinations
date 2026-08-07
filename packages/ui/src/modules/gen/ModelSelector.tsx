@@ -1,4 +1,4 @@
-import type { ModelCategory } from "@pollinations/sdk";
+import type { ModelCategory, ModelInfo } from "@pollinations/sdk";
 import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
@@ -9,17 +9,8 @@ import { TabButton } from "../../primitives/TabButton.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
-type ModelSelectorItem = {
-    id: string;
-    name: string;
-    title: string;
-    description?: string;
-    category: ModelSelectorCategory;
-    paidOnly?: boolean;
-};
-
 type ModelSelectorProps = {
-    models: readonly ModelSelectorItem[];
+    models: readonly ModelInfo[];
     category: ModelSelectorCategory;
     value: string;
     isLoading?: boolean;
@@ -54,6 +45,10 @@ function AccessIcon({ paidOnly }: { paidOnly?: boolean }) {
     );
 }
 
+function modelId(model: ModelInfo): string {
+    return model.id ?? model.name;
+}
+
 export function ModelSelector({
     models,
     category,
@@ -62,11 +57,13 @@ export function ModelSelector({
     className,
     onChange,
 }: ModelSelectorProps) {
-    const filteredModels = models.filter(
-        (model) => model.category === category,
-    );
-    const currentModel = models.find((model) => model.id === value);
-    const modelLabel = currentModel?.title ?? "Select";
+    const filteredModels = models
+        .filter((model) => model.category === category)
+        .sort((a, b) => modelId(a).localeCompare(modelId(b)));
+    const currentModel = models.find((model) => modelId(model) === value);
+    const modelLabel = currentModel
+        ? (currentModel.title ?? currentModel.name)
+        : "Select";
     const accessibleLabel = currentModel
         ? `${CATEGORY_LABELS[category]} model: ${modelLabel}`
         : `Select ${CATEGORY_LABELS[category].toLowerCase()} model`;
@@ -87,7 +84,7 @@ export function ModelSelector({
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
                         <span className="polli:truncate">{modelLabel}</span>
                         {currentModel && (
-                            <AccessIcon paidOnly={currentModel.paidOnly} />
+                            <AccessIcon paidOnly={currentModel.paid_only} />
                         )}
                     </span>
                     <ChevronIcon expanded={open} />
@@ -103,26 +100,27 @@ export function ModelSelector({
                     <ScrollArea className="polli:max-h-80 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
-                                const isActive = value === model.id;
+                                const id = modelId(model);
+                                const isActive = value === id;
                                 return (
                                     <TabButton
-                                        key={model.id}
+                                        key={id}
                                         active={isActive}
                                         size="sm"
                                         variant="ghost"
                                         className="polli:w-full polli:justify-start polli:text-left"
                                         onClick={() => {
-                                            onChange(model.id);
+                                            onChange(id);
                                             close();
                                         }}
                                     >
                                         <span className="polli:flex polli:min-w-0 polli:flex-col polli:gap-0.5">
                                             <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
                                                 <span className="polli:truncate">
-                                                    {model.title}
+                                                    {model.title ?? model.name}
                                                 </span>
                                                 <AccessIcon
-                                                    paidOnly={model.paidOnly}
+                                                    paidOnly={model.paid_only}
                                                 />
                                             </span>
                                             {model.description && (

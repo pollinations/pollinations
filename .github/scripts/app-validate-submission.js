@@ -2,7 +2,7 @@
 
 const { execFileSync } = require("node:child_process");
 const {
-    buildRow,
+    buildApp,
     findCatalogDuplicate,
     parseSubmission,
     validateSubmission,
@@ -20,6 +20,10 @@ function main() {
         throw new Error("ISSUE_NUMBER must be numeric");
     if (!/^[A-Za-z0-9-]+$/.test(ISSUE_AUTHOR || ""))
         throw new Error("ISSUE_AUTHOR is invalid");
+
+    const githubUser = JSON.parse(gh(["api", `/users/${ISSUE_AUTHOR}`]));
+    if (!Number.isInteger(githubUser.id))
+        throw new Error("Issue author has no numeric GitHub user ID");
 
     const issue = Object.hasOwn(process.env, "ISSUE_BODY")
         ? {
@@ -42,10 +46,14 @@ function main() {
         throw new Error("Issue snapshot metadata is incomplete");
     const submission = parseSubmission(issue.body);
     const errors = validateSubmission(submission);
-    const duplicate = findCatalogDuplicate(submission, undefined, ISSUE_AUTHOR);
+    const duplicate = findCatalogDuplicate(
+        submission,
+        undefined,
+        githubUser.id,
+    );
     if (duplicate) {
         errors.push(
-            `This app appears to already be listed as ${duplicate.name} in apps/APPS.md.`,
+            `This app appears to already be listed as ${duplicate.name} in apps/catalog.json.`,
         );
     }
     const pendingIssues = JSON.parse(
@@ -72,12 +80,12 @@ function main() {
             [
                 {
                     name: parsed.name,
-                    webUrl: parsed.appUrl,
-                    repoUrl: parsed.repoUrl,
-                    githubUsername: candidate.author?.login || "",
+                    url: parsed.appUrl,
+                    repositoryUrl: parsed.repoUrl,
+                    githubUserId: candidate.author?.id || "",
                 },
             ],
-            ISSUE_AUTHOR,
+            githubUser.node_id || "",
         );
     });
     if (pendingDuplicate) {
@@ -86,7 +94,6 @@ function main() {
         );
     }
 
-    const githubUser = JSON.parse(gh(["api", `/users/${ISSUE_AUTHOR}`]));
     const approvedDate =
         process.env.APPROVED_DATE || new Date().toISOString().slice(0, 10);
     const metadata = {
@@ -102,7 +109,7 @@ function main() {
         errors,
         submission,
         metadata,
-        row: errors.length === 0 ? buildRow(submission, metadata) : "",
+        app: errors.length === 0 ? buildApp(submission, metadata) : null,
     };
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.valid) process.exitCode = 2;

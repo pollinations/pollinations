@@ -1,0 +1,34 @@
+{
+  "pr_number": 13162,
+  "title": "fix: keep FLUX on Vast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13162",
+  "merged_at": "2026-08-07T10:21:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes Replicate from the public `flux` fallback chain.\n- Deletes the retired hidden `flux-replicate` registry entry, dispatcher branch, implementation, and pricing snapshot.\n- Keeps the existing weighted two-worker Vast pool unchanged.\n- Returns a controlled 503 when no Vast worker is available; the removed ID returns 400 and never contacts Replicate.\n\nTests: 50 Gen routing/integration tests; 332 alias, pricing, and effective-price tests; Gen TypeScript check.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "FLUX stays in the garden",
+    "blurb": "FLUX now sticks to its two-worker Vast grove instead of wandering into a retired fallback path. When the grove is full, the API says so cleanly rather than taking a surprise detour.",
+    "summary": "Removed Replicate from the public FLUX fallback chain, retired the hidden flux-replicate model path, and made unavailable Vast capacity return a controlled 503 while preserving the existing weighted two-worker Vast pool.",
+    "impact": "FLUX requests now run only through the established Vast workers; if neither worker is available, callers receive a predictable 503, and flux-replicate returns 400 without contacting Replicate.",
+    "keywords": [
+      "FLUX",
+      "Vast",
+      "image-generation",
+      "routing",
+      "model-registry",
+      "503"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper tending two connected Vast-powered FLUX flower beds, with a retired side path gently closed off by a small sign. A cozy terminal can show a simple “503: workers resting” message, making the controlled routing behavior feel orderly rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tending two glowing FLUX code-flowers connected to a retro terminal in a warm garden shed; a small retired side path is closed with a gentle pixel sign while the terminal reads “503: workers resting.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13162.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tending two glowing FLUX code-flowers connected to a retro terminal in a warm garden shed; a small retired side path is closed with a gentle pixel sign while the terminal reads “503: workers resting.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-07T10:22:47.458606+00:00"
+}

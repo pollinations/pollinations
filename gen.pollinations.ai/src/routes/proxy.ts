@@ -650,7 +650,7 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const { response, servedEntry } = await withModelFallbackResponse(
+            return withModelFallbackResponse(
                 c.var.model,
                 (candidate) =>
                     generateEmbeddings(
@@ -659,13 +659,11 @@ export const proxyRoutes = new Hono<Env>()
                             ...requestBody,
                             model: getEmbeddingProviderModelId(candidate.id),
                         },
-                        candidate.definition ?? c.var.model.definition,
+                        candidate.definition,
                         candidate.id,
                     ),
-                c.var.track?.failedCalls,
+                c.var.track?.attempts,
             );
-            if (servedEntry) c.set("servedModelEntry", servedEntry);
-            return response;
         },
     )
     .post(

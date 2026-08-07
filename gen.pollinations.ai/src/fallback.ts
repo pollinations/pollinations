@@ -153,11 +153,8 @@ export function isRetryableFallbackError(error: unknown): boolean {
  */
 export type FallbackCandidate = {
     id: string;
-    /** Always present alongside `communityEndpoint`: it is what prices it. */
-    definition?: ModelDefinition;
+    definition: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
-    /** Serving registry entry. Absent on the model the caller asked for. */
-    entry?: GenerationModelEntry;
 };
 
 type PrimaryModel = {
@@ -167,29 +164,20 @@ type PrimaryModel = {
     fallbackEntries?: GenerationModelEntry[];
 };
 
-/**
- * The model the caller asked for, then each declared fallback in order.
- *
- * An absent model means generation was reached without the model middleware, so
- * there is no registry entry and nothing to fall back to — the one attempt still
- * runs against whatever the provider config resolves.
- */
-export function fallbackCandidates(
-    model: PrimaryModel | undefined,
-): FallbackCandidate[] {
+/** The model the caller asked for, then each declared fallback in order. */
+export function fallbackCandidates(model: PrimaryModel): FallbackCandidate[] {
     const candidates: FallbackCandidate[] = [
         {
-            id: model?.resolved ?? "",
-            definition: model?.definition,
-            communityEndpoint: model?.communityEndpoint,
+            id: model.resolved,
+            definition: model.definition,
+            communityEndpoint: model.communityEndpoint,
         },
     ];
-    for (const entry of model?.fallbackEntries ?? []) {
+    for (const entry of model.fallbackEntries ?? []) {
         candidates.push({
             id: entry.id,
             definition: entry.definition,
             communityEndpoint: entry.communityEndpoint,
-            entry,
         });
     }
     return candidates;
@@ -245,18 +233,14 @@ export function linkFallbackEntries(
 }
 
 /**
- * One upstream call that failed, as the loop saw it.
- *
- * `terminal` marks the failure that ended the request — the only thing about a
- * failed generation that the error response cannot say for itself, since it
- * carries no candidate name.
+ * One upstream call, in the order the loop made it. Every element except the
+ * last is a failed call that was retried; the last is the request's outcome.
  */
-export type FailedCall = {
+export type FallbackAttempt = {
     candidate: FallbackCandidate;
-    error: unknown;
     startedAt: Date;
     endedAt: Date;
-    terminal: boolean;
+    error?: unknown;
 };
 
 /**
@@ -268,10 +252,10 @@ export type FailedCall = {
  * dominant failure is an exhausted quota, and asking the same endpoint again
  * would only spend more of a budget that is already gone.
  *
- * Every failed call is appended to `failures`, including the one that ends the
- * request. Recording is not the same as retrying: this loop decides only which
- * candidate to try next, and leaves what any of it means to whoever reads the
- * list.
+ * Every call is appended to `attempts`, including the one that serves or ends
+ * the request. Recording is not the same as retrying: this loop decides only
+ * which candidate to try next, and leaves what any of it means to whoever reads
+ * the list.
  *
  * Safe for streaming: the clients throw before returning a body, so a failed
  * attempt has sent the caller nothing.
@@ -279,7 +263,7 @@ export type FailedCall = {
 export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
-    failures?: FailedCall[],
+    attempts?: FallbackAttempt[],
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
         // Timed from this attempt's own start. Measured from the request's, a
@@ -287,17 +271,18 @@ export async function withModelFallback<T>(
         // own latency.
         const startedAt = new Date();
         try {
-            return { result: await attempt(candidate), candidate, index };
+            const result = await attempt(candidate);
+            attempts?.push({ candidate, startedAt, endedAt: new Date() });
+            return { result, candidate, index };
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
                 !isRetryableFallbackError(error);
-            failures?.push({
+            attempts?.push({
                 candidate,
                 error,
                 startedAt,
                 endedAt: new Date(),
-                terminal,
             });
             if (terminal) throw error;
         }
@@ -311,15 +296,15 @@ export async function withModelFallback<T>(
 export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
-    failures?: FailedCall[],
-): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
-    const { result, candidate, index } = await withModelFallback(
+    attempts?: FallbackAttempt[],
+): Promise<Response> {
+    const { result, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
-        failures,
+        attempts,
     );
     if (index > 0) {
         result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
     }
-    return { response: result, servedEntry: candidate.entry };
+    return result;
 }

@@ -26,6 +26,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import {
@@ -49,7 +50,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
-    servedModelEntry?: ModelVariables["servedModelEntry"],
+    servedModelEntry?: GenerationModelEntry,
     responseHeaders: Record<string, string> = {},
 ) {
     const app = new Hono<Env>();
@@ -74,36 +75,33 @@ function createTestApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(
-                JSON.stringify({
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                }),
-                {
-                    headers: {
-                        "content-type": "application/json",
-                        "x-model-used": "gpt-5-nano-2025-08-07",
-                        "x-usage-prompt-text-tokens": "1000",
-                        "x-usage-completion-text-tokens": "500",
-                        ...responseHeaders,
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordServedEntry(c.var.track.attempts, servedModelEntry);
+        return new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
                     },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "500",
+                    ...responseHeaders,
                 },
-            ),
-    );
+            },
+        );
+    });
 
     return app;
 }
@@ -295,24 +293,21 @@ function createHeaderApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
-                status,
-                headers: {
-                    "content-type": "application/json",
-                    "x-model-used": "gpt-5-nano-2025-08-07",
-                    "x-usage-prompt-text-tokens": "10",
-                    "x-usage-completion-text-tokens": "5",
-                    ...extraHeaders,
-                },
-            }),
-    );
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordServedEntry(c.var.track.attempts, servedModelEntry);
+        return new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+            status,
+            headers: {
+                "content-type": "application/json",
+                "x-model-used": "gpt-5-nano-2025-08-07",
+                "x-usage-prompt-text-tokens": "10",
+                "x-usage-completion-text-tokens": "5",
+                ...extraHeaders,
+            },
+        });
+    });
 
     return app;
 }
@@ -328,6 +323,23 @@ function createStaticEntry(model: ModelName): GenerationModelEntry {
         info: modelInfoFromDefinition(model, definition),
         visible: true,
     };
+}
+
+function recordServedEntry(
+    attempts: FallbackAttempt[],
+    entry?: GenerationModelEntry,
+): void {
+    if (!entry) return;
+    const now = new Date();
+    attempts.push({
+        candidate: {
+            id: entry.id,
+            definition: entry.definition,
+            communityEndpoint: entry.communityEndpoint,
+        },
+        startedAt: now,
+        endedAt: now,
+    });
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -635,6 +647,7 @@ describe("tracking observability", () => {
             isBilledUsage: true,
             fallbackUsed: true,
             modelUsed: "openai",
+            modelProviderUsed: "azure",
             totalCost: 0,
             totalPrice: 0.005,
             devPrice: 0.005,
@@ -696,6 +709,7 @@ describe("tracking observability", () => {
             isBilledUsage: false,
             fallbackUsed: true,
             modelUsed: "perplexity-fast",
+            modelProviderUsed: "perplexity",
             totalCost: 0.005,
             totalPrice: 0,
             devPrice: 0,
@@ -1623,12 +1637,18 @@ function requestTrackingFixture(
     return {
         modelRequested: model,
         resolvedModelRequested: model,
-        modelProvider: definition.provider,
         modelDefinition: definition,
         modelCostDefinition,
         modelPriceDefinition,
         streamRequested,
         referrerData: {},
+    };
+}
+
+function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
+    return {
+        id: model,
+        definition: getRegistryModelDefinition(model),
     };
 }
 
@@ -1638,6 +1658,7 @@ describe("trackResponse modelUsed", () => {
             "generate.text",
             requestTrackingFixture(),
             new Response("upstream exploded", { status: 502 }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 502,
@@ -1653,6 +1674,7 @@ describe("trackResponse modelUsed", () => {
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -1671,6 +1693,7 @@ describe("trackResponse modelUsed", () => {
                 'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
                 { headers: { "content-type": "text/event-stream" } },
             ),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -1684,6 +1707,7 @@ describe("trackResponse modelUsed", () => {
             "generate.text",
             requestTrackingFixture(),
             Response.json({ choices: [] }, { headers: { "x-cache": "HIT" } }),
+            candidateFixture(),
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);

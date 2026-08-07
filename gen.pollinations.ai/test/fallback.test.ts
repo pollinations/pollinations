@@ -3,7 +3,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
-    type FailedCall,
+    type FallbackAttempt,
     type FallbackCandidate,
     fallbackCandidates,
     isRetryableFallbackError,
@@ -264,21 +264,26 @@ describe("isRetryableFallbackError", () => {
 });
 
 describe("withModelFallback", () => {
-    const candidate = (id: string): FallbackCandidate => ({ id });
+    const candidate = (id: string): FallbackCandidate => ({
+        id,
+        definition: registryEntry(id).definition,
+    });
     const rateLimited = () =>
         Object.assign(new Error("429 upstream"), {
             status: 502,
             upstreamStatus: 429,
         });
 
-    /** How the loop's own record of a failure reads, most compactly. */
-    const seen = (failures: FailedCall[]) =>
-        failures.map((f) =>
-            f.terminal ? `${f.candidate.id}!` : f.candidate.id,
+    /** How the loop's attempt trace reads, with ! on a terminal failure. */
+    const seen = (attempts: FallbackAttempt[]) =>
+        attempts.map((attempt, index) =>
+            index === attempts.length - 1 && attempt.error
+                ? `${attempt.candidate.id}!`
+                : attempt.candidate.id,
         );
 
     it("reports every failure, marking the one that ended the request", async () => {
-        const failures: FailedCall[] = [];
+        const attempts: FallbackAttempt[] = [];
         const attempt = vi.fn(async () => {
             throw rateLimited();
         });
@@ -287,36 +292,34 @@ describe("withModelFallback", () => {
             withModelFallback(
                 [candidate("primary"), candidate("second"), candidate("third")],
                 attempt,
-                failures,
+                attempts,
             ),
         ).rejects.toThrow("429 upstream");
 
-        // Three calls, three failures reported. Only the terminal one is
-        // flagged, because it is the request's outcome rather than an attempt
-        // that was moved on from — tracking turns that flag into one row per
-        // upstream call.
+        // Three calls, three failures reported. Tracking treats the final
+        // element as the request outcome and emits the earlier two separately.
         expect(attempt).toHaveBeenCalledTimes(3);
-        expect(seen(failures)).toEqual(["primary", "second", "third!"]);
+        expect(seen(attempts)).toEqual(["primary", "second", "third!"]);
     });
 
     it("reports the only model tried when it is the one that failed", async () => {
-        const failures: FailedCall[] = [];
+        const attempts: FallbackAttempt[] = [];
         const attempt = vi.fn(async () => {
             throw rateLimited();
         });
 
         await expect(
-            withModelFallback([candidate("primary")], attempt, failures),
+            withModelFallback([candidate("primary")], attempt, attempts),
         ).rejects.toThrow("429 upstream");
 
         // The overwhelmingly common shape: no fallbacks declared. The failure
         // is terminal, so it is named but produces no row of its own.
         expect(attempt).toHaveBeenCalledTimes(1);
-        expect(seen(failures)).toEqual(["primary!"]);
+        expect(seen(attempts)).toEqual(["primary!"]);
     });
 
     it("stops the chain on a caller error and reports it as terminal", async () => {
-        const failures: FailedCall[] = [];
+        const attempts: FallbackAttempt[] = [];
         const badRequest = Object.assign(new Error("400 upstream"), {
             status: 400,
             upstreamStatus: 400,
@@ -328,17 +331,17 @@ describe("withModelFallback", () => {
                 async () => {
                     throw badRequest;
                 },
-                failures,
+                attempts,
             ),
         ).rejects.toThrow("400 upstream");
 
         // Nothing was moved on from, but the 400 still came from a named
         // model, and that name is the only thing the response cannot carry.
-        expect(seen(failures)).toEqual(["primary!"]);
+        expect(seen(attempts)).toEqual(["primary!"]);
     });
 
-    it("reports only the failures it moved on from once a model serves", async () => {
-        const failures: FailedCall[] = [];
+    it("reports the failed and serving attempts in order", async () => {
+        const attempts: FallbackAttempt[] = [];
         const attempt = vi
             .fn<(c: FallbackCandidate) => Promise<string>>()
             .mockRejectedValueOnce(rateLimited())
@@ -351,13 +354,13 @@ describe("withModelFallback", () => {
         } = await withModelFallback(
             [candidate("primary"), candidate("second"), candidate("third")],
             attempt,
-            failures,
+            attempts,
         );
 
         expect(result).toBe("served");
         expect(served.id).toBe("second");
         expect(index).toBe(1);
-        expect(seen(failures)).toEqual(["primary"]);
+        expect(seen(attempts)).toEqual(["primary", "second"]);
         expect(attempt).toHaveBeenCalledTimes(2);
     });
 });
@@ -368,7 +371,8 @@ describe("withModelFallbackResponse", () => {
         const target = registryEntry("target");
         primary.fallbackEntries = [target];
 
-        const { response, servedEntry } = await withModelFallbackResponse(
+        const attempts: FallbackAttempt[] = [];
+        const response = await withModelFallbackResponse(
             {
                 resolved: primary.id,
                 definition: primary.definition,
@@ -382,9 +386,10 @@ describe("withModelFallbackResponse", () => {
                 }
                 return Response.json({ model: candidate.id });
             },
+            attempts,
         );
 
-        expect(servedEntry?.id).toBe("target");
+        expect(attempts.at(-1)?.candidate.id).toBe("target");
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );

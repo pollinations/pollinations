@@ -75,7 +75,11 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
-import type { FailedCall } from "../fallback.ts";
+import {
+    type FallbackAttempt,
+    type FallbackCandidate,
+    fallbackCandidates,
+} from "../fallback.ts";
 
 export type ModelUsage = {
     model: string;
@@ -86,7 +90,6 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
-    modelProvider?: string;
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -102,7 +105,7 @@ type ResponseTrackingData = {
     /** False only on a call that was moved on from; the outcome row leaves it true. */
     isFinal?: boolean;
     modelUsed?: string;
-    modelProviderUsed?: string;
+    candidate: FallbackCandidate;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -131,11 +134,10 @@ export type TrackVariables = {
         // pricing. Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
         /**
-         * Handed to the fallback loop to append to. Nothing is written as the
-         * calls fail: the block after next() owns every row this request
-         * emits, so it can see the whole sequence at once.
+         * Handed to the fallback loop to append to. The final attempt is the
+         * request outcome; every earlier attempt is a failure that was retried.
          */
-        failedCalls: FailedCall[];
+        attempts: FallbackAttempt[];
     };
 };
 
@@ -186,13 +188,8 @@ export const track = (eventType: EventType) =>
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
-        /**
-         * Every upstream call that failed, in the order they were tried.
-         *
-         * Filled by the fallback loop, which knows only how to retry; this
-         * middleware is what turns the list into rows.
-         */
-        const failedCalls: FailedCall[] = [];
+        /** Every upstream call in order; the final one is the outcome row. */
+        const attempts: FallbackAttempt[] = [];
 
         // Read at emit time: balanceCheckResult is only set once the balance
         // middleware has run.
@@ -258,7 +255,7 @@ export const track = (eventType: EventType) =>
             setPricingInput: (input: PricingInput) => {
                 pricingInput = input;
             },
-            failedCalls,
+            attempts,
         });
 
         await next();
@@ -268,10 +265,9 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
-                const terminalAttempt = failedCalls.find(
-                    (call) => call.terminal,
-                );
-                const terminalAttemptModel = terminalAttempt?.candidate.id;
+                const finalCandidate =
+                    attempts.at(-1)?.candidate ??
+                    fallbackCandidates(modelInfo)[0];
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -291,13 +287,12 @@ export const track = (eventType: EventType) =>
                 // ended the request is not among them: it is the response, and
                 // the settlement row below carries it — under the name only the
                 // loop can supply. So a request emits one row per upstream call.
-                for (const call of failedCalls) {
-                    if (call.terminal) continue;
-                    const model = call.candidate.id;
-                    const status = failedAttemptStatus(call.error);
+                for (const attempt of attempts.slice(0, -1)) {
+                    const model = attempt.candidate.id;
+                    const status = failedAttemptStatus(attempt.error);
                     await emitRow({
-                        startTime: call.startedAt,
-                        endTime: call.endedAt,
+                        startTime: attempt.startedAt,
+                        endTime: attempt.endedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
                             responseStatus: status,
@@ -308,26 +303,21 @@ export const track = (eventType: EventType) =>
                                 model !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
-                            modelProviderUsed:
-                                call.candidate.definition?.provider ??
-                                requestTracking.modelProvider,
+                            candidate: attempt.candidate,
                         },
                         errorTracking: collectErrorData(
                             status,
-                            call.error instanceof Error
-                                ? call.error
+                            attempt.error instanceof Error
+                                ? attempt.error
                                 : undefined,
                         ),
                     });
                 }
-                const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition ??
-                        terminalAttempt?.candidate.definition,
-                    terminalAttemptModel ?? servedEntry?.id,
+                    finalCandidate,
                     pricingInput,
                 );
                 if (responseTracking.cacheHit) {
@@ -354,9 +344,7 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const communityEndpoint = servedEntry
-                        ? servedEntry.communityEndpoint
-                        : c.var.model?.communityEndpoint;
+                    const communityEndpoint = finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -518,7 +506,6 @@ async function trackRequest(
     const resolvedModelRequested = modelInfo.resolved;
 
     const modelDefinition = modelInfo.definition;
-    const modelProvider = modelDefinition.provider;
     const modelCostDefinition = modelDefinition.cost;
     const modelPriceDefinition = getPriceDefinitionForModel(modelDefinition);
     if (!modelCostDefinition || !modelPriceDefinition) {
@@ -532,7 +519,6 @@ async function trackRequest(
     return {
         modelRequested,
         resolvedModelRequested,
-        modelProvider,
         modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
@@ -563,28 +549,26 @@ export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
-    servedModelDefinition?: ModelDefinition,
-    terminalAttemptModel?: string,
+    candidate: FallbackCandidate,
     pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    // The model this row is actually about. Defaults to the one asked for,
-    // which is right until a fallback moves the request to a different id.
-    const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
-    const modelProviderUsed =
-        servedModelDefinition?.provider ?? requestTracking.modelProvider;
+    const modelCalled = candidate.id;
     const cacheHit = response.headers.get("x-cache") === "HIT";
-    const fallbackUsed = parseFallbackUsed(response);
-    const notBilled = (
-        extra?: Partial<ResponseTrackingData>,
+    const fallbackUsed =
+        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+    const tracked = (
+        data: Omit<
+            ResponseTrackingData,
+            "responseStatus" | "cacheHit" | "fallbackUsed" | "candidate"
+        >,
     ): ResponseTrackingData => ({
         responseStatus: response.status,
         cacheHit,
-        isBilledUsage: false,
         fallbackUsed,
-        modelProviderUsed,
-        ...extra,
+        candidate,
+        ...data,
     });
 
     // A cache hit called no model, so it must not claim one. A failure did
@@ -592,20 +576,16 @@ export async function trackResponse(
     // say what failed — otherwise model_used falls back to the datasource
     // DEFAULT 'undefined' and per-model upstream health is unqueryable.
     //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it. Portkey's multi-target config (see fallbackUsed /
-    // x-portkey-last-used-option-index) only changes which upstream provider
-    // target served a single model id, so it needs no such reporting.
+    // The fallback loop's final candidate identifies which model failed.
+    // Portkey's internal target fallback keeps one model id and is reported by
+    // x-portkey-last-used-option-index through fallbackUsed above.
     if (cacheHit) {
-        return notBilled();
+        return tracked({ isBilledUsage: false });
     }
     if (!response.ok) {
-        return notBilled({
+        return tracked({
+            isBilledUsage: false,
             modelUsed: modelCalled,
-            fallbackUsed:
-                fallbackUsed || modelCalled !== resolvedModelRequested,
         });
     }
 
@@ -628,7 +608,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return tracked({ isBilledUsage: false, modelUsed: modelCalled });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -647,7 +627,7 @@ export async function trackResponse(
         const adjustmentOnlyBilling = calculateUsageBilling({
             model: resolvedModelRequested,
             usage: {},
-            servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+            servedBy: candidate.definition,
             quotedBy: requestTracking.modelDefinition,
             output,
             input: pricingInput,
@@ -655,18 +635,16 @@ export async function trackResponse(
         const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
         const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
         if (hasKnownProviderCost || hasBillablePrice) {
-            return {
-                responseStatus: response.status,
-                cacheHit,
+            return tracked({
                 isBilledUsage: hasBillablePrice,
-                fallbackUsed,
                 ...adjustmentOnlyBilling,
                 modelUsed: modelCalled,
                 usage: {},
                 contentFilterResults,
-            };
+            });
         }
-        return notBilled({
+        return tracked({
+            isBilledUsage: false,
             contentFilterResults,
             modelUsed: modelCalled,
         });
@@ -683,16 +661,13 @@ export async function trackResponse(
     } = calculateUsageBilling({
         model: resolvedModelRequested,
         usage: modelUsage.usage,
-        servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+        servedBy: candidate.definition,
         quotedBy: requestTracking.modelDefinition,
         output: modelUsage.output,
         input: pricingInput,
     });
-    return {
-        responseStatus: response.status,
-        cacheHit,
+    return tracked({
         isBilledUsage: true,
-        fallbackUsed,
         cost,
         price,
         servedPrice,
@@ -700,10 +675,9 @@ export async function trackResponse(
         priceDefinition,
         costVariant,
         modelUsed: modelUsage.model,
-        modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
-    };
+    });
 }
 
 // Portkey reports the served target as "config.targets[N]" via the
@@ -894,8 +868,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed:
-            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
+        modelProviderUsed: responseTracking.candidate.definition.provider,
         costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,

@@ -450,7 +450,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing — API keys, Pollen credits, and pack checkout.
 
-- [`image.pollinations.ai/`](./image.pollinations.ai/): Image GPU/backend assets; the public image gateway code lives in `gen.pollinations.ai/`.
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Image and video GPU/backend assets and deployment scripts; the public gateway code lives in `gen.pollinations.ai/`.
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 

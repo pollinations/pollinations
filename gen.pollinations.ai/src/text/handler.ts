@@ -370,6 +370,7 @@ function throwTextError(error: ServiceError): never {
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
+        upstreamHeaders: error.upstreamHeaders,
         cause: error,
     });
 }
@@ -387,6 +388,7 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
+        const portkey = c.env.PORTKEY;
         const {
             result: completion,
             candidate,
@@ -397,6 +399,9 @@ async function generateTextResponse(
                 generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
+                    portkey
+                        ? (input, init) => portkey.fetch(input, init)
+                        : undefined,
                 ),
             c.var.track?.failedCalls,
         );

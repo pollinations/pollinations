@@ -40,7 +40,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Apps listed in APPS.md with a category assigned.",
+            "description": "Apps listed in catalog.json with a category assigned.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -575,7 +575,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Directory apps with BYOP-detected events. Attribution via developer (api_key_created_for_user_id \u2192 d1_user.github_id \u2192 app_directory.github_user_id) \u2014 surfaces end-user spend correctly. 'Declared' indicates the APPS.md entry self-declares byop=true.",
+            "description": "Directory apps with BYOP-detected events. Attribution via developer (api_key_created_for_user_id \u2192 d1_user.github_id \u2192 app_directory.github_user_id) \u2014 surfaces end-user spend correctly. 'Declared' indicates the catalog.json entry self-declares byop=true.",
             "fieldConfig": {
                 "defaults": {
                     "color": {

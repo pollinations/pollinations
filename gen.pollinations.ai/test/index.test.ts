@@ -9,6 +9,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
+const TRANSCRIPTION_MODEL_IDS = [
+    "whisper",
+    "scribe",
+    "universal-2",
+    "universal-3.5-pro",
+] as const;
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -354,6 +361,31 @@ describe("gen worker routing", () => {
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();
+        for (const id of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.data.find((model) => model.id === id)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
+    });
+
+    it.each([
+        "/models",
+        "/audio/models",
+    ] as const)("advertises transcription endpoints on %s", async (path) => {
+        const response = await fetchWorker(path, envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            supported_endpoints?: string[];
+        }[];
+        for (const name of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.find((model) => model.name === name)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
     });
 
     it("serves fixed request pricing without auth", async () => {
@@ -1810,7 +1842,7 @@ fixtureTest(
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 message:
-                    "Model 'universal-2' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.",
+                    'Model "universal-2" cannot be used on /v1/audio/speech. Supported endpoints: /v1/audio/transcriptions.',
             },
         });
 
@@ -1819,5 +1851,36 @@ fixtureTest(
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
         ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects text-to-speech models on the transcription endpoint",
+    async ({ apiKey }) => {
+        const formData = new FormData();
+        formData.set("model", "elevenlabs");
+
+        const response = await fetchWorker(
+            "/v1/audio/transcriptions",
+            {
+                ...env,
+                // Blank the whisper key so a rejection regression fails here
+                // instead of reaching the live provider.
+                OVHCLOUD_API_KEY: "",
+            } as unknown as CloudflareBindings,
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: formData,
+            },
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
+            },
+        });
     },
 );

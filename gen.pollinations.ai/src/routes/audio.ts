@@ -7,7 +7,6 @@ import {
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -1353,20 +1352,6 @@ export async function generateLyria3Clip(opts: {
     });
 }
 
-function requireTextToAudioModel(
-    model: string,
-    definition: ModelDefinition,
-): void {
-    const acceptsText = definition.inputModalities?.includes("text");
-    const returnsAudio = definition.outputModalities?.includes("audio");
-
-    if (acceptsText && returnsAudio) return;
-
-    throw new UpstreamError(400 as ContentfulStatusCode, {
-        message: `Model '${model}' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.`,
-    });
-}
-
 function requireElevenMusicOptions(
     model: string,
     opts: {
@@ -2238,7 +2223,6 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    requireTextToAudioModel(c.var.model.resolved, c.var.model.definition);
     text = await applySafety(c, text, query.safe);
 
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -2754,10 +2738,6 @@ export const audioRoutes = new Hono<Env>()
                 loop,
                 prompt_influence,
             } = await parseSpeechRequest(c);
-            requireTextToAudioModel(
-                c.var.model.resolved,
-                c.var.model.definition,
-            );
             requireElevenMusicOptions(c.var.model.resolved, {
                 referenceAudio: reference_audio,
                 compositionPlan: composition_plan,
@@ -3066,6 +3046,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         resolveModel("generate.audio", {
             defaultModel: "whisper-large-v3",
+            supportedEndpoint: "/v1/audio/transcriptions",
         }),
         track("generate.audio"),
         async (c) => {

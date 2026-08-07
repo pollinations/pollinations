@@ -40,7 +40,6 @@ import {
     type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
-import { isAccountLevelBlock } from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -351,39 +350,12 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 
 let gptImageEndpointIndex = 0;
 
-function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
+/** Round robins the Azure regions to spread load. One region per request. */
+function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
-    if (configs.length === 1) return configs;
-
-    const start = gptImageEndpointIndex;
-    gptImageEndpointIndex += 1;
-    if (gptImageEndpointIndex === configs.length) gptImageEndpointIndex = 0;
-    return [...configs.slice(start), ...configs.slice(0, start)];
-}
-
-/**
- * A second region is only worth trying when the first one cannot have billed us
- * for an image. Azure charges for a generation it completed even if we never
- * saw the response, so anything that leaves that in doubt — a timeout, a 5xx
- * mid-flight, a body we could not parse — is failed to the caller rather than
- * paid for twice.
- */
-function isRetryableGPTImageError(error: unknown): boolean {
-    if (!(error instanceof HttpError)) return false;
-    // Azure blocks a resource (403) after aggregate abuse, and every prompt on
-    // it fails until the block lifts. The block is per-resource, so the sibling
-    // region still serves — fail over instead of failing the caller. A genuine
-    // content rejection is NOT retried: it would be refused in every region, so
-    // retrying only burns a second upstream call.
-    const blockText = `${error.message} ${
-        typeof error.details === "string"
-            ? error.details
-            : JSON.stringify(error.details ?? "")
-    }`;
-    if (isAccountLevelBlock(blockText)) return true;
-    // Rate limiting is refused before any image is produced, so the retry is
-    // free. Every other status is not.
-    return error.status === 429;
+    const config = configs[gptImageEndpointIndex % configs.length];
+    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    return config;
 }
 
 const callGPTImageWithEndpoint = async (
@@ -654,31 +626,24 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "gptimage",
 ): Promise<ImageGenerationResult> => {
-    const configs = orderedGPTImageConfigs(model);
-    let lastError: unknown;
-
-    for (let index = 0; index < configs.length; index++) {
-        const config = configs[index];
-        try {
-            return await callGPTImageWithEndpoint(
-                prompt,
-                safeParams,
-                userInfo,
-                config,
-            );
-        } catch (error) {
-            lastError = error;
-            const retry =
-                index < configs.length - 1 && isRetryableGPTImageError(error);
-            logError(
-                `Error calling Azure GPT Image API (${config.modelName}, ${config.region})${retry ? "; trying next region" : ""}:`,
-                error,
-            );
-            if (!retry) throw error;
-        }
+    // One region, one attempt. Azure bills a generation it completed even when
+    // we never saw the response, so a second region would pay for a second
+    // image to answer a request the caller has already been told failed.
+    const config = nextGPTImageConfig(model);
+    try {
+        return await callGPTImageWithEndpoint(
+            prompt,
+            safeParams,
+            userInfo,
+            config,
+        );
+    } catch (error) {
+        logError(
+            `Error calling Azure GPT Image API (${config.modelName}, ${config.region}):`,
+            error,
+        );
+        throw error;
     }
-
-    throw lastError;
 };
 
 /**

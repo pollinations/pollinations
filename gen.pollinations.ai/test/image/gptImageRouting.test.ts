@@ -75,21 +75,6 @@ describe("gpt-image-2 Azure routing", () => {
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
     });
 
-    it("tries the next Azure region after a retryable response", async () => {
-        const urls: string[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-            urls.push(String(input));
-            return urls.length === 1
-                ? new Response("rate limited", { status: 429 })
-                : successResponse();
-        });
-
-        await callGPTImage("test", params, userInfo, "gpt-image-2");
-
-        expect(urls).toHaveLength(2);
-        expect(new URL(urls[0]).host).not.toBe(new URL(urls[1]).host);
-    });
-
     it("does not retry client errors", async () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
@@ -114,19 +99,14 @@ describe("gpt-image-2 Azure routing", () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
-    it("stops after all Azure regions are rate limited", async () => {
-        const urls: string[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-            urls.push(String(input));
-            return new Response("rate limited", { status: 429 });
-        });
+    it("does not fail over to a second region on a rate limit", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response("rate limited", { status: 429 }));
 
         await expect(
             callGPTImage("test", params, userInfo, "gpt-image-2"),
         ).rejects.toMatchObject({ status: 429 } satisfies Partial<HttpError>);
-        expect(urls).toHaveLength(EXPECTED_HOSTS.size);
-        expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
-            EXPECTED_HOSTS,
-        );
+        expect(fetchMock).toHaveBeenCalledOnce();
     });
 });

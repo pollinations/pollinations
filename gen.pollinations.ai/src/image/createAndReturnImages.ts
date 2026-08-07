@@ -361,26 +361,29 @@ function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
     return [...configs.slice(start), ...configs.slice(0, start)];
 }
 
+/**
+ * A second region is only worth trying when the first one cannot have billed us
+ * for an image. Azure charges for a generation it completed even if we never
+ * saw the response, so anything that leaves that in doubt — a timeout, a 5xx
+ * mid-flight, a body we could not parse — is failed to the caller rather than
+ * paid for twice.
+ */
 function isRetryableGPTImageError(error: unknown): boolean {
-    if (error instanceof HttpError) {
-        // Azure blocks a resource (403) after aggregate abuse, and every prompt
-        // on it fails until the block lifts. The block is per-resource, so the
-        // sibling region still serves — fail over instead of failing the caller.
-        // A genuine content rejection is NOT retried: it would be refused in
-        // every region, so retrying only burns a second upstream call.
-        const blockText = `${error.message} ${
-            typeof error.details === "string"
-                ? error.details
-                : JSON.stringify(error.details ?? "")
-        }`;
-        if (isAccountLevelBlock(blockText)) return true;
-        return error.status === 429 || error.status >= 500;
-    }
-    return (
-        error instanceof TypeError ||
-        (error instanceof Error &&
-            error.message === "Invalid response from GPT Image API")
-    );
+    if (!(error instanceof HttpError)) return false;
+    // Azure blocks a resource (403) after aggregate abuse, and every prompt on
+    // it fails until the block lifts. The block is per-resource, so the sibling
+    // region still serves — fail over instead of failing the caller. A genuine
+    // content rejection is NOT retried: it would be refused in every region, so
+    // retrying only burns a second upstream call.
+    const blockText = `${error.message} ${
+        typeof error.details === "string"
+            ? error.details
+            : JSON.stringify(error.details ?? "")
+    }`;
+    if (isAccountLevelBlock(blockText)) return true;
+    // Rate limiting is refused before any image is produced, so the retry is
+    // free. Every other status is not.
+    return error.status === 429;
 }
 
 const callGPTImageWithEndpoint = async (

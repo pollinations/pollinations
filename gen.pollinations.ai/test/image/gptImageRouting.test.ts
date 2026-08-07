@@ -101,6 +101,19 @@ describe("gpt-image-2 Azure routing", () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
+    it("does not retry a timeout, which may already have been billed", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(
+                new Response("error code: 524", { status: 524 }),
+            );
+
+        await expect(
+            callGPTImage("test", params, userInfo, "gpt-image-2"),
+        ).rejects.toMatchObject({ status: 524 } satisfies Partial<HttpError>);
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
     it("stops after all Azure regions are rate limited", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {

@@ -39,7 +39,10 @@ import {
     withModelFallbackResponse,
 } from "../fallback.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
-import { buildTranscriptionResponse } from "./transcription-response.ts";
+import {
+    buildTranscriptionResponse,
+    type NormalizedDiarizedSegment,
+} from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -714,6 +717,124 @@ interface ElevenLabsTranscriptionResponse {
         speaker_id?: string | null;
         type?: string;
     }[];
+}
+
+interface XaiTranscriptionResponse {
+    text: string;
+    language?: string;
+    duration: number;
+    words?: {
+        text: string;
+        start: number;
+        end: number;
+        speaker?: number;
+    }[];
+}
+
+export async function transcribeWithXai(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "xAI transcription service is not configured",
+        });
+    }
+    if (
+        !["json", "text", "verbose_json", "diarized_json"].includes(
+            responseFormat,
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for grok-transcribe: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
+        });
+    }
+
+    const formData = new FormData();
+    if (language) {
+        formData.append("language", language);
+        formData.append("format", "true");
+    }
+    if (responseFormat === "diarized_json") {
+        formData.append("diarize", "true");
+    }
+    formData.append("file", file, file.name || "audio");
+
+    const xaiUrl = "https://api.x.ai/v1/stt";
+    const response = await ensureUpstreamOk(
+        await fetch(xaiUrl, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: formData,
+        }),
+        xaiUrl,
+    );
+    const transcript = (await response.json()) as XaiTranscriptionResponse;
+    if (
+        typeof transcript.text !== "string" ||
+        typeof transcript.duration !== "number" ||
+        !Number.isFinite(transcript.duration) ||
+        transcript.duration < 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "xAI returned an invalid transcription response",
+        });
+    }
+
+    log.info("xAI transcription success: {chars} chars, {duration}s", {
+        chars: transcript.text.length,
+        duration: transcript.duration,
+    });
+
+    return buildTranscriptionResponse({
+        normalized: {
+            text: transcript.text,
+            language: transcript.language || undefined,
+            duration: transcript.duration,
+            words:
+                transcript.words?.map((word) => ({
+                    word: word.text,
+                    start: word.start,
+                    end: word.end,
+                })) ?? [],
+            diarizedSegments: groupXaiWordsBySpeaker(transcript.words),
+        },
+        responseFormat,
+        usageHeaders: buildUsageHeaders(
+            "grok-transcribe",
+            createAudioSecondsUsage(transcript.duration),
+        ),
+    });
+}
+
+function groupXaiWordsBySpeaker(
+    words: XaiTranscriptionResponse["words"],
+): NormalizedDiarizedSegment[] {
+    if (!words?.length) return [];
+
+    const segments: NormalizedDiarizedSegment[] = [];
+    for (const word of words) {
+        const speaker =
+            word.speaker === undefined ? null : String(word.speaker);
+        const current = segments.at(-1);
+        if (current?.speaker === speaker) {
+            current.text = `${current.text} ${word.text}`;
+            current.end = word.end;
+        } else {
+            segments.push({
+                speaker,
+                text: word.text,
+                start: word.start,
+                end: word.end,
+            });
+        }
+    }
+    return segments;
 }
 
 export async function transcribeWithElevenLabs(opts: {
@@ -2943,6 +3064,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
+                "- `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -2964,7 +3086,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3.5-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -3098,6 +3220,16 @@ export const audioRoutes = new Hono<Env>()
             }
 
             const result = await withAudioFallback(c, async (candidate) => {
+                if (candidate.id === "grok-transcribe") {
+                    return transcribeWithXai({
+                        file,
+                        language: language || undefined,
+                        responseFormat: responseFormat || undefined,
+                        apiKey: c.env.XAI_API_KEY,
+                        log,
+                    });
+                }
+
                 if (candidate.id === "scribe") {
                     return transcribeWithElevenLabs({
                         file,

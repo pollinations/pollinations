@@ -978,9 +978,11 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("flux image generation uses Replicate fallback from gen", async ({
+test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     mocks,
 }) => {
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
     await mocks.enable("tinybird", "replicate");
     const { key } = await createTestApiKey({
         allowedModels: ["flux"],
@@ -990,44 +992,23 @@ test("flux image generation uses Replicate fallback from gen", async ({
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
-            // The key allows only public `flux` (and one unrelated text model).
-            // Its hidden provider route must remain available as an internal
-            // implementation detail of that permitted public model.
             headers: { authorization: `Bearer ${key}` },
         },
     );
 
-    const failureBody =
-        response.status === 200 ? "" : await response.clone().text();
-    expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/^image\//);
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
-    expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
-    await wait();
-
-    expect(mocks.replicate.state.requests).toHaveLength(1);
-    expect(mocks.replicate.state.requests[0]).toMatchObject({
-        url: "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
-        body: {
-            input: {
-                prompt: "vcr red square",
-                aspect_ratio: "16:9",
-                num_inference_steps: 4,
-                num_outputs: 1,
-                output_format: "jpg",
-                output_quality: 90,
-                go_fast: true,
-                megapixels: "1",
-                seed: 42,
-            },
-        },
-        headers: {
-            authorization: `Bearer ${env.REPLICATE_API_TOKEN}`,
-            "content-type": "application/json",
-            prefer: "wait=60",
+    expect(response.status).toBe(503);
+    expect(response.headers.get("x-fallback-target")).toBeNull();
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "SERVICE_UNAVAILABLE",
+            message: "No active flux servers available",
         },
     });
-    expect(mocks.tinybird.state.events).toHaveLength(2);
+    await wait();
+
+    expect(mocks.replicate.state.requests).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
@@ -1036,30 +1017,56 @@ test("flux image generation uses Replicate fallback from gen", async ({
         modelProviderUsed: "vast",
         responseStatus: 503,
         fallbackUsed: false,
-        isFinal: false,
+        isFinal: true,
         isBilledUsage: false,
     });
-    expect(mocks.tinybird.state.events[1]).toMatchObject({
-        eventType: "generate.image",
-        modelRequested: "flux",
-        resolvedModelRequested: "flux",
-        modelUsed: "flux",
-        modelProviderUsed: "replicate",
-        tokenCountCompletionImage: 1,
-        totalCost: 0.003,
-        totalPrice: 0.002,
-        devPrice: 0.002,
-        fallbackUsed: true,
-        isFinal: true,
-        isBilledUsage: true,
+});
+
+test("removed flux-replicate model returns invalid model", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "replicate");
+    const { response, wait } = await fetchWorker(
+        "/image/test?model=flux-replicate",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                'Invalid model or alias: "flux-replicate". Must be a valid model name or alias.',
+        },
     });
+    await wait();
+
+    expect(mocks.replicate.state.requests).toHaveLength(0);
 });
 
 test("OpenAI image generation returns token usage", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "replicate");
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "flux",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
+    await mocks.enable("tinybird", "imageBackend");
 
     const { response, wait } = await fetchWorker("/v1/images/generations", {
         method: "POST",

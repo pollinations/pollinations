@@ -140,6 +140,15 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
 
 Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
 
+**Speech-to-text:**
+
+```bash
+curl 'https://gen.pollinations.ai/v1/audio/transcriptions' \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F file=@audio.mp3 \
+  -F model=whisper-large-v3
+```
+
 ### Video Generation
 
 ```bash
@@ -155,6 +164,31 @@ curl 'https://gen.pollinations.ai/3d/a%20rusty%20robot?key=YOUR_API_KEY' -o mode
 ```
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models. See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
+
+### Embeddings
+
+```bash
+curl 'https://gen.pollinations.ai/v1/embeddings' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -d '{"model": "openai-3-small", "input": "Hello world!"}'
+```
+
+Pass a string or an array of up to 32 strings (text or multimodal content parts). See available embedding models at [gen.pollinations.ai/embeddings/models](https://gen.pollinations.ai/embeddings/models).
+
+### Pollinations CLI
+
+Generate text, images, audio, video, and more right from your terminal:
+
+```bash
+npx @pollinations/cli gen image "cyberpunk city at night" --model flux --output city.png
+npx @pollinations/cli gen text "Explain quantum tunneling in one sentence"
+npx @pollinations/cli gen audio "Hello world" --voice nova --output speech.mp3
+npx @pollinations/cli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+npx @pollinations/cli gen transcribe speech.mp3
+```
+
+Install globally and use the shorter `polli` command: `npm install -g @pollinations/cli`. Run `polli models` to list models, `polli auth login` to authenticate, and `polli docs` for the full API reference in your terminal.
 
 ### MCP Server for AI Assistants
 

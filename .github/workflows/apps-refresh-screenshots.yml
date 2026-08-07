@@ -1,0 +1,122 @@
+name: Apps / Refresh screenshots
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Screenshot set to process
+        type: choice
+        options:
+          - refresh
+          - missing
+          - all
+        default: missing
+      limit:
+        description: Maximum screenshots for a manual run
+        type: number
+        default: 50
+
+concurrency:
+  group: app-screenshot-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Capture and upload screenshots
+        env:
+          COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
+          CAPTURE_MODE: ${{ inputs.mode || 'refresh' }}
+          CAPTURE_LIMIT: ${{ inputs.limit }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+        run: |
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
+            args=(--mode=all --limit=50 --rotate-daily --concurrency=4 --publish)
+          else
+            args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
+            args+=(--limit="${CAPTURE_LIMIT:-50}")
+          fi
+          npm run apps:capture-screenshots -- "${args[@]}"
+
+      - name: Validate catalog
+        run: node -e 'require("./.github/scripts/lib/app-catalog.js").readApps()'
+
+      - name: Upload capture report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshot-report
+          path: temp/app-screenshots/**/report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check for catalog changes
+        id: changes
+        run: |
+          if git diff --quiet -- apps/catalog.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate repository write token
+        if: steps.changes.outputs.changed == 'true'
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Configure git
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Create refresh PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="auto/app-screenshots-${DATE}-${GITHUB_RUN_ID}"
+
+          git checkout -b "$BRANCH"
+          git add apps/catalog.json
+          git commit -m "chore: refresh app screenshots (${DATE})"
+          git push -u origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "chore: refresh app screenshots (${DATE})" \
+            --body "Refreshes community app screenshots stored on media.pollinations.ai. Review the capture report at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before merging.")
+
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
+            gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          fi

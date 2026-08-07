@@ -1,0 +1,34 @@
+{
+  "pr_number": 13070,
+  "title": "fix: report canonical text model IDs in x-model-used",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13070",
+  "merged_at": "2026-08-07T11:44:13Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Reports the successful text candidate's canonical registry ID in `x-model-used` for static models, aliases, community models, and fallbacks.\n- Applies the header consistently to streaming and non-streaming responses while leaving JSON `response.model` and SSE chunk model names provider-reported.\n- Intentionally separates this header behavior change from the model-consolidation PR (#13043) so its purpose and history remain clear.\n\n## Root cause\n\nNormal static primary models withheld the resolved registry ID, so non-streaming headers fell back to the provider's model name and static streams lacked the canonical header. Existing tracking consumes this header.\n\n## Validation\n\n- `npx vitest run test/generation-vcr.test.ts test/tracking-observability.test.ts`\n- Focused community, streaming, and fallback tests in `src/community-endpoints.test.ts`\n- `npm run typecheck`\n- `npx biome check --write gen.pollinations.ai/src/text/handler.ts gen.pollinations.ai/test/generation-vcr.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Names, properly labeled",
+    "blurb": "The hive’s model labels now follow the same trail as the request. `x-model-used` reports the canonical registry ID that actually won, even when aliases, community models, or fallbacks get involved.",
+    "summary": "Fixed `x-model-used` so streaming and non-streaming text responses consistently report the successful candidate’s canonical registry ID for static models, aliases, community models, and fallbacks, while JSON and SSE model fields remain provider-reported.",
+    "impact": "Apps and tracking tools can now reliably identify the resolved Pollinations text model from `x-model-used`, including when a request takes an alias, community-model, or fallback route.",
+    "keywords": [
+      "text-api",
+      "x-model-used",
+      "model-registry",
+      "streaming",
+      "observability",
+      "fallbacks"
+    ],
+    "visual_concept": "Depict Polli carefully attaching clear canonical name tags to several glowing model seed jars on a cozy terminal shelf: one is an alias signpost, one is a community flower pot, and one follows a gentle fallback vine. A CRT monitor robot reads the labels happily while provider-shaped labels remain on tiny outgoing message envelopes, showing that the header is standardized without changing response payload names.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while attaching neat canonical ID tags to glowing model seed jars; a chunky CRT-monitor robot eagerly checks the labels beside code-plants, alias signposts, and a gentle fallback vine. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow; pixel-font text: \"x-model-used\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13070.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while attaching neat canonical ID tags to glowing model seed jars; a chunky CRT-monitor robot eagerly checks the labels beside code-plants, alias signposts, and a gentle fallback vine. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow; pixel-font text: \"x-model-used\"."
+  },
+  "generated_at": "2026-08-07T11:45:09.230832+00:00"
+}

@@ -51,12 +51,12 @@ type ModelsProps = {
 
 const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
+    "text",
     "image",
     "video",
     "3d",
     "audio",
     "realtime",
-    "text",
     "embedding",
 ];
 
@@ -324,6 +324,7 @@ export const Models: FC<ModelsProps> = ({
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
+                            listKey={`${activeScope}:${activeTab}:${query}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}

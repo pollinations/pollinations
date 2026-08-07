@@ -1,5 +1,5 @@
 import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -30,6 +30,7 @@ import type { ModelPrice } from "./types.ts";
 export type SectionType = ModelCategory;
 
 type UnifiedModelTableProps = {
+    listKey: string;
     allModels: ModelPrice[];
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
@@ -54,22 +55,97 @@ export const sectionLabels: Record<SectionType, string> = {
 
 // --- Tab content ---
 
-const TabContent: FC<{ models: ModelPrice[] }> = ({ models }) => {
+// Matches Tailwind's @2xl container breakpoint while respecting the user's
+// root font size instead of assuming 1rem is always 16px.
+const DESKTOP_TABLE_MIN_REM = 42;
+const INITIAL_MODEL_COUNT = 24;
+const MODEL_BATCH_SIZE = 24;
+
+function useDesktopModelTable() {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+    useLayoutEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const pointerQuery = window.matchMedia("(pointer: fine)");
+        const updateLayout = () => {
+            const rootFontSize = Number.parseFloat(
+                window.getComputedStyle(document.documentElement).fontSize,
+            );
+            setIsDesktop(
+                pointerQuery.matches &&
+                    container.clientWidth >=
+                        DESKTOP_TABLE_MIN_REM * rootFontSize,
+            );
+        };
+        const observer = new ResizeObserver(updateLayout);
+
+        updateLayout();
+        observer.observe(container);
+        pointerQuery.addEventListener("change", updateLayout);
+
+        return () => {
+            observer.disconnect();
+            pointerQuery.removeEventListener("change", updateLayout);
+        };
+    }, []);
+
+    return { containerRef, isDesktop };
+}
+
+const TabContent: FC<{
+    models: ModelPrice[];
+    isDesktop: boolean;
+    resetKey: string;
+}> = ({ models, isDesktop, resetKey }) => {
+    const [pagination, setPagination] = useState({
+        key: resetKey,
+        count: INITIAL_MODEL_COUNT,
+    });
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+    if (pagination.key !== resetKey) {
+        setPagination({ key: resetKey, count: INITIAL_MODEL_COUNT });
+    }
+    const visibleCount =
+        pagination.key === resetKey ? pagination.count : INITIAL_MODEL_COUNT;
+    const visibleModels = models.slice(0, visibleCount);
+    const Row = isDesktop ? ModelRow : MobileModelRow;
+
+    useEffect(() => {
+        const loadMore = loadMoreRef.current;
+        if (!loadMore) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry?.isIntersecting) return;
+                setPagination((current) => ({
+                    key: resetKey,
+                    count: Math.min(
+                        (current.key === resetKey
+                            ? current.count
+                            : INITIAL_MODEL_COUNT) + MODEL_BATCH_SIZE,
+                        models.length,
+                    ),
+                }));
+            },
+            { rootMargin: "600px" },
+        );
+        observer.observe(loadMore);
+        return () => observer.disconnect();
+    }, [models.length, resetKey]);
+
     return (
         <>
-            {/* Desktop cards */}
-            <div className="hidden gap-2 pb-1 @2xl:pointer-fine:flex @2xl:pointer-fine:flex-col">
-                {models.map((model) => (
-                    <ModelRow key={model.name} model={model} />
+            <div className={isDesktop ? "flex flex-col gap-2 pb-1" : "pb-1"}>
+                {visibleModels.map((model) => (
+                    <Row key={model.name} model={model} />
                 ))}
             </div>
-
-            {/* Mobile list */}
-            <div className="pb-1 @2xl:pointer-fine:hidden">
-                {models.map((model) => (
-                    <MobileModelRow key={model.name} model={model} />
-                ))}
-            </div>
+            {visibleCount < models.length && (
+                <div ref={loadMoreRef} className="h-px" aria-hidden="true" />
+            )}
         </>
     );
 };
@@ -253,6 +329,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 // --- Main export ---
 
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
+    listKey,
     allModels,
     imageModels,
     videoModels,
@@ -263,6 +340,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     embeddingModels,
     activeTab,
 }) => {
+    const { containerRef, isDesktop } = useDesktopModelTable();
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "all", models: allModels },
         { type: "image", models: imageModels },
@@ -277,9 +355,15 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const activeSection = sections.find((s) => s.type === activeTab);
 
     return (
-        <div className="@container">
+        <div ref={containerRef}>
             {/* Tab content — the selected modality */}
-            {activeSection && <TabContent models={activeSection.models} />}
+            {activeSection && isDesktop !== null && (
+                <TabContent
+                    models={activeSection.models}
+                    isDesktop={isDesktop}
+                    resetKey={listKey}
+                />
+            )}
         </div>
     );
 };

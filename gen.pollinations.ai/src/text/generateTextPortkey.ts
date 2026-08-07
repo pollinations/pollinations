@@ -9,6 +9,7 @@ import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
     ChatMessage,
+    OpenAIClientConfig,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -34,6 +35,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
+    fetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
     let state: TransformResult = { messages, options: { ...options } };
     const modelDef = state.options.model
@@ -65,6 +67,7 @@ export async function generateTextPortkey(
             string,
             string
         >,
+        fetcher,
     };
 
     delete state.options.additionalHeaders;

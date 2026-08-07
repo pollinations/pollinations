@@ -548,6 +548,11 @@ describe("selection safety and composition", () => {
                             kind: "test",
                             unit: "request",
                             unitCost: 0.1,
+                            publicPricing: {
+                                label: "Test",
+                                quantity: 1,
+                                unit: "request",
+                            },
                             countUnits: () => 1,
                         },
                     ],
@@ -702,6 +707,10 @@ describe("registry-wide variant invariants", () => {
             if (variantNames.length === 0) continue;
 
             const info = modelInfoFromDefinition(model, def);
+            expect(def.defaultCostVariantLabel?.trim()).not.toBe("");
+            expect(info.pricing_default_label).toBe(
+                def.defaultCostVariantLabel,
+            );
             expect(
                 info.pricing_variants?.map((variant) => variant.name).sort(),
             ).toEqual(variantNames);

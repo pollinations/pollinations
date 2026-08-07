@@ -58,6 +58,7 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
+    if (model.community) return "/brand-logos/community.svg";
     const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

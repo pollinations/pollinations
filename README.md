@@ -171,7 +171,7 @@ Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]
 ### 3D Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/3d/a%20rusty%20robot?key=YOUR_API_KEY' -o model.glb
+curl 'https://gen.pollinations.ai/3d/no_prompt_needed&image=https://inferenceport.ai/img/trellis.jpg&key=YOUR_API_KEY&model=trellis2&resolution=low' -o model.glb
 ```
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models. See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).

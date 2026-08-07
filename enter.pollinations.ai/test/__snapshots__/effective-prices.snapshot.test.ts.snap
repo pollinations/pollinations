@@ -232,14 +232,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.002,
     },
   },
-  "flux-replicate": {
-    "cost": {
-      "completionImageTokens": 0.003,
-    },
-    "price": {
-      "completionImageTokens": 0.003,
-    },
-  },
   "gemini": {
     "cost": {
       "completionTextTokens": 0.0000075,

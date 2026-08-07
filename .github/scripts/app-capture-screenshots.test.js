@@ -1,14 +1,66 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
+    DESKTOP_USER_AGENT,
     applyMediaUrls,
     calculateDailyBatch,
+    isSafeDismissLabel,
     resolveTarget,
     selectTargets,
     selectTargetsByUrl,
     toCaptureTarget,
     validateReview,
+    waitForSuccessfulNavigation,
 } = require("./app-capture-screenshots.js");
+
+test("uses a normal desktop browser identity for public app captures", () => {
+    assert.match(DESKTOP_USER_AGENT, /Chrome\/\d+/);
+    assert.doesNotMatch(DESKTOP_USER_AGENT, /HeadlessChrome/);
+});
+
+test("allows a blocked navigation to resolve to a successful document", async () => {
+    const mainFrame = {};
+    const successfulResponse = {
+        frame: () => mainFrame,
+        request: () => ({ isNavigationRequest: () => true }),
+        status: () => 200,
+    };
+    const page = {
+        mainFrame: () => mainFrame,
+        waitForResponse: async (predicate, options) => {
+            assert.equal(options.timeout, 10000);
+            assert.equal(predicate(successfulResponse), true);
+            return successfulResponse;
+        },
+    };
+
+    assert.equal(
+        await waitForSuccessfulNavigation(page, { status: () => 403 }, 30000),
+        200,
+    );
+});
+
+test("recognizes safe first-visit dismiss controls without clicking primary actions", () => {
+    for (const label of [
+        "Accept all cookies",
+        "Acepto y Continuar",
+        "Skip Tour",
+        "SKIP",
+        "Close",
+        "No thanks",
+    ]) {
+        assert.equal(isSafeDismissLabel(label), true, label);
+    }
+
+    for (const label of [
+        "Next",
+        "Open Character Forge",
+        "Generate",
+        "Delete account",
+    ]) {
+        assert.equal(isSafeDismissLabel(label), false, label);
+    }
+});
 
 test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
     const apps = [

@@ -1022,6 +1022,32 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     });
 });
 
+test("removed flux-replicate model returns invalid model", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "replicate");
+    const { response, wait } = await fetchWorker(
+        "/image/test?model=flux-replicate",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                'Invalid model or alias: "flux-replicate". Must be a valid model name or alias.',
+        },
+    });
+    await wait();
+
+    expect(mocks.replicate.state.requests).toHaveLength(0);
+});
+
 test("OpenAI image generation returns token usage", async ({
     paidApiKey,
     mocks,

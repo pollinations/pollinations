@@ -193,6 +193,9 @@ async function fakePortkeyResponse(request: Request) {
     const model = body.model || "openai-fast";
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
+    const reportedModel = prompt.includes("provider model mismatch")
+        ? "provider-model-version"
+        : model;
 
     if (body.stream) {
         const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
@@ -207,7 +210,7 @@ async function fakePortkeyResponse(request: Request) {
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
-            model,
+            model: reportedModel,
             choices: [
                 {
                     index: 0,
@@ -359,7 +362,7 @@ async function fakePortkeyResponse(request: Request) {
             id: "chatcmpl_vcr",
             object: "chat.completion",
             created: 1,
-            model,
+            model: reportedModel,
             citations: selectedCase?.citations,
             prompt_filter_results: selectedCase?.promptFilterResults,
             choices: [
@@ -475,6 +478,68 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     );
 });
 
+test("canonical model headers preserve provider-reported payload models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [
+                { role: "user", content: "provider model mismatch json" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("openai-fast");
+    await expect(response.json()).resolves.toMatchObject({
+        model: "provider-model-version",
+    });
+    await wait();
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "openai-fast",
+    });
+
+    const { response: streamResponse, wait: waitForStream } = await fetchWorker(
+        "/v1/chat/completions",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "openai-fast",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: "provider model mismatch stream",
+                    },
+                ],
+            }),
+        },
+    );
+
+    expect(streamResponse.status).toBe(200);
+    expect(streamResponse.headers.get("x-model-used")).toBe("openai-fast");
+    const streamBody = await streamResponse.text();
+    expect(streamBody).toContain('"model":"provider-model-version"');
+    expect(streamBody).not.toContain('"model":"openai-fast"');
+    await waitForStream();
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelUsed: "openai-fast",
+    });
+});
+
 test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
     paidApiKey,
     mocks,
@@ -554,7 +619,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("sonar");
+        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
         await response.text();
         await wait();
     }

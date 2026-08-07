@@ -289,7 +289,7 @@ export const AUDIO_SERVICES = {
             // Vertex bills a fixed $0.04 for each 30-second generated clip.
             completionAudioTokens: 0.04,
         },
-        title: "Lyria 3 Clip",
+        title: "Lyria 3 Clip Preview",
         description:
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
@@ -468,7 +468,7 @@ export const AUDIO_SERVICES = {
             // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
             completionAudioTokens: 0.0115 / 1000,
         },
-        title: "Qwen3-TTS Instruct",
+        title: "Qwen3-TTS Instruct Flash",
         description:
             "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],

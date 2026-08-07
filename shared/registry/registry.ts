@@ -98,15 +98,31 @@ export type BillingAdjustmentRule = {
     kind: string;
     unit: string;
     unitCost: number;
+    publicPricing: {
+        label: string;
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    };
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module
     // (gemini-billing.ts, perplexity-billing.ts) — not in the registry.
-    countUnits: (output: unknown) => number;
+    countUnits: (output: unknown, input?: PricingInput) => number;
     // Optional provider-reported unit cost (e.g. Perplexity usage.cost)
     // resolved via the provider module's clamp-and-alert policy. Must never
     // throw. Defaults to the static unitCost when omitted.
-    resolveUnitCost?: (output: unknown, model: string) => number;
+    resolveUnitCost?: (
+        output: unknown,
+        model: string,
+        input?: PricingInput,
+    ) => number;
 };
 
 export type BillingRules = {
@@ -144,6 +160,9 @@ export type ModelDefinition = {
     // selector so /models and the dashboard can disclose when alternate rates
     // apply without attempting to serialize selector code.
     costVariantMetadata?: Record<string, CostVariantMetadata>;
+    // Public label for the base rate sheet selected when no named variant
+    // applies, such as "720p" or "≤272K context".
+    defaultCostVariantLabel?: string;
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection
@@ -157,6 +176,7 @@ export type ModelDefinition = {
     addedDate: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    brandUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
@@ -165,6 +185,9 @@ export type ModelDefinition = {
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;
+    // Supported Perplexity search-context sizes; first entry is the default.
+    // A single entry is fixed and ignores request overrides.
+    searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];
@@ -178,7 +201,7 @@ export type ModelDefinition = {
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
-    // Video-only: supported output resolutions; first entry is the default.
+    // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
@@ -293,12 +316,14 @@ export function calculateBillingAdjustments(
     svc: ModelDefinition,
     output: unknown,
     model: string,
+    input?: PricingInput,
 ): BillingAdjustment[] {
     const adjustments: BillingAdjustment[] = [];
     for (const rule of svc.billing?.adjustments ?? []) {
-        const units = rule.countUnits(output);
+        const units = rule.countUnits(output, input);
         if (units === 0) continue;
-        const unitCost = rule.resolveUnitCost?.(output, model) ?? rule.unitCost;
+        const unitCost =
+            rule.resolveUnitCost?.(output, model, input) ?? rule.unitCost;
         const cost = units * unitCost;
         adjustments.push({
             ruleId: rule.id,
@@ -372,7 +397,7 @@ function rateAgainst(
     output?: unknown,
     input?: PricingInput,
 ): Omit<UsageBilling, "servedPrice"> {
-    const adjustments = calculateBillingAdjustments(svc, output, model);
+    const adjustments = calculateBillingAdjustments(svc, output, model, input);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,

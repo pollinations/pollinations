@@ -388,6 +388,62 @@ describe("gen worker routing", () => {
         }
     });
 
+    it("serves fixed request pricing without auth", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            pricing_adjustments?: unknown[];
+        }[];
+        expect(
+            models.find((model) => model.name === "perplexity-fast")
+                ?.pricing_adjustments,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    label: "Search",
+                    price: "5",
+                    currency: "pollen",
+                    quantity: 1_000,
+                    unit: "requests",
+                    option: expect.objectContaining({
+                        value: "low",
+                        label: "Low search context",
+                        default: true,
+                    }),
+                }),
+                expect.objectContaining({
+                    label: "Search",
+                    price: "12",
+                    currency: "pollen",
+                    quantity: 1_000,
+                    unit: "requests",
+                    option: expect.objectContaining({
+                        value: "high",
+                        label: "High search context",
+                    }),
+                }),
+            ]),
+        );
+    });
+
+    it("labels image pricing units without auth", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            flat_rate?: boolean;
+        }[];
+        expect(
+            models.find(({ name }) => name === "grok-imagine")?.flat_rate,
+        ).toBe(true);
+        expect(
+            models.find(({ name }) => name === "nanobanana-pro")?.flat_rate,
+        ).toBe(false);
+    });
+
     it("adds CORS headers on public model responses", async () => {
         const response = await fetchWorker("/image/models", envWithEnter(), {
             headers: { Origin: "https://pollinations.ai" },
@@ -442,7 +498,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("distinguishes Perplexity Sonar search presets", async () => {
+    it("publishes one configurable Perplexity Sonar model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -461,11 +517,7 @@ describe("gen worker routing", () => {
         });
         expect(
             models.find((model) => model.name === "perplexity-high"),
-        ).toMatchObject({
-            title: "Perplexity Sonar High-Context Search",
-            description:
-                "Digs through many sources for thorough, cited research answers",
-        });
+        ).toBeUndefined();
         expect(
             models.find((model) => model.name === "perplexity"),
         ).toMatchObject({

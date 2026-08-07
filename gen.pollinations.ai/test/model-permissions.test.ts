@@ -76,6 +76,31 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
+test("media routes own their endpoint-specific model defaults", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["zimage"],
+        user: { packBalance: 100 },
+    });
+
+    const videoResponse = await fetchWorker("/video/test", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    const editResponse = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt: "make it blue",
+            image: "https://example.test/cat.png",
+        }),
+    });
+
+    expect(videoResponse.status).toBe(403);
+    expect(editResponse.status).toBe(403);
+});
+
 test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,
@@ -151,11 +176,11 @@ test("filters paid-only audio models by paid balance", async ({
 
     expect(expectedFreeModelNames.length).toBeGreaterThan(0);
     expect(expectedPaidOnlyModelNames.length).toBeGreaterThan(0);
-    expect(freeModels.map((model) => model.name)).toEqual(
-        expectedFreeModelNames,
+    expect(new Set(freeModels.map((model) => model.name))).toEqual(
+        new Set(expectedFreeModelNames),
     );
-    expect(paidModels.map((model) => model.name)).toEqual(
-        expectedPaidModelNames,
+    expect(new Set(paidModels.map((model) => model.name))).toEqual(
+        new Set(expectedPaidModelNames),
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);

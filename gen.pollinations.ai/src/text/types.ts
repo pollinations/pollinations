@@ -2,6 +2,8 @@
  * Shared types for the text generation service.
  */
 
+import type { UpstreamHeaders } from "@shared/error.ts";
+
 /** OpenAI-style chat message. */
 export interface ChatMessage {
     role: string;
@@ -39,6 +41,9 @@ export interface TransformOptions {
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     modalities?: string[];
     audio?: Record<string, unknown>;
     normalizeFinishReasonAtTokenLimit?: boolean;
@@ -102,6 +107,7 @@ export interface ServiceError extends Error {
     model?: string;
     provider?: string;
     response?: { data?: unknown };
+    upstreamHeaders?: UpstreamHeaders;
 }
 
 export type TextVariables = {
@@ -126,6 +132,9 @@ export interface RequestData {
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;
@@ -143,4 +152,5 @@ export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
     defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
+    fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

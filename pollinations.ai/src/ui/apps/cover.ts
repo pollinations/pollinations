@@ -1,34 +1,19 @@
-import COVERS from "./covers.json";
-
 /**
- * Cover art for app cards — one unique image per app, generated from that
- * app's own name and description by scripts/generate-app-art.mjs and committed
- * under public/app-art/.
- *
- * Static, not generated at page load: anonymous generation is no longer
- * possible (the legacy prompt endpoint 403s, gen 401s, and the site's
- * publishable pk_ key can only start an authorize flow), and doing it live
- * would mean seven generations per Apps view, seconds each, billed to whatever
- * key sat in the markup.
- *
- * Only apps that can reach an image slot have art — the spotlight, and the top
- * of the directory that Hello's shelf and the Apps hero read from. Anything
- * else returns null and the card renders without a picture rather than
- * borrowing someone else's. Re-run the script when the directory shifts.
+ * Real product screenshots come from the public app directory. Every missing
+ * screenshot gets the same recognizable Polli fallback so the catalogue stays
+ * honest: generated art never pretends to be the app itself.
  */
 
-const HAS_COVER = new Set<string>(COVERS);
+const PLAYGROUND_SCREENSHOT =
+    "https://media.pollinations.ai/7158f20b-4d9c-4026-a6f9-9fe452064a7a";
+export const MISSING_SCREENSHOT = "/app-art/missing-screenshot.webp";
 
-/** Must match slugify() in scripts/generate-app-art.mjs. */
-function coverSlug(name: string): string {
-    return name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 60);
+export function appCover(name: string, screenshotUrl = ""): string {
+    if (screenshotUrl) return screenshotUrl;
+    if (name === "Pollinations Playground") return PLAYGROUND_SCREENSHOT;
+    return MISSING_SCREENSHOT;
 }
 
-export function appCover(name: string): string | null {
-    const slug = coverSlug(name);
-    return HAS_COVER.has(slug) ? `/app-art/${slug}.webp` : null;
+export function isAppScreenshot(src: string): boolean {
+    return src.startsWith("https://media.pollinations.ai/");
 }

@@ -2,13 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { isBuzz, sortApps, useAppDirectory } from "../../data/publicStats";
 import { AppTile } from "../apps/cards";
-import { appCover } from "../apps/cover";
 import { ArrowLink, CardGrid, ScrollStrip, SectionHeader } from "../site/kit";
 
 /**
  * A wide shelf you skim sideways — the same strip the Apps spotlight uses, so
  * Hello shows eight covers instead of three tiles in yet another 3-up grid.
- * Only apps that actually have cover art qualify; a shelf is pictures.
+ * Missing screenshots use the shared Polli fallback, so the shelf remains
+ * visual without pretending generated art is the real app.
  */
 export function LiveApps() {
     const { data: apps, loading, failed } = useAppDirectory();
@@ -16,12 +16,7 @@ export function LiveApps() {
     const featured = useMemo(
         () =>
             apps
-                .filter(
-                    (app) =>
-                        isBuzz(app) &&
-                        Boolean(app.description) &&
-                        appCover(app.name) !== null,
-                )
+                .filter((app) => isBuzz(app) && Boolean(app.description))
                 .slice()
                 .sort(sortApps)
                 .slice(0, 8),

@@ -32,11 +32,11 @@
 | [🖼️ Sparkle Studio](https://sparkle-studio-pollinations-a031.onbelmo.uk) | Draw jewelry, then make it sparkle. A playful web app for kids: sketch a piece of jewelry (or just describe it), and an AI turns it into a polished, photorealistic render. Powered entirely by Pollinat | [@mtonk](https://github.com/mtonk) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
-## 🚀 New Unified API — Now Live
+## 🚀 Unified API
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video, 3D, embeddings — all in one place.
 
-### What's New
+### What's Included
 
 - **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
@@ -224,7 +224,7 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Use our API directly in your browser or applications:
 
-    https://pollinations.ai/p/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
+    https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
@@ -243,7 +243,7 @@ Python code to download the generated image:
     import requests
 
     def download_image(prompt):
-        url = f"https://pollinations.ai/p/{prompt}"
+        url = f"https://gen.pollinations.ai/image/{prompt}"
         response = requests.get(url)
         with open('generated_image.jpg', 'wb') as file:
             file.write(response.content)
@@ -301,21 +301,14 @@ graph LR
     R --> GEN
     MCP --> GEN
 
-    GEN["gen.pollinations.ai"]:::cfWorker --> ENTER["enter.pollinations.ai Gateway"]:::cfWorker
+    GEN["gen.pollinations.ai — Edge Router + Generation Worker"]:::cfWorker -->|auth and billing| ENTER["enter.pollinations.ai — Auth Gateway + Billing"]:::cfWorker
 
-    ENTER --> IMG["Image Service"]:::ec2
-    ENTER --> AUD["Audio Service"]:::ec2
+    GEN --> IMG["Image — gen Worker dispatch to providers / GPU backends"]:::cfWorkerLight
+    IMG --> D["Flux, Z-Image, LTX, ... — GPU VMs"]:::gpuNode
 
-    IMG --> CF["Cloudflare Worker with R2 Cache"]:::cfWorkerLight
-    CF --> B["image-origin.pollinations.ai"]:::ec2
-    B --> D["FLUX / GPT Image / Seedream - GPU VMs"]:::gpuNode
-
-    AUD --> EL["ElevenLabs TTS API"]:::provider
-
-    GEN --> SC["Scaleway API"]:::provider
-    GEN --> DS["Deepseek API"]:::provider
-    GEN --> G["Azure-hosted LLMs"]:::provider
-    GEN --> CFM["Cloudflare AI"]:::provider
+    GEN --> TXT["Text — Portkey multi-provider"]:::provider
+    GEN --> VID["Video — Wan / Veo / LTX"]:::provider
+    GEN --> AUD["Audio — ElevenLabs / TTM"]:::provider
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
 
@@ -323,7 +316,6 @@ graph LR
 
     classDef cfWorker fill:#E65100,color:#fff,stroke:#FFB300,stroke-width:2px,font-weight:bold
     classDef cfWorkerLight fill:#BF360C,color:#fff,stroke:#FFB300,stroke-width:1px
-    classDef ec2 fill:#1F2937,color:#fff,stroke:#F59E0B,stroke-width:2px
     classDef gpuNode fill:#064E3B,stroke:#34D399,color:#ECFDF5,stroke-width:2px
     classDef provider fill:#1E3A8A,stroke:#60A5FA,color:#EFF6FF,stroke-width:1px
 ```
@@ -356,11 +348,11 @@ We're committed to developing AI technology that serves humanity while respectin
 
 We believe in community-driven development. You can contribute to pollinations.ai in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The Polli assistant will analyze and implement it directly! No coding required - just describe what you want.
 
 2. **Project Submissions**: Have you built something with pollinations.ai? [Use our app submission template](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) to share it with the community and get it featured in our README.
 
-3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
+3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the Polli assistant will review it.
 
 4. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/pollinations-ai-885844321461485618) to:
    - Share your creations
@@ -374,11 +366,19 @@ For any questions or support, please visit our [Discord channel](https://discord
 
 Our codebase is organized into several key folders, each serving a specific purpose in the pollinations.ai ecosystem:
 
-- [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
-
-- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
+- [`pollinations.ai/`](./pollinations.ai/): The main React application for the Pollinations.ai website.
 
 - [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
+
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing — API keys, Pollen credits, and pack checkout.
+
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Image GPU/backend assets; the public image gateway code lives in `gen.pollinations.ai/`.
+
+- [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
+
+- [`apps/`](./apps/): Community apps and the app catalog (`catalog.json`, `GREENHOUSE.md`).
+
+- [`social/`](./social/): Discord, Reddit, and GitHub automation.
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
 

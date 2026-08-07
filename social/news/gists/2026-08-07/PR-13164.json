@@ -1,0 +1,34 @@
+{
+  "pr_number": 13164,
+  "title": "fix: restore long Portkey request timeout",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13164",
+  "merged_at": "2026-08-07T14:59:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the production and staging Portkey service bindings, restoring the public `portkey.myceli.ai` route and its ~300s provider-read allowance.\n- Sends `x-portkey-request-timeout: 290000` so silent providers return a structured 408 before Cloudflare emits a 524.\n- Treats that exact Portkey timeout envelope as terminal, preventing the owned deadline from multiplying across model fallbacks; ordinary provider 408s can still fall back.\n- Staging verification: `staging.gen.pollinations.ai` returned 200 after 203.44s; the paired `staging.gen.myceli.ai` request returned JSON 408 after 290.33s. Both survived the former ~125s boundary.\n- Validation: 38 focused tests, typecheck, staging build, and `git diff --check`.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The long wait blooms again",
+    "blurb": "Some models take their time brewing a response. The hive now lets Portkey requests keep working for up to 290 seconds, with a proper timeout note instead of Cloudflare slamming the door.",
+    "summary": "Restored the public portkey.myceli.ai route and its roughly 300-second provider-read allowance, sending x-portkey-request-timeout: 290000 and treating Portkey's matching timeout envelope as terminal across model fallbacks.",
+    "impact": "Long-running text requests can now complete beyond the former roughly 125-second boundary, while requests that reach 290 seconds return a structured 408 instead of a Cloudflare 524 and avoid repeated fallback waits.",
+    "keywords": [
+      "Portkey",
+      "timeouts",
+      "text-generation",
+      "fallbacks",
+      "Cloudflare",
+      "reliability"
+    ],
+    "visual_concept": "A cozy garden-shed API relay where Polli tends a slow-growing code plant connected to a retro terminal and a long sandglass. The plant has enough time to bloom before a clearly labeled 290s timer gently rings; a CRT monitor robot watches the request path with relief, representing structured timeout handling rather than an abrupt Cloudflare wall.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed: Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue translucent wings, and a tiny gardener scarf carefully waters a slow-blooming code plant beside a retro terminal glowing lime green (#ecf874); a friendly CRT monitor robot holds a large sandglass marked in simple pixel text “290s” as the plant reaches a flower. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13164.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed: Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue translucent wings, and a tiny gardener scarf carefully waters a slow-blooming code plant beside a retro terminal glowing lime green (#ecf874); a friendly CRT monitor robot holds a large sandglass marked in simple pixel text “290s” as the plant reaches a flower. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-07T15:00:59.784795+00:00"
+}

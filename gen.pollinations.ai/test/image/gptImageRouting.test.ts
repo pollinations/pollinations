@@ -75,38 +75,21 @@ describe("gpt-image-2 Azure routing", () => {
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
     });
 
-    it("does not retry client errors", async () => {
-        const fetchMock = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response("bad request", { status: 400 }));
+    // A second region would pay Azure for a second image, and a timeout is
+    // exactly the case where the first one may already have been generated.
+    it.each([400, 429, 524])(
+        "fails a %i to the caller instead of trying another region",
+        async (status) => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(
+                    new Response("upstream said no", { status }),
+                );
 
-        await expect(
-            callGPTImage("test", params, userInfo, "gpt-image-2"),
-        ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
-
-    it("does not retry a timeout, which may already have been billed", async () => {
-        const fetchMock = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(
-                new Response("error code: 524", { status: 524 }),
-            );
-
-        await expect(
-            callGPTImage("test", params, userInfo, "gpt-image-2"),
-        ).rejects.toMatchObject({ status: 524 } satisfies Partial<HttpError>);
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
-
-    it("does not fail over to a second region on a rate limit", async () => {
-        const fetchMock = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response("rate limited", { status: 429 }));
-
-        await expect(
-            callGPTImage("test", params, userInfo, "gpt-image-2"),
-        ).rejects.toMatchObject({ status: 429 } satisfies Partial<HttpError>);
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
+            await expect(
+                callGPTImage("test", params, userInfo, "gpt-image-2"),
+            ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
+            expect(fetchMock).toHaveBeenCalledOnce();
+        },
+    );
 });

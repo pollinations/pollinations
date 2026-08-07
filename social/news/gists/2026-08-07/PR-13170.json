@@ -1,0 +1,35 @@
+{
+  "pr_number": 13170,
+  "title": "feat: add Grok Transcribe",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13170",
+  "merged_at": "2026-08-07T18:18:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `grok-transcribe` through xAI REST `POST /v1/stt` at the exact $0.10/hour provider rate.\n- Exposes audio-to-text on `/v1/audio/transcriptions` with no aliases, Pollinations GPU, or fallback.\n- Supports `json`, `text`, `verbose_json`, and `diarized_json`, including language formatting and speaker labels.\n- Adds one focused handler test and the required effective-price snapshot.\n\nValidation:\n- Direct xAI: 7/7 formats; 60-second audio in 1.51s; 10/10 burst, 1.39s max.\n- Local E2E: formats, outputs, parameters, paid-only permissions, errors, catalogs, no-cache behavior, and exact duration billing; 60-second audio in 2.60s; 10/10 burst, 1.39s max.\n- Gen: 63 tests; Enter: 376 tests; both typechecks and Biome pass.\n- PR #13059 endpoint metadata/enforcement verified in production.\n\nDraft gate: confirm the staging Tinybird billing row before marking ready.\n\nAddresses #11027",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive has transcription",
+    "blurb": "Grok Transcribe has landed for paid API keys. Send audio to the hive; get back text, timestamps, languages, and even speaker labels without teaching a bee stenography.",
+    "summary": "Added paid-only `grok-transcribe` via xAI's `/v1/stt`, available through `/v1/audio/transcriptions` at $0.10/hour with `json`, `text`, `verbose_json`, and `diarized_json` response formats.",
+    "impact": "Developers can now transcribe audio through the Pollinations audio API, including formatted language metadata and speaker-labeled diarized output, with exact duration-based billing and no fallback routing.",
+    "keywords": [
+      "grok-transcribe",
+      "xAI",
+      "audio",
+      "transcription",
+      "speech-to-text",
+      "API",
+      "diarization"
+    ],
+    "visual_concept": "Depict Grok Transcribe as a cozy audio-to-text garden: sound-wave flowers flow from a retro microphone into a glowing terminal that prints neat transcript pages, including tiny labeled speaker bubbles. Polli wears miniature studio headphones and tends the sound-wave flowers while the eager CRT Monitor Robot holds a transcript sheet; lime green is the terminal glow and garden-pot accent.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny studio headphones, tending sound-wave flowers growing from lime green (#ecf874) pots beside a retro terminal that turns a microphone recording into neat transcript pages with small pixel text: \"AUDIO → TEXT\". A cute CRT monitor robot holds a speaker-labeled transcript while warm cream, mint, lavender, and peach code-plants fill the garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13170.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny studio headphones, tending sound-wave flowers growing from lime green (#ecf874) pots beside a retro terminal that turns a microphone recording into neat transcript pages with small pixel text: \"AUDIO → TEXT\". A cute CRT monitor robot holds a speaker-labeled transcript while warm cream, mint, lavender, and peach code-plants fill the garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-07T18:19:38.538004+00:00"
+}

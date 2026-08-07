@@ -698,6 +698,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
+  "grok-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+  },
   "grok-video-pro": {
     "cost": {
       "completionVideoSeconds": 0.07,

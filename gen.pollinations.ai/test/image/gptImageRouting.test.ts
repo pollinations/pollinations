@@ -80,9 +80,8 @@ describe("gpt-image-2 Azure routing", () => {
 
     // A second region would pay Azure for a second image, and a timeout is
     // exactly the case where the first one may already have been generated.
-    it.each(UPSTREAM_FAILURES)(
-        "fails a %i to the caller instead of trying another region",
-        async (status) => {
+    for (const status of UPSTREAM_FAILURES) {
+        it(`fails a ${status} to the caller instead of trying another region`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
                 .mockResolvedValue(
@@ -93,6 +92,6 @@ describe("gpt-image-2 Azure routing", () => {
                 callGPTImage("test", params, userInfo, "gpt-image-2"),
             ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
             expect(fetchMock).toHaveBeenCalledOnce();
-        },
-    );
+        });
+    }
 });

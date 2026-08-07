@@ -1,0 +1,34 @@
+{
+  "pr_number": 13069,
+  "title": "feat: add JSON POST support for 3D",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13069",
+  "merged_at": "2026-08-07T11:35:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Introduces a new POST /3d/{prompt} API surface for JSON model, image, resolution, and seed parameters.\n- Reuses the existing 3D authentication, safety, provider routing, billing, and response path.\n- Bypasses URL-only media caching for POST while keeping GET behavior unchanged.\n\nTests:\n- npm test --workspace pollinations-gen\n- npm run typecheck --workspace pollinations-gen\n- npx vitest run test/model3d",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "3D Takes JSON Orders",
+    "blurb": "The 3D endpoint now accepts a proper JSON POST request, because prompts occasionally travel with more luggage than a URL can reasonably carry. Same 3D pipeline, more room for the useful knobs.",
+    "summary": "Added POST /3d/{prompt} support for JSON body parameters including model, image, resolution, and seed, while reusing the existing 3D auth, safety, provider routing, billing, and response flow.",
+    "impact": "Developers can now create 3D generations with structured POST payloads for model selection, reference images, resolution, and reproducible seeds, while existing GET requests keep their current behavior.",
+    "keywords": [
+      "3d",
+      "api",
+      "post",
+      "json",
+      "generation",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Polli as a tiny 3D sculptor in a cozy garden workshop, feeding a neatly labeled JSON scroll into a retro terminal that produces a small pastel voxel sculpture. The terminal represents the new POST API surface; floating pixel tiles labeled model, image, resolution, and seed show the structured controls, while code-plants and flowers keep the scene rooted in the hive.",
+    "image_prompt": "Cozy pixel art scene of the pollinations bee mascot with a tiny sculptor beret and tool belt feeding a glowing JSON scroll into a retro CRT terminal, which is printing a small pastel 3D voxel flower sculpture; floating pixel labels read “model”, “image”, “resolution”, and “seed”, with code-plants growing in lime green (#ecf874) pots. The bee has a yellow body with dark brown stripes, black oval eyes, pink rectangular blush cheeks, a small smile, and rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and a warm cream garden-workshop background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13069.jpg",
+    "prompt": "Cozy pixel art scene of the pollinations bee mascot with a tiny sculptor beret and tool belt feeding a glowing JSON scroll into a retro CRT terminal, which is printing a small pastel 3D voxel flower sculpture; floating pixel labels read “model”, “image”, “resolution”, and “seed”, with code-plants growing in lime green (#ecf874) pots. The bee has a yellow body with dark brown stripes, black oval eyes, pink rectangular blush cheeks, a small smile, and rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and a warm cream garden-workshop background."
+  },
+  "generated_at": "2026-08-07T11:36:28.624182+00:00"
+}

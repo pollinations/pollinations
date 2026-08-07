@@ -11,7 +11,7 @@ import {
     useAppDirectory,
 } from "../data/publicStats";
 // Hand-picked, and the only editorial thing on the page — every badge in
-// APPS.md is computed from traffic or recency, so none of them can say "we
+// catalog.json is computed from traffic or recency, so none of them can say "we
 // think this is good". JSON because scripts/generate-app-art.mjs reads the
 // same list to decide which apps get cover art.
 import SPOTLIGHT from "../data/spotlight.json";
@@ -56,42 +56,38 @@ function OpenPill({ children }: { children: string }) {
     );
 }
 
-/**
- * One row of pills on wider screens. On phones the label takes its own line so
- * the controls keep the full content width and remain comfortable touch targets.
- */
 function FilterAxis<T extends string>({
-    label,
+    ariaLabel,
     values,
     labels,
     selected,
     onToggle,
+    size = "sm",
 }: {
-    label: string;
+    ariaLabel: string;
     values: readonly T[];
     labels: Record<T, string>;
     selected: T[];
     onToggle: (value: T) => void;
+    size?: "lg" | "md" | "sm";
 }) {
     return (
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-baseline sm:gap-x-3">
-            <PixelLabel variant="chrome" className="w-auto shrink-0 sm:w-20">
-                {label}
-            </PixelLabel>
-            <div className="flex w-full flex-wrap gap-2 sm:flex-1">
-                {values.map((value) => (
-                    <TabButton
-                        key={value}
-                        size="sm"
-                        active={selected.includes(value)}
-                        onClick={() => onToggle(value)}
-                        className="min-h-11"
-                    >
-                        {labels[value]}
-                    </TabButton>
-                ))}
-            </div>
-        </div>
+        <fieldset
+            className="m-0 flex min-w-0 w-full flex-wrap gap-2 border-0 p-0"
+            aria-label={ariaLabel}
+        >
+            {values.map((value) => (
+                <TabButton
+                    key={value}
+                    size={size}
+                    active={selected.includes(value)}
+                    onClick={() => onToggle(value)}
+                    className={size === "sm" ? "min-h-9" : "min-h-11"}
+                >
+                    {labels[value]}
+                </TabButton>
+            ))}
+        </fieldset>
     );
 }
 
@@ -225,7 +221,7 @@ function AppsPage() {
                                     ? `by ${lead.github_username}`
                                     : "community built"
                             }
-                            image={appCover(lead.name)}
+                            image={appCover(lead.name, lead.screenshot_url)}
                             action={
                                 <span className="text-sm font-semibold text-theme-text-soft">
                                     Open ↗
@@ -256,26 +252,35 @@ function AppsPage() {
                     eyebrow="Browse"
                     title="Everything else."
                     subtitle="Filters stack. Badges are automatic — 🐝 100+ requests in the last 24 hours, 🏵️ runs on your Pollen, 🫧 new this month."
-                    action={
-                        !loading && (
-                            <PixelLabel variant="eyebrow">
-                                {filtered.length} of {apps.length}
-                            </PixelLabel>
-                        )
-                    }
                 />
 
                 <div className="flex flex-col gap-3">
-                    {/* `q` was validated, round-tripped through the URL and
-                        filtered on, with nothing able to set it — the search
-                        worked only if you hand-edited the address bar. */}
-                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-baseline sm:gap-x-3">
-                        <PixelLabel
-                            variant="chrome"
-                            className="w-auto shrink-0 sm:w-20"
-                        >
-                            Search
-                        </PixelLabel>
+                    <FilterAxis
+                        ariaLabel="Categories"
+                        values={APP_CATEGORIES}
+                        labels={CATEGORY_LABELS}
+                        selected={category}
+                        onToggle={(value) => toggleAxis("category", value)}
+                        size="lg"
+                    />
+                    <hr className="border-divider" />
+                    <FilterAxis
+                        ariaLabel="Badges"
+                        values={APP_SIGNALS}
+                        labels={SIGNAL_LABELS}
+                        selected={signal}
+                        onToggle={(value) => toggleAxis("signal", value)}
+                    />
+                    <hr className="border-divider" />
+                    <FilterAxis
+                        ariaLabel="Platforms"
+                        values={APP_PLATFORMS}
+                        labels={PLATFORM_LABELS}
+                        selected={platform}
+                        onToggle={(value) => toggleAxis("platform", value)}
+                    />
+
+                    <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
                         <Input
                             type="search"
                             value={q ?? ""}
@@ -292,42 +297,28 @@ function AppsPage() {
                                     }),
                                 })
                             }
-                            className="min-h-11 w-full max-w-xs sm:flex-1"
+                            className="min-h-11 w-full max-w-sm"
                         />
+                        <div className="flex min-h-9 items-center gap-3">
+                            {hasFilters && (
+                                <button
+                                    type="button"
+                                    className="text-sm font-semibold text-theme-text-soft underline"
+                                    onClick={clear}
+                                >
+                                    Clear filters
+                                </button>
+                            )}
+                            {!loading && (
+                                <PixelLabel
+                                    variant="eyebrow"
+                                    className="ml-auto"
+                                >
+                                    {filtered.length} of {apps.length}
+                                </PixelLabel>
+                            )}
+                        </div>
                     </div>
-                    <FilterAxis
-                        label="Category"
-                        values={APP_CATEGORIES}
-                        labels={CATEGORY_LABELS}
-                        selected={category}
-                        onToggle={(value) => toggleAxis("category", value)}
-                    />
-                    {/* "Badges" is the page's own word for them, one line
-                        above. "Signals" is the internal name in
-                        app-update-greenhouse.js and means nothing here. */}
-                    <FilterAxis
-                        label="Badges"
-                        values={APP_SIGNALS}
-                        labels={SIGNAL_LABELS}
-                        selected={signal}
-                        onToggle={(value) => toggleAxis("signal", value)}
-                    />
-                    <FilterAxis
-                        label="Platform"
-                        values={APP_PLATFORMS}
-                        labels={PLATFORM_LABELS}
-                        selected={platform}
-                        onToggle={(value) => toggleAxis("platform", value)}
-                    />
-                    {hasFilters && (
-                        <button
-                            type="button"
-                            className="self-start text-sm font-semibold text-theme-text-soft underline"
-                            onClick={clear}
-                        >
-                            Clear filters
-                        </button>
-                    )}
                 </div>
 
                 {failed ? (
@@ -349,7 +340,7 @@ function AppsPage() {
                     </div>
                 ) : (
                     <>
-                        <CardGrid gap="gap-4">
+                        <CardGrid min="gallery" gap="gap-4">
                             {visible.map((app) => (
                                 <AppCard key={app.name} app={app} />
                             ))}

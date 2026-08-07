@@ -85,7 +85,7 @@ type AppSignal = (typeof APP_SIGNALS)[number];
 
 export const SIGNAL_LABELS: Record<AppSignal, string> = {
     buzz: "🐝 Busy",
-    pollen: "🏵️ Pollen",
+    pollen: "🏵️ BYOP",
     fresh: "🫧 Fresh",
 };
 

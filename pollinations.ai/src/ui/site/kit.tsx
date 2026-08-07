@@ -40,6 +40,8 @@ const GRID_MIN = {
     narrow: "grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))]",
     /** Three across: the default card shelf. */
     wide: "grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))]",
+    /** Screenshot cards: one on phones, two on compact screens, three on desktop. */
+    gallery: "grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3",
 } as const;
 
 /**
@@ -98,7 +100,7 @@ export function PixelLabel({
  * everywhere (the three ways, app badges); `accent` is reserved for the one
  * official thing on a page, so it only ever appears once per view.
  *
- * Keep emoji out of it. Pixelify Sans has no emoji glyphs, and the fallback
+ * Keep emoji out of it. Geist Pixel has no emoji glyphs, and the fallback
  * font's advance width doesn't reconcile with the pixel metrics — "🐝 BUZZ"
  * renders with the bee sitting on top of the B.
  */

@@ -74,6 +74,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🎬 **Video Generation** — Text-to-video and image-to-video
 - 🎵 **Audio** — Text-to-speech and speech-to-text
 - 🧊 **3D Generation** — Text-to-3D and image-to-3D
+- 🎙️ **Real-time API** — OpenAI-compatible WebSocket for streaming conversations
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
@@ -84,6 +85,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
+
+## 🧩 Community Models
+
+Community members run their own models on the Pollinations platform — text, image, video, audio, embeddings, and more.
+
+- **Host your own model** — register an upstream endpoint with the [`/account/my-models`](APIDOCS.md) API, then serve it to everyone or keep it private to your API keys.
+- **Automatic fallback routing** — nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
+- **Discover and monitor** — browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+
+For billing details when building apps on top, see [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -189,6 +200,16 @@ npx @pollinations/cli gen transcribe speech.mp3
 ```
 
 Install globally and use the shorter `polli` command: `npm install -g @pollinations/cli`. Run `polli models` to list models, `polli auth login` to authenticate, and `polli docs` for the full API reference in your terminal.
+
+### Real-time API
+
+Stream AI responses over an OpenAI-compatible WebSocket:
+
+```
+wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=pk_YOUR_API_KEY
+```
+
+Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Server for AI Assistants
 
@@ -317,6 +338,24 @@ print(response.choices[0].message.content)
 ```
 
 Other official OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet), [Rust](https://github.com/openai/openai-rust) — plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
+
+**Vercel AI SDK:**
+
+```typescript
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText } from "ai";
+
+const client = createOpenAI({
+  baseURL: "https://gen.pollinations.ai/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const { text } = await generateText({
+  model: client("openai"),
+  prompt: "Hello!",
+});
+console.log(text);
+```
 
 ## Architecture
 
@@ -457,6 +496,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai/keys)**.
 
 ## 📣 Stay Connected
+[Status](https://model-monitor.pollinations.ai) ·
 [News & FAQ](https://enter.pollinations.ai/news) ·
 [𝕏 Twitter](https://x.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 

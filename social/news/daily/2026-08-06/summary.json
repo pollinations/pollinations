@@ -1,0 +1,59 @@
+{
+  "date": "2026-08-06",
+  "period_start": "2026-08-06",
+  "period_end": "2026-08-06",
+  "title": "The community app directory grew up and got screenshots",
+  "summary": "A community-directory overhaul, a much calmer model catalog, and sturdier routing for long text and image generation.\n\nThe 859-entry community app list moved from a markdown file into a validated, newest-first JSON catalog shared by the website, publishing workflows, metrics, Tinybird, and social tooling. The directory can now carry verified WebP screenshots, and Whisper joined the bots listing: an Android overlay for sending screen and audio context to Pollinations models.\n\nThe dashboard now separates Official and Community models, opens on the supported catalog, retains searches across scopes, and keeps modality filters sensible when switching. Catalog order is deterministic across the API and UI, pricing and generation estimates are easier to scan, community-model controls are more consistent, and a much smaller initial DOM plus progressive row loading makes the official catalog substantially lighter to browse.\n\nPortkey-backed text generation now uses Cloudflare service bindings when available, allowing long non-streaming requests to outlive the public proxy timeout while preserving a public-fetch fallback. The second production FLUX worker is also documented with its GPU qualification, request attribution, queue behavior, and fallback route—because image generation is apparently a small distributed systems project now.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 13110,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13118,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13127,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13135,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13137,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13140,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13141,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13142,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13143,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13144,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13152,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13155,
+      "date": "2026-08-06"
+    }
+  ],
+  "generated_at": "2026-08-07T06:31:31.656338+00:00"
+}

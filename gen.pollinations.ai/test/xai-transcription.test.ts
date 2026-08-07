@@ -16,12 +16,15 @@ describe("transcribeWithXai", () => {
     it("forwards REST options and bills the returned audio duration", async () => {
         const fetchMock = vi.fn().mockResolvedValueOnce(
             Response.json({
-                text: "hello there",
-                language: "en",
+                text: "今日は hello there",
+                language: "ja",
                 duration: 3.25,
                 words: [
-                    { text: "hello", start: 0, end: 0.5, speaker: 0 },
-                    { text: "there", start: 0.6, end: 1.1, speaker: 1 },
+                    { text: "今", start: 0, end: 0.2, speaker: 0 },
+                    { text: "日", start: 0.2, end: 0.4, speaker: 0 },
+                    { text: "は", start: 0.4, end: 0.6, speaker: 0 },
+                    { text: "hello", start: 0.7, end: 1, speaker: 1 },
+                    { text: "there", start: 1, end: 1.3, speaker: 1 },
                 ],
             }),
         );
@@ -29,7 +32,7 @@ describe("transcribeWithXai", () => {
 
         const response = await transcribeWithXai({
             file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
-            language: "en",
+            language: "ja",
             responseFormat: "diarized_json",
             apiKey: "test-key",
             log,
@@ -52,11 +55,11 @@ describe("transcribeWithXai", () => {
             "3.25",
         );
         await expect(response.json()).resolves.toMatchObject({
-            text: "hello there",
+            text: "今日は hello there",
             duration: 3.25,
             segments: [
-                { speaker: "0", text: "hello", start: 0, end: 0.5 },
-                { speaker: "1", text: "there", start: 0.6, end: 1.1 },
+                { speaker: "0", text: "今日は", start: 0, end: 0.6 },
+                { speaker: "1", text: "hello there", start: 0.7, end: 1.3 },
             ],
         });
     });

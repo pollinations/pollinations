@@ -763,6 +763,7 @@ export async function transcribeWithXai(opts: {
     if (responseFormat === "diarized_json") {
         formData.append("diarize", "true");
     }
+    // xAI requires the file to be the final multipart field.
     formData.append("file", file, file.name || "audio");
 
     const xaiUrl = "https://api.x.ai/v1/stt";
@@ -817,13 +818,19 @@ function groupXaiWordsBySpeaker(
 ): NormalizedDiarizedSegment[] {
     if (!words?.length) return [];
 
+    const cjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
     const segments: NormalizedDiarizedSegment[] = [];
     for (const word of words) {
         const speaker =
             word.speaker === undefined ? null : String(word.speaker);
         const current = segments.at(-1);
         if (current?.speaker === speaker) {
-            current.text = `${current.text} ${word.text}`;
+            const separator =
+                cjk.test(current.text.at(-1) ?? "") &&
+                cjk.test(word.text[0] ?? "")
+                    ? ""
+                    : " ";
+            current.text = `${current.text}${separator}${word.text}`;
             current.end = word.end;
         } else {
             segments.push({

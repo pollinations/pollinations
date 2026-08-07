@@ -1,0 +1,33 @@
+{
+  "pr_number": 13156,
+  "title": "fix: add security.txt",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13156",
+  "merged_at": "2026-08-07T14:02:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a standards-compliant `/.well-known/security.txt` for `pollinations.ai`.\n- Publishes `hello@pollinations.ai` and GitHub private security advisories as reporting contacts.\n- Adds a canonical URL, preferred language, and expiry date.\n- Resolves the Cloudflare Security Insights warning caused by the frontend fallback serving HTML at this path.\n\nChecks:\n- `npm run build`\n- Verified the built file matches the source.\n- Verified local response is `200 OK` with `text/plain; charset=utf-8`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A mailbox for responsible bees",
+    "blurb": "The hive now keeps a proper note at `/.well-known/security.txt`. Security researchers get clear reporting routes instead of accidentally finding the frontend's HTML wallpaper.",
+    "summary": "Added a standards-compliant `/.well-known/security.txt` on pollinations.ai with hello@pollinations.ai and GitHub private security advisories as reporting contacts, plus canonical URL, language, and expiry metadata.",
+    "impact": "Security researchers and automated security tools now receive a 200 text/plain security policy at the expected path, with clear private reporting options.",
+    "keywords": [
+      "security.txt",
+      "security",
+      "well-known",
+      "pollinations.ai",
+      "Cloudflare"
+    ],
+    "visual_concept": "Polli acts as the hive's friendly security postmaster, placing a sealed letter into a tiny lime-green mailbox marked security.txt beside a cozy garden-web server. A retro CRT companion can display a simple 200 OK message, while flowers and code-vines make the reporting route feel clear and welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, placing a sealed report into a lime green (#ecf874) mailbox labeled \"security.txt\" beside a warm retro web server covered in flowering code-vines; a small CRT robot screen reads \"200 OK\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13156.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, placing a sealed report into a lime green (#ecf874) mailbox labeled \"security.txt\" beside a warm retro web server covered in flowering code-vines; a small CRT robot screen reads \"200 OK\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "generated_at": "2026-08-07T14:03:53.953918+00:00"
+}

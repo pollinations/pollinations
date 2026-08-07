@@ -68,7 +68,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
+- 🌱 **Pollen Quests** — earn Pollen by completing Quests
 - 🖼️ **Image Generation** — Text-to-image and image editing
 - 📝 **Text Generation** — Chat, reasoning, vision, function calling, structured outputs 
 - 🎬 **Video Generation** — Text-to-video and image-to-video
@@ -272,6 +272,22 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "alloy"}' \
   -o speech.mp3
 ```
+
+### Video Generation
+
+```bash
+curl 'https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?key=YOUR_API_KEY' -o video.mp4
+```
+
+Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]`/`image[1]` to pass start/end reference frames. See available video models and capabilities at [gen.pollinations.ai/image/models](https://gen.pollinations.ai/image/models).
+
+### 3D Generation
+
+```bash
+curl 'https://gen.pollinations.ai/3d/a%20rusty%20robot?key=YOUR_API_KEY' -o model.glb
+```
+
+Pass reference image URL(s) via the `image` parameter for image-to-3D models. See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
 
 ## 🛠️ Integration
 

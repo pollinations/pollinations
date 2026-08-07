@@ -382,11 +382,11 @@ graph LR
     GEN["gen.pollinations.ai — Edge Router + Generation Worker"]:::cfWorker -->|auth and billing| ENTER["enter.pollinations.ai — Auth Gateway + Billing"]:::cfWorker
 
     GEN --> IMG["Image — gen Worker dispatch to providers / GPU backends"]:::cfWorkerLight
-    IMG --> D["Flux, Z-Image, LTX, ... — GPU VMs"]:::gpuNode
+    IMG --> D["Flux, Z-Image, Seedream, ... — GPU VMs"]:::gpuNode
 
     GEN --> TXT["Text — Portkey multi-provider"]:::provider
-    GEN --> VID["Video — Wan / Veo / LTX"]:::provider
-    GEN --> AUD["Audio — ElevenLabs / TTM"]:::provider
+    GEN --> VID["Video — Wan / Veo / Seedance"]:::provider
+    GEN --> AUD["Audio — ElevenLabs / OVH (Whisper)"]:::provider
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
 

@@ -70,7 +70,7 @@ export const Generate3dRequestBodySchema = z
             .default(DEFAULT_3D_MODEL)
             .meta({
                 description:
-                    "Model to use. See /3d/models for the full list and per-model input requirements.",
+                    "Model to use for 3D generation. See /3d/models for the full list and per-model input requirements.",
             }),
         image: z
             .union([z.string(), z.array(z.string())])
@@ -93,14 +93,15 @@ export const Generate3dRequestBodySchema = z
             })
             .meta({
                 description:
-                    "Reference image URL or array of URLs for image-to-3D generation. A string is treated as one complete URL.",
+                    "Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL.",
             }),
         resolution: z
             .enum(["low", "medium", "high"])
             .optional()
             .default("low")
             .meta({
-                description: "Output detail for `trellis-2`.",
+                description:
+                    "Output voxel-grid resolution for `trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more.",
             }),
         seed: z.number().int().optional().meta({
             description:

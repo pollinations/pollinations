@@ -906,7 +906,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 prompt: z.string().min(1).meta({
                     description:
-                        "Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models)",
+                        "Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2)",
                     example: "a low-poly treasure chest",
                 }),
             }),

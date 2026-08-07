@@ -3,9 +3,9 @@ from typing import Any
 
 import aiohttp
 
-from ...utils.cache import TTLCache
 from ...core.config import config
-from . import auth as github_auth
+from ...utils.cache import TTLCache
+from .auth import get_github_token
 from .projects import ProjectsMixin
 from .repo_overview import RepoOverviewMixin
 
@@ -54,26 +54,6 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
             await self._connector.close()
             self._connector = None
 
-    async def _get_token(self, for_projects: bool = False) -> str | None:
-        if for_projects:
-            if github_auth.github_app_auth:
-                token = await github_auth.github_app_auth.get_token()
-                if token:
-                    logger.debug("Using GitHub App token for project operation")
-                    return token
-            if config.github.project_pat:
-                logger.debug("Falling back to GITHUB_PROJECT_PAT for project operation")
-                return config.github.project_pat
-            else:
-                logger.warning("ProjectV2 operation: No GitHub App or GITHUB_PROJECT_PAT configured")
-                return None
-
-        if github_auth.github_app_auth:
-            token = await github_auth.github_app_auth.get_token()
-            if token:
-                return token
-        return config.github.token if config.github.token else None
-
     async def _execute(
         self,
         query: str,
@@ -81,7 +61,7 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         use_sub_issues: bool = False,
         for_projects: bool = False,
     ) -> dict:
-        token = await self._get_token(for_projects=for_projects)
+        token = await get_github_token(for_projects=for_projects)
         if not token:
             if for_projects:
                 return {
@@ -473,7 +453,7 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
     async def _rest_get(self, url: str) -> dict:
         """GET-only REST request to GitHub API."""
         try:
-            token = await self._get_token()
+            token = await get_github_token()
             if not token:
                 return {"error": "GitHub token not configured"}
             headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}

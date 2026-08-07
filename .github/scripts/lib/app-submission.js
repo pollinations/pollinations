@@ -1,4 +1,4 @@
-const { parseApps } = require("./parse-apps.js");
+const { readApps } = require("./app-catalog.js");
 
 const CATEGORIES = new Set([
     "image",
@@ -146,7 +146,7 @@ function normalizeComparable(value) {
 
 function findCatalogDuplicate(
     submission,
-    apps = parseApps().apps,
+    apps = readApps(),
     githubUserId = "",
 ) {
     const appUrl = normalizeComparable(submission.appUrl);
@@ -154,8 +154,8 @@ function findCatalogDuplicate(
     const name = normalizeComparable(submission.name);
     return apps.find((app) => {
         return (
-            (appUrl && normalizeComparable(app.webUrl) === appUrl) ||
-            (repoUrl && normalizeComparable(app.repoUrl) === repoUrl) ||
+            (appUrl && normalizeComparable(app.url) === appUrl) ||
+            (repoUrl && normalizeComparable(app.repositoryUrl) === repoUrl) ||
             (name &&
                 githubUserId &&
                 normalizeComparable(app.name) === name &&
@@ -164,32 +164,31 @@ function findCatalogDuplicate(
     });
 }
 
-function buildRow(submission, metadata) {
-    const fields = [
-        submission.emoji,
-        submission.name,
-        submission.appUrl,
-        submission.description,
-        submission.language,
-        submission.category,
-        submission.platform,
-        `@${metadata.githubUsername}`,
-        String(metadata.githubUserId),
-        submission.repoUrl,
-        "",
-        submission.discord,
-        "",
-        metadata.submittedDate,
-        metadata.issueUrl,
-        metadata.approvedDate,
-        "",
-        "",
-    ];
-    return `| ${fields.join(" | ")} |`;
+function buildApp(submission, metadata) {
+    return {
+        emoji: submission.emoji,
+        name: submission.name,
+        url: submission.appUrl,
+        description: submission.description,
+        language: submission.language,
+        category: submission.category,
+        platform: submission.platform,
+        githubUsername: metadata.githubUsername,
+        githubUserId: String(metadata.githubUserId),
+        repositoryUrl: submission.repoUrl || null,
+        repositoryStars: null,
+        discordUsername: submission.discord || null,
+        other: null,
+        submittedDate: metadata.submittedDate,
+        issueUrl: metadata.issueUrl,
+        approvedDate: metadata.approvedDate,
+        byop: false,
+        requests24h: 0,
+    };
 }
 
 module.exports = {
-    buildRow,
+    buildApp,
     findCatalogDuplicate,
     inferPlatform,
     parseSubmission,

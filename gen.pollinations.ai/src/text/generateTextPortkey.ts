@@ -1,6 +1,6 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
-import { sanitizeFramedResponse } from "./cohereCommandAPlus.js";
+import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
@@ -9,6 +9,7 @@ import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
     ChatMessage,
+    OpenAIClientConfig,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -34,6 +35,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
+    fetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
     let state: TransformResult = { messages, options: { ...options } };
     const modelDef = state.options.model
@@ -65,6 +67,7 @@ export async function generateTextPortkey(
             string,
             string
         >,
+        fetcher,
     };
 
     delete state.options.additionalHeaders;
@@ -75,7 +78,7 @@ export async function generateTextPortkey(
         state.options,
         requestConfig,
     );
-    return modelDef && ["command-a-plus", "inkling"].includes(modelDef.name)
-        ? sanitizeFramedResponse(completion)
+    return modelDef?.name === "command-a-plus"
+        ? sanitizeCohereResponse(completion)
         : completion;
 }

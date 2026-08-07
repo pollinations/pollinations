@@ -98,6 +98,18 @@ export type BillingAdjustmentRule = {
     kind: string;
     unit: string;
     unitCost: number;
+    publicPricing: {
+        label: string;
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    };
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module
@@ -148,6 +160,9 @@ export type ModelDefinition = {
     // selector so /models and the dashboard can disclose when alternate rates
     // apply without attempting to serialize selector code.
     costVariantMetadata?: Record<string, CostVariantMetadata>;
+    // Public label for the base rate sheet selected when no named variant
+    // applies, such as "720p" or "≤272K context".
+    defaultCostVariantLabel?: string;
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection
@@ -161,6 +176,7 @@ export type ModelDefinition = {
     addedDate: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    brandUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;

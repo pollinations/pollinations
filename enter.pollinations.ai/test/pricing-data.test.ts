@@ -8,6 +8,7 @@ import {
     getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
+    modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import {
     calculateBillingAdjustments,
@@ -22,6 +23,7 @@ import {
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
 import {
+    formatDisplayPrice,
     formatPriceFlat,
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
@@ -106,6 +108,25 @@ test("formatPricePer1M renders each decimal branch and strips trailing zeros", (
     expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 -> 5 decimals
 });
 
+test("display prices stay compact and use a readable token scale", () => {
+    expect(formatDisplayPrice("2.0", true)).toEqual({
+        value: "2",
+        tokenScale: "M",
+    });
+    expect(formatDisplayPrice("120.0", true)).toEqual({
+        value: "0.12",
+        tokenScale: "K",
+    });
+    expect(formatDisplayPrice("0.083333333333")).toEqual({
+        value: "0.0833",
+        tokenScale: "M",
+    });
+    expect(formatDisplayPrice("0.00001")).toEqual({
+        value: "0.00001",
+        tokenScale: "M",
+    });
+});
+
 test("catalog prices format token rates through formatPricePer1M", () => {
     const sourceByName = new Map(
         getCatalogModels().map((model) => [model.name, model]),
@@ -121,9 +142,7 @@ test("catalog prices format token rates through formatPricePer1M", () => {
             continue;
 
         const pricing = sourceModel?.pricing;
-        const imageUsesTokenRows =
-            Number(pricing?.promptTextTokens) > 0 ||
-            Number(pricing?.promptImageTokens) > 0;
+        const imageUsesTokenRows = sourceModel?.flat_rate === false;
         const rows =
             sourceModel?.category === "image"
                 ? imageUsesTokenRows
@@ -148,6 +167,28 @@ test("catalog prices format token rates through formatPricePer1M", () => {
     expect(checkedFields).toBeGreaterThan(0);
 });
 
+test("catalog distinguishes flat image rates from image-token rates", () => {
+    const models = getCatalogModels();
+    const prices = getCatalogModelPrices();
+    const grokInfo = models.find(({ name }) => name === "grok-imagine");
+    const nanoInfo = models.find(({ name }) => name === "nanobanana-pro");
+    const grokPrice = prices.find(({ name }) => name === "grok-imagine");
+    const nanoPrice = prices.find(({ name }) => name === "nanobanana-pro");
+
+    expect(grokInfo?.flat_rate).toBe(true);
+    expect(nanoInfo?.flat_rate).toBe(false);
+    expect(grokPrice?.prices).toEqual([
+        { direction: "input", kind: "image", price: "0.002", unit: "request" },
+        { direction: "output", kind: "image", price: "0.02", unit: "request" },
+    ]);
+    expect(nanoPrice?.prices).toContainEqual({
+        direction: "output",
+        kind: "image",
+        price: "120.0",
+        unit: "token",
+    });
+});
+
 test("catalog prices keep community text models flagged for display", () => {
     const [communityModel] = getModelPricesFromCatalog([
         {
@@ -155,7 +196,8 @@ test("catalog prices keep community text models flagged for display", () => {
             aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
-            brand: "Community",
+            brand: "Example AI",
+            brand_url: "https://example.com/",
             title: "OpenAI relay",
             description: "OpenAI relay",
             pricing: {
@@ -174,7 +216,8 @@ test("catalog prices keep community text models flagged for display", () => {
         type: "text",
         community: true,
         displayName: "OpenAI relay",
-        brand: "Community",
+        brand: "Example AI",
+        brandUrl: "https://example.com/",
         capabilities: [],
     });
     expect(communityModel?.prices).toEqual(
@@ -249,6 +292,19 @@ test("catalog models resolve brand logo SVG assets", () => {
     });
 
     expect(missingLogos).toEqual([]);
+});
+
+test("community models use the community logo regardless of provider brand", () => {
+    expect(
+        getModelBrandLogoPath({
+            name: "owner/model",
+            type: "text",
+            community: true,
+            brand: "Custom Provider",
+            capabilities: [],
+            prices: [],
+        }),
+    ).toBe("/brand-logos/community.svg");
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {
@@ -477,10 +533,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
-// Billing internals are intentionally NOT exposed in the public /models schema
-// (v1). Public model info carries only token pricing — assert the billing
-// object is absent so a future re-exposure is a deliberate, tested change.
-test("Gemini billing internals are not exposed in public model catalog", () => {
+test("public model catalog exposes Gemini billing prices without internals", () => {
     const geminiSearchFast = getTextModelsInfo().find(
         (model) => model.name === "gemini-flash-lite-3.5",
     );
@@ -492,6 +545,17 @@ test("Gemini billing internals are not exposed in public model catalog", () => {
     expect(geminiLarge).toBeDefined();
     expect(geminiSearchFast).not.toHaveProperty("billing");
     expect(geminiLarge).not.toHaveProperty("billing");
+    expect(geminiLarge?.pricing_adjustments).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                label: "Search",
+                price: "14",
+                currency: "pollen",
+                quantity: 1_000,
+                unit: "search requests",
+            }),
+        ]),
+    );
 });
 
 test("Perplexity request search fees are added by declarative billing rules", () => {
@@ -622,9 +686,9 @@ test("independent Vertex Gemini Search detects streamed grounding", () => {
     ).toBeCloseTo(0.535, 8);
 });
 
-// Billing rules live on the private ModelDefinition (drive the fee), but are
-// NOT surfaced in the public /models schema. Assert both facts.
-test("Perplexity billing rules carry per-tier request fees privately only", () => {
+// Executable billing stays private; the public catalog receives only the
+// display-safe price metadata asserted below.
+test("Perplexity billing keeps executable rules private", () => {
     const perplexityFees = [
         [
             "perplexity",
@@ -678,9 +742,41 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
         expect(adjustment?.countUnits({})).toBe(1);
     }
 
-    // Public catalog exposes token pricing only — no billing internals.
+    // Public catalog exposes display-safe pricing, never executable billing.
     for (const model of getTextModelsInfo()) {
         expect(model).not.toHaveProperty("billing");
+    }
+});
+
+test("every billing adjustment has public catalog metadata", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        const rules = definition.billing?.adjustments ?? [];
+        const adjustments = modelInfoFromDefinition(
+            model,
+            definition,
+        ).pricing_adjustments;
+
+        expect(
+            adjustments?.length ?? 0,
+            `${model}: every billing rule must be publicly visible`,
+        ).toBe(rules.length);
+
+        for (const rule of rules) {
+            expect(rule.publicPricing.label.trim()).not.toBe("");
+            expect(rule.publicPricing.quantity).toBeGreaterThan(0);
+            expect(rule.publicPricing.unit.trim()).not.toBe("");
+            expect(
+                Number(
+                    adjustments?.find(({ name }) => name === rule.id)?.price,
+                ),
+            ).toBeCloseTo(
+                rule.unitCost *
+                    rule.publicPricing.quantity *
+                    definition.priceMultiplier,
+                10,
+            );
+        }
     }
 });
 

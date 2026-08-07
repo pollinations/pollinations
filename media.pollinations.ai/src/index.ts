@@ -97,19 +97,6 @@ function splitTags(values: unknown[]): string[] {
     return tags;
 }
 
-class TagValidationError extends Error {}
-
-function validateTags(rawTags: string[]): string[] {
-    try {
-        return normalizeTags(rawTags);
-    } catch (error) {
-        if (error instanceof TagError) {
-            throw new TagValidationError(error.message);
-        }
-        throw error;
-    }
-}
-
 // Item shape returned by GET /media — never exposes ownerUserId/appKeyId.
 interface MediaItemResponse {
     id: string;
@@ -436,9 +423,9 @@ api.post(
 
             let tags: string[];
             try {
-                tags = validateTags(rawTags);
+                tags = normalizeTags(rawTags);
             } catch (error) {
-                if (error instanceof TagValidationError) {
+                if (error instanceof TagError) {
                     return c.json({ error: error.message }, 400);
                 }
                 throw error;
@@ -480,7 +467,6 @@ api.post(
             // a D1 failure must surface as a 500, not be silently swallowed.
             // `tags` non-empty implies a user-attached key (rejected above
             // otherwise), so ownerUserId is always real here.
-            let storedTags: string[] | undefined;
             if (tags.length > 0 && authResult.userId !== null) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
@@ -491,7 +477,6 @@ api.post(
                     size: fileBuffer.byteLength,
                     tags,
                 });
-                storedTags = tags;
             }
 
             console.log(
@@ -510,7 +495,7 @@ api.post(
                 url: mediaUrl(id),
                 contentType,
                 size: fileBuffer.byteLength,
-                ...(storedTags ? { tags: storedTags } : {}),
+                ...(tags.length > 0 ? { tags } : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);

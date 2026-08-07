@@ -304,7 +304,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
+        priceMultiplier: 0.2,
         cost: {
             promptTextTokens: perMillion(1.0),
             promptCachedTokens: perMillion(0.1),

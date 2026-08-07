@@ -1,0 +1,34 @@
+{
+  "pr_number": 13160,
+  "title": "docs: refresh README — accurate API examples, expanded guides",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/13160",
+  "merged_at": "2026-08-07T10:26:07Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\nDocs refresh of the root `README.md`. No code changes.\n\n## Corrections (accuracy)\n\n- **API keys now required** on generation examples. The image/text endpoints return `401` without auth, so all examples were updated: `curl -H \"Authorization: Bearer YOUR_API_KEY\"` for image, `?key=YOUR_API_KEY` for text GET, the browser URLs, and the Python snippet.\n- **Legacy URLs removed**: `pollinations.ai/p/...` image links → `gen.pollinations.ai/image/...`; `./app/` → `./pollinations.ai/`; `twitter.com` → `x.com`.\n- **MentatBot → Polli** (the coding assistant that implements issues).\n- **Badges**: `flat-square` → `for-the-badge`; added **Playground** link to the nav bar.\n- **Quests**: removed stale \"(in alpha)\" note — quests are live.\n- **Architecture diagram** now reflects the current stack: `gen.pollinations.ai` edge router → `enter.pollinations.ai` auth/billing; image/video/3D generation runs inside the gen Worker (no more separate EC2/R2 image origin); providers = Portkey (text), Wan/Veo/Seedance (video), ElevenLabs/OVH Whisper (audio); dropped the obsolete `ec2` node class.\n- **Project structure** completed: `enter`, `shared`, `apps`, `media.pollinations.ai`, `social` added; stale descriptions rewritten.\n\n## Consolidation (less redundancy)\n\n- **Removed the duplicate `## 🎨 Examples` section** (Python + plain URLs) — all generation examples now live in one detailed `Getting Started`.\n- **`How to Use`**: dropped the redundant \"API\" subsection (same URL as the examples), kept the Web Interface blurb and sample images.\n- **Quick Start (3 steps)** moved under `Getting Started` (it was nested under `Key Features`).\n- Header: \"New Unified API — Now Live\" → \"Unified API\"; \"What's New\" → \"What's Included\".\n\n## New content\n\n- **🧩 Community Models** section — host your own model via `/account/my-models`, automatic fallback routing (up to 3 backups), discovery via `/v1/models`, and the `model-monitor.pollinations.ai` status/leaderboard page.\n- **Generation examples** added f",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The README found its map",
+    "blurb": "The front door got a careful rebuild: authenticated examples, a current architecture map, and fewer abandoned corridors. Polli also updated the signposts for community models and live Quests.",
+    "summary": "Refreshed the root README with authenticated image and text API examples, current gen→enter architecture and providers, consolidated onboarding guides, and new Community Models documentation for /account/my-models, fallback routing, /v1/models discovery, and model-monitor.pollinations.ai.",
+    "impact": "Developers now get copyable examples that include the required API key, accurate current URLs and project structure, plus clearer paths to host, discover, and monitor community models.",
+    "keywords": [
+      "documentation",
+      "README",
+      "API keys",
+      "community models",
+      "architecture",
+      "onboarding"
+    ],
+    "visual_concept": "Depict Polli as a cozy cartographer updating a large open README map on a desk: authenticated API-key stamps, a gen.pollinations.ai edge-router path leading to enter.pollinations.ai, and small code-plants labeled Community Models growing beside a model-monitor screen. A helpful CRT monitor robot can hold the corrected map while flowers and vines make the documentation feel alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing tiny librarian glasses while updating a glowing README map beside a retro terminal; the map shows a simple gen → enter route, an API-key stamp, and code-plants labeled “COMMUNITY MODELS.” A small CRT monitor robot holds the map among flowers and vines, with lime green (#ecf874) prominent against warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13160.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing tiny librarian glasses while updating a glowing README map beside a retro terminal; the map shows a simple gen → enter route, an API-key stamp, and code-plants labeled “COMMUNITY MODELS.” A small CRT monitor robot holds the map among flowers and vines, with lime green (#ecf874) prominent against warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-07T10:27:11.875747+00:00"
+}

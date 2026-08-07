@@ -51,6 +51,9 @@ function successResponse(): Response {
     });
 }
 
+/** Client error, rate limit, and a timeout that may already have been billed. */
+const UPSTREAM_FAILURES = [400, 429, 524];
+
 syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
 
 afterEach(() => {
@@ -77,7 +80,7 @@ describe("gpt-image-2 Azure routing", () => {
 
     // A second region would pay Azure for a second image, and a timeout is
     // exactly the case where the first one may already have been generated.
-    it.each([400, 429, 524])(
+    it.each(UPSTREAM_FAILURES)(
         "fails a %i to the caller instead of trying another region",
         async (status) => {
             const fetchMock = vi

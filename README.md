@@ -247,6 +247,43 @@ Here are some examples of what you can generate:
 
 Check out our [Pollinations SDK](./packages/sdk/README.md) for Node.js, browser, and React integration.
 
+### OpenAI SDK Compatibility
+
+The API is OpenAI-compatible, so the official OpenAI SDKs work out of the box — just point them at `https://gen.pollinations.ai/v1`.
+
+**Node.js:**
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://gen.pollinations.ai/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.chat.completions.create({
+  model: "openai",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(response.choices[0].message.content);
+```
+
+**Python:**
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
+
+response = client.chat.completions.create(
+    model="openai",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(response.choices[0].message.content)
+```
+
+Other official OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet), [Rust](https://github.com/openai/openai-rust) — plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
+
 ## Architecture
 
 ```mermaid

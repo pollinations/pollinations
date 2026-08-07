@@ -1,0 +1,34 @@
+{
+  "pr_number": 13157,
+  "title": "chore: update app metrics 2026-08-07",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13157",
+  "merged_at": "2026-08-07T04:44:20Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Greenhouse check-in",
+    "blurb": "The garden ledger got its daily tending: app metrics, health checks, and catalog details are freshly counted.",
+    "summary": "Automated daily updates refreshed app metrics, health-check data, and the Greenhouse catalog records for 2026-08-07.",
+    "impact": "Maintainers have current health and activity information for the community app garden.",
+    "keywords": [
+      "apps",
+      "greenhouse",
+      "metrics",
+      "health-checks",
+      "catalog",
+      "automation"
+    ],
+    "visual_concept": "Polli acts as a tiny greenhouse caretaker, checking a cozy wall of app-health gauges beside labeled code-plants; a retro terminal displays refreshed catalog entries while healthy plants bloom around it.",
+    "image_prompt": "A cozy pixel art greenhouse where Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, checks lime green (#ecf874) app-health gauges beside pots of blooming code-plants and a retro terminal showing neat catalog rows. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender surroundings and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-07/PR-13157.jpg",
+    "prompt": "A cozy pixel art greenhouse where Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, checks lime green (#ecf874) app-health gauges beside pots of blooming code-plants and a retro terminal showing neat catalog rows. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender surroundings and subtle CRT glow."
+  },
+  "generated_at": "2026-08-07T04:45:16.541370+00:00"
+}

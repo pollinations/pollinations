@@ -337,7 +337,7 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-Other official OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet) — plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
+Other OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet), [Rust (async-openai, community)](https://github.com/64bit/async-openai) — plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
 
 **Vercel AI SDK:**
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13199,
+  "title": "Add Orange City (Pollinations AI Edition) to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13199",
+  "merged_at": "2026-08-08T14:24:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Orange City (Pollinations AI Edition)](https://github.com/GermanIllan/orange_city) to image\n- A Python plugin for GIMP 3.2 that generates stylized oil-painted cityscapes with AI-generated background skies powered by Pollinations.ai. **Direct link to Pollinations API integration in source code:\n\nFixes #13198",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Oil paint meets open skies",
+    "blurb": "Orange City has landed in the greenhouse: a GIMP 3.2 plugin that paints cityscapes, then lets Pollinations supply the sky. The clouds have finally joined the art department.",
+    "summary": "Added Orange City (Pollinations AI Edition) to the app catalog: a Python plugin for GIMP 3.2 that creates stylized oil-painted cityscapes with AI-generated background skies from the Pollinations API.",
+    "impact": "Artists and tinkerers can now discover a GIMP workflow that combines hand-styled urban scenes with Pollinations-generated skies directly from the app catalog.",
+    "keywords": [
+      "community-app",
+      "gimp",
+      "image-generation",
+      "cityscapes",
+      "python-plugin",
+      "digital-art"
+    ],
+    "visual_concept": "Depict a cozy pixel-art painter's studio where Polli, wearing a tiny painter's beret, helps a GIMP-like retro monitor paint an oil-textured orange cityscape. A Pollinations-powered sky generator should appear as a glowing garden-cloud machine producing pastel clouds above the canvas, with flowers and code-plants around the workspace.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny painter's beret, hovering beside a chunky retro art computer as it paints an orange oil-painted cityscape; a small glowing sky generator grows soft pastel clouds from code-plants and lime green (#ecf874) flower pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading “ORANGE CITY”; nostalgic, emotionally warm, and clearly not realistic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13199.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny painter's beret, hovering beside a chunky retro art computer as it paints an orange oil-painted cityscape; a small glowing sky generator grows soft pastel clouds from code-plants and lime green (#ecf874) flower pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading “ORANGE CITY”; nostalgic, emotionally warm, and clearly not realistic."
+  },
+  "generated_at": "2026-08-08T14:25:26.624490+00:00",
+  "app_name": "Orange City (Pollinations AI Edition)",
+  "app_url": "https://github.com/GermanIllan/orange_city"
+}

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "NEON SHADOWS: CHRONICLES OF THE CORE",
+    "url": "https://habitatai.biz/game",
+    "description": "Supports an AI-driven cyberpunk RPG experience for \"NEON SHADOWS: CHRONICLES OF THE CORE\".",
+    "language": "de-DE",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "KT-Society",
+    "githubUserId": "50811139",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/10900",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "studdy",
     "url": "https://bharkodat-ux.github.io/studdy",

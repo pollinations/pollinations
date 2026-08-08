@@ -1,0 +1,36 @@
+{
+  "pr_number": 13195,
+  "title": "Add Archetype to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13195",
+  "merged_at": "2026-08-08T10:59:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Archetype](https://github.com/xnet-admin-1/archetype-game) to games\n- Archetype is a collaborative storytelling game for Android where 2-4 players take turns building stories together. It uses the Pollinations text API (nova-fast model) for AI-powered story sparks, char\n\nFixes #11262",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stories, now multiplayer",
+    "blurb": "Archetype joined the game shelf: pass a story between friends, let nova-fast toss in a spark, and see where the plot wanders. The garden has acquired a tiny writers’ room.",
+    "summary": "Added Archetype to the games catalog, an Android collaborative storytelling game for 2–4 players that uses the Pollinations text API with nova-fast for AI-generated story sparks.",
+    "impact": "Players can now discover an Android game where a small group builds stories turn by turn with nova-fast prompts to keep the narrative moving.",
+    "keywords": [
+      "community",
+      "games",
+      "android",
+      "storytelling",
+      "nova-fast",
+      "text-api"
+    ],
+    "visual_concept": "Depict a cozy shared storytelling table: Polli and three friendly pixel players gather around an Android tablet showing branching story pages, while glowing lime-green text-spark fireflies emerge from a code-plant. Polli wears a tiny writer’s beret and helps pass a scroll between the group, making the collaborative turn-taking visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny writer’s beret, gathered with three friendly pixel storytellers around an Android tablet as they pass a glowing story scroll between them; lime green (#ecf874) AI text-spark fireflies rise from nearby flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text on the tablet: “YOUR TURN.”"
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13195.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny writer’s beret, gathered with three friendly pixel storytellers around an Android tablet as they pass a glowing story scroll between them; lime green (#ecf874) AI text-spark fireflies rise from nearby flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text on the tablet: “YOUR TURN.”"
+  },
+  "generated_at": "2026-08-08T11:00:58.647543+00:00",
+  "app_name": "Archetype",
+  "app_url": "https://github.com/xnet-admin-1/archetype-game"
+}

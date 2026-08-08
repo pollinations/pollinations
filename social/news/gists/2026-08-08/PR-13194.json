@@ -1,0 +1,36 @@
+{
+  "pr_number": 13194,
+  "title": "Add Briefly to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13194",
+  "merged_at": "2026-08-08T10:57:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Briefly](https://briefly-app.defyma.com) to chat\n- Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread.\n\nFixes #11282",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Notes, meet your tiny ladder",
+    "blurb": "Briefly has joined the chat. Drop in a pile of rough notes and it helps turn them into steps, structure, and replies that sound like you had a plan all along.",
+    "summary": "Added Briefly to the app catalog and chat, where it turns rough notes into structured output, breaks large goals into actionable steps, and drafts focused replies.",
+    "impact": "People can now find and use Briefly through pollinations chat when they need to turn an idea pile into a clearer plan or response.",
+    "keywords": [
+      "briefly",
+      "community-app",
+      "chat",
+      "productivity",
+      "planning",
+      "writing"
+    ],
+    "visual_concept": "Depict Briefly as a cozy focused chat workspace: scattered sticky-note ideas becoming a neat staircase of small task cards beside a retro terminal. Polli should wear a tiny librarian visor and gently carry a note toward the organized plan, with code-plants and flowers growing from the completed steps to show ideas becoming useful action.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny librarian visor as she carries a rough sticky note into a retro chat terminal where messy notes transform into a neat staircase of task cards and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, pixel-font text: “BRIEFLY”, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13194.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny librarian visor as she carries a rough sticky note into a retro chat terminal where messy notes transform into a neat staircase of task cards and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, pixel-font text: “BRIEFLY”, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-08T10:58:03.980575+00:00",
+  "app_name": "Briefly",
+  "app_url": "https://briefly-app.defyma.com"
+}

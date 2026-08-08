@@ -1,0 +1,36 @@
+{
+  "pr_number": 13196,
+  "title": "Add 7visions - Safe Dream Analysis to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13196",
+  "merged_at": "2026-08-08T11:02:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [7visions - Safe Dream Analysis](https://www.7visions.fr/app) to chat\n- 7visions is a safe AI dream analysis app available on web and Android. Users describe a dream and receive a structured interpretation through seven complementary perspectives: Jungian psychology, Freu\n\nFixes #11354",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seven ways to dream",
+    "blurb": "7visions has joined the garden: a calm little place to bring a strange dream and look at it from seven thoughtful angles. Polli approves of any software that treats the subconscious like a community art project.",
+    "summary": "Added 7visions, a web and Android AI dream-analysis app that gives users structured dream interpretations through seven complementary perspectives, to the Pollinations app catalog and chat.",
+    "impact": "People can now discover 7visions through Pollinations and explore dream descriptions with a more structured, multi-perspective interpretation flow.",
+    "keywords": [
+      "community",
+      "apps",
+      "7visions",
+      "chat",
+      "dream analysis",
+      "android"
+    ],
+    "visual_concept": "Depict 7visions as a cozy dream observatory: seven pastel, floating window-panels each showing a gentle symbolic dream image such as a moon, key, flower, staircase, cloud, mirror, and star. Polli, wearing a tiny nightcap and holding a dream journal, warmly examines the panels while code-plants and small flowers grow around a softly glowing retro chat terminal.",
+    "image_prompt": "A cozy pixel art dream observatory where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears a tiny nightcap and holds a dream journal beside a retro chat terminal; seven floating pastel dream panels show a moon, key, flower, staircase, cloud, mirror, and star, with code-plants and garden flowers below. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"7 VISIONS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13196.jpg",
+    "prompt": "A cozy pixel art dream observatory where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears a tiny nightcap and holds a dream journal beside a retro chat terminal; seven floating pastel dream panels show a moon, key, flower, staircase, cloud, mirror, and star, with code-plants and garden flowers below. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"7 VISIONS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-08T11:03:30.776955+00:00",
+  "app_name": "7visions - Safe Dream Analysis",
+  "app_url": "https://www.7visions.fr/app"
+}

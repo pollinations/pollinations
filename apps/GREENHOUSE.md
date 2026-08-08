@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **867** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **868** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💬 7visions - Safe Dream Analysis](https://www.7visions.fr/app) | 7visions is a safe AI dream analysis app available on web and Android. Users describe a dream and receive a structured interpretation through seven complementary perspectives: Jungian psychology, Freu | [@BenoitMagnan](https://github.com/BenoitMagnan) |  | 🫧 |
 | [🎮 Archetype](https://github.com/xnet-admin-1/archetype-game) | Archetype is a collaborative storytelling game for Android where 2-4 players take turns building stories together. It uses the Pollinations text API (nova-fast model) for AI-powered story sparks, char | [@xnet-admin-1](https://github.com/xnet-admin-1) |  | 🫧 |
 | [💬 Briefly](https://briefly-app.defyma.com) | Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread. | [@defyma](https://github.com/defyma) |  | 🫧 |
 | [✍️ AI Blog Articles](https://getaiblogarticles.com) | AI Blog Articles (getaiblogarticles.com) is a free, no-signup web tool that generates SEO-optimized blog articles in two steps. The user enters a topic and chooses an article length; the app calls the | [@br3t](https://github.com/br3t) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 HSCAura (NeuraX Omega AI)](https://hscaura.vercel.app/ai-chat) | NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI. | [@mtaspro](https://github.com/mtaspro) |  | 🫧 |
 | [📚 Pollen Scope](https://horoscope-beta-eight.vercel.app) | Pollen Scope is a daily horoscope app built on Pollinations. It uses Pollinations OAuth + BYOP so each user's readings are billed to their own pollen balance — no shared quota, no accounts. Each readi | [@KodeIsFun](https://github.com/KodeIsFun) |  | 🫧 |
 | [🤖 Whisper](https://play.google.com/store/apps/details?id=com.leiver.whisper_android) | This application allows users to use different AI models to analyze the screen and audio requests through an overlay, using Pollinations AI | [@Okonorff](https://github.com/Okonorff) |  | 🫧 |
-| [💬 Receipt Fortune Teller](https://oracle.shipr.app) | Receipt Fortune Teller converts receipts, grocery lists, and small purchase lists into AI fortune readings and tarot-style card art. It uses submitted text to generate the results. | [@0xNull-ops](https://github.com/0xNull-ops) |  | 🫧 |
 
 ---
 
@@ -451,7 +451,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ Pollination Hub](https://hugow0528.github.io/Pollination/) | Frontend dashboard for Pollinations AI: chat + image gen with API debugger | [@hugow0528](https://github.com/hugow0528) |  | 🐝 |
 | [🧩 SAGE](https://starlightguardians.com) | Open-source AI orchestration suite for multimedia generation, even Android. | [@sebastianpw](https://github.com/sebastianpw) |  | 🐝 |
 
-<details><summary>Show all 149 apps</summary>
+<details><summary>Show all 150 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -500,6 +500,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Pollination App](https://github.com/aheadmujtaba/PollinationsApp) | Android client for Pollinations.ai to generate images and chat with AI. | [@aheadmujtaba](https://github.com/aheadmujtaba) | 1 |  |
 | [💬 AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio) | Provide a local desktop AI chat with multimodal attachments, in-chat image generation, isolated project file management, saved chats with export, and streaming responses. | [@Universe-shifting](https://github.com/Universe-shifting) | 1 |  |
 | [🧠 MindFlow](https://note.aegis-plus.my.id/) | AI second-brain notes that turns messy thoughts into structured insights. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
+| [💬 7visions - Safe Dream Analysis](https://www.7visions.fr/app) | 7visions is a safe AI dream analysis app available on web and Android. Users describe a dream and receive a structured interpretation through seven complementary perspectives: Jungian psychology, Freu | [@BenoitMagnan](https://github.com/BenoitMagnan) |  | 🫧 |
 | [💬 Briefly](https://briefly-app.defyma.com) | Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread. | [@defyma](https://github.com/defyma) |  | 🫧 |
 | [💬 Receipt Fortune Teller](https://oracle.shipr.app) | Receipt Fortune Teller converts receipts, grocery lists, and small purchase lists into AI fortune readings and tarot-style card art. It uses submitted text to generate the results. | [@0xNull-ops](https://github.com/0xNull-ops) |  | 🫧 |
 | [💬 chatty](https://chatty.ext.io) | simple chat ui that uses pollinations and new byop system [models are a bit outdated will prob update sometime] | [@smplstuff](https://github.com/smplstuff) |  | 🫧 |

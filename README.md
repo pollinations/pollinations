@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) | Pollination EduCard AI provides an “About the App” section describing the app. | [@Satwata-Bandopadhyay](https://github.com/Satwata-Bandopadhyay) |
 | [💼 Valdy - AI-Powered Startup Validation](https://samo-fex.github.io/valdy) | Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers. | [@samo-fex](https://github.com/samo-fex) |
 | [🛠️ FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) | A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the | [@KushalRoyChowdhury](https://github.com/KushalRoyChowdhury) |
 | [🛠️ Promptzy](https://promptzy.pinkpixel.dev) | Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage. | [@sizzlebop](https://github.com/sizzlebop) |
@@ -29,7 +30,6 @@
 | [🎮 Archetype](https://github.com/xnet-admin-1/archetype-game) | Archetype is a collaborative storytelling game for Android where 2-4 players take turns building stories together. It uses the Pollinations text API (nova-fast model) for AI-powered story sparks, char | [@xnet-admin-1](https://github.com/xnet-admin-1) |
 | [💬 Briefly](https://briefly-app.defyma.com) | Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread. | [@defyma](https://github.com/defyma) |
 | [✍️ AI Blog Articles](https://getaiblogarticles.com) | AI Blog Articles (getaiblogarticles.com) is a free, no-signup web tool that generates SEO-optimized blog articles in two steps. The user enters a topic and chooses an article length; the app calls the | [@br3t](https://github.com/br3t) |
-| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 Unified API

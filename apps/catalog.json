@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "VideoForge AI",
+    "url": "https://videoforge.digiverse.fr",
+    "description": "VideoForge AI turns a single text prompt into a ready-to-publish short video for social media, including Instagram Reels, TikTok, YouTube Shorts, and LinkedIn.",
+    "language": "fr",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "Pims18",
+    "githubUserId": "75073204",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-07-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/12445",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🤖",
     "name": "HSCAura (NeuraX Omega AI)",
     "url": "https://hscaura.vercel.app/ai-chat",

@@ -1,13 +1,19 @@
+import { getCanonicalPromotionAliases } from "@shared/registry/canonical-model-promotions.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import { z } from "zod";
 
+const REALTIME_MODEL_IDS = [
+    ...REALTIME_MODEL_NAMES,
+    ...REALTIME_MODEL_NAMES.flatMap(getCanonicalPromotionAliases),
+];
+
 export const RealtimeRequestQueryParamsSchema = z
     .object({
         model: z
-            .enum(REALTIME_MODEL_NAMES as [string, ...string[]])
+            .enum(REALTIME_MODEL_IDS as [string, ...string[]])
             .optional()
             .default(DEFAULT_REALTIME_MODEL)
             .meta({

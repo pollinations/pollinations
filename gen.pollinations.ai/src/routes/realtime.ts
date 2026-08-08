@@ -18,6 +18,7 @@ import {
     type CostDefinition,
     calculateUsageBilling,
     getPriceDefinitionForModel,
+    isModelAllowed,
     type ModelDefinition,
     type PriceDefinition,
     type Usage,
@@ -116,7 +117,7 @@ type RealtimeBillingContext = {
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
     const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
+    if (!isModelAllowed(allowedModels, model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });

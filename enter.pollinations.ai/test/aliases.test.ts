@@ -1,4 +1,5 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { CANONICAL_MODEL_PROMOTIONS } from "@shared/registry/canonical-model-promotions";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
@@ -8,11 +9,14 @@ import {
     getModels,
     getPriceDefinition,
     getRegistryModelDefinition,
+    isModelAllowed,
     type ModelName,
+    normalizeModelAllowlist,
     resolveModelName,
     type UsageType,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
+import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids";
 import { expect, test } from "vitest";
 
 function serviceAliasTestCases(
@@ -53,6 +57,55 @@ test.for(
 )("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
+});
+
+test("future canonical IDs resolve to the approved current registry entries", () => {
+    const promotions = Object.entries(CANONICAL_MODEL_PROMOTIONS);
+
+    expect(promotions).toHaveLength(128);
+    expect(new Set(promotions.map(([, current]) => current)).size).toBe(128);
+    for (const [futureCanonical, currentCanonical] of promotions) {
+        expect(resolveModelName(futureCanonical)).toBe(currentCanonical);
+        expect(
+            getRegistryModelDefinition(currentCanonical as ModelName).aliases,
+        ).toContain(futureCanonical);
+    }
+});
+
+test("model allowlists compare aliases and preserve community IDs", () => {
+    expect(isModelAllowed(["openai/gpt-5.4-nano"], "openai")).toBe(true);
+    expect(isModelAllowed(["openai"], "openai/gpt-5.4-nano")).toBe(true);
+    expect(
+        isModelAllowed(["owner/community-model"], "owner/community-model"),
+    ).toBe(true);
+    expect(isModelAllowed([], "openai")).toBe(false);
+
+    expect(
+        normalizeModelAllowlist([
+            "openai/gpt-5.4-nano",
+            "openai",
+            "owner/community-model",
+        ]),
+    ).toEqual(["openai", "owner/community-model"]);
+});
+
+test("permission read-back canonicalizes aliases without dropping visible community IDs", () => {
+    expect(
+        filterPermissionsToVisibleModels(
+            {
+                models: [
+                    "openai/gpt-5.4-nano",
+                    "owner/community-model",
+                    "retired-model",
+                ],
+                account: ["usage"],
+            },
+            new Set(["openai", "owner/community-model"]),
+        ),
+    ).toEqual({
+        models: ["openai", "owner/community-model"],
+        account: ["usage"],
+    });
 });
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {

@@ -1,5 +1,6 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { CANONICAL_MODEL_PROMOTIONS } from "@shared/registry/canonical-model-promotions.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import {
     getImageModelIds,
@@ -213,6 +214,7 @@ const ALL_ALIASES = new Set([
     ...TEXT_ALIASES,
     ...AUDIO_ALIASES,
     ...EMBEDDING_ALIASES,
+    ...Object.keys(CANONICAL_MODEL_PROMOTIONS),
 ]);
 const imageModelDisplayNames = getImageModelIds().join(", ");
 

@@ -12,6 +12,7 @@ import {
     test,
 } from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
+import { RealtimeRequestQueryParamsSchema } from "../src/schemas/realtime.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -53,6 +54,43 @@ test("filters image model list by API key permissions", async ({
         true,
     );
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
+});
+
+test("future canonical allowlist IDs expose the current canonical catalog entry", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["openai/gpt-5.4-nano"],
+        user: { tierBalance: 100 },
+    });
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { data: { id: string }[] };
+    expect(body.data.map((model) => model.id)).toEqual(["openai"]);
+});
+
+test("current allowlist IDs permit requests using future canonical IDs", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["mistral"],
+        user: { tierBalance: 100 },
+    });
+    const response = await fetchWorker(
+        "/text/test?model=mistralai%2Fmistral-small-2603",
+        { headers: { Authorization: `Bearer ${key}` } },
+    );
+
+    // This paid-only model reaches the balance gate instead of being rejected
+    // by the model allowlist.
+    expect(response.status).toBe(402);
+});
+
+test("future canonical realtime IDs pass request validation", () => {
+    expect(
+        RealtimeRequestQueryParamsSchema.safeParse({
+            model: "openai/gpt-realtime-2.1",
+        }).success,
+    ).toBe(true);
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {

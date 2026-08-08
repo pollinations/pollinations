@@ -7,6 +7,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { isModelAllowed } from "@shared/registry/registry.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { LoggerVariables } from "./logger.ts";
@@ -84,7 +85,7 @@ export const auth = () =>
 
             if (!apiKey?.permissions?.models) return;
 
-            if (!apiKey.permissions.models.includes(model.resolved)) {
+            if (!isModelAllowed(apiKey.permissions.models, model.resolved)) {
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });

@@ -3,9 +3,10 @@ import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
 const configuredApiBaseUrl = process.env.POLLINATIONS_BASE_URL?.trim();
 
-export const API_BASE_URL = (
-    configuredApiBaseUrl || DEFAULT_API_BASE_URL
-).replace(/\/+$/, "");
+const API_BASE_URL = (configuredApiBaseUrl || DEFAULT_API_BASE_URL).replace(
+    /\/+$/,
+    "",
+);
 
 export function validateApiBaseUrl() {
     let url;
@@ -21,12 +22,17 @@ export function validateApiBaseUrl() {
             "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
         );
     }
+    if (url.username || url.password) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: credentials in the URL are not supported.",
+        );
+    }
     if (url.search || url.hash) {
         throw new Error(
             "Invalid POLLINATIONS_BASE_URL: query strings and fragments are not supported.",
         );
     }
-    return url;
+    return API_BASE_URL;
 }
 
 function createApiUrl(path) {

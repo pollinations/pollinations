@@ -5,6 +5,7 @@
  * Supports image, video, text, and audio generation via the Pollinations API
  */
 
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -17,7 +18,9 @@ import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
-const SERVER_VERSION = "2.3.1";
+const SERVER_VERSION = createRequire(import.meta.url)(
+    "../package.json",
+).version;
 
 // Combine all tools
 const allTools = [
@@ -89,19 +92,12 @@ All requests go through: ${apiBaseUrl}
 - Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
 }
 
-function getDisplayApiBaseUrl(validatedUrl) {
-    const displayUrl = new URL(validatedUrl);
-    displayUrl.username = "";
-    displayUrl.password = "";
-    return displayUrl.toString().replace(/\/$/, "");
-}
-
 /**
  * Start the MCP server with STDIO transport
  */
 export async function startMcpServer() {
     try {
-        const apiBaseUrl = getDisplayApiBaseUrl(validateApiBaseUrl());
+        const apiBaseUrl = validateApiBaseUrl();
 
         // Initialize audio player (optional, for local playback)
         try {

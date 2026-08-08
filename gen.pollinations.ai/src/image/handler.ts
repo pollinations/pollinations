@@ -245,6 +245,9 @@ type ParsedUpstreamBody = {
     text: string | null;
 };
 
+const OPERATIONAL_PROVIDER_ERROR_PATTERN =
+    /rate[ -]?limit|too many requests|quota|capacity|insufficient (?:credit|balance)|invalid api key|unauthori[sz]ed|forbidden/i;
+
 /**
  * Build the responseBody to thread through UpstreamError so clients see a real
  * error message instead of `"{}"`. Prefer the upstream provider's raw body
@@ -267,11 +270,22 @@ function classifyImageHttpError(error: HttpError): {
     message: string;
 } {
     const parsed = parseUpstreamErrorBody(error);
+    const providerText = [
+        parsed.text,
+        error.message,
+        typeof error.details?.body === "string" ? error.details.body : null,
+    ]
+        .filter(Boolean)
+        .join(" ");
+    const isOperationalProviderError =
+        Boolean(error.upstreamUrl) &&
+        OPERATIONAL_PROVIDER_ERROR_PATTERN.test(providerText);
     const isValidation =
-        error.status === 422 ||
-        (error.status === 400 &&
-            (error.details?.validation === true ||
-                parsed.kind === "validation"));
+        !isOperationalProviderError &&
+        (error.status === 422 ||
+            (error.status === 400 &&
+                (error.details?.validation === true ||
+                    parsed.kind === "validation")));
 
     if (isValidation) {
         const text = parsed.text || error.message;
@@ -293,7 +307,10 @@ function classifyImageHttpError(error: HttpError): {
     if (error.status >= 400 && error.status < 500) {
         const text = parsed.text || error.message;
         return {
-            status: remapUpstreamStatus(error.status),
+            // Any provider rejection that was not identified above as input
+            // validation is an operational model failure. Surface it as 502
+            // so health monitoring does not discard it as client noise.
+            status: 502,
             message: text
                 ? `Image provider error: ${text}`
                 : "Image provider error",

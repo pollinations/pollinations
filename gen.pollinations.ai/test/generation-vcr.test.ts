@@ -154,6 +154,9 @@ async function fakeImageBackendResponse(request: Request) {
             { status: 400 },
         );
     }
+    if (prompt.includes("rate limit 400")) {
+        return Response.json({ detail: "Rate limit exceeded" }, { status: 400 });
+    }
     if (prompt.includes("empty body 400")) {
         return new Response("", { status: 400 });
     }
@@ -1249,7 +1252,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
     });
 });
 
-test("image backend validation errors return client-facing 400", async ({
+test("image backend separates validation errors from provider failures", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -1326,11 +1329,11 @@ test("image backend validation errors return client-facing 400", async ({
             },
         );
 
-    expect(provider400Response.status).toBe(400);
+    expect(provider400Response.status).toBe(502);
     await expect(provider400Response.json()).resolves.toMatchObject({
         success: false,
         error: {
-            code: "BAD_REQUEST",
+            code: "BAD_GATEWAY",
             message: "Image provider error: missing provider key",
         },
     });
@@ -1340,7 +1343,32 @@ test("image backend validation errors return client-facing 400", async ({
     expect(mocks.tinybird.state.events[2]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "zimage",
-        responseStatus: 400,
+        responseStatus: 502,
+    });
+
+    const { response: rateLimit400Response, wait: waitRateLimit400 } =
+        await fetchWorker(
+            "/image/rate%20limit%20400?model=zimage&width=280&height=280&seed=42",
+            {
+                headers: { authorization: `Bearer ${paidApiKey}` },
+            },
+        );
+
+    expect(rateLimit400Response.status).toBe(502);
+    await expect(rateLimit400Response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_GATEWAY",
+            message: "Image provider error: Rate limit exceeded",
+        },
+    });
+    await waitRateLimit400();
+
+    expect(mocks.tinybird.state.events).toHaveLength(4);
+    expect(mocks.tinybird.state.events[3]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "zimage",
+        responseStatus: 502,
     });
 
     // Upstream 400 with empty body must still surface a useful message via
@@ -1353,11 +1381,11 @@ test("image backend validation errors return client-facing 400", async ({
             },
         );
 
-    expect(emptyBody400Response.status).toBe(400);
+    expect(emptyBody400Response.status).toBe(502);
     await expect(emptyBody400Response.json()).resolves.toMatchObject({
         success: false,
         error: {
-            code: "BAD_REQUEST",
+            code: "BAD_GATEWAY",
             message:
                 "Image provider error: Image backend rejected request with status 400",
         },

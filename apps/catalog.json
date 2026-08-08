@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Generateur d'image ia",
+    "url": "https://mzaacdepy.github.io/generateur-images-ia",
+    "description": "Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS.",
+    "language": "fr",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "MzaacDePY",
+    "githubUserId": "286515136",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11230",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Orange City (Pollinations AI Edition)",
     "url": "https://github.com/GermanIllan/orange_city",
     "description": "A Python plugin for GIMP 3.2 that generates stylized oil-painted cityscapes with AI-generated background skies powered by Pollinations.ai. **Direct link to Pollinations API integration in source code:",

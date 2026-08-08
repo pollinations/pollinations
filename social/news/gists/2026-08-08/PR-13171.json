@@ -1,0 +1,34 @@
+{
+  "pr_number": 13171,
+  "title": "chore: rotate OpenRouter API key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13171",
+  "merged_at": "2026-08-08T10:09:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Rotates `OPENROUTER_API_KEY` in the encrypted development, staging, and production secret files.\n- Keeps the secret change isolated from feature work.\n- Does not deploy or revoke the previous credential.\n\nValidation:\n- New key authenticated successfully with OpenRouter.\n- Paid text inference and the dedicated image API/provider route succeeded.\n- All three SOPS files decrypt successfully and contain the validated key.\n- Biome and `git diff --check` pass.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh key, same hive",
+    "blurb": "The OpenRouter keyring got a quiet seasonal refresh across development, staging, and production. Polli checked the routes; the bees are still buzzing.",
+    "summary": "Rotated the OPENROUTER_API_KEY in the encrypted development, staging, and production SOPS secret files after validating paid text inference and the dedicated image-provider route.",
+    "impact": "OpenRouter-backed text and image-provider requests continue using a validated credential consistently across all three environments.",
+    "keywords": [
+      "openrouter",
+      "secrets",
+      "sops",
+      "credentials",
+      "text-inference",
+      "image-api"
+    ],
+    "visual_concept": "A cozy key-rotation scene: Polli uses a tiny locksmith tool to place a fresh glowing key into three small labeled garden-server boxes for dev, staging, and prod, while code-plants and flowers grow around them. The key represents refreshed provider authentication, and the three boxes make the environment coverage visible without exposing any credential details.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, black oval eyes, light blue rounded wings, and a tiny locksmith tool belt, gently placing a glowing lime green (#ecf874) key into three little garden server boxes labeled DEV, STAGING, and PROD; code-plants and pastel flowers sprout around the boxes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13171.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, black oval eyes, light blue rounded wings, and a tiny locksmith tool belt, gently placing a glowing lime green (#ecf874) key into three little garden server boxes labeled DEV, STAGING, and PROD; code-plants and pastel flowers sprout around the boxes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-08T10:09:52.726970+00:00"
+}

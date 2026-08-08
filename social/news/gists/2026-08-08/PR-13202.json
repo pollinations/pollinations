@@ -1,0 +1,36 @@
+{
+  "pr_number": 13202,
+  "title": "Add FluxFlow CLI to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13202",
+  "merged_at": "2026-08-08T14:39:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) to build\n- A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the\n\nFixes #11162",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A terminal grew flowers",
+    "blurb": "FluxFlow CLI has joined the greenhouse. It brings a coding-and-creative agent to the pollinations ecosystem, with image generation waiting right in the terminal.",
+    "summary": "Added the FluxFlow CLI to the app catalog and build, giving developers a CLI-based AI agent for coding, documentation, creative work, and pollinations.ai-powered image generation.",
+    "impact": "Developers can now discover and build FluxFlow CLI as part of the pollinations app ecosystem, bringing image generation directly into their command-line workflow.",
+    "keywords": [
+      "FluxFlow CLI",
+      "community app",
+      "CLI",
+      "AI agent",
+      "image generation",
+      "catalog"
+    ],
+    "visual_concept": "Depict FluxFlow as a cozy retro terminal in the greenhouse, where command-line text grows into flowering image cards and code-plants. Polli should be actively tending the terminal garden with a tiny gardener tool belt, showing that the CLI connects practical coding work with creative generation.",
+    "image_prompt": "A cozy pixel-art greenhouse hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while typing at a retro terminal; lime green (#ecf874) command lines sprout into code-plants and small generated landscape cards among warm cream, mint, lavender, and peach flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow; pixel-font terminal text reads “FLUXFLOW CLI”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13202.jpg",
+    "prompt": "A cozy pixel-art greenhouse hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while typing at a retro terminal; lime green (#ecf874) command lines sprout into code-plants and small generated landscape cards among warm cream, mint, lavender, and peach flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow; pixel-font terminal text reads “FLUXFLOW CLI”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-08T14:40:51.930046+00:00",
+  "app_name": "FluxFlow CLI",
+  "app_url": "https://www.npmjs.com/package/fluxflow-cli"
+}

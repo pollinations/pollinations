@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "studdy",
+    "url": "https://bharkodat-ux.github.io/studdy",
+    "description": "studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning.",
+    "language": "ts",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "bharkodat-ux",
+    "githubUserId": "262920109",
+    "repositoryUrl": "https://github.com/bharkodat-ux/studdy",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11055",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "AIOPE Headless",
     "url": "https://xnet.ngo",

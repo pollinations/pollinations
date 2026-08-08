@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |
 | [🎬 VideoForge AI](https://videoforge.digiverse.fr) | VideoForge AI turns a single text prompt into a ready-to-publish short video for social media, including Instagram Reels, TikTok, YouTube Shorts, and LinkedIn. | [@Pims18](https://github.com/Pims18) |
 | [🎬 Video Translator Agent](https://video-translator-agent.pages.dev) | AI-powered short video voice and subtitle auto-translation agent. Extracts audio from short videos using FFmpeg.wasm, transcribes speech with Pollinations Whisper API, translates subtitles with Pollin | [@RiderJoker](https://github.com/RiderJoker) |
 | [🤖 HSCAura (NeuraX Omega AI)](https://hscaura.vercel.app/ai-chat) | NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI. | [@mtaspro](https://github.com/mtaspro) |
@@ -29,7 +30,6 @@
 | [🖼️ Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) | An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g | [@Vigor-Zhong](https://github.com/Vigor-Zhong) |
 | [🛠️ Agentic Automation](https://pollinations-chat-kohl.vercel.app) | Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI | [@SopuluA](https://github.com/SopuluA) |
 | [💬 Pulse AI](https://github.com/XNet-NGO/pulse-ai) | Pulse AI is a consumer AI assistant for Android that uses the Pollinations text API (gen.pollinations.ai/v1) for chat completions and the Pollinations image API (image.pollinations.ai) for on-demand i | [@xnet-admin-1](https://github.com/xnet-admin-1) |
-| [🖼️ Lumara](https://github.com/pinkpixel-dev/Lumara) | Lumara is a desktop application that brings the power of the Pollinations AI image generation ecosystem directly to your computer. Select from a variety of image models, apply artistic styles, optiona | [@sizzlebop](https://github.com/sizzlebop) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 Unified API

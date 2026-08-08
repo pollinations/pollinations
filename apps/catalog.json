@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Promptzy",
+    "url": "https://promptzy.pinkpixel.dev",
+    "description": "Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage.",
+    "language": "en",
+    "category": "build",
+    "platform": "desktop",
+    "githubUsername": "sizzlebop",
+    "githubUserId": "192782247",
+    "repositoryUrl": "https://github.com/pinkpixel-dev/promptzy",
+    "repositoryStars": null,
+    "discordUsername": "sizzlebopz",
+    "other": null,
+    "submittedDate": "2026-05-20",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11204",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Generateur d'image ia",
     "url": "https://mzaacdepy.github.io/generateur-images-ia",

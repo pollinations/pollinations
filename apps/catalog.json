@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "Pollen Scope",
+    "url": "https://horoscope-beta-eight.vercel.app",
+    "description": "Pollen Scope is a daily horoscope app built on Pollinations. It uses Pollinations OAuth + BYOP so each user's readings are billed to their own pollen balance — no shared quota, no accounts. Each readi",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "KodeIsFun",
+    "githubUserId": "9068119",
+    "repositoryUrl": "https://github.com/KodeIsFun/Horoscope",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13116",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🤖",
     "name": "Whisper",
     "url": "https://play.google.com/store/apps/details?id=com.leiver.whisper_android",

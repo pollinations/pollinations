@@ -113,6 +113,20 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
             .filter((modality) => modality.length > 0);
     }
 
+    if (opts.outputModalities !== undefined) {
+        body.outputModalities = String(opts.outputModalities)
+            .split(",")
+            .map((modality) => modality.trim())
+            .filter((modality) => modality.length > 0);
+    }
+
+    if (opts.videoCapabilities !== undefined) {
+        body.videoCapabilities = String(opts.videoCapabilities)
+            .split(",")
+            .map((capability) => capability.trim())
+            .filter((capability) => capability.length > 0);
+    }
+
     if (includeRequired) {
         for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
@@ -189,6 +203,14 @@ const create = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--output-modalities <types>",
+            "Comma-separated produced outputs: text,image,audio,video",
+        )
+        .option(
+            "--video-capabilities <caps>",
+            "Comma-separated video capabilities: text-to-video,image-to-video",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -229,6 +251,14 @@ const update = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--output-modalities <types>",
+            "Comma-separated produced outputs: text,image,audio,video",
+        )
+        .option(
+            "--video-capabilities <caps>",
+            "Comma-separated video capabilities: text-to-video,image-to-video",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();

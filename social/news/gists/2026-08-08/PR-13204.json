@@ -1,0 +1,36 @@
+{
+  "pr_number": 13204,
+  "title": "Add Pollination EduCard AI to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13204",
+  "merged_at": "2026-08-08T14:45:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) to learn\n- Pollination EduCard AI provides an “About the App” section describing the app.\n\nFixes #11155",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study cards enter the garden",
+    "blurb": "Pollination EduCard AI has landed in Learn, bringing a small study companion to the hive. It turns learning into something a little more card-shaped and a lot less lonely.",
+    "summary": "Added Pollination EduCard AI to the Learn catalog, including an About the App section that explains the study-card app and its purpose.",
+    "impact": "Learners can now discover Pollination EduCard AI directly from Learn and quickly understand what it does before opening it.",
+    "keywords": [
+      "community",
+      "learn",
+      "education",
+      "study-cards",
+      "app-catalog",
+      "EduCard"
+    ],
+    "visual_concept": "Depict Polli as a thoughtful study buddy wearing tiny round reading glasses, arranging glowing pixel flashcards that bloom from a flower pot like code-plants. A cozy retro classroom terminal displays simple card-shaped study notes, with small flowers and vines around it to show the app joining the Learn garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, black oval eyes, light blue wings, and tiny round reading glasses, carefully arranging glowing study flashcards beside a retro classroom terminal. The cards sprout like code-plants from a lime green (#ecf874) flower pot amid pastel flowers and vines; pixel-font text reads “LEARN”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13204.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, black oval eyes, light blue wings, and tiny round reading glasses, carefully arranging glowing study flashcards beside a retro classroom terminal. The cards sprout like code-plants from a lime green (#ecf874) flower pot amid pastel flowers and vines; pixel-font text reads “LEARN”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-08T14:46:14.776694+00:00",
+  "app_name": "Pollination EduCard AI",
+  "app_url": "https://satwata-bandopadhyay.github.io/pollination-educard-ai"
+}

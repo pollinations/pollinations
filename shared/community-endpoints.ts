@@ -13,6 +13,13 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+// Upstream rate budget assumed when the owner does not declare one for their
+// endpoint.
+export const COMMUNITY_ENDPOINT_DEFAULT_RATE_LIMIT_RPM = 120;
+// Fixed share of the endpoint's declared upstream RPM granted to each
+// Pollinations caller. One heavy caller can otherwise exhaust the shared
+// upstream quota for every other user.
+export const COMMUNITY_ENDPOINT_PER_USER_RATE_LIMIT_SHARE = 0.25;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -206,6 +213,26 @@ export function isFreeCommunityEndpoint(
     );
 }
 
+/**
+ * Per-caller request budget (requests/minute) for a community endpoint: a fixed
+ * share of the owner-declared upstream RPM, falling back to a default when the
+ * owner did not declare one. Rounds up so a defaulted 120 RPM yields a usable
+ * 30 req/min instead of 29.
+ */
+export function communityEndpointPerUserRateLimitRpm(endpoint: {
+    rateLimitRpm?: number | null;
+}): number {
+    const upstreamRpm =
+        endpoint.rateLimitRpm &&
+        Number.isFinite(endpoint.rateLimitRpm) &&
+        endpoint.rateLimitRpm > 0
+            ? endpoint.rateLimitRpm
+            : COMMUNITY_ENDPOINT_DEFAULT_RATE_LIMIT_RPM;
+    return Math.ceil(
+        upstreamRpm * COMMUNITY_ENDPOINT_PER_USER_RATE_LIMIT_SHARE,
+    );
+}
+
 export function communityEndpointPricesForModality(
     source: Partial<CommunityEndpointPrices>,
     modality: CommunityEndpointModality,
@@ -302,6 +329,9 @@ export type CommunityEndpointRuntime = {
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
+    // Upstream rate budget in requests/minute declared by the owner. Null falls
+    // back to COMMUNITY_ENDPOINT_DEFAULT_RATE_LIMIT_RPM.
+    rateLimitRpm: number | null;
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbackModelIds: string[];

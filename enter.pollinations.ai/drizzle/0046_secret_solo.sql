@@ -1,0 +1,1 @@
+ALTER TABLE `community_endpoint` ADD `rate_limit_rpm` integer;

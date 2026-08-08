@@ -43,6 +43,7 @@ import {
     endpointToForm,
     type FallbackModelOption,
     idleAction,
+    isValidRateLimitRpm,
     nextFormState,
     providerModelHelper,
     readError,
@@ -379,6 +380,7 @@ export function CommunityEndpointDialog({
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
+        isValidRateLimitRpm(form.rateLimitRpm) &&
         hasValidVisiblePrices &&
         saveRequirementMet;
 
@@ -688,6 +690,33 @@ export function CommunityEndpointDialog({
                                                         ),
                                                     )}
                                                 </div>
+                                                {isShared && (
+                                                    <FieldStack
+                                                        label="Rate limit (requests/min)"
+                                                        helper="Optional. Upstream rate budget you declare for this model. Each caller is capped at 25% of this value so one user cannot exhaust your upstream quota for everyone else. Defaults to 120 RPM (30 per caller) when omitted."
+                                                        alignLabelRow
+                                                    >
+                                                        <Input
+                                                            name="community-rate-limit-rpm"
+                                                            type="number"
+                                                            min={1}
+                                                            max={60000}
+                                                            step={1}
+                                                            value={
+                                                                form.rateLimitRpm
+                                                            }
+                                                            placeholder="120"
+                                                            autoComplete="off"
+                                                            onChange={(e) =>
+                                                                updateForm(
+                                                                    "rateLimitRpm",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                    </FieldStack>
+                                                )}
                                             </ScrollArea>
                                         ) : (
                                             <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">

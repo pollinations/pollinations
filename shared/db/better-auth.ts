@@ -253,6 +253,11 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
     string[]
   >(),
+  // Upstream rate budget, requests per minute, declared by the owner. Null
+  // falls back to a default. The gateway derives a per-Pollinations-user cap
+  // (a fixed share of this RPM) so one caller can't exhaust the shared
+  // upstream quota for everyone else.
+  rateLimitRpm: integer("rate_limit_rpm"),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

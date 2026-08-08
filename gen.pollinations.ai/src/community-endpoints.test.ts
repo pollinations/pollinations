@@ -730,6 +730,7 @@ describe("community endpoint helpers", () => {
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 fallbackModelIds: [],
+                rateLimitRpm: null,
                 disabledAt: null,
                 disabledReason: null,
                 bearerTokenCiphertext: await encryptSecret(
@@ -917,6 +918,7 @@ describe("community endpoint helpers", () => {
             visibility: "public",
             delegatesGeneration: false,
             fallbackModelIds: [],
+            rateLimitRpm: null,
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -978,6 +980,7 @@ describe("community endpoint helpers", () => {
                 upstreamModel: "agent",
                 visibility: "public",
                 delegatesGeneration: true,
+                rateLimitRpm: null,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],

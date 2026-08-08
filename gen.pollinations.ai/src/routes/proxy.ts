@@ -9,6 +9,7 @@ import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { communityModelRateLimit } from "@/middleware/community-model-rate-limit.ts";
 import {
     audioCache,
     imageCache,
@@ -112,6 +113,7 @@ const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageCache,
     generationAccess,
+    communityModelRateLimit,
     async (c) => {
         const query = c.req.valid("query" as never) as { safe?: SafeValue };
         const prompt = await applySafety(
@@ -149,6 +151,7 @@ const chatCompletionHandlers = factory.createHandlers(
     track("generate.text"),
     textCache,
     generationAccess,
+    communityModelRateLimit,
     async (c) => {
         // Use resolved model from middleware for the backend request
         const requestBody = await applySafetyToChatRequest(c, {
@@ -695,6 +698,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
+        communityModelRateLimit,
         async (c) => {
             const requestBody = await applySafetyToChatRequest(c, {
                 ...(c.req.valid(
@@ -744,6 +748,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
+        communityModelRateLimit,
         async (c) => {
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -1148,6 +1153,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        communityModelRateLimit,
         handleImageGeneration,
     )
     .post(
@@ -1178,6 +1184,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
+        communityModelRateLimit,
         handleImageEdit,
     );
 

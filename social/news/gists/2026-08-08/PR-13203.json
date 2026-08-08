@@ -1,0 +1,36 @@
+{
+  "pr_number": 13203,
+  "title": "Add Valdy - AI-Powered Startup Validation to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13203",
+  "merged_at": "2026-08-08T14:42:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Valdy - AI-Powered Startup Validation](https://samo-fex.github.io/valdy) to business\n- Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers.\n\nFixes #11156",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Ideas meet the garden test",
+    "blurb": "Valdy joined the business garden to help founders give startup ideas a proper reality check. Polli brought the data, the questions, and a tiny clipboard.",
+    "summary": "Added Valdy to the business app catalog, giving entrepreneurs and product managers an AI-powered tool that combines real-world data with analysis to validate startup ideas.",
+    "impact": "People browsing Pollinations business apps can now find Valdy and use its data-informed AI analysis to assess ideas before planting too many weeks of work.",
+    "keywords": [
+      "community-app",
+      "business",
+      "startup-validation",
+      "ai-analysis",
+      "entrepreneurs",
+      "catalog"
+    ],
+    "visual_concept": "Depict Valdy as a cozy startup-validation workbench: a retro dashboard shows a seedling idea being examined with friendly data charts, checkmarks, and a magnifying glass. Polli, wearing a tiny founder-style cap and holding a clipboard, helps inspect the seedling beside a pot of code-plants and small garden flowers; the scene makes validation feel like testing whether a seed has the conditions to grow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny founder cap and holding a clipboard beside a Valdy startup-validation dashboard on a glowing retro CRT monitor; the screen shows a seedling idea, gentle bar charts, checkmarks, and a magnifying glass while code-plants grow from pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle scanlines, pixel-font text \"VALIDATE\", retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13203.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny founder cap and holding a clipboard beside a Valdy startup-validation dashboard on a glowing retro CRT monitor; the screen shows a seedling idea, gentle bar charts, checkmarks, and a magnifying glass while code-plants grow from pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle scanlines, pixel-font text \"VALIDATE\", retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-08T14:43:09.561071+00:00",
+  "app_name": "Valdy - AI-Powered Startup Validation",
+  "app_url": "https://samo-fex.github.io/valdy"
+}

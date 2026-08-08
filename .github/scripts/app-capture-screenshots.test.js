@@ -4,12 +4,13 @@ const {
     DESKTOP_USER_AGENT,
     applyMediaUrls,
     calculateDailyBatch,
-    isSafeDismissLabel,
+    classifyCaptureOutcome,
+    isBlockedAgentControl,
+    resolveAgentClickTarget,
     resolveTarget,
     selectTargets,
     selectTargetsByUrl,
-    toCaptureTarget,
-    validateReview,
+    validateAgentDecision,
     waitForSuccessfulNavigation,
 } = require("./app-capture-screenshots.js");
 
@@ -38,28 +39,6 @@ test("allows a blocked navigation to resolve to a successful document", async ()
         await waitForSuccessfulNavigation(page, { status: () => 403 }, 30000),
         200,
     );
-});
-
-test("recognizes safe first-visit dismiss controls without clicking primary actions", () => {
-    for (const label of [
-        "Accept all cookies",
-        "Acepto y Continuar",
-        "Skip Tour",
-        "SKIP",
-        "Close",
-        "No thanks",
-    ]) {
-        assert.equal(isSafeDismissLabel(label), true, label);
-    }
-
-    for (const label of [
-        "Next",
-        "Open Character Forge",
-        "Generate",
-        "Delete account",
-    ]) {
-        assert.equal(isSafeDismissLabel(label), false, label);
-    }
 });
 
 test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
@@ -211,27 +190,117 @@ test("selects an explicit non-contiguous target URL list", () => {
     );
 });
 
-test("validates visual review decisions", () => {
+test("validates final screenshot-agent decisions", () => {
     assert.deepEqual(
-        validateReview({
-            decision: "approved",
+        validateAgentDecision({
+            action: null,
+            decision: "accept",
             reason: "The app is clearly visible.",
             score: 92,
         }),
         {
-            decision: "approved",
+            action: null,
+            decision: "accept",
             reason: "The app is clearly visible.",
             score: 92,
         },
     );
     assert.throws(
         () =>
-            validateReview({
+            validateAgentDecision({
                 decision: "maybe",
                 reason: "Uncertain",
                 score: 50,
             }),
         /invalid decision/,
+    );
+});
+
+test("allows only structured actions against supplied page controls", () => {
+    assert.deepEqual(
+        validateAgentDecision(
+            {
+                action: { elementId: "f0-e2", type: "click" },
+                decision: "act",
+                reason: "Dismiss the cookie banner.",
+                score: 60,
+            },
+            new Set(["f0-e2"]),
+        ),
+        {
+            action: { elementId: "f0-e2", type: "click" },
+            decision: "act",
+            reason: "Dismiss the cookie banner.",
+            score: 60,
+        },
+    );
+    assert.throws(
+        () =>
+            validateAgentDecision(
+                {
+                    action: { elementId: "f0-e9", type: "click" },
+                    decision: "act",
+                    reason: "Click an unavailable control.",
+                    score: 20,
+                },
+                new Set(["f0-e2"]),
+            ),
+        /unavailable element/,
+    );
+    assert.throws(
+        () =>
+            validateAgentDecision({
+                action: { direction: "sideways", type: "scroll" },
+                decision: "act",
+                reason: "Move sideways.",
+                score: 20,
+            }),
+        /scroll direction/,
+    );
+});
+
+test("resolves a unique control label returned by the screenshot agent", () => {
+    const decision = {
+        action: { elementId: "Aceitar", type: "click" },
+        decision: "act",
+        reason: "Dismiss the cookie dialog.",
+        score: 60,
+    };
+    assert.deepEqual(
+        resolveAgentClickTarget(decision, [
+            { elementId: "f0-e3", label: "Aceitar" },
+        ]),
+        {
+            ...decision,
+            action: { elementId: "f0-e3", type: "click" },
+        },
+    );
+});
+
+test("keeps sensitive browser actions out of the agent control list", () => {
+    for (const label of [
+        "Log in",
+        "Authorize application",
+        "Connect wallet",
+        "Delete account",
+        "Add to Discord",
+    ]) {
+        assert.equal(isBlockedAgentControl(label), true, label);
+    }
+    for (const label of ["Accept cookies", "Skip tour", "Close", "Continue"]) {
+        assert.equal(isBlockedAgentControl(label), false, label);
+    }
+});
+
+test("reports capture outcomes separately", () => {
+    assert.equal(classifyCaptureOutcome({ approved: true }), "approved");
+    assert.equal(
+        classifyCaptureOutcome({ approved: false, success: true }),
+        "agent_rejected",
+    );
+    assert.equal(
+        classifyCaptureOutcome({ approved: false, success: false }),
+        "technical_failure",
     );
 });
 
@@ -255,39 +324,4 @@ test("rotates deterministic daily batches across the target set", () => {
         batchIndex: 0,
         offset: 0,
     });
-});
-
-test("removes stale capture fields before a retry", () => {
-    assert.deepEqual(
-        toCaptureTarget({
-            catalogIndices: [12],
-            key: "website:https://app.test",
-            context: {
-                categories: ["chat"],
-                descriptions: ["A useful app"],
-                platforms: ["web"],
-            },
-            name: "Retry app",
-            names: ["Retry app"],
-            screenshotBytes: 12345,
-            screenshotPath: "/tmp/old.png",
-            source: "website",
-            status: 200,
-            success: true,
-            targetUrl: "https://app.test",
-        }),
-        {
-            catalogIndices: [12],
-            context: {
-                categories: ["chat"],
-                descriptions: ["A useful app"],
-                platforms: ["web"],
-            },
-            key: "website:https://app.test",
-            name: "Retry app",
-            names: ["Retry app"],
-            source: "website",
-            targetUrl: "https://app.test",
-        },
-    );
 });

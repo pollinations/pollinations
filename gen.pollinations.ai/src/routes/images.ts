@@ -23,6 +23,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { inferSizeFromSourceImage } from "@/image/utils/sourceDimensions.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
@@ -281,7 +282,20 @@ export async function handleImageEdit(c: Context<Env>) {
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
     const safePrompt = await applySafety(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
+
+    // Preserve the source image's aspect ratio when the caller did not
+    // request dimensions (#12583). Explicit `size` — and legacy
+    // ?width=/&height= query params, which merge in downstream — keep
+    // controlling the output exactly as before.
+    const query = c.req.query();
+    const dimensionsRequested =
+        size !== undefined ||
+        query.width !== undefined ||
+        query.height !== undefined;
+    const effectiveSize = dimensionsRequested
+        ? size
+        : await inferSizeFromSourceImage(imageUrls);
+    const resolved = resolveParams({ size: effectiveSize, quality, seed });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {
         prompt: safePrompt,

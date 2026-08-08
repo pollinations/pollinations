@@ -556,6 +556,17 @@ const imageNField = z
 const imageSizeField = z.string().optional().default("1024x1024").meta({
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
 });
+// Edits must distinguish "size omitted" from an explicit 1024x1024 so the
+// gateway can derive dimensions from the source image instead of defaulting
+// to square (#12583 / #10944). No default here on purpose.
+const imageEditSizeField = z
+    .string()
+    .optional()
+    .meta({
+        description:
+            "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512). " +
+            "When omitted, the output size is derived from the source image's aspect ratio",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -655,7 +666,7 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
         safe: SafeSchema,
     })

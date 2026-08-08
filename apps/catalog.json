@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "AI Blog Articles",
+    "url": "https://getaiblogarticles.com",
+    "description": "AI Blog Articles (getaiblogarticles.com) is a free, no-signup web tool that generates SEO-optimized blog articles in two steps. The user enters a topic and chooses an article length; the app calls the",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "br3t",
+    "githubUserId": "1561861",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-25",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11288",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "Silenos Música",
     "url": "https://www.silenos.es/musica",

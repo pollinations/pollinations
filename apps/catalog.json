@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Video Translator Agent",
+    "url": "https://video-translator-agent.pages.dev",
+    "description": "AI-powered short video voice and subtitle auto-translation agent. Extracts audio from short videos using FFmpeg.wasm, transcribes speech with Pollinations Whisper API, translates subtitles with Pollin",
+    "language": "zh-CN",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "RiderJoker",
+    "githubUserId": "18320976",
+    "repositoryUrl": "https://github.com/RiderJoker/video-translator-agent-pollinations",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13185",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🤖",
     "name": "HSCAura (NeuraX Omega AI)",
     "url": "https://hscaura.vercel.app/ai-chat",

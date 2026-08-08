@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Briefly",
+    "url": "https://briefly-app.defyma.com",
+    "description": "Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "defyma",
+    "githubUserId": "22837102",
+    "repositoryUrl": "https://github.com/defyma/briefly-app",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-24",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11282",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "AI Blog Articles",
     "url": "https://getaiblogarticles.com",

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "7visions - Safe Dream Analysis",
+    "url": "https://www.7visions.fr/app",
+    "description": "7visions is a safe AI dream analysis app available on web and Android. Users describe a dream and receive a structured interpretation through seven complementary perspectives: Jungian psychology, Freu",
+    "language": "fr",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "BenoitMagnan",
+    "githubUserId": "17542510",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "benoitmagnan",
+    "other": null,
+    "submittedDate": "2026-05-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11354",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎮",
     "name": "Archetype",
     "url": "https://github.com/xnet-admin-1/archetype-game",

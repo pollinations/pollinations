@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 7visions - Safe Dream Analysis](https://www.7visions.fr/app) | 7visions is a safe AI dream analysis app available on web and Android. Users describe a dream and receive a structured interpretation through seven complementary perspectives: Jungian psychology, Freu | [@BenoitMagnan](https://github.com/BenoitMagnan) |
 | [🎮 Archetype](https://github.com/xnet-admin-1/archetype-game) | Archetype is a collaborative storytelling game for Android where 2-4 players take turns building stories together. It uses the Pollinations text API (nova-fast model) for AI-powered story sparks, char | [@xnet-admin-1](https://github.com/xnet-admin-1) |
 | [💬 Briefly](https://briefly-app.defyma.com) | Briefly turns rough notes into structured output, breaks big goals into actionable steps, and drafts clear replies in a focused chat thread. | [@defyma](https://github.com/defyma) |
 | [✍️ AI Blog Articles](https://getaiblogarticles.com) | AI Blog Articles (getaiblogarticles.com) is a free, no-signup web tool that generates SEO-optimized blog articles in two steps. The user enters a topic and chooses an article length; the app calls the | [@br3t](https://github.com/br3t) |
@@ -29,7 +30,6 @@
 | [🤖 HSCAura (NeuraX Omega AI)](https://hscaura.vercel.app/ai-chat) | NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI. | [@mtaspro](https://github.com/mtaspro) |
 | [📚 Pollen Scope](https://horoscope-beta-eight.vercel.app) | Pollen Scope is a daily horoscope app built on Pollinations. It uses Pollinations OAuth + BYOP so each user's readings are billed to their own pollen balance — no shared quota, no accounts. Each readi | [@KodeIsFun](https://github.com/KodeIsFun) |
 | [🤖 Whisper](https://play.google.com/store/apps/details?id=com.leiver.whisper_android) | This application allows users to use different AI models to analyze the screen and audio requests through an overlay, using Pollinations AI | [@Okonorff](https://github.com/Okonorff) |
-| [💬 Receipt Fortune Teller](https://oracle.shipr.app) | Receipt Fortune Teller converts receipts, grocery lists, and small purchase lists into AI fortune readings and tarot-style card art. It uses submitted text to generate the results. | [@0xNull-ops](https://github.com/0xNull-ops) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 Unified API

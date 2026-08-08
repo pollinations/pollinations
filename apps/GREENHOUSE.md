@@ -218,7 +218,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ elixpo](https://elixpo.com) | Create images from text prompts using AI | [@Circuit-Overtime](https://github.com/Circuit-Overtime) |  |  |
 | [🎨 eflyer](https://gki-gmm.github.io/eflyer/) | Generate custom electronic flyers from templates with simple controls. | [@gki-gmm](https://github.com/gki-gmm) |  |  |
 | [🎨 Eflyer Generator](https://gki-gmm.github.io/eflyer/) | Buat flyer digital dengan latar AI untuk kebaktian di GKI Griya Merpati Mas | [@gki-gmm](https://github.com/gki-gmm) |  |  |
-| [🖼️ Pollination Gallery AI](https://lytura-ai-visions-forge.lovable.app/) | Powerful AI image generator based on pollinations.ai API | [@malik498-r](https://github.com/malik498-r) |  |  |
+| [🖼️ Lytura AI](https://lytura-ai-visions-forge.lovable.app/) | Powerful AI image generator based on pollinations.ai API | [@malik498-r](https://github.com/malik498-r) |  |  |
 | [🎨 dev voanh art](https://dev.voanh.art/) | Free text-to-image platform with 200+ pre-prompts, no signup required | [@LaurentVoanh](https://github.com/LaurentVoanh) |  |  |
 | [🎨 ImagynexAI](https://imagynexai.vercel.app) | Gamified AI art platform with social features, gallery & leaderboards | [@aggarwalh905-ops](https://github.com/aggarwalh905-ops) |  |  |
 | [🧠 Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | [@Superheroghost](https://github.com/Superheroghost) |  |  |
@@ -295,7 +295,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@rajeshbsws557](https://github.com/rajeshbsws557) |  |  |
 | [🎬 AvaTube](https://avatube.ai/) | AI-powered social media where avatars create content without cameras. | [@Jxsue2911](https://github.com/Jxsue2911) |  |  |
 | [🎬 AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | [@rodrigololr](https://github.com/rodrigololr) |  |  |
-| [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@thomazandreywalicoski](https://github.com/thomazandreywalicoski) |  |  |
+| [🎬 AutoStoryfy](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@thomazandreywalicoski](https://github.com/thomazandreywalicoski) |  |  |
 | [🎞️ Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | [@eneryu](https://github.com/eneryu) |  |  |
 | [🎬 Anime AI Studio](https://www.animeaistudio.com/) | AI short drama platform with 5-stage pipeline from script to video | [@xiaoliangliang](https://github.com/xiaoliangliang) |  |  |
 | [🗣️ Realistic Text To Speech](https://huggingface.co/spaces/NihalGazi/Text-To-Speech-Unlimited) | Unlimited high-quality TTS with prompt-level emotion control | [@nihal-gazi](https://github.com/nihal-gazi) |  |  |
@@ -928,7 +928,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📈 Wall Street Vision](https://www.wallstreetvision.io) | AI platform turning market data into predictive insights for investors | [@saboornasar164-del](https://github.com/saboornasar164-del) |  |  |
 | [🌱 Abundance Effect](https://abundance-effect.vercel.app/) | Gamified financial core with AI visuals to support personal growth. | [@Evgeniyzuev](https://github.com/Evgeniyzuev) |  |  |
 | [🍎 CaloriX](https://yediginibil.vercel.app) | AI calorie counter PWA with food photo recognition & barcode scanning | [@GokhanOfficial](https://github.com/GokhanOfficial) |  |  |
-| [🏥 medi translate](https://reporttranslator.com/) | AI-powered medical report translation and image generation platform | [@Bhumitpachani](https://github.com/Bhumitpachani) |  |  |
+| [🏥 StellarMind](https://reporttranslator.com/) | AI-powered medical report translation and image generation platform | [@Bhumitpachani](https://github.com/Bhumitpachani) |  |  |
 | [🛒 KOADLY](https://koadly.com) | B2B platform with AI tools for product images, marketing & dropshipping | [@copilot967](https://github.com/copilot967) |  |  |
 | [🐝 Suivi Apidae](https://www.allier-auvergne-tourisme.com/) | Tourism database monitor with AI descriptions, images & audio | [@AurelABA](https://github.com/AurelABA) |  |  |
 | [🍳 Smart Recipe Finder](https://www.pratiksef.com.tr/) | Discover recipes based on ingredients you have, reducing food waste | [@yunusmertofficial](https://github.com/yunusmertofficial) |  |  |

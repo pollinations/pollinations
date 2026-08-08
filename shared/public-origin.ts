@@ -8,6 +8,8 @@ const TRUSTED_PUBLIC_HOSTS = new Set<string>([
     "dev.enter.pollinations.ai",
     "gen.pollinations.ai",
     "staging.gen.pollinations.ai",
+    "mcp.pollinations.ai",
+    "staging.mcp.pollinations.ai",
     "media.pollinations.ai",
 ]);
 

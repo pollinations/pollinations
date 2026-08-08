@@ -10,6 +10,7 @@ const BASE = "http://localhost:3000";
 const VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
 const REDIRECT_URI = "https://app.example/cb";
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
+const MCP_RESOURCE = "https://mcp.pollinations.ai";
 
 async function s256(verifier: string): Promise<string> {
     const digest = await crypto.subtle.digest(
@@ -80,6 +81,7 @@ describe("OAuth authorization server metadata", () => {
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
+        expect(meta.scopes_supported).toContain("mcp:tools");
     });
 });
 
@@ -121,6 +123,39 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(200);
         const body = (await res.json()) as { access_token: string };
         expect(body.access_token).toBe("sk_test_access_token");
+    });
+
+    test("requires the resource indicator when the authorization code is MCP-bound", async () => {
+        const code = crypto.randomUUID();
+        await putCode(code, { resource: MCP_RESOURCE, scope: "mcp:tools" });
+
+        const missingResource = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost(validTokenParams(code)),
+        );
+        expect(missingResource.status).toBe(400);
+        await expect(missingResource.json()).resolves.toMatchObject({
+            error: "invalid_grant",
+            error_description: "resource mismatch",
+        });
+
+        const matchingCode = crypto.randomUUID();
+        await putCode(matchingCode, {
+            resource: MCP_RESOURCE,
+            scope: "mcp:tools",
+        });
+        const matchingResource = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                ...validTokenParams(matchingCode),
+                resource: MCP_RESOURCE,
+            }),
+        );
+        expect(matchingResource.status).toBe(200);
+        await expect(matchingResource.json()).resolves.toMatchObject({
+            resource: MCP_RESOURCE,
+            scope: "mcp:tools",
+        });
     });
 
     test("omitting redirect_uri is rejected (RFC 6749 §4.1.3)", async () => {

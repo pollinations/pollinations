@@ -90,6 +90,7 @@ type RealtimeBillingContext = {
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
     apiKeyPollenBalance?: number | null;
+    apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -486,8 +487,13 @@ async function settleRealtimeSession(
     if (tracking.settled) return;
     tracking.settlementAttempts += 1;
 
+    const db = drizzle(c.env.DB) as unknown as Parameters<
+        typeof handleBalanceDeduction
+    >[0]["db"];
+
     const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
+        await releaseRealtimeReservation(db, tracking);
         tracking.settled = true;
         return;
     }
@@ -499,14 +505,12 @@ async function settleRealtimeSession(
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
+        await releaseRealtimeReservation(db, tracking);
         tracking.settled = true;
         return;
     }
 
     const eventEndTime = new Date();
-    const db = drizzle(c.env.DB) as unknown as Parameters<
-        typeof handleBalanceDeduction
-    >[0]["db"];
 
     tracking.deduction ??= await handleBalanceDeduction({
         db,
@@ -515,6 +519,7 @@ async function settleRealtimeSession(
         userId: tracking.userId,
         apiKeyId: tracking.apiKeyId,
         apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+        apiKeyReservedAmount: tracking.apiKeyReservedAmount,
         byopClientKeyId: tracking.byopClientKeyId,
         modelPaidOnly: tracking.modelDefinition.paidOnly,
     });
@@ -543,6 +548,27 @@ async function settleRealtimeSession(
         c.get("log").getChild("realtime"),
     );
     tracking.settled = true;
+}
+
+/**
+ * Releases what admission reserved against the API key budget when a session
+ * ends with nothing to bill. Routed through the unbilled branch of
+ * `handleBalanceDeduction` so refunds stay in one place.
+ */
+async function releaseRealtimeReservation(
+    db: Parameters<typeof handleBalanceDeduction>[0]["db"],
+    tracking: RealtimeBillingContext,
+): Promise<void> {
+    if (!tracking.apiKeyId || !tracking.apiKeyReservedAmount) return;
+
+    await handleBalanceDeduction({
+        db,
+        isBilledUsage: false,
+        userId: tracking.userId,
+        apiKeyId: tracking.apiKeyId,
+        apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+        apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+    });
 }
 
 function collectBillingEvents(
@@ -702,6 +728,7 @@ async function createRealtimeBillingContext(
             c.var.auth.apiKey?.byopClientUserId ?? undefined,
         apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        apiKeyReservedAmount: c.var.balance?.apiKeyReservation?.amount,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,

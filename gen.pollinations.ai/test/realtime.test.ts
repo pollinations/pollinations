@@ -4,8 +4,12 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
+import type { TinybirdModelStats } from "@shared/utils/model-stats.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
@@ -55,7 +59,7 @@ function nextClose(socket: WebSocket): Promise<CloseEvent> {
     });
 }
 
-function mockOpenAIRealtime() {
+function mockOpenAIRealtime(modelStats: TinybirdModelStats["data"] = []) {
     let upstreamRequest: Request | undefined;
     let upstreamServer: WebSocket | undefined;
     const tinybirdRequests: Request[] = [];
@@ -70,7 +74,7 @@ function mockOpenAIRealtime() {
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
-                return Response.json({ data: [] });
+                return Response.json({ data: modelStats });
             }
 
             upstreamRequest = request;
@@ -127,6 +131,26 @@ async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     return getUserBalances(userId);
 }
 
+async function getApiKeyBalance(apiKeyId: string) {
+    const db = drizzle(env.DB);
+    const [row] = await db
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return row?.pollenBalance;
+}
+
+async function waitForApiKeyBalanceAbove(apiKeyId: string, minBalance: number) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const pollenBalance = await getApiKeyBalance(apiKeyId);
+        if (pollenBalance != null && pollenBalance > minBalance) {
+            return pollenBalance;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return getApiKeyBalance(apiKeyId);
+}
+
 async function waitForTinybirdRequests(
     upstream: ReturnType<typeof mockOpenAIRealtime>,
     count = 1,
@@ -141,17 +165,25 @@ async function openPaidRealtimeSession({
     name,
     model = "gpt-realtime-2",
     referrer,
+    estimatedCost = 0,
 }: {
     name: string;
     model?: string;
     referrer?: string;
+    estimatedCost?: number;
 }) {
-    const { key, userId } = await createTestApiKey({
+    const {
+        key,
+        id: apiKeyId,
+        userId,
+    } = await createTestApiKey({
         name,
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockOpenAIRealtime(
+        estimatedCost > 0 ? [{ model, avg_cost_usd: estimatedCost }] : [],
+    );
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -169,7 +201,7 @@ async function openPaidRealtimeSession({
     client.accept();
     upstream.server.accept();
 
-    return { client, ctx, upstream, userId };
+    return { client, ctx, upstream, userId, apiKeyId };
 }
 
 type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
@@ -552,6 +584,43 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("refunds the admission reservation when a session closes without usage", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "unused-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
+
+    await closeRealtimeSession(session);
+
+    const pollenBalance = await waitForApiKeyBalanceAbove(
+        session.apiKeyId,
+        0.9,
+    );
+    expect(pollenBalance).toBeCloseTo(1, 8);
+});
+
+test("settles the API key budget against the reservation, not on top of it", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "reserved-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+
+    await closeAndReadTelemetry(session);
+
+    const expectedCharge = 0.0023975 * 0.75;
+    const pollenBalance = await waitForApiKeyBalanceAbove(
+        session.apiKeyId,
+        0.9,
+    );
+    expect(pollenBalance).toBeCloseTo(1 - expectedCharge, 7);
 });
 
 test.each([

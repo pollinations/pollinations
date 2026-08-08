@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💼",
+    "name": "Valdy - AI-Powered Startup Validation",
+    "url": "https://samo-fex.github.io/valdy",
+    "description": "Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers.",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "samo-fex",
+    "githubUserId": "195462777",
+    "repositoryUrl": "https://github.com/samo-fex/valdy",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11156",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "FluxFlow CLI",
     "url": "https://www.npmjs.com/package/fluxflow-cli",

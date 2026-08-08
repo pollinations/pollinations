@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Archetype",
+    "url": "https://github.com/xnet-admin-1/archetype-game",
+    "description": "Archetype is a collaborative storytelling game for Android where 2-4 players take turns building stories together. It uses the Pollinations text API (nova-fast model) for AI-powered story sparks, char",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "xnet-admin-1",
+    "githubUserId": "246910385",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-23",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11262",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Briefly",
     "url": "https://briefly-app.defyma.com",

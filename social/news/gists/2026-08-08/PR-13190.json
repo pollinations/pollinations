@@ -1,0 +1,37 @@
+{
+  "pr_number": 13190,
+  "title": "Add Silenos Música to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13190",
+  "merged_at": "2026-08-08T10:04:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Silenos Música](https://www.silenos.es/musica) to build\n- Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla.\n\nFixes #12476",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Songs join the garden",
+    "blurb": "Silenos Música has landed in the build: a small doorway from an idea to a new song or sound. Polli brought headphones, naturally.",
+    "summary": "Added Silenos Música to the app catalog, connecting Acestep and ElevenLabs to make creating songs and sounds simpler.",
+    "impact": "People browsing the Pollinations build can now discover Silenos Música as a ready-made tool for generating music and audio.",
+    "keywords": [
+      "community",
+      "apps",
+      "music",
+      "audio",
+      "Acestep",
+      "ElevenLabs",
+      "Silenos Música"
+    ],
+    "visual_concept": "Depict Silenos Música as a cozy music-making garden studio: Polli wears oversized headphones and tends flowering audio waveforms growing from pots beside a retro sampler. Include soft sound notes and a small CRT monitor showing a simple song waveform, representing the Acestep and ElevenLabs-powered music and sound creation workflow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny pair of headphones, tending a garden of flowering sound-wave plants beside a retro music sampler and CRT monitor. Lime green (#ecf874) glows prominently among mint, lavender, peach, and warm cream pastels; subtle pixel-font text reads “SILENOS MÚSICA,” with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and a nostalgic emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13190.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny pair of headphones, tending a garden of flowering sound-wave plants beside a retro music sampler and CRT monitor. Lime green (#ecf874) glows prominently among mint, lavender, peach, and warm cream pastels; subtle pixel-font text reads “SILENOS MÚSICA,” with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and a nostalgic emotionally warm atmosphere."
+  },
+  "generated_at": "2026-08-08T10:05:42.770742+00:00",
+  "app_name": "Silenos Música",
+  "app_url": "https://www.silenos.es/musica"
+}

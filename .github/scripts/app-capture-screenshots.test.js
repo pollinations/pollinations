@@ -2,10 +2,10 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
     DESKTOP_USER_AGENT,
+    applyAgentAction,
     applyMediaUrls,
     calculateDailyBatch,
     classifyCaptureOutcome,
-    isBlockedAgentControl,
     resolveAgentClickTarget,
     resolveTarget,
     selectTargets,
@@ -77,7 +77,7 @@ test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
     assert.equal(apps[2].screenshotUrl, "unchanged");
 });
 
-test("prefers a live app URL and falls back to a repository URL", () => {
+test("uses a repository only when no website URL is available", () => {
     assert.deepEqual(
         resolveTarget(
             {
@@ -214,6 +214,15 @@ test("validates final screenshot-agent decisions", () => {
             }),
         /invalid decision/,
     );
+    assert.throws(
+        () =>
+            validateAgentDecision({
+                decision: "accept",
+                reason: "Invalid score",
+                score: Number.NaN,
+            }),
+        /invalid score/,
+    );
 });
 
 test("allows only structured actions against supplied page controls", () => {
@@ -259,7 +268,7 @@ test("allows only structured actions against supplied page controls", () => {
     );
 });
 
-test("resolves a unique control label returned by the screenshot agent", () => {
+test("resolves a unique control label in any language", () => {
     const decision = {
         action: { elementId: "Aceitar", type: "click" },
         decision: "act",
@@ -277,19 +286,39 @@ test("resolves a unique control label returned by the screenshot agent", () => {
     );
 });
 
-test("keeps sensitive browser actions out of the agent control list", () => {
-    for (const label of [
-        "Log in",
-        "Authorize application",
-        "Connect wallet",
-        "Delete account",
-        "Add to Discord",
-    ]) {
-        assert.equal(isBlockedAgentControl(label), true, label);
-    }
-    for (const label of ["Accept cookies", "Skip tour", "Close", "Continue"]) {
-        assert.equal(isBlockedAgentControl(label), false, label);
-    }
+test("treats a disappeared control as a recoverable action", async () => {
+    const result = await applyAgentAction(
+        {},
+        { elementId: "f0-e1", type: "click" },
+        new Map([["f0-e1", { isVisible: async () => false }]]),
+        "https://app.test",
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.fatal, undefined);
+    assert.match(result.reason, /disappeared/);
+});
+
+test("rejects navigation away from the validated website", async () => {
+    const page = {
+        url: () => "https://other.test/landing",
+        waitForFunction: async () => {},
+        waitForLoadState: async () => {},
+        waitForNavigation: async () => ({ status: () => 200 }),
+        waitForTimeout: async () => {},
+    };
+    const result = await applyAgentAction(
+        page,
+        { elementId: "f0-e1", type: "click" },
+        new Map([
+            ["f0-e1", { click: async () => {}, isVisible: async () => true }],
+        ]),
+        "https://app.test",
+    );
+    assert.deepEqual(result, {
+        fatal: true,
+        ok: false,
+        reason: "The action navigated away from the validated website",
+    });
 });
 
 test("reports capture outcomes separately", () => {

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Orange City (Pollinations AI Edition)",
+    "url": "https://github.com/GermanIllan/orange_city",
+    "description": "A Python plugin for GIMP 3.2 that generates stylized oil-painted cityscapes with AI-generated background skies powered by Pollinations.ai. **Direct link to Pollinations API integration in source code:",
+    "language": "es",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "GermanIllan",
+    "githubUserId": "187320745",
+    "repositoryUrl": "https://github.com/GermanIllan/orange_city",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13198",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "7visions - Safe Dream Analysis",
     "url": "https://www.7visions.fr/app",

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "AIOPE Headless",
+    "url": "https://xnet.ngo",
+    "description": "Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "xnet-admin-1",
+    "githubUserId": "246910385",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "xnet_admin",
+    "other": null,
+    "submittedDate": "2026-05-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11123",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🤖",
     "name": "Lucia",
     "url": "https://t.me/MissLucia_bot",

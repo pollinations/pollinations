@@ -426,6 +426,14 @@ function resolveAgentClickTarget(decision, elements) {
     };
 }
 
+function hasAllowedOrigin(page, allowedOrigin) {
+    try {
+        return new URL(page.url()).origin === allowedOrigin;
+    } catch {
+        return false;
+    }
+}
+
 async function callScreenshotAgent(body, token, deadline) {
     let lastError;
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -552,6 +560,7 @@ async function requestAgentDecision(
 }
 
 async function applyAgentAction(page, action, controls, allowedOrigin) {
+    let actionError = null;
     let navigationResponse = null;
     try {
         if (action.type === "wait") {
@@ -569,10 +578,9 @@ async function applyAgentAction(page, action, controls, allowedOrigin) {
         } else {
             const control = controls.get(action.elementId);
             if (!control || !(await control.isVisible())) {
-                return {
-                    ok: false,
-                    reason: "The selected control disappeared before the click",
-                };
+                throw new Error(
+                    "The selected control disappeared before the click",
+                );
             }
             [navigationResponse] = await Promise.all([
                 page
@@ -586,24 +594,18 @@ async function applyAgentAction(page, action, controls, allowedOrigin) {
         }
         await waitForPageReadiness(page, 1000);
     } catch (error) {
-        return {
-            ok: false,
-            reason: `Action failed: ${error instanceof Error ? error.message : String(error)}`,
-        };
+        actionError = error instanceof Error ? error.message : String(error);
     }
 
-    let currentOrigin;
-    try {
-        currentOrigin = new URL(page.url()).origin;
-    } catch {
-        currentOrigin = null;
-    }
-    if (currentOrigin !== allowedOrigin) {
+    if (!hasAllowedOrigin(page, allowedOrigin)) {
         return {
             fatal: true,
             ok: false,
             reason: "The action navigated away from the validated website",
         };
+    }
+    if (actionError) {
+        return { ok: false, reason: `Action failed: ${actionError}` };
     }
     if (navigationResponse && navigationResponse.status() !== 200) {
         return {
@@ -615,12 +617,18 @@ async function applyAgentAction(page, action, controls, allowedOrigin) {
     return { ok: true };
 }
 
-async function observePage(page, target, outputDirectory, step) {
+async function observePage(page, target, outputDirectory, step, allowedOrigin) {
+    if (!hasAllowedOrigin(page, allowedOrigin)) {
+        throw new Error("Page navigated away from the validated website");
+    }
     const screenshotPath = path.join(
         outputDirectory,
         screenshotFilename(target, `-agent-${step}`),
     );
     await page.screenshot({ animations: "disabled", path: screenshotPath });
+    if (!hasAllowedOrigin(page, allowedOrigin)) {
+        throw new Error("Page navigated away from the validated website");
+    }
     return {
         finalUrl: page.url(),
         screenshotPath,
@@ -655,6 +663,7 @@ async function runScreenshotAgent(
             target,
             outputDirectory,
             step,
+            allowedOrigin,
         );
         if (Date.now() >= deadline) {
             throw new Error("Screenshot agent session timed out");
@@ -991,6 +1000,7 @@ module.exports = {
     applyMediaUrls,
     calculateDailyBatch,
     classifyCaptureOutcome,
+    hasAllowedOrigin,
     resolveTarget,
     resolveAgentClickTarget,
     selectTargets,

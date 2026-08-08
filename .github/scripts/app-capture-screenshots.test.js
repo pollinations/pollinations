@@ -6,6 +6,7 @@ const {
     applyMediaUrls,
     calculateDailyBatch,
     classifyCaptureOutcome,
+    hasAllowedOrigin,
     resolveAgentClickTarget,
     resolveTarget,
     selectTargets,
@@ -288,7 +289,7 @@ test("resolves a unique control label in any language", () => {
 
 test("treats a disappeared control as a recoverable action", async () => {
     const result = await applyAgentAction(
-        {},
+        { url: () => "https://app.test/inside" },
         { elementId: "f0-e1", type: "click" },
         new Map([["f0-e1", { isVisible: async () => false }]]),
         "https://app.test",
@@ -319,6 +320,48 @@ test("rejects navigation away from the validated website", async () => {
         ok: false,
         reason: "The action navigated away from the validated website",
     });
+});
+
+test("rejects cross-origin navigation even when the click throws", async () => {
+    const page = {
+        url: () => "https://other.test/landing",
+        waitForNavigation: async () => null,
+    };
+    const result = await applyAgentAction(
+        page,
+        { elementId: "f0-e1", type: "click" },
+        new Map([
+            [
+                "f0-e1",
+                {
+                    click: async () => {
+                        throw new Error("Navigation interrupted the click");
+                    },
+                    isVisible: async () => true,
+                },
+            ],
+        ]),
+        "https://app.test",
+    );
+    assert.equal(result.fatal, true);
+    assert.match(result.reason, /navigated away/);
+});
+
+test("checks page origin independently of action success", () => {
+    assert.equal(
+        hasAllowedOrigin(
+            { url: () => "https://app.test/inside" },
+            "https://app.test",
+        ),
+        true,
+    );
+    assert.equal(
+        hasAllowedOrigin(
+            { url: () => "https://other.test/landing" },
+            "https://app.test",
+        ),
+        false,
+    );
 });
 
 test("reports capture outcomes separately", () => {

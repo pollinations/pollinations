@@ -1,0 +1,37 @@
+{
+  "pr_number": 13207,
+  "title": "Add studdy to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13207",
+  "merged_at": "2026-08-08T14:55:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [studdy](https://bharkodat-ux.github.io/studdy) to learn\n- studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning.\n\nFixes #11055",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study buds in bloom",
+    "blurb": "Studdy joined the learn garden with personalized study guides, interactive flashcards, and quizzes. Polli has packed a tiny backpack and is pretending this counts as studying.",
+    "summary": "Added Studdy to the app catalog and Learn section, giving learners a community-built tool that generates personalized study guides, interactive flashcards, and quizzes for any topic.",
+    "impact": "People exploring pollinations apps can now find Studdy as a ready-made study companion for turning topics into structured learning material.",
+    "keywords": [
+      "community",
+      "studdy",
+      "learning",
+      "study-guides",
+      "flashcards",
+      "quizzes",
+      "apps"
+    ],
+    "visual_concept": "Depict Studdy as a cozy digital study nook: a retro terminal displays a personalized study guide, while oversized flashcards and a small quiz sheet grow like code-plants from flower pots. Polli wears a tiny scholar cap and helps arrange the cards; the eager CRT Monitor Robot can hold up a card, reinforcing interactive learning and discovery.",
+    "image_prompt": "A cozy pixel art study garden where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny scholar cap, helps a CRT monitor robot arrange personalized study-guide pages, flashcards, and a quiz sheet growing from lime green (#ecf874) flower pots beside a warm retro computer. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font text on one card reads “STUDDY,” with flowers and code-vines around the desk."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13207.jpg",
+    "prompt": "A cozy pixel art study garden where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny scholar cap, helps a CRT monitor robot arrange personalized study-guide pages, flashcards, and a quiz sheet growing from lime green (#ecf874) flower pots beside a warm retro computer. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font text on one card reads “STUDDY,” with flowers and code-vines around the desk."
+  },
+  "generated_at": "2026-08-08T14:56:19.100023+00:00",
+  "app_name": "studdy",
+  "app_url": "https://bharkodat-ux.github.io/studdy"
+}

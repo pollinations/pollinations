@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **861** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **862** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |  | 🫧 |
 | [🤖 HSCAura (NeuraX Omega AI)](https://hscaura.vercel.app/ai-chat) | NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI. | [@mtaspro](https://github.com/mtaspro) |  | 🫧 |
 | [📚 Pollen Scope](https://horoscope-beta-eight.vercel.app) | Pollen Scope is a daily horoscope app built on Pollinations. It uses Pollinations OAuth + BYOP so each user's readings are billed to their own pollen balance — no shared quota, no accounts. Each readi | [@KodeIsFun](https://github.com/KodeIsFun) |  | 🫧 |
 | [🤖 Whisper](https://play.google.com/store/apps/details?id=com.leiver.whisper_android) | This application allows users to use different AI models to analyze the screen and audio requests through an overlay, using Pollinations AI | [@Okonorff](https://github.com/Okonorff) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 Pulse AI](https://github.com/XNet-NGO/pulse-ai) | Pulse AI is a consumer AI assistant for Android that uses the Pollinations text API (gen.pollinations.ai/v1) for chat completions and the Pollinations image API (image.pollinations.ai) for on-demand i | [@xnet-admin-1](https://github.com/xnet-admin-1) |  | 🏵️ 🫧 |
 | [🖼️ Lumara](https://github.com/pinkpixel-dev/Lumara) | Lumara is a desktop application that brings the power of the Pollinations AI image generation ecosystem directly to your computer. Select from a variety of image models, apply artistic styles, optiona | [@sizzlebop](https://github.com/sizzlebop) |  | 🏵️ 🫧 |
 | [🖼️ ImageGenerator.MAUI](https://github.com/MR-444/ImageGenerator.MAUI) | ImageGenerator.MAUI is an open-source (MIT) Windows desktop image-generation app built with .NET MAUI. Users pick a model, enter a prompt, and generate images; every saved image embeds the full prompt | [@MR-444](https://github.com/MR-444) |  | 🏵️ 🫧 |
-| [🖼️ Batch Imagine](https://batchimagine.netlify.app) | **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API. | [@Shawaiz-Hussain](https://github.com/Shawaiz-Hussain) |  | 🫧 |
 
 ---
 
@@ -839,7 +839,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🐱 Tomdacat AI](https://ai.tomdacat.com) | OpenAI-compatible AI platform built for Roblox creators — chat, vision, and image across 40+ models (GPT, Claude, Gemini, Grok) with a Robux top-up workflow. Powered by Pollinations.ai & partner inference providers. | [@tomdacatto](https://github.com/tomdacatto) |  | 🐝 |
 | [🕵️ PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | [@dreamm160](https://github.com/dreamm160) |  | 🐝 |
 
-<details><summary>Show all 135 apps</summary>
+<details><summary>Show all 136 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -913,6 +913,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠 Pollinations PR Summarizer ️](https://github.com/CloudCompile/pollinations-pr-review) | Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments. | [@CloudCompile](https://github.com/CloudCompile) | 1 |  |
 | [🛠️ AI Agent Portal](https://agent.makululinux.com/) | Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation. | [@raymerjacque](https://github.com/raymerjacque) | 1 |  |
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) | 1 |  |
+| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |  | 🫧 |
 | [🛠️ Agentic Automation](https://pollinations-chat-kohl.vercel.app) | Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI | [@SopuluA](https://github.com/SopuluA) |  | 🫧 |
 | [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |  | 🫧 |
 | [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |  |  |

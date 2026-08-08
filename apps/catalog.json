@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Silenos Música",
+    "url": "https://www.silenos.es/musica",
+    "description": "Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla.",
+    "language": "es",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "zetillamusic",
+    "githubUserId": "305367708",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-07-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/12476",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🤖",
     "name": "HSCAura (NeuraX Omega AI)",
     "url": "https://hscaura.vercel.app/ai-chat",

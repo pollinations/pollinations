@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci --ignore-scripts
-          npx playwright install --with-deps chromium
+          npx playwright-core install --with-deps chromium
 
       - name: Capture and upload screenshots
         env:
@@ -103,7 +103,6 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
           BRANCH="auto/app-screenshots-${DATE}-${GITHUB_RUN_ID}"
@@ -115,8 +114,4 @@ jobs:
 
           PR_URL=$(gh pr create \
             --title "chore: refresh app screenshots (${DATE})" \
-            --body "Refreshes community app screenshots stored on media.pollinations.ai. Review the capture report at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before merging.")
-
-          if [[ "$IS_SCHEDULED" == "true" ]]; then
-            gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
-          fi
+            --body "Refreshes community app screenshots stored on media.pollinations.ai. Review the capture report at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before merging. Automatic merge is disabled during workflow validation.")

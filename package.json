@@ -25,7 +25,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "concurrently": "^9.2.1",
-    "playwright": "^1.62.1"
+    "playwright-core": "^1.62.1"
   },
   "dependencies": {
     "wrangler": "^4.59.1",

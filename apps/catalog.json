@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "Pollination EduCard AI",
+    "url": "https://satwata-bandopadhyay.github.io/pollination-educard-ai",
+    "description": "Pollination EduCard AI provides an “About the App” section describing the app.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "Satwata-Bandopadhyay",
+    "githubUserId": "146882573",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "gamingsat",
+    "other": null,
+    "submittedDate": "2026-05-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11155",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💼",
     "name": "Valdy - AI-Powered Startup Validation",
     "url": "https://samo-fex.github.io/valdy",

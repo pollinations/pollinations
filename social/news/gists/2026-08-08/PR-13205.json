@@ -1,0 +1,36 @@
+{
+  "pr_number": 13205,
+  "title": "Add Lucia to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13205",
+  "merged_at": "2026-08-08T14:48:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lucia](https://t.me/MissLucia_bot) to bots\n- Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU).\n\nFixes #11153",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A warm new hive friend",
+    "blurb": "Lucia has joined the bot garden. She brings empathy, warmth, and a patient ear to Telegram, where more than 10,000 monthly companions already stop by.",
+    "summary": "Added Lucia, an empathetic Telegram virtual companion with over 10,000 monthly active users, to the Pollinations bots catalog and Greenhouse directory.",
+    "impact": "People exploring Pollinations apps can now discover Lucia alongside the other community-built bots and visit her on Telegram for warm, supportive conversation.",
+    "keywords": [
+      "community",
+      "bots",
+      "telegram",
+      "lucia",
+      "catalog",
+      "companions"
+    ],
+    "visual_concept": "Depict Polli welcoming Lucia as a friendly virtual companion into a cozy greenhouse bot garden: a glowing Telegram-style chat terminal, blooming flowers, and a small sign for Lucia. Polli should wear a tiny gardener scarf while helping a gentle, warm chat presence bloom from a code-plant.",
+    "image_prompt": "A cozy greenhouse garden scene where Polli, the cute pixel art bee mascot with a yellow striped body, pink cheek blush, light blue wings, and a tiny gardener scarf, warmly welcomes a glowing Telegram-style chat terminal labeled \"LUCIA\" as soft code-flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with the Monitor Robot happily holding a small flower pot beside the terminal."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13205.jpg",
+    "prompt": "A cozy greenhouse garden scene where Polli, the cute pixel art bee mascot with a yellow striped body, pink cheek blush, light blue wings, and a tiny gardener scarf, warmly welcomes a glowing Telegram-style chat terminal labeled \"LUCIA\" as soft code-flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with the Monitor Robot happily holding a small flower pot beside the terminal."
+  },
+  "generated_at": "2026-08-08T14:49:03.146956+00:00",
+  "app_name": "Lucia",
+  "app_url": "https://t.me/MissLucia_bot"
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13210,
+  "title": "Add GimpToPolli to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13210",
+  "merged_at": "2026-08-08T18:17:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [GimpToPolli](https://github.com/GermanIllan/pollinationsai) to image\n- ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination\n\nFixes #13209",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GIMP found the garden",
+    "blurb": "GimpToPolli has joined the app greenhouse. GIMP artists can now bring pollinations.ai image generation into the same workspace as their pixels, layers, and extremely specific selections.",
+    "summary": "Added GimpToPolli by @GermanIllan to the app catalog, highlighting a community-built bridge between GIMP and pollinations.ai image generation.",
+    "impact": "Artists browsing the pollinations.ai app catalog can now discover GimpToPolli as a way to pair GIMP workflows with image generation.",
+    "keywords": [
+      "community",
+      "apps",
+      "GIMP",
+      "image-generation",
+      "catalog",
+      "GermanIllan"
+    ],
+    "visual_concept": "Depict a cozy pixel-art artist workstation where Polli helps a friendly GIMP-style desktop editor create a blooming image from a canvas. The key symbols are a retro monitor showing a simple layered pixel landscape, a painter's palette and brush, and code-flowers growing from the desk to represent the app catalog connection; Polli wears a tiny painter's beret and warmly guides the creative process.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny painter's beret while hovering beside a retro art workstation; a friendly chunky desktop image editor on a CRT monitor displays a layered pixel garden canvas as flowers and code-plants sprout around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"GIMP TO POLLI\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13210.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny painter's beret while hovering beside a retro art workstation; a friendly chunky desktop image editor on a CRT monitor displays a layered pixel garden canvas as flowers and code-plants sprout around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"GIMP TO POLLI\"."
+  },
+  "generated_at": "2026-08-08T18:18:41.134685+00:00",
+  "app_name": "GimpToPolli",
+  "app_url": "https://github.com/GermanIllan/pollinationsai"
+}

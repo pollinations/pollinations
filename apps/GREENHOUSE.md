@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **863** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **864** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |  | 🫧 |
 | [🎬 VideoForge AI](https://videoforge.digiverse.fr) | VideoForge AI turns a single text prompt into a ready-to-publish short video for social media, including Instagram Reels, TikTok, YouTube Shorts, and LinkedIn. | [@Pims18](https://github.com/Pims18) |  | 🫧 |
 | [🎬 Video Translator Agent](https://video-translator-agent.pages.dev) | AI-powered short video voice and subtitle auto-translation agent. Extracts audio from short videos using FFmpeg.wasm, transcribes speech with Pollinations Whisper API, translates subtitles with Pollin | [@RiderJoker](https://github.com/RiderJoker) |  | 🫧 |
 | [🤖 HSCAura (NeuraX Omega AI)](https://hscaura.vercel.app/ai-chat) | NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI. | [@mtaspro](https://github.com/mtaspro) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) | An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g | [@Vigor-Zhong](https://github.com/Vigor-Zhong) |  | 🫧 |
 | [🛠️ Agentic Automation](https://pollinations-chat-kohl.vercel.app) | Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI | [@SopuluA](https://github.com/SopuluA) |  | 🫧 |
 | [💬 Pulse AI](https://github.com/XNet-NGO/pulse-ai) | Pulse AI is a consumer AI assistant for Android that uses the Pollinations text API (gen.pollinations.ai/v1) for chat completions and the Pollinations image API (image.pollinations.ai) for on-demand i | [@xnet-admin-1](https://github.com/xnet-admin-1) |  | 🏵️ 🫧 |
-| [🖼️ Lumara](https://github.com/pinkpixel-dev/Lumara) | Lumara is a desktop application that brings the power of the Pollinations AI image generation ecosystem directly to your computer. Select from a variety of image models, apply artistic styles, optiona | [@sizzlebop](https://github.com/sizzlebop) |  | 🏵️ 🫧 |
 
 ---
 
@@ -841,7 +841,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🐱 Tomdacat AI](https://ai.tomdacat.com) | OpenAI-compatible AI platform built for Roblox creators — chat, vision, and image across 40+ models (GPT, Claude, Gemini, Grok) with a Robux top-up workflow. Powered by Pollinations.ai & partner inference providers. | [@tomdacatto](https://github.com/tomdacatto) |  | 🐝 |
 | [🕵️ PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | [@dreamm160](https://github.com/dreamm160) |  | 🐝 |
 
-<details><summary>Show all 135 apps</summary>
+<details><summary>Show all 136 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -915,6 +915,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠 Pollinations PR Summarizer ️](https://github.com/CloudCompile/pollinations-pr-review) | Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments. | [@CloudCompile](https://github.com/CloudCompile) | 1 |  |
 | [🛠️ AI Agent Portal](https://agent.makululinux.com/) | Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation. | [@raymerjacque](https://github.com/raymerjacque) | 1 |  |
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) | 1 |  |
+| [🛠️ Silenos Música](https://www.silenos.es/musica) | Silenos Música conecta con Acestep y Eleven Labs para crear nuevas canciones y sonidos de forma sencilla. | [@zetillamusic](https://github.com/zetillamusic) |  | 🫧 |
 | [🛠️ Agentic Automation](https://pollinations-chat-kohl.vercel.app) | Flow is a visual no-code agentic workflow builder powered by pollinations.ai. Chain together Trigger, AI Agent, HTTP Request, Transform, Condition, and Output nodes on a drag-and-drop canvas. Each AI | [@SopuluA](https://github.com/SopuluA) |  | 🫧 |
 | [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |  | 🫧 |
 | [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |  |  |

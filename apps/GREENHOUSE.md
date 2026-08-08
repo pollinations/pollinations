@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **878** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **879** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |  | 🫧 |
 | [🎮 NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) | Supports an AI-driven cyberpunk RPG experience for "NEON SHADOWS: CHRONICLES OF THE CORE". | [@KT-Society](https://github.com/KT-Society) |  | 🫧 |
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) |  | 🫧 |
 | [🛠️ AIOPE Headless](https://xnet.ngo) | Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster | [@xnet-admin-1](https://github.com/xnet-admin-1) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) | A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the | [@KushalRoyChowdhury](https://github.com/KushalRoyChowdhury) |  | 🫧 |
 | [🛠️ Promptzy](https://promptzy.pinkpixel.dev) | Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage. | [@sizzlebop](https://github.com/sizzlebop) |  | 🫧 |
 | [🖼️ Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) | Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS. | [@MzaacDePY](https://github.com/MzaacDePY) |  | 🫧 |
-| [🖼️ Orange City (Pollinations AI Edition)](https://github.com/GermanIllan/orange_city) | A Python plugin for GIMP 3.2 that generates stylized oil-painted cityscapes with AI-generated background skies powered by Pollinations.ai. **Direct link to Pollinations API integration in source code: | [@GermanIllan](https://github.com/GermanIllan) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Perchance AI Generator](https://www.perchanceaigenerator.com/) | Web app for AI image gen with customizable styles and parameters | [@localoca5](https://github.com/localoca5) |  | 🐝 |
 | [🎨 ImagynexAI](https://imagynexai.vercel.app) | Gamified AI art platform with social features, gallery & leaderboards | [@aggarwalh905-ops](https://github.com/aggarwalh905-ops) |  | 🐝 |
 
-<details><summary>Show all 211 apps</summary>
+<details><summary>Show all 212 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -134,6 +134,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧑‍🎨 Pollinations Avatar Gen - Reforged](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |  | 🫧 |
 | [🖼️ Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) | Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS. | [@MzaacDePY](https://github.com/MzaacDePY) |  | 🫧 |
 | [🖼️ Orange City (Pollinations AI Edition)](https://github.com/GermanIllan/orange_city) | A Python plugin for GIMP 3.2 that generates stylized oil-painted cityscapes with AI-generated background skies powered by Pollinations.ai. **Direct link to Pollinations API integration in source code: | [@GermanIllan](https://github.com/GermanIllan) |  | 🫧 |
 | [🖼️ Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) | An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g | [@Vigor-Zhong](https://github.com/Vigor-Zhong) |  | 🫧 |

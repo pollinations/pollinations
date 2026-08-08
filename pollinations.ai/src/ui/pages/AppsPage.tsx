@@ -248,12 +248,20 @@ const sortApps = (a: App, b: App) => {
 
 export default function AppsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const filter = searchParams.get("filter") || "image";
+    const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "new";
-    const setFilter = (f: string) =>
-        setSearchParams({ filter: f, ...(sort ? { sort } : {}) });
-    const setSort = (s: string) =>
-        setSearchParams({ filter, sort: sort === s ? "" : s });
+    const query = searchParams.get("query") || "";
+    const updateParams = (patch: Record<string, string>) => {
+        const next = new URLSearchParams(searchParams);
+        for (const [key, value] of Object.entries(patch)) {
+            if (value) next.set(key, value);
+            else next.delete(key);
+        }
+        setSearchParams(next, { replace: true });
+    };
+    const setFilter = (f: string) => updateParams({ filter: f });
+    const setSort = (s: string) => updateParams({ sort: sort === s ? "" : s });
+    const setQuery = (q: string) => updateParams({ query: q });
     const { apiKey } = useAuth();
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
@@ -270,15 +278,24 @@ export default function AppsPage() {
 
     const filteredApps = useMemo(() => {
         const f = GENRE_FILTERS.find((x) => x.id === filter);
-        if (!f) return allApps.slice().sort(sortApps);
-        const filtered = allApps.filter(f.match).sort(sortApps);
+        let filtered = f ? allApps.filter(f.match) : allApps.slice();
+        const q = query.trim().toLowerCase();
+        if (q) {
+            filtered = filtered.filter(
+                (a) =>
+                    a.name.toLowerCase().includes(q) ||
+                    (a.description || "").toLowerCase().includes(q) ||
+                    (a.github || "").toLowerCase().includes(q),
+            );
+        }
+        filtered = filtered.sort(sortApps);
         // If a badge sort is active, float matching apps to top
         const badgeFn = BADGE_FILTERS.find((x) => x.id === sort);
         if (!badgeFn) return filtered;
         const matching = filtered.filter(badgeFn.match);
         const rest = filtered.filter((a) => !badgeFn.match(a));
         return [...matching, ...rest];
-    }, [allApps, filter, sort]);
+    }, [allApps, filter, sort, query]);
 
     const { prettified } = usePrettify(
         filteredApps,
@@ -302,7 +319,7 @@ export default function AppsPage() {
                     </Body>
 
                     {/* CTAs */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
                         <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <div className="flex-1">
                                 <p className="font-headline text-xs font-black text-dark mb-1">
@@ -347,10 +364,47 @@ export default function AppsPage() {
                                 <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                             </Button>
                         </div>
+                        <div className="flex items-center gap-4 p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.docsCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.docsCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.enterDocs}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.docsCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Search */}
+                    <div className="flex justify-center mb-4">
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={pageCopy.searchPlaceholder}
+                            aria-label={pageCopy.searchPlaceholder}
+                            className="w-full max-w-md px-4 py-2 text-sm font-body bg-white text-dark border-2 border-dark border-r-4 border-b-4 rounded-tag placeholder:text-muted focus:outline-none focus:border-primary-strong"
+                        />
                     </div>
 
                     {/* Filters */}
-                    <div id="filters" className="flex flex-wrap gap-2 mb-4">
+                    <div
+                        id="filters"
+                        className="flex flex-wrap justify-center gap-2 mb-4"
+                    >
                         {translatedGenre.map((f) => (
                             <Button
                                 key={f.id}
@@ -368,8 +422,8 @@ export default function AppsPage() {
                     </div>
 
                     {/* Sort + Legend */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-8">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col items-center gap-3 mb-8">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
                             <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
                                 {pageCopy.sortLabel}
                             </span>
@@ -391,26 +445,13 @@ export default function AppsPage() {
                                 </Button>
                             ))}
                         </div>
-                        <div className="flex flex-col items-start md:items-end gap-0.5 text-xs text-muted">
-                            <span className="inline-flex items-center gap-1 flex-wrap md:flex-nowrap">
+                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted">
+                            <span>
                                 <span className="text-dark font-bold">
                                     {pageCopy.pollenBadge}
                                 </span>
                                 {" = "}
                                 {pageCopy.pollenLegendDesc}
-                                {" · "}
-                                <a
-                                    href={LINKS.byopDocs}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline font-black text-dark bg-accent-strong px-1.5 py-0.5 hover:underline inline-flex items-center gap-0.5"
-                                >
-                                    {pageCopy.pollenDocsLink}
-                                    <ExternalLinkIcon
-                                        className="w-2.5 h-2.5"
-                                        strokeWidth="4"
-                                    />
-                                </a>
                             </span>
                             <span>
                                 <span className="text-dark font-bold">

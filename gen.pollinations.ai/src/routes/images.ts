@@ -23,6 +23,10 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    downloadUserImage,
+    readImageDimensions,
+} from "@/image/utils/imageDownload.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
@@ -31,6 +35,8 @@ import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const PROVIDER_MAX_DIM = 4096;
+const DIM_SNAP = 16;
 
 function imageResponse(
     data: { url?: string; b64_json?: string; media_type?: string },
@@ -102,6 +108,33 @@ function collectPassthrough(
         if (body[key] !== undefined) result[key] = body[key];
     }
     return result;
+}
+
+/**
+ * Snap a dimension to 16px multiples, clamped to provider max.
+ * ponytail: single-provider snap, add per-model snap table if providers diverge.
+ */
+function snapDim(v: number): number {
+    return Math.max(
+        DIM_SNAP,
+        Math.min(PROVIDER_MAX_DIM, Math.round(v / DIM_SNAP) * DIM_SNAP),
+    );
+}
+
+/**
+ * Detect source image dimensions when `size` is omitted.
+ * Returns a size string (e.g. "768x1024") or undefined on failure.
+ * Handles both data URIs (multipart) and remote URLs.
+ */
+async function detectSourceSize(imageUrl: string): Promise<string | undefined> {
+    try {
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
+        const dims = readImageDimensions(buffer, mimeType);
+        if (!dims) return undefined;
+        return `${snapDim(dims.width)}x${snapDim(dims.height)}`;
+    } catch {
+        return undefined;
+    }
 }
 
 /** Parse edits input from multipart or JSON. */
@@ -280,8 +313,15 @@ export async function handleImageEdit(c: Context<Env>) {
 
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
+
+    // When size is omitted, detect from the source image so the output
+    // preserves the original aspect ratio instead of defaulting to 1024².
+    // Pass as a size string (not raw width/height) so dimensionsExplicit
+    // remains false — models like seedream-4 keep their preset routing.
+    const effectiveSize = size ?? (await detectSourceSize(imageUrls[0]));
+
     const safePrompt = await applySafety(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
+    const resolved = resolveParams({ size: effectiveSize, quality, seed });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {
         prompt: safePrompt,

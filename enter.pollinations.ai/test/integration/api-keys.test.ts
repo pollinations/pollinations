@@ -837,7 +837,7 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should omit retired models without rewriting stored permissions", async ({
+        test("should canonicalize active aliases and omit retired models", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
@@ -857,7 +857,10 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
-            expect(listed?.permissions?.models).toEqual(["flux"]);
+            expect(listed?.permissions?.models).toEqual([
+                "flux",
+                "nanobanana-2",
+            ]);
 
             const db = drizzle(env.DB, { schema });
             const stored = await db.query.apikey.findFirst({
@@ -865,9 +868,44 @@ describe("API Key Management", () => {
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
-                "nanobanana2",
+                "nanobanana-2",
                 "retired-model",
             ]);
+        });
+
+        test("should canonicalize future model IDs while preserving unknown IDs", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "key-with-future-model-id",
+                allowedModels: [
+                    "openai/gpt-5.4-nano",
+                    "openai",
+                    "retired-model",
+                ],
+            });
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
+                "openai",
+                "retired-model",
+            ]);
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as ApiKeyListResponse;
+            const listed = body.data.find((key) => key.id === created.id);
+            expect(listed?.permissions?.models).toEqual(["openai"]);
         });
 
         test("should include only private community models owned by the user", async ({
@@ -1019,7 +1057,10 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: [
+                            "black-forest-labs/FLUX.1-schnell",
+                            "openai/gpt-5.4-nano",
+                        ],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },

@@ -6,6 +6,7 @@ import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { normalizeModelAllowlist } from "@shared/registry/registry.ts";
 import {
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
@@ -41,7 +42,13 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(
+        updated,
+        "models",
+        Array.isArray(allowedModels)
+            ? normalizeModelAllowlist(allowedModels)
+            : allowedModels,
+    );
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }

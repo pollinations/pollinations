@@ -1,5 +1,6 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import { getCanonicalPromotionAliases } from "./canonical-model-promotions";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
 
 // Re-export so consumers can keep importing the variant API from the
@@ -489,7 +490,7 @@ export function calculateUsageBilling({
     };
 }
 
-const MODEL_REGISTRY = {
+const BASE_MODEL_REGISTRY = {
     ...TEXT_SERVICES,
     ...IMAGE_SERVICES,
     ...AUDIO_SERVICES,
@@ -498,13 +499,22 @@ const MODEL_REGISTRY = {
     ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
-/**
- * Resolve a model name from a canonical name or alias
- * @param model - Model name or alias
- * @returns Resolved canonical model name
- * @throws Error if model is not found
- */
-export function resolveModelName(model: string): ModelName {
+const MODEL_REGISTRY = Object.fromEntries(
+    Object.entries(BASE_MODEL_REGISTRY).map(([modelName, definition]) => [
+        modelName,
+        {
+            ...definition,
+            aliases: Array.from(
+                new Set([
+                    ...definition.aliases,
+                    ...getCanonicalPromotionAliases(modelName),
+                ]),
+            ),
+        },
+    ]),
+) as Record<ModelName, ModelDefinition>;
+
+function findModelName(model: string): ModelName | undefined {
     if (MODEL_REGISTRY[model as ModelName]) {
         return model as ModelName;
     }
@@ -513,8 +523,43 @@ export function resolveModelName(model: string): ModelName {
             return modelName as ModelName;
         }
     }
+    return undefined;
+}
+
+/**
+ * Resolve a model name from a canonical name or alias
+ * @param model - Model name or alias
+ * @returns Resolved canonical model name
+ * @throws Error if model is not found
+ */
+export function resolveModelName(model: string): ModelName {
+    const resolved = findModelName(model);
+    if (resolved) return resolved;
     throw new Error(
         `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+    );
+}
+
+/** Resolve known registry identities while preserving community/unknown IDs. */
+export function resolveModelNameOrSelf(model: string): string {
+    return findModelName(model) ?? model;
+}
+
+/** Canonicalize and de-duplicate a model allowlist without dropping unknown IDs. */
+export function normalizeModelAllowlist(models: readonly string[]): string[] {
+    return Array.from(new Set(models.map(resolveModelNameOrSelf)));
+}
+
+/** Compare an allowlist and requested model through canonical/alias identity. */
+export function isModelAllowed(
+    allowedModels: readonly string[] | undefined,
+    model: string,
+): boolean {
+    if (!allowedModels) return true;
+    const resolvedModel = resolveModelNameOrSelf(model);
+    return allowedModels.some(
+        (allowedModel) =>
+            resolveModelNameOrSelf(allowedModel) === resolvedModel,
     );
 }
 

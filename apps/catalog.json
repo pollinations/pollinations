@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🛠️",
+    "name": "FluxFlow CLI",
+    "url": "https://www.npmjs.com/package/fluxflow-cli",
+    "description": "A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the",
+    "language": "en",
+    "category": "build",
+    "platform": "library",
+    "githubUsername": "KushalRoyChowdhury",
+    "githubUserId": "217232985",
+    "repositoryUrl": "https://github.com/KushalRoyChowdhury/fluxflow-cli",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-19",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11162",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🛠️",
     "name": "Promptzy",
     "url": "https://promptzy.pinkpixel.dev",
     "description": "Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage.",

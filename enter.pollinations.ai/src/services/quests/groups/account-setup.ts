@@ -58,14 +58,12 @@ const byopLoginQuest: QuestDefinition = {
 
 const sixMonthAccountQuest: QuestDefinition = {
     id: "early_adopter",
-    title: "Early Pollinations adopter",
+    title: "Six-month Pollinations member",
     description: "Your Pollinations account is older than six months.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 2,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
 const legacyFirstTopUpQuest: QuestDefinition = {

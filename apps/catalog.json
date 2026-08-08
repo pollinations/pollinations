@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🤖",
+    "name": "HSCAura (NeuraX Omega AI)",
+    "url": "https://hscaura.vercel.app/ai-chat",
+    "description": "NeuraX Omega is an AI study companion integrated into the HSCAura platform that generates custom educational visuals directly inside the chat interface using Pollinations AI.",
+    "language": "en",
+    "category": "bots",
+    "platform": "web",
+    "githubUsername": "mtaspro",
+    "githubUserId": "209120605",
+    "repositoryUrl": "https://github.com/mtaspro/neuronerdsquiz",
+    "repositoryStars": null,
+    "discordUsername": "mtaspro_mahtab --- ## Verifiable Source Code & API Integration Evidence",
+    "other": null,
+    "submittedDate": "2026-08-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13082",
+    "approvedDate": "2026-08-08",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "Pollen Scope",
     "url": "https://horoscope-beta-eight.vercel.app",

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13193,
+  "title": "Add AI Blog Articles to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13193",
+  "merged_at": "2026-08-08T10:54:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Blog Articles](https://getaiblogarticles.com) to writing\n- AI Blog Articles (getaiblogarticles.com) is a free, no-signup web tool that generates SEO-optimized blog articles in two steps. The user enters a topic and chooses an article length; the app calls the\n\nFixes #11288",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two Steps to Blog",
+    "blurb": "A new writing tool has sprouted in the greenhouse. Give AI Blog Articles a topic and a length, and it grows an SEO-ready draft without asking anyone to make an account first.",
+    "summary": "Added AI Blog Articles (getaiblogarticles.com) to the app catalog, a free no-signup tool that generates SEO-optimized blog articles from a topic and selected article length in two steps.",
+    "impact": "Writers can now discover a quick, account-free route from an idea to a length-matched SEO blog draft through the Pollinations app catalog.",
+    "keywords": [
+      "community-app",
+      "writing",
+      "blogging",
+      "seo",
+      "no-signup",
+      "catalog"
+    ],
+    "visual_concept": "Depict AI Blog Articles as a cozy writing garden: a retro computer turns a small topic seed and a length-setting dial into a tall, neatly formatted blog scroll with tiny SEO leaves. Polli, wearing a miniature editor beret, tends the growing article while code-plants and pixel flowers make the app-catalog setting feel welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny editor beret, planting a seed labeled “TOPIC” beside a retro terminal; a length dial helps a lush SEO blog scroll grow from a lime green (#ecf874) flower pot among code-plants and warm cream flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: “AI BLOG ARTICLES.”"
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13193.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny editor beret, planting a seed labeled “TOPIC” beside a retro terminal; a length dial helps a lush SEO blog scroll grow from a lime green (#ecf874) flower pot among code-plants and warm cream flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: “AI BLOG ARTICLES.”"
+  },
+  "generated_at": "2026-08-08T10:55:30.422978+00:00",
+  "app_name": "AI Blog Articles",
+  "app_url": "https://getaiblogarticles.com"
+}

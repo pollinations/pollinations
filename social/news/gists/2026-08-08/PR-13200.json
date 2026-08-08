@@ -1,0 +1,35 @@
+{
+  "pr_number": 13200,
+  "title": "Add Generateur d'image ia to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13200",
+  "merged_at": "2026-08-08T14:28:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) to image\n- Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS.\n\nFixes #11230",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Une nouvelle fleur française",
+    "blurb": "Generateur d'image ia has joined the garden: a French-language image generator built with plain HTML, CSS, and JavaScript. Proof that a small static site can still grow some very large pixels.",
+    "summary": "Added Generateur d'image ia to the app catalog, a French-language AI image generator web app built with vanilla HTML, CSS, and JavaScript.",
+    "impact": "French-speaking makers can now discover and use another community-built image-generation app in the Pollinations ecosystem.",
+    "keywords": [
+      "community",
+      "image generation",
+      "French",
+      "vanilla JavaScript",
+      "app catalog"
+    ],
+    "visual_concept": "Depict Polli welcoming a small French-inspired image-generator kiosk into a blooming code garden: a retro monitor displays a cheerful generated landscape, with a tiny tricolor pennant and French pixel text. The scene represents a lightweight vanilla-web app joining the wider Pollinations image garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny artist beret, welcoming a retro image-generator computer kiosk into a blooming code garden. The monitor glows lime green (#ecf874) and shows a generated pastel landscape, with a small French tricolor pennant and pixel-font text \"GÉNÉRATEUR D'IMAGE\"; code-plants and soft flowers grow around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13200.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny artist beret, welcoming a retro image-generator computer kiosk into a blooming code garden. The monitor glows lime green (#ecf874) and shows a generated pastel landscape, with a small French tricolor pennant and pixel-font text \"GÉNÉRATEUR D'IMAGE\"; code-plants and soft flowers grow around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-08T14:28:57.855838+00:00",
+  "app_name": "Generateur d'image ia",
+  "app_url": "https://mzaacdepy.github.io/generateur-images-ia"
+}

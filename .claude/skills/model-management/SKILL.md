@@ -82,6 +82,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
+- Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
+- Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
+- When a migration canonicalizes stored model IDs, keep the mapping in the migration only. Do not add a runtime normalization layer; require the migration to complete before the new registry is deployed.
 - Update every consumer of a changed public ID at once.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.

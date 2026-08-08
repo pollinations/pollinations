@@ -174,26 +174,15 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
             ? { type: "input_audio", input_audio: { url: mediaUrl } }
             : { type: mediaType, [mediaType]: { url: mediaUrl } };
 
-    const response = await fetchWithAuth(buildUrl("/v1/chat/completions"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            model,
-            messages: [
-                {
-                    role: "user",
-                    content: [{ type: "text", text: prompt }, mediaBlock],
-                },
-            ],
-        }),
+    const result = await postChatCompletion({
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [{ type: "text", text: prompt }, mediaBlock],
+            },
+        ],
     });
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
-
-    const result = await response.json();
     return {
         content: result.choices?.[0]?.message?.content || "",
         model: result.model || model,
@@ -202,12 +191,11 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
 
 /**
  * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
- * errors (with the dedicated rate-limit message). Returns the raw Response so
- * callers can shape the JSON themselves.
+ * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, maps
+ * errors, and parses the JSON response.
  *
  * @param {Object} body - Request body (null/undefined fields are stripped)
- * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)
+ * @returns {Promise<Object>} - Parsed chat-completion response
  */
 export async function postChatCompletion(body) {
     const cleanedBody = {};
@@ -217,22 +205,12 @@ export async function postChatCompletion(body) {
         }
     }
 
-    const response = await fetchWithAuth(buildUrl("/v1/chat/completions"), {
+    return fetchJsonWithAuth(buildUrl("/v1/chat/completions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedBody),
         timeoutMs: 30000,
     });
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        if (response.status === 429) {
-            throw new Error("Rate limited. Please wait before retrying.");
-        }
-        throw new Error(parseApiError(response.status, errorText));
-    }
-
-    return response;
 }
 
 /**

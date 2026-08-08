@@ -96,6 +96,23 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
     return typeof status === "number" ? status : undefined;
 }
 
+/** The deadline we send to Portkey is the request's terminal time budget. */
+function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
+    if (upstreamStatus(failure) !== 408) return false;
+    const details = failure.details;
+    if (!details || typeof details !== "object") return false;
+    const error = (details as { error?: unknown }).error;
+    if (!error || typeof error !== "object") return false;
+    const timeoutError = error as { message?: unknown; type?: unknown };
+    return (
+        timeoutError.type === "timeout_error" &&
+        typeof timeoutError.message === "string" &&
+        timeoutError.message.startsWith(
+            "Request exceeded the timeout sent in the request:",
+        )
+    );
+}
+
 /**
  * Every place a provider might have put its reason. Content-policy detection is
  * a case-insensitive substring match, so the whole details bag is worth handing
@@ -136,6 +153,10 @@ export function isRetryableFallbackError(error: unknown): boolean {
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
     if (!status) return false;
+    // A generic provider 408 can benefit from a fallback. Portkey's exact
+    // timeout envelope is our own total deadline and must not multiply across
+    // fallback candidates.
+    if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
     if (

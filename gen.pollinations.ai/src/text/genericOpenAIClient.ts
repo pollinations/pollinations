@@ -1,4 +1,4 @@
-import { remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
 import {
     normalizeOptions,
@@ -21,7 +21,7 @@ const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 function isClientInputError(details: unknown): boolean {
     const serialized =
         typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file/i.test(
+    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
         serialized,
     );
 }
@@ -101,7 +101,7 @@ function extractErrorMessage(details: unknown): string | null {
 }
 
 function createApiError(
-    response: { status: number; statusText: string },
+    response: Response,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -118,6 +118,7 @@ function createApiError(
     error.details = details;
     error.model = modelName;
     error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
     return error;
 }
 
@@ -147,7 +148,12 @@ export async function genericOpenAIClient(
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
+    const {
+        endpoint,
+        defaultOptions = {},
+        additionalHeaders = {},
+        fetcher = fetch,
+    } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     let requestUrl: URL | undefined;
@@ -211,7 +217,7 @@ export async function genericOpenAIClient(
 
         let response: Response;
         try {
-            response = await fetch(endpointUrl, {
+            response = await fetcher(endpointUrl, {
                 method: "POST",
                 headers,
                 body: JSON.stringify(requestBody),
@@ -295,6 +301,7 @@ export async function genericOpenAIClient(
             error.details = errorDetails.details;
             error.model = modelName;
             error.requestUrl = requestUrl;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
         log(

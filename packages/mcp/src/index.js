@@ -74,6 +74,7 @@ Get your API key at: https://enter.pollinations.ai/keys
 ### Account
 - **getBalance** - Remaining Pollen for the authenticated key (requires account:usage)
 - **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
+- **listQuests** - Quests and earned rewards for the authenticated account (requires account:usage)
 
 ## API Endpoint
 All requests go through: ${apiBaseUrl}

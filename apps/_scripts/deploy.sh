@@ -23,11 +23,11 @@ fi
 echo "🚀 Deploying $APP_NAME"
 echo "================================"
 
-# Get config from apps.json
+# Get config from deployments.json
 CONFIG=$(node -e "
-    const config = require('$APPS_DIR/apps.json');
+    const config = require('$APPS_DIR/deployments.json');
     const app = config['$APP_NAME'];
-    if (!app) { console.error('App not in apps.json'); process.exit(1); }
+    if (!app) { console.error('App not in deployments.json'); process.exit(1); }
     console.log(JSON.stringify(app));
 ")
 

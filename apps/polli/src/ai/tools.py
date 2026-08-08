@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 # Repo context injected into the system prompt.
 _REPO_INFO_PATH = Path(__file__).resolve().parent.parent / "context" / "repo_info.txt"
 REPO_INFO = (
@@ -940,8 +939,3 @@ Callable multiple times per turn; each call attaches one image (Discord caps at 
         },
     },
 }
-
-# Backward-compat alias — keep the old name pointing at the new schema so
-# any cached AI conversations or stale prompts that reference it still work.
-DATA_VIZ_TOOL = RENDER_VISUAL_TOOL
-

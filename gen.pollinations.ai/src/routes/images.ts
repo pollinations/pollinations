@@ -23,6 +23,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { getSourceImageDimensions } from "@/image/utils/imageDownload.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
@@ -275,13 +276,42 @@ export async function handleImageGeneration(c: Context<Env>) {
     );
 }
 
+function computeAspectRatioSize(
+    width: number,
+    height: number,
+    maxPixels: number = 1048576,
+): string {
+    const area = width * height;
+    let w: number;
+    let h: number;
+    if (area <= maxPixels) {
+        w = width;
+        h = height;
+    } else {
+        const scale = Math.sqrt(maxPixels / area);
+        w = Math.round(width * scale);
+        h = Math.round(height * scale);
+    }
+    const snap = (v: number) => Math.max(16, Math.round(v / 16) * 16);
+    return `${snap(w)}x${snap(h)}`;
+}
+
 export async function handleImageEdit(c: Context<Env>) {
     await requireGenerationAccess(c.var, c.env);
 
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
+
+    let effectiveSize = size;
+    if (!effectiveSize && imageUrls.length > 0) {
+        const dims = await getSourceImageDimensions(imageUrls[0]);
+        if (dims) {
+            effectiveSize = computeAspectRatioSize(dims.width, dims.height);
+        }
+    }
+
     const safePrompt = await applySafety(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
+    const resolved = resolveParams({ size: effectiveSize, quality, seed });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {
         prompt: safePrompt,

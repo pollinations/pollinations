@@ -1,0 +1,36 @@
+{
+  "pr_number": 13206,
+  "title": "Add AIOPE Headless to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13206",
+  "merged_at": "2026-08-08T14:52:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AIOPE Headless](https://xnet.ngo) to build\n- Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster\n\nFixes #11123",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A greenhouse with tools",
+    "blurb": "AIOPE Headless joined the build: a self-hosted assistant that can search the web, tend files, manage SSH, and turn SVGs into pixels. Pollinations supplies the thoughts and pictures; the little server does the chores.",
+    "summary": "Added AIOPE Headless to the app catalog, a self-hosted AI assistant server with a web UI, tool execution, web search, SSH management, file operations, SVG rasterization, and Pollinations.ai as its primary text and image provider.",
+    "impact": "Developers can discover and run a self-hosted assistant that combines Pollinations generation with practical tools for searching, managing servers, handling files, and rendering SVGs.",
+    "keywords": [
+      "community-app",
+      "self-hosted",
+      "assistant",
+      "tool-execution",
+      "web-ui",
+      "pollinations-provider"
+    ],
+    "visual_concept": "Depict AIOPE Headless as a cozy garden-shed assistant server: a retro terminal sprouts tool-shaped code-plants for web search, SSH keys, files, and SVG-to-image conversion. Polli, wearing a tiny tool belt, warmly helps a friendly CRT monitor robot tend the server garden, making Pollinations visibly the source of glowing text and image pollen.",
+    "image_prompt": "Cozy pixel art scene of a self-hosted assistant garden shed where a friendly CRT monitor robot tends code-plants shaped like a magnifying glass, SSH key, file folder, and tiny SVG canvas, all growing from prominent lime green (#ecf874) pots; Polli is a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny tool belt as she helps water the glowing terminal garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading “AIOPE HEADLESS”; nostalgic, friendly, and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13206.jpg",
+    "prompt": "Cozy pixel art scene of a self-hosted assistant garden shed where a friendly CRT monitor robot tends code-plants shaped like a magnifying glass, SSH key, file folder, and tiny SVG canvas, all growing from prominent lime green (#ecf874) pots; Polli is a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny tool belt as she helps water the glowing terminal garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading “AIOPE HEADLESS”; nostalgic, friendly, and emotionally warm."
+  },
+  "generated_at": "2026-08-08T14:53:40.319573+00:00",
+  "app_name": "AIOPE Headless",
+  "app_url": "https://xnet.ngo"
+}

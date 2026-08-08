@@ -136,3 +136,96 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+const DIMENSIONS_CACHE_TTL_SECONDS = 86_400;
+const DIMENSIONS_CACHE_PREFIX = "image:dimensions:v1:";
+
+type ImageDimensions = { width: number; height: number };
+
+async function dimensionsCacheKey(imageUrl: string): Promise<string> {
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(imageUrl),
+    );
+    const bytes = new Uint8Array(digest);
+    return `${DIMENSIONS_CACHE_PREFIX}${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function cachedDimensions(value: unknown): ImageDimensions | null {
+    if (!value || typeof value !== "object") return null;
+    const { width, height } = value as Record<string, unknown>;
+    return typeof width === "number" &&
+        typeof height === "number" &&
+        Number.isInteger(width) &&
+        Number.isInteger(height) &&
+        width > 0 &&
+        height > 0
+        ? { width, height }
+        : null;
+}
+
+function decodeInlineImage(
+    dataUri: string,
+): { buffer: Buffer; mimeType: string } | null {
+    const match = dataUri.match(/^data:([^;,]+)[^,]*,(.*)$/s);
+    if (!match || !match[1].startsWith("image/")) return null;
+    try {
+        const buffer = dataUri.includes(";base64,")
+            ? base64ToBuffer(dataUri)
+            : Buffer.from(decodeURIComponent(match[2]));
+        return { buffer, mimeType: match[1] };
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Resolve the pixel dimensions of a user-supplied source image, used to
+ * preserve aspect ratio on `/v1/images/edits` when the caller omits `size`
+ * (see #12583).
+ *
+ * Inline data URIs are decoded in place — no network call. Remote URLs are
+ * downloaded once and, when `kv` is provided, the resulting dimensions are
+ * cached for 24h so repeated edits of the same source image (a common
+ * workflow: apply several prompts to one upload) skip the re-download.
+ */
+export async function getSourceImageDimensions(
+    imageUrl: string,
+    kv?: KVNamespace,
+): Promise<ImageDimensions | null> {
+    const inline = imageUrl.startsWith("data:")
+        ? decodeInlineImage(imageUrl)
+        : null;
+    if (inline) {
+        return readImageDimensions(
+            bufferToUint8Array(inline.buffer),
+            inline.mimeType,
+        );
+    }
+
+    const cacheKey = kv ? await dimensionsCacheKey(imageUrl) : undefined;
+    if (kv && cacheKey) {
+        const cached = cachedDimensions(await kv.get(cacheKey, "json"));
+        if (cached) return cached;
+    }
+
+    try {
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
+        const dimensions = readImageDimensions(
+            bufferToUint8Array(buffer),
+            mimeType,
+        );
+        if (kv && cacheKey && dimensions) {
+            await kv.put(cacheKey, JSON.stringify(dimensions), {
+                expirationTtl: DIMENSIONS_CACHE_TTL_SECONDS,
+            });
+        }
+        return dimensions;
+    } catch {
+        // A source image we can't download or can't decode just falls back
+        // to the model's default size — this is a best-effort enhancement,
+        // not a hard requirement, and the caller's edit request should still
+        // succeed.
+        return null;
+    }
+}

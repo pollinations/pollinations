@@ -23,6 +23,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { getSourceImageDimensions } from "@/image/utils/imageDownload.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
@@ -70,11 +71,16 @@ function resolveParams(opts: {
     size?: string;
     quality?: string;
     seed?: number;
+    // Overrides the image-param schema's own width/height-based guess at
+    // whether `size` was explicit. Only the edits route needs this — see
+    // the call site in handleImageEdit for why.
+    dimensionsExplicit?: boolean;
 }): {
     width?: number;
     height?: number;
     quality: string;
     seed: number;
+    dimensionsExplicit?: boolean;
 } {
     // Width/height are only emitted when the caller actually passed `size`.
     // Leaving them undefined lets the image-param schema fill model-specific
@@ -87,9 +93,28 @@ function resolveParams(opts: {
     return {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
+        ...(opts.dimensionsExplicit !== undefined
+            ? { dimensionsExplicit: opts.dimensionsExplicit }
+            : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
         seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
     };
+}
+
+/**
+ * Scale (width, height) to fit within `maxPixels` while preserving aspect
+ * ratio, snapped to a 16px grid — most providers reject arbitrary source
+ * resolutions and expect multiples of 8 or 16.
+ */
+export function computeAspectRatioSize(
+    width: number,
+    height: number,
+    maxPixels = 1_048_576, // ~1 megapixel
+): string {
+    const scale = Math.min(1, Math.sqrt(maxPixels / (width * height)));
+    const snap = (value: number) =>
+        Math.max(16, Math.round((value * scale) / 16) * 16);
+    return `${snap(width)}x${snap(height)}`;
 }
 
 /** Collect passthrough params from request body. */
@@ -280,8 +305,37 @@ export async function handleImageEdit(c: Context<Env>) {
 
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
+
+    // #12583: preserve the source image's aspect ratio when the caller
+    // omits `size`, instead of falling through to the model's (often
+    // square) default. An explicit `size` always wins and is left alone.
+    let effectiveSize = size;
+    let sizeWasDerived = false;
+    if (!effectiveSize) {
+        const dimensions = await getSourceImageDimensions(
+            imageUrls[0],
+            c.env.KV,
+        );
+        if (dimensions) {
+            effectiveSize = computeAspectRatioSize(
+                dimensions.width,
+                dimensions.height,
+            );
+            sizeWasDerived = true;
+        }
+    }
+
     const safePrompt = await applySafety(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
+    const resolved = resolveParams({
+        size: effectiveSize,
+        quality,
+        seed,
+        // A size derived from the source image is not a caller-provided
+        // `size` — don't let it flip the `dimensionsExplicit` signal that
+        // seedream-4 and others use to choose pixel-precise vs. preset
+        // sizing (see ImageParamsSchema in image/params.ts).
+        dimensionsExplicit: sizeWasDerived ? false : undefined,
+    });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {
         prompt: safePrompt,

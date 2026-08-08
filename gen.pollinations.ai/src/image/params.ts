@@ -100,6 +100,21 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Internal signal, not a public request parameter: lets a route
+        // override the width/height-based guess at whether the caller
+        // explicitly requested a size. Used by /v1/images/edits (#12583) so
+        // an aspect-ratio derived from the source image doesn't get treated
+        // as an explicit `size` by seedream-4's custom-vs-preset routing.
+        dimensionsExplicit: z
+            .union([z.string(), z.boolean()])
+            .optional()
+            .transform((value) =>
+                value === undefined
+                    ? undefined
+                    : typeof value === "boolean"
+                      ? value
+                      : value.toLowerCase() === "true",
+            ),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -130,7 +145,8 @@ export const ImageParamsSchema = z
         // pixel-precise "custom" upstream path when this is true, instead of
         // approximating to a preset aspect ratio.
         const dimensionsExplicit =
-            data.width !== undefined || data.height !== undefined;
+            data.dimensionsExplicit ??
+            (data.width !== undefined || data.height !== undefined);
         const { width, height } = adjustImageSizeForModel(
             data.model,
             data.width,

@@ -71,3 +71,51 @@ describe("ImageParamsSchema", () => {
         }
     });
 });
+
+describe("ImageParamsSchema dimensionsExplicit", () => {
+    it("defaults to false when no dimensions are given", () => {
+        const result = ImageParamsSchema.parse({ model: "flux" });
+        expect(result.dimensionsExplicit).toBe(false);
+    });
+
+    it("defaults to true when width/height are given", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            width: 800,
+            height: 600,
+        });
+        expect(result.dimensionsExplicit).toBe(true);
+    });
+
+    // #12583: /v1/images/edits sets width/height from the source image's
+    // own aspect ratio when the caller omits `size`. That's not an explicit
+    // request for those dimensions, so the route overrides the signal —
+    // this is what keeps seedream-4's custom-vs-preset routing correct.
+    it("can be overridden to false even when width/height are given", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            width: 800,
+            height: 600,
+            dimensionsExplicit: false,
+        });
+        expect(result.dimensionsExplicit).toBe(false);
+    });
+
+    it("can be overridden to true even without width/height", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            dimensionsExplicit: true,
+        });
+        expect(result.dimensionsExplicit).toBe(true);
+    });
+
+    it("accepts the override as a query-string boolean", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            width: 800,
+            height: 600,
+            dimensionsExplicit: "false",
+        });
+        expect(result.dimensionsExplicit).toBe(false);
+    });
+});

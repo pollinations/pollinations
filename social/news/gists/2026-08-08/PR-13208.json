@@ -1,0 +1,35 @@
+{
+  "pr_number": 13208,
+  "title": "Add NEON SHADOWS: CHRONICLES OF THE CORE to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13208",
+  "merged_at": "2026-08-08T14:58:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) to games\n- Supports an AI-driven cyberpunk RPG experience for \"NEON SHADOWS: CHRONICLES OF THE CORE\".\n\nFixes #10900",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new core blooms",
+    "blurb": "NEON SHADOWS: CHRONICLES OF THE CORE has joined the games garden. An AI-driven RPG for anyone who thinks a mysterious glowing terminal is an excellent place to spend an evening.",
+    "summary": "Added NEON SHADOWS: CHRONICLES OF THE CORE, an AI-driven RPG, to the Pollinations games catalog and Greenhouse app listings.",
+    "impact": "Players can now discover and launch NEON SHADOWS: CHRONICLES OF THE CORE directly from the Pollinations games collection.",
+    "keywords": [
+      "community",
+      "games",
+      "rpg",
+      "ai-driven",
+      "app-catalog"
+    ],
+    "visual_concept": "Depict a cozy AI RPG adventure terminal with a glowing mysterious core at its center, represented as a warm lime-green crystal growing among code-plants rather than a dark cyberpunk city. Polli wears a tiny explorer scarf and studies the terminal beside the eager monitor robot, with flowers and vines softening the futuristic game scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she investigates a retro RPG terminal beside a glowing lime green (#ecf874) crystal core growing from a flower pot of code-plants; a cute CRT monitor robot points excitedly at the game screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender, mint, peach, warm cream, subtle scanlines, and pixel-font text reading “CHRONICLES OF THE CORE”; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-08/PR-13208.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she investigates a retro RPG terminal beside a glowing lime green (#ecf874) crystal core growing from a flower pot of code-plants; a cute CRT monitor robot points excitedly at the game screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender, mint, peach, warm cream, subtle scanlines, and pixel-font text reading “CHRONICLES OF THE CORE”; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-08T14:59:18.240392+00:00",
+  "app_name": "NEON SHADOWS: CHRONICLES OF THE CORE",
+  "app_url": "https://habitatai.biz/game"
+}

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **879** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **880** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎬 Stoicky](https://stoicky.vercel.app) | Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference. | [@deauthor1234](https://github.com/deauthor1234) |  | 🫧 |
 | [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |  | 🏵️ 🫧 |
 | [🎮 NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) | Supports an AI-driven cyberpunk RPG experience for "NEON SHADOWS: CHRONICLES OF THE CORE". | [@KT-Society](https://github.com/KT-Society) |  | 🫧 |
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) | 1 | 🏵️ 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💼 Valdy - AI-Powered Startup Validation](https://samo-fex.github.io/valdy) | Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers. | [@samo-fex](https://github.com/samo-fex) |  | 🫧 |
 | [🛠️ FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) | A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the | [@KushalRoyChowdhury](https://github.com/KushalRoyChowdhury) | 2 | 🫧 |
 | [🛠️ Promptzy](https://promptzy.pinkpixel.dev) | Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage. | [@sizzlebop](https://github.com/sizzlebop) | 80 | 🫧 |
-| [🖼️ Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) | Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS. | [@MzaacDePY](https://github.com/MzaacDePY) |  | 🫧 |
 
 ---
 
@@ -298,11 +298,12 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📝 Subtitle Studio (SubCap)](https://subtitle-studio-eta.vercel.app/) | Subtitle Studio (SubCap) is a browser-based video captioning tool that uses AI transcription to generate styled subtitles from speech without manual typing. | [@somjaina142](https://github.com/somjaina142) | 3 | 🫧 |
 | [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@aghartavault-ship-it](https://github.com/aghartavault-ship-it) | 1 |  |
 
-<details><summary>Show all 40 apps</summary>
+<details><summary>Show all 41 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🎬 ViralFlow AI](https://fabioarieira.com/viralflow) | Auto-generates cinematic viral videos from a theme (script, TTS, visuals). | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 1 |  |
+| [🎬 Stoicky](https://stoicky.vercel.app) | Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference. | [@deauthor1234](https://github.com/deauthor1234) |  | 🫧 |
 | [🎬 VideoForge AI](https://videoforge.digiverse.fr) | VideoForge AI turns a single text prompt into a ready-to-publish short video for social media, including Instagram Reels, TikTok, YouTube Shorts, and LinkedIn. | [@Pims18](https://github.com/Pims18) |  | 🫧 |
 | [🎬 Video Translator Agent](https://video-translator-agent.pages.dev) | AI-powered short video voice and subtitle auto-translation agent. Extracts audio from short videos using FFmpeg.wasm, transcribes speech with Pollinations Whisper API, translates subtitles with Pollin | [@RiderJoker](https://github.com/RiderJoker) |  | 🫧 |
 | [🎶 Generative Soundscape](https://generative-soundscape.vercel.app/) | Convert your words into endless music with Generative Soundscape. | [@elethy](https://github.com/elethy) |  |  |

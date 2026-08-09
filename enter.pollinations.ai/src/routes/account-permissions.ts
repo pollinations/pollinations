@@ -6,31 +6,21 @@ export type AccountPermissionApiKey = {
     permissions?: Record<string, string[]>;
 };
 
-export function hasDirectAccountPermission(
+export function hasAccountPermission(
     apiKey: AccountPermissionApiKey | undefined,
     permission: AccountPermission,
 ): boolean {
-    return !!apiKey?.permissions?.account?.includes(permission);
+    if (!apiKey) return true;
+    return !!apiKey.permissions?.account?.includes(permission);
 }
 
-export function requireAccountKeysPermission(
+export function requireAccountPermission(
     apiKey: AccountPermissionApiKey | undefined,
+    permission: AccountPermission,
 ): void {
-    if (!apiKey) return;
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
+    if (!hasAccountPermission(apiKey, permission)) {
         throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
+            message: `API key does not have 'account:${permission}' permission`,
         });
     }
-}
-
-/**
- * Read APIs have one canonical read permission (`profile` or `usage`).
- */
-export function hasAccountReadPermission(
-    apiKey: AccountPermissionApiKey | undefined,
-    permission: Exclude<AccountPermission, "keys">,
-): boolean {
-    if (!apiKey) return true;
-    return hasDirectAccountPermission(apiKey, permission);
 }

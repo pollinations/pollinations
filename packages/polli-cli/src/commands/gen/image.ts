@@ -1,8 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
     getOutputMode,
     printError,
@@ -26,7 +24,6 @@ export function createImageCommand() {
         )
         .option("--output <path>", "Save to file", "image.png")
         .action(async (prompt, opts) => {
-            const key = requireKey();
             const isHuman = getOutputMode() === "human";
 
             const params = new URLSearchParams({
@@ -51,23 +48,12 @@ export function createImageCommand() {
             }
 
             const encodedPrompt = encodeURIComponent(prompt);
-            const url = `${BASE_URL}/image/${encodedPrompt}?${params}`;
+            const path = `/image/${encodedPrompt}?${params}`;
 
             if (isHuman) printInfo("Generating image...");
 
             try {
-                const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${key}` },
-                });
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, text);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(`${res.status} ${res.statusText}: ${text}`);
-                }
+                const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
@@ -77,11 +63,8 @@ export function createImageCommand() {
                     size: buffer.length,
                     model: opts.model,
                 });
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

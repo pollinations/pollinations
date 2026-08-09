@@ -35,5 +35,3 @@ export const api = new Hono<Env>()
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/agent-runtime", agentRuntimeRoutes)
     .route("/admin", adminRoutes);
-
-export type ApiRoutes = typeof api;

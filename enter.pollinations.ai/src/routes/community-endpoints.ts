@@ -6,6 +6,8 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
+    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
@@ -29,13 +31,14 @@ import {
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
+    normalizeCommunityProviderUrl,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -49,7 +52,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { requireAccountKeysPermission } from "./account-permissions.ts";
+import { requireAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
@@ -128,7 +131,8 @@ function enforceCommunityEndpointInputModalities(
     });
 }
 
-// Community fallback targets are restricted to other public community models.
+// Community fallback targets are restricted to public community models or
+// private models owned by the same developer.
 // Pointing a community model at a Pollinations-operated model is deliberately
 // out of scope: static registry prices can be function-valued/dynamic, so the
 // "same or lower price" comparison is not well-defined against them.
@@ -136,13 +140,14 @@ const FallbackModelIdsSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another public community model of the same modality, priced at or below this model on every price field.',
+        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another active community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 
 const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
 
 type FallbackPrimary = {
     modelId: string;
+    ownerUserId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
@@ -164,8 +169,14 @@ function fallbackTargetRejection(
     // public rows scanned. The write path checks this earlier, before any
     // lookup, because a model being created has no row to find.
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (target.visibility !== "public" || target.disabledAt !== null) {
-        return `Fallback target ${modelId} must be a public, active community model`;
+    if (target.disabledAt !== null) {
+        return `Fallback target ${modelId} must be active`;
+    }
+    if (
+        target.visibility === "private" &&
+        target.ownerUserId !== primary.ownerUserId
+    ) {
+        return `Fallback target ${modelId} must be public or owned by you`;
     }
     const targetModality = normalizeCommunityEndpointModality(target.modality);
     if (targetModality !== primary.modality) {
@@ -385,6 +396,18 @@ const CommunityEndpointResponseSchema = z.object({
 });
 const CommunityEndpointListResponseSchema = z.object({
     data: z.array(CommunityEndpointResponseSchema),
+    provider: z.object({
+        name: z.string().nullable(),
+        url: z.string().url().nullable(),
+    }),
+});
+const CommunityProviderProfileInputSchema = z.object({
+    name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
+    url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+});
+const CommunityProviderProfileResponseSchema = z.object({
+    name: z.string().nullable(),
+    url: z.string().url().nullable(),
 });
 const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),
@@ -441,6 +464,17 @@ function normalizeInputBearerToken(value: string): string {
                 error instanceof Error
                     ? error.message
                     : "Invalid API bearer token",
+        });
+    }
+}
+
+function normalizeInputProviderUrl(value: string): string {
+    try {
+        return normalizeCommunityProviderUrl(value);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid provider URL",
         });
     }
 }
@@ -655,7 +689,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -672,11 +706,78 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 )
                 .where(eq(schema.communityEndpoint.ownerUserId, user.id))
                 .orderBy(desc(schema.communityEndpoint.createdAt));
+            const owner = await db.query.user.findFirst({
+                columns: {
+                    communityProviderName: true,
+                    communityProviderUrl: true,
+                },
+                where: eq(schema.user.id, user.id),
+            });
             return c.json({
                 data: rows.map(({ endpoint, agentBaseUrl }) =>
                     toResponse(endpoint, ownerGithubUsername, agentBaseUrl),
                 ),
+                provider: {
+                    name: owner?.communityProviderName ?? null,
+                    url: owner?.communityProviderUrl ?? null,
+                },
             });
+        },
+    )
+    .post(
+        "/provider",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update Community Provider Profile",
+            description:
+                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+            responses: {
+                200: {
+                    description: "Updated community provider profile",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityProviderProfileResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                400: { description: "Invalid provider profile" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CommunityProviderProfileInputSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            await requireCommunityEndpointPublishAccess(db, user.id);
+
+            const name = input.name.trim();
+            const url = input.url.trim();
+            if (Boolean(name) !== Boolean(url)) {
+                throw new HTTPException(400, {
+                    message: "Provider name and URL must be set together",
+                });
+            }
+
+            const [profile] = await db
+                .update(schema.user)
+                .set({
+                    communityProviderName: name || null,
+                    communityProviderUrl: url
+                        ? normalizeInputProviderUrl(url)
+                        : null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(schema.user.id, user.id))
+                .returning({
+                    name: schema.user.communityProviderName,
+                    url: schema.user.communityProviderUrl,
+                });
+            return c.json(profile);
         },
     )
     .get(
@@ -685,7 +786,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: public, active, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: active, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -703,7 +804,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -719,14 +820,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
+                ownerUserId: user.id,
                 modality: normalizeCommunityEndpointModality(endpoint.modality),
                 imagePricing: normalizeCommunityEndpointImagePricing(
                     endpoint.imagePricing,
                 ),
                 prices: communityEndpointPrices(endpoint),
             };
-            // Only public rows can be targets, so the owner join never drops
-            // one: publishing already requires a GitHub username.
             const candidates = await db
                 .select({
                     endpoint: schema.communityEndpoint,
@@ -737,7 +837,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
                 )
-                .where(eq(schema.communityEndpoint.visibility, "public"));
+                .where(
+                    or(
+                        eq(schema.communityEndpoint.visibility, "public"),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                    ),
+                );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
                     if (!owner) return [];
@@ -776,7 +881,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -811,6 +916,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           ownerGithubUsername,
                           input.name,
                       ),
+                      ownerUserId: user.id,
                       modality,
                       imagePricing,
                       prices,
@@ -883,7 +989,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -928,7 +1034,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -984,7 +1090,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -1100,6 +1206,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ownerGithubUsername,
                             input.name ?? endpoint.name,
                         ),
+                        ownerUserId: user.id,
                         modality,
                         imagePricing: effectiveImagePricing,
                         prices: effectivePrices,
@@ -1160,7 +1267,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

@@ -1,13 +1,19 @@
 import {
     Alert,
     Button,
+    FieldStack,
+    Input,
     Section,
     SparklesIcon,
     SproutIcon,
     Surface,
     TokensIcon,
 } from "@pollinations/ui";
-import { useCallback, useEffect, useState } from "react";
+import {
+    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
+    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+} from "@shared/community-endpoints.ts";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { AgentCard } from "./agent-card.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
@@ -18,6 +24,7 @@ import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type AgentPayload,
     type CommunityEndpoint,
+    type CommunityProviderProfile,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
@@ -42,6 +49,14 @@ export function CommunityEndpoints({
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [providerName, setProviderName] = useState("");
+    const [providerUrl, setProviderUrl] = useState("");
+    const [savedProvider, setSavedProvider] =
+        useState<CommunityProviderProfile>({ name: null, url: null });
+    const [isSavingProvider, setIsSavingProvider] = useState(false);
+    const providerIsSaved =
+        providerName === (savedProvider.name ?? "") &&
+        providerUrl === (savedProvider.url ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -71,12 +86,16 @@ export function CommunityEndpoints({
         }
         const endpointBody = (await endpointResponse.json()) as {
             data: CommunityEndpoint[];
+            provider: CommunityProviderProfile;
         };
         const agentBody = (await agentResponse.json()) as {
             data: ManagedAgent[];
         };
         setEndpoints(endpointBody.data);
         setAgents(agentBody.data);
+        setProviderName(endpointBody.provider.name ?? "");
+        setProviderUrl(endpointBody.provider.url ?? "");
+        setSavedProvider(endpointBody.provider);
         setIsLoading(false);
     }, []);
 
@@ -177,6 +196,35 @@ export function CommunityEndpoints({
         }
     }
 
+    async function handleProviderSubmit(
+        event: FormEvent<HTMLFormElement>,
+    ): Promise<void> {
+        event.preventDefault();
+        setIsSavingProvider(true);
+        setError(null);
+        try {
+            const response = await apiClient.account[
+                "my-models"
+            ].provider.$post({
+                json: { name: providerName, url: providerUrl },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const profile = (await response.json()) as CommunityProviderProfile;
+            setProviderName(profile.name ?? "");
+            setProviderUrl(profile.url ?? "");
+            setSavedProvider(profile);
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Provider profile update failed",
+            );
+        } finally {
+            setIsSavingProvider(false);
+        }
+    }
+
     async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
         setTogglingId(endpoint.id);
         setError(null);
@@ -255,7 +303,6 @@ export function CommunityEndpoints({
 
     return (
         <>
-            {error && <Alert intent="danger">{error}</Alert>}
             <Section
                 title="My Models"
                 framed
@@ -299,6 +346,69 @@ export function CommunityEndpoints({
                     </div>
                 }
             >
+                {canPublish && !isLoading && (
+                    <Surface className="mb-3 p-4">
+                        <form
+                            className="flex flex-col gap-4"
+                            onSubmit={(event) =>
+                                void handleProviderSubmit(event)
+                            }
+                        >
+                            <div>
+                                <p className="text-sm font-semibold">Brand</p>
+                                <p className="mt-0.5 text-xs text-theme-text-soft">
+                                    Shown on all your public models.
+                                </p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FieldStack label="Name">
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                                <FieldStack label="Website">
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                            </div>
+                            <div>
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        isSavingProvider || providerIsSaved
+                                    }
+                                >
+                                    {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Surface>
+                )}
+                {error && (
+                    <Alert intent="danger" className="mb-3">
+                        {error}
+                    </Alert>
+                )}
                 <div className="flex flex-col gap-3">
                     {isLoading ? (
                         <Surface className="p-6 text-center text-sm text-theme-text-muted">

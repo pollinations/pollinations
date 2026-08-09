@@ -9,6 +9,7 @@ import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
     ChatMessage,
+    OpenAIClientConfig,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -23,6 +24,10 @@ const clientConfig = {
     },
 };
 
+// Portkey applies this millisecond deadline per attempt until provider response
+// headers arrive. Keep retries disabled unless the total deadline is reconsidered.
+const PORTKEY_REQUEST_TIMEOUT_MS = 290_000;
+
 function buildEndpoint(gatewayUrl: unknown): string {
     const base =
         typeof gatewayUrl === "string" && gatewayUrl
@@ -34,6 +39,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
+    fetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
     let state: TransformResult = { messages, options: { ...options } };
     const modelDef = state.options.model
@@ -61,10 +67,14 @@ export async function generateTextPortkey(
     const requestConfig = {
         ...clientConfig,
         endpoint: () => buildEndpoint(portkeyGatewayUrl),
-        additionalHeaders: (state.options.additionalHeaders || {}) as Record<
-            string,
-            string
-        >,
+        additionalHeaders: {
+            "x-portkey-request-timeout": String(PORTKEY_REQUEST_TIMEOUT_MS),
+            ...((state.options.additionalHeaders || {}) as Record<
+                string,
+                string
+            >),
+        },
+        fetcher,
     };
 
     delete state.options.additionalHeaders;

@@ -15,7 +15,7 @@ import {
     parsePromptAgentConfig,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
-import { requireAccountKeysPermission } from "./account-permissions.ts";
+import { requireAccountPermission } from "./account-permissions.ts";
 
 const CreateAgentSchema = PromptAgentSchema;
 const UpdateAgentSchema = z
@@ -98,7 +98,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const rows = await db.query.agent.findMany({
                 where: eq(schema.agent.ownerUserId, user.id),
@@ -130,7 +130,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             return c.json(
                 toResponse(
@@ -164,7 +164,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = crypto.randomUUID();
             const config = PromptAgentSchema.parse(input);
@@ -226,7 +226,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const existing = await requireOwnedAgent(db, id, user.id);
@@ -282,7 +282,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const existing = await requireOwnedAgent(db, id, user.id);

@@ -306,8 +306,29 @@
     {
       "idx": 43,
       "version": "6",
-      "when": 1785561520218,
-      "tag": "0043_married_stature",
+      "when": 1785590121639,
+      "tag": "0043_canonicalize-model-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1785758400000,
+      "tag": "0044_consolidate-model-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1785885364700,
+      "tag": "0045_community_provider_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1786318083542,
+      "tag": "0046_heavy_jimmy_woo",
       "breakpoints": true
     }
   ]

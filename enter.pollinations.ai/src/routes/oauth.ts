@@ -1,3 +1,4 @@
+import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -14,7 +15,6 @@ import {
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
-import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;

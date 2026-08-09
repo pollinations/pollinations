@@ -116,16 +116,20 @@ function gatewayContext(
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> | TransformOptions {
     const { communityEndpoint, definition } = candidate;
+    // A fallback must resolve transforms from the model that will actually run.
+    const candidateRequest = candidate.entry
+        ? { ...requestData, model: candidate.id }
+        : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
-    // config the gateway resolves from the request itself.
+    // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, requestData);
+        return withGatewayContext(c, candidateRequest);
     }
     return communityEndpointGatewayContext(
         communityEndpoint,
         definition,
-        requestData,
+        candidateRequest,
         c.env.BETTER_AUTH_SECRET,
         c.env.PLN_ENTER_TOKEN,
         c.env.PORTKEY_GATEWAY_URL,
@@ -158,15 +162,14 @@ function usageHeaders(
     const headers = new Headers();
     const modelUsed = servedModelId || completion?.model;
     if (modelUsed) {
-        const usage = completion?.usage
+        const usage = completion?.usage;
+        const normalizedUsage = usage
             ? openaiUsageToUsage(
-                  completion.usage as unknown as Parameters<
-                      typeof openaiUsageToUsage
-                  >[0],
+                  usage as unknown as Parameters<typeof openaiUsageToUsage>[0],
               )
-            : {};
+            : undefined;
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(modelUsed, usage),
+            buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
         }
@@ -368,6 +371,7 @@ function throwTextError(error: ServiceError): never {
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
+        upstreamHeaders: error.upstreamHeaders,
         cause: error,
     });
 }
@@ -380,6 +384,12 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const normalization = normalizeSearchContext(c, requestData);
+        if ("errorResponse" in normalization) {
+            return normalization.errorResponse;
+        }
+        const normalizedRequestData = normalization.requestData;
+        const portkey = c.env.PORTKEY;
         const {
             result: completion,
             candidate,
@@ -388,8 +398,11 @@ async function generateTextResponse(
             fallbackCandidates(c.var.model),
             async (attempt) =>
                 generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
+                    normalizedRequestData.messages,
+                    await gatewayContext(c, normalizedRequestData, attempt),
+                    portkey
+                        ? (input, init) => portkey.fetch(input, init)
+                        : undefined,
                 ),
             c.var.track?.failedCalls,
         );
@@ -407,16 +420,10 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        // Only override the provider's own name where it is misleading. A
-        // community endpoint reports its upstream — "gemini-2.0-flash" for what
-        // everyone calls "alice/pro" — and after a rescue that upstream belongs
-        // to a different owner's model. A static model instead reports the
-        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
-        // which is strictly more information, so leave it alone.
-        const servedModelId =
-            servedEntry?.id ??
-            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
-        if (requestData.stream)
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
+        if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
@@ -435,6 +442,53 @@ async function generateTextResponse(
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }
+}
+
+function normalizeSearchContext(
+    c: TextContext,
+    requestData: RequestData,
+): { requestData: RequestData } | { errorResponse: Response } {
+    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
+    const model = c.var.model;
+    if (!model) return { requestData: requestWithoutSearchOptions };
+    const supported = model.definition.searchContextSizes;
+    if (!supported?.length) {
+        return { requestData: requestWithoutSearchOptions };
+    }
+
+    const requested = web_search_options?.search_context_size;
+    if (
+        supported.length > 1 &&
+        requested !== undefined &&
+        !supported.includes(requested as "low" | "high")
+    ) {
+        return {
+            errorResponse: c.json(
+                {
+                    error: {
+                        message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
+                    },
+                },
+                400,
+            ),
+        };
+    }
+
+    if (supported.length > 1 && requested === undefined) {
+        return { requestData: requestWithoutSearchOptions };
+    }
+
+    const searchContextSize =
+        supported.length > 1 && requested
+            ? (requested as "low" | "high")
+            : supported[0];
+    c.var.track.setPricingInput({ searchContextSize });
+    return {
+        requestData: {
+            ...requestWithoutSearchOptions,
+            web_search_options: { search_context_size: searchContextSize },
+        },
+    };
 }
 
 export async function handleChatCompletionLocal(

@@ -1,39 +1,36 @@
-# SANA Sprint Servers
+# Sana compatibility route
 
-Last updated: 2026-03-08
+Last updated: 2026-08-09
 
-## Current Deployment
+## Current deployment
 
-Sana Sprint 0.6B runs on the Taiwan vast.ai instance (GPU 0), serving the legacy `image.pollinations.ai` endpoint.
+SANA Sprint is no longer in the production image route. The public `sana`
+model name is retained as an alias of `dreamshaper`, which serves DreamShaper 8
+LCM from two Vast RTX 3090 workers. The internal registry pool key also remains
+`sana` for compatibility.
 
-| Host | Instance | IP | GPU | Port (int/ext) | Model |
-|------|----------|-----|-----|----------------|-------|
-| vast.ai Taiwan | 30937024 | 211.72.13.202 | GPU 0 (RTX 5090) | 8765 / 47190 | Sana Sprint 0.6B |
+| Worker | Vast instance | Machine / region | All-in rate | Registered hostname |
+|--------|---------------|------------------|-------------|---------------------|
+| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | $0.150000/hr | `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | 46387155 | 123712 / California, US | $0.153333/hr | `dreamshaper-vast-02.pollinations.ai` |
 
-- Max resolution: 512x512 (clamped)
-- Inference steps: 2
-- Generation time: ~0.2-0.5s
+The route is:
 
-Traffic reaches Sana via SSH tunnel from Scaleway (legacy gateway):
-```
-image.pollinations.ai → Cloudflare → Scaleway:16384 (legacy service)
-  → SSH tunnel (localhost:19876 → vast.ai:8765) → Sana 0.6B
-```
-
-## SSH Access
-
-```bash
-ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
-screen -r sana-gpu0
-tail -f /tmp/sana.log
+```text
+model=sana -> registry alias dreamshaper -> pool type sana
+           -> named Cloudflare tunnels -> DreamShaper workers
 ```
 
-## Legacy Scaleway Sana Instances (Decommissioned)
+There is no automatic external fallback. Both workers run
+`dreamshaper-lcm/setup-vast.sh`, and Vast restores `/root/onstart.sh` after a
+container restart. See [`../GPU_INSTANCES.md`](../GPU_INSTANCES.md) for the
+live fleet and qualification evidence, and
+[`../dreamshaper-lcm/README.md`](../dreamshaper-lcm/README.md) for deployment
+and API details.
 
-These Scaleway GPU instances previously ran Sana Sprint 1.6B but are no longer in use for Sana.
+## Historical Sana infrastructure
 
-| Host | SSH Alias | IP | GPUs | Provider |
-|------|-----------|-----|------|----------|
-| sana-1 | `sana-1` | 51.158.101.128 | 2x L4 (24GB) | Scaleway PAR1 |
-| sana-2 | `sana-2` | 51.159.129.211 | 2x L4 (24GB) | Scaleway PAR2 |
-| comfystream | `comfystream` | 3.239.212.66 | 1x L40S (46GB) | AWS |
+Vast instance `30937024`, the Scaleway Sana workers, and the legacy SSH-tunnel
+route are historical and are not part of production dispatch. Do not use old
+IP addresses or SSH commands from prior runbooks when diagnosing the current
+`sana` alias.

@@ -39,24 +39,62 @@ is cheaper per image ($0.0033 vs $0.0044 per 1k).
 
 ## Deployment
 
-Registers into the gen registry pool as type `dreamshaper` via `/register`
-heartbeat every 30s. There is **no fallback** — if no worker is registered, the
-model is down.
+Registers into the gen registry pool as type `sana` via `/register` heartbeat
+every 30s. The public model is `dreamshaper`; `sana` remains both its API alias
+and the internal pool key. There is **no fallback** — if no worker is
+registered, the model is down.
+
+Each of the three Uvicorn worker processes accepts at most two generation
+requests: one running and one waiting. Additional requests receive `503 Queue
+full`, which lets gen immediately retry the other registered DreamShaper Vast
+worker instead of building an unbounded queue on one GPU. `QUEUE_LIMIT` is
+per process, so the default deployment admits at most six in-flight requests
+per GPU.
+
+**Rollout order:** do not enable `QUEUE_LIMIT` on production workers until gen
+production contains the cross-worker 503 retry. First sync `main` to
+`production`, deploy gen through GitHub Actions, and verify the retry is live.
+Only then rerun this setup on both DreamShaper workers. Reversing the order
+turns saturation into user-visible 503 responses instead of failover.
 
 Requires a **named** Cloudflare tunnel, not a quick tunnel (quick tunnels caused
 outage #12254). Point the public hostname at `http://localhost:8766` and pass
 the hostname so heartbeats advertise the stable URL rather than a raw IP:
 
+Provision a Vast SSH instance with at least 60 GB of disk and configure the
+startup hook at rent time:
+
 ```bash
-PLN_GPU_TOKEN=... \
-PUBLIC_HOSTNAME=dreamshaper-vast.example.com \
-NUM_INFERENCE_STEPS=3 \
-python server.py
+vastai create instance <OFFER> \
+  --image vastai/base-image:cuda-12.8.1-cudnn-devel-ubuntu24.04-py312 \
+  --disk 60 --ssh --label dreamshaper-vast-NN \
+  --onstart-cmd 'if [ -x /root/onstart.sh ]; then /root/onstart.sh; fi'
+vastai attach ssh <INSTANCE> ~/.ssh/id_ed25519.pub
+
+# Isolated canary: no production heartbeat and no tunnel by default.
+PLN_GPU_TOKEN=... PUBLIC_HOSTNAME=dreamshaper-canary.example.com \
+  GIT_BRANCH=main bash setup-vast.sh
+
+# Public-path canary: dedicated canary tunnel, still no production heartbeat.
+PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+  PUBLIC_HOSTNAME=dreamshaper-canary.example.com TUNNEL_ENABLED=true \
+  HEARTBEAT_ENABLED=false GIT_BRANCH=main bash setup-vast.sh
+
+# Production only after the named promotion approval.
+PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+  PUBLIC_HOSTNAME=dreamshaper-vast-NN.example.com TUNNEL_ENABLED=true \
+  HEARTBEAT_ENABLED=true GIT_BRANCH=main bash setup-vast.sh
 ```
 
 Env: `MODEL_ID`, `LCM_LORA`, `TINY_VAE`, `NUM_INFERENCE_STEPS`,
 `GUIDANCE_SCALE`, `MAX_DIM` (768), `MAX_PIXELS` (512²), `PORT` (8766),
-`REGISTER_URL`, `SERVICE_TYPE` (`dreamshaper`).
+`REGISTER_URL`, `SERVICE_TYPE` (`sana`), `HEARTBEAT_ENABLED`,
+`TUNNEL_ENABLED`, `WORKERS` (3), and `QUEUE_LIMIT` (2 per worker process).
+
+Vast executes `/root/onstart.sh`, not `/workspace/onstart.sh`, after a container
+restart. The startup script terminates any listener still holding port 8766
+before relaunching Uvicorn; quitting the parent `screen` session alone can
+leave worker children alive and cause an `Address already in use` loop.
 
 **Ordering matters when replacing sana.** Before this change `sana` was reached
 through a hardcoded backend URL that bypassed the registry pool. Deploy and

@@ -242,6 +242,9 @@ export async function handleImageGeneration(c: Context<Env>) {
             ...resolved,
         }))
             imageUrl.searchParams.set(key, String(value));
+        if (typeof body.resolution === "string") {
+            imageUrl.searchParams.set("resolution", body.resolution);
+        }
         const safeValue = normalizeSafeValue(body.safe as SafeValue);
         if (safeValue) {
             imageUrl.searchParams.set("safe", safeValue);

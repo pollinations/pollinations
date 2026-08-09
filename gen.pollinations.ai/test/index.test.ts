@@ -9,6 +9,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
+const TRANSCRIPTION_MODEL_IDS = [
+    "whisper",
+    "scribe",
+    "universal-2",
+    "universal-3.5-pro",
+] as const;
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -354,6 +361,87 @@ describe("gen worker routing", () => {
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();
+        for (const id of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.data.find((model) => model.id === id)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
+    });
+
+    it.each([
+        "/models",
+        "/audio/models",
+    ] as const)("advertises transcription endpoints on %s", async (path) => {
+        const response = await fetchWorker(path, envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            supported_endpoints?: string[];
+        }[];
+        for (const name of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.find((model) => model.name === name)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
+    });
+
+    it("serves fixed request pricing without auth", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            pricing_adjustments?: unknown[];
+        }[];
+        expect(
+            models.find((model) => model.name === "perplexity-fast")
+                ?.pricing_adjustments,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    label: "Search",
+                    price: "5",
+                    currency: "pollen",
+                    quantity: 1_000,
+                    unit: "requests",
+                    option: expect.objectContaining({
+                        value: "low",
+                        label: "Low search context",
+                        default: true,
+                    }),
+                }),
+                expect.objectContaining({
+                    label: "Search",
+                    price: "12",
+                    currency: "pollen",
+                    quantity: 1_000,
+                    unit: "requests",
+                    option: expect.objectContaining({
+                        value: "high",
+                        label: "High search context",
+                    }),
+                }),
+            ]),
+        );
+    });
+
+    it("labels image pricing units without auth", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            flat_rate?: boolean;
+        }[];
+        expect(
+            models.find(({ name }) => name === "grok-imagine")?.flat_rate,
+        ).toBe(true);
+        expect(
+            models.find(({ name }) => name === "nanobanana-pro")?.flat_rate,
+        ).toBe(false);
     });
 
     it("adds CORS headers on public model responses", async () => {
@@ -410,7 +498,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("distinguishes Perplexity Sonar search presets", async () => {
+    it("publishes one configurable Perplexity Sonar model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -429,11 +517,7 @@ describe("gen worker routing", () => {
         });
         expect(
             models.find((model) => model.name === "perplexity-high"),
-        ).toMatchObject({
-            title: "Perplexity Sonar High-Context Search",
-            description:
-                "Digs through many sources for thorough, cited research answers",
-        });
+        ).toBeUndefined();
         expect(
             models.find((model) => model.name === "perplexity"),
         ).toMatchObject({
@@ -918,6 +1002,170 @@ fixtureTest(
             await expect(response.json()).resolves.toMatchObject({
                 error: { message: expect.stringContaining(testCase.message) },
             });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(calls).not.toContain(deepInfraEndpoint);
+    },
+);
+
+fixtureTest(
+    "routes Kokoro aliases and default voice through DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const providerBodies: unknown[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+
+                if (request.url === deepInfraEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-deepinfra-key",
+                    );
+                    providerBodies.push(await request.json());
+                    return new Response(
+                        new Uint8Array([0x52, 0x49, 0x46, 0x46]),
+                        {
+                            headers: { "Content-Type": "audio/wav" },
+                        },
+                    );
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const postContext = createExecutionContext();
+        const postResponse = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "kokoro-tts",
+                    input: "Hi 😀",
+                    voice: "bf_emma",
+                    response_format: "wav",
+                }),
+            }),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            postContext,
+        );
+
+        expect(postResponse.status).toBe(200);
+        expect(postResponse.headers.get("content-type")).toBe("audio/wav");
+        expect(postResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(
+            postResponse.headers.get("x-usage-completion-audio-tokens"),
+        ).toBe("4");
+        expect(postResponse.headers.get("x-tts-voice")).toBe("bf_emma");
+        await waitOnExecutionContext(postContext);
+
+        const getContext = createExecutionContext();
+        const getResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/Hello%20Kokoro?model=hexgrad-kokoro-82m&response_format=mp3",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            getContext,
+        );
+
+        expect(getResponse.status).toBe(200);
+        expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
+        await waitOnExecutionContext(getContext);
+
+        expect(providerBodies).toEqual([
+            {
+                model: "hexgrad/Kokoro-82M",
+                input: "Hi 😀",
+                voice: "bf_emma",
+                response_format: "wav",
+            },
+            {
+                model: "hexgrad/Kokoro-82M",
+                input: "Hello Kokoro",
+                voice: "af_alloy",
+                response_format: "mp3",
+            },
+        ]);
+    },
+);
+
+fixtureTest(
+    "validates Kokoro voices and formats before calling DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        for (const testCase of [
+            { voice: "unknown_voice", response_format: "mp3" },
+            { voice: "af_bella", response_format: "aac" },
+        ]) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "kokoro",
+                            input: "Hello",
+                            ...testCase,
+                        }),
+                    },
+                ),
+                {
+                    ...env,
+                    DEEPINFRA_API_KEY: "test-deepinfra-key",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
             await waitOnExecutionContext(ctx);
         }
 
@@ -1594,7 +1842,7 @@ fixtureTest(
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 message:
-                    "Model 'universal-2' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.",
+                    'Model "universal-2" cannot be used on /v1/audio/speech. Supported endpoints: /v1/audio/transcriptions.',
             },
         });
 
@@ -1603,5 +1851,36 @@ fixtureTest(
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
         ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects text-to-speech models on the transcription endpoint",
+    async ({ apiKey }) => {
+        const formData = new FormData();
+        formData.set("model", "elevenlabs");
+
+        const response = await fetchWorker(
+            "/v1/audio/transcriptions",
+            {
+                ...env,
+                // Blank the whisper key so a rejection regression fails here
+                // instead of reaching the live provider.
+                OVHCLOUD_API_KEY: "",
+            } as unknown as CloudflareBindings,
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: formData,
+            },
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
+            },
+        });
     },
 );

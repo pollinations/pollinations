@@ -31,6 +31,8 @@ type ErrorHandlerEnv = {
     Variables: RequestIdVariables & ErrorVariables;
 };
 
+export type UpstreamHeaders = Record<string, string>;
+
 type UpstreamErrorOptions = {
     res?: Response;
     message?: string;
@@ -39,6 +41,7 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
+    upstreamHeaders?: UpstreamHeaders;
     /**
      * Overrides the status-derived error code in the response envelope. Used to
      * surface a stable, machine-readable code (e.g. `content_policy_violation`)
@@ -53,6 +56,7 @@ export class UpstreamError extends HTTPException {
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
+    public readonly upstreamHeaders?: UpstreamHeaders;
     public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
@@ -61,8 +65,25 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
+        this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
     }
+}
+
+const REDACTED_HEADER_VALUE = "[redacted]";
+const SENSITIVE_HEADER_NAME =
+    /(^|[-_])(authorization|cookie|api[-_]?key|token|secret)([-_]|$)/i;
+
+/** Preserves upstream response headers while redacting credential-bearing values. */
+export function collectUpstreamHeaders(
+    headers: Headers,
+): UpstreamHeaders | undefined {
+    const entries = Array.from(headers.entries(), ([name, value]) => [
+        name,
+        SENSITIVE_HEADER_NAME.test(name) ? REDACTED_HEADER_VALUE : value,
+    ]);
+
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 export async function ensureUpstreamOk(
@@ -80,6 +101,7 @@ export async function ensureUpstreamOk(
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
         upstreamStatus: response.status,
         responseBody,
+        upstreamHeaders: collectUpstreamHeaders(response.headers),
     });
 }
 
@@ -205,6 +227,8 @@ type ServerErrorEnvelope = {
     upstreamHost?: string;
     upstreamStatus?: number;
     upstreamBody?: string;
+    edgeColo?: string;
+    upstreamHeaders?: UpstreamHeaders;
     modelRequested?: string;
     resolvedModelRequested?: string;
     requestInputs?: RequestInputs;
@@ -350,7 +374,7 @@ function createUpstreamErrorResponse(
  * (400/413/422) as-is since those can reflect user input we failed to validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    const remapTo502 = new Set([401, 403, 404, 409, 415, 429]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 415, 429]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
@@ -453,6 +477,11 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         ) || getDefaultErrorMessage(status);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
     const resolvedRoutePath = getRoutePath(c);
+    const edgeColo = (
+        c.req.raw as Request & {
+            cf?: { colo?: string };
+        }
+    ).cf?.colo;
 
     return {
         kind: "server_error",
@@ -481,6 +510,9 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError
                 ? truncateString(error.responseBody, MAX_UPSTREAM_BODY_LENGTH)
                 : undefined,
+        edgeColo,
+        upstreamHeaders:
+            error instanceof UpstreamError ? error.upstreamHeaders : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
         requestInputs: await collectRequestInputs(c),
@@ -510,6 +542,10 @@ function toTinybirdErrorEvent(
         upstream_host: envelope.upstreamHost,
         upstream_status: envelope.upstreamStatus,
         upstream_body: envelope.upstreamBody,
+        edge_colo: envelope.edgeColo,
+        upstream_headers: envelope.upstreamHeaders
+            ? JSON.stringify(envelope.upstreamHeaders)
+            : undefined,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,
         request_inputs: stringifyRequestInputs(envelope.requestInputs),

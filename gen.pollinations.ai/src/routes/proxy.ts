@@ -66,8 +66,14 @@ import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
-import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
+import {
+    GenerateImageRequestQueryParamsSchema,
+    GenerateVideoRequestQueryParamsSchema,
+} from "@/schemas/image.ts";
+import {
+    Generate3dRequestBodySchema,
+    Generate3dRequestQueryParamsSchema,
+} from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -76,6 +82,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -102,7 +109,6 @@ const textBodyLimit = bodyLimit({
 });
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
-    resolveModel("generate.image"),
     track("generate.image"),
     imageCache,
     generationAccess,
@@ -151,6 +157,7 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         const response = await handleChatCompletionLocal(c, requestBody);
+        if (!response.ok) return response;
 
         assertStreamContentType(c, response, c.var.upstreamRequestUrl);
 
@@ -287,24 +294,6 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
     ).filter((entry) => entry.definition.category === "video");
 }
 
-async function getOrderedVisibleModelEntries(c: Context<Env>) {
-    const entries = await getVisibleModelEntries(c);
-    return [
-        ...entries.filter(
-            (entry) =>
-                entry.eventType === "generate.text" && !entry.communityEndpoint,
-        ),
-        ...entries.filter(
-            (entry) =>
-                entry.eventType === "generate.text" && entry.communityEndpoint,
-        ),
-        ...entries.filter((entry) => entry.eventType === "generate.image"),
-        ...entries.filter((entry) => entry.eventType === "generate.realtime"),
-        ...entries.filter((entry) => entry.eventType === "generate.audio"),
-        ...entries.filter((entry) => entry.eventType === "generate.embedding"),
-    ];
-}
-
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -323,7 +312,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models (text, community text/image, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -340,7 +329,7 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByPermissions(
-                await getOrderedVisibleModelEntries(c),
+                await getVisibleModelEntries(c),
                 allowedModels,
                 paidBalance,
             );
@@ -374,7 +363,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -392,7 +381,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(getOrderedVisibleModelEntries),
+        modelsListHandler(getVisibleModelEntries),
     )
     .get(
         "/3d/models",
@@ -664,16 +653,22 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const serviceDef = c.var.model.definition;
-            return generateEmbeddings(
-                c.env,
-                {
-                    ...requestBody,
-                    model: getEmbeddingProviderModelId(c.var.model.resolved),
-                },
-                serviceDef,
-                c.var.model.resolved,
+            const { response, servedEntry } = await withModelFallbackResponse(
+                c.var.model,
+                (candidate) =>
+                    generateEmbeddings(
+                        c.env,
+                        {
+                            ...requestBody,
+                            model: getEmbeddingProviderModelId(candidate.id),
+                        },
+                        candidate.definition ?? c.var.model.definition,
+                        candidate.id,
+                    ),
+                c.var.track?.failedCalls,
             );
+            if (servedEntry) c.set("servedModelEntry", servedEntry);
+            return response;
         },
     )
     .post(
@@ -830,6 +825,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
         ...imageVideoHandlers,
     )
     .get(
@@ -872,7 +868,8 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", GenerateImageRequestQueryParamsSchema),
+        validator("query", GenerateVideoRequestQueryParamsSchema),
+        resolveModel("generate.image", { defaultModel: "veo" }),
         ...imageVideoHandlers,
     )
     .get(
@@ -885,10 +882,45 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator("query", Generate3dRequestQueryParamsSchema),
+        ...model3dHandlers,
+    )
+    .post(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model With JSON",
+            description:
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. POST requests bypass the server-side media cache, so repeated requests regenerate and are billed. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -914,8 +946,33 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", Generate3dRequestQueryParamsSchema),
-        ...model3dHandlers,
+        validator(
+            "query",
+            z
+                .object({
+                    key: z.string().optional().meta({
+                        description:
+                            "API key (alternative to Authorization header)",
+                    }),
+                    safe: SafeSchema,
+                })
+                .strict(),
+        ),
+        validator("json", Generate3dRequestBodySchema),
+        resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+        track("generate.image"),
+        generationAccess,
+        async (c) => {
+            const query = c.req.valid("query" as never) as {
+                safe?: SafeValue;
+            };
+            const prompt = await applySafety(
+                c,
+                c.req.param("prompt") || "",
+                query.safe,
+            );
+            return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
+        },
     )
     .get(
         "/audio/:text",
@@ -971,7 +1028,7 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                            "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -1119,7 +1176,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image"),
+        resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
         handleImageEdit,
     );

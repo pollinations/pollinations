@@ -78,12 +78,14 @@ jobs:
             node apps/app-management/generate-catalog-outputs.js
           fi
 
-      - name: Upload capture report
+      - name: Upload review evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app-screenshot-report
-          path: temp/app-screenshots/**/report.json
+          name: app-management-evidence
+          path: |
+            temp/app-screenshots/**/report.json
+            temp/app-screenshots/**/evidence/*.png
           if-no-files-found: warn
           retention-days: 30
 
@@ -129,30 +131,9 @@ jobs:
           git commit -m "chore: maintain community apps (${DATE})"
           git push -u origin "$BRANCH"
 
-          REMOVAL_COUNT=$(jq '.removedApps | length' "$REPORT")
-          if [ "$REMOVAL_COUNT" -gt 0 ]; then
-            REMOVALS=$(jq -c '.removedApps' "$REPORT")
-            MARKER=$(printf '{"action":"remove","apps":%s}' "$REMOVALS" | base64 -w0)
-            REMOVAL_LIST=$(jq -r '.removedApps[] | "- **\(.name)** — \(.reason)"' "$REPORT")
-          else
-            MARKER=""
-            REMOVAL_LIST="- None"
-          fi
-          MARKER_LINE=""
-          if [ -n "$MARKER" ]; then
-            MARKER_LINE="<!-- pollinations-app-management:${MARKER} -->"
-          fi
-
-          cat > "$RUNNER_TEMP/pr-body.md" <<EOF
-          - Refreshes approved community-app screenshots.
-          - Removes only apps with a confirmed permanent failure.
-          - [Capture report](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
-
-          Removed apps:
-          ${REMOVAL_LIST}
-
-          ${MARKER_LINE}
-          EOF
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          node apps/app-management/management/render-pr-body.js \
+            "$REPORT" "$RUN_URL" > "$RUNNER_TEMP/pr-body.md"
 
           PR_URL=$(gh pr create \
             --title "chore: maintain community apps (${DATE})" \

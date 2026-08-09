@@ -724,6 +724,13 @@ function App() {
                                         ? stats.latency_p95_ms / 1000
                                         : null;
                                     const health = computeHealthStatus(stats);
+                                    const modelSlug =
+                                        model.name.split("/").pop() ||
+                                        model.name;
+                                    const modelLabel = model.title || modelSlug;
+                                    const showCanonicalId =
+                                        model.title ||
+                                        model.name !== modelLabel;
 
                                     return (
                                         <TableRow
@@ -739,20 +746,18 @@ function App() {
                                                     {model.type}
                                                 </ModalityChip>
                                             </TableCell>
-                                            <TableCell className="w-full min-w-[12rem] max-w-0">
-                                                <div className="flex min-w-0 items-center gap-2">
-                                                    {/* The name is the row's identity — never truncate it;
-                                                        the muted title is the flexible part. */}
-                                                    <span className="whitespace-nowrap font-medium text-theme-text-strong">
-                                                        {model.name}
-                                                    </span>
-                                                    {model.title && (
-                                                        <span
-                                                            className="min-w-0 truncate text-xs text-theme-text-muted"
-                                                            title={model.title}
+                                            <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
+                                                <div className="min-w-0">
+                                                    <div className="truncate font-medium text-theme-text-strong">
+                                                        {modelLabel}
+                                                    </div>
+                                                    {showCanonicalId && (
+                                                        <div
+                                                            className="truncate text-micro text-theme-text-muted"
+                                                            title={model.name}
                                                         >
-                                                            {model.title}
-                                                        </span>
+                                                            {model.name}
+                                                        </div>
                                                     )}
                                                 </div>
                                             </TableCell>

@@ -35,9 +35,9 @@
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
 #                     use 810000 on RTX 4090
-#   QUEUE_LIMIT       default 3 (one running plus two waiting; server.py sheds
-#                     additional load with 503 so the gateway falls back to
-#                     Replicate instead of building a long user-facing queue)
+#   QUEUE_LIMIT       default 3 (intended as one running plus two waiting;
+#                     synchronous inference currently prevents this from being
+#                     a reliable hard cap — see GPU_INSTANCES.md)
 #   SERVICE_TYPE      default flux
 #   HEARTBEAT_ENABLED default false; enable only for an approved production worker
 #   TUNNEL_ENABLED    default false; enable only after human promotion approval

@@ -111,7 +111,8 @@ Open an issue with the [submission template](https://github.com/pollinations/pol
 
 ### After
 
-- Keep your app working — broken apps get delisted after a heads-up
+- Keep your app working — confirmed broken apps are delisted automatically and
+  the original submission issue explains how to restore them
 - Changing your URL or name? Open a new PR
 
 ### Common Reasons for Rejection

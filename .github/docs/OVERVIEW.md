@@ -36,7 +36,7 @@ Scripts follow a similar pattern:
 | Pattern                 | Examples                                                |
 | ----------------------- | ------------------------------------------------------- |
 | `entity_action_what.py` | `app_check_duplicate.py`, `app_prepend_row.py`          |
-| `app-action-what.js`    | `app-prepend.js`, `app-check-links.js`                  |
+| folder-scoped JS        | `app-management/catalog.js`, `capture-screenshots.js`    |
 
 ---
 

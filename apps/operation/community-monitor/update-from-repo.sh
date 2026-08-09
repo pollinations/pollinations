@@ -37,6 +37,7 @@ install_from_main seven-day-health.mjs 0755
 install_from_main loop.sh 0755
 install_from_main healthcheck.sh 0755
 install_from_main leaderboard/build-leaderboard.mjs 0644
+install_from_main leaderboard/build-image-leaderboard.mjs 0644
 
 printf '%s\n' "$REVISION" > "$MONITOR/.source-revision.tmp"
 mv "$MONITOR/.source-revision.tmp" "$MONITOR/.source-revision"

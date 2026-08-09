@@ -52,7 +52,7 @@ Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
 
 Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
 fetches `origin/main` and updates `CYCLE.md`, `probe.mjs`, `loop.sh`,
-`healthcheck.sh`, and the leaderboard builder. Changes merged to `main` apply on
+`healthcheck.sh`, and both leaderboard builders. Changes merged to `main` apply on
 the next cycle. `.env`, state, identity mappings, logs, and generated data are
 never copied or removed. Restart the service to apply a merged change
 immediately.
@@ -64,6 +64,8 @@ scp apps/operation/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,
   community-monitor:/home/ubuntu/monitor/
 scp apps/operation/community-monitor/seven-day-health.mjs \
   community-monitor:/home/ubuntu/monitor/
+scp apps/operation/community-monitor/leaderboard/{build-leaderboard.mjs,build-image-leaderboard.mjs,fonts-embedded.css} \
+  community-monitor:/home/ubuntu/monitor/leaderboard/
 scp apps/operation/community-monitor/community-monitor.service \
   community-monitor:/tmp/community-monitor.service
 ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \

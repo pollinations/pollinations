@@ -1,0 +1,35 @@
+{
+  "pr_number": 13217,
+  "title": "fix: harden and reconcile Vast production fleet",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13217",
+  "merged_at": "2026-08-09T14:23:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reconciles the seven-worker Vast production fleet, rates, routing identities, and measured replacement savings.\n- Hardens Klein canaries and Workers VPC promotion checks around QUIC connectivity, four stable connections, and zero tunnel errors.\n- Corrects FLUX documentation to the two-worker Vast-only pool and verifies exact worker attribution.\n- Replaces obsolete Sana infrastructure with DreamShaper compatibility routing and records LTX-2/ACE-Step as retired.\n- Hardens Z-Image cold downloads by disabling unreliable Xet transfers and resuming standard-HTTP downloads from partial cache.\n- Records Z-Image instance `47267292` replacing `46598648` and the old instance's verified destruction.\n\nLive audit:\n- Exactly seven paid instances remain, all mapped to production; total burn is `$1.754815/hr` (`$1,263.47/30d`).\n- Z-Image now costs `$0.712593/hr`; the replacement saves `$21.33/30d`.\n- Both Z-Image replicas are on separate California machines; machine diversity remains, regional diversity is reduced.\n\nValidation:\n- Bash syntax and `git diff --check` pass.\n- Z-Image passed all supported sizes, deterministic seed, auth and limit checks, 65/65 load requests at 1.019 img/s, and a 25s cached restart.\n- With the old connector drained, 8/8 attributed requests passed. After destruction, health passed 5/5 and images 4/4 at 2.02s p50, with zero 5xx, OOM, traceback, or tunnel errors.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seven workers, zero tunnel drama",
+    "blurb": "The image fleet got a careful garden pass: workers reconciled, routes checked, and an unreliable download path sent gently into retirement. Z-Image now wakes from its cache without wandering off through Xet.",
+    "summary": "Reconciled the seven-instance Vast production fleet, replaced obsolete Sana routing with DreamShaper compatibility routing, hardened Klein QUIC/VPC promotion checks, and made Z-Image resume cold downloads over standard HTTP from partial cache.",
+    "impact": "Image generation now runs on verified production worker identities with stronger connectivity checks, while Z-Image gets more reliable restarts and validated replica routing across its supported sizes and auth limits.",
+    "keywords": [
+      "image-generation",
+      "vast",
+      "z-image",
+      "routing",
+      "reliability",
+      "dreamshaper",
+      "quic"
+    ],
+    "visual_concept": "Depict Polli tending a cozy seven-node server garden, where seven small Vast worker pods are connected by stable glowing paths to a retro image terminal. A Z-Image seedling resumes growing from a half-filled cache jar over a dependable HTTP watering hose, while a friendly monitor robot checks four solid connection lights; include subtle California hills, flowers, and code-vines to represent the verified fleet and machine diversity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she tends seven small server-garden worker pods linked by four steady glowing cables to a retro image terminal; a CRT monitor robot proudly checks green connection lights beside a Z-Image code-plant drinking from a standard HTTP watering hose and sprouting from a partial-cache jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"7/7 HEALTHY\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13217.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she tends seven small server-garden worker pods linked by four steady glowing cables to a retro image terminal; a CRT monitor robot proudly checks green connection lights beside a Z-Image code-plant drinking from a standard HTTP watering hose and sprouting from a partial-cache jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"7/7 HEALTHY\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-09T14:24:21.716138+00:00"
+}

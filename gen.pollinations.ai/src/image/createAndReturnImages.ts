@@ -208,7 +208,8 @@ export const callSelfHostedServer = async (
 
         let response = null;
 
-        // Single attempt - no retry logic
+        // The pool helper retries each other registered worker once when the
+        // selected backend rejects the request with queue-full 503.
         try {
             const requestInit = {
                 method: "POST",

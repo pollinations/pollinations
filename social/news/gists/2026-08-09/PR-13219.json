@@ -1,0 +1,35 @@
+{
+  "pr_number": 13219,
+  "title": "fix: remap upstream payment failures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13219",
+  "merged_at": "2026-08-09T16:07:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Maps provider-returned HTTP 402 responses to 502 Bad Gateway.\n- Keeps Pollinations wallet and API-key budget failures as HTTP 402.\n- Preserves the raw upstream 402 for fallback and observability.\n- Adds focused regression coverage.\n\nRoot cause: OpenRouter credit exhaustion was being surfaced as a user `PAYMENT_REQUIRED` error even when their Paid Pollen was healthy.\n\nChecks:\n- Biome 2.3.10: clean\n- Focused Vitest regression: 1 passed\n- Full Cloudflare-worker test harness: CI pending\n\nFixes #13180",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 402 stopped wandering",
+    "blurb": "An upstream provider ran out of credits and tried to borrow Pollinations’ payment-error costume. We gave it a proper 502 badge instead, while keeping real wallet and API-key budget errors exactly where they belong.",
+    "summary": "Provider-returned HTTP 402 errors, including OpenRouter credit exhaustion, now map to HTTP 502 Bad Gateway, while Pollinations wallet and API-key budget failures remain HTTP 402 and the original upstream status is retained for fallback and observability.",
+    "impact": "Healthy Paid Pollen users will no longer receive a misleading PAYMENT_REQUIRED response when an upstream provider has a billing problem; clients can identify it as a temporary upstream failure and retry or fall back.",
+    "keywords": [
+      "error-handling",
+      "OpenRouter",
+      "HTTP-402",
+      "HTTP-502",
+      "fallback",
+      "payments",
+      "API"
+    ],
+    "visual_concept": "Depict a cozy API gateway garden where Polli helps sort two nearly identical error parcels: a Pollinations wallet parcel marked 402 stays safely in the hive, while an upstream-provider parcel is redirected onto a clearly marked 502 bridge toward a backup path. The visual metaphor is accurate error routing rather than payment trouble, with a small retro terminal and blooming code-plants signaling observability and fallback.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny postal cap, carefully sorting two pixel error envelopes beside a retro terminal: one says “402 WALLET” and stays at a warm hive mailbox, while an “UPSTREAM 402” envelope is guided across a lime green (#ecf874) signposted “502” bridge toward a backup garden path. Code-plants and pastel flowers grow around the gateway, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13219.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny postal cap, carefully sorting two pixel error envelopes beside a retro terminal: one says “402 WALLET” and stays at a warm hive mailbox, while an “UPSTREAM 402” envelope is guided across a lime green (#ecf874) signposted “502” bridge toward a backup garden path. Code-plants and pastel flowers grow around the gateway, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-09T16:08:19.269114+00:00"
+}

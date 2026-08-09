@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -115,4 +117,42 @@ function writeApps(apps, filePath = CATALOG_FILE) {
     fs.writeFileSync(filePath, `${JSON.stringify(apps, null, 2)}\n`);
 }
 
-module.exports = { CATALOG_FILE, readApps, validateApps, writeApps };
+function prependApp(app, filePath = CATALOG_FILE) {
+    const apps = readApps(filePath);
+    writeApps([app, ...apps], filePath);
+}
+
+function main() {
+    const command = process.argv[2];
+    if (command === "validate") {
+        const apps = readApps();
+        console.log(`Validated ${apps.length} apps in ${CATALOG_FILE}`);
+        return;
+    }
+    if (command === "prepend") {
+        if (!process.env.NEW_APP) {
+            throw new Error("NEW_APP environment variable is required");
+        }
+        prependApp(JSON.parse(process.env.NEW_APP));
+        console.log("Prepended new entry to apps/catalog.json");
+        return;
+    }
+    throw new Error("Expected validate or prepend command");
+}
+
+if (require.main === module) {
+    try {
+        main();
+    } catch (error) {
+        console.error(error instanceof Error ? error.message : error);
+        process.exitCode = 1;
+    }
+}
+
+module.exports = {
+    CATALOG_FILE,
+    prependApp,
+    readApps,
+    validateApps,
+    writeApps,
+};

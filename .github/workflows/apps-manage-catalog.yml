@@ -61,11 +61,10 @@ jobs:
           fi
           npm run apps:capture-screenshots -- "${args[@]}"
 
-      - name: Validate catalog
+      - name: Finalize catalog
         run: |
-          node apps/operation/app-management/validate-catalog.js
           if ! git diff --quiet -- apps/catalog.json; then
-            node apps/operation/app-management/update-greenhouse.js
+            node apps/operation/app-management/generate-catalog-outputs.js
           fi
 
       - name: Upload capture report

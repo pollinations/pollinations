@@ -9,7 +9,7 @@ const {
     readApps,
     validateApps,
     writeApps,
-} = require("./catalog.js");
+} = require("../catalog.js");
 
 const DEFAULT_REVIEW_MODEL = "openai-fast";
 const TRUSTED_ASSOCIATIONS = new Set(["COLLABORATOR", "MEMBER", "OWNER"]);

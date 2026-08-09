@@ -33,4 +33,4 @@ jobs:
       - name: Notify submitters
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-        run: node apps/operation/app-management/notify-submitters.js
+        run: node apps/operation/app-management/management/notify-submitters.js

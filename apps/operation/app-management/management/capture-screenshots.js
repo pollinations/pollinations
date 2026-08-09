@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require("playwright-core");
-const { readApps, writeApps } = require("./catalog.js");
+const { readApps, writeApps } = require("../catalog.js");
 
 const VIEWPORT = { width: 1200, height: 600 };
 const DEFAULT_CONCURRENCY = 2;

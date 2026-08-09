@@ -3,7 +3,12 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { readApps, validateApps, writeApps } = require("./catalog.js");
+const {
+    prependApp,
+    readApps,
+    validateApps,
+    writeApps,
+} = require("./catalog.js");
 
 const APP = {
     emoji: "🌻",
@@ -82,6 +87,18 @@ test("accepts an optional screenshot URL", () => {
             ]),
         /screenshotUrl must use https:\/\/media\.pollinations\.ai\//,
     );
+});
+
+test("prepends a validated catalog app", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-catalog-"));
+    const filePath = path.join(directory, "catalog.json");
+    writeApps([APP], filePath);
+
+    const newest = { ...APP, name: "Newest app", url: "https://new.test" };
+    prependApp(newest, filePath);
+    assert.deepEqual(readApps(filePath), [newest, APP]);
+
+    fs.rmSync(directory, { recursive: true, force: true });
 });
 
 test("rejects missing and wrong-typed fields", () => {

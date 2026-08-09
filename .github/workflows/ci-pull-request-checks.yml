@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Validate app catalog
-        run: node apps/operation/app-management/validate-catalog.js
+        run: node apps/operation/app-management/catalog.js validate
 
       - name: Get changed files
         id: changed-files
@@ -76,7 +76,7 @@ jobs:
 
       - name: Test automation scripts
         if: steps.automation-scripts.outputs.any_changed == 'true'
-        run: node --test .github/scripts/*.test.js apps/operation/app-management/*.test.js
+        run: node --test .github/scripts/*.test.js apps/operation/app-management/*.test.js apps/operation/app-management/*/*.test.js
 
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files

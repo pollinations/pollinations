@@ -25,28 +25,26 @@ changes.
 There is no separate deleted-app ledger. The catalog, Git history, pull request,
 and original submission issue are the complete record.
 
-## Scripts
+## Architecture
 
-- `catalog.js`, `validate-catalog.js`, and `update-greenhouse.js` own the catalog
-  schema, validation, and generated showcase files.
-- `submission.js`, `validate-submission.js`, `review-agent.py`, and `prepend.js`
-  support the existing submission review and publishing workflows.
-- `update-metrics.js` refreshes GitHub, BYOP, and request metrics.
-- `capture-screenshots.js` owns page loading, visual review, safe page actions,
-  screenshot upload, and confirmed removal decisions. Timeouts, bot blocks,
-  CAPTCHA, login screens, temporary provider failures, and uncertain reviews
-  are reported but never removed automatically.
-- `reactivate-app.js` validates issue-comment authors, asks the text agent
-  whether the reply is a real repair request, recovers the deleted row from Git
-  history, and prepares it for a fresh capture. A repository URL is never used
-  as a fallback for a failed website.
-- `notify-submitters.js` reads the signed machine marker from a merged
-  app-management PR and comments on the matching submission issue.
+- `ingestion/` handles new submissions: parsing, validation, AI review, and the
+  catalog row that enters after maintainer approval.
+- `management/` maintains existing entries: screenshots, confirmed removals,
+  developer notification, Git-history recovery, and restoration.
+- `performance/` refreshes the inexpensive daily metrics for every app:
+  GitHub stars, BYOP status, request volume, and ranking.
+- `catalog.js` is shared by all three blocks and owns the catalog schema,
+  reading/writing, validation, and the small `validate` and `prepend` commands.
+- `generate-catalog-outputs.js` regenerates both derived Markdown outputs:
+  `apps/GREENHOUSE.md` and the Recent Apps section in the root `README.md`.
+
+The boundaries are deliberate: ingestion adds apps, management can remove or
+restore them and manages media, and performance only updates metrics.
 
 Each script has a colocated Node test file. Run them with:
 
 ```bash
-node --test apps/operation/app-management/*.test.js
+node --test apps/operation/app-management/*.test.js apps/operation/app-management/*/*.test.js
 ```
 
 ## Authentication

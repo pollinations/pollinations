@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Generate apps/GREENHOUSE.md — a curated highlight reel from all categories.
+ * Generate the Markdown outputs derived from the app catalog.
  *
  * Reads apps/catalog.json (source of truth) and writes:
  *   apps/GREENHOUSE.md  – top apps per category + label highlights
  *   README.md            – updates "Recent Apps" section in repo root
  *
- * Usage: node apps/operation/app-management/update-greenhouse.js
+ * Usage: node apps/operation/app-management/generate-catalog-outputs.js
  */
 
 const fs = require("node:fs");
@@ -237,4 +237,4 @@ console.log(`  ✅ Generated ${GARDEN_FILE}`);
 
 updateRootReadme(apps);
 
-console.log("\n🔆 Greenhouse updated!");
+console.log("\nCatalog outputs generated");

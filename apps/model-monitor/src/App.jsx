@@ -40,6 +40,11 @@ const MODEL_TYPES = [
     { key: "embedding", title: "Embedding" },
 ];
 
+const MODEL_SCOPES = [
+    { key: "official", title: "Official" },
+    { key: "community", title: "Community" },
+];
+
 const LOW_SAMPLE_REQUESTS = 10;
 
 const EXTERNAL_LINKS = [
@@ -148,7 +153,7 @@ function calcGroupStats(group) {
 
     const modelRequests = total2xx + total5xx;
     const successRate =
-        modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : null;
 
     return {
         successRate,
@@ -180,9 +185,11 @@ function CategoryTab({ title, stats, showBadges = true }) {
     return (
         <span className="inline-flex items-center gap-1.5">
             <span>{title}</span>
-            <span className="text-xs tabular-nums opacity-70">
-                {stats.successRate.toFixed(1)}%
-            </span>
+            {stats.successRate !== null && (
+                <span className="text-xs tabular-nums opacity-70">
+                    {stats.successRate.toFixed(1)}%
+                </span>
+            )}
             {showBadges && stats.countOff > 0 && (
                 <CountBadge
                     intent="danger"
@@ -217,11 +224,7 @@ function CategoryTabs({ models, value, onChange }) {
                 onClick={() => onChange(null)}
                 size="sm"
             >
-                <CategoryTab
-                    title="All"
-                    stats={calcGroupStats(models)}
-                    showBadges={false}
-                />
+                <CategoryTab title="All" stats={calcGroupStats(models)} />
             </TabButton>
             {available.map(({ key, title }) => (
                 <TabButton
@@ -234,6 +237,32 @@ function CategoryTabs({ models, value, onChange }) {
                         title={title}
                         stats={calcGroupStats(
                             models.filter((model) => model.type === key),
+                        )}
+                    />
+                </TabButton>
+            ))}
+        </div>
+    );
+}
+
+function modelScope(model) {
+    return model.community ? "community" : "official";
+}
+
+function ScopeTabs({ models, value, onChange }) {
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {MODEL_SCOPES.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="lg"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => modelScope(model) === key),
                         )}
                     />
                 </TabButton>
@@ -366,6 +395,7 @@ function App() {
         useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
+    const [scopeFilter, setScopeFilter] = useState("official");
     const [typeFilter, setTypeFilter] = useState(null);
     const catalogUnavailable = endpointStatus.catalog === false;
 
@@ -377,11 +407,11 @@ function App() {
         }));
     };
 
-    const sortedModels = [...models].sort((a, b) => {
-        const aHasData = (a.stats?.total_requests || 0) > 0;
-        const bHasData = (b.stats?.total_requests || 0) > 0;
-        if (aHasData !== bHasData) return aHasData ? -1 : 1;
+    const observedModels = models.filter(
+        (model) => (model.stats?.total_requests || 0) > 0,
+    );
 
+    const sortedModels = [...observedModels].sort((a, b) => {
         const dir = sort.asc ? 1 : -1;
         switch (sort.key) {
             case "type":
@@ -491,9 +521,17 @@ function App() {
         }
     });
 
+    const scopedModels = sortedModels.filter(
+        (model) => modelScope(model) === scopeFilter,
+    );
     const filteredModels = typeFilter
-        ? sortedModels.filter((model) => model.type === typeFilter)
-        : sortedModels;
+        ? scopedModels.filter((model) => model.type === typeFilter)
+        : scopedModels;
+
+    const handleScopeChange = (scope) => {
+        setScopeFilter(scope);
+        setTypeFilter(null);
+    };
 
     return (
         <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
@@ -553,11 +591,18 @@ function App() {
                     </Alert>
                 )}
 
-                <CategoryTabs
-                    models={models}
-                    value={typeFilter}
-                    onChange={setTypeFilter}
-                />
+                <div className="flex flex-col gap-2">
+                    <ScopeTabs
+                        models={observedModels}
+                        value={scopeFilter}
+                        onChange={handleScopeChange}
+                    />
+                    <CategoryTabs
+                        models={scopedModels}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
+                    />
+                </div>
 
                 <Surface variant="card" className="p-0">
                     <Table>
@@ -657,7 +702,7 @@ function App() {
                                         className="py-8 text-theme-text-muted"
                                     >
                                         {lastUpdated
-                                            ? "No models found"
+                                            ? "No traffic in this window"
                                             : "Loading models..."}
                                     </TableCell>
                                 </TableRow>

@@ -1,0 +1,37 @@
+{
+  "pr_number": 13213,
+  "title": "Add Stoicky to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13213",
+  "merged_at": "2026-08-09T07:23:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Stoicky](https://stoicky.vercel.app) to video_audio\n- Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference.\n\nFixes #13037",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Faceless videos, freshly pollinated",
+    "blurb": "Stoicky joined the video_audio garden. It turns Pollinations image and text inference into an AI-assisted workflow for making faceless video content.",
+    "summary": "Added Stoicky to the video_audio app catalog, showcasing an AI-powered video automation tool for faceless creators that uses Pollinations image and text inference.",
+    "impact": "Creators can now discover Stoicky through the Pollinations app catalog and use it as a starting point for automated faceless-video workflows.",
+    "keywords": [
+      "community",
+      "video",
+      "audio",
+      "Stoicky",
+      "image generation",
+      "text generation",
+      "creator tools"
+    ],
+    "visual_concept": "Polli helps a cozy retro video workstation produce a sequence of faceless creator clips: a CRT monitor shows a timeline with generated image frames and text captions, while little code-plants grow around it. A friendly monitor robot can hold a clapperboard to represent video automation.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny director beret, arranging generated image frames and caption cards on a retro video-editing timeline; a cheerful CRT monitor robot holds a clapperboard beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with simple pixel-font text: 'STOICKY'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13213.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny director beret, arranging generated image frames and caption cards on a retro video-editing timeline; a cheerful CRT monitor robot holds a clapperboard beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with simple pixel-font text: 'STOICKY'."
+  },
+  "generated_at": "2026-08-09T07:24:12.058657+00:00",
+  "app_name": "Stoicky",
+  "app_url": "https://stoicky.vercel.app"
+}

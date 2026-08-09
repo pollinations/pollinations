@@ -7,13 +7,13 @@ Last updated: 2026-08-09
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 2 | RTX 5090 + RTX PRO 4000 Blackwell | Vast.ai | $0.591111/hr all-in | **ACTIVE — two production, Vast-only** |
-| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.712593/hr all-in | **ACTIVE — two production** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.147778/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the seven running Vast instances cost **$1.784444/hr** in total
-(**$1,284.80 per 30-day month**).
+At capture time, the seven running Vast instances cost **$1.754815/hr** in total
+(**$1,263.47 per 30-day month**).
 All seven are production workers; there is no isolated canary left running.
 
 Live verification on 2026-08-09 confirmed that all seven instances are in both
@@ -215,13 +215,32 @@ sees one stable backend URL.
 | Worker | Vast instance | Machine / region | Reliability | All-in rate | Status |
 |--------|---------------|------------------|-------------|-------------|--------|
 | zimage-vast-canary | 46003779 | 56097 / California, US | 0.99487 | $0.351111/hr | ACTIVE — production |
-| zimage-vast-03 | 46598648 | 44927 / Estonia, EE | 0.99821 | $0.391111/hr | ACTIVE — production (promoted 2026-08-02) |
+| zimage-vast-04 | 47267292 | 137833 / California, US | 0.99507 | $0.361481/hr | ACTIVE — production (promoted 2026-08-09) |
 
-The active two-worker fleet costs `$0.742222/hr`. Instance `46598648` replaced
-`45313816`, saving `$0.031111/hr` or `$22.40` per 30-day month; the replaced
+The active two-worker fleet costs `$0.712593/hr`. Instance `47267292` replaced
+`46598648`, saving `$0.029630/hr` or `$21.33` per 30-day month; the replaced
 instance was destroyed immediately after production verification. Compared
-with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
-30-day month.
+with the original `$0.844444/hr` pair, the current fleet saves `$94.93` per
+30-day month. Both replicas are now in California on separate machines, so
+machine diversity remains but regional diversity is reduced.
+
+**Replacement validation (2026-08-09):**
+
+- The isolated candidate passed authentication rejection, 512x512,
+  1024x1024, 768x1152, and 1536x1536 generation, fixed-seed byte parity, and
+  the 2,359,296-pixel limit.
+- A 63.8-second concurrency-4 run completed 65 images with zero errors at
+  **1.019 img/s**, 3.92-second p50, and 4.01-second p95 latency.
+- Cached restart restored health in 25 seconds and produced a valid 1024x1024
+  image while the production tunnel remained disabled.
+- After joining the shared tunnel, the worker served real production traffic
+  with zero 5xx, OOM, traceback, or tunnel errors. With the replaced connector
+  drained, 8/8 attributed images passed at 3.89-second p50 and 5.30-second max.
+- After `46598648` was destroyed, shared health passed 5/5 and 4/4 attributed
+  1024x1024 images passed at 2.02-second p50 with zero 5xx or tunnel errors.
+- The host's Hugging Face Xet and standard-HTTP cold downloads both suffered
+  transient connection failures. Disabling Xet and resuming partial standard-
+  HTTP downloads completed the 32.8 GB cache; subsequent starts were fast.
 
 **Replacement validation (2026-08-02):**
 

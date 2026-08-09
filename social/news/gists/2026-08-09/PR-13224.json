@@ -1,0 +1,33 @@
+{
+  "pr_number": 13224,
+  "title": "chore: allow guus6457 community publishing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13224",
+  "merged_at": "2026-08-09T16:50:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `guus6457`’s immutable GitHub user ID to the community-model publisher allowlist.\n- Keeps the approval stable if the username changes.\n\nChecks:\n- Biome 2.3.10\n- Allowlist membership and uniqueness assertion\n- `git diff --check`\n\nFixes #13019",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A new gardener gets keys",
+    "blurb": "guus6457 is now cleared to publish community models. The approval is tied to their immutable GitHub ID, because usernames are allowed to wander off and reinvent themselves.",
+    "summary": "Added guus6457’s immutable GitHub user ID to the community-model publisher allowlist, preserving publishing approval even if their username changes.",
+    "impact": "guus6457 can now publish community models, with their authorization remaining stable across future GitHub username changes.",
+    "keywords": [
+      "community-models",
+      "github",
+      "publisher-allowlist",
+      "contributors",
+      "authorization"
+    ],
+    "visual_concept": "Depict Polli welcoming a new community gardener into a cozy code garden, handing them a small immutable ID badge and a seed packet labeled “community models.” Use a glowing allowlist clipboard or garden gate to represent approved publishing; include sprouting code-plants to show models being shared.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, welcoming a new anonymous pixel gardener through a lime green (#ecf874) garden gate while handing over a glowing immutable ID badge beside sprouting code-plants and an allowlist clipboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “PUBLISHER APPROVED”; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13224.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, welcoming a new anonymous pixel gardener through a lime green (#ecf874) garden gate while handing over a glowing immutable ID badge beside sprouting code-plants and an allowlist clipboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “PUBLISHER APPROVED”; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-09T16:51:02.876708+00:00"
+}

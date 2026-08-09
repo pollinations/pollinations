@@ -1,5 +1,10 @@
 # LTX2 ComfyUI on Modal (Async API)
 
+> **Status: retired from Pollinations production.** LTX-2 and ACE-Step have no
+> active production routes. This directory is retained only as historical
+> deployment code; running `modal deploy` creates a separate billable service
+> and does not restore a registered Pollinations model.
+
 Deploys ComfyUI as an async, cost-efficient API for video generation on Modal. Jobs are queued in ComfyUI, GPUs scale to zero when idle, and clients poll for status/result instead of holding long HTTP connections.
 
 ## Project layout

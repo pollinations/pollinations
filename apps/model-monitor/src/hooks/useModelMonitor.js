@@ -45,6 +45,7 @@ function normalizeCatalogModel(model) {
         ...model,
         name,
         aliases: model.aliases || [],
+        community: model.community === true,
         type,
         endpointType: eventTypeForDisplayType(type),
         catalogStatus: "visible",
@@ -172,6 +173,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         if (endpointStatus.catalog === false) {
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -184,6 +186,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
             ].sort();
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: sameNameMatches.some((m) => m.community),
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -193,6 +196,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         } else {
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,

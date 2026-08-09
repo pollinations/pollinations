@@ -24,6 +24,7 @@ MODEL_CACHE="${MODEL_CACHE:-/workspace/zimage-cache}"
 SERVICE_TYPE="${SERVICE_TYPE:-zimage}"
 PORT="${PORT:-10002}"
 HEARTBEAT_ENABLED="${HEARTBEAT_ENABLED:-false}"
+HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 SUDO=""
 [ "$(id -u)" != "0" ] && SUDO="sudo"
 
@@ -129,7 +130,15 @@ print("CUDA OK:", torch.__version__, torch.version.cuda, torch.cuda.get_device_n
 PY
 
 log "Downloading SPAN upscaler"
-MODEL_CACHE="$MODEL_CACHE" "$VENV/bin/python" - <<'PY'
+SPAN_MODEL_PATH="$MODEL_CACHE/span/2xNomosUni_span_multijpg.safetensors"
+span_ready=false
+if [ -s "$SPAN_MODEL_PATH" ]; then
+    span_ready=true
+fi
+for attempt in $(seq 1 10); do
+    [ "$span_ready" = true ] && break
+    if MODEL_CACHE="$MODEL_CACHE" HF_HUB_DISABLE_XET="$HF_HUB_DISABLE_XET" \
+        "$VENV/bin/python" - <<'PY'
 import os
 from huggingface_hub import hf_hub_download
 
@@ -139,6 +148,17 @@ hf_hub_download(
     local_dir=os.path.join(os.environ["MODEL_CACHE"], "span"),
 )
 PY
+    then
+        span_ready=true
+        break
+    fi
+    log "SPAN download attempt $attempt failed; retrying with the partial cache"
+    sleep 5
+done
+if [ "$span_ready" != true ] || [ ! -s "$SPAN_MODEL_PATH" ]; then
+    echo "SPAN download failed after 10 resumable attempts" >&2
+    exit 1
+fi
 
 ENV_FILE="$ZIMAGE_DIR/.env.zimage"
 log "Writing runtime environment to $ENV_FILE"
@@ -151,9 +171,9 @@ log "Writing runtime environment to $ENV_FILE"
     printf 'export HEARTBEAT_ENABLED=%q\n' "$HEARTBEAT_ENABLED"
     printf 'export VENV=%q\n' "$VENV"
     printf 'export MODEL_CACHE=%q\n' "$MODEL_CACHE"
-    printf 'export SPAN_MODEL_PATH=%q\n' "$MODEL_CACHE/span/2xNomosUni_span_multijpg.safetensors"
+    printf 'export SPAN_MODEL_PATH=%q\n' "$SPAN_MODEL_PATH"
     printf 'export HF_HUB_CACHE=%q\n' "$MODEL_CACHE/hub"
-    printf 'export HF_XET_HIGH_PERFORMANCE=1\n'
+    printf 'export HF_HUB_DISABLE_XET=%q\n' "$HF_HUB_DISABLE_XET"
     printf 'export CUDA_VISIBLE_DEVICES=0\n'
     # cuDNN v8's VAE convolution path segfaults with exit 139 on the tested
     # RTX 5090 / driver 570 / cu128 stack. The legacy API remains GPU-backed

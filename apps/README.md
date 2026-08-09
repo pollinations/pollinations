@@ -156,6 +156,10 @@ Routine screenshot capture stays anonymous. When an unresolved app genuinely
 requires sign-in, review it locally with the dedicated Pollinations Agent
 Google, GitHub, and Pollinations accounts under these rules:
 
+- Only official Google, GitHub, and `enter.pollinations.ai` authentication is
+  supported. Discord, email/password, magic-link, and other login providers are
+  skipped. A Pollinations BYOP flow may continue through GitHub and must return
+  to the original app before its screenshot can be accepted.
 - Start Pollinations authorization with a `0` Pollen budget and a one-day
   expiry. This is enough to verify login and the post-login interface without
   allowing generation spend.

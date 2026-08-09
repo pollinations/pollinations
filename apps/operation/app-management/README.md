@@ -10,14 +10,16 @@ changes.
 2. Playwright opens each page and waits for navigation, fonts, and late content.
 3. The visual agent may wait, scroll, or use safe presentation controls until it
    finds a useful cover.
-4. Approved screenshots are uploaded to `media.pollinations.ai` and written to
+4. A separate guard approves every click, final visual review confirms every
+   cover, and a second removal review confirms every deletion.
+5. Approved screenshots are uploaded to `media.pollinations.ai` and written to
    the catalog.
-5. A row is removed only after two 404/410 responses or an explicit visual
+6. A row is removed only after two 404/410 responses or a confirmed visual
    `remove` decision for a parked/repurposed domain, permanent shutdown, broken
    authentication callback, unrelated destination, or sexual content.
-6. The catalog change lands through an auto-merge PR. After merge, the original
+7. The catalog change lands through an auto-merge PR. After merge, the original
    submission issue receives the reason and restoration instructions.
-7. A submitter or repository maintainer can reply that the app is fixed. The
+8. A submitter or repository maintainer can reply that the app is fixed. The
    reactivation agent recovers the old row from Git history, interprets the
    reply, rechecks the live app, captures a fresh screenshot, and opens a
    restoration PR.
@@ -49,8 +51,20 @@ node --test apps/operation/app-management/*.test.js apps/operation/app-managemen
 
 ## Authentication
 
-Routine runs remain anonymous. A page that clearly requires authentication is
-reported as `auth_required` and skipped rather than treated as broken. The
-dedicated reviewer-account rules are documented in `apps/README.md`; an
-authenticated CI browser session must follow those limits before it is enabled
-for automatic restoration.
+Routine runs remain anonymous unless `--auth-state` supplies the dedicated
+reviewer browser state. When enabled, the agent may continue only through the
+exact Google, GitHub, and `enter.pollinations.ai` origins and must return to the
+original app before accepting a screenshot. Other login providers, expired
+reviewer sessions, CAPTCHAs, and unexpected origins are reported as
+`auth_required` and skipped.
+
+Pollinations BYOP authorization is a separate explicit mode:
+`--authorize-pollinations`. It requires `--auth-state`, sets the authorization
+to 0 Pollen and one day, and refuses to click Authorize if those limits cannot
+be verified. Authenticated reviews are serialized. Every new Pollinations key
+is revoked after capture, the app's site data is cleared, and a cleanup failure
+stops all later authenticated reviews in that run. Google is limited to
+`openid`, email, and profile without offline access; Google and GitHub consent
+screens that would create a broader new grant fail closed. Keep the
+browser-state file outside tracked repository content. The remaining
+reviewer-account limits are documented in `apps/README.md`.

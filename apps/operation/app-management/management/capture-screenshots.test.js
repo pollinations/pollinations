@@ -7,20 +7,151 @@ const {
     applyMediaUrls,
     calculateDailyBatch,
     callScreenshotAgent,
+    classifyAuthOrigin,
     classifyCaptureOutcome,
     hasAllowedOrigin,
+    identifyAuthProvider,
+    listReviewerKeyIds,
     navigateToTarget,
+    parseAgentJson,
     resolveAgentClickTarget,
     resolveTarget,
+    revokeReviewerKeys,
     selectTargets,
     selectTargetsByUrl,
+    setPollinationsAuthorizationLimits,
     validateAgentDecision,
+    validateClickGuardDecision,
+    validateGoogleAuthRequest,
     waitForSuccessfulNavigation,
 } = require("./capture-screenshots.js");
 
 test("uses a normal desktop browser identity for public app captures", () => {
     assert.match(DESKTOP_USER_AGENT, /Chrome\/\d+/);
     assert.doesNotMatch(DESKTOP_USER_AGENT, /HeadlessChrome/);
+});
+
+test("recognizes only the three supported authentication providers", () => {
+    assert.equal(identifyAuthProvider("Continue with Google"), "google");
+    assert.equal(identifyAuthProvider("Sign in with GitHub"), "github");
+    assert.equal(
+        identifyAuthProvider("使用 Pollinations 登录授权"),
+        "pollinations",
+    );
+    assert.equal(identifyAuthProvider("Continue with Discord"), null);
+    assert.equal(identifyAuthProvider("Enter key manually"), null);
+});
+
+test("allows authentication only on the app and exact official origins", () => {
+    const appOrigin = "https://app.test";
+    assert.equal(
+        classifyAuthOrigin("https://app.test/callback", appOrigin),
+        "app",
+    );
+    assert.equal(
+        classifyAuthOrigin(
+            "https://accounts.google.com/o/oauth2/v2/auth",
+            appOrigin,
+        ),
+        "google",
+    );
+    assert.equal(
+        classifyAuthOrigin(
+            "https://github.com/login/oauth/authorize",
+            appOrigin,
+        ),
+        "github",
+    );
+    assert.equal(
+        classifyAuthOrigin(
+            "https://enter.pollinations.ai/authorize",
+            appOrigin,
+        ),
+        "pollinations",
+    );
+    assert.equal(
+        classifyAuthOrigin("https://accounts.google.com.evil.test", appOrigin),
+        null,
+    );
+    assert.equal(
+        classifyAuthOrigin("https://discord.com/oauth2/authorize", appOrigin),
+        null,
+    );
+});
+
+test("pins Pollinations authorization to zero Pollen and one day", async () => {
+    const values = ["5", ""];
+    const inputs = values.map((_, index) => ({
+        fill: async (value) => {
+            values[index] = value;
+        },
+        inputValue: async () => values[index],
+    }));
+    await setPollinationsAuthorizationLimits({
+        getByRole: () => ({ all: async () => inputs }),
+    });
+    assert.deepEqual(values, ["0", "1"]);
+
+    await assert.rejects(
+        setPollinationsAuthorizationLimits({
+            getByRole: () => ({ all: async () => inputs.slice(0, 1) }),
+        }),
+        /limits were not available/,
+    );
+});
+
+test("allows only minimal online Google authentication scopes", () => {
+    const allowed = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    allowed.searchParams.set("scope", "openid email profile");
+    assert.equal(validateGoogleAuthRequest(allowed.href), true);
+
+    const nested = new URL("https://accounts.google.com/v3/signin/identifier");
+    nested.searchParams.set("continue", allowed.href);
+    assert.equal(validateGoogleAuthRequest(nested.href), true);
+
+    const offline = new URL(allowed);
+    offline.searchParams.set("access_type", "offline");
+    assert.equal(validateGoogleAuthRequest(offline.href), false);
+
+    const broad = new URL(allowed);
+    broad.searchParams.set(
+        "scope",
+        "openid email https://www.googleapis.com/auth/drive",
+    );
+    assert.equal(validateGoogleAuthRequest(broad.href), false);
+    assert.equal(
+        validateGoogleAuthRequest("https://discord.com/oauth2/authorize"),
+        false,
+    );
+});
+
+test("revokes every key created during an authenticated review", async () => {
+    const deleted = [];
+    let keys = ["existing", "new-review-key"];
+    const context = {
+        request: {
+            delete: async (url) => {
+                const keyId = decodeURIComponent(url.split("/").at(-1));
+                deleted.push(keyId);
+                keys = keys.filter((candidate) => candidate !== keyId);
+                return { ok: () => true };
+            },
+            get: async () => ({
+                json: async () => ({
+                    data: keys.map((id) => ({ id })),
+                }),
+                ok: () => true,
+            }),
+        },
+    };
+
+    assert.deepEqual(
+        await listReviewerKeyIds(context),
+        new Set(["existing", "new-review-key"]),
+    );
+    await revokeReviewerKeys(context, ["new-review-key"]);
+    assert.deepEqual(deleted, ["new-review-key"]);
+    assert.deepEqual(await listReviewerKeyIds(context), new Set(["existing"]));
 });
 
 test("allows a blocked navigation to resolve to a successful document", async () => {
@@ -327,6 +458,27 @@ test("validates final screenshot-agent decisions", () => {
     );
 });
 
+test("fails closed on invalid click-guard decisions", () => {
+    assert.deepEqual(
+        validateClickGuardDecision({
+            reason: "Dismisses a passive consent layer.",
+            safe: true,
+        }),
+        {
+            reason: "Dismisses a passive consent layer.",
+            safe: true,
+        },
+    );
+    assert.throws(
+        () => validateClickGuardDecision({ reason: "Missing safety flag." }),
+        /invalid decision/,
+    );
+    assert.throws(
+        () => validateClickGuardDecision({ reason: "", safe: false }),
+        /invalid reason/,
+    );
+});
+
 test("retries an empty screenshot-agent response", async () => {
     const originalFetch = global.fetch;
     let calls = 0;
@@ -359,6 +511,21 @@ test("retries an empty screenshot-agent response", async () => {
     } finally {
         global.fetch = originalFetch;
     }
+});
+
+test("parses a JSON decision wrapped by model formatting", () => {
+    assert.deepEqual(
+        parseAgentJson(
+            '```json\n{"decision":"accept","score":90,"reason":"Ready","action":null}\n```',
+        ),
+        {
+            action: null,
+            decision: "accept",
+            reason: "Ready",
+            score: 90,
+        },
+    );
+    assert.throws(() => parseAgentJson("no decision"), /No JSON object/);
 });
 
 test("allows only structured actions against supplied page controls", () => {

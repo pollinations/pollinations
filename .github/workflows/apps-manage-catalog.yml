@@ -49,16 +49,27 @@ jobs:
       - name: Capture and upload screenshots
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
+          COMMUNITY_APP_REVIEW_AUTH_STATE: ${{ secrets.COMMUNITY_APP_REVIEW_AUTH_STATE }}
           CAPTURE_MODE: ${{ inputs.mode || 'refresh' }}
           CAPTURE_LIMIT: ${{ inputs.limit }}
           IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
         run: |
+          AUTH_STATE_PATH="$RUNNER_TEMP/community-app-review-auth-state.json"
+          if [[ -z "$COMMUNITY_APP_REVIEW_AUTH_STATE" ]]; then
+            echo "COMMUNITY_APP_REVIEW_AUTH_STATE is not configured" >&2
+            exit 1
+          fi
+          printf '%s' "$COMMUNITY_APP_REVIEW_AUTH_STATE" > "$AUTH_STATE_PATH"
+          chmod 600 "$AUTH_STATE_PATH"
+          trap 'rm -f "$AUTH_STATE_PATH"' EXIT
+
           if [[ "$IS_SCHEDULED" == "true" ]]; then
             args=(--mode=all --limit=50 --rotate-daily --concurrency=4 --publish)
           else
             args=(--mode="$CAPTURE_MODE" --concurrency=4 --publish)
             args+=(--limit="${CAPTURE_LIMIT:-50}")
           fi
+          args+=(--auth-state="$AUTH_STATE_PATH" --authorize-pollinations)
           npm run apps:capture-screenshots -- "${args[@]}"
 
       - name: Finalize catalog

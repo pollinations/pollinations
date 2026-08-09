@@ -78,7 +78,7 @@ jobs:
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
         run: |
           set +e
-          node .github/scripts/app-validate-submission.js > "$RUNNER_TEMP/app-validation.json"
+          node apps/operation/app-management/validate-submission.js > "$RUNNER_TEMP/app-validation.json"
           STATUS=$?
           set -e
           cat "$RUNNER_TEMP/app-validation.json"
@@ -98,4 +98,4 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
-        run: python .github/scripts/app-review-agent.py
+        run: python apps/operation/app-management/review-agent.py

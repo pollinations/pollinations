@@ -3,13 +3,13 @@
 /**
  * Prepend a new app entry to apps/catalog.json
  *
- * Usage: node .github/scripts/app-prepend.js
+ * Usage: node apps/operation/app-management/prepend.js
  *
  * Environment variables:
  *   NEW_APP - The app object as compact JSON
  */
 
-const { readApps, writeApps } = require("./lib/app-catalog.js");
+const { readApps, writeApps } = require("./catalog.js");
 
 const newApp = process.env.NEW_APP;
 

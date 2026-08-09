@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { readApps, validateApps, writeApps } = require("./lib/app-catalog.js");
+const { readApps, validateApps, writeApps } = require("./catalog.js");
 
 const APP = {
     emoji: "🌻",

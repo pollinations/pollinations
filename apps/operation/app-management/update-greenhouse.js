@@ -7,11 +7,11 @@
  *   apps/GREENHOUSE.md  – top apps per category + label highlights
  *   README.md            – updates "Recent Apps" section in repo root
  *
- * Usage: node .github/scripts/app-update-greenhouse.js
+ * Usage: node apps/operation/app-management/update-greenhouse.js
  */
 
 const fs = require("node:fs");
-const { CATALOG_FILE, readApps } = require("./lib/app-catalog.js");
+const { CATALOG_FILE, readApps } = require("./catalog.js");
 
 // ── Config ──────────────────────────────────────────────────────────────────
 

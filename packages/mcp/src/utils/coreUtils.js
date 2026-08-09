@@ -1,6 +1,44 @@
 import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 
-export const API_BASE_URL = "https://gen.pollinations.ai";
+const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
+const configuredApiBaseUrl = process.env.POLLINATIONS_BASE_URL?.trim();
+
+const API_BASE_URL = (configuredApiBaseUrl || DEFAULT_API_BASE_URL).replace(
+    /\/+$/,
+    "",
+);
+
+export function validateApiBaseUrl() {
+    let url;
+    try {
+        url = new URL(API_BASE_URL);
+    } catch {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
+        );
+    }
+    if (!["http:", "https:"].includes(url.protocol)) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
+        );
+    }
+    if (url.username || url.password) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: credentials in the URL are not supported.",
+        );
+    }
+    if (url.search || url.hash) {
+        throw new Error(
+            "Invalid POLLINATIONS_BASE_URL: query strings and fragments are not supported.",
+        );
+    }
+    return API_BASE_URL;
+}
+
+function createApiUrl(path) {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return new URL(`${API_BASE_URL}${normalizedPath}`);
+}
 
 /**
  * @param {Array} content - Array of content objects (text, image, etc.)
@@ -55,7 +93,7 @@ export function createAudioContent(data, mimeType) {
  * @returns {string} - Complete URL
  */
 export function buildUrl(path, params = {}, includeAuth = false) {
-    const url = new URL(path, API_BASE_URL);
+    const url = createApiUrl(path);
     const allParams = includeAuth
         ? { ...params, ...getAuthQueryParam() }
         : params;
@@ -73,7 +111,7 @@ export function buildUrl(path, params = {}, includeAuth = false) {
  * @returns {string} - Complete URL without auth
  */
 export function buildShareableUrl(path, params = {}) {
-    const url = new URL(path, API_BASE_URL);
+    const url = createApiUrl(path);
     Object.entries(params).forEach(([key, value]) => {
         if (
             value !== undefined &&
@@ -173,7 +211,7 @@ export async function postChatCompletion(body) {
         }
     }
 
-    return fetchJsonWithAuth(`${API_BASE_URL}/v1/chat/completions`, {
+    return fetchJsonWithAuth(buildUrl("/v1/chat/completions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedBody),

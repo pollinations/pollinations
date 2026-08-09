@@ -136,6 +136,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
+            "≤272K context",
         ),
         title: "GPT-5.4",
         description:
@@ -200,6 +201,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
+            "≤272K context",
         ),
         title: "GPT-5.5",
         description:
@@ -242,6 +244,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the full request.",
                 },
             },
+            "≤272K context",
         ),
         title: "GPT-5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
@@ -283,6 +286,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the full request.",
                 },
             },
+            "≤272K context",
         ),
         title: "GPT-5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
@@ -300,7 +304,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
+        priceMultiplier: 0.2,
         cost: {
             promptTextTokens: perMillion(1.0),
             promptCachedTokens: perMillion(0.1),
@@ -324,6 +328,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the full request.",
                 },
             },
+            "≤272K context",
         ),
         title: "GPT-5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
@@ -840,6 +845,7 @@ export const TEXT_SERVICES = {
                         "At least 200,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
+            "<200K context",
         ),
         title: "Grok 4.5",
         description: "Frontier reasoning for coding and knowledge work",
@@ -939,6 +945,7 @@ export const TEXT_SERVICES = {
                         "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
+            "≤272K context",
         ),
         title: "MIDIjourney Large",
         description:
@@ -1462,6 +1469,7 @@ export const TEXT_SERVICES = {
                         "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
                 },
             },
+            "<200K context",
         ),
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
@@ -1780,6 +1788,7 @@ export const TEXT_SERVICES = {
                         "At least 256,000 prompt tokens; the higher rates apply to the whole request.",
                 },
             },
+            "<256K context",
         ),
         title: "Qwen3.7 Plus",
         description:
@@ -1899,6 +1908,7 @@ export const TEXT_SERVICES = {
                         "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
                 },
             },
+            "<32K context",
         ),
         title: "Qwen3.7 Flash",
         description:

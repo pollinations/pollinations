@@ -35,9 +35,9 @@
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
 #                     use 810000 on RTX 4090
-#   QUEUE_LIMIT       default 3 (one running plus two waiting; server.py sheds
-#                     additional load with 503 so the gateway falls back to
-#                     Replicate instead of building a long user-facing queue)
+#   QUEUE_LIMIT       default 3 (intended as one running plus two waiting;
+#                     synchronous inference currently prevents this from being
+#                     a reliable hard cap — see GPU_INSTANCES.md)
 #   SERVICE_TYPE      default flux
 #   HEARTBEAT_ENABLED default false; enable only for an approved production worker
 #   TUNNEL_ENABLED    default false; enable only after human promotion approval
@@ -70,6 +70,11 @@ fi
 
 if [ "$TUNNEL_ENABLED" = true ] && { [ -z "${CLOUDFLARED_TUNNEL_TOKEN:-}" ] || [ "$PUBLIC_HOSTNAME" = localhost ]; }; then
     echo "TUNNEL_ENABLED=true requires CLOUDFLARED_TUNNEL_TOKEN and PUBLIC_HOSTNAME" >&2
+    exit 1
+fi
+
+if [ "$HEARTBEAT_ENABLED" = true ] && [ "$TUNNEL_ENABLED" != true ]; then
+    echo "HEARTBEAT_ENABLED=true requires TUNNEL_ENABLED=true" >&2
     exit 1
 fi
 
@@ -261,8 +266,10 @@ log "  Logs:       tail -f /tmp/flux.log"
 log "  Attach:     screen -r flux   (detach: Ctrl+A, D)"
 log "  Local test: curl -s localhost:$PORT/docs >/dev/null && echo up"
 log "  Canary:     POLLINATIONS_API_KEY=... bash verify-vast.sh"
-if [ "$TUNNEL_ENABLED" = true ]; then
-    log "  Registered: curl -s https://gen.pollinations.ai/register | grep -o '$SERVICE_TYPE[^,]*'"
+if [ "$HEARTBEAT_ENABLED" = true ] && [ "$TUNNEL_ENABLED" = true ]; then
+    log "  Production: verify https://$PUBLIC_IP in the authenticated /register response and confirm an attributed request in /tmp/flux.log"
+elif [ "$TUNNEL_ENABLED" = true ]; then
+    log "  Isolated external canary enabled; registry heartbeat remains disabled"
 else
     log "  Production heartbeat and tunnel are disabled pending human approval"
 fi

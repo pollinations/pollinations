@@ -15,7 +15,7 @@ test("detects registered apps that consume changed shared packages", () => {
     const repoRoot = fs.mkdtempSync(
         path.join(os.tmpdir(), "pollinations-apps-"),
     );
-    writeJson(path.join(repoRoot, "apps", "apps.json"), {
+    writeJson(path.join(repoRoot, "apps", "deployments.json"), {
         _defaults: {},
         "model-monitor": {},
         playground: {},

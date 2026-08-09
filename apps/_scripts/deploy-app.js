@@ -279,10 +279,11 @@ async function upsertCname(zoneId, headers, name, target) {
 
 function appContext(appName) {
     const config = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "../apps.json"), "utf8"),
+        fs.readFileSync(path.join(__dirname, "../deployments.json"), "utf8"),
     );
     const appConfig = config[appName];
-    if (!appConfig) throw new Error(`App ${appName} not found in apps.json`);
+    if (!appConfig)
+        throw new Error(`App ${appName} not found in deployments.json`);
 
     const subdomain = appConfig.subdomain || appName;
     return {

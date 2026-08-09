@@ -1,19 +1,32 @@
 # GPU Instances
 
-Last updated: 2026-08-02
+Last updated: 2026-08-09
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.361111/hr all-in | **ACTIVE — production** (Replicate fallback) |
-| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.742222/hr all-in | **ACTIVE — two production** |
-| Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
+| Flux (FP4) | 2 | RTX 5090 + RTX PRO 4000 Blackwell | Vast.ai | $0.591111/hr all-in | **ACTIVE — two production, Vast-only** |
+| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.712593/hr all-in | **ACTIVE — two production** |
+| Klein 4B | 1 | RTX 3090 | Vast.ai | $0.147778/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
-| LTX-2 + ACE-Step | 1 | GH200 | Lambda Labs | — | **ACTIVE — Sana drained, `sana.service` can be stopped** |
+| LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the six running Vast instances cost **$1.572222/hr** in total.
-All six are production workers; there is no isolated canary left running.
+At capture time, the seven running Vast instances cost **$1.754815/hr** in total
+(**$1,263.47 per 30-day month**).
+All seven are production workers; there is no isolated canary left running.
+
+Live verification on 2026-08-09 confirmed that all seven instances are in both
+`actual_status=running` and `intended_status=running`, every model server and
+named tunnel is healthy, and the registry contains both Flux hostnames, the
+shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
+heartbeat registry because production reaches it through the `KLEIN_VPC`
+Workers VPC binding.
+
+Two dashboard labels are historical: `zimage-vast-canary` on `46003779` and
+`flux-maintenance-canary-44731147` on `46491202`. Both are production workers,
+not spare canaries. Vast labels do not control routing; instance IDs,
+registered hostnames, and the Klein VPC tunnel are authoritative.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -31,6 +44,12 @@ Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
 `dreamshaper-lcm/`; Vast runs `/root/onstart.sh` after container start to
 restore the worker and named tunnel.
+
+Each Uvicorn process admits one running and one waiting request
+(`QUEUE_LIMIT=2`). Once that bounded queue is full, the worker returns 503 and
+gen retries the other registered DreamShaper hostname. With three processes,
+each GPU admits at most six in-flight requests instead of accumulating an
+unbounded local backlog.
 
 Instance `46607014` replaced `46307858` on 2026-08-02 and reduced the slot from
 `$0.175556/hr` to `$0.150000/hr`, saving **$0.025556/hr** or about
@@ -79,21 +98,54 @@ is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.
 
-## Provider: Vast.ai — Flux (RTX 5090, FP4)
+## Provider: Vast.ai — Flux (RTX 5090 + RTX PRO 4000 Blackwell, FP4)
 
-One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Replicate fallback
-(`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
+Two single-GPU instances, each fronted by a named Cloudflare Tunnel. Flux is
+Vast-only and has no external provider fallback. The gen worker dispatches to
+the registered `flux` pool through `callSelfHostedServer`.
 
-| Worker | Vast instance | GPU | Listed rate | Status |
-|--------|---------------|-----|-------------|--------|
-| flux-vast-04 | 46491202 | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — named tunnel `flux-vast-04.pollinations.ai` |
+| Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
+|--------|---------------|------------------|-----|-------------|--------|
+| flux-vast-04 | 46491202 | 138472 / California, US | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — registered hostname `flux-vast-04.pollinations.ai` |
+| flux-vast-06 | 47259458 | 102863 / Quebec, CA | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-09) — registered hostname `flux-vast-06.pollinations.ai` |
+
+Instance `47259458` replaced `47018211` while instance `46491202` remained
+active. The Quebec host is machine `102863`, has Vast reliability `0.99595`,
+and costs **$165.60 per 30-day month** in Vast credits. It saves
+**$0.057778/hr**, or **$41.60 per 30-day month**, compared with the replaced
+slot. The two-worker FLUX pool now costs `$0.591111/hr` all-in.
+
+Qualification on the replacement passed authentication rejection, 512x512,
+1024x1024, 1024x768, and 768x1024 generation, four-request burst handling,
+model restart recovery in 12 seconds, and shared-tunnel production routing.
+Direct generation took 1.30s at 512x512, 1.95s at 1024x1024, and 1.42s for
+both wide and tall tests. The worker served **116/116 attributed production
+requests** with zero 4xx/5xx, OOM, CUDA, or traceback errors before the old
+instance was destroyed. Fixed-seed byte output varied on both the candidate and
+the replaced production worker, so it was recorded as existing Nunchaku
+behavior rather than a host regression.
+
+The replacement reconfirmed a queue caveat: the synchronous inference call
+blocks the FastAPI event loop, so `QUEUE_LIMIT=3` does not currently guarantee
+fast 503 shedding under concurrent load. Treat the two-worker Vast pool as the
+capacity guard. Queue admission must be hardened separately; there is no
+Replicate fallback.
+
+The post-promotion audit found that `47259458` still had
+`HEARTBEAT_ENABLED=false` even though its named tunnel was healthy. That made
+the second paid worker invisible to normal Flux dispatch and left
+`46491202` carrying the pool alone. The flag was corrected, the worker was
+restarted, both Flux hostnames appeared in `/register`, and real production
+requests reached `flux-vast-06`. Always finish a promotion by checking the
+exact new hostname in `/register` and an attributed request in that worker's
+`/tmp/flux.log`; a healthy tunnel alone is insufficient.
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
-> does not prove the data path works. Replicate can hide either failure.
+> does not prove the data path works. Historical external fallbacks could hide
+> either failure, but the current FLUX route is Vast-only.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -105,7 +157,8 @@ Never point production at a quick tunnel; use a named tunnel.
 
 Instance `46491202` replaced maintenance-bound instance `44731147`, which was
 destroyed after cutover. The California host is machine `138472` with Vast
-reliability `0.9971`. Qualification passed 512x512 and 1024x1024 generation,
+reliability `0.99476` at the 2026-08-09 audit. Qualification passed 512x512 and
+1024x1024 generation,
 four concurrent requests, authentication rejection, 17-second restart
 recovery, and an external Cloudflare generation in 3.46 seconds. After the old
 connector drained, the new worker served 47 production generations with zero
@@ -121,7 +174,7 @@ connections.
 ```bash
 vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
 vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
-vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+vastai attach ssh <INSTANCE> "$(cat ~/.ssh/id_ed25519.pub)"
 # Isolated canary: heartbeat and production tunnel are disabled by default.
 PLN_GPU_TOKEN=... HF_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
 GIT_BRANCH=main bash setup-vast.sh
@@ -154,10 +207,10 @@ curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_
 POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
 ```
 
-**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
-`QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Replicate instead of making users
-wait in a long queue.
+**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024
+(`MAX_PIXELS=1048576`). `QUEUE_LIMIT=3` is configured, but the synchronous
+inference path currently prevents it from reliably shedding concurrent load.
+FLUX is Vast-only, so both production workers must remain healthy.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
 
@@ -165,17 +218,35 @@ Z-Image uses one remotely managed Cloudflare Tunnel shared by the Vast
 workers. Cloudflare balances requests across its connectors, while the registry
 sees one stable backend URL.
 
-| Worker | Vast instance | Region | Listed rate | Status |
-|--------|---------------|--------|-------------|--------|
-| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
-| zimage-vast-03 | 46598648 | Estonia | $0.391111/hr | ACTIVE — production (promoted 2026-08-02) |
+| Worker | Vast instance | Machine / region | Reliability | All-in rate | Status |
+|--------|---------------|------------------|-------------|-------------|--------|
+| zimage-vast-canary | 46003779 | 56097 / California, US | 0.99487 | $0.351111/hr | ACTIVE — production |
+| zimage-vast-04 | 47267292 | 137833 / California, US | 0.99507 | $0.361481/hr | ACTIVE — production (promoted 2026-08-09) |
 
-The active two-worker fleet costs `$0.742222/hr`. Instance `46598648` replaced
-`45313816`, saving `$0.031111/hr` or `$22.40` per 30-day month; the replaced
+The active two-worker fleet costs `$0.712593/hr`. Instance `47267292` replaced
+`46598648`, saving `$0.029630/hr` or `$21.33` per 30-day month; the replaced
 instance was destroyed immediately after production verification. Compared
-with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
-30-day month. Total live Vast fleet burn after this cleanup was
-`$1.572222/hr`.
+with the original `$0.844444/hr` pair, the current fleet saves `$94.93` per
+30-day month. Both replicas are now in California on separate machines, so
+machine diversity remains but regional diversity is reduced.
+
+**Replacement validation (2026-08-09):**
+
+- The isolated candidate passed authentication rejection, 512x512,
+  1024x1024, 768x1152, and 1536x1536 generation, fixed-seed byte parity, and
+  the 2,359,296-pixel limit.
+- A 63.8-second concurrency-4 run completed 65 images with zero errors at
+  **1.019 img/s**, 3.92-second p50, and 4.01-second p95 latency.
+- Cached restart restored health in 25 seconds and produced a valid 1024x1024
+  image while the production tunnel remained disabled.
+- After joining the shared tunnel, the worker served real production traffic
+  with zero 5xx, OOM, traceback, or tunnel errors. With the replaced connector
+  drained, 8/8 attributed images passed at 3.89-second p50 and 5.30-second max.
+- After `46598648` was destroyed, shared health passed 5/5 and 4/4 attributed
+  1024x1024 images passed at 2.02-second p50 with zero 5xx or tunnel errors.
+- The host's Hugging Face Xet and standard-HTTP cold downloads both suffered
+  transient connection failures. Disabling Xet and resuming partial standard-
+  HTTP downloads completed the 32.8 GB cache; subsequent starts were fast.
 
 **Replacement validation (2026-08-02):**
 
@@ -226,13 +297,17 @@ with the original `$0.844444/hr` pair, the current fleet saves `$73.60` per
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 
-Production Klein runs on a dedicated Indiana RTX 3090. The gen Worker reaches
+Production Klein runs on a dedicated California RTX 3090. The gen Worker reaches
 port 8000 through a remotely managed Cloudflare Tunnel bound as the private
 `KLEIN_VPC` Workers VPC network; there is no public hostname or raw-IP route.
 
-| Worker | Vast instance | GPU | Listed rate | Tunnel | Status |
-|--------|---------------|-----|-------------|--------|--------|
-| klein-vast-01 | 44766948 | RTX 3090 24GB | $0.165556/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
+| Worker | Vast instance | Machine / region | GPU | Listed rate | Tunnel | Status |
+|--------|---------------|------------------|-----|-------------|--------|--------|
+| klein-vast-01 | 47259457 | 47340 / California, US | RTX 3090 24GB | $0.147778/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
+
+Instance `47259457` replaced `44766948` on 2026-08-09. The host has Vast
+reliability `0.997194` and saves **$0.017778/hr**, or **$12.80 per 30-day
+month**.
 
 **Provisioning:** use `image.pollinations.ai/klein-runpod/setup-vast.sh` with
 `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel`. The model is public and does not
@@ -246,9 +321,21 @@ vastai create instance <OFFER> \
   --env '-p 8000:8000' --cancel-unavail
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/id_ed25519.pub)"
 
-PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... TUNNEL_ENABLED=false \
   bash image.pollinations.ai/klein-runpod/setup-vast.sh
 ```
+
+The setup defaults to an isolated canary. After direct tests and explicit
+human approval, rerun setup so it enables the stored scoped tunnel token and
+enforces the Workers VPC QUIC qualification:
+
+```bash
+PLN_GPU_TOKEN=... TUNNEL_ENABLED=true \
+  bash image.pollinations.ai/klein-runpod/setup-vast.sh
+```
+
+Do not manually create `/root/.cloudflared_tunnel_enabled`; doing so bypasses
+the UDP precheck and four-connection gate.
 
 **Routing and rollback:** when `KLEIN_VPC` exists, the Klein handler uses
 `http://127.0.0.1:8000/generate` through the binding. `KLEIN_URL` remains the
@@ -257,13 +344,27 @@ There is no automatic runtime fallback for Klein. To roll back, remove the
 production `KLEIN_VPC` binding and redeploy the gen Worker; it will immediately
 resume using `KLEIN_URL`.
 
+Workers VPC tunnel replicas provide high availability, not balanced canary
+traffic: requests select the nearest replica. For an end-to-end replacement
+test, keep the old GPU server healthy, pause only its `cloudflared` connector,
+verify real traffic on the new worker, then restore the old connector until
+human promotion approval. See Cloudflare's
+[Workers VPC tunnel documentation](https://developers.cloudflare.com/workers-vpc/configuration/tunnel/).
+
+Workers VPC requires QUIC over UDP/7844; HTTP/2 is not a valid transport for
+this binding. `setup-vast.sh` therefore pins `--protocol quic`, requires
+`cloudflared` 2026.5.2 or newer for startup connectivity prechecks, and fails
+qualification if the UDP precheck fails or the tunnel does not establish four
+healthy connections with zero request errors. A host that briefly registers
+four connections after a failed UDP precheck is still disqualified.
+
 **Health and restart:** Vast runs `/root/onstart.sh` on container startup. It
 supervises `klein` and `cloudflared` screen sessions with restart loops. Tokens
 are mode-600 files and cloudflared uses `--token-file`, keeping its token out of
 process listings.
 
 ```bash
-vastai show instance 44766948 --raw
+vastai show instance 47259457 --raw
 # On the host:
 screen -ls
 tail -f /root/klein.log
@@ -271,7 +372,33 @@ tail -f /root/cloudflared.log
 curl -s http://127.0.0.1:8000/health
 ```
 
-**Cutover results (2026-07-14):**
+**Replacement qualification (2026-08-09):**
+
+- Authentication rejection, invalid-image handling, and the 2,359,296-pixel
+  limit returned the expected 403, 400, and 422 responses.
+- 512x512, 1024x1024, and 1536x1536 generation passed in 3.02s, 3.57s, and
+  8.41s respectively with no OOM.
+- Single-reference and two-reference edits passed in 3.89s and 7.07s.
+- Three concurrent 512x512 requests all succeeded; a full restart restored
+  health in 42 seconds and the first post-restart image completed in 2.56s.
+- The tunnel health gate prevented routing during model load. Seven attributed
+  production requests completed with zero 4xx/5xx, OOM, or traceback errors;
+  three were forced through the new worker by pausing only the old connector.
+
+**Post-cutover incident (2026-08-09):** the replacement's startup log reported
+failed UDP connectivity even though four QUIC connections initially
+registered. Production latency later rose from roughly 6–9 seconds to
+70–100 seconds, then all four connections cycled between 12:44 and 12:45 UTC.
+Eight gateway 5xx responses (`destination_not_found` / handshake timeout)
+occurred while the local model remained healthy and generated a direct 512x512
+image in 1.21 seconds. This is a tunnel/host-network failure, not a GPU error.
+
+Future Klein canaries must keep all four QUIC connections healthy for at least
+30 minutes, show no tunnel reconnects or 5xx, and keep the attributed Workers
+VPC path below 15 seconds p95 before promotion. Local health, direct inference,
+or a momentary four-connection count is insufficient.
+
+**Original cutover results (2026-07-14):**
 
 - 512x512 generation: 2.83s; single-reference edit: 2.97s.
 - Two-reference edit: 3.36s and both inputs influenced the output.
@@ -298,9 +425,11 @@ runpodctl pod list             # list pods
 runpodctl pod get <id>         # pod details
 ```
 
-### Pod jmrbmje2fyuy46 — Klein 4B rollback
+### Historical/manual Klein 4B rollback configuration
 
-> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `gen.pollinations.ai/secrets/prod.vars.json`).
+> RunPod state was not available during the 2026-08-09 Vast audit. Do not infer
+> that this pod is running from this document: check `runpodctl pod list` and
+> the `KLEIN_URL` value before relying on it or attributing cost to it.
 
 - **GPU**: 1x RTX A5000 (24GB) | **Cost**: $0.27/hr via API ($0.29/hr in UI)
 - **SSH**: full SSH using `SSH_RUNPOD_KLEIN` from SOPS; current runtime port changes on recreate/start
@@ -316,12 +445,12 @@ runpodctl pod get <id>         # pod details
 curl -s https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 ```
 
-Keeping this pod running costs $0.27/hr in addition to Vast. Once the Vast
-deployment has met the desired soak period, stop the pod to remove that cost;
-retain its `KLEIN_URL` value for a manual restart-and-redeploy rollback.
+If this pod is running, it costs $0.27/hr in addition to Vast. Production does
+not call it while the `KLEIN_VPC` binding exists; it is only a manual
+restart-and-redeploy rollback path.
 
 **Shutdown checklist:** stop the pod; do not terminate it. Then confirm Klein
-still reports `provider=vast`, a successful request reaches instance `44766948`,
+still reports `provider=vast`, a successful request reaches instance `47259457`,
 and the production status window remains free of 5xx. To roll back, restart the
 pod, verify its health endpoint, remove `KLEIN_VPC`, and deploy gen through CI.
 
@@ -340,7 +469,11 @@ curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_
 
 ## Provider: Lambda Labs
 
-### LTX-2.3 Video + ACE-Step Music + Sana (GH200)
+### Historical LTX-2.3 Video + ACE-Step Music + Sana (GH200)
+
+LTX-2 and ACE-Step are retired from production. DreamShaper replaced the
+legacy Sana route. Confirm the Lambda instance is terminated in the provider
+account before assuming there is no remaining Lambda charge.
 
 - **Host**: `192.222.51.105`
 - **SSH**: `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105`
@@ -361,7 +494,7 @@ The legacy `image-pollinations.service` (port 16384) and `text-pollinations.serv
 
 GPU workers send heartbeats to the gen worker registry:
 - **URL**: `https://gen.pollinations.ai/register`
-- **Check registered**: `curl -s https://gen.pollinations.ai/register`
+- **Check registered**: `curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"`
 
 ## SSH Keys
 
@@ -383,7 +516,6 @@ Non-SOPS keys:
 
 | Key | Provider | Location |
 |-----|----------|----------|
-| `~/.ssh/pollinations_services_2026` | Vast.ai | Flux 5090 workers (attach via `vastai attach ssh`) |
-| Vast account SSH key | Vast.ai | Klein instance 44766948; query current proxy host/port with `vastai show instance` |
+| `~/.ssh/id_ed25519` | Vast.ai | All seven active Vast workers; query the current proxy host/port with `vastai show instance` |
 | `~/.ssh/enter-services-shared` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging` | EC2 staging | enter services |

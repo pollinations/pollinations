@@ -51,6 +51,12 @@ worker instead of building an unbounded queue on one GPU. `QUEUE_LIMIT` is
 per process, so the default deployment admits at most six in-flight requests
 per GPU.
 
+**Rollout order:** do not enable `QUEUE_LIMIT` on production workers until gen
+production contains the cross-worker 503 retry. First sync `main` to
+`production`, deploy gen through GitHub Actions, and verify the retry is live.
+Only then rerun this setup on both DreamShaper workers. Reversing the order
+turns saturation into user-visible 503 responses instead of failover.
+
 Requires a **named** Cloudflare tunnel, not a quick tunnel (quick tunnels caused
 outage #12254). Point the public hostname at `http://localhost:8766` and pass
 the hostname so heartbeats advertise the stable URL rather than a raw IP:
@@ -82,7 +88,7 @@ PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
 
 Env: `MODEL_ID`, `LCM_LORA`, `TINY_VAE`, `NUM_INFERENCE_STEPS`,
 `GUIDANCE_SCALE`, `MAX_DIM` (768), `MAX_PIXELS` (512²), `PORT` (8766),
-`REGISTER_URL`, `SERVICE_TYPE` (`sana`), `HEARTBEAT_ENABLED`, and
+`REGISTER_URL`, `SERVICE_TYPE` (`sana`), `HEARTBEAT_ENABLED`,
 `TUNNEL_ENABLED`, `WORKERS` (3), and `QUEUE_LIMIT` (2 per worker process).
 
 Vast executes `/root/onstart.sh`, not `/workspace/onstart.sh`, after a container

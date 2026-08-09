@@ -1,0 +1,34 @@
+{
+  "pr_number": 13214,
+  "title": "feat: split model monitor by ownership",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13214",
+  "merged_at": "2026-08-09T10:50:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds large Official and Community tabs matching the Enter model list\n- Keeps modality health percentages and outage badges scoped to the selected ownership\n- Defaults to Official and resets the modality filter when switching ownership\n- Hides models without traffic in the selected window\n\nVerification:\n- `npm run build` in `apps/model-monitor`\n- Biome check for changed files\n- Local desktop and mobile UI verification",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The monitor gets two gardens",
+    "blurb": "The model monitor now sorts its blooms into Official and Community beds. Polli can check the health of each patch without accidentally watering the whole garden at once.",
+    "summary": "The model monitor now has Official and Community ownership tabs, with modality health percentages, outage badges, and no-traffic models scoped to the selected tab and time window.",
+    "impact": "Users can inspect Official or Community model availability separately, starting on Official, while switching tabs resets the modality filter for a clearer view.",
+    "keywords": [
+      "model-monitor",
+      "official-models",
+      "community-models",
+      "health-status",
+      "outages",
+      "ui"
+    ],
+    "visual_concept": "Depict the model monitor as a cozy greenhouse dashboard split into two clearly labeled garden plots: Official and Community. Polli, wearing a tiny gardener hat, compares two CRT health monitors with percentage bars and small friendly outage-cloud badges; healthy code-plants grow only in the active plot, representing traffic-aware filtering.",
+    "image_prompt": "A cozy pixel art greenhouse dashboard split into two garden beds labeled in simple pixel text “OFFICIAL” and “COMMUNITY,” where glowing CRT monitors show scoped model health percentage bars and tiny cloud-shaped outage badges; code-plants bloom only in the selected bed. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while checking the monitors beside flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13214.jpg",
+    "prompt": "A cozy pixel art greenhouse dashboard split into two garden beds labeled in simple pixel text “OFFICIAL” and “COMMUNITY,” where glowing CRT monitors show scoped model health percentage bars and tiny cloud-shaped outage badges; code-plants bloom only in the selected bed. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while checking the monitors beside flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-09T10:51:18.604651+00:00"
+}

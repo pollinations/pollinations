@@ -228,7 +228,7 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
-        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
+        const multiplier = model === "openai/gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
             promptTextTokens: (input / 1e6) * multiplier,
             promptCachedTokens: (cached / 1e6) * multiplier,

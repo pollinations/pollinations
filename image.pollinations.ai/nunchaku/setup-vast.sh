@@ -73,6 +73,11 @@ if [ "$TUNNEL_ENABLED" = true ] && { [ -z "${CLOUDFLARED_TUNNEL_TOKEN:-}" ] || [
     exit 1
 fi
 
+if [ "$HEARTBEAT_ENABLED" = true ] && [ "$TUNNEL_ENABLED" != true ]; then
+    echo "HEARTBEAT_ENABLED=true requires TUNNEL_ENABLED=true" >&2
+    exit 1
+fi
+
 case "$PUBLIC_HOSTNAME" in
     *[!A-Za-z0-9.-]*)
         echo "PUBLIC_HOSTNAME must be a hostname, without a scheme or path" >&2
@@ -261,8 +266,10 @@ log "  Logs:       tail -f /tmp/flux.log"
 log "  Attach:     screen -r flux   (detach: Ctrl+A, D)"
 log "  Local test: curl -s localhost:$PORT/docs >/dev/null && echo up"
 log "  Canary:     POLLINATIONS_API_KEY=... bash verify-vast.sh"
-if [ "$TUNNEL_ENABLED" = true ]; then
-    log "  Registered: curl -s https://gen.pollinations.ai/register | grep -o '$SERVICE_TYPE[^,]*'"
+if [ "$HEARTBEAT_ENABLED" = true ] && [ "$TUNNEL_ENABLED" = true ]; then
+    log "  Production: verify https://$PUBLIC_IP in the authenticated /register response and confirm an attributed request in /tmp/flux.log"
+elif [ "$TUNNEL_ENABLED" = true ]; then
+    log "  Isolated external canary enabled; registry heartbeat remains disabled"
 else
     log "  Production heartbeat and tunnel are disabled pending human approval"
 fi

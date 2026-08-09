@@ -18,10 +18,12 @@ const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
+const SEEDANCE_25_MODEL = "bytedance/seedance-2.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const SEEDANCE_25_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -30,6 +32,14 @@ const HAPPYHORSE_ASPECT_RATIOS = [
     "3:4",
     "21:9",
     "9:21",
+] as const;
+const SEEDANCE_25_ASPECT_RATIOS = [
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
+    "21:9",
 ] as const;
 
 interface OpenRouterVideoResponse {
@@ -190,6 +200,75 @@ export async function callOpenRouterGrokVideoAPI(
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,
             },
+        },
+    };
+}
+
+function resolveSeedance25AspectRatio(safeParams: ImageParams): string {
+    if (
+        safeParams.aspectRatio &&
+        SEEDANCE_25_ASPECT_RATIOS.includes(
+            safeParams.aspectRatio as (typeof SEEDANCE_25_ASPECT_RATIOS)[number],
+        )
+    ) {
+        return safeParams.aspectRatio;
+    }
+    return closestRatioLogSpace(
+        safeParams.width,
+        safeParams.height,
+        SEEDANCE_25_ASPECT_RATIOS,
+    );
+}
+
+export async function callOpenRouterSeedance25API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = safeParams.duration ?? 4;
+    if (duration !== 4) {
+        throw new HttpError(
+            "Seedance 2.5 currently supports 4-second videos",
+            400,
+        );
+    }
+
+    const resolution = safeParams.resolution ?? "480p";
+    const frameImages = safeParams.image.slice(0, 2).map((url, index) => ({
+        type: "image_url",
+        image_url: { url },
+        frame_type: index === 0 ? "first_frame" : "last_frame",
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: SEEDANCE_25_MODEL,
+        prompt,
+        resolution,
+        aspect_ratio: resolveSeedance25AspectRatio(safeParams),
+        duration,
+        generate_audio: safeParams.audio,
+        seed: safeParams.seed,
+        provider: { only: ["Seed"], allow_fallbacks: false },
+        ...(frameImages.length > 0 ? { frame_images: frameImages } : {}),
+    };
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        SEEDANCE_25_POLL_TIMEOUT_MS,
+    );
+
+    logOps("Seedance 2.5 generation complete", {
+        duration,
+        resolution,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: "seedance-2.5",
+            usage: { completionVideoSeconds: duration },
         },
     };
 }

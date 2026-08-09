@@ -3,6 +3,7 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterSeedance25API,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -388,6 +389,87 @@ describe("OpenRouter Grok Video Pro", () => {
             callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
                 ...baseParams,
                 model: "grok-video-pro",
+                duration,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe("OpenRouter Seedance 2.5", () => {
+    it.each([
+        [undefined, "480p"],
+        ["480p", "480p"],
+        ["720p", "720p"],
+    ] as const)("routes resolution %s as %s", async (resolution, expected) => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests);
+
+        const result = await callOpenRouterSeedance25API(
+            "a paper boat on calm water",
+            {
+                ...baseParams,
+                model: "seedance-2.5",
+                duration: 4,
+                resolution,
+                aspectRatio: "4:3",
+                audio: true,
+                image: [
+                    "https://example.com/start.png",
+                    "https://example.com/end.png",
+                ],
+            },
+        );
+
+        expect(requests).toEqual([
+            {
+                model: "bytedance/seedance-2.5",
+                prompt: "a paper boat on calm water",
+                resolution: expected,
+                aspect_ratio: "4:3",
+                duration: 4,
+                generate_audio: true,
+                seed: 42,
+                provider: { only: ["Seed"], allow_fallbacks: false },
+                frame_images: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "https://example.com/start.png",
+                        },
+                        frame_type: "first_frame",
+                    },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "https://example.com/end.png",
+                        },
+                        frame_type: "last_frame",
+                    },
+                ],
+            },
+        ]);
+        expect(result).toMatchObject({
+            mimeType: "video/mp4",
+            durationSeconds: 4,
+            trackingData: {
+                actualModel: "seedance-2.5",
+                usage: { completionVideoSeconds: 4 },
+            },
+        });
+    });
+
+    it.each([
+        3, 5, 4.5,
+    ])("rejects unsupported duration %s before submitting", async (duration) => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callOpenRouterSeedance25API("a paper boat", {
+                ...baseParams,
+                model: "seedance-2.5",
                 duration,
             }),
         ).rejects.toMatchObject({ status: 400 });

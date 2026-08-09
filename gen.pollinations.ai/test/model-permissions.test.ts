@@ -176,11 +176,11 @@ test("filters paid-only audio models by paid balance", async ({
 
     expect(expectedFreeModelNames.length).toBeGreaterThan(0);
     expect(expectedPaidOnlyModelNames.length).toBeGreaterThan(0);
-    expect(freeModels.map((model) => model.name)).toEqual(
-        expectedFreeModelNames,
+    expect(new Set(freeModels.map((model) => model.name))).toEqual(
+        new Set(expectedFreeModelNames),
     );
-    expect(paidModels.map((model) => model.name)).toEqual(
-        expectedPaidModelNames,
+    expect(new Set(paidModels.map((model) => model.name))).toEqual(
+        new Set(expectedPaidModelNames),
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);

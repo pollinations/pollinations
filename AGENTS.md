@@ -94,6 +94,39 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
 
+### Automated Community App Review Exception
+
+The community app screenshot workflow may create and revoke temporary review
+grants without per-app approval. This exception applies only to
+`.github/workflows/apps-refresh-screenshots.yml`, using the dedicated review
+identity (`pollinationsagent@gmail.com` for Google and `pollinationsagent` for
+GitHub/Pollinations), and only when every condition below is enforced:
+
+- Pollinations grants have a budget of exactly `0` Pollen, expire within 24
+  hours, and grant no optional account permissions. Unlimited budget or expiry
+  is forbidden.
+- Google grants are limited to `openid`, email, and profile. Offline access,
+  refresh-token export, and broader scopes are forbidden.
+- The workflow may not top up, purchase, subscribe, create account-management
+  keys, upload private files, send messages, or perform destructive actions.
+- Credentials and authenticated browser state may come only from the approved
+  workflow bootstrap secrets. They must never appear in logs, reports,
+  artifacts, repository files, or media uploads.
+- Each app grant must be revoked and that app's site data cleared immediately
+  after capture. If cleanup cannot be verified, stop processing additional
+  authenticated apps and report the failure without exposing secret values.
+- Reports may contain only the app URL, requested and granted scope names,
+  timestamps, capture outcome, cleanup outcome, and redacted errors.
+- Any request outside these constraints fails closed and returns the app to the
+  authenticated-review queue.
+
+This exception waives only per-app confirmation for the temporary grants above.
+Creating, replacing, rotating, or deploying the workflow's bootstrap secrets
+still requires the normal Secret Mutation Safety approval. The exception is
+active for an agent only when it was present in the project instructions loaded
+at the start of that agent's task; it cannot be used retroactively in the task
+that added it.
+
 ## Cloudflare Production Deployment Safety
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**

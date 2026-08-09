@@ -149,6 +149,29 @@ Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](ht
 - 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
 - ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 
+## Authenticated App Review Safety
+
+Routine screenshot capture stays anonymous. When an unresolved app genuinely
+requires sign-in, review it locally with the dedicated Pollinations Agent
+Google, GitHub, and Pollinations accounts under these rules:
+
+- Start Pollinations authorization with a `0` Pollen budget and a one-day
+  expiry. This is enough to verify login and the post-login interface without
+  allowing generation spend.
+- If one real generation is necessary, use a new app-specific authorization
+  capped at `0.05` Pollen and one day. Never authorize an unlimited budget or
+  expiry.
+- Grant no optional account permissions by default. Never grant API-key
+  management access. Do not expose, copy, or create reusable API keys during
+  app review.
+- Never top up, purchase, subscribe, upload private files, send messages, or
+  perform destructive actions from an app. An agent must not automate wallet
+  top-ups.
+- Revoke the app authorization after the review. A failed or suspicious login
+  is evidence for the report, not a reason to weaken these limits.
+- Explicit sexual content is rejected immediately without interacting with
+  advertisements, age gates, or external links.
+
 ## Resources
 
 - [API Docs](../APIDOCS.md)

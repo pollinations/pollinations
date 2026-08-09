@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Stoicky",
+    "url": "https://stoicky.vercel.app",
+    "description": "Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference.",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "deauthor1234",
+    "githubUserId": "134807048",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "@oladapoauthority",
+    "other": null,
+    "submittedDate": "2026-08-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13037",
+    "approvedDate": "2026-08-09",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "GimpToPolli",
     "url": "https://github.com/GermanIllan/pollinationsai",

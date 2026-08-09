@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 Stoicky](https://stoicky.vercel.app) | Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference. | [@deauthor1234](https://github.com/deauthor1234) |
 | [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |
 | [🎮 NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) | Supports an AI-driven cyberpunk RPG experience for "NEON SHADOWS: CHRONICLES OF THE CORE". | [@KT-Society](https://github.com/KT-Society) |
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) |
@@ -29,7 +30,6 @@
 | [💼 Valdy - AI-Powered Startup Validation](https://samo-fex.github.io/valdy) | Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers. | [@samo-fex](https://github.com/samo-fex) |
 | [🛠️ FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) | A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the | [@KushalRoyChowdhury](https://github.com/KushalRoyChowdhury) |
 | [🛠️ Promptzy](https://promptzy.pinkpixel.dev) | Manage and organize AI prompts with tagging and search in Promptzy, available as a web/desktop app with cloud storage. | [@sizzlebop](https://github.com/sizzlebop) |
-| [🖼️ Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) | Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS. | [@MzaacDePY](https://github.com/MzaacDePY) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 Unified API

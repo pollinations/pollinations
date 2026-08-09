@@ -225,6 +225,20 @@ test("validates final screenshot-agent decisions", () => {
             }),
         /invalid score/,
     );
+    assert.deepEqual(
+        validateAgentDecision({
+            action: null,
+            decision: "needs_auth",
+            reason: "The app is visible but requires Google sign-in.",
+            score: 70,
+        }),
+        {
+            action: null,
+            decision: "needs_auth",
+            reason: "The app is visible but requires Google sign-in.",
+            score: 70,
+        },
+    );
 });
 
 test("retries an empty screenshot-agent response", async () => {
@@ -401,6 +415,14 @@ test("checks page origin independently of action success", () => {
 
 test("reports capture outcomes separately", () => {
     assert.equal(classifyCaptureOutcome({ approved: true }), "approved");
+    assert.equal(
+        classifyCaptureOutcome({
+            approved: false,
+            review: { decision: "needs_auth" },
+            success: true,
+        }),
+        "auth_required",
+    );
     assert.equal(
         classifyCaptureOutcome({ approved: false, success: true }),
         "agent_rejected",

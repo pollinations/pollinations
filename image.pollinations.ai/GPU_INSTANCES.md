@@ -301,13 +301,16 @@ PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... TUNNEL_ENABLED=false \
 ```
 
 The setup defaults to an isolated canary. After direct tests and explicit
-human approval, enable the stored scoped tunnel token and restart the
-supervisor:
+human approval, rerun setup so it enables the stored scoped tunnel token and
+enforces the Workers VPC QUIC qualification:
 
 ```bash
-touch /root/.cloudflared_tunnel_enabled
-/root/onstart.sh
+PLN_GPU_TOKEN=... TUNNEL_ENABLED=true \
+  bash image.pollinations.ai/klein-runpod/setup-vast.sh
 ```
+
+Do not manually create `/root/.cloudflared_tunnel_enabled`; doing so bypasses
+the UDP precheck and four-connection gate.
 
 **Routing and rollback:** when `KLEIN_VPC` exists, the Klein handler uses
 `http://127.0.0.1:8000/generate` through the binding. `KLEIN_URL` remains the
@@ -322,6 +325,13 @@ test, keep the old GPU server healthy, pause only its `cloudflared` connector,
 verify real traffic on the new worker, then restore the old connector until
 human promotion approval. See Cloudflare's
 [Workers VPC tunnel documentation](https://developers.cloudflare.com/workers-vpc/configuration/tunnel/).
+
+Workers VPC requires QUIC over UDP/7844; HTTP/2 is not a valid transport for
+this binding. `setup-vast.sh` therefore pins `--protocol quic`, requires
+`cloudflared` 2026.5.2 or newer for startup connectivity prechecks, and fails
+qualification if the UDP precheck fails or the tunnel does not establish four
+healthy connections with zero request errors. A host that briefly registers
+four connections after a failed UDP precheck is still disqualified.
 
 **Health and restart:** Vast runs `/root/onstart.sh` on container startup. It
 supervises `klein` and `cloudflared` screen sessions with restart loops. Tokens
@@ -349,6 +359,19 @@ curl -s http://127.0.0.1:8000/health
 - The tunnel health gate prevented routing during model load. Seven attributed
   production requests completed with zero 4xx/5xx, OOM, or traceback errors;
   three were forced through the new worker by pausing only the old connector.
+
+**Post-cutover incident (2026-08-09):** the replacement's startup log reported
+failed UDP connectivity even though four QUIC connections initially
+registered. Production latency later rose from roughly 6–9 seconds to
+70–100 seconds, then all four connections cycled between 12:44 and 12:45 UTC.
+Eight gateway 5xx responses (`destination_not_found` / handshake timeout)
+occurred while the local model remained healthy and generated a direct 512x512
+image in 1.21 seconds. This is a tunnel/host-network failure, not a GPU error.
+
+Future Klein canaries must keep all four QUIC connections healthy for at least
+30 minutes, show no tunnel reconnects or 5xx, and keep the attributed Workers
+VPC path below 15 seconds p95 before promotion. Local health, direct inference,
+or a momentary four-connection count is insufficient.
 
 **Original cutover results (2026-07-14):**
 

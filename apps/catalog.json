@@ -37,7 +37,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13209",
     "approvedDate": "2026-08-08",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/993630b2-ea1a-433e-ab6d-b44c22b83f70"
   },
   {
     "emoji": "🎮",
@@ -117,7 +118,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11153",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 1,
+    "screenshotUrl": "https://media.pollinations.ai/7c2533e0-8adf-46f4-8851-b4bf85c074b2"
   },
   {
     "emoji": "📚",
@@ -137,7 +139,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11155",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/c9e1783d-d22a-4921-b655-0b1a24cf4633"
   },
   {
     "emoji": "💼",
@@ -157,7 +160,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11156",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/cec18b8d-0de0-42b9-805a-916d1d52dd7d"
   },
   {
     "emoji": "🛠️",
@@ -237,7 +241,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13198",
     "approvedDate": "2026-08-08",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/fe1f50ec-415b-48b8-b9a1-437383a7a313"
   },
   {
     "emoji": "💬",
@@ -277,7 +282,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11262",
     "approvedDate": "2026-08-08",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/0e125e5e-c227-4b45-b4d5-ccc2d6338ebb"
   },
   {
     "emoji": "💬",
@@ -297,7 +303,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11282",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/ecc7b9fc-fa82-438b-b556-8a05e2006406"
   },
   {
     "emoji": "✍️",
@@ -377,7 +384,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13185",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a793a38e-1151-459b-a837-ffc1261cb5dc"
   },
   {
     "emoji": "🤖",
@@ -417,7 +425,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13116",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4bba7c83-4ad1-415e-9220-4e57b0b2f85f"
   },
   {
     "emoji": "🤖",
@@ -2179,7 +2188,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10607",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4e24688a-b765-4781-a1be-6bc9de95dd47"
   },
   {
     "emoji": "📚",
@@ -4843,7 +4853,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9103",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/2e5e45c4-2eec-4dd7-aa79-1c00604207f0"
   },
   {
     "emoji": "🤖",
@@ -6036,7 +6047,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9648",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/eb29cd45-715c-437d-bc92-ce79aeacaca4"
   },
   {
     "emoji": "💪",
@@ -6058,26 +6070,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/056402fd-0d41-474f-990e-e5b8fbbfc733"
-  },
-  {
-    "emoji": "🪶",
-    "name": "PollenQuill",
-    "url": "https://zevrinbuilds.github.io/Pollendash-engine/",
-    "description": "Lists PollenQuill core features.",
-    "language": "en",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "ZevrinBuilds",
-    "githubUserId": "196796209",
-    "repositoryUrl": "https://github.com/Zevrinbuilds/Pollendash-engine",
-    "repositoryStars": null,
-    "discordUsername": "7_zevrin",
-    "other": null,
-    "submittedDate": "2026-03-27",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9645",
-    "approvedDate": "2026-03-28",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "💬",
@@ -6164,26 +6156,6 @@
     "screenshotUrl": "https://media.pollinations.ai/3e5a112a-86f6-4fca-81c2-59c3f5b1c0d8"
   },
   {
-    "emoji": "🤖",
-    "name": "Apiction",
-    "url": "https://apiction.site/",
-    "description": "Talk to any AI model from any provider, including Pollinations, using Apiction.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "abhish-shrivastava",
-    "githubUserId": "123856969",
-    "repositoryUrl": "https://github.com/abhish-shrivastava/apiction",
-    "repositoryStars": null,
-    "discordUsername": "abhish1688",
-    "other": null,
-    "submittedDate": "2026-03-26",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9606",
-    "approvedDate": "2026-03-26",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🎬",
     "name": "Storymake",
     "url": "https://storymake.io",
@@ -6243,7 +6215,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9583",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/6f87fe3a-fc23-486b-bf4b-65551bafdbdc"
   },
   {
     "emoji": "🛠️",
@@ -6452,7 +6425,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9552",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 7
+    "requests24h": 7,
+    "screenshotUrl": "https://media.pollinations.ai/00960940-3a32-4548-aa1f-98de44110d1e"
   },
   {
     "emoji": "📣",
@@ -6621,26 +6595,6 @@
     "byop": false,
     "requests24h": 205,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
-  },
-  {
-    "emoji": "⚛️",
-    "name": "Physics study with AI",
-    "url": "https://physicsatlas.github.io/PhysicsAtlas/",
-    "description": "Practice physics problems and receive step-by-step solutions and explanations with Physics study with AI.",
-    "language": "en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "miguelsaldanha1213-byte",
-    "githubUserId": "242530308",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "https://github.com/PhysicsAtlas/PhysicsAtlas",
-    "other": null,
-    "submittedDate": "2026-03-20",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9324",
-    "approvedDate": "2026-03-21",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "📝",
@@ -6911,7 +6865,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8356",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/23330836-abf6-415f-9c58-9b4065712065"
   },
   {
     "emoji": "🤖",
@@ -7602,7 +7557,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8825",
     "approvedDate": "2026-03-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a7ede814-8533-49b8-bbf1-675b30e80fb6"
   },
   {
     "emoji": "🤖",
@@ -7936,7 +7892,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8318",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/da615233-c6f1-46ed-ad66-7c7e77fec2df"
   },
   {
     "emoji": "🖌️",
@@ -8061,7 +8018,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8586",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 8,
+    "screenshotUrl": "https://media.pollinations.ai/5831e0d8-41e7-4486-a420-3eb2752245d1"
   },
   {
     "emoji": "📝",
@@ -8379,26 +8337,6 @@
   },
   {
     "emoji": "🤖",
-    "name": "Hizumi",
-    "url": "https://discord.com/oauth2/authorize?client_id=1349802412805980231",
-    "description": "Discord bot for image and video generation in 145+ servers.",
-    "language": "en",
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "Hakira08",
-    "githubUserId": "175668829",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "2n.d.",
-    "other": null,
-    "submittedDate": "2026-01-15",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7318",
-    "approvedDate": "2026-02-24",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🤖",
     "name": "Riko",
     "url": "https://discord.gg/zXuw4rvpvT",
     "description": "Human-like Discord bot with long-term memory, relationships, and personality.",
@@ -8458,26 +8396,6 @@
     "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/f0124d66-55da-4ff6-9169-0f4c866e393b"
-  },
-  {
-    "emoji": "🎓",
-    "name": "Image Generator Hub FOR STUDY",
-    "url": "https://kychugo.github.io/poll-img-study/",
-    "description": "Educational tool transforming study topics into comic-style visuals.",
-    "language": "en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "Wilmonwmsti",
-    "githubUserId": "157299372",
-    "repositoryUrl": "https://github.com/kychugo/poll-img-study",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-15",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7298",
-    "approvedDate": "2026-02-24",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎬",
@@ -9107,26 +9025,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5a685e5d-41dd-4422-b225-fdd1a36c1816"
-  },
-  {
-    "emoji": "🎨",
-    "name": "Theta AI",
-    "url": "https://www.facebook.com/thetallm",
-    "description": "Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "takrim1999",
-    "githubUserId": "58911305",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "takrim1999",
-    "other": null,
-    "submittedDate": "2026-02-17",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8373",
-    "approvedDate": "2026-02-22",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "✍️",
@@ -9904,26 +9802,6 @@
     "screenshotUrl": "https://media.pollinations.ai/17f87fdf-bbd9-4b07-85c9-eaabb212fcdc"
   },
   {
-    "emoji": "🧙‍♂️",
-    "name": "Sage",
-    "url": "https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8",
-    "description": "Discord bot offering assistant-style features and server utilities.",
-    "language": "en",
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "BokX1",
-    "githubUserId": "143122409",
-    "repositoryUrl": "https://github.com/BokX1/Sage",
-    "repositoryStars": null,
-    "discordUsername": ".Itris",
-    "other": null,
-    "submittedDate": "2026-01-24",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7639",
-    "approvedDate": "2026-01-24",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🔌",
     "name": "Pollinations Provider for Vercel AI SDK",
     "url": "https://ai-sdk-pollinations-example.vercel.app",
@@ -10026,26 +9904,6 @@
     "byop": false,
     "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/bfbf62ed-cdc1-48a8-85ba-e65c4605e7cc"
-  },
-  {
-    "emoji": "🤖",
-    "name": "CHATTY AI",
-    "url": "https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK",
-    "description": "Enhance and update CHATTY AI web app to work seamlessly on Free Tier.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "tefa2007h-dev",
-    "githubUserId": "236226459",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-09",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6987",
-    "approvedDate": "2026-01-12",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -10840,7 +10698,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6959",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/efe16876-d689-45f4-abf9-950159673178"
   },
   {
     "emoji": "📖",
@@ -10883,46 +10742,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/af673eb3-8352-4dbe-9a2e-659e07838eb9"
-  },
-  {
-    "emoji": "🤖",
-    "name": "Happy Robot",
-    "url": "https://discord.com/oauth2/authorize?client_id=1335649491658735737",
-    "description": "Discord AI bot with streaming responses, web search & image generation",
-    "language": null,
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "tiagozip",
-    "githubUserId": "70700766",
-    "repositoryUrl": "https://github.com/tiagozip/happyrobot",
-    "repositoryStars": null,
-    "discordUsername": "tiago.zip",
-    "other": "https://x.com/0xtiago_",
-    "submittedDate": "2026-01-10",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7014",
-    "approvedDate": "2026-01-06",
-    "byop": false,
-    "requests24h": 1
-  },
-  {
-    "emoji": "🎞️",
-    "name": "Onyx - The AI Storyboard Engine.",
-    "url": "https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/",
-    "description": "Dark AI storyboard engine turning scripts into noir visual sequences",
-    "language": "en",
-    "category": "video_audio",
-    "platform": "web",
-    "githubUsername": "eneryu",
-    "githubUserId": "170572248",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "eneryu",
-    "other": null,
-    "submittedDate": "2025-12-29",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6547",
-    "approvedDate": "2026-01-04",
-    "byop": false,
-    "requests24h": 1
   },
   {
     "emoji": "💬",
@@ -11194,7 +11013,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6712",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3fbb1999-92d4-4feb-9752-cf2deba66029"
   },
   {
     "emoji": "🎨",
@@ -11382,7 +11202,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6649",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e607be3d-9fb9-45ed-9955-0d04c36dff31"
   },
   {
     "emoji": "🌍",
@@ -12157,7 +11978,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6100",
     "approvedDate": "2025-12-16",
     "byop": false,
-    "requests24h": 127
+    "requests24h": 127,
+    "screenshotUrl": "https://media.pollinations.ai/6822822c-f92b-451f-a078-741391957aad"
   },
   {
     "emoji": "🎄",
@@ -12493,26 +12315,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/d90ab4b4-3ac1-4c36-98e4-66704ecd4720"
-  },
-  {
-    "emoji": "🤖",
-    "name": "Lily – AI Discord Companion",
-    "url": "https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands",
-    "description": "Provide an AI Discord companion with adaptive memory to maintain conversational context and deliver personalized responses.",
-    "language": null,
-    "category": "games",
-    "platform": "discord",
-    "githubUsername": "CloudCompile",
-    "githubUserId": "201248601",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-10",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5857",
-    "approvedDate": "2025-12-10",
-    "byop": false,
-    "requests24h": 127
   },
   {
     "emoji": "💕",
@@ -13019,26 +12821,6 @@
     "screenshotUrl": "https://media.pollinations.ai/66c84c15-caa7-4989-a76d-a4a6d110ce1b"
   },
   {
-    "emoji": "🎨",
-    "name": "Magerun AI",
-    "url": "https://preview--prompt-to-vision-18.lovable.app/",
-    "description": "Improve image prompts, forward them to Pollinations AI, and select the number of images to generate.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "lilfin1",
-    "githubUserId": "239333172",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-10-27",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4807",
-    "approvedDate": "2025-10-25",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🔌",
     "name": "PollinVerse",
     "url": "https://pollinverse.netlify.app",
@@ -13415,26 +13197,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/30d8736b-1a30-494b-a34b-fbf0689fc291"
-  },
-  {
-    "emoji": "🎨",
-    "name": "Inkly AI",
-    "url": "https://inkly-ai.vercel.app/",
-    "description": "Generate images from text or transform images via image-to-image, view your gallery, and download generated files.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "Auspicious14",
-    "githubUserId": "85289832",
-    "repositoryUrl": "https://github.com/Auspicious14/image-generator-be",
-    "repositoryStars": 1,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-10-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4331",
-    "approvedDate": "2025-10-04",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "✨",
@@ -15095,26 +14857,6 @@
     "screenshotUrl": "https://media.pollinations.ai/d83d1efb-e4ca-4a5e-9158-691a366452dd"
   },
   {
-    "emoji": "🌼",
-    "name": "PollinateAI",
-    "url": "https://pollinateai.vercel.app",
-    "description": "AI image generation to spark inspiration for designers and everyone.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "Auspicious14",
-    "githubUserId": "85289832",
-    "repositoryUrl": "https://github.com/Auspicious14/image-generator-fe.git",
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1867",
-    "approvedDate": "2025-05-01",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "📈",
     "name": "Server Status Dashboards",
     "url": null,
@@ -15178,26 +14920,6 @@
     "screenshotUrl": "https://media.pollinations.ai/2e05fb64-1df8-4b4e-839f-685da797b765"
   },
   {
-    "emoji": "🔓",
-    "name": "Image Gen - Uncensored Edition",
-    "url": "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-    "description": "Unrestricted AI image generation for maximum creative freedom.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "flowgpt",
-    "githubUserId": "122692223",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-04-25",
-    "byop": false,
-    "requests24h": 0
-  },
-  {
     "emoji": "🥗",
     "name": "FoodAnaly",
     "url": "https://foodanaly.vercel.app/",
@@ -15238,26 +14960,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/136a75f4-304b-40ed-819a-c6fa9b745816"
-  },
-  {
-    "emoji": "🧰",
-    "name": "AIMinistries",
-    "url": "https://www.ai-ministries.com",
-    "description": "Free AI toolkit: chat, writing, images, TTS, and speech-to-text.",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": null,
-    "githubUserId": null,
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2025-04-21",
-    "byop": false,
-    "requests24h": 0
   },
   {
     "emoji": "🌏",
@@ -15785,15 +15487,15 @@
   },
   {
     "emoji": "💬",
-    "name": "LobeChat",
-    "url": "https://lobechat.com",
-    "description": "Open-source AI chat framework with multi-model support, plugins, and customizable agent workflows",
+    "name": "LobeHub",
+    "url": "https://lobehub.com/",
+    "description": "Organize and operate AI agents across long-running tasks, integrations, and multimodal workflows.",
     "language": null,
     "category": "chat",
     "platform": "web",
     "githubUsername": "lobehub",
     "githubUserId": "131470832",
-    "repositoryUrl": "https://github.com/lobehub/lobe-chat",
+    "repositoryUrl": "https://github.com/lobehub/lobehub",
     "repositoryStars": 70100,
     "discordUsername": null,
     "other": null,
@@ -15801,27 +15503,8 @@
     "issueUrl": null,
     "approvedDate": "2025-03-01",
     "byop": false,
-    "requests24h": 0
-  },
-  {
-    "emoji": "🎮",
-    "name": "Gacha",
-    "url": "https://discord.com/oauth2/authorize?client_id=1377330983740903586",
-    "description": "Discord bot for gacha-style AI image collecting and trading",
-    "language": null,
-    "category": "bots",
-    "platform": "discord",
-    "githubUsername": "pollinations-ai[bot]",
-    "githubUserId": "247793354",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "`_dr_misterio_`",
-    "submittedDate": "2025-12-05",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/5710",
-    "approvedDate": "2025-02-24",
-    "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e45f00fb-889a-44fe-9485-32ed7da7dfd4"
   },
   {
     "emoji": "🖼️",
@@ -16030,7 +15713,8 @@
     "issueUrl": null,
     "approvedDate": null,
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/0b932c01-a0e0-469f-aecd-ddf8b4c1adb8"
   },
   {
     "emoji": "🎬",

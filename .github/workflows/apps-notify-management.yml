@@ -1,0 +1,36 @@
+name: Apps / Notify catalog changes
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  notify:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login == 'pollinations-ai[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
+      contains(github.event.pull_request.body, '<!-- pollinations-app-management:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Generate app token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Notify submitters
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: node apps/operation/app-management/notify-submitters.js

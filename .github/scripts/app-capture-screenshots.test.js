@@ -5,6 +5,7 @@ const {
     applyAgentAction,
     applyMediaUrls,
     calculateDailyBatch,
+    callScreenshotAgent,
     classifyCaptureOutcome,
     hasAllowedOrigin,
     resolveAgentClickTarget,
@@ -224,6 +225,40 @@ test("validates final screenshot-agent decisions", () => {
             }),
         /invalid score/,
     );
+});
+
+test("retries an empty screenshot-agent response", async () => {
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => {
+        calls++;
+        return {
+            json: async () => ({
+                choices: [
+                    {
+                        message: {
+                            content:
+                                calls === 1
+                                    ? null
+                                    : '{"decision":"reject","score":0,"reason":"No cover","action":null}',
+                        },
+                    },
+                ],
+            }),
+            ok: true,
+        };
+    };
+    try {
+        const result = await callScreenshotAgent(
+            JSON.stringify({ messages: [] }),
+            "test-token",
+            Date.now() + 5000,
+        );
+        assert.equal(calls, 2);
+        assert.equal(result.decision.decision, "reject");
+    } finally {
+        global.fetch = originalFetch;
+    }
 });
 
 test("allows only structured actions against supplied page controls", () => {

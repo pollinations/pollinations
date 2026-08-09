@@ -467,9 +467,15 @@ async function callScreenshotAgent(body, token, deadline) {
                 );
             }
             const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+            if (typeof content !== "string") {
+                throw new SyntaxError(
+                    "Screenshot agent returned no decision content",
+                );
+            }
             return {
                 data,
-                decision: JSON.parse(data.choices?.[0]?.message?.content),
+                decision: JSON.parse(content),
             };
         } catch (error) {
             lastError = error;
@@ -999,6 +1005,7 @@ module.exports = {
     applyAgentAction,
     applyMediaUrls,
     calculateDailyBatch,
+    callScreenshotAgent,
     classifyCaptureOutcome,
     hasAllowedOrigin,
     resolveTarget,

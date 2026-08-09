@@ -1,4 +1,5 @@
 import debug from "debug";
+import { isNetworkFailure } from "../fallback.ts";
 import { HttpError } from "./httpError.ts";
 
 const logServer = debug("pollinations:server");
@@ -180,16 +181,26 @@ export function __resetLatencyStateForTests(): void {
     recentWrites.clear();
 }
 
+type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
+
+/**
+ * Fetches from the weighted pool, retrying distinct workers only when the
+ * request was not accepted (HTTP 503 or a known network failure). The body is
+ * deliberately restricted to a string so every retry can safely resend it.
+ *
+ * Do not add AbortSignal.timeout() here without production Workerd validation:
+ * a timeout signal previously broke every pool request despite passing locally.
+ */
 export const fetchFromWeightedServer = async (
     type: ServerType = "flux",
-    options: RequestInit,
+    options: ReplayableRequestInit,
 ): Promise<Response> => {
     const remainingServers = await getRegisteredServers(type);
     if (remainingServers.length === 0) {
         throw new HttpError(`No active ${type} servers available`, 503);
     }
 
-    while (remainingServers.length > 0) {
+    while (true) {
         const serverUrl = chooseWeightedServer(remainingServers);
         const selectedIndex = remainingServers.findIndex(
             (server) => server.url === serverUrl,
@@ -197,7 +208,18 @@ export const fetchFromWeightedServer = async (
         remainingServers.splice(selectedIndex, 1);
 
         const startedAt = Date.now();
-        const response = await fetch(`${serverUrl}/generate`, options);
+        let response: Response;
+        try {
+            response = await fetch(`${serverUrl}/generate`, options);
+        } catch (error) {
+            if (!isNetworkFailure(error) || remainingServers.length === 0) {
+                throw error;
+            }
+            console.warn(
+                `[${type}] Network failure from ${serverUrl}; retrying another pool worker`,
+            );
+            continue;
+        }
         // Record latency for successful responses only (a 5xx/timeout would
         // record the full timeout window and wrongly down-weight a recovering
         // server). Awaited (not fire-and-forget): a floating promise can be
@@ -215,15 +237,6 @@ export const fetchFromWeightedServer = async (
             errorBody = "Could not read error response body";
         }
 
-        console.error(
-            `[${type}] Server ${serverUrl} returned ${response.status}:`,
-            {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorBody,
-            },
-        );
-
         const error = new HttpError(
             `Image backend rejected request with status ${response.status}`,
             response.status,
@@ -236,13 +249,20 @@ export const fetchFromWeightedServer = async (
         // before the caller receives a 503. Other failures stay single-attempt:
         // retrying a request that may already have started can duplicate work.
         if (response.status !== 503 || remainingServers.length === 0) {
+            console.error(
+                `[${type}] Server ${serverUrl} returned ${response.status}:`,
+                {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorBody,
+                },
+            );
             throw error;
         }
 
         console.warn(
-            `[${type}] Server ${serverUrl} is full; retrying another pool worker`,
+            `[${type}] Server ${serverUrl} returned 503; retrying another pool worker`,
+            { body: errorBody },
         );
     }
-
-    throw new HttpError(`No active ${type} servers available`, 503);
 };

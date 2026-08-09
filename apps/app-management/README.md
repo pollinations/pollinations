@@ -46,7 +46,7 @@ restore them and manages media, and performance only updates metrics.
 Each script has a colocated Node test file. Run them with:
 
 ```bash
-node --test apps/operation/app-management/*.test.js apps/operation/app-management/*/*.test.js
+node --test apps/app-management/*.test.js apps/app-management/*/*.test.js
 ```
 
 ## Authentication

@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CATALOG_FILE = path.resolve(__dirname, "../../catalog.json");
+const CATALOG_FILE = path.resolve(__dirname, "../catalog.json");
 
 const REQUIRED_STRING_FIELDS = [
     "emoji",

@@ -46,7 +46,7 @@ jobs:
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
         run: |
-          node apps/operation/app-management/management/reactivate-app.js prepare \
+          node apps/app-management/management/reactivate-app.js prepare \
             --event="$GITHUB_EVENT_PATH" \
             --output="$RUNNER_TEMP/app-candidate.json"
           if [ -f "$RUNNER_TEMP/app-candidate.json" ]; then
@@ -66,7 +66,7 @@ jobs:
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
         run: |
-          node apps/operation/app-management/management/reactivate-app.js apply \
+          node apps/app-management/management/reactivate-app.js apply \
             --candidate="$RUNNER_TEMP/app-candidate.json"
           jq -c '[.url]' "$RUNNER_TEMP/app-candidate.json" > "$RUNNER_TEMP/app-target.json"
           npm run apps:capture-screenshots -- \
@@ -82,7 +82,7 @@ jobs:
         run: |
           REPORT=$(find temp/app-screenshots -name report.json -type f | sort | tail -1)
           if jq -e '.results | length == 1 and .[0].outcome == "approved"' "$REPORT" >/dev/null; then
-            node apps/operation/app-management/generate-catalog-outputs.js
+            node apps/app-management/generate-catalog-outputs.js
             echo "approved=true" >> "$GITHUB_OUTPUT"
           else
             git restore apps/catalog.json

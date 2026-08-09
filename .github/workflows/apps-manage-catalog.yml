@@ -75,7 +75,7 @@ jobs:
       - name: Finalize catalog
         run: |
           if ! git diff --quiet -- apps/catalog.json; then
-            node apps/operation/app-management/generate-catalog-outputs.js
+            node apps/app-management/generate-catalog-outputs.js
           fi
 
       - name: Upload capture report

@@ -42,7 +42,10 @@ function renderPrBody(report, runUrl) {
             tableCell(result.name),
             tableCell(result.outcome),
             tableCell(
-                result.error || result.review?.reason || "No usable screenshot",
+                result.uploadError ||
+                    result.error ||
+                    result.review?.reason ||
+                    "No usable screenshot",
             ),
             tableCell(result.evidenceUrl || result.evidenceFile),
         ].join(" | "),

@@ -11,13 +11,13 @@ const {
     applyCatalogChanges,
     applyMediaUrls,
     attachReviewEvidence,
+    attachUploadOutcomes,
     calculateDailyBatch,
     callScreenshotAgent,
     classifyAuthOrigin,
     classifyCaptureOutcome,
     collectAgentControls,
     hasAllowedOrigin,
-    identifyAuthProvider,
     identifyRedirectedAuthProvider,
     isAuthorizedRestorationEvent,
     isPublicAppUrl,
@@ -28,7 +28,8 @@ const {
     prepareRestoration,
     readStorageState,
     recoverApp,
-    resolveAgentClickTarget,
+    requestAgentDecision,
+    reviewContextOptions,
     resolveTarget,
     revokeReviewerKeys,
     selectTargets,
@@ -36,9 +37,10 @@ const {
     setPollinationsAuthorizationLimits,
     validateAgentDecision,
     validateClickGuardDecision,
-    validateEligibilityDecision,
+    validateFinalQualityDecision,
     validateGoogleAuthRequest,
     validateFreshAgentDecision,
+    validateRemovalDecision,
     validateRestorationDecision,
     waitForSuccessfulNavigation,
 } = require("./capture-screenshots.js");
@@ -101,15 +103,31 @@ test("reads plain and compressed Playwright authentication state", () => {
     assert.deepEqual(readStorageState(compressedPath), state);
 });
 
-test("recognizes only the three supported authentication providers", () => {
-    assert.equal(identifyAuthProvider("Continue with Google"), "google");
-    assert.equal(identifyAuthProvider("Sign in with GitHub"), "github");
-    assert.equal(
-        identifyAuthProvider("使用 Pollinations 登录授权"),
-        "pollinations",
+test("keeps routine review anonymous and adds auth state only on demand", () => {
+    const state = { cookies: [], origins: [] };
+    assert.equal("storageState" in reviewContextOptions(), false);
+    assert.equal(reviewContextOptions(state).storageState, state);
+});
+
+test("records failed cover uploads as unresolved outcomes", () => {
+    const [result] = attachUploadOutcomes(
+        [
+            {
+                approved: true,
+                outcome: "approved",
+                targetUrl: "https://app.test",
+            },
+        ],
+        [
+            {
+                error: "Media upload returned 503",
+                success: false,
+                targetUrl: "https://app.test",
+            },
+        ],
     );
-    assert.equal(identifyAuthProvider("Continue with Discord"), null);
-    assert.equal(identifyAuthProvider("Enter key manually"), null);
+    assert.equal(result.outcome, "upload_failed");
+    assert.equal(result.uploadError, "Media upload returned 503");
 });
 
 test("recognizes redirects to official authentication without changing app identity", () => {
@@ -174,21 +192,28 @@ test("allows authentication only on the app and exact official origins", () => {
 });
 
 test("pins Pollinations authorization to zero Pollen and one day", async () => {
-    const values = ["5", ""];
-    const inputs = values.map((_, index) => ({
-        fill: async (value) => {
-            values[index] = value;
-        },
-        inputValue: async () => values[index],
-    }));
+    const values = { budget: "5", expiry: "" };
+    const inputs = Object.fromEntries(
+        Object.keys(values).map((name) => [
+            name,
+            {
+                count: async () => 1,
+                fill: async (value) => {
+                    values[name] = value;
+                },
+                inputValue: async () => values[name],
+            },
+        ]),
+    );
     await setPollinationsAuthorizationLimits({
-        getByRole: () => ({ all: async () => inputs }),
+        locator: (selector) =>
+            selector.includes("pollen-budget") ? inputs.budget : inputs.expiry,
     });
-    assert.deepEqual(values, ["0", "1"]);
+    assert.deepEqual(values, { budget: "0", expiry: "1" });
 
     await assert.rejects(
         setPollinationsAuthorizationLimits({
-            getByRole: () => ({ all: async () => inputs.slice(0, 1) }),
+            locator: () => ({ count: async () => 0 }),
         }),
         /limits were not available/,
     );
@@ -310,8 +335,25 @@ test("the management agent prepares a recovered app for fresh review", async () 
             url: "https://new.sunflower.test",
         }),
     );
-    assert.equal(candidate.url, "https://new.sunflower.test");
-    assert.equal(candidate.screenshotUrl, null);
+    assert.equal(candidate.app.url, "https://new.sunflower.test");
+    assert.equal(candidate.app.screenshotUrl, null);
+    assert.equal(candidate.targetUrl, "https://new.sunflower.test");
+});
+
+test("restoration uses the resolved repository cover target", async () => {
+    const candidate = await prepareRestoration(
+        restorationEvent(),
+        [],
+        "unused-token",
+        "unused-model",
+        () => ({ ...REMOVED_APP, platform: "discord" }),
+        async () => ({
+            decision: "restore",
+            reason: "The submitter says the bot is fixed.",
+            url: null,
+        }),
+    );
+    assert.equal(candidate.targetUrl, "https://github.com/gardener/sunflower");
 });
 
 test("the management agent recovers a deleted row from Git history", (t) => {
@@ -686,14 +728,12 @@ test("validates final screenshot-agent decisions", () => {
             action: null,
             decision: "accept",
             reason: "The app is clearly visible.",
-            score: 92,
         }),
         {
             action: null,
             catalogUpdate: null,
             decision: "accept",
             reason: "The app is clearly visible.",
-            score: 92,
         },
     );
     assert.throws(
@@ -701,47 +741,45 @@ test("validates final screenshot-agent decisions", () => {
             validateAgentDecision({
                 decision: "maybe",
                 reason: "Uncertain",
-                score: 50,
             }),
         /invalid decision/,
+    );
+    assert.deepEqual(
+        validateAgentDecision(
+            {
+                action: { elementId: "f0-e2", type: "authenticate" },
+                decision: "authenticate",
+                reason: "The app requires official Google sign-in.",
+            },
+            new Set(["f0-e2"]),
+        ),
+        {
+            action: { elementId: "f0-e2", type: "authenticate" },
+            catalogUpdate: null,
+            decision: "authenticate",
+            reason: "The app requires official Google sign-in.",
+        },
     );
     assert.throws(
         () =>
             validateAgentDecision({
-                decision: "accept",
-                reason: "Invalid score",
-                score: Number.NaN,
+                action: { elementId: "missing", type: "authenticate" },
+                decision: "authenticate",
+                reason: "Authenticate.",
             }),
-        /invalid score/,
-    );
-    assert.deepEqual(
-        validateAgentDecision({
-            action: null,
-            decision: "needs_auth",
-            reason: "The app is visible but requires Google sign-in.",
-            score: 70,
-        }),
-        {
-            action: null,
-            catalogUpdate: null,
-            decision: "needs_auth",
-            reason: "The app is visible but requires Google sign-in.",
-            score: 70,
-        },
+        /unavailable authentication control/,
     );
     assert.deepEqual(
         validateAgentDecision({
             action: null,
             decision: "remove",
             reason: "The domain is visibly parked.",
-            score: 100,
         }),
         {
             action: null,
             catalogUpdate: null,
             decision: "remove",
             reason: "The domain is visibly parked.",
-            score: 100,
         },
     );
     assert.deepEqual(
@@ -753,7 +791,6 @@ test("validates final screenshot-agent decisions", () => {
             },
             decision: "accept",
             reason: "The product is clearly visible.",
-            score: 95,
         }).catalogUpdate,
         {
             name: "Canonical Product",
@@ -770,7 +807,6 @@ test("validates final screenshot-agent decisions", () => {
                 },
                 decision: "reject",
                 reason: "The screen is unusable.",
-                score: 0,
             }),
         /without acceptance/,
     );
@@ -812,30 +848,98 @@ test("fails closed on invalid click-guard decisions", () => {
     );
 });
 
-test("validates independent catalog eligibility decisions", () => {
-    assert.deepEqual(
-        validateEligibilityDecision({
-            action: null,
-            decision: "remove",
-            reason: "The destination is visibly unrelated.",
-            score: 100,
-        }),
-        {
-            action: null,
-            decision: "remove",
-            reason: "The destination is visibly unrelated.",
-            score: 100,
-        },
+test("final review gates cannot invent a removal", () => {
+    assert.equal(
+        validateFinalQualityDecision({
+            decision: "accept",
+            reason: "The cover is ready.",
+        }).decision,
+        "accept",
     );
     assert.throws(
         () =>
-            validateEligibilityDecision({
-                decision: "reject",
-                reason: "Wrong phase.",
-                score: 50,
+            validateFinalQualityDecision({
+                decision: "remove",
+                reason: "Wrong review phase.",
             }),
-        /invalid decision/,
+        /quality review was invalid/,
     );
+    assert.equal(
+        validateRemovalDecision({
+            decision: "remove",
+            reason: "The destination is conclusively parked.",
+        }).decision,
+        "remove",
+    );
+    assert.throws(
+        () =>
+            validateRemovalDecision({
+                decision: "accept",
+                reason: "Wrong review phase.",
+            }),
+        /removal review was invalid/,
+    );
+});
+
+test("a model-proposed removal requires independent confirmation", async (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-removal-"));
+    t.after(() => fs.rmSync(directory, { force: true, recursive: true }));
+    const screenshotPath = path.join(directory, "screen.png");
+    fs.writeFileSync(screenshotPath, "image");
+    const decisions = [
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "remove",
+            reason: "The page appears parked.",
+        },
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "reject",
+            reason: "The evidence is not conclusive.",
+        },
+    ];
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => ({
+        json: async () => ({
+            choices: [
+                { message: { content: JSON.stringify(decisions[calls++]) } },
+            ],
+            model: "test-model",
+        }),
+        ok: true,
+    });
+    try {
+        const result = await requestAgentDecision(
+            {
+                finalUrl: "https://app.test",
+                pageTitle: "App",
+                screenshotPath,
+            },
+            {
+                context: {
+                    categories: ["chat"],
+                    descriptions: ["A test app"],
+                    platforms: ["web"],
+                },
+                names: ["Test app"],
+                source: "website",
+            },
+            [],
+            6,
+            [],
+            Date.now() + 5000,
+            "test-token",
+            "test-model",
+        );
+        assert.equal(calls, 2);
+        assert.equal(result.decision, "reject");
+        assert.match(result.reason, /did not confirm removal/);
+    } finally {
+        global.fetch = originalFetch;
+    }
 });
 
 test("retries an empty screenshot-agent response", async () => {
@@ -851,7 +955,7 @@ test("retries an empty screenshot-agent response", async () => {
                             content:
                                 calls === 1
                                     ? null
-                                    : '{"decision":"reject","score":0,"reason":"No cover","action":null}',
+                                    : '{"decision":"reject","reason":"No cover","action":null}',
                         },
                     },
                 ],
@@ -875,13 +979,12 @@ test("retries an empty screenshot-agent response", async () => {
 test("parses a JSON decision wrapped by model formatting", () => {
     assert.deepEqual(
         parseAgentJson(
-            '```json\n{"decision":"accept","score":90,"reason":"Ready","action":null}\n```',
+            '```json\n{"decision":"accept","reason":"Ready","action":null}\n```',
         ),
         {
             action: null,
             decision: "accept",
             reason: "Ready",
-            score: 90,
         },
     );
     assert.throws(() => parseAgentJson("no decision"), /No JSON object/);
@@ -894,7 +997,6 @@ test("allows only structured actions against supplied page controls", () => {
                 action: { elementId: "f0-e2", type: "click" },
                 decision: "act",
                 reason: "Dismiss the cookie banner.",
-                score: 60,
             },
             new Set(["f0-e2"]),
         ),
@@ -903,7 +1005,6 @@ test("allows only structured actions against supplied page controls", () => {
             catalogUpdate: null,
             decision: "act",
             reason: "Dismiss the cookie banner.",
-            score: 60,
         },
     );
     assert.throws(
@@ -913,7 +1014,6 @@ test("allows only structured actions against supplied page controls", () => {
                     action: { elementId: "f0-e9", type: "click" },
                     decision: "act",
                     reason: "Click an unavailable control.",
-                    score: 20,
                 },
                 new Set(["f0-e2"]),
             ),
@@ -925,7 +1025,6 @@ test("allows only structured actions against supplied page controls", () => {
                 action: { direction: "sideways", type: "scroll" },
                 decision: "act",
                 reason: "Move sideways.",
-                score: 20,
             }),
         /scroll direction/,
     );
@@ -935,14 +1034,12 @@ test("allows only structured actions against supplied page controls", () => {
                 action: { type },
                 decision: "act",
                 reason: "Use a bounded browser action.",
-                score: 50,
             }),
             {
                 action: { type },
                 catalogUpdate: null,
                 decision: "act",
                 reason: "Use a bounded browser action.",
-                score: 50,
             },
         );
     }
@@ -951,14 +1048,12 @@ test("allows only structured actions against supplied page controls", () => {
             action: { type: "click_point", x: 308, y: 478 },
             decision: "act",
             reason: "Dismiss an unlabeled close icon.",
-            score: 70,
         }),
         {
             action: { type: "click_point", x: 308, y: 478 },
             catalogUpdate: null,
             decision: "act",
             reason: "Dismiss an unlabeled close icon.",
-            score: 70,
         },
     );
     assert.throws(
@@ -967,7 +1062,6 @@ test("allows only structured actions against supplied page controls", () => {
                 action: { type: "click_point", x: 1001, y: 10 },
                 decision: "act",
                 reason: "Outside the viewport.",
-                score: 10,
             }),
         /invalid click point/,
     );
@@ -979,7 +1073,6 @@ test("rejects an action that already failed in the same session", () => {
         catalogUpdate: null,
         decision: "act",
         reason: "Try the same point again.",
-        score: 50,
     };
     assert.throws(
         () =>
@@ -999,8 +1092,12 @@ test("rejects an action that already failed in the same session", () => {
     );
 });
 
-test("offers only same-origin links to the screenshot agent", async () => {
-    const locators = [{ id: "same" }, { id: "external" }];
+test("offers same-origin and official authentication links to the agent", async () => {
+    const locators = [
+        { id: "same" },
+        { id: "external" },
+        { id: "official-auth" },
+    ];
     const candidates = {
         evaluateAll: async () => [
             {
@@ -1019,6 +1116,14 @@ test("offers only same-origin links to the screenshot agent", async () => {
                 x: 30,
                 y: 40,
             },
+            {
+                href: "https://accounts.google.com/o/oauth2/v2/auth",
+                index: 2,
+                kind: "link",
+                label: "Continue",
+                x: 50,
+                y: 60,
+            },
         ],
         nth: (index) => locators[index],
     };
@@ -1034,32 +1139,24 @@ test("offers only same-origin links to the screenshot agent", async () => {
     const result = await collectAgentControls(page, "https://app.test");
     assert.deepEqual(result.elements, [
         {
+            authentication: null,
             destination: "/gallery",
             elementId: "f0-e0",
             kind: "link",
             label: "Gallery",
             position: { x: 10, y: 20 },
         },
+        {
+            authentication: "google",
+            destination: "official google authentication",
+            elementId: "f0-e2",
+            kind: "link",
+            label: "Continue",
+            position: { x: 50, y: 60 },
+        },
     ]);
     assert.equal(result.controls.get("f0-e0"), locators[0]);
-});
-
-test("resolves a unique control label in any language", () => {
-    const decision = {
-        action: { elementId: "Aceitar", type: "click" },
-        decision: "act",
-        reason: "Dismiss the cookie dialog.",
-        score: 60,
-    };
-    assert.deepEqual(
-        resolveAgentClickTarget(decision, [
-            { elementId: "f0-e3", label: "Aceitar" },
-        ]),
-        {
-            ...decision,
-            action: { elementId: "f0-e3", type: "click" },
-        },
-    );
+    assert.equal(result.controls.get("f0-e2"), locators[2]);
 });
 
 test("treats a disappeared control as a recoverable action", async () => {
@@ -1271,7 +1368,7 @@ test("reports capture outcomes separately", () => {
     assert.equal(
         classifyCaptureOutcome({
             approved: false,
-            review: { decision: "needs_auth" },
+            review: { decision: "authenticate" },
             success: true,
         }),
         "auth_required",

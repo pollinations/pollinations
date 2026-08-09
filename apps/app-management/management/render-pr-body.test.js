@@ -18,6 +18,11 @@ test("renders catalog changes, removals, unresolved evidence, and notification m
                 { name: "Updated app", outcome: "approved" },
                 { name: "Dead app", outcome: "confirmed_removal" },
                 {
+                    name: "Upload failed",
+                    outcome: "upload_failed",
+                    uploadError: "Media returned HTTP 503",
+                },
+                {
                     evidenceUrl: "https://media.pollinations.ai/rejected.png",
                     name: "Needs | review",
                     outcome: "agent_rejected",
@@ -41,9 +46,10 @@ test("renders catalog changes, removals, unresolved evidence, and notification m
         "https://github.com/pollinations/pollinations/actions/runs/1",
     );
 
-    assert.match(body, /1 catalog rows updated, 1 removed, 1 unresolved/);
+    assert.match(body, /1 catalog rows updated, 1 removed, 2 unresolved/);
     assert.match(body, /\| Updated app \| name \| Old name \| Updated app \|/);
     assert.match(body, /Needs &#124; review/);
+    assert.match(body, /Media returned HTTP 503/);
     assert.match(body, /!\[Rejected terminal screen\]/);
     const encoded = body.match(
         /<!-- pollinations-app-management:([^ ]+) -->/,

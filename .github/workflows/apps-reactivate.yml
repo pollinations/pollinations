@@ -19,8 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     steps:
       - name: Generate app token
@@ -76,7 +75,7 @@ jobs:
           chmod 600 "$AUTH_STATE_PATH"
           trap 'rm -f "$AUTH_STATE_PATH"' EXIT
 
-          jq -c '[.url]' "$RUNNER_TEMP/app-candidate.json" > "$RUNNER_TEMP/app-target.json"
+          jq -c '[.targetUrl]' "$RUNNER_TEMP/app-candidate.json" > "$RUNNER_TEMP/app-target.json"
           npm run apps:capture-screenshots -- \
             --mode=all \
             --targets-file="$RUNNER_TEMP/app-target.json" \
@@ -99,16 +98,24 @@ jobs:
             echo "approved=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Report unsuccessful recheck
+        if: always() && steps.candidate.outputs.ready == 'true' && steps.verified.outputs.approved != 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "The app was rechecked, but the automated review still could not confirm a working public app and a publishable screenshot. No catalog change was made."
+
       - name: Create restoration PR
         if: steps.verified.outputs.approved == 'true'
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: |
           ISSUE_NUMBER="${{ github.event.issue.number }}"
-          NAME=$(jq -r .name "$RUNNER_TEMP/app-candidate.json")
-          ISSUE_URL=$(jq -r .issueUrl "$RUNNER_TEMP/app-candidate.json")
-          URL=$(jq -r .url "$RUNNER_TEMP/app-candidate.json")
-          APPS=$(jq -c '[{name, issueUrl}]' "$RUNNER_TEMP/app-candidate.json")
+          NAME=$(jq -r .app.name "$RUNNER_TEMP/app-candidate.json")
+          ISSUE_URL=$(jq -r .app.issueUrl "$RUNNER_TEMP/app-candidate.json")
+          URL=$(jq -r '.app.url // .app.repositoryUrl' "$RUNNER_TEMP/app-candidate.json")
+          APPS=$(jq -c '[.app | {name, issueUrl}]' "$RUNNER_TEMP/app-candidate.json")
           MARKER=$(printf '{"action":"restore","apps":%s}' "$APPS" | base64 -w0)
           BRANCH="auto/app-restore-${ISSUE_NUMBER}-${GITHUB_RUN_ID}"
 

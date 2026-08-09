@@ -456,6 +456,24 @@ test("uses a repository only when no website URL is available", () => {
     );
 });
 
+test("uses the repository as the public cover for Discord bots", () => {
+    assert.deepEqual(
+        resolveTarget(
+            {
+                platform: "discord",
+                repositoryUrl: "https://github.com/example/bot",
+                url: "https://discord.com/oauth2/authorize?client_id=123",
+            },
+            6,
+        ),
+        {
+            catalogIndex: 6,
+            source: "repository",
+            targetUrl: "https://github.com/example/bot",
+        },
+    );
+});
+
 test("selects missing screenshots, deduplicates targets, and reports omissions", () => {
     const { skipped, targets } = selectTargets(
         [

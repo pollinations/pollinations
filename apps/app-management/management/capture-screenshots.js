@@ -326,6 +326,19 @@ function validateGoogleAuthRequest(value, depth = 0) {
 }
 
 function resolveTarget(app, catalogIndex) {
+    if (
+        String(app.platform || "")
+            .split(",")
+            .map((value) => value.trim())
+            .includes("discord") &&
+        isHttpUrl(app.repositoryUrl)
+    ) {
+        return {
+            catalogIndex,
+            source: "repository",
+            targetUrl: app.repositoryUrl,
+        };
+    }
     if (isHttpUrl(app.url)) {
         return {
             catalogIndex,

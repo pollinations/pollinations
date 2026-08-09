@@ -95,7 +95,9 @@ D1/wrangler access needed on the box) and allocates probe requests per model:
   cache-busted prompt, the model's default image dimensions, and `b64_json`
   validation. A newly listed model is tested immediately. Use
   `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
-  bypasses the cadence but still sends only one request.
+  bypasses the cadence but still sends only one request. Targeted checks print
+  JSON without replacing the latest full sweep or changing its budget/cadence
+  state.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key. Next
   cycle's budget mean-reverts off last cycle's actual spend (overspend ->

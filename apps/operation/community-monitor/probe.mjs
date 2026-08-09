@@ -58,10 +58,7 @@ async function fetchCommunityModels() {
     const list = await fetch(`${GEN}/models`).then((r) => r.json());
     const models = Array.isArray(list) ? list : (list.data ?? list);
     return models.filter(
-        (m) =>
-            m.community &&
-            m.name?.includes("/") &&
-            (m.category === "text" || m.category === "image"),
+        (m) => m.community && (m.category === "text" || m.category === "image"),
     );
 }
 
@@ -284,15 +281,22 @@ async function probeText(model) {
                 // leave usage/content undefined -- reconciliation/checks just skip this request
             }
         }
+        const hasCompletion =
+            typeof content === "string" && content.trim().length > 0;
+        const ok = res.ok && hasCompletion;
         const result = {
             model: model.name,
             category: model.category,
-            ok: res.ok,
-            status: res.status,
+            ok,
+            status: res.ok && !hasCompletion ? "INVALID" : res.status,
             ms: Date.now() - started,
             usage,
             probeMarker: marker,
-            detail: res.ok ? undefined : body.slice(0, 300),
+            detail: res.ok
+                ? hasCompletion
+                    ? undefined
+                    : "successful response did not contain a non-empty completion"
+                : body.slice(0, 300),
         };
         if (res.ok) result.billingFlags = billingSanityFlags(usage, content);
         return result;
@@ -508,7 +512,9 @@ const nextState = {
         },
     },
 };
-fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
+if (!onlyModel) {
+    fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
+}
 
 // Aggregate billing-sanity flags per model (union across its probes this
 // cycle) -- surfaced separately from health status since a model can be
@@ -530,6 +536,12 @@ const out = {
     results,
     billingFlagsByModel,
 };
+if (onlyModel) {
+    // Targeted freshness checks return their result without replacing the
+    // latest complete sweep or influencing the next sweep's budget/cadence.
+    console.log(JSON.stringify(out));
+    process.exit(0);
+}
 fs.writeFileSync(RESULTS_PATH, JSON.stringify(out, null, 2));
 
 // Per-model summary: worst status per model, plus request count.

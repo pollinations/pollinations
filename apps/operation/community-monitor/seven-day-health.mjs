@@ -20,7 +20,6 @@ if (!token) {
 const sql = `
 SELECT
     resolved_model_requested AS model,
-    event_type,
     countIf(is_final) AS total_final,
     countIf(is_final AND response_status >= 200 AND response_status < 300) AS successes,
     countIf(is_final AND response_status >= 500) AS failures_5xx,
@@ -81,8 +80,7 @@ SELECT
 FROM generation_event_v2
 WHERE environment = 'production'
   AND start_time >= now() - INTERVAL ${WINDOW_DAYS} DAY
-  AND position(resolved_model_requested, '/') > 0
-GROUP BY model, event_type
+GROUP BY model
 ORDER BY model
 FORMAT JSON`;
 

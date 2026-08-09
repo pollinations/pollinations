@@ -687,6 +687,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "grok-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+  },
   "hexgrad/kokoro-82m": {
     "cost": {
       "completionAudioTokens": 0.00000062,
@@ -1028,10 +1036,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.000003,
-      "promptCacheWriteTokens": 0.000000625,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.0000012,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.0000002,
     },
   },
   "openai/gpt-5.6-sol": {

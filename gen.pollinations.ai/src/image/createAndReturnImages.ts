@@ -25,7 +25,6 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
-import { callReplicateFluxSchnellAPI } from "./models/replicateFluxModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -41,7 +40,6 @@ import {
     type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
-import { isAccountLevelBlock } from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -237,7 +235,10 @@ export const callSelfHostedServer = async (
 
         if (!response.ok) {
             logError("Error from server. input was", body);
-            throw new Error(`Server responded with ${response.status}`);
+            throw new HttpError(
+                `Server responded with ${response.status}`,
+                response.status,
+            );
         }
 
         const jsonResponse = await response.json();
@@ -248,7 +249,7 @@ export const callSelfHostedServer = async (
 
         if (!image) {
             logError("image is null");
-            throw new Error("image is null");
+            throw new HttpError("Image server returned no image", 502);
         }
 
         logOps("decoding base64 image");
@@ -269,27 +270,6 @@ export const callSelfHostedServer = async (
     } catch (e) {
         logError("Error in callSelfHostedServer:", e);
         throw e;
-    }
-};
-
-/**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Replicate when
- * no worker is registered or the pool request fails.
- * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
- * workerd it broke every pool request (all traffic silently fell back to
- * Fireworks for ~1.5h on 2026-07-02) while passing in the local test runtime.
- */
-export const callFluxWithFallback = async (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> => {
-    try {
-        return await callSelfHostedServer(prompt, safeParams, "flux");
-    } catch (error) {
-        // Log the full error (not just message) so unexpected error types
-        // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Replicate:", error);
-        return await callReplicateFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -370,44 +350,20 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 
 let gptImageEndpointIndex = 0;
 
-function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
+/** Round robins the Azure regions to spread load. One region per request. */
+function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs =
         GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
-    if (configs.length === 1) return configs;
-
-    const start = gptImageEndpointIndex;
-    gptImageEndpointIndex += 1;
-    if (gptImageEndpointIndex === configs.length) gptImageEndpointIndex = 0;
-    return [...configs.slice(start), ...configs.slice(0, start)];
-}
-
-function isRetryableGPTImageError(error: unknown): boolean {
-    if (error instanceof HttpError) {
-        // Azure blocks a resource (403) after aggregate abuse, and every prompt
-        // on it fails until the block lifts. The block is per-resource, so the
-        // sibling region still serves — fail over instead of failing the caller.
-        // A genuine content rejection is NOT retried: it would be refused in
-        // every region, so retrying only burns a second upstream call.
-        const blockText = `${error.message} ${
-            typeof error.details === "string"
-                ? error.details
-                : JSON.stringify(error.details ?? "")
-        }`;
-        if (isAccountLevelBlock(blockText)) return true;
-        return error.status === 429 || error.status >= 500;
-    }
-    return (
-        error instanceof TypeError ||
-        (error instanceof Error &&
-            error.message === "Invalid response from GPT Image API")
-    );
+    const config = configs[gptImageEndpointIndex % configs.length];
+    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    return config;
 }
 
 const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: GPTImageConfig = GPTIMAGE_CONFIGS.gptimage[0],
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"][0],
 ): Promise<ImageGenerationResult> => {
     const apiKey = getImageEnv(config.apiKeyEnv);
 
@@ -671,31 +627,24 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    const configs = orderedGPTImageConfigs(model);
-    let lastError: unknown;
-
-    for (let index = 0; index < configs.length; index++) {
-        const config = configs[index];
-        try {
-            return await callGPTImageWithEndpoint(
-                prompt,
-                safeParams,
-                userInfo,
-                config,
-            );
-        } catch (error) {
-            lastError = error;
-            const retry =
-                index < configs.length - 1 && isRetryableGPTImageError(error);
-            logError(
-                `Error calling Azure GPT Image API (${config.modelName}, ${config.region})${retry ? "; trying next region" : ""}:`,
-                error,
-            );
-            if (!retry) throw error;
-        }
+    // One region, one attempt. Azure bills a generation it completed even when
+    // we never saw the response, so a second region would pay for a second
+    // image to answer a request the caller has already been told failed.
+    const config = nextGPTImageConfig(model);
+    try {
+        return await callGPTImageWithEndpoint(
+            prompt,
+            safeParams,
+            userInfo,
+            config,
+        );
+    } catch (error) {
+        logError(
+            `Error calling Azure GPT Image API (${config.modelName}, ${config.region}):`,
+            error,
+        );
+        throw error;
     }
-
-    throw lastError;
 };
 
 /**
@@ -862,7 +811,7 @@ const generateImage = async (
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "black-forest-labs/FLUX.1-schnell":
-            return await callFluxWithFallback(prompt, safeParams);
+            return await callSelfHostedServer(prompt, safeParams, "flux");
 
         default:
             // zimage is the only model that reaches the default branch
@@ -926,6 +875,7 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
+    metadataModel = safeParams.model,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
@@ -946,7 +896,10 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
+        const metadataObj = prepareMetadata(prompt, originalPrompt, {
+            ...safeParams,
+            model: metadataModel,
+        });
 
         // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
         const processedBuffer =

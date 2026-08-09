@@ -14,9 +14,9 @@ import {
 const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
 const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 240_000;
-const ASSEMBLYAI_MODELS: Record<string, string[]> = {
-    "assemblyai/universal-2": ["universal-2"],
-    "assemblyai/universal-3.5-pro": ["universal-3-5-pro"],
+const ASSEMBLYAI_MODELS: Record<string, string> = {
+    "assemblyai/universal-2": "universal-2",
+    "assemblyai/universal-3.5-pro": "universal-3-5-pro",
 };
 
 interface AssemblyAiUploadResponse {
@@ -44,7 +44,6 @@ interface AssemblyAiTranscriptResponse {
     text?: string | null;
     audio_duration?: number | null;
     language_code?: string | null;
-    speech_model_used?: string | null;
     words?: AssemblyAiWord[] | null;
     utterances?: AssemblyAiUtterance[] | null;
 }
@@ -80,7 +79,6 @@ export async function transcribeWithAssemblyAi(opts: {
     }
 
     if (
-        responseFormat &&
         ![
             "json",
             "text",
@@ -103,8 +101,8 @@ export async function transcribeWithAssemblyAi(opts: {
         });
     }
 
-    const speechModels = ASSEMBLYAI_MODELS[model];
-    if (!speechModels) {
+    const speechModel = ASSEMBLYAI_MODELS[model];
+    if (!speechModel) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `Unsupported AssemblyAI model: ${model}`,
         });
@@ -118,7 +116,7 @@ export async function transcribeWithAssemblyAi(opts: {
     const uploadData = await uploadAssemblyAiFile(file, apiKey);
     const submitted = await submitAssemblyAiTranscript({
         uploadUrl: uploadData.upload_url,
-        speechModels,
+        speechModel,
         language,
         prompt,
         temperature,
@@ -132,13 +130,9 @@ export async function transcribeWithAssemblyAi(opts: {
         log,
     });
 
-    const modelUsed = getAssemblyAiRegistryModel(
-        transcript.speech_model_used,
-        model,
-    );
     const duration = getAssemblyAiDuration(transcript, log);
     const usageHeaders = buildUsageHeaders(
-        modelUsed,
+        model,
         createAudioSecondsUsage(duration),
     );
 
@@ -187,7 +181,7 @@ async function uploadAssemblyAiFile(
 
 async function submitAssemblyAiTranscript(opts: {
     uploadUrl: string;
-    speechModels: string[];
+    speechModel: string;
     language?: string;
     prompt?: string;
     temperature?: number;
@@ -197,7 +191,7 @@ async function submitAssemblyAiTranscript(opts: {
 }): Promise<{ id: string }> {
     const {
         uploadUrl,
-        speechModels,
+        speechModel,
         language,
         prompt,
         temperature,
@@ -207,7 +201,7 @@ async function submitAssemblyAiTranscript(opts: {
     } = opts;
     const transcriptRequest: Record<string, unknown> = {
         audio_url: uploadUrl,
-        speech_models: speechModels,
+        speech_models: [speechModel],
         punctuate: true,
         format_text: true,
     };
@@ -216,7 +210,7 @@ async function submitAssemblyAiTranscript(opts: {
     } else {
         transcriptRequest.language_detection = true;
     }
-    if (speechModels[0] === "universal-3-5-pro") {
+    if (speechModel === "universal-3-5-pro") {
         if (prompt) transcriptRequest.prompt = prompt;
         if (temperature !== undefined)
             transcriptRequest.temperature = temperature;
@@ -362,16 +356,6 @@ function getAssemblyAiErrorStatus(message: string): 400 | 500 {
         return 400;
     }
     return 500;
-}
-
-function getAssemblyAiRegistryModel(
-    speechModelUsed: string | null | undefined,
-    fallbackModel: string,
-): string {
-    if (speechModelUsed === "universal-2") return "assemblyai/universal-2";
-    if (speechModelUsed === "universal-3-5-pro")
-        return "assemblyai/universal-3.5-pro";
-    return fallbackModel;
 }
 
 function getAssemblyAiDuration(

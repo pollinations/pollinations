@@ -10,9 +10,6 @@
  * const image = await generateImage('A cute cat');
  * await image.saveToFile('cat.png');
  *
- * // Generate multiple images
- * const images = await generateImage('A cute cat', { n: 5 });
- *
  * // Generate text
  * const text = await generateText('Write a haiku');
  * ```
@@ -98,24 +95,12 @@ export function configure(options: {
     defaultClient = new Pollinations(options);
 }
 
-// ============================================================================
-// Options with n parameter
-// ============================================================================
-
-interface WithN {
-    /** Number of outputs to generate (default: 1). Each gets a random seed. */
-    n?: number;
-}
-
 interface WithRaw {
     /** Return full API response instead of just the text (default: false) */
     raw?: boolean;
 }
 
-type ImageOptionsWithN = ImageGenerateOptions & WithN;
-type VideoOptionsWithN = VideoGenerateOptions & WithN;
-type TextOptionsWithN = TextGenerateOptions & WithN & WithRaw;
-type AudioOptionsWithN = AudioGenerateOptions & WithN;
+type TextOptionsWithRaw = TextGenerateOptions & WithRaw;
 
 // ============================================================================
 // Image Functions
@@ -138,38 +123,20 @@ export async function imageUrl(
 }
 
 /**
- * Generate image(s) from a prompt
+ * Generate an image from a prompt
  *
  * @example
  * ```ts
- * // Single image
  * const image = await generateImage('A robot');
  * await image.saveToFile('robot.jpg');
- *
- * // Multiple images with n parameter
- * const images = await generateImage('A robot', { n: 5 });
- * images.forEach((img, i) => img.saveToFile(`robot-${i}.jpg`));
  * ```
  */
 export async function generateImage(
     prompt: string,
-    options?: ImageOptionsWithN,
-): Promise<ImageResponseExt | ImageResponseExt[]> {
-    const { n = 1, ...imageOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.image(prompt, imageOptions);
-        return wrapImageResponse(response);
-    }
-
-    // Multiple: run in parallel with random seeds
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.image(prompt, { ...imageOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapImageResponse);
+    options?: ImageGenerateOptions,
+): Promise<ImageResponseExt> {
+    const response = await getClient().image(prompt, options);
+    return wrapImageResponse(response);
 }
 
 // ============================================================================
@@ -238,36 +205,20 @@ export async function videoUrl(
 }
 
 /**
- * Generate video(s) from a prompt
+ * Generate a video from a prompt
  *
  * @example
  * ```ts
- * // Single video
  * const video = await generateVideo('A cat stretching', { duration: 4 });
  * await video.saveToFile('cat.mp4');
- *
- * // Multiple videos
- * const videos = await generateVideo('A cat stretching', { n: 3, duration: 4 });
  * ```
  */
 export async function generateVideo(
     prompt: string,
-    options?: VideoOptionsWithN,
-): Promise<VideoResponseExt | VideoResponseExt[]> {
-    const { n = 1, ...videoOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.video(prompt, videoOptions);
-        return wrapVideoResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.video(prompt, { ...videoOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapVideoResponse);
+    options?: VideoGenerateOptions,
+): Promise<VideoResponseExt> {
+    const response = await getClient().video(prompt, options);
+    return wrapVideoResponse(response);
 }
 
 // ============================================================================
@@ -279,11 +230,7 @@ export async function generateVideo(
  *
  * @example
  * ```ts
- * // Single response (just text)
  * const text = await generateText('Write a haiku');
- *
- * // Multiple responses
- * const texts = await generateText('Write a haiku', { n: 3 });
  *
  * // Full API response with raw: true
  * const response = await generateText('Write a haiku', { raw: true });
@@ -292,41 +239,17 @@ export async function generateVideo(
  */
 export async function generateText(
     prompt: string,
-    options?: TextOptionsWithN,
-): Promise<string | string[] | ChatResponseExt | ChatResponseExt[]> {
-    const { n = 1, raw = false, ...textOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        if (raw) {
-            const response = await client.chat(
-                [{ role: "user", content: prompt }],
-                { ...textOptions },
-            );
-            return wrapChatResponse(response);
-        }
-        return client.text(prompt, textOptions);
-    }
-
-    // Multiple: run in parallel with random seeds
+    options?: TextOptionsWithRaw,
+): Promise<string | ChatResponseExt> {
+    const { raw = false, ...textOptions } = options || {};
     if (raw) {
-        const results = await Promise.all(
-            Array.from({ length: n }, () =>
-                client.chat([{ role: "user", content: prompt }], {
-                    ...textOptions,
-                    seed: -1,
-                }),
-            ),
+        const response = await getClient().chat(
+            [{ role: "user", content: prompt }],
+            textOptions,
         );
-        return results.map(wrapChatResponse);
+        return wrapChatResponse(response);
     }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.text(prompt, { ...textOptions, seed: -1 }),
-        ),
-    );
-    return results;
+    return getClient().text(prompt, textOptions);
 }
 
 /**
@@ -351,36 +274,20 @@ export async function* generateTextStream(
 // ============================================================================
 
 /**
- * Create chat completion(s) with extended response
+ * Create a chat completion with extended response
  *
  * @example
  * ```ts
- * // Single completion
  * const response = await chat([{ role: 'user', content: 'Hello!' }]);
  * console.log(response.text);
- *
- * // Multiple completions
- * const responses = await chat([{ role: 'user', content: 'Hello!' }], { n: 3 });
  * ```
  */
 export async function chat(
     messages: Message[],
-    options?: ChatOptions & WithN,
-): Promise<ChatResponseExt | ChatResponseExt[]> {
-    const { n = 1, ...chatOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.chat(messages, chatOptions);
-        return wrapChatResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.chat(messages, { ...chatOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapChatResponse);
+    options?: ChatOptions,
+): Promise<ChatResponseExt> {
+    const response = await getClient().chat(messages, options);
+    return wrapChatResponse(response);
 }
 
 /**
@@ -432,28 +339,14 @@ export function conversation(options?: ChatOptions): Conversation {
  * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
- * // Multiple variations
- * const audios = await generateAudio('Hello world!', { n: 3, voice: 'nova' });
  * ```
  */
 export async function generateAudio(
     text: string,
-    options?: AudioOptionsWithN,
-): Promise<AudioResponseExt | AudioResponseExt[]> {
-    const { n = 1, ...audioOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.audio(text, audioOptions);
-        return wrapAudioResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.audio(text, { ...audioOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapAudioResponse);
+    options?: AudioGenerateOptions,
+): Promise<AudioResponseExt> {
+    const response = await getClient().audio(text, options);
+    return wrapAudioResponse(response);
 }
 
 // ============================================================================

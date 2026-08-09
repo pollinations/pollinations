@@ -40,18 +40,10 @@ Environment:
 
 import argparse
 import sys
-import os
 import time
-import json
 import re
 import requests
-import importlib.util
-
-# Import shared functions from project-manager.py (hyphen in filename requires special import)
-script_dir = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location("project_manager", os.path.join(script_dir, "project-manager.py"))
-pm = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(pm)
+import project_manager as pm
 
 CONFIG = pm.CONFIG
 VALID_LABELS = pm.VALID_LABELS
@@ -63,14 +55,27 @@ REPO_OWNER = pm.REPO_OWNER
 REPO_NAME = pm.REPO_NAME
 log_debug = pm.log_debug
 log_error = pm.log_error
-read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
 is_paid_customer = pm.is_paid_customer
 
-POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
+
+def classify_issue(
+    title: str,
+    body: str,
+    author: str,
+    is_internal: bool,
+    is_pr: bool = False,
+) -> dict:
+    classification = pm.classify_with_ai(
+        is_internal,
+        title=title,
+        body=body,
+        author=author,
+        is_pull_request=is_pr,
+    )
+    return classification if classification.get("project") else {}
 
 
 def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None) -> list:
@@ -225,61 +230,6 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
     return [l for l in current_labels if l not in to_remove]
 
 
-def classify_issue(title: str, body: str, author: str, is_internal: bool, is_pr: bool = False) -> dict:
-    """Classify an issue or PR using the AI (same as project-manager.py)."""
-    base_prompt = read_prompt_file()
-    item_kind = "pull request" if is_pr else "issue"
-
-    system_prompt = f"""{base_prompt}
-
----
-**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
-"""
-
-    user_prompt = f"""
-Item Type: {item_kind}
-Author: {author}
-Author Type: {"Internal" if is_internal else "External"}
-Title: {title}
-Body: {(body or "")[:2000]}
-"""
-
-    for attempt in range(3):
-        try:
-            r = requests.post(
-                POLLINATIONS_API,
-                headers={
-                    "content-type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
-                },
-                json={
-                    "model": "openai/gpt-5.5",
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    "max_tokens": 400,
-                },
-                timeout=120,
-            )
-
-            if r.status_code != 200:
-                log_error(f"AI HTTP {r.status_code}: {r.text}")
-                time.sleep(2 ** attempt)
-                continue
-
-            data = r.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "{}")
-            
-            return json.loads(content)
-        except Exception as e:
-            log_error(f"Classification error: {e}")
-            time.sleep(2 ** attempt)
-    
-    return {}
-
-
 def add_to_project(project_id: str, content_node_id: str) -> str:
     """Add an issue/PR to a project. Returns new project item id."""
     mutation = """
@@ -399,7 +349,9 @@ def main():
 
             real_author, real_author_id = get_real_author(author, author_id, body)
             is_internal = pm.is_org_member(real_author_id)
-            classification = classify_issue(title, body, real_author, is_internal, is_pr=is_pr)
+            classification = classify_issue(
+                title, body, real_author, is_internal, is_pr=is_pr
+            )
             if not classification:
                 log_error(f"Failed to classify #{issue_number}; skipping migration")
                 time.sleep(1)
@@ -465,7 +417,9 @@ def main():
             real_author, real_author_id = get_real_author(author, author_id, body)
             is_internal = pm.is_org_member(real_author_id)
             log_debug(f"Author: {author} -> Real: {real_author}, Internal: {is_internal}")
-            classification = classify_issue(title, body, real_author, is_internal)
+            classification = classify_issue(
+                title, body, real_author, is_internal
+            )
             
             if not classification:
                 log_error(f"Failed to classify #{issue_number}")
@@ -482,7 +436,9 @@ def main():
             if not classification:
                 real_author, real_author_id = get_real_author(author, author_id, body)
                 is_internal = pm.is_org_member(real_author_id)
-                classification = classify_issue(title, body, real_author, is_internal)
+                classification = classify_issue(
+                    title, body, real_author, is_internal
+                )
             
             if classification:
                 priority = classification.get("priority")

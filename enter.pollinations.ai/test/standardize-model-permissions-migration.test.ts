@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0045_standardize-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0046_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
     ["openai", "openai/gpt-5.4-nano"],

@@ -142,7 +142,9 @@ test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(0.5);
+        expect(definition.priceMultiplier).toBe(
+            model === "openai/gpt-5.6-luna" ? 0.2 : 0.5,
+        );
     }
 });
 

@@ -1,8 +1,8 @@
 import {
     fetchModelCatalog,
     type ModelCatalog,
-    type ModelCatalogItem,
     type ModelCategory,
+    type ModelInfo,
     Pollinations,
 } from "@pollinations/sdk";
 import { useAuthState } from "@pollinations/sdk/react";
@@ -134,27 +134,29 @@ function errorMessage(error: unknown): string {
     return String(error || "Something went wrong");
 }
 
-function isAudioTranscriptionModel(
-    model: ModelCatalogItem | undefined,
-): boolean {
-    return (
+function modelId(model: ModelInfo): string {
+    return model.id ?? model.name;
+}
+
+function isAudioTranscriptionModel(model: ModelInfo | undefined): boolean {
+    return !!(
         model?.category === "audio" &&
-        model.inputModalities.includes("audio") &&
-        model.outputModalities.includes("text")
+        model.input_modalities?.includes("audio") &&
+        model.output_modalities?.includes("text")
     );
 }
 
-function isTextToAudioModel(model: ModelCatalogItem | undefined): boolean {
-    return (
+function isTextToAudioModel(model: ModelInfo | undefined): boolean {
+    return !!(
         model?.category === "audio" &&
-        model.inputModalities.includes("text") &&
-        model.outputModalities.includes("audio")
+        model.input_modalities?.includes("text") &&
+        model.output_modalities?.includes("audio")
     );
 }
 
-function referenceImageLimit(model: ModelCatalogItem | undefined): number {
-    if (!model?.inputModalities.includes("image")) return 0;
-    return model.maxReferenceImages ?? 0;
+function referenceImageLimit(model: ModelInfo | undefined): number {
+    if (!model?.input_modalities?.includes("image")) return 0;
+    return model.max_reference_images ?? 0;
 }
 
 function pluralizeImages(count: number): string {
@@ -315,9 +317,7 @@ export function Playground({
     } = usePlaygroundCatalog(apiKey);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
-    const [selectedModel, setSelectedModel] = useState(
-        "black-forest-labs/FLUX.1-schnell",
-    );
+    const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
@@ -330,33 +330,33 @@ export function Playground({
     const [error, setError] = useState<string | null>(null);
 
     const currentModel = useMemo(
-        () => catalog.models.find((model) => model.id === selectedModel),
+        () => catalog.models.find((model) => modelId(model) === selectedModel),
         [catalog.models, selectedModel],
     );
 
     useEffect(() => {
         if (catalog.models.length === 0) return;
-        if (catalog.models.some((model) => model.id === selectedModel)) return;
+        if (catalog.models.some((model) => modelId(model) === selectedModel))
+            return;
         const nextModel =
-            catalog.models.find(
-                (model) => model.id === "black-forest-labs/FLUX.1-schnell",
-            ) ??
+            catalog.models.find((model) => modelId(model) === "flux") ??
             catalog.models.find((model) => model.category === "image") ??
             catalog.models[0];
         if (nextModel) {
-            setSelectedModel(nextModel.id);
-            setActiveCategory(nextModel.category);
+            setSelectedModel(modelId(nextModel));
+            if (nextModel.category) setActiveCategory(nextModel.category);
         }
     }, [catalog.models, selectedModel]);
 
     useEffect(() => {
         if (!currentModel) return;
-        const [firstVoice] = currentModel.voices;
+        const voices = currentModel.voices ?? [];
+        const [firstVoice] = voices;
         if (!firstVoice) {
             if (selectedVoice) setSelectedVoice("");
             return;
         }
-        if (!currentModel.voices.includes(selectedVoice)) {
+        if (!voices.includes(selectedVoice)) {
             setSelectedVoice(firstVoice);
         }
     }, [currentModel, selectedVoice]);
@@ -377,7 +377,7 @@ export function Playground({
         supportsReferenceImages && !isVideoReferenceMode;
     const supportsLastFrame =
         isVideoReferenceMode &&
-        (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
+        (currentModel?.video_capabilities?.includes("end_frame") ?? false) &&
         maxReferenceImages >= 2;
     const firstFrameFiles = referenceImages[0] ? [referenceImages[0]] : [];
     const lastFrameFiles = referenceImages[1] ? [referenceImages[1]] : [];
@@ -386,7 +386,7 @@ export function Playground({
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
-        catalog.allowedModelIds.has(currentModel.id);
+        catalog.allowedModelIds.has(modelId(currentModel));
 
     useEffect(() => {
         setReferenceImages((current) => {
@@ -403,10 +403,11 @@ export function Playground({
             catalog.models.find(
                 (model) =>
                     model.category === category &&
-                    (!isLoggedIn || catalog.allowedModelIds.has(model.id)),
+                    (!isLoggedIn ||
+                        catalog.allowedModelIds.has(modelId(model))),
             ) ?? catalog.models.find((model) => model.category === category);
 
-        if (nextModel) setSelectedModel(nextModel.id);
+        if (nextModel) setSelectedModel(modelId(nextModel));
     }
 
     function setFrameImage(index: 0 | 1, files: File[]) {
@@ -461,7 +462,7 @@ export function Playground({
                 currentModel.category === "video"
             ) {
                 const response = await client.image(trimmedPrompt, {
-                    model: currentModel.id,
+                    model: modelId(currentModel),
                     width,
                     height,
                     seed,
@@ -485,7 +486,7 @@ export function Playground({
             if (currentModel.category === "audio") {
                 if (isAudioTranscription && audioFile) {
                     const response = await client.transcribe(audioFile, {
-                        model: currentModel.id,
+                        model: modelId(currentModel),
                         prompt: trimmedPrompt || undefined,
                     });
                     setResult({
@@ -503,7 +504,7 @@ export function Playground({
                 }
 
                 const response = await client.audio(trimmedPrompt, {
-                    model: currentModel.id,
+                    model: modelId(currentModel),
                     voice: selectedVoice || undefined,
                 });
                 setResult({
@@ -528,7 +529,7 @@ export function Playground({
                       ]
                     : trimmedPrompt;
             const response = await client.chat([{ role: "user", content }], {
-                model: currentModel.id,
+                model: modelId(currentModel),
             });
             setResult({
                 type: "text",
@@ -825,32 +826,37 @@ export function Playground({
                             </div>
                         )}
 
-                        {currentModel && currentModel.voices.length > 0 && (
-                            <FieldStack
-                                label={
-                                    <>
-                                        <ModalityDot modality="audio" />
-                                        Voice
-                                    </>
-                                }
-                                labelClassName="polli:flex polli:items-center polli:gap-1.5"
-                            >
-                                <ButtonGroup aria-label="Voice">
-                                    {currentModel.voices.map((voice) => (
-                                        <TabButton
-                                            key={voice}
-                                            active={selectedVoice === voice}
-                                            size="sm"
-                                            onClick={() =>
-                                                setSelectedVoice(voice)
-                                            }
-                                        >
-                                            {voice}
-                                        </TabButton>
-                                    ))}
-                                </ButtonGroup>
-                            </FieldStack>
-                        )}
+                        {currentModel &&
+                            (currentModel.voices?.length ?? 0) > 0 && (
+                                <FieldStack
+                                    label={
+                                        <>
+                                            <ModalityDot modality="audio" />
+                                            Voice
+                                        </>
+                                    }
+                                    labelClassName="polli:flex polli:items-center polli:gap-1.5"
+                                >
+                                    <ButtonGroup aria-label="Voice">
+                                        {(currentModel.voices ?? []).map(
+                                            (voice) => (
+                                                <TabButton
+                                                    key={voice}
+                                                    active={
+                                                        selectedVoice === voice
+                                                    }
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setSelectedVoice(voice)
+                                                    }
+                                                >
+                                                    {voice}
+                                                </TabButton>
+                                            ),
+                                        )}
+                                    </ButtonGroup>
+                                </FieldStack>
+                            )}
 
                         {error && <Alert intent="danger">{error}</Alert>}
 

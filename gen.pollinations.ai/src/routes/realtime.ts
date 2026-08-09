@@ -11,6 +11,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type BillingAdjustment,
@@ -69,12 +70,6 @@ const REALTIME_ROUTES: Record<
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
 };
-const CREDENTIAL_QUERY_PARAMS = new Set([
-    "access_token",
-    "api_key",
-    "key",
-    "token",
-]);
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
@@ -415,16 +410,6 @@ function extractReferrerHeader(c: Context<Env>): {
     } catch {
         return {};
     }
-}
-
-function redactCredentialQueryParams(url: URL): string {
-    const redacted = new URL(url);
-    for (const param of redacted.searchParams.keys()) {
-        if (CREDENTIAL_QUERY_PARAMS.has(param.toLowerCase())) {
-            redacted.searchParams.set(param, "[redacted]");
-        }
-    }
-    return redacted.toString();
 }
 
 function getPostDeductionBalances(

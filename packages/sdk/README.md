@@ -254,7 +254,7 @@ import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'Tongyi-MAI/Z-Image-Turbo',
+  model: 'zimage',
   width: 1920,
   height: 1080,
 });
@@ -264,19 +264,17 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Generate multiple images
-const images = await generateImage('abstract art', { n: 4 });
-images.forEach((img, i) => img.saveToFile(`art-${i}.png`));
-
 // Just get the URL (no download)
 const url = await imageUrl('a sunset');
 ```
 
 ### Options
 
+Defaults are applied by the API; the SDK sends only options you provide.
+
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'Tongyi-MAI/Z-Image-Turbo'` | Model to use |
+| `model` | string | `'zimage'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
@@ -285,8 +283,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
-| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for Google Gemini image models. Booleans are accepted for backward compatibility. |
-| `n` | number | `1` | Number of images |
+| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
 
 ## Image Editing
 
@@ -295,7 +292,7 @@ import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
-  model: 'black-forest-labs/FLUX.1-schnell',
+  model: 'flux',
 });
 await result.saveToFile('edited.png');
 
@@ -315,7 +312,7 @@ import { imageGenerate } from '@pollinations/sdk';
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
   size: '1024x1024',
-  model: 'black-forest-labs/FLUX.1-schnell',
+  model: 'flux',
 });
 await img.saveToFile('robot.png');
 
@@ -336,12 +333,9 @@ const text = await generateText('write a poem about coding');
 
 // With options
 const story = await generateText('explain gravity', {
-  model: 'openai/gpt-5.4-nano',
+  model: 'openai',
   systemPrompt: 'You are a physics teacher',
 });
-
-// Multiple responses
-const facts = await generateText('give me a random fact', { n: 3 });
 
 // Streaming
 for await (const chunk of generateTextStream('tell me a story')) {
@@ -359,7 +353,7 @@ console.log(result.actualModel); // actual model used
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'openai/gpt-5.4-nano'` | Model to use |
+| `model` | string | `'openai'` | Model to use |
 | `systemPrompt` | string | - | System prompt |
 | `temperature` | number | `1` | Creativity (0-2) |
 | `maxTokens` | number | - | Max output tokens |
@@ -368,7 +362,6 @@ console.log(result.actualModel); // actual model used
 | `seed` | number | random | Reproducible results |
 | `json` | boolean | `false` | JSON output mode |
 | `private` | boolean | `false` | Keep generation private |
-| `n` | number | `1` | Number of responses |
 | `raw` | boolean | `false` | Return full response |
 
 ## Chat
@@ -389,7 +382,7 @@ for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }]
 }
 
 // Conversation (auto-manages history)
-const convo = conversation({ model: 'openai/gpt-5.4-nano' });
+const convo = conversation({ model: 'openai' });
 convo.system('You are a pirate');
 
 const r1 = await convo.say('Hello!');        // "Ahoy, matey!"
@@ -405,27 +398,24 @@ convo.clear(); // Reset conversation
 import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
-  model: 'google/veo-3.1-fast',
+  model: 'veo',
   duration: 6,
 });
 await video.saveToFile('clouds.mp4');
 
-// Multiple videos
-const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 ```
 
 ### Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'google/veo-3.1-fast'` | `'google/veo-3.1-fast'`, `'bytedance/seedance-1-pro-fast'`, `'alibaba/wan-2.6'`, etc. |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
 | `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
-| `audio` | boolean | `false` | Include audio (`alibaba/wan-2.6` always has audio) |
+| `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
 | `safe` | boolean | `false` | Safety filter |
-| `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech & Music)
 
@@ -438,7 +428,7 @@ await speech.saveToFile('welcome.mp3');
 
 // Music generation
 const music = await generateAudio('upbeat jazz piano', {
-  model: 'elevenlabs/music-v2',
+  model: 'elevenmusic',
   duration: 30,
 });
 await music.saveToFile('jazz.mp3');
@@ -457,10 +447,9 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs/eleven-v3'` | `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
-| `n` | number | `1` | Number of outputs |
 
 ### Available Voices
 
@@ -559,7 +548,7 @@ import type {
 
 | Function | Description |
 |----------|-------------|
-| `generateImage(prompt, options?)` | Generate image(s) |
+| `generateImage(prompt, options?)` | Generate an image |
 | `editImage(prompt, options?)` | Edit image with prompt |
 | `imageUrl(prompt, options?)` | Get image URL |
 | `generateText(prompt, options?)` | Generate text |
@@ -567,7 +556,7 @@ import type {
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
 | `conversation(options?)` | Create conversation |
-| `generateVideo(prompt, options?)` | Generate video(s) |
+| `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |

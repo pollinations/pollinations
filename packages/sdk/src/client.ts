@@ -235,6 +235,17 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
+    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            signal,
+        );
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<T>;
+    }
+
     private buildQueryParams(
         params: Record<string, unknown>,
         includeKey: boolean = true,
@@ -281,7 +292,7 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "Tongyi-MAI/Z-Image-Turbo",
+            model: options.model,
             width: options.width,
             height: options.height,
             seed: options.seed,
@@ -369,7 +380,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'black-forest-labs/FLUX.1-schnell',
+     *   model: 'flux',
      * });
      * ```
      */
@@ -387,7 +398,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "black-forest-labs/FLUX.1-schnell",
+            model: options.model,
         };
 
         if (options.image) {
@@ -445,7 +456,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'black-forest-labs/FLUX.1-schnell',
+     *   model: 'flux',
      * });
      *
      * // Multiple images
@@ -472,7 +483,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "Tongyi-MAI/Z-Image-Turbo",
+            model: options.model,
         };
         if (size) body.size = size;
         if (options.n !== undefined) body.n = options.n;
@@ -568,10 +579,8 @@ export class Pollinations {
         prompt: string,
         options: VideoGenerateOptions = {},
     ): string {
-        const model = options.model || "google/veo-3.1-fast";
-
         const params: Record<string, unknown> = {
-            model,
+            model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
             seed: options.seed,
@@ -592,7 +601,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -679,7 +688,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai/gpt-5.4-nano",
+            model: options.model,
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -745,7 +754,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai/gpt-5.4-nano",
+            model: options.model,
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -817,7 +826,7 @@ export class Pollinations {
     ): Record<string, unknown> {
         return this.stripUndefined({
             messages,
-            model: options.model || "openai/gpt-5.4-nano",
+            model: options.model,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -969,7 +978,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
      * ```
      */
     async audio(
@@ -1035,8 +1044,8 @@ export class Pollinations {
 
         const body = {
             input: text,
-            voice: options.voice || "alloy",
-            model: options.model || "elevenlabs/eleven-v3",
+            voice: options.voice,
+            model: options.model,
         };
 
         const response = await fetchWithTimeout(
@@ -1075,17 +1084,7 @@ export class Pollinations {
      * ```
      */
     async textModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/text/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
     }
 
     /**
@@ -1098,17 +1097,7 @@ export class Pollinations {
      * ```
      */
     async imageModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/image/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
     }
 
     /**
@@ -1120,17 +1109,7 @@ export class Pollinations {
      * ```
      */
     async models(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/v1/models`);
     }
 
     // ============================================================================
@@ -1173,7 +1152,7 @@ export class Pollinations {
                 : new Blob([audio], { type: "audio/mpeg" });
 
         formData.append("file", blob, "audio.mp3");
-        formData.append("model", options.model || "whisper-large-v3");
+        if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
         if (options.responseFormat)
@@ -1284,7 +1263,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['black-forest-labs/FLUX.1-schnell', 'openai/gpt-5.4-nano'],
+     *   models: ['flux', 'openai'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });
@@ -1443,15 +1422,10 @@ export class Pollinations {
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
-        const response = await fetchWithTimeout(
+        return this.getJson<UserInfo>(
             `${AUTH_BASE_URL}/api/device/userinfo`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UserInfo>;
     }
 
     // ============================================================================
@@ -1468,14 +1442,7 @@ export class Pollinations {
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/profile`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountProfile>;
+        return this.getJson<AccountProfile>(`${this.baseUrl}/account/profile`);
     }
 
     /**
@@ -1488,14 +1455,7 @@ export class Pollinations {
      * ```
      */
     async accountBalance(): Promise<AccountBalance> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/balance`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountBalance>;
+        return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
     }
 
     /**
@@ -1519,14 +1479,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        return this.getJson<UsageResponse>(url);
     }
 
     /**
@@ -1552,14 +1505,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<DailyUsageResponse>;
+        return this.getJson<DailyUsageResponse>(url);
     }
 
     /**
@@ -1572,14 +1518,7 @@ export class Pollinations {
      * ```
      */
     async validateKey(): Promise<KeyInfo> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/key`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<KeyInfo>;
+        return this.getJson<KeyInfo>(`${this.baseUrl}/account/key`);
     }
 
     /**
@@ -1604,14 +1543,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        return this.getJson<UsageResponse>(url);
     }
 
     // ============================================================================
@@ -1628,15 +1560,10 @@ export class Pollinations {
      * ```
      */
     async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
-        const response = await fetchWithTimeout(
+        const body = await this.getJson<{ data?: AccountKey[] }>(
             `${this.baseUrl}/account/keys`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        const body = (await response.json()) as { data?: AccountKey[] };
         return body.data || [];
     }
 

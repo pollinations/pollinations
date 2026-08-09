@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     createMCPResponse,
     createTextContent,
-    parseApiError,
     postChatCompletion,
 } from "../utils/coreUtils.js";
 import {
@@ -18,7 +16,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "openai/gpt-5.4-nano",
+        model = "openai",
         seed,
         system,
         temperature,
@@ -64,8 +62,7 @@ async function generateText(params) {
     }
 
     try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
         const content = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([createTextContent(content)]);
@@ -80,7 +77,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "openai/gpt-5.4-nano",
+        model = "openai",
         temperature,
         max_tokens,
         top_p,
@@ -147,8 +144,7 @@ async function chatCompletion(params) {
     };
 
     try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
 
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
@@ -259,7 +255,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "openai/gpt-audio-mini",
+                m.name === "openai-audio",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
@@ -306,7 +302,7 @@ async function listTextModels(_params) {
                 advanced:
                     "Use chatCompletion for multi-turn conversations, tool calling, audio output",
                 reasoning:
-                    "True reasoning models: moonshotai/kimi-k2.6, perplexity/sonar-reasoning-pro, openai/gpt-5.5, google/gemini-3.1-pro-preview. Use reasoning_effort",
+                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
                 audio: "Use openai-audio with modalities=['text','audio'] for voice output",
             },
         };
@@ -327,14 +323,16 @@ async function webSearch(params) {
         throw new Error("Query is required and must be a string");
     }
 
-    const searchModels = [
-        "perplexity-fast",
-        "perplexity/sonar-reasoning-pro",
-        "gemini-search",
-    ];
-    if (!searchModels.includes(model)) {
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Model "${model}" doesn't support web search. Use: ${searchModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listTextModels to see all ${validation.availableCount} available models.`,
+        );
+    }
+    if (!validation.model.capabilities?.includes("web_search")) {
+        throw new Error(
+            `Model "${model}" doesn't support web search. Use listTextModels to find models with the web_search capability.`,
         );
     }
 
@@ -351,23 +349,7 @@ async function webSearch(params) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
         const answer = result.choices?.[0]?.message?.content || "";
 
         const responseData = {
@@ -433,13 +415,13 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'openai/gpt-5.4-nano'). See listTextModels for current IDs.\n" +
-                "- openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-5.5: GPT models\n" +
-                "- anthropic/claude-sonnet-4.6, anthropic/claude-haiku-4.5, anthropic/claude-opus-5: Claude models\n" +
-                "- google/gemini-3.6-flash, google/gemini-2.5-flash-lite, google/gemini-3.1-pro-preview: Gemini models\n" +
-                "- deepseek/deepseek-v4-flash-0731: Advanced reasoning model\n" +
+            "Text model to use (default: 'openai'). Popular options:\n" +
+                "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
+                "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
+                "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
+                "- deepseek: Advanced reasoning model\n" +
                 "- grok: xAI's Grok model\n" +
-                "- mistralai/mistral-small-2603, qwen/qwen3-coder-30b-a3b-instruct, perplexity-fast, perplexity/sonar-reasoning-pro\n" +
+                "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
                 "Use listTextModels for complete list.",
         ),
     seed: z
@@ -596,7 +578,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai/gpt-5.4-nano'). See listTextModels for all options",
+            "Text model (default: 'openai'). See listTextModels for all options",
         ),
     temperature: z
         .number()
@@ -758,14 +740,10 @@ export const textTools = [
         {
             query: z.string().describe("The search query or question"),
             model: z
-                .enum([
-                    "perplexity-fast",
-                    "perplexity/sonar-reasoning-pro",
-                    "gemini-search",
-                ])
+                .string()
                 .optional()
                 .describe(
-                    "Search model (default: 'perplexity-fast'):\n- perplexity-fast: Quick answers with web search\n- perplexity-reasoning: Deeper analysis with web search\n- gemini-search: Google's Gemini with Google Search",
+                    "Search-capable text model (default: 'perplexity-fast'). Use listTextModels for the live list of models with the web_search capability.",
                 ),
             detailed: z
                 .boolean()

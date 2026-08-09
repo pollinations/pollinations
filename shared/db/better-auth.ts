@@ -37,6 +37,9 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  // Public branding shared by every community model owned by this account.
+  communityProviderName: text("community_provider_name"),
+  communityProviderUrl: text("community_provider_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),

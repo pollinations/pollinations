@@ -16,7 +16,7 @@
     "submittedDate": "2026-08-08",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13209",
     "approvedDate": "2026-08-08",
-    "byop": false,
+    "byop": true,
     "requests24h": 0
   },
   {
@@ -50,13 +50,13 @@
     "githubUsername": "bharkodat-ux",
     "githubUserId": "262920109",
     "repositoryUrl": "https://github.com/bharkodat-ux/studdy",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-05-17",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11055",
     "approvedDate": "2026-08-08",
-    "byop": false,
+    "byop": true,
     "requests24h": 0
   },
   {
@@ -97,7 +97,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11153",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "📚",
@@ -150,7 +150,7 @@
     "githubUsername": "KushalRoyChowdhury",
     "githubUserId": "217232985",
     "repositoryUrl": "https://github.com/KushalRoyChowdhury/fluxflow-cli",
-    "repositoryStars": null,
+    "repositoryStars": 2,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-05-19",
@@ -170,7 +170,7 @@
     "githubUsername": "sizzlebop",
     "githubUserId": "192782247",
     "repositoryUrl": "https://github.com/pinkpixel-dev/promptzy",
-    "repositoryStars": null,
+    "repositoryStars": 80,
     "discordUsername": "sizzlebopz",
     "other": null,
     "submittedDate": "2026-05-20",
@@ -216,7 +216,7 @@
     "submittedDate": "2026-08-08",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13198",
     "approvedDate": "2026-08-08",
-    "byop": false,
+    "byop": true,
     "requests24h": 0
   },
   {
@@ -237,7 +237,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11354",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 25
   },
   {
     "emoji": "🎮",
@@ -256,7 +256,7 @@
     "submittedDate": "2026-05-23",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11262",
     "approvedDate": "2026-08-08",
-    "byop": false,
+    "byop": true,
     "requests24h": 0
   },
   {
@@ -297,7 +297,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11288",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 11
   },
   {
     "emoji": "🛠️",
@@ -370,7 +370,7 @@
     "githubUsername": "mtaspro",
     "githubUserId": "209120605",
     "repositoryUrl": "https://github.com/mtaspro/neuronerdsquiz",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": "mtaspro_mahtab --- ## Verifiable Source Code & API Integration Evidence",
     "other": null,
     "submittedDate": "2026-08-05",
@@ -417,7 +417,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12706",
     "approvedDate": "2026-08-06",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 3
   },
   {
     "emoji": "💬",
@@ -457,7 +457,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11420",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🛠️",
@@ -577,7 +577,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12905",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 23
+    "requests24h": 15
   },
   {
     "emoji": "🖼️",
@@ -597,7 +597,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12863",
     "approvedDate": "2026-08-05",
     "byop": true,
-    "requests24h": 4
+    "requests24h": 0
   },
   {
     "emoji": "💬",
@@ -637,7 +637,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12243",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 10
+    "requests24h": 2
   },
   {
     "emoji": "💬",
@@ -697,7 +697,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12694",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🖼️",
@@ -757,7 +757,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12742",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 858
+    "requests24h": 1264
   },
   {
     "emoji": "🛠️",
@@ -777,7 +777,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12765",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 229
+    "requests24h": 55
   },
   {
     "emoji": "🎬",
@@ -817,7 +817,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12773",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "💬",
@@ -857,7 +857,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10355",
     "approvedDate": "2026-07-22",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 6
   },
   {
     "emoji": "🖼️",
@@ -957,7 +957,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11448",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 115
+    "requests24h": 0
   },
   {
     "emoji": "🎉",
@@ -990,7 +990,7 @@
     "githubUsername": "falconafk31",
     "githubUserId": "41593642",
     "repositoryUrl": "https://github.com/falconafk31/affiliate-video-maker",
-    "repositoryStars": 4,
+    "repositoryStars": 5,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-06-03",
@@ -1037,7 +1037,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11647",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 124
+    "requests24h": 0
   },
   {
     "emoji": "🎬",
@@ -1057,7 +1057,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11673",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 116
+    "requests24h": 0
   },
   {
     "emoji": "🗣️",
@@ -1117,7 +1117,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11771",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🛠️",
@@ -1157,7 +1157,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11820",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 5
+    "requests24h": 213
   },
   {
     "emoji": "🤖",
@@ -1190,14 +1190,14 @@
     "githubUsername": "RaptorVampire",
     "githubUserId": "296319174",
     "repositoryUrl": "https://github.com/RaptorVampire/pollinations-image-lab",
-    "repositoryStars": 88,
+    "repositoryStars": 89,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-07-01",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12158",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🃏",
@@ -1257,7 +1257,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12199",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 14
   },
   {
     "emoji": "🪝",
@@ -1277,7 +1277,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12265",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "💬",
@@ -1317,7 +1317,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12315",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 6
   },
   {
     "emoji": "👗",
@@ -1357,7 +1357,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11799",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 30
+    "requests24h": 35
   },
   {
     "emoji": "🖼️",
@@ -1418,7 +1418,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12240",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 551165
+    "requests24h": 518133
   },
   {
     "emoji": "🖼️",
@@ -1438,7 +1438,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12115",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 71
   },
   {
     "emoji": "🌱",
@@ -1458,7 +1458,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12217",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 71
   },
   {
     "emoji": "💬",
@@ -1598,7 +1598,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11911",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 9
+    "requests24h": 1
   },
   {
     "emoji": "🧩",
@@ -1658,7 +1658,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11962",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 4
   },
   {
     "emoji": "🤖",
@@ -1698,7 +1698,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12013",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 33
+    "requests24h": 11
   },
   {
     "emoji": "🌸",
@@ -1758,7 +1758,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11987",
     "approvedDate": "2026-06-26",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🎭",
@@ -1778,7 +1778,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10492",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 7
   },
   {
     "emoji": "💸",
@@ -1798,7 +1798,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11751",
     "approvedDate": "2026-06-18",
     "byop": false,
-    "requests24h": 18
+    "requests24h": 6
   },
   {
     "emoji": "🧪",
@@ -1818,7 +1818,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11229",
     "approvedDate": "2026-06-18",
     "byop": false,
-    "requests24h": 18
+    "requests24h": 6
   },
   {
     "emoji": "📝",
@@ -1858,7 +1858,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11704",
     "approvedDate": "2026-06-11",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🧩",
@@ -1918,7 +1918,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10234",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 11
+    "requests24h": 10
   },
   {
     "emoji": "🖼️",
@@ -1978,7 +1978,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10380",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🧶",
@@ -2138,7 +2138,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10507",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 406
+    "requests24h": 221
   },
   {
     "emoji": "📻",
@@ -2158,7 +2158,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10484",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 316
+    "requests24h": 247
   },
   {
     "emoji": "🧩",
@@ -2258,7 +2258,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10697",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 79
+    "requests24h": 125
   },
   {
     "emoji": "🖼️",
@@ -2378,7 +2378,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10101",
     "approvedDate": "2026-05-30",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🌐",
@@ -2638,7 +2638,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10034",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 5
+    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -2698,7 +2698,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9995",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 18
+    "requests24h": 13
   },
   {
     "emoji": "🎨",
@@ -2718,7 +2718,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9994",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🎨",
@@ -2758,7 +2758,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9990",
     "approvedDate": "2026-05-17",
     "byop": true,
-    "requests24h": 18
+    "requests24h": 0
   },
   {
     "emoji": "🧠",
@@ -2898,7 +2898,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9949",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 101
+    "requests24h": 51
   },
   {
     "emoji": "🪶",
@@ -2938,7 +2938,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9947",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 9
+    "requests24h": 0
   },
   {
     "emoji": "🧭",
@@ -2978,7 +2978,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9196",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 222
+    "requests24h": 205
   },
   {
     "emoji": "🎬",
@@ -3218,7 +3218,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10568",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 24
+    "requests24h": 25
   },
   {
     "emoji": "🧠",
@@ -3258,7 +3258,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10958",
     "approvedDate": "2026-05-16",
     "byop": false,
-    "requests24h": 111
+    "requests24h": 98
   },
   {
     "emoji": "🧑‍🏫",
@@ -3418,7 +3418,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8944",
     "approvedDate": "2026-05-10",
     "byop": true,
-    "requests24h": 18
+    "requests24h": 0
   },
   {
     "emoji": "🏗️",
@@ -3438,7 +3438,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10016",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 5
+    "requests24h": 0
   },
   {
     "emoji": "🤖",
@@ -3658,7 +3658,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8932",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🧩",
@@ -3691,14 +3691,14 @@
     "githubUsername": "ivLis-Studio",
     "githubUserId": "25863234",
     "repositoryUrl": "https://github.com/ivLis-Studio/ivLyrics",
-    "repositoryStars": 160,
+    "repositoryStars": 161,
     "discordUsername": "ivl.is",
     "other": null,
     "submittedDate": "2026-03-16",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9169",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 147
+    "requests24h": 41
   },
   {
     "emoji": "🎬",
@@ -3738,7 +3738,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10710",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 6
+    "requests24h": 2
   },
   {
     "emoji": "🧩",
@@ -3778,7 +3778,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10755",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 0
   },
   {
     "emoji": "🩺",
@@ -3998,7 +3998,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10670",
     "approvedDate": "2026-05-05",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 2
   },
   {
     "emoji": "🛠️",
@@ -4058,7 +4058,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10404",
     "approvedDate": "2026-05-03",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🖼️",
@@ -4078,7 +4078,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10390",
     "approvedDate": "2026-04-29",
     "byop": false,
-    "requests24h": 383
+    "requests24h": 291
   },
   {
     "emoji": "🖼️",
@@ -4298,7 +4298,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9999",
     "approvedDate": "2026-04-20",
     "byop": false,
-    "requests24h": 18
+    "requests24h": 13
   },
   {
     "emoji": "🧠",
@@ -4318,7 +4318,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10340",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 41
+    "requests24h": 47
   },
   {
     "emoji": "📚",
@@ -4378,7 +4378,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10332",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🧠",
@@ -4438,7 +4438,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4604",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🖼️",
@@ -4458,7 +4458,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9197",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 12
+    "requests24h": 4
   },
   {
     "emoji": "🌤️",
@@ -4478,7 +4478,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10288",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 68
+    "requests24h": 62
   },
   {
     "emoji": "🧠",
@@ -4498,7 +4498,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10273",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 326
+    "requests24h": 286
   },
   {
     "emoji": "🎬",
@@ -4538,7 +4538,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2186",
     "approvedDate": "2025-05-31",
     "byop": false,
-    "requests24h": 32
+    "requests24h": 16
   },
   {
     "emoji": "🐱",
@@ -4558,7 +4558,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8490",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 1061
+    "requests24h": 838
   },
   {
     "emoji": "🏃‍♂️",
@@ -4578,7 +4578,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10251",
     "approvedDate": "2026-04-15",
     "byop": true,
-    "requests24h": 4
+    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -4618,7 +4618,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3080",
     "approvedDate": "2026-04-13",
     "byop": true,
-    "requests24h": 30
+    "requests24h": 0
   },
   {
     "emoji": "✍️",
@@ -4758,7 +4758,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9146",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 11
+    "requests24h": 7
   },
   {
     "emoji": "🤖",
@@ -4818,7 +4818,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8943",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 0
   },
   {
     "emoji": "🎨",
@@ -4858,7 +4858,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9235",
     "approvedDate": "2026-04-09",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🌸",
@@ -4878,7 +4878,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9188",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 11
+    "requests24h": 0
   },
   {
     "emoji": "🎬",
@@ -5018,7 +5018,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9041",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 14
+    "requests24h": 12
   },
   {
     "emoji": "🤖",
@@ -5131,7 +5131,7 @@
     "githubUsername": "SidhuK",
     "githubUserId": "22849795",
     "repositoryUrl": "https://github.com/SidhuK/WardenApp",
-    "repositoryStars": 324,
+    "repositoryStars": 325,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-03-17",
@@ -5158,7 +5158,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9972",
     "approvedDate": "2026-04-05",
     "byop": false,
-    "requests24h": 11
+    "requests24h": 53
   },
   {
     "emoji": "🎞️",
@@ -5178,7 +5178,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9917",
     "approvedDate": "2026-04-04",
     "byop": false,
-    "requests24h": 261
+    "requests24h": 624
   },
   {
     "emoji": "🧠",
@@ -5198,7 +5198,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9809",
     "approvedDate": "2026-04-03",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 84
   },
   {
     "emoji": "🖼️",
@@ -5318,7 +5318,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9841",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 6
   },
   {
     "emoji": "🧩",
@@ -5338,7 +5338,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9801",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 18
+    "requests24h": 3
   },
   {
     "emoji": "🎨",
@@ -5358,7 +5358,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9791",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 91
+    "requests24h": 136
   },
   {
     "emoji": "🧩",
@@ -5378,7 +5378,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9778",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 72
+    "requests24h": 102
   },
   {
     "emoji": "🤖",
@@ -5419,7 +5419,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 112
+    "requests24h": 6681
   },
   {
     "emoji": "📝",
@@ -5439,7 +5439,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9794",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 10
+    "requests24h": 210
   },
   {
     "emoji": "🔬",
@@ -5479,7 +5479,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9778",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 72
+    "requests24h": 102
   },
   {
     "emoji": "🤖",
@@ -5520,7 +5520,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 112
+    "requests24h": 6681
   },
   {
     "emoji": "📚",
@@ -5620,7 +5620,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9758",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 4
   },
   {
     "emoji": "🍳",
@@ -5680,7 +5680,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9305",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 20
+    "requests24h": 54
   },
   {
     "emoji": "🎓",
@@ -5700,7 +5700,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9299",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 3
   },
   {
     "emoji": "✒️",
@@ -5740,7 +5740,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9472",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 21
+    "requests24h": 14
   },
   {
     "emoji": "🌐",
@@ -5840,7 +5840,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9720",
     "approvedDate": "2026-03-29",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 3
   },
   {
     "emoji": "🐱",
@@ -5860,7 +5860,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9719",
     "approvedDate": "2026-03-29",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 2
   },
   {
     "emoji": "🔀",
@@ -5960,7 +5960,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9265",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 6
+    "requests24h": 7
   },
   {
     "emoji": "🧰",
@@ -6020,7 +6020,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9327",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 10
   },
   {
     "emoji": "🎬",
@@ -6060,7 +6060,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9335",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 14
+    "requests24h": 0
   },
   {
     "emoji": "📰",
@@ -6100,7 +6100,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9674",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🌼",
@@ -6180,7 +6180,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9656",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 4
   },
   {
     "emoji": "🕌",
@@ -6220,7 +6220,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9582",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🎨",
@@ -6300,7 +6300,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9639",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 23
+    "requests24h": 21
   },
   {
     "emoji": "🎨",
@@ -6320,7 +6320,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9631",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 25
+    "requests24h": 28
   },
   {
     "emoji": "📝",
@@ -6380,7 +6380,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9606",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 20
+    "requests24h": 0
   },
   {
     "emoji": "🎬",
@@ -6400,7 +6400,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9612",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 53
+    "requests24h": 0
   },
   {
     "emoji": "💬",
@@ -6440,7 +6440,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9583",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🛠️",
@@ -6480,7 +6480,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9596",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 563
+    "requests24h": 0
   },
   {
     "emoji": "🤖",
@@ -6500,7 +6500,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9326",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 159
+    "requests24h": 269
   },
   {
     "emoji": "🧮",
@@ -6521,7 +6521,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9451",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 858
+    "requests24h": 1264
   },
   {
     "emoji": "⚡",
@@ -6661,7 +6661,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9552",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 7
   },
   {
     "emoji": "📣",
@@ -6721,7 +6721,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9511",
     "approvedDate": "2026-03-24",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "🎹",
@@ -6741,7 +6741,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9475",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 9
+    "requests24h": 6
   },
   {
     "emoji": "🎬",
@@ -6841,7 +6841,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9416",
     "approvedDate": "2026-03-22",
     "byop": false,
-    "requests24h": 222
+    "requests24h": 205
   },
   {
     "emoji": "⚛️",
@@ -6941,7 +6941,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9385",
     "approvedDate": "2026-03-21",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🌌",
@@ -7021,7 +7021,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9315",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 6
   },
   {
     "emoji": "📝",
@@ -7041,7 +7041,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8162",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 5
+    "requests24h": 4
   },
   {
     "emoji": "🫧",
@@ -7061,7 +7061,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8136",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 103
+    "requests24h": 0
   },
   {
     "emoji": "📈",
@@ -7121,7 +7121,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8697",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 48
   },
   {
     "emoji": "🤖",
@@ -7201,7 +7201,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8707",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 2956
+    "requests24h": 1160
   },
   {
     "emoji": "🤖",
@@ -7221,7 +7221,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9059",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 17
+    "requests24h": 22
   },
   {
     "emoji": "🗃️",
@@ -7321,7 +7321,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9167",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 6
+    "requests24h": 3
   },
   {
     "emoji": "⚗️",
@@ -7401,7 +7401,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9058",
     "approvedDate": "2026-03-15",
     "byop": false,
-    "requests24h": 17
+    "requests24h": 22
   },
   {
     "emoji": "🎬",
@@ -7441,7 +7441,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9085",
     "approvedDate": "2026-03-13",
     "byop": false,
-    "requests24h": 31
+    "requests24h": 8
   },
   {
     "emoji": "📚",
@@ -7461,7 +7461,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8888",
     "approvedDate": "2026-03-07",
     "byop": true,
-    "requests24h": 1
+    "requests24h": 3
   },
   {
     "emoji": "🎬",
@@ -7481,7 +7481,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8920",
     "approvedDate": "2026-03-07",
     "byop": true,
-    "requests24h": 18
+    "requests24h": 0
   },
   {
     "emoji": "🏵",
@@ -7521,7 +7521,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8530",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 2
   },
   {
     "emoji": "🎨",
@@ -7614,14 +7614,14 @@
     "githubUsername": "Amine-SGM",
     "githubUserId": "176244378",
     "repositoryUrl": "https://github.com/Amine-SGM/pollinations-ui",
-    "repositoryStars": 6,
+    "repositoryStars": 7,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-02-25",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8590",
     "approvedDate": "2026-02-25",
     "byop": true,
-    "requests24h": 1
+    "requests24h": 7
   },
   {
     "emoji": "🖼️",
@@ -7741,7 +7741,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8768",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🧪",
@@ -7801,7 +7801,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8801",
     "approvedDate": "2026-03-03",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 0
   },
   {
     "emoji": "📖",
@@ -7861,7 +7861,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7576",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 59
+    "requests24h": 101
   },
   {
     "emoji": "🎭",
@@ -7881,7 +7881,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7642",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 6
   },
   {
     "emoji": "🤖",
@@ -8001,7 +8001,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8027",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 39
+    "requests24h": 0
   },
   {
     "emoji": "🧮",
@@ -8041,7 +8041,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7744",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 38
+    "requests24h": 1
   },
   {
     "emoji": "🎓",
@@ -8101,7 +8101,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8665",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 601
+    "requests24h": 555
   },
   {
     "emoji": "🎮",
@@ -8221,7 +8221,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8630",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🎬",
@@ -8261,7 +8261,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8218",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 3
   },
   {
     "emoji": "🎭",
@@ -8281,7 +8281,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8586",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 8
   },
   {
     "emoji": "📝",
@@ -8341,7 +8341,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8321",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 85
+    "requests24h": 0
   },
   {
     "emoji": "🌐",
@@ -8361,7 +8361,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8285",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 103
+    "requests24h": 0
   },
   {
     "emoji": "📖",
@@ -8461,7 +8461,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7241",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 15
   },
   {
     "emoji": "🎨",
@@ -8481,7 +8481,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8475",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 33
+    "requests24h": 11
   },
   {
     "emoji": "🖼️",
@@ -8741,7 +8741,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7273",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 63
+    "requests24h": 27
   },
   {
     "emoji": "💭",
@@ -8821,7 +8821,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8312",
     "approvedDate": "2026-02-23",
     "byop": false,
-    "requests24h": 159
+    "requests24h": 269
   },
   {
     "emoji": "⚖️",
@@ -8881,7 +8881,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7911",
     "approvedDate": "2026-02-23",
     "byop": false,
-    "requests24h": 28
+    "requests24h": 4
   },
   {
     "emoji": "💬",
@@ -8921,7 +8921,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7247",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 19
+    "requests24h": 83
   },
   {
     "emoji": "🖼️",
@@ -9001,7 +9001,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7626",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 29
+    "requests24h": 0
   },
   {
     "emoji": "🎶",
@@ -9061,7 +9061,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7663",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 188
+    "requests24h": 79
   },
   {
     "emoji": "🎨",
@@ -9141,7 +9141,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7698",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 177
+    "requests24h": 260
   },
   {
     "emoji": "🎨",
@@ -9161,7 +9161,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7810",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 20
+    "requests24h": 193
   },
   {
     "emoji": "🤖",
@@ -9181,7 +9181,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7848",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 6
   },
   {
     "emoji": "🛒",
@@ -9221,7 +9221,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7908",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 53
+    "requests24h": 29
   },
   {
     "emoji": "🧾",
@@ -9301,7 +9301,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8049",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 21
+    "requests24h": 23
   },
   {
     "emoji": "🖼️",
@@ -9341,7 +9341,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8296",
     "approvedDate": "2026-02-22",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🧪",
@@ -9401,7 +9401,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8373",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 0
   },
   {
     "emoji": "✍️",
@@ -9581,7 +9581,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7327",
     "approvedDate": "2026-02-21",
     "byop": false,
-    "requests24h": 12
+    "requests24h": 4
   },
   {
     "emoji": "🧠",
@@ -9641,7 +9641,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8065",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "💬",
@@ -9681,7 +9681,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7766",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 15
+    "requests24h": 70
   },
   {
     "emoji": "📝",
@@ -9701,7 +9701,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7882",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 1
+    "requests24h": 3
   },
   {
     "emoji": "🧠",
@@ -9761,7 +9761,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8093",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 29
+    "requests24h": 23
   },
   {
     "emoji": "🤖",
@@ -9781,7 +9781,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8191",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 32
+    "requests24h": 13
   },
   {
     "emoji": "🖼️",
@@ -9841,7 +9841,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7726",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 3
   },
   {
     "emoji": "📊",
@@ -9854,7 +9854,7 @@
     "githubUsername": "sligter",
     "githubUserId": "23713984",
     "repositoryUrl": "https://github.com/sligter/LandPPT",
-    "repositoryStars": 3539,
+    "repositoryStars": 3541,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-01-17",
@@ -9962,7 +9962,7 @@
     "issueUrl": null,
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 3
+    "requests24h": 0
   },
   {
     "emoji": "💬",
@@ -10002,7 +10002,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8079",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 409
+    "requests24h": 231
   },
   {
     "emoji": "🏫",
@@ -10082,7 +10082,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7732",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 47
+    "requests24h": 159
   },
   {
     "emoji": "🎨",
@@ -10123,7 +10123,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8287",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 100083
+    "requests24h": 102003
   },
   {
     "emoji": "🛡️",
@@ -10143,7 +10143,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7977",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 48
+    "requests24h": 51
   },
   {
     "emoji": "🦞",
@@ -10156,7 +10156,7 @@
     "githubUsername": "pollinations",
     "githubUserId": "86964862",
     "repositoryUrl": "https://github.com/pollinations/pollinations",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": "[openclaw.ai](https://openclaw.ai)",
     "submittedDate": "2026-02-14",
@@ -10223,7 +10223,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7290",
     "approvedDate": null,
     "byop": false,
-    "requests24h": 1085
+    "requests24h": 1953
   },
   {
     "emoji": "🧙‍♂️",
@@ -10283,7 +10283,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7483",
     "approvedDate": "2026-01-20",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 0
   },
   {
     "emoji": "🛠️",
@@ -10323,7 +10323,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6985",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 40
+    "requests24h": 159
   },
   {
     "emoji": "🛠️",
@@ -10363,7 +10363,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7109",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 10
   },
   {
     "emoji": "🤖",
@@ -10423,7 +10423,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7058",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🤖",
@@ -10443,7 +10443,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6370",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 44
+    "requests24h": 34
   },
   {
     "emoji": "🎨",
@@ -10563,7 +10563,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6558",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 0
   },
   {
     "emoji": "🖼️",
@@ -10783,7 +10783,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7041",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 131
+    "requests24h": 13
   },
   {
     "emoji": "🤖",
@@ -10863,7 +10863,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6932",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 332
+    "requests24h": 195
   },
   {
     "emoji": "📈",
@@ -10903,7 +10903,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6931",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 2263
   },
   {
     "emoji": "📝",
@@ -10983,7 +10983,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6920",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 13
+    "requests24h": 405
   },
   {
     "emoji": "🤖",
@@ -11023,7 +11023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6917",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 6
   },
   {
     "emoji": "🤖",
@@ -11083,7 +11083,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6882",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 75
+    "requests24h": 30
   },
   {
     "emoji": "💻",
@@ -11123,7 +11123,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6856",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 418
+    "requests24h": 659
   },
   {
     "emoji": "🖼️",
@@ -11163,7 +11163,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7192",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 79
+    "requests24h": 32
   },
   {
     "emoji": "🛠️",
@@ -11223,7 +11223,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7200",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 235
+    "requests24h": 0
   },
   {
     "emoji": "🗺️",
@@ -11263,7 +11263,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7208",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 7
+    "requests24h": 4
   },
   {
     "emoji": "🛠️",
@@ -11283,7 +11283,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7088",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 22
+    "requests24h": 20
   },
   {
     "emoji": "🧠",
@@ -11303,7 +11303,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7076",
     "approvedDate": "2026-01-10",
     "byop": false,
-    "requests24h": 366
+    "requests24h": 283
   },
   {
     "emoji": "🌺",
@@ -11323,7 +11323,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6991",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 357
+    "requests24h": 363
   },
   {
     "emoji": "📚",
@@ -11423,7 +11423,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7042",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 13
   },
   {
     "emoji": "🍎",
@@ -11523,7 +11523,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6547",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 2
+    "requests24h": 1
   },
   {
     "emoji": "💬",
@@ -11543,7 +11543,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6505",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 2263
   },
   {
     "emoji": "🎞️",
@@ -11603,7 +11603,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6805",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 26
   },
   {
     "emoji": "🧠",
@@ -11643,7 +11643,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6762",
     "approvedDate": "2026-01-03",
     "byop": false,
-    "requests24h": 85
+    "requests24h": 23
   },
   {
     "emoji": "🌸",
@@ -11663,7 +11663,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7595",
     "approvedDate": "2026-01-03",
     "byop": true,
-    "requests24h": 0
+    "requests24h": 5
   },
   {
     "emoji": "🎵",
@@ -11723,7 +11723,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6718",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 235
+    "requests24h": 0
   },
   {
     "emoji": "🖼️",
@@ -11783,7 +11783,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6714",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 79
+    "requests24h": 18
   },
   {
     "emoji": "🏥",
@@ -11823,7 +11823,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6711",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 2151
+    "requests24h": 2105
   },
   {
     "emoji": "📖",
@@ -11943,7 +11943,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6660",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🎵",
@@ -11983,7 +11983,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6653",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 195
+    "requests24h": 205
   },
   {
     "emoji": "🤖",
@@ -12023,7 +12023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6647",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 13
+    "requests24h": 34
   },
   {
     "emoji": "🍳",
@@ -12063,7 +12063,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6982",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 53
+    "requests24h": 4
   },
   {
     "emoji": "🎉",
@@ -12203,7 +12203,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6635",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 10
+    "requests24h": 51
   },
   {
     "emoji": "🌳",
@@ -12223,7 +12223,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6551",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 8
+    "requests24h": 0
   },
   {
     "emoji": "🎮",
@@ -12243,7 +12243,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6550",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 26
   },
   {
     "emoji": "📸",
@@ -12323,7 +12323,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6504",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 83
+    "requests24h": 64
   },
   {
     "emoji": "🎨",
@@ -12343,7 +12343,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6494",
     "approvedDate": "2025-12-27",
     "byop": true,
-    "requests24h": 4
+    "requests24h": 0
   },
   {
     "emoji": "⚡",
@@ -12363,7 +12363,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6780",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 138
+    "requests24h": 56
   },
   {
     "emoji": "💬",
@@ -12423,7 +12423,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6448",
     "approvedDate": "2025-12-25",
     "byop": false,
-    "requests24h": 32
+    "requests24h": 33
   },
   {
     "emoji": "🐟",
@@ -12503,7 +12503,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6419",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 111
+    "requests24h": 2
   },
   {
     "emoji": "🎨",
@@ -12563,7 +12563,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6438",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 121
+    "requests24h": 115
   },
   {
     "emoji": "🧩",
@@ -12583,7 +12583,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6424",
     "approvedDate": "2025-12-24",
     "byop": true,
-    "requests24h": 47
+    "requests24h": 159
   },
   {
     "emoji": "🗣️",
@@ -12603,7 +12603,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6352",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 53
+    "requests24h": 17
   },
   {
     "emoji": "🎛️",
@@ -12623,7 +12623,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6346",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 2
   },
   {
     "emoji": "🛠️",
@@ -12643,7 +12643,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6367",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 17
+    "requests24h": 1
   },
   {
     "emoji": "💬",
@@ -12683,7 +12683,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6331",
     "approvedDate": "2025-12-22",
     "byop": true,
-    "requests24h": 47
+    "requests24h": 159
   },
   {
     "emoji": "🛠️",
@@ -12763,7 +12763,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5660",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 601
+    "requests24h": 555
   },
   {
     "emoji": "🎨",
@@ -12843,7 +12843,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6100",
     "approvedDate": "2025-12-16",
     "byop": false,
-    "requests24h": 29
+    "requests24h": 127
   },
   {
     "emoji": "🎄",
@@ -12903,7 +12903,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5508",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 6
   },
   {
     "emoji": "✨",
@@ -12923,7 +12923,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5737",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 162
   },
   {
     "emoji": "🍎",
@@ -13003,7 +13003,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4914",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 393
+    "requests24h": 191
   },
   {
     "emoji": "🎨",
@@ -13023,7 +13023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5373",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "🎮",
@@ -13203,7 +13203,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5742",
     "approvedDate": "2025-12-12",
     "byop": false,
-    "requests24h": 3139
+    "requests24h": 675
   },
   {
     "emoji": "🤖",
@@ -13223,7 +13223,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5857",
     "approvedDate": "2025-12-10",
     "byop": false,
-    "requests24h": 29
+    "requests24h": 127
   },
   {
     "emoji": "💕",
@@ -13263,7 +13263,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5658",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 57
+    "requests24h": 52
   },
   {
     "emoji": "🎨",
@@ -13283,7 +13283,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5664",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🖼️",
@@ -13303,7 +13303,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5662",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 6
+    "requests24h": 12
   },
   {
     "emoji": "🖼️",
@@ -13323,7 +13323,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5640",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 190
+    "requests24h": 233
   },
   {
     "emoji": "🧩",
@@ -13363,7 +13363,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5647",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 27
   },
   {
     "emoji": "🌐",
@@ -13383,7 +13383,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5655",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 29
   },
   {
     "emoji": "🎬",
@@ -13423,7 +13423,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5588",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 15
+    "requests24h": 17
   },
   {
     "emoji": "🧪",
@@ -13483,7 +13483,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5628",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 381
+    "requests24h": 150
   },
   {
     "emoji": "💰",
@@ -13503,7 +13503,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5563",
     "approvedDate": "2025-12-02",
     "byop": false,
-    "requests24h": 111
+    "requests24h": 2
   },
   {
     "emoji": "💬",
@@ -13583,7 +13583,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5490",
     "approvedDate": "2025-11-30",
     "byop": false,
-    "requests24h": 39
+    "requests24h": 1
   },
   {
     "emoji": "🖼️",
@@ -13723,7 +13723,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4832",
     "approvedDate": "2025-10-28",
     "byop": false,
-    "requests24h": 4
+    "requests24h": 12
   },
   {
     "emoji": "🪶",
@@ -13763,7 +13763,7 @@
     "issueUrl": null,
     "approvedDate": "2025-10-26",
     "byop": false,
-    "requests24h": 551165
+    "requests24h": 518133
   },
   {
     "emoji": "📸",
@@ -13903,7 +13903,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4718",
     "approvedDate": "2025-10-22",
     "byop": false,
-    "requests24h": 29
+    "requests24h": 127
   },
   {
     "emoji": "🤖",
@@ -13983,7 +13983,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4613",
     "approvedDate": "2025-10-19",
     "byop": false,
-    "requests24h": 1211
+    "requests24h": 175
   },
   {
     "emoji": "🎨",
@@ -14003,7 +14003,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4587",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 19
+    "requests24h": 83
   },
   {
     "emoji": "🎨",
@@ -14023,7 +14023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4586",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 130
+    "requests24h": 107
   },
   {
     "emoji": "💬",
@@ -14176,7 +14176,7 @@
     "githubUsername": "AdityaTel89",
     "githubUserId": "101270144",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/map-to-isometric",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14196,7 +14196,7 @@
     "githubUsername": "prateekverma145",
     "githubUserId": "148776148",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14256,7 +14256,7 @@
     "githubUsername": "anmolsah",
     "githubUserId": "113588714",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14276,7 +14276,7 @@
     "githubUsername": "codevector-2003",
     "githubUserId": "197366900",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14323,7 +14323,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4287",
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 381
+    "requests24h": 150
   },
   {
     "emoji": "🛗",
@@ -14337,14 +14337,14 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/sirius-cybernetics-elevator-challenge",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
     "issueUrl": null,
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 551165
+    "requests24h": 518133
   },
   {
     "emoji": "😼",
@@ -14358,7 +14358,7 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/catgpt",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-05",
@@ -14425,7 +14425,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4102",
     "approvedDate": "2025-09-21",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 6
   },
   {
     "emoji": "💬",
@@ -14765,7 +14765,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3589",
     "approvedDate": "2025-08-11",
     "byop": false,
-    "requests24h": 735
+    "requests24h": 796
   },
   {
     "emoji": "🤖",
@@ -14785,7 +14785,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2041",
     "approvedDate": "2025-08-08",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 0
   },
   {
     "emoji": "🛠",
@@ -14845,7 +14845,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3476",
     "approvedDate": "2025-08-05",
     "byop": false,
-    "requests24h": 5
+    "requests24h": 1
   },
   {
     "emoji": "🎨",
@@ -15245,7 +15245,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2961",
     "approvedDate": "2025-07-12",
     "byop": false,
-    "requests24h": 33
+    "requests24h": 11
   },
   {
     "emoji": "🔌",
@@ -15345,7 +15345,7 @@
     "issueUrl": null,
     "approvedDate": "2025-07-05",
     "byop": false,
-    "requests24h": 9
+    "requests24h": 6
   },
   {
     "emoji": "✨",
@@ -15465,7 +15465,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2362",
     "approvedDate": "2025-06-13",
     "byop": false,
-    "requests24h": 9
+    "requests24h": 6
   },
   {
     "emoji": "🖍️",
@@ -15665,7 +15665,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2146",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 177
+    "requests24h": 260
   },
   {
     "emoji": "🛠",
@@ -15765,7 +15765,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2020",
     "approvedDate": "2025-05-20",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 6
   },
   {
     "emoji": "🍳",
@@ -15805,7 +15805,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1998",
     "approvedDate": "2025-05-19",
     "byop": false,
-    "requests24h": 67
+    "requests24h": 75
   },
   {
     "emoji": "💻",
@@ -15925,7 +15925,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1985",
     "approvedDate": "2025-05-16",
     "byop": false,
-    "requests24h": 39
+    "requests24h": 1
   },
   {
     "emoji": "🔌",
@@ -15938,14 +15938,14 @@
     "githubUsername": "aandrew-me",
     "githubUserId": "66430340",
     "repositoryUrl": "https://github.com/aandrew-me/tgpt",
-    "repositoryStars": 3229,
+    "repositoryStars": 3230,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-12-28",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6539",
     "approvedDate": "2025-05-15",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 1
   },
   {
     "emoji": "📖",
@@ -15998,7 +15998,7 @@
     "githubUsername": "harry0703",
     "githubUserId": "4928832",
     "repositoryUrl": "https://github.com/harry0703/MoneyPrinterTurbo",
-    "repositoryStars": 102125,
+    "repositoryStars": 102240,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -16025,7 +16025,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1887",
     "approvedDate": "2025-05-12",
     "byop": false,
-    "requests24h": 15
+    "requests24h": 70
   },
   {
     "emoji": "📷",
@@ -16085,7 +16085,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1887",
     "approvedDate": "2025-05-12",
     "byop": false,
-    "requests24h": 15
+    "requests24h": 70
   },
   {
     "emoji": "📷",
@@ -16385,7 +16385,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 85
+    "requests24h": 23
   },
   {
     "emoji": "💅",
@@ -16405,7 +16405,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 85
+    "requests24h": 23
   },
   {
     "emoji": "📊",
@@ -16478,7 +16478,7 @@
     "githubUsername": "aidevs",
     "githubUserId": "19439409",
     "repositoryUrl": "https://github.com/vercel/ai/tree/main/examples/ai-image-generator",
-    "repositoryStars": 26078,
+    "repositoryStars": 26088,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -16545,7 +16545,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1730",
     "approvedDate": "2025-04-20",
     "byop": false,
-    "requests24h": 102
+    "requests24h": 1
   },
   {
     "emoji": "🌍",
@@ -16625,7 +16625,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1680",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 551165
+    "requests24h": 518133
   },
   {
     "emoji": "🖼️",
@@ -16925,7 +16925,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3316",
     "approvedDate": "2025-03-15",
     "byop": false,
-    "requests24h": 61
+    "requests24h": 65
   },
   {
     "emoji": "🧩",
@@ -16985,7 +16985,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1349",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 131
+    "requests24h": 13
   },
   {
     "emoji": "🔥",
@@ -17005,7 +17005,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1356",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 61
+    "requests24h": 65
   },
   {
     "emoji": "🎮",
@@ -17105,7 +17105,7 @@
     "issueUrl": null,
     "approvedDate": "2025-03-01",
     "byop": true,
-    "requests24h": 47
+    "requests24h": 159
   },
   {
     "emoji": "💬",
@@ -17318,7 +17318,7 @@
     "githubUsername": "pollinations",
     "githubUserId": "86964862",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/mcp",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -17378,7 +17378,7 @@
     "githubUsername": "pinkpixel-dev",
     "githubUserId": "195895956",
     "repositoryUrl": "https://github.com/pinkpixel-dev/MCPollinations",
-    "repositoryStars": 40,
+    "repositoryStars": 39,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -17458,7 +17458,7 @@
     "githubUsername": "QwenLM",
     "githubUserId": "141221163",
     "repositoryUrl": "https://github.com/QwenLM/Qwen-Agent",
-    "repositoryStars": 16933,
+    "repositoryStars": 16939,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-03-25",
@@ -17478,7 +17478,7 @@
     "githubUsername": "SillyTavern",
     "githubUserId": "134869877",
     "repositoryUrl": "https://github.com/SillyTavern/SillyTavern",
-    "repositoryStars": 31792,
+    "repositoryStars": 31834,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -17525,7 +17525,7 @@
     "issueUrl": null,
     "approvedDate": null,
     "byop": false,
-    "requests24h": 11
+    "requests24h": 10
   },
   {
     "emoji": "🎨",
@@ -17578,7 +17578,7 @@
     "githubUsername": "pollinations-test",
     "githubUserId": "151645294",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/sdk",
-    "repositoryStars": 4929,
+    "repositoryStars": 4932,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",

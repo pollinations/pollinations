@@ -46,9 +46,9 @@ jobs:
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
         run: |
-          node apps/app-management/management/reactivate-app.js prepare \
-            --event="$GITHUB_EVENT_PATH" \
-            --output="$RUNNER_TEMP/app-candidate.json"
+          npm run apps:capture-screenshots -- \
+            --restore-event="$GITHUB_EVENT_PATH" \
+            --restore-output="$RUNNER_TEMP/app-candidate.json"
           if [ -f "$RUNNER_TEMP/app-candidate.json" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
@@ -65,15 +65,25 @@ jobs:
         if: steps.candidate.outputs.ready == 'true'
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
+          COMMUNITY_APP_REVIEW_AUTH_STATE: ${{ secrets.COMMUNITY_APP_REVIEW_AUTH_STATE }}
         run: |
-          node apps/app-management/management/reactivate-app.js apply \
-            --candidate="$RUNNER_TEMP/app-candidate.json"
+          AUTH_STATE_PATH="$RUNNER_TEMP/community-app-review-auth-state.json"
+          if [[ -z "$COMMUNITY_APP_REVIEW_AUTH_STATE" ]]; then
+            echo "COMMUNITY_APP_REVIEW_AUTH_STATE is not configured" >&2
+            exit 1
+          fi
+          printf '%s' "$COMMUNITY_APP_REVIEW_AUTH_STATE" > "$AUTH_STATE_PATH"
+          chmod 600 "$AUTH_STATE_PATH"
+          trap 'rm -f "$AUTH_STATE_PATH"' EXIT
+
           jq -c '[.url]' "$RUNNER_TEMP/app-candidate.json" > "$RUNNER_TEMP/app-target.json"
           npm run apps:capture-screenshots -- \
             --mode=all \
             --targets-file="$RUNNER_TEMP/app-target.json" \
             --limit=1 \
             --concurrency=1 \
+            --auth-state="$AUTH_STATE_PATH" \
+            --authorize-pollinations \
             --publish
 
       - name: Verify reactivation

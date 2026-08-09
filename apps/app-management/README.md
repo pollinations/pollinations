@@ -20,9 +20,10 @@ changes.
 7. The catalog change lands through an auto-merge PR. After merge, the original
    submission issue receives the reason and restoration instructions.
 8. A submitter or repository maintainer can reply that the app is fixed. The
-   reactivation agent recovers the old row from Git history, interprets the
+   same management agent recovers the old row from Git history, interprets the
    reply, rechecks the live app, captures a fresh screenshot, and opens a
-   restoration PR.
+   restoration PR. The GitHub workflow only filters the event and publishes the
+   result.
 
 There is no separate deleted-app ledger. The catalog, Git history, pull request,
 and original submission issue are the complete record.

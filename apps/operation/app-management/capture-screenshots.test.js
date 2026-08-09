@@ -3,18 +3,20 @@ const test = require("node:test");
 const {
     DESKTOP_USER_AGENT,
     applyAgentAction,
+    applyCatalogChanges,
     applyMediaUrls,
     calculateDailyBatch,
     callScreenshotAgent,
     classifyCaptureOutcome,
     hasAllowedOrigin,
+    navigateToTarget,
     resolveAgentClickTarget,
     resolveTarget,
     selectTargets,
     selectTargetsByUrl,
     validateAgentDecision,
     waitForSuccessfulNavigation,
-} = require("./app-capture-screenshots.js");
+} = require("./capture-screenshots.js");
 
 test("uses a normal desktop browser identity for public app captures", () => {
     assert.match(DESKTOP_USER_AGENT, /Chrome\/\d+/);
@@ -41,6 +43,29 @@ test("allows a blocked navigation to resolve to a successful document", async ()
         await waitForSuccessfulNavigation(page, { status: () => 403 }, 30000),
         200,
     );
+});
+
+test("requires two matching 404 responses before confirming removal", async () => {
+    let navigations = 0;
+    const response = {
+        status: () => 404,
+    };
+    const page = {
+        goto: async () => {
+            navigations++;
+            return response;
+        },
+        waitForResponse: async () => {
+            throw new Error("No successful navigation");
+        },
+        waitForTimeout: async () => {},
+    };
+
+    assert.deepEqual(
+        await navigateToTarget(page, "https://missing.test", 30000),
+        { response, status: 404 },
+    );
+    assert.equal(navigations, 2);
 });
 
 test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
@@ -77,6 +102,53 @@ test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
     );
     assert.equal(apps[1].screenshotUrl, apps[0].screenshotUrl);
     assert.equal(apps[2].screenshotUrl, "unchanged");
+});
+
+test("removes only explicitly confirmed catalog rows", () => {
+    const apps = [
+        {
+            issueUrl: "https://github.com/pollinations/pollinations/issues/1",
+            name: "Dead app",
+            url: "https://dead.test",
+        },
+        {
+            issueUrl: "https://github.com/pollinations/pollinations/issues/2",
+            name: "Uncertain app",
+            url: "https://uncertain.test",
+        },
+    ];
+    const update = applyCatalogChanges(
+        apps,
+        [],
+        [
+            {
+                catalogIndices: [0],
+                review: {
+                    decision: "remove",
+                    reason: "The app returned HTTP 404 twice",
+                },
+                status: 404,
+            },
+            {
+                catalogIndices: [1],
+                review: {
+                    decision: "reject",
+                    reason: "The page did not finish loading",
+                },
+            },
+        ],
+    );
+
+    assert.deepEqual(update.apps, [apps[1]]);
+    assert.deepEqual(update.removedApps, [
+        {
+            issueUrl: apps[0].issueUrl,
+            name: "Dead app",
+            reason: "The app returned HTTP 404 twice",
+            status: 404,
+            url: "https://dead.test",
+        },
+    ]);
 });
 
 test("uses a repository only when no website URL is available", () => {
@@ -237,6 +309,20 @@ test("validates final screenshot-agent decisions", () => {
             decision: "needs_auth",
             reason: "The app is visible but requires Google sign-in.",
             score: 70,
+        },
+    );
+    assert.deepEqual(
+        validateAgentDecision({
+            action: null,
+            decision: "remove",
+            reason: "The domain is visibly parked.",
+            score: 100,
+        }),
+        {
+            action: null,
+            decision: "remove",
+            reason: "The domain is visibly parked.",
+            score: 100,
         },
     );
 });
@@ -422,6 +508,14 @@ test("reports capture outcomes separately", () => {
             success: true,
         }),
         "auth_required",
+    );
+    assert.equal(
+        classifyCaptureOutcome({
+            approved: false,
+            review: { decision: "remove" },
+            success: true,
+        }),
+        "confirmed_removal",
     );
     assert.equal(
         classifyCaptureOutcome({ approved: false, success: true }),

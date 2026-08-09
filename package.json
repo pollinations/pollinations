@@ -19,7 +19,7 @@
     "dev:enter": "npm run dev --workspace pollinations-enter",
     "dev:gen": "npm run dev --workspace pollinations-gen",
     "dev:gen-stack": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter-worker,gen' -c 'auto' 'npm run dev:worker --workspace pollinations-enter' 'sleep 12 && npm run dev --workspace pollinations-gen'",
-    "apps:capture-screenshots": "node .github/scripts/app-capture-screenshots.js",
+    "apps:capture-screenshots": "node apps/operation/app-management/capture-screenshots.js",
     "format:changed": "git diff --diff-filter=d --name-only origin/main | grep -E '\\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|dist|build|\\.next|\\.cache|out)/' | xargs npx biome check --write"
   },
   "devDependencies": {

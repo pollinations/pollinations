@@ -1,4 +1,4 @@
-name: Apps / Refresh screenshots
+name: Apps / Manage catalog
 
 on:
   schedule:
@@ -19,11 +19,11 @@ on:
         default: 50
 
 concurrency:
-  group: app-screenshot-refresh
+  group: app-catalog-management
   cancel-in-progress: false
 
 jobs:
-  refresh-screenshots:
+  manage-catalog:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -62,7 +62,11 @@ jobs:
           npm run apps:capture-screenshots -- "${args[@]}"
 
       - name: Validate catalog
-        run: node -e 'require("./.github/scripts/lib/app-catalog.js").readApps()'
+        run: |
+          node apps/operation/app-management/validate-catalog.js
+          if ! git diff --quiet -- apps/catalog.json; then
+            node apps/operation/app-management/update-greenhouse.js
+          fi
 
       - name: Upload capture report
         if: always()
@@ -76,6 +80,8 @@ jobs:
       - name: Check for catalog changes
         id: changes
         run: |
+          REPORT=$(find temp/app-screenshots -name report.json -type f | sort | tail -1)
+          echo "report=$REPORT" >> "$GITHUB_OUTPUT"
           if git diff --quiet -- apps/catalog.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -103,15 +109,42 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          REPORT: ${{ steps.changes.outputs.report }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
           BRANCH="auto/app-screenshots-${DATE}-${GITHUB_RUN_ID}"
 
           git checkout -b "$BRANCH"
-          git add apps/catalog.json
-          git commit -m "chore: refresh app screenshots (${DATE})"
+          git add apps/catalog.json apps/GREENHOUSE.md README.md
+          git commit -m "chore: maintain community apps (${DATE})"
           git push -u origin "$BRANCH"
 
+          REMOVAL_COUNT=$(jq '.removedApps | length' "$REPORT")
+          if [ "$REMOVAL_COUNT" -gt 0 ]; then
+            REMOVALS=$(jq -c '.removedApps' "$REPORT")
+            MARKER=$(printf '{"action":"remove","apps":%s}' "$REMOVALS" | base64 -w0)
+            REMOVAL_LIST=$(jq -r '.removedApps[] | "- **\(.name)** — \(.reason)"' "$REPORT")
+          else
+            MARKER=""
+            REMOVAL_LIST="- None"
+          fi
+          MARKER_LINE=""
+          if [ -n "$MARKER" ]; then
+            MARKER_LINE="<!-- pollinations-app-management:${MARKER} -->"
+          fi
+
+          cat > "$RUNNER_TEMP/pr-body.md" <<EOF
+          - Refreshes approved community-app screenshots.
+          - Removes only apps with a confirmed permanent failure.
+          - [Capture report](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+
+          Removed apps:
+          ${REMOVAL_LIST}
+
+          ${MARKER_LINE}
+          EOF
+
           PR_URL=$(gh pr create \
-            --title "chore: refresh app screenshots (${DATE})" \
-            --body "Refreshes community app screenshots stored on media.pollinations.ai. Review the capture report at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before merging. Automatic merge is disabled during workflow validation.")
+            --title "chore: maintain community apps (${DATE})" \
+            --body-file "$RUNNER_TEMP/pr-body.md")
+          gh pr merge "$PR_URL" --auto --squash --delete-branch

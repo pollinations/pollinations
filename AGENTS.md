@@ -8,7 +8,7 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/catalog.json`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `apps/catalog.json`, run `node apps/operation/app-management/update-greenhouse.js`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
@@ -98,7 +98,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 The community app screenshot workflow may create and revoke temporary review
 grants without per-app approval. This exception applies only to
-`.github/workflows/apps-refresh-screenshots.yml`, using the dedicated review
+`.github/workflows/apps-manage-catalog.yml`, using the dedicated review
 identity (`pollinationsagent@gmail.com` for Google and `pollinationsagent` for
 GitHub/Pollinations), and only when every condition below is enforced:
 

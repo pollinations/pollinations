@@ -1,0 +1,34 @@
+{
+  "pr_number": 13221,
+  "title": "fix: spill DreamShaper load across Vast workers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13221",
+  "merged_at": "2026-08-09T22:39:49Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Bounds each DreamShaper Uvicorn process at one running and one waiting generation.\n- Returns `503 Queue full` beyond that limit so the shared Vast pool router retries the other registered DreamShaper hostname.\n- Persists `QUEUE_LIMIT=2` in Vast setup and documents the six-request-per-GPU admission limit.\n- Adds focused tests for overload rejection and slot release after failures.\n\n## Contract preserved\n\n- Canonical model: `dreamshaper`; alias: `sana`\n- Price multiplier: `1`; paid-only: no\n- Pollinations GPU: yes; registry provider: Vast\n- Primary: two-worker Vast `sana` pool running `Lykon/dreamshaper-8` with LCM LoRA\n- External fallback: none\n\n## Validation\n\n- `python3 -m unittest -v test_server.py` — 2 passed\n- `python3 -m py_compile server.py test_server.py`\n- `bash -n setup-vast.sh`\n- `npx vitest run test/image/availableServers.test.ts` — 9 passed\n\n## Required rollout order\n\n1. Merge this PR into `main`.\n2. Sync `main` to `production` and deploy gen through GitHub Actions so the cross-worker 503 retry from #13218 is live.\n3. Verify the deployed gen retry behavior.\n4. Only then rerun setup on both DreamShaper production workers to activate `QUEUE_LIMIT=2`.\n\nEnabling the worker queue limit before step 2 would expose raw 503s to users instead of failing over.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "DreamShaper shares the pollen",
+    "blurb": "DreamShaper workers now know when their tiny waiting room is full and politely send new generations toward another Vast worker. Less queue staring, more pixels.",
+    "summary": "Bounded each DreamShaper Uvicorn worker to one active and one waiting generation (QUEUE_LIMIT=2), returning 503 Queue full so the shared Vast router can retry the other registered DreamShaper worker, for six admitted requests per GPU.",
+    "impact": "DreamShaper image requests can now spill across the two-worker Vast sana pool when one worker is busy, improving generation availability while preserving the dreamshaper/sana model contract.",
+    "keywords": [
+      "DreamShaper",
+      "sana",
+      "Vast",
+      "queueing",
+      "image-generation",
+      "reliability"
+    ],
+    "visual_concept": "Depict DreamShaper as a cozy two-station pixel-art image workshop: Polli, wearing a tiny traffic-controller cap, guides glowing image-prompt packets from a full worker queue to a neighboring Vast-powered workstation. Show two retro GPU terminals, a small two-slot queue sign on each, and code-plants growing around the shared routing path to make load balancing feel like tending a garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee with pink cheek blush, light blue wings, and a tiny traffic-controller cap, gently directing glowing image-prompt seeds from one busy retro GPU terminal to a neighboring available terminal in a DreamShaper garden workshop; each terminal has a small pixel sign reading '2 SLOTS', with vines and code-plants connecting them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-09/PR-13221.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee with pink cheek blush, light blue wings, and a tiny traffic-controller cap, gently directing glowing image-prompt seeds from one busy retro GPU terminal to a neighboring available terminal in a DreamShaper garden workshop; each terminal has a small pixel sign reading '2 SLOTS', with vines and code-plants connecting them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-09T22:41:04.865951+00:00"
+}

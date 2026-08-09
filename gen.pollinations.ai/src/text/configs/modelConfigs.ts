@@ -164,6 +164,21 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "z-ai/glm-5.2": () => ({
+        provider: "openrouter",
+        authKey: process.env.OPENROUTER_API_KEY,
+        model: "z-ai/glm-5.2",
+        defaultOptions: {
+            provider: {
+                only: ["novita/fp8"],
+                allow_fallbacks: false,
+                max_price: {
+                    prompt: 0.0812,
+                    completion: 0.2552,
+                },
+            },
+        },
+    }),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -380,10 +395,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
-    "accounts/fireworks/models/glm-5p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p2",
-        }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",

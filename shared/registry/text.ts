@@ -1540,15 +1540,16 @@ export const TEXT_SERVICES = {
     },
     "glm": {
         aliases: ["glm-5.2", "glm-5p2"],
-        provider: "fireworks",
+        provider: "openrouter",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.14),
-            completionTextTokens: perMillion(4.4),
+            promptTextTokens: perMillion(0.0812),
+            promptCachedTokens: perMillion(0.01508),
+            completionTextTokens: perMillion(0.2552),
         },
         title: "Z.ai GLM-5.2",
         description:

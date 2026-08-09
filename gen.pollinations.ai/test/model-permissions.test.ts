@@ -101,7 +101,7 @@ test("media routes own their endpoint-specific model defaults", async () => {
     expect(editResponse.status).toBe(403);
 });
 
-test("filters OpenRouter text models by paid balance", async ({
+test("filters paid-only OpenRouter text models while keeping GLM free", async ({
     apiKey,
     paidApiKey,
 }) => {
@@ -121,19 +121,28 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    const openRouterModelNames = getVisibleTextModels().filter(
-        (model) => getRegistryModelDefinition(model).provider === "openrouter",
+    const paidOnlyOpenRouterModelNames = getVisibleTextModels().filter(
+        (model) => {
+            const definition = getRegistryModelDefinition(model);
+            return definition.provider === "openrouter" && definition.paidOnly;
+        },
     );
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
-    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(paidOnlyOpenRouterModelNames.length).toBeGreaterThan(0);
     expect(
-        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+        paidOnlyOpenRouterModelNames.every(
+            (model) => !freeModelNames.has(model),
+        ),
     ).toBe(true);
     expect(
-        openRouterModelNames.every((model) => paidModelNames.has(model)),
+        paidOnlyOpenRouterModelNames.every((model) =>
+            paidModelNames.has(model),
+        ),
     ).toBe(true);
+    expect(freeModelNames.has("glm")).toBe(true);
+    expect(paidModelNames.has("glm")).toBe(true);
 
     const generation = await fetchWorker(
         "/text/paid-only-check?model=mistral",

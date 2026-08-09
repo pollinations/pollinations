@@ -137,6 +137,24 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM 5.2 to Novita on OpenRouter with a price ceiling", () => {
+        const result = resolveModelConfig(messages, { model: "glm" });
+
+        expect(result.options.model).toBe("z-ai/glm-5.2");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+        });
+        expect(result.options.modelConfig).not.toHaveProperty("custom-host");
+        expect(result.options.provider).toEqual({
+            only: ["novita/fp8"],
+            allow_fallbacks: false,
+            max_price: {
+                prompt: 0.0812,
+                completion: 0.2552,
+            },
+        });
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

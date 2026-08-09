@@ -389,7 +389,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
+        config: portkeyConfig["z-ai/glm-5.2"],
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {

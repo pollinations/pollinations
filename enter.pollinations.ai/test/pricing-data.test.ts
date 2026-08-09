@@ -857,11 +857,13 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-test("OpenRouter models require paid balance", () => {
+test("OpenRouter models require paid balance except free GLM", () => {
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
         if (definition.provider === "openrouter") {
-            expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
+            expect(definition.paidOnly, `${model} paid-only status`).toBe(
+                model !== "glm",
+            );
         }
     }
 });

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **780** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **777** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -329,7 +329,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@NiruOps-JS](https://github.com/NiruOps-JS) |  | 🏵️ |
 | [🖼️ Image and text presentation generator with the new](https://proyectodescartes.org/IATools/62_Generador_de_presentaciones_con_imágenes_y_texto) | Client-side AI presentation generator creating image & text slides in-browser. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 
-<details><summary>Show all 76 apps</summary>
+<details><summary>Show all 75 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -352,7 +352,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [✍️ Qisas Hook Lab](https://q8paradise.github.io/qisas-hook-lab) | Qisas Hook Lab is a bilingual Arabic/English writing workflow for developing responsible short-form stories. A user enters a subject and, after Pollinations OAuth 2.1 authorization with PKCE and BYOP, | [@q8paradise](https://github.com/q8paradise) |  | 🫧 |
 | [🧵 StoryWeaver](https://carvalholuciano.github.io/storyweaver/) | StoryWeaver is a single-page web app using pure HTML/CSS/JS with no backend that turns a | [@carvalholuciano](https://github.com/carvalholuciano) |  | 🫧 |
 | [📝 Textylize](https://textylize.vercel.app/) | Textylize is a mainly client-side text stylizer. It lets users apply text styling changes. | [@bytetilde](https://github.com/bytetilde) |  |  |
-| [📚 BeDream APP](https://bedream.xyz) | **BeDream APP** is a comprehensive AI roleplay and creative writing platform designed for immersive, unrestricted storytelling. Users can craft deeply detailed characters, build elaborate worlds and s | [@budibudi7](https://github.com/budibudi7) |  |  |
 | [📚 Storiva](https://play.google.com/store/apps/details?id=com.ismafly.storiva) | Storiva is an Android app that generates personalized illustrated children's stories where the child's own face appears in every illustration using AI inpainting. | [@ismailazdad](https://github.com/ismailazdad) |  |  |
 | [📝 Lingua Memory Card](https://lingua-memory-card.vercel.app/) | Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct | [@Minor-fun](https://github.com/Minor-fun) |  |  |
 | [🧵 SceneWeave](https://scene-weave.vercel.app) | Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing. | [@an3vilmonk3y](https://github.com/an3vilmonk3y) |  |  |
@@ -419,7 +418,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Pollinations AI Samples](https://pollinations.godsbee.com/) | Demonstrates Pollinations AI features including text-to-image, animation storyboards, code and web page generation, chat and speech translation, text-to-speech and image-to-text vision analysis. | [@nyr-github](https://github.com/nyr-github) |  | 🐝 |
 | [🖼️ PixPal](https://pixpal.chat) | Analyze, edit, and generate images, build websites from screenshots, create 3D games, and draft blog posts within a single chat interface. | [@andreaspaps](https://github.com/andreaspaps) |  | 🐝 |
 
-<details><summary>Show all 121 apps</summary>
+<details><summary>Show all 120 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -518,7 +517,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 Strapick Chat](https://strapick-chat.vercel.app/) | Minimal chat UI for interacting with Pollinations AI | [@mmojocoder](https://github.com/mmojocoder) |  |  |
 | [💭 iTouch](https://jordanpeteroliver.github.io/itouch/) | Chat where images and texts integrate. A poetic journey to where inspiration liv... | [@jordanpeteroliver](https://github.com/jordanpeteroliver) |  |  |
 | [🎨 YooAI](https://yooai.co/) | Provide integrated AI-Writer, AI-Video, and free Pollinations-based image generation that produces images from prompts without registration. | [@5A59](https://github.com/5A59) |  |  |
-| [🐾 Petfuse Image Generator](https://petfuse.xyz/) | Generate images via chat with optional custom seed and publish generated images publicly to an indexable homepage. | [@yasmeenanti08-creator](https://github.com/yasmeenanti08-creator) |  |  |
 | [🖼️ Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant for fast replies, image understandin... | [@bladedev](https://github.com/bladedev) |  |  |
 | [🤖 Botzy AI](https://botzy.hexabiz.com.pk) | Web-based AI chatbot powered by Pollinations API | [@zakrya6665](https://github.com/zakrya6665) |  |  |
 | [💬 DeepSeek Prompt](https://www.deepseekprompt.top/) | Provides free AI models while monetizing premium models such as gpt-image-1. | [@new-xmon-df](https://github.com/new-xmon-df) |  |  |
@@ -912,7 +910,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@Jadu07](https://github.com/Jadu07) | 1 |  |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) | 1 |  |
 
-<details><summary>Show all 52 apps</summary>
+<details><summary>Show all 51 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -950,7 +948,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛒 KOADLY](https://koadly.com) | B2B platform with AI tools for product images, marketing & dropshipping | [@copilot967](https://github.com/copilot967) |  |  |
 | [🍳 Smart Recipe Finder](https://www.pratiksef.com.tr/) | Discover recipes based on ingredients you have, reducing food waste | [@yunusmertofficial](https://github.com/yunusmertofficial) |  |  |
 | [🌳 Orchive](https://orchive.in/) | AI orchard assistant for apple growers: health, grafting, planning & supplies | [@saveychauhan](https://github.com/saveychauhan) |  |  |
-| [🐟 AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | [@aquamind](https://github.com/aquamind) |  |  |
 | [🎨 AI Logo and Business Name Generators](https://bilgu.com/tools/ai-generated-names) | Pollinations-powered AI logo + business name generators | [@m4jor101](https://github.com/m4jor101) |  |  |
 | [🛠️ BhaujAI](https://bhaujai.cc) | Automate up to 70% of routine tasks for creators or businesses using AI with integrations across tools and apps; MVP in beta. | [@royalashu4u](https://github.com/royalashu4u) |  |  |
 | [🎨 Foodie AI](https://foodie-ai.vercel.app/) | Indicate the project is closed due to 67 days of inactivity and available to be reopened if still relevant. | [@sizzlebop](https://github.com/sizzlebop) |  |  |

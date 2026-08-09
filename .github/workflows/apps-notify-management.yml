@@ -15,7 +15,6 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      issues: write
 
     steps:
       - name: Generate app token

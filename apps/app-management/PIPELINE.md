@@ -13,7 +13,7 @@ flowchart LR
     M -->|"screenshots, names, removals"| C
     M --> X[("MEDIA<br/>app covers")]
     C --> P["Refresh lightweight metrics"]
-    P -->|"stars, BYOP, requests, rank"| C
+    P -->|"stars, BYOP, requests"| C
     C --> O["Website and derived outputs"]
 
     classDef input fill:#f4efff,stroke:#7253b6,color:#241638,stroke-width:2px
@@ -73,7 +73,7 @@ flowchart LR
 
     subgraph REVIEW["2 · REVIEW"]
         direction TB
-        ELIG{"Catalog eligible?"} -->|"yes"| COVER["Cover agent and guarded UI tools"]
+        COVER["Visual agent and guarded UI tools"]
         COVER -->|"official login"| AUTH["Restricted authentication"]
         AUTH -->|"resume review"| COVER
     end
@@ -85,10 +85,10 @@ flowchart LR
         SKIP["Report — no change"] --> REPORT
     end
 
-    STATUS -->|"usable screen"| ELIG
+    STATUS -->|"usable screen"| COVER
     STATUS -->|"404 or 410 twice"| DELETE
     STATUS -->|"temporary failure"| SKIP
-    ELIG -->|"no"| DELETE
+    COVER -->|"confirmed removal"| DELETE
     COVER -->|"approved"| UPDATE
     COVER -->|"uncertain"| SKIP
     AUTH -->|"unsafe or failed"| SKIP
@@ -101,7 +101,7 @@ flowchart LR
     classDef neutral fill:#f0f2f4,stroke:#75818a,color:#1e272d,stroke-width:2px
     class START start
     class OPEN,COVER,AUTH review
-    class STATUS,ELIG decision
+    class STATUS decision
     class UPDATE,REPORT success
     class DELETE danger
     class SKIP neutral
@@ -135,11 +135,12 @@ fonts, late content, redirects, and common browser challenges before review.
 - Actions cannot leave the validated app origin, except during the restricted
   authentication flow.
 
-## 3. Catalog eligibility
+## 3. Agent judgment
 
-Eligibility and cover quality are separate decisions. `gpt-5.4-mini` reviews
-the first usable screen and every terminal screen reached by the cover agent.
-The cover model cannot override an eligibility removal.
+One visual agent judges the current screen, operates safe UI tools, and decides
+whether to accept, authenticate, remove, or stop without changing the catalog.
+An accepted cover and a proposed removal each pass a separate final review.
+Every model-proposed deletion therefore has an independent confirmation.
 
 The catalog is a curated product directory, not an availability index. A `200`
 response is insufficient: the app must remain the clear, credible primary
@@ -157,7 +158,7 @@ intrusive, deceptive, or low-quality commercial advertising is not.
 - a private password or access-code gate without official Google, GitHub, or
   Pollinations authentication.
 
-**Keep eligible when the screen only shows:**
+**Keep or defer when the screen only shows:**
 
 - official authentication;
 - CAPTCHA, bot protection, loading, or a temporary error;
@@ -167,8 +168,7 @@ intrusive, deceptive, or low-quality commercial advertising is not.
 - a minor consent, privacy, or onboarding layer, or a small advertisement that
   leaves the product clearly primary and readable.
 
-An inconclusive eligibility response fails open to cover review; it never
-deletes an app.
+Uncertainty never deletes an app.
 
 ## 4. Cover selection
 
@@ -190,21 +190,20 @@ download, destructive, external-navigation, and ambiguous controls fail closed.
 Safe controls include cookie dismissal, consent, passive onboarding, age gates,
 and presentation layers.
 
-`qwen-vision-pro` is used when the primary model returns invalid output, rejects
-while useful controls remain, or reaches the action limit. Final visual review
-accepts loaded interfaces, dashboards, forms, repositories, storefronts, and
-technical screens. Minor non-dismissible overlays are acceptable when the
-product remains readable.
+`qwen-vision-pro` is used when the primary model returns invalid output or
+reaches the action limit. Final visual review accepts loaded interfaces,
+dashboards, forms, repositories, storefronts, and technical screens. Minor
+non-dismissible overlays are acceptable when the product remains readable.
 
-The final screenshot passes catalog eligibility again before upload. An
-accepted cover may also propose an exact canonical-name correction when the
+An accepted cover may propose an exact canonical-name correction when the
 current catalog name is objectively wrong and the replacement is clearly
 visible. No other metadata is inferred from a screenshot.
 
 ## 5. Authentication safety
 
-Authentication is optional and uses a dedicated reviewer browser state. Only
-these exact origins are allowed:
+Every target opens anonymously. A separate context receives the dedicated
+reviewer browser state only after the agent selects an official login control.
+Only these exact origins are allowed:
 
 - `accounts.google.com`
 - `github.com`
@@ -215,7 +214,7 @@ these exact origins are allowed:
 flowchart TD
     APP["App login screen"] --> PROVIDER{"Official provider?"}
     PROVIDER -->|"Google, GitHub, Pollinations"| LOGIN["Restricted login"]
-    PROVIDER -->|"private password or access code"| DELETE["Delete catalog row"]
+    PROVIDER -->|"independently confirmed private gate"| DELETE["Delete catalog row"]
     LOGIN -->|"safe callback"| REVIEW["Review authenticated app"]
     LOGIN -->|"challenge, unsafe scope, expired session"| SKIP["Report — no change"]
     REVIEW --> CLEAN["Revoke keys and clear app data"]
@@ -290,9 +289,9 @@ capture report, and the original submission issue are the audit trail.
 
 A submitter or repository maintainer can reply that a removed app is fixed. The
 restoration workflow verifies the author, recovers the previous row from Git
-history, validates any replacement URL, and runs the same live eligibility and
-cover pipeline. Restoration requires a fresh approved screenshot and lands
-through a pull request.
+history, resolves its website or repository target, validates any replacement
+URL, and runs the same visual-agent pipeline. Restoration requires a fresh
+approved screenshot and lands through a pull request.
 
 ## Outcome contract
 
@@ -301,7 +300,7 @@ through a pull request.
 | Approved cover | Update `screenshotUrl` | None |
 | Accepted canonical-name correction | Update `name` | None |
 | Confirmed removal | Delete row | Original issue after merge |
-| Unsupported private auth | Delete row | Original issue after merge |
+| Confirmed unsupported private auth | Delete row | Original issue after merge |
 | Double `404` / `410` | Delete row | Original issue after merge |
 | CAPTCHA, `403`, timeout, temporary error | No change | Report only |
 | Visual or identity uncertainty | No change | Report only |

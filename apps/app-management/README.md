@@ -12,14 +12,14 @@ authentication safeguards, persistence, and restoration lifecycle.
 1. The daily screenshot workflow selects a rotating batch of 50 app or
    repository targets.
 2. Playwright opens each page and waits for navigation, fonts, and late content.
-3. A dedicated eligibility agent decides whether the app belongs in the catalog.
-4. The cover agent may wait, scroll, or use guarded presentation controls until
-   it finds a useful cover; terminal screens pass eligibility again. A final
-   accepted screen may correct an objectively wrong catalog name.
+3. One visual agent judges the app and may wait, scroll, authenticate, or use
+   guarded presentation controls until it finds a useful cover.
+4. Every accepted cover and proposed removal passes its own final review. An
+   accepted screen may also correct an objectively wrong catalog name.
 5. Approved screenshots are uploaded to `media.pollinations.ai` and written to
    the catalog.
-6. A row is removed only after two 404/410 responses, an eligibility `remove`
-   decision, or unsupported private authentication.
+6. A row is removed only after two 404/410 responses or an independently
+   confirmed visual-agent removal.
 7. The catalog change lands through an auto-merge PR. After merge, the original
    submission issue receives the reason and restoration instructions. The PR
    body lists every catalog change and unresolved outcome, with anonymous
@@ -40,7 +40,7 @@ and original submission issue are the complete record.
 - `management/` maintains existing entries: screenshots, confirmed removals,
   developer notification, Git-history recovery, and restoration.
 - `performance/` refreshes the inexpensive daily metrics for every app:
-  GitHub stars, BYOP status, request volume, and ranking.
+  GitHub stars, BYOP status, and request volume.
 - `catalog.js` is shared by all three blocks and owns the catalog schema,
   reading/writing, validation, and the small `validate` and `prepend` commands.
 - `generate-catalog-outputs.js` regenerates both derived Markdown outputs:
@@ -57,12 +57,13 @@ node --test apps/app-management/*.test.js apps/app-management/*/*.test.js
 
 ## Authentication
 
-Routine runs remain anonymous unless `--auth-state` supplies the dedicated
-reviewer browser state. When enabled, the agent may continue only through the
-exact Google, GitHub, and `enter.pollinations.ai` origins and must return to the
-original app before accepting a screenshot. Unsupported private authentication
-is ineligible; expired official sessions, CAPTCHAs, and unexpected origins are
-reported and skipped.
+Every app starts in an anonymous browser context. When the visual agent selects
+an official login control, a separate context receives the dedicated reviewer
+state and may continue only through the exact Google, GitHub, and
+`enter.pollinations.ai` origins. It must return to the original app before a
+screenshot can be accepted. Private authentication, expired official sessions,
+CAPTCHAs, and unexpected origins are reported unless the agent independently
+proposes and confirms catalog removal.
 
 Pollinations BYOP authorization is a separate explicit mode:
 `--authorize-pollinations`. It requires `--auth-state`, sets the authorization

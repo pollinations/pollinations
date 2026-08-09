@@ -152,9 +152,9 @@ Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](ht
 
 ## Authenticated App Review Safety
 
-Routine screenshot capture stays anonymous. When an unresolved app genuinely
-requires sign-in, review it locally with the dedicated Pollinations Agent
-Google, GitHub, and Pollinations accounts under these rules:
+Every app starts anonymously. Only when the visual agent selects an official
+login control does the workflow open a separate context with the dedicated
+Pollinations Agent Google, GitHub, and Pollinations accounts under these rules:
 
 - Only official Google, GitHub, and `enter.pollinations.ai` authentication is
   supported. Discord, email/password, magic-link, and other login providers are

@@ -5,7 +5,6 @@
  *   - GitHub stars (from GitHub API)
  *   - BYOP status (from Tinybird — apps using secret API keys)
  *   - Request count in last 24h (from Tinybird — by referrer domain)
- *   - Sort rows: BYOP first → requests desc → stars desc
  *
  * Usage: node apps/app-management/performance/update-metrics.js [options]
  *   --dry-run    Show changes without modifying files

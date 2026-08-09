@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
@@ -45,6 +45,7 @@ function normalizeCatalogModel(model) {
         ...model,
         name,
         aliases: model.aliases || [],
+        community: model.community === true,
         type,
         endpointType: eventTypeForDisplayType(type),
         catalogStatus: "visible",
@@ -62,7 +63,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [endpointStatus, setEndpointStatus] = useState({
         catalog: null,
     });
-    const intervalRef = useRef(null);
     const error = healthError || catalogError;
 
     // Fetch model list from gen.pollinations.ai
@@ -173,6 +173,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         if (endpointStatus.catalog === false) {
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -185,6 +186,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
             ].sort();
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: sameNameMatches.some((m) => m.community),
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -194,6 +196,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         } else {
             modelMeta = {
                 name: s.model || "(unknown)",
+                community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -215,29 +218,10 @@ export function useModelMonitor(aggregationWindow = "60m") {
         fetchHealthStats();
     }, [fetchModels, fetchHealthStats]);
 
-    // Initial fetch
     useEffect(() => {
         refresh();
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [refresh]);
-
-    // Polling - always active
-    useEffect(() => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-        }
-
-        intervalRef.current = setInterval(refresh, pollInterval);
-
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
+        const interval = setInterval(refresh, pollInterval);
+        return () => clearInterval(interval);
     }, [refresh, pollInterval]);
 
     return {

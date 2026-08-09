@@ -1,9 +1,12 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -55,10 +58,12 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENROUTER_API_KEY",
@@ -220,6 +225,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
@@ -373,6 +380,7 @@ async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
+    metadataModel: ImageParams["model"] = safeParams.model as ImageParams["model"],
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
@@ -381,6 +389,7 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
+        metadataModel,
     );
 
     if (result.isChild && result.isMature) {
@@ -388,6 +397,66 @@ async function generateImageResult(
     }
 
     return result;
+}
+
+/** Tries the requested model and its fallbacks through one modality-neutral loop. */
+async function generateMediaWithFallback(
+    c: ImageContext,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult | VideoGenerationResult;
+    params: RuntimeImageParams;
+    servedEntry?: GenerationModelEntry;
+    servedIndex: number;
+}> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const params = { ...safeParams, model: attempt.id };
+            if (attempt.communityEndpoint) {
+                const generated = await callCommunityImageEndpoint(
+                    attempt.communityEndpoint,
+                    prompt,
+                    params,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+                assertNonEmptyMedia(
+                    generated.buffer,
+                    "Community image endpoint",
+                );
+                return { result: generated, params };
+            }
+            if (isVideoModel(params.model)) {
+                const generated = await generateVideoResult(c, prompt, params);
+                assertNonEmptyMedia(generated.buffer, "Video provider");
+                return { result: generated, params };
+            }
+            const hiddenFallback = attempt.entry?.definition.hidden === true;
+            const generated = await generateImageResult(
+                c,
+                prompt,
+                params,
+                (hiddenFallback
+                    ? safeParams.model
+                    : params.model) as ImageParams["model"],
+            );
+            assertNonEmptyMedia(generated.buffer, "Image provider");
+            // Hidden static fallbacks are internal routes for the same public
+            // service. Keep their id out of filenames and EXIF metadata while
+            // servedEntry still carries their provider and cost to tracking.
+            return {
+                result: generated,
+                params: hiddenFallback ? safeParams : params,
+            };
+        },
+        c.var.track?.failedCalls,
+    );
+    return {
+        ...result,
+        servedEntry: candidate.entry,
+        servedIndex: index,
+    };
 }
 
 async function generateVideoResult(
@@ -410,54 +479,29 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
+        const { result, params, servedEntry, servedIndex } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
+        const headers = mediaHeaders(
+            originalPrompt,
+            params,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+        if (servedIndex > 0) {
+            // Same shape text emits, so tracking has one fallback marker.
+            headers.set(
+                FALLBACK_TARGET_HEADER,
+                `config.targets[${servedIndex}]`,
             );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
         }
-
-        if (isVideoModel(safeParams.model)) {
-            const result = await generateVideoResult(
-                c,
-                originalPrompt,
-                safeParams,
-            );
-            assertNonEmptyMedia(result.buffer, "Video provider");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    result.mimeType || "video/mp4",
-                ),
-            });
-        }
-
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                result.mimeType || detectMimeType(result.buffer),
-            ),
-        });
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

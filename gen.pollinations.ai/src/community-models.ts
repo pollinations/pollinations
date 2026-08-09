@@ -11,7 +11,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import type {
+    ModelDefinition,
+    ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
@@ -26,11 +29,11 @@ export function communityTextSupportedEndpoints(): string[] {
 }
 
 export function communityImageSupportedEndpoints(
-    supportsImageEdits = false,
+    inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {
     return [
         "/v1/images/generations",
-        ...(supportsImageEdits ? ["/v1/images/edits"] : []),
+        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
         "/image/{prompt}",
     ];
 }
@@ -53,12 +56,14 @@ export async function getCommunityModelRegistryEntries(
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
             ownerGithubUsername: schema.user.githubUsername,
+            providerName: schema.user.communityProviderName,
+            providerUrl: schema.user.communityProviderUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
-            supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
+            inputModalities: schema.communityEndpoint.inputModalities,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
@@ -76,8 +81,10 @@ export async function getCommunityModelRegistryEntries(
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
+            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
+            createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -96,21 +103,27 @@ export async function getCommunityModelRegistryEntries(
             name: row.name,
             title: row.title,
             description: row.description,
+            providerName: row.providerName,
+            providerUrl: row.providerUrl,
             modality: normalizeCommunityEndpointModality(row.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
             ),
-            supportsImageEdits: row.supportsImageEdits,
+            inputModalities: row.inputModalities,
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
             delegatesGeneration: row.delegatesGeneration,
+            fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        const definition = communityModelDefinition(communityEndpoint);
+        const definition = communityModelDefinition({
+            ...communityEndpoint,
+            addedDate: row.createdAt.getTime(),
+        });
         return [
             {
                 id: modelId,

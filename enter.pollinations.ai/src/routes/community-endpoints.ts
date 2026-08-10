@@ -6,6 +6,8 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
+    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
@@ -29,6 +31,7 @@ import {
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
+    normalizeCommunityProviderUrl,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -49,7 +52,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { hasDirectAccountPermission } from "./account-permissions.ts";
+import { requireAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
@@ -276,14 +279,17 @@ const VisibilitySchema = z
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
 const EndpointFieldsSchema = {
-    // No "/": the public model id is `<owner>/<name>`, so a slash in the name
-    // would inject a second separator and let one model spoof another's id.
+    // This slug is used in `<owner>/<name>` model ids and by operational tools.
+    // Keep it safe to pass as data without accepting shell or SQL syntax.
     name: z
         .string()
         .trim()
         .min(1)
         .max(120)
-        .regex(/^[^/]+$/, "Model name cannot contain '/'"),
+        .regex(
+            /^[A-Za-z0-9._:-]+$/,
+            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
+        ),
     title: z
         .string()
         .trim()
@@ -366,6 +372,18 @@ const CommunityEndpointResponseSchema = z.object({
 });
 const CommunityEndpointListResponseSchema = z.object({
     data: z.array(CommunityEndpointResponseSchema),
+    provider: z.object({
+        name: z.string().nullable(),
+        url: z.string().url().nullable(),
+    }),
+});
+const CommunityProviderProfileInputSchema = z.object({
+    name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
+    url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+});
+const CommunityProviderProfileResponseSchema = z.object({
+    name: z.string().nullable(),
+    url: z.string().url().nullable(),
 });
 const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),
@@ -422,6 +440,17 @@ function normalizeInputBearerToken(value: string): string {
                 error instanceof Error
                     ? error.message
                     : "Invalid API bearer token",
+        });
+    }
+}
+
+function normalizeInputProviderUrl(value: string): string {
+    try {
+        return normalizeCommunityProviderUrl(value);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid provider URL",
         });
     }
 }
@@ -534,18 +563,6 @@ function throwEndpointTestError(error: unknown): never {
 
 type EndpointProbeKind = "models" | "test";
 
-function requireCommunityEndpointManagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return;
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
-
 // Publishing is allowlist-gated. Pricing is independent: public endpoints may
 // be free or owner-priced.
 async function enforcePublishingAccess(
@@ -613,7 +630,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -622,9 +639,76 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 where: eq(schema.communityEndpoint.ownerUserId, user.id),
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
+            const owner = await db.query.user.findFirst({
+                columns: {
+                    communityProviderName: true,
+                    communityProviderUrl: true,
+                },
+                where: eq(schema.user.id, user.id),
+            });
             return c.json({
                 data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+                provider: {
+                    name: owner?.communityProviderName ?? null,
+                    url: owner?.communityProviderUrl ?? null,
+                },
             });
+        },
+    )
+    .post(
+        "/provider",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update Community Provider Profile",
+            description:
+                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+            responses: {
+                200: {
+                    description: "Updated community provider profile",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityProviderProfileResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                400: { description: "Invalid provider profile" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CommunityProviderProfileInputSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            await requireCommunityEndpointPublishAccess(db, user.id);
+
+            const name = input.name.trim();
+            const url = input.url.trim();
+            if (Boolean(name) !== Boolean(url)) {
+                throw new HTTPException(400, {
+                    message: "Provider name and URL must be set together",
+                });
+            }
+
+            const [profile] = await db
+                .update(schema.user)
+                .set({
+                    communityProviderName: name || null,
+                    communityProviderUrl: url
+                        ? normalizeInputProviderUrl(url)
+                        : null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(schema.user.id, user.id))
+                .returning({
+                    name: schema.user.communityProviderName,
+                    url: schema.user.communityProviderUrl,
+                });
+            return c.json(profile);
         },
     )
     .get(
@@ -651,7 +735,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -728,7 +812,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -823,7 +907,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -868,7 +952,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -924,7 +1008,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -1084,7 +1168,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

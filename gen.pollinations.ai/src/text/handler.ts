@@ -370,6 +370,7 @@ function throwTextError(error: ServiceError): never {
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
+        upstreamHeaders: error.upstreamHeaders,
         cause: error,
     });
 }
@@ -387,6 +388,7 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
+        const portkey = c.env.PORTKEY;
         const {
             result: completion,
             candidate,
@@ -397,6 +399,9 @@ async function generateTextResponse(
                 generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
+                    portkey
+                        ? (input, init) => portkey.fetch(input, init)
+                        : undefined,
                 ),
             c.var.track?.failedCalls,
         );
@@ -414,15 +419,9 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        // Only override the provider's own name where it is misleading. A
-        // community endpoint reports its upstream — "gemini-2.0-flash" for what
-        // everyone calls "alice/pro" — and after a rescue that upstream belongs
-        // to a different owner's model. A static model instead reports the
-        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
-        // which is strictly more information, so leave it alone.
-        const servedModelId =
-            servedEntry?.id ??
-            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert

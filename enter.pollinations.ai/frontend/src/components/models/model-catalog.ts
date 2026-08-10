@@ -20,6 +20,7 @@ export type ApiModelInfo = {
     id?: string;
     category?: ModelCategory;
     brand?: string;
+    brand_url?: string;
     community?: boolean;
     pricing?: ApiPricing;
     pricing_variants?: Array<{
@@ -27,6 +28,23 @@ export type ApiModelInfo = {
         label: string;
         description: string;
         pricing: ApiPricing;
+    }>;
+    pricing_default_label?: string;
+    pricing_adjustments?: Array<{
+        name: string;
+        label: string;
+        kind: string;
+        price: string;
+        currency: "pollen";
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
     }>;
     title?: string;
     description?: string;
@@ -210,6 +228,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
+        brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         capabilities: model.capabilities ?? [],
@@ -223,6 +242,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         inputSortPrice,
         outputSortPrice,
         prices: [],
+        priceAdjustments: model.pricing_adjustments,
     };
 }
 
@@ -292,11 +312,8 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (
-            model.flat_rate === false ||
-            promptTextTokens ||
-            promptImageTokens
-        ) {
+        const isFlatRate = model.flat_rate ?? !promptTextTokens;
+        if (!isFlatRate) {
             return {
                 ...price,
                 prices: priceLines(
@@ -323,12 +340,20 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
         }
         return {
             ...price,
-            prices: priceLines([
-                "output",
-                "image",
-                formatPrice(completionImageTokens, formatPriceFlat),
-                "request",
-            ]),
+            prices: priceLines(
+                [
+                    "input",
+                    "image",
+                    formatPrice(promptImageTokens, formatPriceFlat),
+                    "request",
+                ],
+                [
+                    "output",
+                    "image",
+                    formatPrice(completionImageTokens, formatPriceFlat),
+                    "request",
+                ],
+            ),
         };
     }
 
@@ -514,7 +539,13 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             : [];
     });
 
-    return priceVariants?.length ? { ...basePrice, priceVariants } : basePrice;
+    return priceVariants?.length
+        ? {
+              ...basePrice,
+              priceVariants,
+              priceDefaultLabel: model.pricing_default_label,
+          }
+        : basePrice;
 }
 
 export function getModelPricesFromCatalog(

@@ -102,6 +102,7 @@ type ResponseTrackingData = {
     /** False only on a call that was moved on from; the outcome row leaves it true. */
     isFinal?: boolean;
     modelUsed?: string;
+    modelProviderUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -118,6 +119,9 @@ type ResponseTrackingData = {
     // observational).
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
+    // A failure the response status cannot show. Replaces the status-derived
+    // error data when the settlement row is emitted.
+    errorTracking?: ErrorData;
 };
 
 export type TrackVariables = {
@@ -267,9 +271,10 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
-                const terminalAttemptModel = failedCalls.find(
+                const terminalAttempt = failedCalls.find(
                     (call) => call.terminal,
-                )?.candidate.id;
+                );
+                const terminalAttemptModel = terminalAttempt?.candidate.id;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -306,6 +311,9 @@ export const track = (eventType: EventType) =>
                                 model !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
+                            modelProviderUsed:
+                                call.candidate.definition?.provider ??
+                                requestTracking.modelProvider,
                         },
                         errorTracking: collectErrorData(
                             status,
@@ -320,7 +328,8 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition,
+                    servedEntry?.definition ??
+                        terminalAttempt?.candidate.definition,
                     terminalAttemptModel ?? servedEntry?.id,
                     pricingInput,
                 );
@@ -419,10 +428,9 @@ export const track = (eventType: EventType) =>
                     markup,
                     communityModelReward,
                     billedPrice,
-                    errorTracking: collectErrorData(
-                        response.status,
-                        c.get("error"),
-                    ),
+                    errorTracking:
+                        responseTracking.errorTracking ??
+                        collectErrorData(response.status, c.get("error")),
                 });
 
                 log.trace(
@@ -566,6 +574,8 @@ export async function trackResponse(
     // The model this row is actually about. Defaults to the one asked for,
     // which is right until a fallback moves the request to a different id.
     const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
+    const modelProviderUsed =
+        servedModelDefinition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
@@ -575,6 +585,7 @@ export async function trackResponse(
         cacheHit,
         isBilledUsage: false,
         fallbackUsed,
+        modelProviderUsed,
         ...extra,
     });
 
@@ -657,9 +668,19 @@ export async function trackResponse(
                 contentFilterResults,
             };
         }
+        // Nothing was charged and nothing could be. Mark the row so a billable
+        // text generation with no charge stays queryable instead of passing
+        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
             modelUsed: modelCalled,
+            errorTracking:
+                eventType === "generate.text"
+                    ? {
+                          errorResponseCode: "usage_missing",
+                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
+                      }
+                    : undefined,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -691,6 +712,7 @@ export async function trackResponse(
         priceDefinition,
         costVariant,
         modelUsed: modelUsage.model,
+        modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
@@ -884,7 +906,8 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed: requestTracking.modelProvider,
+        modelProviderUsed:
+            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,

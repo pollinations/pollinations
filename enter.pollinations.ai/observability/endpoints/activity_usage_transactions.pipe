@@ -54,8 +54,8 @@ SQL >
         FROM activity_usage_events
         WHERE
             user_id = {{ String(user_id, '') }}
-            {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
-            {% if defined(models) %} AND resolved_model IN {{ Array(models, 'String') }} {% end %}
+            {% if defined(api_key_ids) %} AND activity_usage_events.api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+            {% if defined(models) %} AND activity_usage_events.resolved_model IN {{ Array(models, 'String') }} {% end %}
             {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
             {% else %} AND timestamp >= now() - INTERVAL 30 DAY
             {% end %}

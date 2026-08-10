@@ -4,9 +4,9 @@ import logging
 
 from aiohttp import web
 
+from ..core.config import config
 from ..utils.json import dumps as _json_dumps
 from ..utils.json import loads as _json_loads
-from ..core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,14 @@ class GitHubWebhookServer:
         mention = f"@{config.github.bot_username}"
         return mention.lower() in body.lower()
 
+    def _mentioned_actor(self, item: dict) -> tuple[str, str, int | None] | None:
+        """Return the body and stable identity for a human mention."""
+        body = item.get("body", "")
+        user = item.get("user", {})
+        if not self.is_mentioned(body) or user.get("type") == "Bot":
+            return None
+        return body, user.get("login", ""), user.get("id")
+
     async def handle_issue_comment(self, data: dict):
         """Handle issue_comment event - someone commented on an issue/PR."""
         action = data.get("action")
@@ -121,16 +129,10 @@ class GitHubWebhookServer:
             return
 
         comment = data.get("comment", {})
-        body = comment.get("body", "")
-
-        if not self.is_mentioned(body):
+        mention = self._mentioned_actor(comment)
+        if not mention:
             return
-
-        # Don't respond to our own comments
-        comment_user = comment.get("user", {})
-        commenter = comment_user.get("login", "")
-        if comment_user.get("type") == "Bot":
-            return
+        body, actor, actor_id = mention
 
         issue = data.get("issue", {})
         repo = data.get("repository", {})
@@ -144,8 +146,8 @@ class GitHubWebhookServer:
             "is_pr": "pull_request" in issue,
             "comment_id": comment.get("id"),
             "comment_body": body,
-            "commenter": commenter,
-            "commenter_id": comment_user.get("id"),
+            "actor": actor,
+            "actor_id": actor_id,
             "issue_body": issue.get("body", ""),
         }
 
@@ -158,15 +160,10 @@ class GitHubWebhookServer:
             return
 
         issue = data.get("issue", {})
-        body = issue.get("body", "")
-
-        if not self.is_mentioned(body):
+        mention = self._mentioned_actor(issue)
+        if not mention:
             return
-
-        issue_user = issue.get("user", {})
-        author = issue_user.get("login", "")
-        if issue_user.get("type") == "Bot":
-            return
+        body, actor, actor_id = mention
 
         repo = data.get("repository", {})
 
@@ -178,8 +175,8 @@ class GitHubWebhookServer:
             "issue_state": issue.get("state"),
             "is_pr": False,
             "issue_body": body,
-            "author": author,
-            "author_id": issue_user.get("id"),
+            "actor": actor,
+            "actor_id": actor_id,
         }
 
         await self.process_mention(context)
@@ -191,15 +188,10 @@ class GitHubWebhookServer:
             return
 
         pr = data.get("pull_request", {})
-        body = pr.get("body", "")
-
-        if not self.is_mentioned(body):
+        mention = self._mentioned_actor(pr)
+        if not mention:
             return
-
-        pr_user = pr.get("user", {})
-        author = pr_user.get("login", "")
-        if pr_user.get("type") == "Bot":
-            return
+        body, actor, actor_id = mention
 
         repo = data.get("repository", {})
 
@@ -211,8 +203,8 @@ class GitHubWebhookServer:
             "pr_state": pr.get("state"),
             "is_pr": True,
             "pr_body": body,
-            "author": author,
-            "author_id": pr_user.get("id"),
+            "actor": actor,
+            "actor_id": actor_id,
             "head_branch": pr.get("head", {}).get("ref"),
             "base_branch": pr.get("base", {}).get("ref"),
         }
@@ -226,15 +218,10 @@ class GitHubWebhookServer:
             return
 
         comment = data.get("comment", {})
-        body = comment.get("body", "")
-
-        if not self.is_mentioned(body):
+        mention = self._mentioned_actor(comment)
+        if not mention:
             return
-
-        comment_user = comment.get("user", {})
-        commenter = comment_user.get("login", "")
-        if comment_user.get("type") == "Bot":
-            return
+        body, actor, actor_id = mention
 
         pr = data.get("pull_request", {})
         repo = data.get("repository", {})
@@ -247,8 +234,8 @@ class GitHubWebhookServer:
             "is_pr": True,
             "comment_id": comment.get("id"),
             "comment_body": body,
-            "commenter": commenter,
-            "commenter_id": comment_user.get("id"),
+            "actor": actor,
+            "actor_id": actor_id,
             "file_path": comment.get("path"),
             "line": comment.get("line"),
             "diff_hunk": comment.get("diff_hunk", ""),
@@ -263,15 +250,10 @@ class GitHubWebhookServer:
             return
 
         review = data.get("review", {})
-        body = review.get("body", "")
-
-        if not self.is_mentioned(body):
+        mention = self._mentioned_actor(review)
+        if not mention:
             return
-
-        review_user = review.get("user", {})
-        reviewer = review_user.get("login", "")
-        if review_user.get("type") == "Bot":
-            return
+        body, actor, actor_id = mention
 
         pr = data.get("pull_request", {})
         repo = data.get("repository", {})
@@ -285,8 +267,8 @@ class GitHubWebhookServer:
             "review_id": review.get("id"),
             "review_body": body,
             "review_state": review.get("state"),
-            "reviewer": reviewer,
-            "reviewer_id": review_user.get("id"),
+            "actor": actor,
+            "actor_id": actor_id,
         }
 
         await self.process_mention(context)
@@ -304,8 +286,8 @@ class GitHubWebhookServer:
         from ..ai.client import pollinations_client
 
         # Usernames are display-only; authorization uses the immutable account ID.
-        github_user = context.get("commenter") or context.get("author") or context.get("reviewer")
-        github_user_id = context.get("commenter_id") or context.get("author_id") or context.get("reviewer_id")
+        github_user = context["actor"]
+        github_user_id = context["actor_id"]
 
         # Check if user is a GitHub admin
         is_admin = config.github.is_admin(github_user_id)
@@ -360,7 +342,7 @@ Is PR: {context["is_pr"]}
 Issue description:
 {context.get("issue_body", "No description")}
 
-Comment from @{context["commenter"]}:
+Comment from @{context["actor"]}:
 {context["comment_body"]}
 
 Respond to their request. You can use tools to help. Keep response concise for GitHub.{admin_note}"""
@@ -369,7 +351,7 @@ Respond to their request. You can use tools to help. Keep response concise for G
             return f"""[GitHub Issue Mention]
 Repository: {context["repo"]}
 Issue #{context["issue_number"]}: {context["issue_title"]}
-Author: @{context["author"]}
+Author: @{context["actor"]}
 
 Issue body:
 {context["issue_body"]}
@@ -380,7 +362,7 @@ The author mentioned you in this issue. Respond helpfully. You can use tools.{ad
             return f"""[GitHub PR Mention]
 Repository: {context["repo"]}
 PR #{context["pr_number"]}: {context["pr_title"]}
-Author: @{context["author"]}
+Author: @{context["actor"]}
 Branch: {context["head_branch"]} → {context["base_branch"]}
 
 PR description:
@@ -399,7 +381,7 @@ Code context:
 {context.get("diff_hunk", "No diff available")}
 ```
 
-Comment from @{context["commenter"]}:
+Comment from @{context["actor"]}:
 {context["comment_body"]}
 
 Respond to their code question/request. Be concise.{admin_note}"""
@@ -408,7 +390,7 @@ Respond to their code question/request. Be concise.{admin_note}"""
             return f"""[GitHub PR Review]
 Repository: {context["repo"]}
 PR #{context["pr_number"]}: {context["pr_title"]}
-Review by @{context["reviewer"]} ({context["review_state"]})
+Review by @{context["actor"]} ({context["review_state"]})
 
 Review comment:
 {context["review_body"]}
@@ -420,8 +402,8 @@ Respond to the reviewer's feedback.{admin_note}"""
 
     async def _post_github_response(self, context: dict, response: str):
         """Post response back to GitHub using shared session."""
-        from .github.client import github_manager
         from .github.auth import github_app_auth
+        from .github.client import github_manager
 
         repo = context.get("repo")
         if not repo:

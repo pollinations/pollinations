@@ -55,6 +55,8 @@ export async function getCommunityModelRegistryEntries(
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
             ownerGithubUsername: schema.user.githubUsername,
+            providerName: schema.user.communityProviderName,
+            providerUrl: schema.user.communityProviderUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
@@ -81,6 +83,7 @@ export async function getCommunityModelRegistryEntries(
             fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
+            createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -99,6 +102,8 @@ export async function getCommunityModelRegistryEntries(
             name: row.name,
             title: row.title,
             description: row.description,
+            providerName: row.providerName,
+            providerUrl: row.providerUrl,
             modality: normalizeCommunityEndpointModality(row.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
@@ -114,7 +119,10 @@ export async function getCommunityModelRegistryEntries(
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        const definition = communityModelDefinition(communityEndpoint);
+        const definition = communityModelDefinition({
+            ...communityEndpoint,
+            addedDate: row.createdAt.getTime(),
+        });
         return [
             {
                 id: modelId,

@@ -192,15 +192,17 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // An API key's model allowlist scopes what the key may be served, not
-        // just what it may ask for. Drop the targets that are off the list: the
-        // request still runs against the rest, but a scoped key can never be
-        // served — or billed for — a model it would get a 403 for if it called
-        // it directly.
+        // Hidden registry fallbacks are provider implementations of the public
+        // model the caller selected, so they inherit that model's permission.
+        // Visible and community targets remain independently scoped: a key can
+        // never be served — or billed for — a model it could not call directly.
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) => allowedModels.includes(entry.id),
+                (entry) =>
+                    (entry.definition.hidden === true &&
+                        !entry.communityEndpoint) ||
+                    allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);

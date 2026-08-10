@@ -1,0 +1,34 @@
+{
+  "pr_number": 13264,
+  "title": "fix: bound Z-Image queue for Fal spillover",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13264",
+  "merged_at": "2026-08-10T21:59:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Caps each Z-Image worker at three admitted generations: one running and two waiting.\n- Returns `503 Queue full` immediately for further requests so the deployed Fal fallback absorbs sustained bursts.\n- Persists `QUEUE_LIMIT=3` through Vast restarts and documents the consolidation rollout order.\n- Keeps the public model, pricing, registry provider, and fallback policy unchanged; includes no secret changes.\n\nRoot cause: the Fal fallback was wired for Vast 503/network failures, but Z-Image serialized excess work behind an unbounded lock instead of signalling saturation.\n\nValidation:\n- 3/3 queue unit tests pass, including exception cleanup.\n- Python compile, Black formatting check, setup script syntax, and `git diff --check` pass.\n- 18/18 gen fallback tests pass, including end-to-end Vast 503 → Fal generation, billing, and Tinybird attribution.\n\nAfter merge: deploy `QUEUE_LIMIT=3` to both Z-Image workers, verify concurrency and production spillover, drain instance `47267292`, then destroy it after a healthy 30–60 minute observation window.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A queue with manners",
+    "blurb": "Z-Image workers now know when their little waiting room is full. Instead of quietly building an infinite line, they send overflow to Fal, which is exactly what the fallback was planted for.",
+    "summary": "Capped each Vast Z-Image worker at three admitted generations—one running and two queued—so further requests receive a 503 immediately and spill over to the existing Fal fallback.",
+    "impact": "During sustained Z-Image bursts, users get generation capacity through Fal rather than waiting behind an unbounded Vast queue, while model, pricing, provider registry, and fallback policy stay unchanged.",
+    "keywords": [
+      "Z-Image",
+      "Fal",
+      "fallback",
+      "queueing",
+      "GPU",
+      "reliability"
+    ],
+    "visual_concept": "Depict Z-Image's generation queue as a cozy tiny garden gate with exactly three numbered spots: one active pixel-image seed growing and two waiting pots. Polli, wearing a tiny traffic-controller cap, gently directs extra glowing image-seeds along a clearly open flower-lined path toward a friendly Fal cloud/server greenhouse, representing graceful overflow instead of an endless line.",
+    "image_prompt": "A cozy pixel art garden-server scene where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny traffic-controller cap, manages a lime green (#ecf874) Z-Image queue with three numbered flower pots: one glowing generation plant running and two patiently waiting, while extra pixel-image seeds travel safely to a warm pastel cloud greenhouse labeled \"FAL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, code-vines and flowers, with dark purple (#110518) pixel-font text reading \"QUEUE FULL → FALLBACK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13264.jpg",
+    "prompt": "A cozy pixel art garden-server scene where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny traffic-controller cap, manages a lime green (#ecf874) Z-Image queue with three numbered flower pots: one glowing generation plant running and two patiently waiting, while extra pixel-image seeds travel safely to a warm pastel cloud greenhouse labeled \"FAL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, code-vines and flowers, with dark purple (#110518) pixel-font text reading \"QUEUE FULL → FALLBACK\"."
+  },
+  "generated_at": "2026-08-10T22:00:13.131823+00:00"
+}

@@ -5,10 +5,10 @@ on:
     branches:
       - production
     paths:
-      - "apps/operation/kpi/**"
-      - "apps/operation/quest-dashboard/**"
-      - "apps/operation/economics/**"
-      - "apps/operation/observability/**"
+      - "operations/kpi/**"
+      - "operations/quest-dashboard/**"
+      - "operations/economics/**"
+      - "operations/observability/**"
       - ".github/workflows/deploy-operations-cloudflare.yml"
   workflow_dispatch:
     inputs:
@@ -68,7 +68,7 @@ jobs:
               APPS="$SUPPORTED_APPS"
             else
               APPS=$(
-                sed -n 's|^apps/operation/\([^/]*\)/.*|\1|p' changed.txt \
+                sed -n 's|^operations/\([^/]*\)/.*|\1|p' changed.txt \
                   | sort -u \
                   | grep -E '^(kpi|quest-dashboard|economics|observability)$' \
                   | xargs || true
@@ -122,7 +122,7 @@ jobs:
       - name: Install operation app dependencies
         if: matrix.app != 'economics'
         run: npm ci
-        working-directory: ./apps/operation/${{ matrix.app }}
+        working-directory: ./operations/${{ matrix.app }}
 
       - name: Install Economics dependencies
         if: matrix.app == 'economics'
@@ -131,26 +131,26 @@ jobs:
       - name: Deploy KPI Worker
         if: matrix.app == 'kpi'
         run: npm run deploy
-        working-directory: ./apps/operation/kpi
+        working-directory: ./operations/kpi
 
       - name: Push KPI secrets
         if: matrix.app == 'kpi'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'
-        working-directory: ./apps/operation/kpi
+        working-directory: ./operations/kpi
 
       - name: Build Economics Worker
         if: matrix.app == 'economics'
         run: npm run build
-        working-directory: ./apps/operation/economics/web
+        working-directory: ./operations/economics/web
 
       - name: Deploy Economics Worker
         if: matrix.app == 'economics'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY_ECONOMICS }}
         run: sops exec-file --no-fifo ../secrets/web.json 'npx wrangler deploy --secrets-file {}'
-        working-directory: ./apps/operation/economics/web
+        working-directory: ./operations/economics/web
 
       - name: Verify Economics Myceli origin
         if: matrix.app == 'economics'
@@ -167,24 +167,24 @@ jobs:
       - name: Deploy Quest Dashboard Worker
         if: matrix.app == 'quest-dashboard'
         run: npm run deploy
-        working-directory: ./apps/operation/quest-dashboard
+        working-directory: ./operations/quest-dashboard
 
       - name: Validate Observability Worker configuration
         if: matrix.app == 'observability'
         run: npm run check
-        working-directory: ./apps/operation/observability
+        working-directory: ./operations/observability
 
       - name: Deploy Observability Grafana container Worker
         if: matrix.app == 'observability'
         run: npm run deploy
-        working-directory: ./apps/operation/observability
+        working-directory: ./operations/observability
 
       - name: Push Observability Grafana secrets
         if: matrix.app == 'observability'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: npm run push-secrets
-        working-directory: ./apps/operation/observability
+        working-directory: ./operations/observability
 
       - name: Verify Observability Myceli origin health
         if: matrix.app == 'observability'

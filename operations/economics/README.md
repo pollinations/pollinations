@@ -27,4 +27,4 @@ on the `production` branch. The workflow deploys the Worker with both custom
 domains and verifies both session endpoints.
 
 The OP Tinybird datasource and pipe definitions (`op_*`) live in
-[`enter.pollinations.ai/observability/`](../../../enter.pollinations.ai/observability/).
+[`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).

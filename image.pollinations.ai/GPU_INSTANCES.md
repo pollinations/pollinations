@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 
 ## Capacity Summary
 
@@ -8,15 +8,15 @@ Last updated: 2026-08-09
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 2 | RTX 5090 + RTX PRO 4000 Blackwell | Vast.ai | $0.591111/hr all-in | **ACTIVE — two production, Vast-only** |
 | Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.712593/hr all-in | **ACTIVE — two production** |
-| Klein 4B | 1 | RTX 3090 | Vast.ai | $0.147778/hr all-in | **ACTIVE — Vast production** |
+| Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the seven running Vast instances cost **$1.754815/hr** in total
-(**$1,263.47 per 30-day month**).
+At capture time, the seven running Vast instances cost **$1.757037/hr** in total
+(**$1,265.07 per 30-day month**).
 All seven are production workers; there is no isolated canary left running.
 
-Live verification on 2026-08-09 confirmed that all seven instances are in both
+Live verification on 2026-08-10 confirmed that all seven instances are in both
 `actual_status=running` and `intended_status=running`, every model server and
 named tunnel is healthy, and the registry contains both Flux hostnames, the
 shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
@@ -297,17 +297,17 @@ machine diversity remains but regional diversity is reduced.
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 
-Production Klein runs on a dedicated California RTX 3090. The gen Worker reaches
+Production Klein runs on a dedicated Nevada RTX 3090. The gen Worker reaches
 port 8000 through a remotely managed Cloudflare Tunnel bound as the private
 `KLEIN_VPC` Workers VPC network; there is no public hostname or raw-IP route.
 
 | Worker | Vast instance | Machine / region | GPU | Listed rate | Tunnel | Status |
 |--------|---------------|------------------|-----|-------------|--------|--------|
-| klein-vast-01 | 47259457 | 47340 / California, US | RTX 3090 24GB | $0.147778/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
+| klein-vast-01 | 47353224 | 51654 / Nevada, US | RTX 3090 24GB | $0.150000/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
 
-Instance `47259457` replaced `44766948` on 2026-08-09. The host has Vast
-reliability `0.997194` and saves **$0.017778/hr**, or **$12.80 per 30-day
-month**.
+Instance `47353224` replaced network-defective instance `47259457` on
+2026-08-10. The host has Vast reliability `0.997827` and costs
+**$0.002222/hr**, or **$1.60 per 30-day month**, more than the retired slot.
 
 **Provisioning:** use `image.pollinations.ai/klein-runpod/setup-vast.sh` with
 `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel`. The model is public and does not
@@ -364,7 +364,7 @@ are mode-600 files and cloudflared uses `--token-file`, keeping its token out of
 process listings.
 
 ```bash
-vastai show instance 47259457 --raw
+vastai show instance 47353224 --raw
 # On the host:
 screen -ls
 tail -f /root/klein.log
@@ -372,7 +372,26 @@ tail -f /root/cloudflared.log
 curl -s http://127.0.0.1:8000/health
 ```
 
-**Replacement qualification (2026-08-09):**
+**Network replacement qualification (2026-08-10):**
+
+- Cloudflare connectivity passed UDP/QUIC and TCP/HTTP/2 on port 7844 against
+  both tunnel regions. The connector established four QUIC connections and
+  recorded zero reconnects or tunnel request errors during a 30-minute soak.
+- Authentication rejection and invalid-image handling returned the expected
+  403 and 400 responses. Direct 512x512 and 1024x1024 generation completed in
+  1.32s and 3.33s; a reference edit completed in 1.58s.
+- Three concurrent 512x512 requests completed successfully in three seconds
+  wall time. Cached restart restored health in 10 seconds while the production
+  tunnel remained disabled.
+- After joining Workers VPC, 21 production requests completed successfully with
+  zero 5xx, OOM, CUDA, backend, or tunnel failures. The final 15-minute
+  production P50/P95 was 7.32s/10.54s; after the old connector was removed, a
+  sole-backend 1024x1024 request completed in 6.52s end to end.
+- During the comparison, retired host `47259457` logged 90 additional tunnel
+  dial or termination failures while its local model remained healthy. It was
+  destroyed immediately after the human-approved cutover.
+
+**Previous replacement qualification (2026-08-09):**
 
 - Authentication rejection, invalid-image handling, and the 2,359,296-pixel
   limit returned the expected 403, 400, and 422 responses.

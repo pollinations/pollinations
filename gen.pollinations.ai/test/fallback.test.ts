@@ -170,6 +170,23 @@ describe("isRetryableFallbackError", () => {
         );
     });
 
+    it("does not multiply the owned Portkey timeout across fallbacks", () => {
+        expect(
+            isRetryableFallbackError(
+                textFailure(408, {
+                    error: {
+                        message:
+                            "Request exceeded the timeout sent in the request: 290000ms",
+                        type: "timeout_error",
+                        param: null,
+                        code: null,
+                    },
+                }),
+            ),
+        ).toBe(false);
+        expect(isRetryableFallbackError(textFailure(408))).toBe(true);
+    });
+
     it("does not fail over on caller errors", () => {
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
         expect(isRetryableFallbackError(new HttpError("bad input", 422))).toBe(

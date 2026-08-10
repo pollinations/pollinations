@@ -2,7 +2,7 @@ import os, sys, io, base64, logging, torch, time, threading, warnings, asyncio, 
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
@@ -32,8 +32,14 @@ NUM_INFERENCE_STEPS = int(os.getenv("NUM_INFERENCE_STEPS", "3"))
 GUIDANCE_SCALE = float(os.getenv("GUIDANCE_SCALE", "0.0"))
 MAX_DIM = int(os.getenv("MAX_DIM", "768"))
 MAX_PIXELS = int(os.getenv("MAX_PIXELS", str(512 * 512)))
+# Per Uvicorn worker process: one request runs on the GPU while one may wait.
+# Further requests receive 503 so gen can retry another registered Vast worker.
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "2"))
+if QUEUE_LIMIT < 1:
+    raise ValueError("QUEUE_LIMIT must be at least 1")
 
 generate_lock = threading.Lock()
+generation_slots = threading.BoundedSemaphore(QUEUE_LIMIT)
 
 
 class ImageRequest(BaseModel):
@@ -175,29 +181,40 @@ def verify_backend_token(x_backend_token: str = Header(None, alias="x-backend-to
     return True
 
 
+@contextmanager
+def generation_slot():
+    if not generation_slots.acquire(blocking=False):
+        raise HTTPException(status_code=503, detail="Queue full")
+    try:
+        yield
+    finally:
+        generation_slots.release()
+
+
 @app.post("/generate")
 def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
-    generator = torch.Generator("cuda").manual_seed(seed)
-    gen_w, gen_h = clamp_dims(request.width, request.height)
-    try:
-        t0 = time.time()
-        with generate_lock:
-            with torch.inference_mode():
-                output = pipe(prompt=request.prompts[0], generator=generator, width=gen_w, height=gen_h,
-                              num_inference_steps=NUM_INFERENCE_STEPS, guidance_scale=GUIDANCE_SCALE)
-            image = output.images[0]
-        logger.info("Generated %dx%d in %.3fs", gen_w, gen_h, time.time() - t0)
-        buf = io.BytesIO()
-        image.save(buf, format="JPEG", quality=90)
-        return JSONResponse(content=[{"image": base64.b64encode(buf.getvalue()).decode(), "has_nsfw_concept": False,
-                                      "concept": [], "width": image.width, "height": image.height, "seed": seed,
-                                      "prompt": request.prompts[0]}])
-    except torch.cuda.OutOfMemoryError as e:
-        logger.error("OOM: %s", e)
-        sys.exit(1)
+    with generation_slot():
+        seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
+        generator = torch.Generator("cuda").manual_seed(seed)
+        gen_w, gen_h = clamp_dims(request.width, request.height)
+        try:
+            t0 = time.time()
+            with generate_lock:
+                with torch.inference_mode():
+                    output = pipe(prompt=request.prompts[0], generator=generator, width=gen_w, height=gen_h,
+                                  num_inference_steps=NUM_INFERENCE_STEPS, guidance_scale=GUIDANCE_SCALE)
+                image = output.images[0]
+            logger.info("Generated %dx%d in %.3fs", gen_w, gen_h, time.time() - t0)
+            buf = io.BytesIO()
+            image.save(buf, format="JPEG", quality=90)
+            return JSONResponse(content=[{"image": base64.b64encode(buf.getvalue()).decode(), "has_nsfw_concept": False,
+                                          "concept": [], "width": image.width, "height": image.height, "seed": seed,
+                                          "prompt": request.prompts[0]}])
+        except torch.cuda.OutOfMemoryError as e:
+            logger.error("OOM: %s", e)
+            sys.exit(1)
 
 
 @app.get("/health")

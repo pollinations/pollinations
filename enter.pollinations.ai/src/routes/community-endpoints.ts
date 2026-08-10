@@ -287,14 +287,17 @@ const RateLimitRpmSchema = z
         "Upstream rate budget in requests per minute. Each Pollinations caller is capped at a fixed share (25%) of this value so one user cannot exhaust the shared upstream quota. Defaults to 120 RPM when omitted.",
     );
 const EndpointFieldsSchema = {
-    // No "/": the public model id is `<owner>/<name>`, so a slash in the name
-    // would inject a second separator and let one model spoof another's id.
+    // This slug is used in `<owner>/<name>` model ids and by operational tools.
+    // Keep it safe to pass as data without accepting shell or SQL syntax.
     name: z
         .string()
         .trim()
         .min(1)
         .max(120)
-        .regex(/^[^/]+$/, "Model name cannot contain '/'"),
+        .regex(
+            /^[A-Za-z0-9._:-]+$/,
+            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
+        ),
     title: z
         .string()
         .trim()

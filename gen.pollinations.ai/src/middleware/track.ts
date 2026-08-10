@@ -119,6 +119,9 @@ type ResponseTrackingData = {
     // observational).
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
+    // A failure the response status cannot show. Replaces the status-derived
+    // error data when the settlement row is emitted.
+    errorTracking?: ErrorData;
 };
 
 export type TrackVariables = {
@@ -425,10 +428,9 @@ export const track = (eventType: EventType) =>
                     markup,
                     communityModelReward,
                     billedPrice,
-                    errorTracking: collectErrorData(
-                        response.status,
-                        c.get("error"),
-                    ),
+                    errorTracking:
+                        responseTracking.errorTracking ??
+                        collectErrorData(response.status, c.get("error")),
                 });
 
                 log.trace(
@@ -666,9 +668,19 @@ export async function trackResponse(
                 contentFilterResults,
             };
         }
+        // Nothing was charged and nothing could be. Mark the row so a billable
+        // text generation with no charge stays queryable instead of passing
+        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
             modelUsed: modelCalled,
+            errorTracking:
+                eventType === "generate.text"
+                    ? {
+                          errorResponseCode: "usage_missing",
+                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
+                      }
+                    : undefined,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked

@@ -228,11 +228,12 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
+        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (input * 0.5) / 1e6,
-            promptCachedTokens: (cached * 0.5) / 1e6,
-            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-            completionTextTokens: (output * 0.5) / 1e6,
+            promptTextTokens: (input / 1e6) * multiplier,
+            promptCachedTokens: (cached / 1e6) * multiplier,
+            promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
+            completionTextTokens: (output / 1e6) * multiplier,
         });
         expect(billing.cost.totalCost).toBeCloseTo(
             272_001 * (input / 1e6) +
@@ -548,6 +549,11 @@ describe("selection safety and composition", () => {
                             kind: "test",
                             unit: "request",
                             unitCost: 0.1,
+                            publicPricing: {
+                                label: "Test",
+                                quantity: 1,
+                                unit: "request",
+                            },
                             countUnits: () => 1,
                         },
                     ],
@@ -702,6 +708,10 @@ describe("registry-wide variant invariants", () => {
             if (variantNames.length === 0) continue;
 
             const info = modelInfoFromDefinition(model, def);
+            expect(def.defaultCostVariantLabel?.trim()).not.toBe("");
+            expect(info.pricing_default_label).toBe(
+                def.defaultCostVariantLabel,
+            );
             expect(
                 info.pricing_variants?.map((variant) => variant.name).sort(),
             ).toEqual(variantNames);

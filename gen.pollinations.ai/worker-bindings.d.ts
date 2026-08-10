@@ -1,5 +1,6 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;

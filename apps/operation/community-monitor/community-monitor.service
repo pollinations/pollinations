@@ -1,26 +1,20 @@
 [Unit]
 Description=Community Model Monitor Loop
-After=network.target
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/pollinations/apps/operation/community-monitor
-EnvironmentFile=/home/ubuntu/pollinations/apps/operation/community-monitor/.env
-# Runs one cycle (fresh probe traffic + a headless Claude Code diagnosis
-# pass) inside a detached screen session, so `screen -r community-monitor`
-# gives live interactive access to the running Claude Code transcript at any
-# time, while systemd's Restart=always still recovers a killed/crashed
-# screen session. loop.sh itself exits after one cycle by design — restart
-# handles the next cycle rather than an in-process loop.
-#
-# NOT currently active on the box (inactive/disabled) — the box instead runs
-# watchdog.sh via cron against a single long-lived --remote-control session.
-# Kept here as the intended systemd-supervised path once that migration
-# happens.
-ExecStart=/usr/bin/screen -DmS community-monitor /home/ubuntu/pollinations/apps/operation/community-monitor/loop.sh
+WorkingDirectory=/home/ubuntu/monitor
+EnvironmentFile=/home/ubuntu/monitor/.env
+ExecStartPre=-/home/ubuntu/monitor/update-from-repo.sh
+ExecStart=/home/ubuntu/monitor/loop.sh
 Restart=always
-RestartSec=300
+RestartSec=900
+RuntimeMaxSec=2700
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

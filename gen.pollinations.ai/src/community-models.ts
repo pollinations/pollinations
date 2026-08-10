@@ -84,6 +84,7 @@ export async function getCommunityModelRegistryEntries(
             rateLimitRpm: schema.communityEndpoint.rateLimitRpm,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
+            createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -120,7 +121,10 @@ export async function getCommunityModelRegistryEntries(
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        const definition = communityModelDefinition(communityEndpoint);
+        const definition = communityModelDefinition({
+            ...communityEndpoint,
+            addedDate: row.createdAt.getTime(),
+        });
         return [
             {
                 id: modelId,

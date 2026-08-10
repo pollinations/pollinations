@@ -17,8 +17,11 @@ const {
     classifyAuthOrigin,
     classifyCaptureOutcome,
     collectAgentControls,
+    compactGithubEvidence,
+    githubApiUrl,
     hasAllowedOrigin,
     identifyRedirectedAuthProvider,
+    investigateTechnicalFailure,
     isAuthorizedRestorationEvent,
     isPublicAppUrl,
     listReviewerKeyIds,
@@ -227,6 +230,12 @@ test("allows only minimal online Google authentication scopes", () => {
     const nested = new URL("https://accounts.google.com/v3/signin/identifier");
     nested.searchParams.set("continue", allowed.href);
     assert.equal(validateGoogleAuthRequest(nested.href), true);
+    assert.equal(
+        validateGoogleAuthRequest(
+            "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fapp.test",
+        ),
+        true,
+    );
 
     const offline = new URL(allowed);
     offline.searchParams.set("access_type", "offline");
@@ -238,6 +247,11 @@ test("allows only minimal online Google authentication scopes", () => {
         "openid email https://www.googleapis.com/auth/drive",
     );
     assert.equal(validateGoogleAuthRequest(broad.href), false);
+    const nestedBroad = new URL(
+        "https://accounts.google.com/v3/signin/identifier",
+    );
+    nestedBroad.searchParams.set("continue", broad.href);
+    assert.equal(validateGoogleAuthRequest(nestedBroad.href), false);
     assert.equal(
         validateGoogleAuthRequest("https://discord.com/oauth2/authorize"),
         false,
@@ -421,6 +435,141 @@ test("requires two matching 404 responses before confirming removal", async () =
         { response, status: 404 },
     );
     assert.equal(navigations, 2);
+});
+
+test("retries any non-successful navigation before investigation", async () => {
+    let navigations = 0;
+    const response = { status: () => 503 };
+    const page = {
+        goto: async () => {
+            navigations++;
+            return response;
+        },
+        mainFrame: () => ({}),
+        waitForResponse: async () => null,
+        waitForTimeout: async () => {},
+    };
+
+    assert.deepEqual(
+        await navigateToTarget(page, "https://temporary.test", 30000),
+        { response, status: 503 },
+    );
+    assert.equal(navigations, 2);
+});
+
+test("collects only compact evidence from exact GitHub resources", () => {
+    assert.equal(
+        githubApiUrl(
+            "https://github.com/pollinations/pollinations/issues/123",
+            "issue",
+        ),
+        "https://api.github.com/repos/pollinations/pollinations/issues/123",
+    );
+    assert.equal(
+        githubApiUrl("https://github.com/example/app/tree/main", "repository"),
+        "https://api.github.com/repos/example/app",
+    );
+    assert.equal(
+        githubApiUrl("https://github.com.evil.test/example/app", "repository"),
+        null,
+    );
+    assert.deepEqual(
+        compactGithubEvidence(
+            {
+                archived: true,
+                description: "A project",
+                disabled: false,
+                full_name: "example/app",
+                homepage: "https://app.test",
+                pushed_at: "2026-01-01T00:00:00Z",
+                ignored: "not sent to the model",
+            },
+            "repository",
+        ),
+        {
+            archived: true,
+            description: "A project",
+            disabled: false,
+            fullName: "example/app",
+            homepage: "https://app.test",
+            pushedAt: "2026-01-01T00:00:00Z",
+        },
+    );
+});
+
+test("technical removals require an independent agent confirmation", async () => {
+    const decisions = [
+        { decision: "remove", reason: "The host no longer exists." },
+        { decision: "remove", reason: "The evidence is conclusive." },
+    ];
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => ({
+        json: async () => ({
+            choices: [
+                { message: { content: JSON.stringify(decisions[calls++]) } },
+            ],
+            model: "test-model",
+        }),
+        ok: true,
+    });
+    try {
+        const result = await investigateTechnicalFailure(
+            {
+                context: {
+                    descriptions: ["A test app"],
+                    platforms: ["web"],
+                },
+                names: ["Test app"],
+                targetUrl: "https://missing.test",
+            },
+            "net::ERR_NAME_NOT_RESOLVED",
+            "test-token",
+            "test-model",
+        );
+        assert.equal(calls, 2);
+        assert.equal(result.decision.decision, "remove");
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test("invalid technical confirmation fails closed without losing the report", async () => {
+    const decisions = [
+        { decision: "remove", reason: "The host no longer exists." },
+        { decision: "accept", reason: "Invalid confirmation shape." },
+    ];
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => ({
+        json: async () => ({
+            choices: [
+                { message: { content: JSON.stringify(decisions[calls++]) } },
+            ],
+            model: "test-model",
+        }),
+        ok: true,
+    });
+    try {
+        const result = await investigateTechnicalFailure(
+            {
+                context: {
+                    descriptions: ["A test app"],
+                    platforms: ["web"],
+                },
+                names: ["Test app"],
+                targetUrl: "https://missing.test",
+            },
+            "net::ERR_NAME_NOT_RESOLVED",
+            "test-token",
+            "test-model",
+        );
+        assert.equal(calls, 2);
+        assert.equal(result.decision.decision, "reject");
+        assert.match(result.decision.reason, /did not confirm removal/);
+    } finally {
+        global.fetch = originalFetch;
+    }
 });
 
 test("applies one uploaded screenshot URL to duplicate catalog rows", () => {
@@ -821,6 +970,10 @@ test("loads a focused screenshot-agent system prompt", () => {
         SCREENSHOT_AGENT_SYSTEM_PROMPT,
         /advertising is a removal signal/,
     );
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /API-key prompt/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /Adult or sexual products/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /not adult evidence/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /multi-step onboarding/);
     assert.doesNotMatch(
         SCREENSHOT_AGENT_SYSTEM_PROMPT,
         /accept a matching readable product despite an advertisement/,
@@ -937,6 +1090,138 @@ test("a model-proposed removal requires independent confirmation", async (t) => 
         assert.equal(calls, 2);
         assert.equal(result.decision, "reject");
         assert.match(result.reason, /did not confirm removal/);
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test("retries an invalid independent removal confirmation", async (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-removal-"));
+    t.after(() => fs.rmSync(directory, { force: true, recursive: true }));
+    const screenshotPath = path.join(directory, "screen.png");
+    fs.writeFileSync(screenshotPath, "image");
+    const decisions = [
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "remove",
+            reason: "The page is an adult service.",
+        },
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "accept",
+            reason: "Invalid in the removal-review phase.",
+        },
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "remove",
+            reason: "The page conclusively shows an adult service.",
+        },
+    ];
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => ({
+        json: async () => ({
+            choices: [
+                { message: { content: JSON.stringify(decisions[calls++]) } },
+            ],
+            model: "test-model",
+        }),
+        ok: true,
+    });
+    try {
+        const result = await requestAgentDecision(
+            {
+                finalUrl: "https://app.test",
+                pageTitle: "App",
+                screenshotPath,
+            },
+            {
+                context: {
+                    categories: ["chat"],
+                    descriptions: ["A test app"],
+                    platforms: ["web"],
+                },
+                names: ["Test app"],
+                source: "website",
+            },
+            [],
+            6,
+            [],
+            Date.now() + 5000,
+            "test-token",
+            "test-model",
+        );
+        assert.equal(calls, 3);
+        assert.equal(result.decision, "remove");
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test("retries an invalid final-quality confirmation", async (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-quality-"));
+    t.after(() => fs.rmSync(directory, { force: true, recursive: true }));
+    const screenshotPath = path.join(directory, "screen.png");
+    fs.writeFileSync(screenshotPath, "image");
+    const decisions = [
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "accept",
+            reason: "The app is clearly visible.",
+        },
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "remove",
+            reason: "Invalid in the quality-review phase.",
+        },
+        {
+            action: null,
+            catalogUpdate: null,
+            decision: "accept",
+            reason: "The cover is readable and representative.",
+        },
+    ];
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => ({
+        json: async () => ({
+            choices: [
+                { message: { content: JSON.stringify(decisions[calls++]) } },
+            ],
+            model: "test-model",
+        }),
+        ok: true,
+    });
+    try {
+        const result = await requestAgentDecision(
+            {
+                finalUrl: "https://app.test",
+                pageTitle: "App",
+                screenshotPath,
+            },
+            {
+                context: {
+                    categories: ["chat"],
+                    descriptions: ["A test app"],
+                    platforms: ["web"],
+                },
+                names: ["Test app"],
+                source: "website",
+            },
+            [],
+            6,
+            [],
+            Date.now() + 5000,
+            "test-token",
+            "test-model",
+        );
+        assert.equal(calls, 3);
+        assert.equal(result.decision, "accept");
     } finally {
         global.fetch = originalFetch;
     }

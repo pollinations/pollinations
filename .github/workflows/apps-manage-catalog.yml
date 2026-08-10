@@ -28,6 +28,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+      issues: read
 
     steps:
       - name: Checkout code
@@ -50,6 +51,7 @@ jobs:
         env:
           COMMUNITY_APP_MANAGEMENT_KEY: ${{ secrets.COMMUNITY_APP_MANAGEMENT_KEY }}
           COMMUNITY_APP_REVIEW_AUTH_STATE: ${{ secrets.COMMUNITY_APP_REVIEW_AUTH_STATE }}
+          GITHUB_TOKEN: ${{ github.token }}
           CAPTURE_MODE: ${{ inputs.mode || 'refresh' }}
           CAPTURE_LIMIT: ${{ inputs.limit }}
           IS_SCHEDULED: ${{ github.event_name == 'schedule' }}

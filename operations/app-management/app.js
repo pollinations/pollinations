@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CATALOG_FILE = path.resolve(__dirname, "../catalog.json");
+const APP_FILE = path.resolve(__dirname, "app.json");
 
 const REQUIRED_STRING_FIELDS = [
     "emoji",
@@ -39,7 +39,7 @@ const CATALOG_FIELDS = new Set([
     ...OPTIONAL_NULLABLE_STRING_FIELDS,
 ]);
 
-function validateApps(apps, filePath = CATALOG_FILE) {
+function validateApps(apps, filePath = APP_FILE) {
     if (!Array.isArray(apps))
         throw new Error(`${filePath} must contain an array`);
 
@@ -107,17 +107,17 @@ function validateApps(apps, filePath = CATALOG_FILE) {
     return apps;
 }
 
-function readApps(filePath = CATALOG_FILE) {
+function readApps(filePath = APP_FILE) {
     const apps = JSON.parse(fs.readFileSync(filePath, "utf8"));
     return validateApps(apps, filePath);
 }
 
-function writeApps(apps, filePath = CATALOG_FILE) {
+function writeApps(apps, filePath = APP_FILE) {
     validateApps(apps, filePath);
     fs.writeFileSync(filePath, `${JSON.stringify(apps, null, 2)}\n`);
 }
 
-function prependApp(app, filePath = CATALOG_FILE) {
+function prependApp(app, filePath = APP_FILE) {
     const apps = readApps(filePath);
     writeApps([app, ...apps], filePath);
 }
@@ -126,7 +126,7 @@ function main() {
     const command = process.argv[2];
     if (command === "validate") {
         const apps = readApps();
-        console.log(`Validated ${apps.length} apps in ${CATALOG_FILE}`);
+        console.log(`Validated ${apps.length} apps in ${APP_FILE}`);
         return;
     }
     if (command === "prepend") {
@@ -134,7 +134,9 @@ function main() {
             throw new Error("NEW_APP environment variable is required");
         }
         prependApp(JSON.parse(process.env.NEW_APP));
-        console.log("Prepended new entry to apps/catalog.json");
+        console.log(
+            "Prepended new entry to operations/app-management/app.json",
+        );
         return;
     }
     throw new Error("Expected validate or prepend command");
@@ -150,7 +152,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-    CATALOG_FILE,
+    APP_FILE,
     prependApp,
     readApps,
     validateApps,

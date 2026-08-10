@@ -3,12 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const {
-    prependApp,
-    readApps,
-    validateApps,
-    writeApps,
-} = require("./catalog.js");
+const { prependApp, readApps, validateApps, writeApps } = require("./app.js");
 
 const APP = {
     emoji: "🌻",
@@ -33,7 +28,7 @@ const APP = {
 
 test("validates and round-trips catalog apps", () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-catalog-"));
-    const filePath = path.join(directory, "catalog.json");
+    const filePath = path.join(directory, "app.json");
 
     writeApps([APP], filePath);
     assert.deepEqual(readApps(filePath), [APP]);
@@ -43,7 +38,7 @@ test("validates and round-trips catalog apps", () => {
 
 test("prepends a validated catalog app", () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-catalog-"));
-    const filePath = path.join(directory, "catalog.json");
+    const filePath = path.join(directory, "app.json");
 
     writeApps([APP], filePath);
     const first = { ...APP, name: "First App" };

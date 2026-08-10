@@ -482,6 +482,7 @@ export async function generateImageOrVideoResponse(
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
     try {

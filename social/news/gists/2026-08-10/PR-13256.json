@@ -1,0 +1,34 @@
+{
+  "pr_number": 13256,
+  "title": "chore: correct community app metadata",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13256",
+  "merged_at": "2026-08-10T19:17:44Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Corrects metadata for 6 community catalog rows.\n- Does not remove apps or add screenshots.\n\n| App | Field | Before | After |\n| --- | --- | --- | --- |\n| Pollinations AI  Claude Code CLI Plugin | url | https://www.ai-ministries.com/downloads/ | https://github.com/Tolerable/pollinations-claude-code |\n| Lytura AI | name | Pollination Gallery AI | Lytura AI |\n| StellarMind | name | medi translate | StellarMind |\n| Blossom-ai (Python SDK) | url | https://pypistats.org/packages/eclips-blossom-ai | https://pypi.org/project/eclips-blossom-ai/ |\n| NailsGen | emoji | 🖼️ | 💅 |\n| NailsGen | name | imggen.top | NailsGen |\n| NailsGen | url | https://www.imggen.top/ | https://www.nailsgen.com/ |\n| NailsGen | description | Free, no-login AI image generator with unlimited FLUX creations. | Generate custom AI nail art designs in any style and color. |\n| LobeHub | name | LobeChat | LobeHub |\n| LobeHub | url | https://lobechat.com | https://lobehub.com/ |\n| LobeHub | description | Open-source AI chat framework with multi-model support, plugins, and customizable agent workflows | Organize and operate AI agents across long-running tasks, integrations, and multimodal workflows. |\n| LobeHub | repositoryUrl | https://github.com/lobehub/lobe-chat | https://github.com/lobehub/lobehub |\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The catalog got name tags",
+    "blurb": "Six community apps received their proper names, links, and descriptions. The garden labels now point to the plants they actually describe.",
+    "summary": "Corrected names, URLs, descriptions, repository links, and the emoji for six community catalog entries: Pollinations AI Claude Code CLI Plugin, Lytura AI, StellarMind, Blossom-ai, NailsGen, and LobeHub.",
+    "impact": "Visitors can now find the correct projects directly from the community catalog, including the updated NailsGen nail-art listing and LobeHub repository link.",
+    "keywords": [
+      "community",
+      "app-catalog",
+      "metadata",
+      "directory",
+      "NailsGen",
+      "LobeHub"
+    ],
+    "visual_concept": "A cozy community-app garden with six clearly labeled flower pots replacing mismatched labels; Polli acts as a careful catalog keeper, updating name tags and signposts while a friendly CRT robot checks that each link leads to the right little project booth.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny librarian visor, carefully replacing labels on six flowering code-plants in a warm community app garden while a chunky CRT monitor robot checks matching signposts. Prominent lime green (#ecf874) garden accents and terminal glow, soft mint, lavender, peach, and warm cream gradients, subtle pixel-font text reading “CATALOG”, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13256.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny librarian visor, carefully replacing labels on six flowering code-plants in a warm community app garden while a chunky CRT monitor robot checks matching signposts. Prominent lime green (#ecf874) garden accents and terminal glow, soft mint, lavender, peach, and warm cream gradients, subtle pixel-font text reading “CATALOG”, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-10T19:18:57.212693+00:00"
+}

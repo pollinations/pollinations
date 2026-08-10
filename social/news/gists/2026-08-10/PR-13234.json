@@ -1,0 +1,34 @@
+{
+  "pr_number": 13234,
+  "title": "docs: record Klein Vast network replacement",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13234",
+  "merged_at": "2026-08-10T16:35:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates the active Klein Vast instance, region, rate, and fleet totals after the production cutover.\n- Records the 30-minute QUIC/Workers VPC qualification and bounded model tests.\n- Preserves the retired host incident as the reason for the replacement.\n\nRoot cause: instance `47259457` had persistent UDP/QUIC connection churn while local inference remained healthy, producing severe end-to-end latency.\n\nValidation:\n- Seven running Vast production instances at `$1.757037/hour`.\n- Replacement `47353224` maintained four QUIC connections with zero reconnects or tunnel errors.\n- 21 production requests completed with zero 5xx; final P50/P95 was 7.32s/10.54s.\n- Old instance destroyed after sole-backend verification.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The tunnel found its flowerbed",
+    "blurb": "The Klein Vast notes now record the production handoff, including the QUIC gremlin that prompted it. Seven GPUs are humming along, and the old host has been composted.",
+    "summary": "Updated GPU_INSTANCES.md with Klein Vast replacement 47353224, documenting the retired instance 47259457's UDP/QUIC churn and qualification results: four stable QUIC connections, 21 successful production requests, and 7.32s/10.54s P50/P95 latency.",
+    "impact": "Operators now have a concrete record of the active seven-instance Vast fleet at $1.757037/hour and the validation evidence behind the production replacement.",
+    "keywords": [
+      "documentation",
+      "klein",
+      "vast",
+      "quic",
+      "gpu-instances",
+      "production"
+    ],
+    "visual_concept": "A cozy garden-server shed represents the Klein Vast production fleet: Polli, wearing a tiny mechanic cap, tends seven small flowering GPU server pots while a healthy replacement server is connected by four calm glowing tunnel-vines. A retired, unplugged server pot sits neatly aside with a small \"RESTED\" label, while a CRT monitor robot confirms the stable connection; use this as a warm infrastructure-maintenance scene rather than an incident scene.",
+    "image_prompt": "Cozy pixel art scene in a warm garden server shed where Polli, a cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny mechanic cap, checks four calm glowing tunnel-vines connecting a fresh GPU server to seven flowering server pots; a friendly CRT monitor robot watches with happy pixel eyes beside a gently retired old server. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, with small pixel-font text: \"QUIC: STABLE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13234.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden server shed where Polli, a cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny mechanic cap, checks four calm glowing tunnel-vines connecting a fresh GPU server to seven flowering server pots; a friendly CRT monitor robot watches with happy pixel eyes beside a gently retired old server. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, with small pixel-font text: \"QUIC: STABLE\"."
+  },
+  "generated_at": "2026-08-10T16:36:09.893718+00:00"
+}

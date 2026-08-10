@@ -1,0 +1,34 @@
+{
+  "pr_number": 13252,
+  "title": "refactor: organize community app operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13252",
+  "merged_at": "2026-08-10T18:39:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves app ingestion, catalog validation/output, daily traffic metrics, and Tinybird catalog sync from `.github/scripts` into `apps/app-management`.\n- Consolidates catalog validation and prepend commands into one tested catalog module.\n- Updates the existing ingestion, publishing, metrics, sync, and CI workflows to use the new paths.\n- Removes the obsolete weekly dead-app checker; ongoing screenshot and health review now lives in the public [`community-app-operator`](https://github.com/pollinations/community-app-operator) repository.\n- Does not change `apps/catalog.json`, screenshot backfill data, or generated app listings.\n\nValidation: script tests pass; the 883-app catalog validates; catalog outputs regenerate with zero drift; Tinybird sync completes against a local mocked endpoint.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The app shed got shelves",
+    "blurb": "Community app operations moved into one tidy little workshop. The catalog, ingestion, metrics, and Tinybird sync scripts now know where they live.",
+    "summary": "Moved community app ingestion, catalog validation and output generation, daily traffic metrics, and Tinybird catalog sync from .github/scripts into apps/app-management, with consolidated tested catalog commands and updated workflows.",
+    "impact": "The 883-app catalog and its publishing pipeline keep producing identical outputs, while contributors get a clearer, better-tested home for app operations.",
+    "keywords": [
+      "community-apps",
+      "app-management",
+      "catalog",
+      "workflows",
+      "tinybird",
+      "automation"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian-organizer in a cozy garden shed, sorting labeled app catalog cards and code-plants onto shelves while a helpful CRT monitor robot routes small papers through clearly marked tubes toward a Tinybird-shaped pixel terminal. The scene represents consolidating scattered operational scripts into one maintained app-management workspace.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully organizes glowing app catalog cards and code-plants onto shelves labeled \"APP MANAGEMENT\"; a cheerful chunky CRT monitor robot helps route cards to a small bird-shaped terminal. Lime green (#ecf874) appears prominently in the shelves and terminal glow, with flowers and vines around the workspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13252.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully organizes glowing app catalog cards and code-plants onto shelves labeled \"APP MANAGEMENT\"; a cheerful chunky CRT monitor robot helps route cards to a small bird-shaped terminal. Lime green (#ecf874) appears prominently in the shelves and terminal glow, with flowers and vines around the workspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-10T18:40:24.083466+00:00"
+}

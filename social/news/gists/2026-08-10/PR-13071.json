@@ -1,0 +1,34 @@
+{
+  "pr_number": 13071,
+  "title": "fix: migrate Trellis to InferencePort async jobs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13071",
+  "merged_at": "2026-08-10T20:58:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Submits Trellis 2 generations through InferencePort's async API and polls the job endpoint instead of using the synchronous transport.\n- Keeps the Pollinations API synchronous while allowing up to five minutes for the upstream job.\n- Returns 502 for failed or malformed jobs and 504 when the total deadline expires.\n- Covers submission, polling, terminal states, timeout, status mapping, fallback, and resolution handling.\n\nModel contract: canonical `trellis-2`; aliases low/medium/high; multiplier 1; not paid-only; no Pollinations GPU; InferencePort `trellis2`; no fallback.\n\nValidation:\n- 35 model-3D tests pass\n- Typecheck passes\n- Local authenticated E2E returned HTTP 200 with a valid 4.2 MB GLB after 165s and billed $0.24\n\nDepends on #13067. No deployment included.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Trellis learned patience",
+    "blurb": "Trellis 2 now sends its 3D seedlings through InferencePort's long-running job queue, then waits for the GLB to bloom. The API stays pleasantly synchronous; the upstream machinery gets the time it needs.",
+    "summary": "Migrated canonical `trellis-2` 3D generation to InferencePort's async `trellis2` job API, polling completed jobs for up to five minutes while preserving Pollinations' synchronous response flow.",
+    "impact": "Developers can keep calling Trellis 2 normally—including its low, medium, and high aliases—while generations that take minutes can return finished GLB files reliably, with clear 502 failure and 504 deadline responses.",
+    "keywords": [
+      "trellis-2",
+      "3d-generation",
+      "inferenceport",
+      "async-jobs",
+      "glb",
+      "model-api"
+    ],
+    "visual_concept": "A cozy 3D workshop garden: Trellis 2 is represented by a tiny lime-green job queue greenhouse that gradually grows a chunky GLB crystal sculpture. Polli, wearing a miniature maker's hard hat and holding a clipboard, patiently watches the job-status sprouts progress from queued to complete beside a retro terminal; small flowers and code-vines make the long wait feel productive rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny maker hard hat, patiently tending a lime green (#ecf874) greenhouse where a glowing low-poly GLB sculpture grows from a job-status plant; a retro terminal shows simple pixel text, \"TRELLIS 2: DONE.\" Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender and warm cream surroundings, dark purple (#110518) outlines, flowers and code-vines, emotionally warm like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13071.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny maker hard hat, patiently tending a lime green (#ecf874) greenhouse where a glowing low-poly GLB sculpture grows from a job-status plant; a retro terminal shows simple pixel text, \"TRELLIS 2: DONE.\" Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender and warm cream surroundings, dark purple (#110518) outlines, flowers and code-vines, emotionally warm like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-08-10T20:59:29.187357+00:00"
+}

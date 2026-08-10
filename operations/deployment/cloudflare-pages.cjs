@@ -8,7 +8,7 @@
  *   --phase=cutover  After upload and origin verification, add
  *                    <sub>.pollinations.ai directly to the Myceli Pages project.
  *
- * Usage: node deploy-app.js <appName> --phase=origin|cutover
+ * Usage: node cloudflare-pages.cjs <app-path> --phase=origin|cutover
  */
 
 const fs = require("node:fs");
@@ -18,20 +18,7 @@ const CF_API = "https://api.cloudflare.com/client/v4";
 const PUBLIC_ZONE = "pollinations.ai";
 const UPSTREAM_ZONE = "myceli.ai";
 
-function loadEnvFile() {
-    const envPath = path.join(__dirname, "../.env");
-    if (!fs.existsSync(envPath)) return;
-
-    for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
-        const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
-        if (match && !process.env[match[1]]) {
-            process.env[match[1]] = match[2].trim();
-        }
-    }
-}
-
 function loadCredentials() {
-    loadEnvFile();
     return {
         mycToken:
             process.env.CLOUDFLARE_API_TOKEN_MYCELI ||
@@ -78,8 +65,8 @@ async function createPagesProject(account, headers, project, appConfig) {
                 name: project,
                 production_branch: "production",
                 build_config: {
-                    build_command: appConfig.buildCommand || "",
-                    destination_dir: appConfig.outputDir || ".",
+                    build_command: appConfig.build || "",
+                    destination_dir: appConfig.output || ".",
                 },
             }),
         },
@@ -277,14 +264,15 @@ async function upsertCname(zoneId, headers, name, target) {
     throw new Error(`DNS upsert ${name} failed: ${JSON.stringify(json)}`);
 }
 
-function appContext(appName) {
-    const config = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "../deployments.json"), "utf8"),
+function appContext(appPath) {
+    const manifestPath = path.resolve(
+        __dirname,
+        "../..",
+        appPath,
+        "deploy.json",
     );
-    const appConfig = config[appName];
-    if (!appConfig)
-        throw new Error(`App ${appName} not found in deployments.json`);
-
+    const appConfig = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const appName = path.basename(appPath);
     const subdomain = appConfig.subdomain || appName;
     return {
         appConfig,
@@ -342,12 +330,14 @@ async function runCutover(appName) {
 
 const { mycToken: MYC_TOKEN, mycAccount: MYC_ACCOUNT } = loadCredentials();
 
-const appName = process.argv[2];
+const appPath = process.argv[2];
 const phaseArg = process.argv.find((arg) => arg.startsWith("--phase="));
 const phase = phaseArg ? phaseArg.split("=")[1] : "";
 
-if (!appName || (phase !== "origin" && phase !== "cutover")) {
-    console.error("Usage: node deploy-app.js <appName> --phase=origin|cutover");
+if (!appPath || (phase !== "origin" && phase !== "cutover")) {
+    console.error(
+        "Usage: node cloudflare-pages.cjs <app-path> --phase=origin|cutover",
+    );
     process.exit(1);
 }
 
@@ -359,7 +349,7 @@ if (!MYC_TOKEN || !MYC_ACCOUNT) {
 }
 
 const run = phase === "origin" ? runOrigin : runCutover;
-run(appName).catch((error) => {
+run(appPath).catch((error) => {
     console.error(`${phase} failed:`, error.message);
     process.exit(1);
 });

@@ -1,0 +1,14 @@
+{
+  "target": "pages",
+  "credentials": "apps",
+  "subdomain": "model-monitor",
+  "install": "npm ci --prefix ../.. && npm ci",
+  "build": "npm run build",
+  "output": "dist",
+  "watch": [
+    "packages/ui/",
+    "packages/sdk/",
+    "package.json",
+    "package-lock.json"
+  ]
+}

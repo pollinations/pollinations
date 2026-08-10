@@ -210,9 +210,6 @@ The enter.pollinations.ai worker has structured logging enabled. You can query l
 ```bash
 # From wrangler.toml
 grep account_id enter.pollinations.ai/wrangler.toml
-
-# Or from existing .env
-grep CLOUDFLARE_ACCOUNT_ID image.pollinations.ai/.env
 ```
 
 ### 2. Create API Token with Workers Observability Permission

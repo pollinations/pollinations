@@ -3,7 +3,12 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { readApps, validateApps, writeApps } = require("./lib/app-catalog.js");
+const {
+    prependApp,
+    readApps,
+    validateApps,
+    writeApps,
+} = require("./catalog.js");
 
 const APP = {
     emoji: "🌻",
@@ -32,6 +37,18 @@ test("validates and round-trips catalog apps", () => {
 
     writeApps([APP], filePath);
     assert.deepEqual(readApps(filePath), [APP]);
+
+    fs.rmSync(directory, { recursive: true, force: true });
+});
+
+test("prepends a validated catalog app", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-catalog-"));
+    const filePath = path.join(directory, "catalog.json");
+
+    writeApps([APP], filePath);
+    const first = { ...APP, name: "First App" };
+    prependApp(first, filePath);
+    assert.deepEqual(readApps(filePath), [first, APP]);
 
     fs.rmSync(directory, { recursive: true, force: true });
 });

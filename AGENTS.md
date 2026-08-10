@@ -8,7 +8,7 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/catalog.json`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `apps/catalog.json`, run `node apps/app-management/generate-catalog-outputs.js`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 

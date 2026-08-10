@@ -170,7 +170,7 @@ SRV lookups failed through the host resolver. Standard HTTP completed the model
 download, while the local DNS-over-HTTPS fallback established four named-tunnel
 connections.
 
-**Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
+**Provision a new instance** (see `flux/setup-vast.sh` header for all env):
 ```bash
 vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
 vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
@@ -204,7 +204,7 @@ curl -s https://<named-tunnel-hostname>/docs -o /dev/null -w "%{http_code}\n"   
 curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"  # registry
 # on the instance: screen -r flux / screen -r cloudflared; logs /tmp/flux.log /tmp/cloudflared.log
 # Vast runs /root/onstart.sh after a container restart to restore both services
-POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
+POLLINATIONS_API_KEY=... bash operations/infrastructure/gpu/flux/verify-vast.sh  # required before cutover
 ```
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024

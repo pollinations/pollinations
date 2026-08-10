@@ -1,0 +1,34 @@
+{
+  "pr_number": 12621,
+  "title": "fix: consolidate community monitor reliability and safety",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12621",
+  "merged_at": "2026-08-10T14:46:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the community monitor to systemd-supervised fresh processes and keeps its committed prompt/runtime files synchronized from `main`.\n- Adds low-load text and image probes, provider-origin image 4xx classification, bounded billing diagnostics, official-model follow-ups, and daily leaderboard handling.\n- Adds a deterministic daily reliability audit: 7-day success below 70% identifies candidates, while current success of at least 80% in the freshest adequately sampled 24h/48h window prevents delayed deactivation after a fix or new fallback.\n- Counts successful fallback rescues as successes and requires a fresh provider-failing probe when both recent windows contain fewer than 20 attributable requests.\n- Keeps the acute 4-hour incident path separate with its 24-hour grace and limited quota-reset reactivation.\n\nValidation:\n- `npx biome check apps/operation/community-monitor/seven-day-health.mjs`\n- `node --check apps/operation/community-monitor/seven-day-health.mjs`\n- `git diff --check`\n- Production-data dry run: 9 current candidates, 4 protected by recent health, 5 low-volume rows requiring a probe; no model state changed.\n\nSupersedes #12372 and #12483. The live EC2 runtime is updated from this branch; automatic repo synchronization remains gated on this PR landing in `main`.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden gets a watchdog",
+    "blurb": "The community monitor now knows the difference between a sick model and one that has already found its footing again. Fresh probes, fallback-aware scoring, and a daily leaderboard keep the hive’s model garden better tended.",
+    "summary": "Consolidated the community monitor into systemd-supervised fresh processes with synchronized runtime files, low-load text/image probes, fallback-aware success accounting, daily leaderboards, and a deterministic 7-day audit that protects models showing at least 80% success in a recent adequately sampled 24-hour or 48-hour window.",
+    "impact": "Users get more reliable community model availability because successful fallbacks count as rescues, low-volume provider failures trigger fresh probes, and recently healthy models avoid delayed deactivation after a fix or new fallback.",
+    "keywords": [
+      "community-monitor",
+      "model-reliability",
+      "fallbacks",
+      "health-checks",
+      "leaderboard",
+      "providers"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper inspecting a cozy model-health garden: code-plants have small 7-day and 24h/48h status signs, while a CRT monitor robot cheerfully watches fresh text and image probe seedlings. Healthy plants are protected beneath a little glass cloche, fallback vines reconnect a drooping plant to a thriving one, and a tiny daily leaderboard hangs on a garden shed wall.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny gardener hat, carefully tending a lime green (#ecf874) code-garden of model health plants while a chunky CRT monitor robot checks fresh text and image probe seedlings; a small pixel leaderboard and signs reading “7 DAY” and “24H” sit nearby, with a fallback vine rescuing one plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender garden shed, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-12621.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny gardener hat, carefully tending a lime green (#ecf874) code-garden of model health plants while a chunky CRT monitor robot checks fresh text and image probe seedlings; a small pixel leaderboard and signs reading “7 DAY” and “24H” sit nearby, with a fallback vine rescuing one plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender garden shed, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-10T14:48:14.336832+00:00"
+}

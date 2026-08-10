@@ -1,0 +1,33 @@
+{
+  "pr_number": 13250,
+  "title": "chore: remove SlidePainter app",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13250",
+  "merged_at": "2026-08-10T18:17:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes only the outdated `apps/slidepainter` application.\n- Drops its deployment registration.\n- Leaves all other applications and showcase records unchanged.\n- Validated with Biome, JSON parsing, reference checks, and the deployment-consumer test.\n\nDeployment note: the existing Cloudflare project or domain can be retired separately after merge.",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Slides Leave the Garden",
+    "blurb": "SlidePainter has been gently packed away, along with its deployment registration. The rest of the app garden remains exactly where it was.",
+    "summary": "Removed the outdated apps/slidepainter application and its seven-entry deployment registration, leaving all other apps and showcase records unchanged.",
+    "impact": "The app roster is cleaner, while existing applications and showcase listings continue unchanged.",
+    "keywords": [
+      "community-apps",
+      "slidepainter",
+      "cleanup",
+      "deployments",
+      "retirement"
+    ],
+    "visual_concept": "Depict SlidePainter as a cozy retired pixel-art slide projector and stack of presentation cards being carefully packed into a warm cream storage box. Polli, wearing a tiny archivist hat, labels the box beside healthy code-plants and an unchanged garden of small app icons, making the cleanup feel orderly rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny archivist hat, carefully packing a retired slide projector and presentation cards into a warm cream box beside thriving code-plants and pixel flowers; a retro terminal glows prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"ARCHIVED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13250.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny archivist hat, carefully packing a retired slide projector and presentation cards into a warm cream box beside thriving code-plants and pixel flowers; a retro terminal glows prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"ARCHIVED\"."
+  },
+  "generated_at": "2026-08-10T18:18:06.617249+00:00"
+}

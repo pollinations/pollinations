@@ -293,7 +293,7 @@ function buildResponsesBody(
 
     if (options.stream) body.stream = true;
 
-    return cleanNullAndUndefined(body);
+    return cleanNullAndUndefined(body) as Record<string, unknown>;
 }
 
 // =============================================================================
@@ -421,7 +421,7 @@ function streamError(message: string): string {
 }
 
 function convertResponsesStream(
-    source: ReadableStream<Uint8Array> | null,
+    source: ReadableStream<Uint8Array<ArrayBuffer>> | null,
     { modelName, includeUsage }: { modelName: string; includeUsage: boolean },
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();

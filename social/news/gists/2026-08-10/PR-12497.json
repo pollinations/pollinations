@@ -1,0 +1,35 @@
+{
+  "pr_number": 12497,
+  "title": "fix: remove Vector AI Agent from app directory listings",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/12497",
+  "merged_at": "2026-08-10T20:41:23Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Removes Vector AI Agent  as requested by Mincofficial on Discord.\r\n\r\nFixes #12421",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A garden bed cleared",
+    "blurb": "The app garden has one less listing: Vector AI Agent has been retired from the directory. Polli tidied the signpost and kept the paths readable.",
+    "summary": "Removed the Vector AI Agent entry from apps/catalog.json and the GREENHOUSE app directory listing at the creator's request.",
+    "impact": "The public app directory now reflects the current set of community projects without the retired Vector AI Agent listing.",
+    "keywords": [
+      "community",
+      "app-directory",
+      "catalog",
+      "Vector AI Agent",
+      "cleanup"
+    ],
+    "visual_concept": "A cozy community app garden with Polli carefully removing a small retired app sign from a directory board while healthy code-flowers and other project signposts remain. The scene represents accurate curation rather than deletion drama.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, gently taking a small sign labeled 'VECTOR' off a wooden community app directory board while code-flowers bloom nearby. Use a prominent lime green (#ecf874) garden glow, warm cream and lavender pastels, chunky retro sprites, subtle CRT scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-12497.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, gently taking a small sign labeled 'VECTOR' off a wooden community app directory board while code-flowers bloom nearby. Use a prominent lime green (#ecf874) garden glow, warm cream and lavender pastels, chunky retro sprites, subtle CRT scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-10T20:47:10.428831+00:00"
+}

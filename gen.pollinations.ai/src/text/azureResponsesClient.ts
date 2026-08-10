@@ -558,12 +558,15 @@ function convertResponsesStream(
             return;
         }
 
-        // Reasoning content arrives as summary/part deltas and whole-part
-        // additions; surface both as reasoning_content so streaming clients
-        // see the model's reasoning like the non-stream path does.
+        // Reasoning content arrives as raw (response.reasoning_text.delta) or
+        // summarized (response.reasoning_summary_text.delta) text deltas;
+        // surface both as reasoning_content so streaming clients see the
+        // model's reasoning like the non-stream path does. The corresponding
+        // *.part.added events (e.g. response.reasoning_summary_part.added)
+        // carry no useful text — content streams through the deltas instead.
         if (
-            type === "response.reasoning_summary_text.delta" ||
-            type === "response.reasoning_part.delta"
+            type === "response.reasoning_text.delta" ||
+            type === "response.reasoning_summary_text.delta"
         ) {
             const delta = payload.delta;
             if (typeof delta === "string") {
@@ -574,26 +577,6 @@ function convertResponsesStream(
                         created,
                         modelName,
                         { reasoning_content: delta },
-                        null,
-                    ),
-                );
-            }
-            return;
-        }
-
-        if (
-            type === "response.reasoning_summary_part.added" ||
-            type === "response.reasoning_part.added"
-        ) {
-            const text = payload.text;
-            if (typeof text === "string") {
-                emit(
-                    controller,
-                    streamChunk(
-                        chunkId,
-                        created,
-                        modelName,
-                        { reasoning_content: text },
                         null,
                     ),
                 );

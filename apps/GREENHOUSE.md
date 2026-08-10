@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **881** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **882** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |  | 🫧 |
 | [✍️ Tessera Lumen](https://app.963.co.za) | This app uses a backend proxy integration with Pollinations.ai. **Pollinations endpoint used** - https://gen.pollinations.ai/v1/chat/completions **Repository evidence** - POLLINATIONS.md : https://git | [@Jeraque007](https://github.com/Jeraque007) |  | 🫧 |
 | [🎬 Stoicky](https://stoicky.vercel.app) | Stoicky is an AI-powered video automation tool for faceless content creators, it uses pollinations.ai for the Image and text AI inference. | [@deauthor1234](https://github.com/deauthor1234) |  | 🐝 🫧 |
 | [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |  | 🏵️ 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 Lucia](https://t.me/MissLucia_bot) | Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU). | [@Ad101DP](https://github.com/Ad101DP) |  | 🫧 |
 | [📚 Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) | Pollination EduCard AI provides an “About the App” section describing the app. | [@Satwata-Bandopadhyay](https://github.com/Satwata-Bandopadhyay) |  | 🫧 |
 | [💼 Valdy - AI-Powered Startup Validation](https://samo-fex.github.io/valdy) | Validate startup ideas with Valdy, an AI-powered validation tool that uses real-world data and AI analysis to support entrepreneurs and product managers. | [@samo-fex](https://github.com/samo-fex) |  | 🫧 |
-| [🛠️ FluxFlow CLI](https://www.npmjs.com/package/fluxflow-cli) | A powerful CLI-based AI Agent that assists with coding, documentation, and creative production. By integrating the pollinations.ai API, it delivers robust image generation capabilities directly to the | [@KushalRoyChowdhury](https://github.com/KushalRoyChowdhury) | 2 | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ LND Ai](https://www.namansoni.in/text-to-image) | Generate text-to-image outputs and access multiple other AI tools on the LND Ai website, powered by pollination ai. | [@LND78](https://github.com/LND78) |  | 🐝 |
 | [⚡ FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | [@urea](https://github.com/urea) |  | 🐝 |
 
-<details><summary>Show all 212 apps</summary>
+<details><summary>Show all 213 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -135,6 +135,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧑‍🎨 Pollinations Avatar Gen - Reforged](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |  | 🫧 |
 | [🖼️ Generateur d'image ia](https://mzaacdepy.github.io/generateur-images-ia) | Generate images with the French-language AI image generator web app built with vanilla HTML/CSS/JS. | [@MzaacDePY](https://github.com/MzaacDePY) |  | 🫧 |
 | [🖼️ Cat Sticker Generator](https://fantastic-dolphin-00911c.netlify.app) | An AI-powered cat sticker generator that turns real cat photos into WeChat-style cartoon stickers. Users upload a photo, the AI analyzes the cat's appearance (breed, fur color, eye color, patterns), g | [@Vigor-Zhong](https://github.com/Vigor-Zhong) |  | 🫧 |
 | [🖼️ Batch Imagine](https://batchimagine.netlify.app) | **Batch Imagine** is a free, open-source AI batch image generator built with React + Vite, powered entirely by the Pollinations.ai API. | [@Shawaiz-Hussain](https://github.com/Shawaiz-Hussain) |  | 🫧 |

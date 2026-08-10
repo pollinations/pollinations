@@ -1,0 +1,35 @@
+{
+  "date": "2026-08-09",
+  "period_start": "2026-08-09",
+  "period_end": "2026-08-09",
+  "title": "Image generation learned to route around busy workers",
+  "summary": "A reliability-heavy day: image requests can find another worker, model health is easier to read, and Stoicky joined the catalog.\n\nThe Vast image fleet was reconciled and hardened, DreamShaper load can now spill across available workers, and the shared image pool retries another FLUX or DreamShaper worker when the first one is full or unreachable. Z-Image cold-download resumes and replica routing also got stronger checks, which is software's way of admitting that networks remain a practical joke.\n\nThe model monitor gained Official and Community tabs, each with its own modality health percentages, outage badges, and no-traffic model view. It opens on Official models and resets modality filtering when switching ownership, making availability easier to inspect without mixing two different gardens.\n\nProvider-side 402 responses, including exhausted OpenRouter credit, now surface as 502 Bad Gateway while Pollinations wallet and API-key budget responses retain their existing meaning. Clients can more reliably retry or fall back when the problem is temporary and upstream.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 13213,
+      "date": "2026-08-09"
+    },
+    {
+      "number": 13214,
+      "date": "2026-08-09"
+    },
+    {
+      "number": 13217,
+      "date": "2026-08-09"
+    },
+    {
+      "number": 13218,
+      "date": "2026-08-09"
+    },
+    {
+      "number": 13219,
+      "date": "2026-08-09"
+    },
+    {
+      "number": 13221,
+      "date": "2026-08-09"
+    }
+  ],
+  "generated_at": "2026-08-10T06:37:58.810843+00:00"
+}

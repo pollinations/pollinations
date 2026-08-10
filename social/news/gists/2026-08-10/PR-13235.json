@@ -1,0 +1,36 @@
+{
+  "pr_number": 13235,
+  "title": "Add Tessera Lumen to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13235",
+  "merged_at": "2026-08-10T14:52:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Tessera Lumen](https://app.963.co.za) to writing\n- This app uses a backend proxy integration with Pollinations.ai. **Pollinations endpoint used** - https://gen.pollinations.ai/v1/chat/completions **Repository evidence** - POLLINATIONS.md : https://git\n\nFixes #13124",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new light for drafts",
+    "blurb": "Tessera Lumen has joined the writing garden, using Pollinations chat through a backend proxy. Another small tool for turning blank pages into somewhere to start.",
+    "summary": "Added Tessera Lumen, a writing app that integrates Pollinations through a backend proxy to the https://gen.pollinations.ai/v1/chat/completions endpoint, to the community app catalog.",
+    "impact": "People browsing Pollinations writing projects can now discover Tessera Lumen and its chat-powered drafting workflow.",
+    "keywords": [
+      "community-apps",
+      "writing",
+      "Tessera Lumen",
+      "chat-completions",
+      "gen.pollinations.ai",
+      "catalog"
+    ],
+    "visual_concept": "Depict Tessera Lumen as a cozy writer's desk: a glowing retro terminal and an open manuscript illuminate a small garden of letter-shaped sprouts, representing chat-powered writing. Polli, wearing a tiny writer's beret, warmly tends the draft while a soft lamp symbolizes “Lumen” and the app's creative light.",
+    "image_prompt": "Cozy pixel art scene of a warmly lit writer's desk where a retro terminal displays gentle chat bubbles beside an open manuscript, and letter-shaped code-plants grow from lime green (#ecf874) pots under a small pastel reading lamp. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny writer's beret and carefully waters the manuscript garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'TESSERA LUMEN', nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13235.jpg",
+    "prompt": "Cozy pixel art scene of a warmly lit writer's desk where a retro terminal displays gentle chat bubbles beside an open manuscript, and letter-shaped code-plants grow from lime green (#ecf874) pots under a small pastel reading lamp. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny writer's beret and carefully waters the manuscript garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'TESSERA LUMEN', nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-10T14:53:06.919889+00:00",
+  "app_name": "Tessera Lumen",
+  "app_url": "https://app.963.co.za"
+}

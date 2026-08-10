@@ -24,21 +24,32 @@ function params(resolution: "low" | "medium" | "high" = "low"): Model3dParams {
     };
 }
 
-const syncSuccessResponse = (b64 = "aW5mZXJlbmNlcG9ydA==") =>
-    new Response(JSON.stringify({ data: [{ model_glb_b64_bytes: b64 }] }), {
-        status: 200,
-    });
+function mockAsyncSuccess(b64 = "aW5mZXJlbmNlcG9ydA==") {
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+            Response.json(
+                { job_id: "job_123", status: "pending" },
+                { status: 202 },
+            ),
+        )
+        .mockResolvedValueOnce(
+            Response.json({
+                job_id: "job_123",
+                status: "completed",
+                data: [{ model_glb_b64_bytes: b64 }],
+            }),
+        );
+}
 
 describe("callTrellis2", () => {
-    it("uses ?sync=true and the correct inferenceport model name", async () => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+    it("uses the async API and correct inferenceport model name", async () => {
+        const fetchSpy = mockAsyncSuccess();
 
         await callTrellis2(params("medium"));
 
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-        expect(url).toContain("?sync=true");
+        expect(url).not.toContain("sync=true");
         const body = JSON.parse(init.body as string);
         expect(body.model).toBe("trellis2");
         expect(body.resolution).toBe("medium");
@@ -49,9 +60,7 @@ describe("callTrellis2", () => {
         "medium",
         "high",
     ] as const)("sends %s resolution", async (resolution) => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+        const fetchSpy = mockAsyncSuccess();
 
         await callTrellis2(params(resolution));
 
@@ -61,8 +70,8 @@ describe("callTrellis2", () => {
         expect(body.resolution).toBe(resolution);
     });
 
-    it("returns a GLB buffer from the sync response", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(syncSuccessResponse());
+    it("returns a GLB buffer from the completed job", async () => {
+        mockAsyncSuccess();
 
         const result = await callTrellis2(params());
 
@@ -82,9 +91,7 @@ describe("callTrellis2", () => {
     });
 
     it("does not forward seed (inferenceport support unconfirmed)", async () => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+        const fetchSpy = mockAsyncSuccess();
 
         await callTrellis2({ ...params(), seed: 12345 });
 

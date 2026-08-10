@@ -52,10 +52,27 @@ Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
 
 Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
 fetches `origin/main` and updates `CYCLE.md`, `probe.mjs`, `loop.sh`,
-`healthcheck.sh`, and both leaderboard builders. Changes merged to `main` apply on
-the next cycle. `.env`, state, identity mappings, logs, and generated data are
-never copied or removed. Restart the service to apply a merged change
-immediately.
+`healthcheck.sh`, both leaderboard builders, and the updater itself. Changes
+merged to `main` apply on the next cycle. `.env`, state, identity mappings, logs,
+and generated data are never copied or removed. Restart the service to apply a
+merged change immediately.
+
+### One-time `apps/operation` to `operations` migration
+
+Before merging the repository-root move, seed its transition-aware updater on
+the monitor box:
+
+```bash
+scp operations/community-monitor/update-from-repo.sh \
+  community-monitor:/home/ubuntu/monitor/update-from-repo.sh
+ssh community-monitor "chmod +x /home/ubuntu/monitor/update-from-repo.sh && \
+  /home/ubuntu/monitor/update-from-repo.sh"
+```
+
+Before the merge it continues reading `apps/operation/community-monitor` from
+`main`. After the merge it switches to `operations/community-monitor` and keeps
+itself current. Perform this handoff before merging; the previously installed
+updater knows only the legacy path and cannot migrate itself.
 
 ## Deploying runtime changes
 

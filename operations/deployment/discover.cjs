@@ -64,15 +64,6 @@ function discover(scope, repoRoot = REPO_ROOT) {
 }
 
 function selectChanged(apps, changedFiles) {
-    if (
-        changedFiles.some(
-            (file) =>
-                file.startsWith("operations/deployment/") ||
-                file === ".github/workflows/deploy-applications.yml",
-        )
-    ) {
-        return apps;
-    }
     return apps.filter((app) => {
         const prefixes = [`${app.path}/`, ...app.watch];
         return changedFiles.some((file) =>

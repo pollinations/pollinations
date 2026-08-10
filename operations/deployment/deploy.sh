@@ -26,14 +26,23 @@ field() {
 
 run_command() {
     local command=$1
-    [[ -z "$command" ]] || (cd "$APP_DIR" && bash -lc "$command")
+    [[ -z "$command" ]] || (cd "$APP_DIR" && bash -c "$command")
 }
 
 verify_url() {
     local url=$1
     echo "Verifying $url"
-    curl --fail --silent --show-error --output /dev/null \
-        --retry 12 --retry-delay 10 --retry-all-errors "$url"
+    local code
+    for _ in $(seq 1 30); do
+        code=$(curl --silent --show-error --output /dev/null \
+            --write-out '%{http_code}' "$url" || true)
+        if [[ "$code" == "200" ]]; then
+            return
+        fi
+        sleep 10
+    done
+    echo "$url did not return HTTP 200 (last: $code)" >&2
+    return 1
 }
 
 deploy_vps() {
@@ -69,7 +78,10 @@ if ! cmp -s requirements.txt "$REQ_MARKER" 2>/dev/null; then
 fi
 sudo systemctl restart polli.service
 sleep 5
-sudo systemctl is-active --quiet polli.service
+if ! sudo systemctl is-active --quiet polli.service; then
+  sudo journalctl -u polli.service -n 30 --no-pager || true
+  exit 1
+fi
 rm -rf /tmp/polli-deploy
 REMOTE
 }

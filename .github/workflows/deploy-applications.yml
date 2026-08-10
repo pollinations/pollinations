@@ -16,7 +16,6 @@ on:
       app:
         description: "Application name or path, or all"
         required: true
-        default: all
         type: string
 
 permissions:
@@ -31,7 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+
+      - name: Test deployment discovery
+        run: node --test operations/deployment/discover.test.cjs
 
       - name: Detect changed applications
         id: detect
@@ -47,13 +49,11 @@ jobs:
             echo "Application deployments must run from production"
             exit 1
           fi
-          SCOPE=all
-
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$SELECTED_APP" = "all" ]; then
-              APPS=$(node operations/deployment/discover.cjs --scope="$SCOPE")
+              APPS=$(node operations/deployment/discover.cjs --scope=all)
             else
-              APPS=$(node operations/deployment/discover.cjs --scope="$SCOPE" --app="$SELECTED_APP")
+              APPS=$(node operations/deployment/discover.cjs --scope=all --app="$SELECTED_APP")
             fi
           else
             if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
@@ -61,7 +61,7 @@ jobs:
             else
               git diff --name-only HEAD~1 HEAD > changed.txt
             fi
-            APPS=$(node operations/deployment/discover.cjs --scope="$SCOPE" --changed=changed.txt)
+            APPS=$(node operations/deployment/discover.cjs --scope=all --changed=changed.txt)
           fi
 
           if [ "$APPS" = "[]" ]; then
@@ -103,8 +103,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ matrix.app.credentials == 'observability' && secrets.CLOUDFLARE_API_TOKEN_OBSERVABILITY || matrix.app.credentials == 'apps' && secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS || matrix.app.credentials == 'myceli' && secrets.CLOUDFLARE_API_TOKEN_MYCELI || '' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ matrix.app.credentials != 'none' && matrix.app.credentials != 'polli' && secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI || '' }}
-          CLOUDFLARE_API_TOKEN_MYCELI: ${{ matrix.app.credentials == 'apps' && secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS || matrix.app.credentials == 'myceli' && secrets.CLOUDFLARE_API_TOKEN_MYCELI || '' }}
-          CLOUDFLARE_ACCOUNT_ID_MYCELI: ${{ matrix.app.credentials != 'none' && matrix.app.credentials != 'polli' && secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI || '' }}
           SOPS_AGE_KEY: ${{ matrix.app.sops == 'economics' && secrets.SOPS_AGE_KEY_ECONOMICS || matrix.app.sops == 'default' && secrets.SOPS_AGE_KEY || '' }}
           POLLI_AZURE_HOST: ${{ matrix.app.credentials == 'polli' && secrets.POLLI_AZURE_HOST || '' }}
           POLLI_AZURE_USER: ${{ matrix.app.credentials == 'polli' && secrets.POLLI_AZURE_USER || '' }}

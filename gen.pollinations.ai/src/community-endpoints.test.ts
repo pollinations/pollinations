@@ -3338,7 +3338,7 @@ fixtureTest(
     },
 );
 
-fixtureTest("rejects a community model name containing a slash", async () => {
+fixtureTest("rejects unsafe community model names", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
         githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
@@ -3355,26 +3355,33 @@ fixtureTest("rejects a community model name containing a slash", async () => {
     });
 
     const enterApi = await createEnterCommunityApi();
-    const response = await fetchEnterApi(
-        enterApi,
-        new Request("http://localhost:3000/api/community-endpoints", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: await signedSessionCookie(sessionToken),
-            },
-            body: JSON.stringify({
-                name: "inferenceport.ai/gpt-oss-20b",
-                title: "Slash Name",
-                description: "name with a slash",
-                baseUrl: "https://api.example.com/v1",
-                upstreamModel: "gpt-oss-20b",
-                bearerToken: "sk_saved_token",
+    for (const name of [
+        "inferenceport.ai/gpt-oss-20b",
+        "bad name",
+        "bad'name",
+        "$(bad)",
+    ]) {
+        const response = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Unsafe Name",
+                    description: "unsafe model name",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-oss-20b",
+                    bearerToken: "sk_saved_token",
+                }),
             }),
-        }),
-    );
+        );
 
-    expect(response.status).toBe(400);
+        expect(response.status).toBe(400);
+    }
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

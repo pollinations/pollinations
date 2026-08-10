@@ -17,14 +17,10 @@ test("detects registered apps that consume changed shared packages", () => {
     );
     writeJson(path.join(repoRoot, "apps", "deployments.json"), {
         _defaults: {},
-        "model-monitor": {},
         playground: {},
         react: {},
         static: {},
         missingPackage: {},
-    });
-    writeJson(path.join(repoRoot, "apps", "model-monitor", "package.json"), {
-        dependencies: { "@pollinations/ui": "file:../../packages/ui" },
     });
     writeJson(path.join(repoRoot, "apps", "playground", "package.json"), {
         dependencies: { "@pollinations/sdk": "file:../../packages/sdk" },
@@ -38,14 +34,14 @@ test("detects registered apps that consume changed shared packages", () => {
 
     assert.deepEqual(
         detectPackageConsumers(["packages/ui/src/theme.ts"], repoRoot),
-        ["model-monitor", "react"],
+        ["react"],
     );
     assert.deepEqual(
         detectPackageConsumers(
             ["packages/sdk/src/models.ts", "packages/ui/src/theme.ts"],
             repoRoot,
         ),
-        ["model-monitor", "playground", "react"],
+        ["playground", "react"],
     );
     assert.deepEqual(
         detectPackageConsumers(["apps/react/src/App.tsx"], repoRoot),

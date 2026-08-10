@@ -21,4 +21,4 @@ jobs:
       - name: Sync catalog.json to Tinybird
         env:
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
-        run: node .github/scripts/tinybird-sync-apps.js
+        run: node apps/app-management/sync-catalog-to-tinybird.js

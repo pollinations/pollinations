@@ -24,6 +24,10 @@ const clientConfig = {
     },
 };
 
+// Portkey applies this millisecond deadline per attempt until provider response
+// headers arrive. Keep retries disabled unless the total deadline is reconsidered.
+const PORTKEY_REQUEST_TIMEOUT_MS = 290_000;
+
 function buildEndpoint(gatewayUrl: unknown): string {
     const base =
         typeof gatewayUrl === "string" && gatewayUrl
@@ -63,10 +67,13 @@ export async function generateTextPortkey(
     const requestConfig = {
         ...clientConfig,
         endpoint: () => buildEndpoint(portkeyGatewayUrl),
-        additionalHeaders: (state.options.additionalHeaders || {}) as Record<
-            string,
-            string
-        >,
+        additionalHeaders: {
+            "x-portkey-request-timeout": String(PORTKEY_REQUEST_TIMEOUT_MS),
+            ...((state.options.additionalHeaders || {}) as Record<
+                string,
+                string
+            >),
+        },
         fetcher,
     };
 

@@ -1,7 +1,6 @@
 {
   "target": "script",
   "credentials": "apps",
-  "subdomain": "model-monitor",
   "install": "npm ci --prefix ../.. && npm ci",
   "build": "npm run build",
   "deploy": "npx wrangler pages deploy dist --project-name=apps-model-monitor --branch=production --commit-dirty=true",

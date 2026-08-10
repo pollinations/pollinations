@@ -143,6 +143,25 @@ describe("registry fallback linking", () => {
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
     });
+    it("excludes delegating community endpoints from registry fallbacks", () => {
+        const ownPrimary = communityEntry(
+            "owner/primary",
+            "owner",
+            "public",
+            null,
+            ["owner/delegate"],
+            20,
+        );
+        const delegate = communityEntry("owner/delegate", "owner", "public");
+        delegate.communityEndpoint = {
+            ...(delegate.communityEndpoint as GenerationModelEntry["communityEndpoint"]),
+            delegatesGeneration: true,
+        };
+        const entries = [ownPrimary, delegate];
+        const byId = new Map(entries.map((entry) => [entry.id, entry]));
+        linkFallbackEntries(entries, byId);
+        expect(ownPrimary.fallbackEntries).toBeUndefined();
+    });
 });
 
 /**

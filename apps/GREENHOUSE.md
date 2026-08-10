@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **883** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **882** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -777,12 +777,12 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) | 6 |  |
 | [🤖 Pollinations AI  Claude Code CLI Plugin](https://github.com/Tolerable/pollinations-claude-code) | Generate images, text, audio, and video from Claude Code using Pollinations AI  Claude Code CLI Plugin and Pollinations.ai httpspollinations.ai | [@Tolerable](https://github.com/Tolerable) | 5 |  |
 | [🧊 Icebox AI](https://t.me/iceboxai_bot) | Telegram bot for fast AI art generation with daily free limits | [@hatdnt](https://github.com/hatdnt) | 3 |  |
+| [🤖 NovAI](https://nov-ai.github.io/) | NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord. | [@JustScriptzz](https://github.com/JustScriptzz) | 2 | 🫧 |
 
-<details><summary>Show all 63 apps</summary>
+<details><summary>Show all 62 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [🤖 NovAI](https://nov-ai.github.io/) | NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord. | [@JustScriptzz](https://github.com/JustScriptzz) | 2 | 🫧 |
 | [🤖 REKTY AI](https://github.com/rekty/Rekty-AI) | REKTY AI description not provided. | [@rekty](https://github.com/rekty) | 2 |  |
 | [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) | 2 |  |
 | [🤖 Suspicious Helper](https://discord.com/oauth2/authorize?client_id=1455468647744012433) | 14k+ line Discord bot with Pollinations-powered persistent chatbot (Qwen), image generation (Flux), plus Vibe Engine web terminal and open-source API wrappers and bot presets. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) | 2 |  |

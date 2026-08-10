@@ -1,0 +1,34 @@
+{
+  "pr_number": 13272,
+  "title": "fix: use static supporter logos",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13272",
+  "merged_at": "2026-08-10T23:51:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces runtime-generated supporter artwork with 21 static provider SVG logos ported from the website v2 work.\n- Expands the Community page supporter list from 11 to 21 providers and tightens the responsive grid.\n- Removes the orphaned supporter image generator, image API defaults, prompt configuration, and stale README guidance.\n- Fixes inconsistent branding and avoids unnecessary generation API requests whenever the supporter section loads.\n- Validated with Biome, `git diff --check`, `npm run build`, and desktop/mobile browser checks confirming all 21 assets render.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The logos stopped improvising",
+    "blurb": "The Community page traded generated supporter art for the real thing: 21 crisp provider logos, neatly planted in a tighter grid. Fewer API requests, less brand jazz improvisation.",
+    "summary": "The Community page now uses 21 static SVG logos for supporters—including AWS, Cloudflare, NVIDIA, OpenAI, OpenRouter, Replicate, and more—instead of runtime-generated artwork, with a tighter responsive grid and the old image generator removed.",
+    "impact": "Visitors get consistent, correctly branded supporter logos across desktop and mobile while the page avoids generation API requests just to render the supporter section.",
+    "keywords": [
+      "community-page",
+      "supporters",
+      "static-assets",
+      "svg",
+      "branding",
+      "performance"
+    ],
+    "visual_concept": "Depict Polli as a careful community gardener replacing a wobbly magic image-making machine with a tidy garden wall of 21 small, recognizable-but-simplified provider logo plaques. The static logo tiles should be arranged in a responsive-looking trellis grid, with a few flowers and code-plants growing around it to show that the community support network is stable and flourishing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular blush cheeks, a happy smile, light blue rounded wings, and a tiny gardener apron, carefully hanging neat SVG-style supporter logo plaques on a lime green (#ecf874) trellis beside a retired little image-generator machine. Small flowers, vines, and code-plants grow around a tidy grid of 21 logo tiles; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13272.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular blush cheeks, a happy smile, light blue rounded wings, and a tiny gardener apron, carefully hanging neat SVG-style supporter logo plaques on a lime green (#ecf874) trellis beside a retired little image-generator machine. Small flowers, vines, and code-plants grow around a tidy grid of 21 logo tiles; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-08-10T23:53:01.500917+00:00"
+}

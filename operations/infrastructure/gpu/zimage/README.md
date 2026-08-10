@@ -33,6 +33,18 @@ Using one remotely managed tunnel for the pool creates a Cloudflare replica per
 Vast worker. Cloudflare balances requests across those replicas, while the
 Pollinations registry sees one stable backend URL.
 
+Each worker admits at most three generation requests: one running and two
+waiting. Additional requests receive `503 Queue full`, which lets gen route
+the request to the configured Fal fallback instead of building an unbounded
+local queue. `QUEUE_LIMIT=3` is persisted by `setup-vast.sh` and can be
+overridden when provisioning. This absorbs short local bursts before paying
+for Fal while still bounding worst-case queue growth.
+
+Deploy the gen fallback before enabling this queue limit on production workers.
+After updating a worker, verify local saturation returns 503, normal generation
+still succeeds, and production telemetry attributes any overflow to
+`zimage-fal`. Only then drain and destroy a redundant Vast connector.
+
 The setup defaults to `HEARTBEAT_ENABLED=false`, which prevents registry
 registration but does not isolate a connector in the shared named tunnel.
 Validate local health and generation while cloudflared is stopped. The setup

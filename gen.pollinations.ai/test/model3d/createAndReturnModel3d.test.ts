@@ -83,11 +83,19 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
                     upstreams.push("hyper3d-rodin");
                     return new Response("rate limited", { status: 429 });
                 }
-                if (request.url.includes("api.inferenceport.ai")) {
-                    upstreams.push("trellis-2");
+                if (request.url.includes("/v1/3d/jobs/")) {
                     return Response.json({
+                        job_id: "job_123",
+                        status: "completed",
                         data: [{ model_glb_b64_bytes: btoa("glTF") }],
                     });
+                }
+                if (request.url.includes("api.inferenceport.ai")) {
+                    upstreams.push("trellis-2");
+                    return Response.json(
+                        { job_id: "job_123", status: "pending" },
+                        { status: 202 },
+                    );
                 }
                 return new Response("unexpected request", { status: 500 });
             },
@@ -131,13 +139,21 @@ workerTest(
                     ) {
                         return new Response("", { status: 202 });
                     }
+                    if (request.url.includes("/v1/3d/jobs/")) {
+                        return Response.json({
+                            job_id: "job_123",
+                            status: "completed",
+                            data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                        });
+                    }
                     const body = (await request.json()) as {
                         resolution?: unknown;
                     };
                     resolutions.push(body.resolution);
-                    return Response.json({
-                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
-                    });
+                    return Response.json(
+                        { job_id: "job_123", status: "pending" },
+                        { status: 202 },
+                    );
                 },
             );
 

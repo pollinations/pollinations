@@ -6323,26 +6323,6 @@
     "requests24h": 21
   },
   {
-    "emoji": "🤖",
-    "name": "Vector AI Agent",
-    "url": "https://routinehub.co/shortcut/24957/",
-    "description": "Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use.",
-    "language": "en",
-    "category": "bots",
-    "platform": "ios",
-    "githubUsername": "morriszdweck",
-    "githubUserId": "178960782",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "morrisdweck",
-    "other": null,
-    "submittedDate": "2026-03-20",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9326",
-    "approvedDate": "2026-03-25",
-    "byop": false,
-    "requests24h": 837
-  },
-  {
     "emoji": "🧮",
     "name": "excelformula.pro",
     "url": "https://excelformula.pro/",

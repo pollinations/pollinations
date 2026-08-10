@@ -1,0 +1,37 @@
+{
+  "pr_number": 13248,
+  "title": "Add INKRUSH to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13248",
+  "merged_at": "2026-08-10T17:54:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [INKRUSH](https://inkrush-comic-studio.onrender.com) to image\n- Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖\n\nFixes #13239",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Comics enter the garden",
+    "blurb": "INKRUSH has sprouted in the app garden: a browser comic studio for turning ideas into multi-panel stories, speech bubbles and all. Polli brought a beret, naturally.",
+    "summary": "Added INKRUSH to the Pollinations app catalog: a free browser-based AI comic maker with multi-panel stories, custom speech bubbles, character locking, retro comic styles, and PDF book export.",
+    "impact": "People browsing Pollinations apps can now find INKRUSH and make consistent AI comic stories directly in the browser before exporting them as PDF books.",
+    "keywords": [
+      "community",
+      "apps",
+      "INKRUSH",
+      "image-generation",
+      "comics",
+      "PDF",
+      "creative-tools"
+    ],
+    "visual_concept": "Depict INKRUSH as a cozy retro comic-making desk: a multi-panel comic page on a CRT monitor, speech bubbles, ink pens, and a small stack of finished PDF comic books. Polli wears a tiny artist beret and carefully adds a speech bubble while a code-flower vine curls around the workstation, making the comic studio feel like a new plant in the app garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny artist beret, arranging speech bubbles on a glowing retro CRT monitor showing a multi-panel comic page; nearby sit ink pens, a stack of little comic PDF books, and code-plants blooming from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'INKRUSH', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13248.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny artist beret, arranging speech bubbles on a glowing retro CRT monitor showing a multi-panel comic page; nearby sit ink pens, a stack of little comic PDF books, and code-plants blooming from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'INKRUSH', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-10T17:55:28.860762+00:00",
+  "app_name": "INKRUSH",
+  "app_url": "https://inkrush-comic-studio.onrender.com"
+}

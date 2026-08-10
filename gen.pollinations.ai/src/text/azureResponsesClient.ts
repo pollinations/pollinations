@@ -558,6 +558,49 @@ function convertResponsesStream(
             return;
         }
 
+        // Reasoning content arrives as summary/part deltas and whole-part
+        // additions; surface both as reasoning_content so streaming clients
+        // see the model's reasoning like the non-stream path does.
+        if (
+            type === "response.reasoning_summary_text.delta" ||
+            type === "response.reasoning_part.delta"
+        ) {
+            const delta = payload.delta;
+            if (typeof delta === "string") {
+                emit(
+                    controller,
+                    streamChunk(
+                        chunkId,
+                        created,
+                        modelName,
+                        { reasoning_content: delta },
+                        null,
+                    ),
+                );
+            }
+            return;
+        }
+
+        if (
+            type === "response.reasoning_summary_part.added" ||
+            type === "response.reasoning_part.added"
+        ) {
+            const text = payload.text;
+            if (typeof text === "string") {
+                emit(
+                    controller,
+                    streamChunk(
+                        chunkId,
+                        created,
+                        modelName,
+                        { reasoning_content: text },
+                        null,
+                    ),
+                );
+            }
+            return;
+        }
+
         if (type === "response.function_call_arguments.delta") {
             const delta = payload.delta;
             const toolKey =

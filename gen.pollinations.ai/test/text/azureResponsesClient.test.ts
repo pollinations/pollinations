@@ -463,6 +463,71 @@ describe("callAzureResponses", () => {
         });
     });
 
+    it("streams reasoning deltas as reasoning_content", async () => {
+        const encoder = new TextEncoder();
+        const events = [
+            'data: {"type":"response.created","response":{"id":"resp_reason","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
+            'data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":"think"}\n\n',
+            'data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":"ing"}\n\n',
+            'data: {"type":"response.reasoning_part.added","item_id":"rp_1","output_index":1,"content_index":0,"text":"deep"}\n\n',
+            'data: {"type":"response.reasoning_part.delta","item_id":"rp_1","output_index":1,"content_index":0,"delta":"er"}\n\n',
+            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":2,"content_index":0,"delta":"answer"}\n\n',
+            'data: {"type":"response.completed","response":{"id":"resp_reason","status":"completed","output":[{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"answer"}]}]}}\n\n',
+        ];
+
+        const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const event of events) {
+                    controller.enqueue(encoder.encode(event));
+                }
+                controller.close();
+            },
+        });
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async () => new Response(stream),
+        );
+
+        const completion = await callAzureResponses(
+            [{ role: "user", content: "hi" }],
+            { model: "gpt-5.6-sol", modelConfig, stream: true },
+        );
+
+        const reader = completion.responseStream?.getReader();
+        let output = "";
+        while (true) {
+            const { done, value } = await reader!.read();
+            if (done) break;
+            output += new TextDecoder().decode(value);
+        }
+
+        const chunks = output
+            .split("\n\n")
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => {
+                const raw = line.slice(6);
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    return raw;
+                }
+            });
+
+        expect(chunks[0].choices[0].delta).toEqual({
+            reasoning_content: "think",
+        });
+        expect(chunks[1].choices[0].delta).toEqual({
+            reasoning_content: "ing",
+        });
+        expect(chunks[2].choices[0].delta).toEqual({
+            reasoning_content: "deep",
+        });
+        expect(chunks[3].choices[0].delta).toEqual({
+            reasoning_content: "er",
+        });
+        expect(chunks[4].choices[0].delta).toEqual({ content: "answer" });
+    });
+
     it("emits an error when the stream ends before completion", async () => {
         const encoder = new TextEncoder();
         const events = [

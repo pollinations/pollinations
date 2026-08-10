@@ -5,10 +5,11 @@ on:
     branches:
       - production
     paths:
-      - "operations/kpi/**"
-      - "operations/quest-dashboard/**"
-      - "operations/economics/**"
-      - "operations/observability/**"
+      - "operations/**"
+      - "packages/ui/**"
+      - "packages/sdk/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/deploy-operations-cloudflare.yml"
   workflow_dispatch:
     inputs:
@@ -23,6 +24,7 @@ on:
           - quest-dashboard
           - economics
           - observability
+          - model-monitor
 
 permissions:
   contents: read
@@ -39,6 +41,15 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Require production for manual deployment
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/production'
+        run: |
+          echo "Operations production deployments must run from the production branch"
+          exit 1
+
+      - name: Test operations deployment detection
+        run: node --test operations/detect-deployments.test.cjs
+
       - name: Detect operation apps
         id: detect
         env:
@@ -49,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SUPPORTED_APPS="kpi quest-dashboard economics observability"
+          SUPPORTED_APPS=$(node -e "console.log(Object.keys(require('./operations/deployments.json')).sort().join(' '))")
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$SELECTED_APP" = "all" ]; then
@@ -64,16 +75,7 @@ jobs:
               git diff --name-only HEAD~1 HEAD > changed.txt
             fi
 
-            if grep -qx ".github/workflows/deploy-operations-cloudflare.yml" changed.txt; then
-              APPS="$SUPPORTED_APPS"
-            else
-              APPS=$(
-                sed -n 's|^operations/\([^/]*\)/.*|\1|p' changed.txt \
-                  | sort -u \
-                  | grep -E '^(kpi|quest-dashboard|economics|observability)$' \
-                  | xargs || true
-              )
-            fi
+            APPS=$(node operations/detect-deployments.cjs changed.txt)
           fi
 
           if [ -z "$APPS" ]; then
@@ -120,13 +122,45 @@ jobs:
         run: docker info
 
       - name: Install operation app dependencies
-        if: matrix.app != 'economics'
+        if: matrix.app != 'economics' && matrix.app != 'model-monitor'
         run: npm ci
         working-directory: ./operations/${{ matrix.app }}
 
       - name: Install Economics dependencies
         if: matrix.app == 'economics'
         run: npm ci
+
+      - name: Install Model Monitor dependencies
+        if: matrix.app == 'model-monitor'
+        run: |
+          npm ci
+          npm ci --prefix operations/model-monitor
+
+      - name: Build Model Monitor
+        if: matrix.app == 'model-monitor'
+        run: npm run build
+        working-directory: ./operations/model-monitor
+
+      - name: Deploy Model Monitor Pages project
+        if: matrix.app == 'model-monitor'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS }}
+        run: |
+          PROJECT=$(node -p "require('./operations/deployments.json')['model-monitor'].cloudflareProject")
+          npx wrangler pages deploy operations/model-monitor/dist \
+            --project-name="$PROJECT" \
+            --branch=production \
+            --commit-dirty=true
+
+      - name: Verify Model Monitor domains
+        if: matrix.app == 'model-monitor'
+        run: |
+          ORIGIN=$(node -p "require('./operations/deployments.json')['model-monitor'].originUrl")
+          PUBLIC=$(node -p "require('./operations/deployments.json')['model-monitor'].publicUrl")
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 12 --retry-delay 10 --retry-all-errors "$ORIGIN"
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 12 --retry-delay 10 --retry-all-errors "$PUBLIC"
 
       - name: Deploy KPI Worker
         if: matrix.app == 'kpi'

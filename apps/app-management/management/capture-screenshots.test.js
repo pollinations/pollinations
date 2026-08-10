@@ -975,6 +975,43 @@ test("dismisses an explicit presentation layer before authentication", () => {
             reason: "Dismiss the presentation layer before considering authentication",
         },
     );
+
+    assert.deepEqual(
+        preferDismissalBeforeAuthentication(
+            {
+                action: { type: "click_point", x: 664, y: 252 },
+                decision: "act",
+                reason: "A modal overlay blocks the interface; close it.",
+            },
+            [{ elementId: "close", label: "Close" }],
+        ),
+        {
+            action: { elementId: "close", type: "click" },
+            decision: "act",
+            reason: "Dismiss the presentation layer before considering authentication",
+        },
+    );
+
+    assert.deepEqual(
+        preferDismissalBeforeAuthentication(
+            {
+                action: null,
+                decision: "remove",
+                reason: "Official Pollinations authentication blocks the app.",
+            },
+            [
+                {
+                    elementId: "authorize",
+                    label: "Sign in with Pollinations",
+                },
+            ],
+        ),
+        {
+            action: { elementId: "authorize", type: "authenticate" },
+            decision: "authenticate",
+            reason: "Use the supported authentication path before judging the app",
+        },
+    );
 });
 
 test("a model-proposed removal requires independent confirmation", async (t) => {
@@ -1309,6 +1346,22 @@ test("rejects an action that already failed in the same session", () => {
             { action: decision.action, actionResult: { ok: true } },
         ]),
         decision,
+    );
+
+    const authentication = {
+        action: { elementId: "login", type: "authenticate" },
+        decision: "authenticate",
+        reason: "Try the same login again.",
+    };
+    assert.throws(
+        () =>
+            validateFreshAgentDecision(authentication, [
+                {
+                    action: authentication.action,
+                    actionResult: { ok: false, reason: "Login failed" },
+                },
+            ]),
+        /repeated a failed action/,
     );
 });
 

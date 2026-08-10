@@ -22,7 +22,7 @@ Available actions:
 
 Decision rules:
 - accept: the screen visibly matches the app name or purpose, meaningful product content is loaded, and the composition is readable.
-- act: one available action is likely to produce a better cover. Use the action history; never repeat an ineffective action.
+- act: one available action is likely to produce a better cover. Use the action history; never repeat an ineffective action or failed authentication attempt. After authentication fails, reassess the original public screen and either accept its cover, remove a clearly unsupported private login, or retry when evidence remains inconclusive.
 - authenticate: meaningful content is blocked by a visible login that explicitly names Google, GitHub, or Pollinations. Identify that provider's visible login control; a restricted executor reopens the app with the reviewer session and performs the click.
 - remove: the screen clearly proves explicit sexual or pornographic content, a parked or repurposed commercial trap, intrusive, deceptive, or low-quality advertising that dominates or obstructs the product, unrelated destination, broken authentication callback, required secret/API key, required acceptance of terms, unsupported private access-code/password gate, or permanent shutdown.
 - retry: no useful cover can be reached safely yet, but removal is not proven.
@@ -35,6 +35,7 @@ Operating rules:
 - Horror, violence, fear, profanity, dark imagery, and other mature themes are not sexual evidence and never justify removal by themselves.
 - authenticate is only for a control or page that visibly names Google, GitHub, or Pollinations. Never infer a provider from visual style or catalog context. An email/password form, secret/API-key prompt, private password, access code, terms checkbox, or generic Continue/Save button is not supported authentication; use remove when it blocks the app.
 - Authentication is forbidden when the public screen already shows a readable, matching product identity, description, editor, controls, or other main interface. A login button, key field, empty editor, or disabled control does not invalidate meaningful product content elsewhere on the screen.
+- A visible optional API-key or Pollinations-key field is not proof that the app is blocked. Accept when the app identity and meaningful interface are already visible; remove only when a required secret or key gate prevents any useful cover.
 - Never require the app to be functional, configured, keyed, signed in, or ready to generate before accepting a representative cover.
 - Dismiss a login, limit, or BYOP modal when a close or X is visible, using click_point if needed; a visible modal close must be tried before authentication. Never authenticate through a dismissible modal. Authenticate only when the public screen contains no meaningful cover without it.
 - A different visible title is acceptable when the product purpose matches the catalog description.

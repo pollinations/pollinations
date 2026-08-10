@@ -3,6 +3,12 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import {
+    canCoordinateGeneration,
+    coordinateGeneration,
+    INTERNAL_CACHE_WRITE_HEADER,
+    isGenerationExecution,
+} from "@/utils/idempotent-generation.ts";
 
 export type GenerationCacheEnv = {
     Bindings: CloudflareBindings;
@@ -10,6 +16,7 @@ export type GenerationCacheEnv = {
 };
 
 export type GenerationCacheAdapter = {
+    namespace: string;
     label: string;
     getKey: (
         c: Context<GenerationCacheEnv>,
@@ -24,7 +31,7 @@ export type GenerationCacheAdapter = {
         c: Context<GenerationCacheEnv>,
         key: string,
         response: Response,
-    ) => Response;
+    ) => { response: Response; write: Promise<void> };
 };
 
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
@@ -45,13 +52,41 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
             c.header("X-Cache", "MISS");
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
+            if (
+                canCoordinateGeneration(c) ||
+                isGenerationExecution(c.executionCtx)
+            ) {
+                return new Response(
+                    "Generation cache is temporarily unavailable",
+                    {
+                        status: 503,
+                    },
+                );
+            }
         }
+
+        const coordinated = await coordinateGeneration(c, adapter, cacheKey);
+        if (coordinated) return coordinated;
 
         await next();
 
         if (c.res && adapter.shouldCache(c.res)) {
             log.debug("Caching response");
-            c.res = adapter.capture(c, cacheKey, c.res);
+            const capture = adapter.capture(c, cacheKey, c.res);
+            const internal = isGenerationExecution(c.executionCtx);
+            c.executionCtx.waitUntil(
+                internal
+                    ? capture.write
+                    : capture.write.catch((error) => {
+                          log.error("Error caching response: {error}", {
+                              error,
+                          });
+                      }),
+            );
+            c.res = capture.response;
+            if (internal) {
+                c.res.headers.set(INTERNAL_CACHE_WRITE_HEADER, "1");
+            }
         }
     });
 }

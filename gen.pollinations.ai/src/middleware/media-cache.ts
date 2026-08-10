@@ -12,8 +12,8 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import {
-    cacheMediaResponse,
     generateCacheKey,
+    putMediaResponse,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
 import { createGenerationCache } from "./generation-cache.ts";
@@ -29,6 +29,7 @@ type MediaCacheConfig = {
 
 export function createMediaCache(config: MediaCacheConfig) {
     return createGenerationCache({
+        namespace: "media",
         label: config.label,
         getKey(c, log) {
             const seedParam = new URL(c.req.url).searchParams.get("seed");
@@ -78,14 +79,16 @@ export function createMediaCache(config: MediaCacheConfig) {
             );
         },
         capture(c, cacheKey, response) {
-            cacheMediaResponse(
-                c.env.IMAGE_BUCKET,
-                cacheKey,
-                c,
-                config.defaultContentType,
+            return {
                 response,
-            );
-            return response;
+                write: putMediaResponse(
+                    c.env.IMAGE_BUCKET,
+                    cacheKey,
+                    c,
+                    config.defaultContentType,
+                    response,
+                ),
+            };
         },
     });
 }

@@ -9,6 +9,7 @@ import {
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { getGenerationExecutionProps } from "@/utils/idempotent-generation.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
@@ -37,23 +38,32 @@ export type AuthEnv = {
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const authResult = await (async () => {
-            try {
-                return await authenticateApiKeyRequest({
-                    request: c.req.raw,
-                    env: c.env,
-                    ctx: c.executionCtx,
-                });
-            } catch (error) {
-                if (
-                    error instanceof BannedAccountError ||
-                    error instanceof StagingAccessDeniedError
-                ) {
-                    throw new HTTPException(403, { message: error.message });
-                }
-                throw error;
-            }
-        })();
+        const internal = getGenerationExecutionProps(c.executionCtx);
+        const authResult = internal
+            ? {
+                  user: internal.auth.user as AuthUser,
+                  apiKey: internal.auth.apiKey,
+                  agentRun: internal.auth.agentRun,
+              }
+            : await (async () => {
+                  try {
+                      return await authenticateApiKeyRequest({
+                          request: c.req.raw,
+                          env: c.env,
+                          ctx: c.executionCtx,
+                      });
+                  } catch (error) {
+                      if (
+                          error instanceof BannedAccountError ||
+                          error instanceof StagingAccessDeniedError
+                      ) {
+                          throw new HTTPException(403, {
+                              message: error.message,
+                          });
+                      }
+                      throw error;
+                  }
+              })();
 
         const { user, apiKey, agentRun } = authResult || {};
 

@@ -17,6 +17,7 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { WorkerEntrypoint } from "cloudflare:workers";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -25,12 +26,18 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import {
+    type GenerationExecutionProps,
+    type GenerationExecutionResult,
+    INTERNAL_CACHE_WRITE_HEADER,
+} from "@/utils/idempotent-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
+export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();
@@ -158,6 +165,93 @@ app.notFound(async (c: Context<Env>) => {
 });
 
 app.onError(handleError);
+
+async function drainResponseBody(
+    response: Response,
+    collect: boolean,
+): Promise<string | undefined> {
+    const reader = response.body?.getReader();
+    if (!reader) return undefined;
+
+    const chunks: Uint8Array[] = [];
+    let collected = 0;
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (collect && collected < 16_384) {
+            const chunk = value.slice(0, 16_384 - collected);
+            chunks.push(chunk);
+            collected += chunk.byteLength;
+        }
+    }
+    if (!collect) return undefined;
+
+    const body = new Uint8Array(collected);
+    let offset = 0;
+    for (const chunk of chunks) {
+        body.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return new TextDecoder().decode(body);
+}
+
+async function settleWaitUntil(promises: Promise<unknown>[]): Promise<void> {
+    let settled = 0;
+    while (settled < promises.length) {
+        const batch = promises.slice(settled);
+        settled = promises.length;
+        await Promise.all(batch);
+    }
+}
+
+/** Trusted loopback entrypoint used only by GenerationCoordinator alarms. */
+export class GenerationExecutor extends WorkerEntrypoint<
+    CloudflareBindings,
+    GenerationExecutionProps
+> {
+    async execute(request: Request): Promise<GenerationExecutionResult> {
+        const promises: Promise<unknown>[] = [];
+        const exports = (this.ctx as ExecutionContext & { exports: unknown })
+            .exports;
+        const executionCtx = {
+            props: this.ctx.props,
+            exports,
+            waitUntil(promise: Promise<unknown>) {
+                promises.push(promise);
+            },
+            passThroughOnException() {},
+        } as ExecutionContext;
+
+        const response = await app.fetch(request, this.env, executionCtx);
+        const cached =
+            response.headers.get("x-cache") === "HIT" ||
+            response.headers.get(INTERNAL_CACHE_WRITE_HEADER) === "1";
+        const body = await drainResponseBody(response, !cached);
+        await settleWaitUntil(promises);
+
+        if (cached) {
+            return {
+                cached: true,
+                status: response.status,
+                statusText: response.statusText,
+            };
+        }
+        return {
+            cached: false,
+            retryable: true,
+            status: response.ok ? 502 : response.status,
+            statusText: response.ok ? "Bad Gateway" : response.statusText,
+            contentType:
+                response.headers.get("content-type") ||
+                "text/plain; charset=utf-8",
+            body:
+                body ||
+                (response.ok
+                    ? "Generation response was not cacheable"
+                    : response.statusText),
+        };
+    }
+}
 
 export default {
     fetch: app.fetch,

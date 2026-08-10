@@ -115,39 +115,26 @@ type MediaCacheEnv = {
     };
 };
 
-export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
+export async function putMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): void {
-    c.executionCtx.waitUntil(
-        response
-            .clone()
-            .arrayBuffer()
-            .then((body) => {
-                if (body.byteLength === 0) {
-                    c.get("log").warn(
-                        "Skipping empty media cache write for {cacheKey}",
-                        { cacheKey },
-                    );
-                    return null;
-                }
+): Promise<void> {
+    const body = await response.clone().arrayBuffer();
+    if (body.byteLength === 0) {
+        c.get("log").warn("Skipping empty media cache write for {cacheKey}", {
+            cacheKey,
+        });
+        return;
+    }
 
-                return bucket.put(cacheKey, body, {
-                    httpMetadata: removeUnset({
-                        contentType:
-                            response.headers.get("content-type") ||
-                            defaultContentType,
-                    } as R2HTTPMetadata),
-                    customMetadata: prepareCustomMetadata(response),
-                });
-            })
-            .catch((error) => {
-                c.get("log").error("Error caching response: {error}", {
-                    error,
-                });
-            }),
-    );
+    await bucket.put(cacheKey, body, {
+        httpMetadata: removeUnset({
+            contentType:
+                response.headers.get("content-type") || defaultContentType,
+        } as R2HTTPMetadata),
+        customMetadata: prepareCustomMetadata(response),
+    });
 }

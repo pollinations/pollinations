@@ -70,6 +70,7 @@ interface CloudflareBindings {
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    GENERATION_COORDINATOR?: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

@@ -45,6 +45,12 @@ tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
 `dreamshaper-lcm/`; Vast runs `/root/onstart.sh` after container start to
 restore the worker and named tunnel.
 
+Each Uvicorn process admits one running and one waiting request
+(`QUEUE_LIMIT=2`). Once that bounded queue is full, the worker returns 503 and
+gen retries the other registered DreamShaper hostname. With three processes,
+each GPU admits at most six in-flight requests instead of accumulating an
+unbounded local backlog.
+
 Instance `46607014` replaced `46307858` on 2026-08-02 and reduced the slot from
 `$0.175556/hr` to `$0.150000/hr`, saving **$0.025556/hr** or about
 **$18.40 per 30-day month**. The Oregon host has Vast reliability `0.9977` and

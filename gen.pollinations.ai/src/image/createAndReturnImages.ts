@@ -32,6 +32,7 @@ import {
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
+import { callZImageFalAPI } from "./models/zImageFalModel.ts";
 import type { ImageParams } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
@@ -813,6 +814,9 @@ const generateImage = async (
 
         case "black-forest-labs/FLUX.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "zimage-fal":
+            return await callZImageFalAPI(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch

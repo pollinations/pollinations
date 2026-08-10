@@ -1695,5 +1695,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000014,
     },
   },
+  "zimage-fal": {
+    "cost": {
+      "completionImageTokens": 0,
+    },
+    "price": {
+      "completionImageTokens": 0,
+    },
+  },
 }
 `;

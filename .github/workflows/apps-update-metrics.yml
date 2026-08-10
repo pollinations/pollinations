@@ -39,10 +39,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
-        run: node .github/scripts/app-update-metrics.js --verbose
+        run: node apps/app-management/performance/update-metrics.js --verbose
 
-      - name: Regenerate greenhouse
-        run: node .github/scripts/app-update-greenhouse.js
+      - name: Regenerate catalog outputs
+        run: node apps/app-management/generate-catalog-outputs.js
 
       - name: Check for changes
         id: changes

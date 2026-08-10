@@ -1,0 +1,34 @@
+{
+  "pr_number": 13240,
+  "title": "docs: move GPU fleet inventory under operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13240",
+  "merged_at": "2026-08-10T17:20:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the live Vast GPU fleet inventory to operations/infrastructure/gpu.\n- Updates GPU management, monitoring, token-rotation, and SANA runbook references.\n- Starts the staged removal of the image.pollinations.ai root without moving model runtimes yet.\n- Does not change production routing, deployment workflows, credentials, or running GPU instances.\n\nValidation:\n- git diff --check\n- repository-wide stale-path scan\n- relative link and file existence checks\n\nFollow-ups will move active model backends one workload at a time before legacy assets are reviewed and the old root is removed.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The GPU map moved house",
+    "blurb": "The live GPU fleet inventory has been replanted under operations, with its runbooks following the trail. No servers moved; the labels on the garden shed just got less mysterious.",
+    "summary": "Moved the live Vast GPU fleet inventory to operations/infrastructure/gpu and updated GPU management, monitoring, token-rotation, and SANA runbook references as the first step toward retiring the image.pollinations.ai root.",
+    "impact": "Operators now have GPU fleet documentation and related runbooks organized under operations/infrastructure/gpu, while production routing, deployments, credentials, and running instances remain unchanged.",
+    "keywords": [
+      "documentation",
+      "gpu",
+      "operations",
+      "vast",
+      "runbooks",
+      "infrastructure"
+    ],
+    "visual_concept": "A cozy infrastructure garden where a clearly labeled GPU inventory folder is carried from an old image.pollinations.ai shed to a neat operations/infrastructure/gpu filing cabinet. Polli, wearing a tiny operations hard hat, guides the move while code-plants and small server racks make the internal reorganization feel warm rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny hard hat as she carries a glowing folder labeled \"GPU INVENTORY\" from an old garden shed toward a tidy cabinet labeled \"OPERATIONS\"; gentle server racks, code-plants, and flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13240.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny hard hat as she carries a glowing folder labeled \"GPU INVENTORY\" from an old garden shed toward a tidy cabinet labeled \"OPERATIONS\"; gentle server racks, code-plants, and flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-10T17:21:26.133875+00:00"
+}

@@ -1274,6 +1274,115 @@ describe("tracking observability", () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
     });
+
+    it("keeps tracking alive after a malformed SSE chunk and still emits usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.use("*", async (c, next) => {
+            c.set("auth", {
+                user: trackingUser,
+                requireAuthorization: async () => {},
+                requireUser: () => trackingUser,
+                requireModelAccess: () => {},
+            });
+            c.set("balance", {
+                getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            });
+            c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+            c.set("model", {
+                requested: "openai",
+                resolved: "openai",
+                definition: getRegistryModelDefinition("openai"),
+            });
+            await next();
+        });
+        app.post("/v1/chat/completions", track("generate.text"), () => {
+            const encoder = new TextEncoder();
+            const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
+            const chunks = [
+                sse({
+                    model: "gpt-5-nano-2025-08-07",
+                    choices: [{ delta: { content: "hel" } }],
+                }),
+                // Malformed SSE chunk: invalid JSON
+                "data: {not valid json\n\n",
+                sse({
+                    model: "gpt-5-nano-2025-08-07",
+                    choices: [{ delta: { content: "lo" } }],
+                }),
+                sse({
+                    model: "gpt-5-nano-2025-08-07",
+                    choices: [],
+                    usage: {
+                        prompt_tokens: 1000,
+                        completion_tokens: 500,
+                        total_tokens: 1500,
+                    },
+                }),
+                "data: [DONE]\n\n",
+            ];
+            const body = new ReadableStream<Uint8Array>({
+                async start(controller) {
+                    for (const chunk of chunks) {
+                        controller.enqueue(encoder.encode(chunk));
+                    }
+                    controller.close();
+                },
+            });
+            return new Response(body, {
+                headers: { "content-type": "text/event-stream" },
+            });
+        });
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as {
+            isBilledUsage: boolean;
+            tokenCountPromptText: number;
+            tokenCountCompletionText: number;
+            modelUsed: string;
+        };
+        // The malformed chunk must not abort usage extraction.
+        expect(event.isBilledUsage).toBe(true);
+        expect(event.tokenCountPromptText).toBe(1000);
+        expect(event.tokenCountCompletionText).toBe(500);
+        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+    });
 });
 
 function requestTrackingFixture(

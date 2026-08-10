@@ -709,6 +709,7 @@ async function* extractResponseStream(
 ): AsyncGenerator<unknown> {
     if (!response.body) return;
 
+    const log = getLogger(["hono", "track", "stream"]);
     const textDecoder = new TextDecoderStream();
     const sseParser = new EventSourceParserStream();
     const eventStream = response.body
@@ -717,7 +718,13 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+        try {
+            yield JSON.parse(event.data);
+        } catch {
+            log.warn("Malformed SSE event data, skipping: {data}", {
+                data: event.data,
+            });
+        }
     }
 }
 

@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -22,15 +21,11 @@ const {
     hasAllowedOrigin,
     identifyRedirectedAuthProvider,
     investigateTechnicalFailure,
-    isAuthorizedRestorationEvent,
-    isPublicAppUrl,
     listReviewerKeyIds,
     navigateToTarget,
     normalizedPointToViewport,
     parseAgentJson,
-    prepareRestoration,
     readStorageState,
-    recoverApp,
     requestAgentDecision,
     reviewContextOptions,
     resolveTarget,
@@ -44,47 +39,8 @@ const {
     validateGoogleAuthRequest,
     validateFreshAgentDecision,
     validateRemovalDecision,
-    validateRestorationDecision,
     waitForSuccessfulNavigation,
 } = require("./capture-screenshots.js");
-
-const REMOVED_APP = {
-    emoji: "🌻",
-    name: "Sunflower Studio",
-    url: "https://sunflower.test",
-    description: "Creates images with Pollinations.",
-    language: "en",
-    category: "image",
-    platform: "web",
-    githubUsername: "gardener",
-    githubUserId: "123",
-    repositoryUrl: "https://github.com/gardener/sunflower",
-    repositoryStars: 4,
-    discordUsername: null,
-    other: null,
-    submittedDate: "2026-07-01",
-    issueUrl: "https://github.com/pollinations/pollinations/issues/123",
-    approvedDate: "2026-07-02",
-    byop: false,
-    requests24h: 0,
-    screenshotUrl: "https://media.pollinations.ai/old.webp",
-};
-
-function restorationEvent(overrides = {}) {
-    return {
-        comment: {
-            author_association: "NONE",
-            body: "It is fixed now.",
-            user: { login: "gardener", type: "User" },
-        },
-        issue: {
-            html_url: REMOVED_APP.issueUrl,
-            labels: [{ name: "APP-SUBMISSION" }],
-            user: { login: "gardener" },
-        },
-        ...overrides,
-    };
-}
 
 test("uses a normal desktop browser identity for public app captures", () => {
     assert.match(DESKTOP_USER_AGENT, /Chrome\/\d+/);
@@ -285,111 +241,6 @@ test("revokes every key created during an authenticated review", async () => {
     await revokeReviewerKeys(context, ["new-review-key"]);
     assert.deepEqual(deleted, ["new-review-key"]);
     assert.deepEqual(await listReviewerKeyIds(context), new Set(["existing"]));
-});
-
-test("accepts restoration requests only from the submitter or a maintainer", () => {
-    assert.equal(isAuthorizedRestorationEvent(restorationEvent()), true);
-    assert.equal(
-        isAuthorizedRestorationEvent(
-            restorationEvent({
-                comment: {
-                    author_association: "MEMBER",
-                    body: "The app works again.",
-                    user: { login: "maintainer", type: "User" },
-                },
-            }),
-        ),
-        true,
-    );
-    assert.equal(
-        isAuthorizedRestorationEvent(
-            restorationEvent({
-                comment: {
-                    author_association: "NONE",
-                    body: "Restore it.",
-                    user: { login: "stranger", type: "User" },
-                },
-            }),
-        ),
-        false,
-    );
-});
-
-test("rejects unsafe restoration targets", () => {
-    assert.equal(isPublicAppUrl("https://app.test"), true);
-    assert.equal(isPublicAppUrl("http://127.0.0.1"), false);
-    assert.equal(isPublicAppUrl("http://169.254.169.254/latest"), false);
-    assert.equal(isPublicAppUrl("http://10.0.0.4"), false);
-    assert.equal(isPublicAppUrl("http://[::1]"), false);
-    assert.equal(isPublicAppUrl("https://user:pass@app.test"), false);
-    assert.deepEqual(
-        validateRestorationDecision({
-            decision: "restore",
-            reason: "Use the repository.",
-            url: "https://github.com/gardener/sunflower",
-        }),
-        {
-            decision: "ignore",
-            reason: "A repository is not a replacement for a working app",
-            url: null,
-        },
-    );
-});
-
-test("the management agent prepares a recovered app for fresh review", async () => {
-    const candidate = await prepareRestoration(
-        restorationEvent(),
-        [],
-        "unused-token",
-        "unused-model",
-        () => REMOVED_APP,
-        async () => ({
-            decision: "restore",
-            reason: "The submitter says it is fixed.",
-            url: "https://new.sunflower.test",
-        }),
-    );
-    assert.equal(candidate.app.url, "https://new.sunflower.test");
-    assert.equal(candidate.app.screenshotUrl, null);
-    assert.equal(candidate.targetUrl, "https://new.sunflower.test");
-});
-
-test("restoration uses the resolved repository cover target", async () => {
-    const candidate = await prepareRestoration(
-        restorationEvent(),
-        [],
-        "unused-token",
-        "unused-model",
-        () => ({ ...REMOVED_APP, platform: "discord" }),
-        async () => ({
-            decision: "restore",
-            reason: "The submitter says the bot is fixed.",
-            url: null,
-        }),
-    );
-    assert.equal(candidate.targetUrl, "https://github.com/gardener/sunflower");
-});
-
-test("the management agent recovers a deleted row from Git history", (t) => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-history-"));
-    t.after(() => fs.rmSync(directory, { force: true, recursive: true }));
-    fs.mkdirSync(path.join(directory, "apps"));
-    execFileSync("git", ["init"], { cwd: directory });
-    execFileSync("git", ["config", "user.name", "Test"], { cwd: directory });
-    execFileSync("git", ["config", "user.email", "test@example.com"], {
-        cwd: directory,
-    });
-    const catalogFile = path.join(directory, "apps/catalog.json");
-    fs.writeFileSync(
-        catalogFile,
-        `${JSON.stringify([REMOVED_APP], null, 2)}\n`,
-    );
-    execFileSync("git", ["add", "apps/catalog.json"], { cwd: directory });
-    execFileSync("git", ["commit", "-m", "add app"], { cwd: directory });
-    fs.writeFileSync(catalogFile, "[]\n");
-    execFileSync("git", ["commit", "-am", "remove app"], { cwd: directory });
-
-    assert.deepEqual(recoverApp(REMOVED_APP.issueUrl, directory), REMOVED_APP);
 });
 
 test("allows a blocked navigation to resolve to a successful document", async () => {

@@ -8,7 +8,7 @@ function parseNotification(body) {
     const match = body?.match(MARKER_PATTERN);
     if (!match) return null;
     const payload = JSON.parse(Buffer.from(match[1], "base64").toString());
-    if (!["remove", "restore"].includes(payload.action)) {
+    if (payload.action !== "remove") {
         throw new Error("Unknown app-management notification action");
     }
     if (!Array.isArray(payload.apps)) {
@@ -24,11 +24,8 @@ function issueNumber(issueUrl, repository) {
     return /^\d+$/.test(value) ? value : null;
 }
 
-function commentFor(action, app, pullRequestUrl) {
-    if (action === "remove") {
-        return `${app.name} was removed from the community app catalog because the automated review confirmed: ${app.reason}.\n\nWhen it is working again, reply here with a short confirmation or a replacement live-app URL. The app-management agent will recheck it and can restore it automatically.\n\nCatalog change: ${pullRequestUrl}`;
-    }
-    return `${app.name} passed a fresh app and screenshot review and has been restored to the community app catalog.\n\nCatalog change: ${pullRequestUrl}`;
+function commentFor(app, pullRequestUrl) {
+    return `${app.name} was removed from the community app catalog because the automated review confirmed: ${app.reason}.\n\nWhen it is working again, reply here with a short confirmation or a replacement live-app URL for maintainer review.\n\nCatalog change: ${pullRequestUrl}`;
 }
 
 async function notify(event, token, fetchImpl = fetch) {
@@ -51,11 +48,7 @@ async function notify(event, token, fetchImpl = fetch) {
                     "X-GitHub-Api-Version": "2022-11-28",
                 },
                 body: JSON.stringify({
-                    body: commentFor(
-                        payload.action,
-                        app,
-                        event.pull_request.html_url,
-                    ),
+                    body: commentFor(app, event.pull_request.html_url),
                 }),
             },
         );

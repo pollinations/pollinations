@@ -19,6 +19,7 @@ test("parses the machine-readable PR marker", () => {
         action: "remove",
         apps: [APP],
     });
+    assert.throws(() => parseNotification(marker("restore")), /Unknown/);
     assert.equal(parseNotification("ordinary PR"), null);
 });
 
@@ -45,5 +46,9 @@ test("notifies the original submission issue after merge", async () => {
     assert.match(
         JSON.parse(requests[0].options.body).body,
         /removed from the community app catalog/,
+    );
+    assert.match(
+        JSON.parse(requests[0].options.body).body,
+        /maintainer review/,
     );
 });

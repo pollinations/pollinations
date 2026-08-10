@@ -40,3 +40,13 @@ test("ignores unrelated operation changes", () => {
         [],
     );
 });
+
+test("ignores GPU infrastructure changes", () => {
+    assert.deepEqual(
+        detectDeployments(
+            ["operations/infrastructure/gpu/flux/server.py"],
+            manifest,
+        ),
+        [],
+    );
+});

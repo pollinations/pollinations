@@ -160,7 +160,7 @@ else
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
 
-NUNCHAKU_DIR="$WORK_DIR/image.pollinations.ai/nunchaku"
+NUNCHAKU_DIR="$WORK_DIR/operations/infrastructure/gpu/flux"
 cd "$NUNCHAKU_DIR"
 
 if [ ! -d venv ]; then

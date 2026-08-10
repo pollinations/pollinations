@@ -102,7 +102,7 @@ setup_repo() {
         git clone https://github.com/pollinations/pollinations.git
     fi
     
-    cd $HOME/pollinations/image.pollinations.ai/nunchaku
+    cd $HOME/pollinations/operations/infrastructure/gpu/flux
     log_info "Repository ready"
 }
 
@@ -138,7 +138,7 @@ setup_python_env() {
 install_nunchaku() {
     log_step "📦 Step 4: Installing prebuilt nunchaku wheel"
 
-    source $HOME/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate
+    source $HOME/pollinations/operations/infrastructure/gpu/flux/venv/bin/activate
 
     # Prebuilt wheel bundles CUDA kernels for SM 7.5/8.0/8.6/8.9/120 — no
     # source build, no CUDA toolkit, no 10-15 min compile. Must match the
@@ -167,7 +167,7 @@ create_services() {
     log_step "⚙️  Step 6: Creating systemd services"
     
     local user=$(whoami)
-    local work_dir="$HOME/pollinations/image.pollinations.ai/nunchaku"
+    local work_dir="$HOME/pollinations/operations/infrastructure/gpu/flux"
     local venv_path="$work_dir/venv/bin"
     
     # GPU 0 Service

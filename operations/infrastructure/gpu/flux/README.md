@@ -79,7 +79,7 @@ explicitly approves the promotion. After cutover, run `verify-vast.sh` with
 bounded number of production requests until one is attributed to this worker.
 Only then destroy the replaced worker.
 The fleet-wide qualification and approval policy is documented in
-[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
+[`manage-vast-gpu-fleet`](../../../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
 ## Operations
 

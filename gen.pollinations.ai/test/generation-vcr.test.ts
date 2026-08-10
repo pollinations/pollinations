@@ -3,7 +3,10 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest } from "@shared/test/fixtures/index.ts";
+import {
+    test as baseTest,
+    createTestApiKey,
+} from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
     teardownFetchMock,
@@ -17,7 +20,6 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
-const sanaBackendHost = "ltx2-backend.pollinations.ai";
 const replicateHost = "api.replicate.com";
 const replicateDeliveryHost = "replicate.delivery";
 
@@ -39,6 +41,9 @@ function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
+    const portkeyState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const replicateState: {
         requests: Array<{
             body: Record<string, unknown>;
@@ -49,17 +54,26 @@ function createGenerationMocks() {
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
-            state: {},
+            state: portkeyState,
             handlerMap: {
-                [portkeyHost]: fakePortkeyResponse,
+                [portkeyHost]: async (request) => {
+                    portkeyState.requests.push(
+                        (await request.clone().json()) as Record<
+                            string,
+                            unknown
+                        >,
+                    );
+                    return fakePortkeyResponse(request);
+                },
             },
-            reset: () => {},
+            reset: () => {
+                portkeyState.requests = [];
+            },
         },
         imageBackend: {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
-                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
         },
@@ -512,6 +526,120 @@ test("chat completions bill provider-reported Perplexity request cost without ex
     });
 });
 
+test("Perplexity aliases add no options and allow explicit override", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    for (const [model, requestedSize] of [
+        ["perplexity-high", undefined],
+        ["sonar-deep", "low"],
+    ] as const) {
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: `context ${model}` }],
+                ...(requestedSize && {
+                    web_search_options: {
+                        search_context_size: requestedSize,
+                    },
+                }),
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("sonar");
+        await response.text();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "web_search_options",
+    );
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        web_search_options: { search_context_size: "low" },
+    });
+});
+
+test("rejects unsupported Perplexity search context sizes", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [{ role: "user", content: "invalid context" }],
+            web_search_options: { search_context_size: "medium" },
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+        error: {
+            message:
+                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
+        },
+    });
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    await wait();
+});
+
+test("pins other Perplexity models high and strips search options elsewhere", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("portkeyDirect");
+
+    for (const [model, searchContextSize] of [
+        ["perplexity", "low"],
+        ["perplexity-reasoning", "low"],
+        ["openai-fast", "medium"],
+    ] as const) {
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: `context ${model}` }],
+                web_search_options: {
+                    search_context_size: searchContextSize,
+                },
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        await response.text();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        web_search_options: { search_context_size: "high" },
+    });
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        web_search_options: { search_context_size: "high" },
+    });
+    expect(mocks.portkeyDirect.state.requests[2]).not.toHaveProperty(
+        "web_search_options",
+    );
+});
+
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({
     paidApiKey,
     mocks,
@@ -851,15 +979,21 @@ test("simple text prompts can include slashes", async ({
 });
 
 test("flux image generation uses Replicate fallback from gen", async ({
-    paidApiKey,
     mocks,
 }) => {
     await mocks.enable("tinybird", "replicate");
+    const { key } = await createTestApiKey({
+        allowedModels: ["flux"],
+        user: { tierBalance: 100 },
+    });
 
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
-            headers: { authorization: `Bearer ${paidApiKey}` },
+            // The key allows only public `flux` (and one unrelated text model).
+            // Its hidden provider route must remain available as an internal
+            // implementation detail of that permitted public model.
+            headers: { authorization: `Bearer ${key}` },
         },
     );
 
@@ -867,6 +1001,7 @@ test("flux image generation uses Replicate fallback from gen", async ({
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("content-type")).toMatch(/^image\//);
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
@@ -892,11 +1027,30 @@ test("flux image generation uses Replicate fallback from gen", async ({
             prefer: "wait=60",
         },
     });
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux",
+        modelProviderUsed: "vast",
+        responseStatus: 503,
+        fallbackUsed: false,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux",
+        modelProviderUsed: "replicate",
         tokenCountCompletionImage: 1,
+        totalCost: 0.003,
+        totalPrice: 0.002,
+        devPrice: 0.002,
+        fallbackUsed: true,
+        isFinal: true,
         isBilledUsage: true,
     });
 });
@@ -976,12 +1130,30 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     });
 });
 
-test("sana uses its fixed backend and records its flat price", async ({
+test("the sana alias routes to the dreamshaper pool and records its flat price", async ({
     paidApiKey,
     mocks,
 }) => {
+    const existing = await env.KV.list({ prefix: "image:server:test:sana:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
+
+    // pool key is still "sana" so workers can register before this deploys
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "sana",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
     await mocks.enable("tinybird", "imageBackend");
 
+    // Requested as "sana" on purpose: the old name has to keep working for the
+    // legacy image proxy worker and existing callers.
     const { response, wait } = await fetchWorker(
         "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
         {
@@ -990,14 +1162,15 @@ test("sana uses its fixed backend and records its flat price", async ({
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("sana");
+    expect(response.headers.get("x-model-used")).toBe("dreamshaper");
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
+        // analytics keep the name the caller actually used
         modelRequested: "sana",
-        modelUsed: "sana",
+        modelUsed: "dreamshaper",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,

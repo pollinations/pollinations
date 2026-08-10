@@ -1,18 +1,20 @@
-import {
-    type CommunityEndpointRuntime,
-    isCommunityFallbackPricingAllowed,
-    MAX_FALLBACK_TARGETS,
-} from "@shared/community-endpoints.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     type Category,
     getModels,
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
@@ -20,6 +22,7 @@ import {
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
+import { linkFallbackEntries } from "./fallback.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 const TEXT_MODEL_ENDPOINTS = [
@@ -32,6 +35,23 @@ const IMAGE_MODEL_ENDPOINTS = [
     "/v1/images/edits",
     "/image/{prompt}",
 ];
+const CATEGORY_ORDER: Record<Category, number> = {
+    text: 0,
+    image: 1,
+    video: 2,
+    "3d": 3,
+    audio: 4,
+    realtime: 5,
+    embedding: 6,
+};
+const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
+    text: DEFAULT_TEXT_MODEL,
+    image: DEFAULT_IMAGE_MODEL,
+    "3d": DEFAULT_3D_MODEL,
+    audio: DEFAULT_AUDIO_MODEL,
+    realtime: DEFAULT_REALTIME_MODEL,
+    embedding: DEFAULT_EMBEDDING_MODEL,
+};
 
 export type GenerationModelEntry = {
     id: string;
@@ -42,10 +62,8 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
-    // Entries that serve this model when its own upstream fails, in the order
-    // its owner declared them. A fallback's own list is not followed: one
-    // owner's declaration cannot redirect another owner's traffic, which also
-    // makes a routing cycle impossible.
+    // Entries that serve this model when its own upstream fails, in declared
+    // order. A fallback's own list is not followed, so routing stays depth one.
     fallbackEntries?: GenerationModelEntry[];
 };
 
@@ -60,13 +78,7 @@ type CachedRegistry = {
     registry: GenerationModelRegistry;
 };
 
-type PendingRegistryLoad = {
-    dbBinding: CloudflareBindings["DB"] | undefined;
-    promise: Promise<GenerationModelRegistry>;
-};
-
 let cachedRegistry: CachedRegistry | null = null;
-let pendingRegistryLoad: PendingRegistryLoad | null = null;
 
 function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
@@ -113,7 +125,7 @@ function communityEntryToGenerationEntry(
         supportedEndpoints:
             eventType === "generate.image"
                 ? communityImageSupportedEndpoints(
-                      entry.communityEndpoint.supportsImageEdits,
+                      entry.definition.inputModalities,
                   )
                 : communityTextSupportedEndpoints(),
         definition: entry.definition,
@@ -127,56 +139,37 @@ function communityEntryToGenerationEntry(
     };
 }
 
-// Write-time validation is only a UX guard — a target can since have been
-// deleted, deactivated, made private or repriced above the primary — so
-// everything is re-checked here before linking.
-function isUsableFallbackTarget(
-    from: GenerationModelEntry,
-    target: GenerationModelEntry | undefined,
-): target is GenerationModelEntry {
-    if (!target || target === from) return false;
-    if (!target.visible || target.eventType !== from.eventType) return false;
-    const primary = from.communityEndpoint;
-    const candidate = target.communityEndpoint;
-    // Both sides must be community endpoints: static registry prices can be
-    // dynamic, so the same-or-lower comparison that makes a fallback safe to
-    // bill is only defined between two endpoint rows.
-    if (!primary || !candidate) return false;
-    // The shared price columns mean Pollen per generated image in "request"
-    // mode and Pollen per token in "tokens" mode, so a cross-mode comparison is
-    // meaningless — and either side can switch mode long after the link was
-    // configured, without touching the other's row. Same rule the write path
-    // applies.
-    if (primary.imagePricing !== candidate.imagePricing) return false;
-    return isCommunityFallbackPricingAllowed(primary, candidate);
-}
+function compareModelEntries(
+    left: GenerationModelEntry,
+    right: GenerationModelEntry,
+): number {
+    const leftCommunity = left.communityEndpoint !== undefined;
+    const rightCommunity = right.communityEndpoint !== undefined;
+    if (leftCommunity !== rightCommunity) return leftCommunity ? 1 : -1;
 
-/**
- * Resolves each entry's declared fallback ids against the registry it was built
- * with, so the hot path never does a second lookup.
- *
- * Every target is validated against the entry that declared it, so each one is
- * priced at or below the model the caller actually asked for.
- */
-function linkFallbackEntries(
-    entries: GenerationModelEntry[],
-    byIdOrAlias: Map<string, GenerationModelEntry>,
-): void {
-    for (const entry of entries) {
-        const declared = entry.communityEndpoint?.fallbackModelIds ?? [];
-        const targets: GenerationModelEntry[] = [];
-        for (const targetId of declared) {
-            if (targets.length >= MAX_FALLBACK_TARGETS) break;
-            const target = byIdOrAlias.get(targetId);
-            if (!isUsableFallbackTarget(entry, target)) continue;
-            // Two declared ids can resolve to one entry through an alias.
-            if (targets.some((linked) => linked.id === target.id)) continue;
-            // Link a copy with an empty list of its own: routing follows only
-            // what this entry's owner declared.
-            targets.push({ ...target, fallbackEntries: undefined });
-        }
-        entry.fallbackEntries = targets.length > 0 ? targets : undefined;
+    if (!leftCommunity) {
+        const categoryDifference =
+            CATEGORY_ORDER[left.definition.category] -
+            CATEGORY_ORDER[right.definition.category];
+        if (categoryDifference !== 0) return categoryDifference;
+
+        const defaultModel =
+            DEFAULT_MODEL_BY_CATEGORY[left.definition.category];
+        const defaultDifference =
+            Number(right.id === defaultModel) -
+            Number(left.id === defaultModel);
+        if (defaultDifference !== 0) return defaultDifference;
+
+        const alphaDifference =
+            Number(left.definition.alpha === true) -
+            Number(right.definition.alpha === true);
+        if (alphaDifference !== 0) return alphaDifference;
     }
+
+    const addedDateDifference =
+        right.definition.addedDate - left.definition.addedDate;
+    if (addedDateDifference !== 0) return addedDateDifference;
+    return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
 
 function buildRegistry(
@@ -185,6 +178,8 @@ function buildRegistry(
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
     const entries = sourceEntries.map((entry) => ({ ...entry }));
+    // Build lookup keys before presentation sorting so duplicate aliases keep
+    // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -199,6 +194,7 @@ function buildRegistry(
         }
     }
     linkFallbackEntries(entries, byIdOrAlias);
+    entries.sort(compareModelEntries);
 
     return {
         resolve: (model) => {
@@ -235,40 +231,28 @@ async function loadGenerationModelRegistry(
 export async function getGenerationModelRegistry(
     env: Pick<CloudflareBindings, "DB">,
 ): Promise<GenerationModelRegistry> {
-    const now = Date.now();
     if (
         cachedRegistry &&
         cachedRegistry.dbBinding === env.DB &&
-        cachedRegistry.expiresAt > now
+        cachedRegistry.expiresAt > Date.now()
     ) {
         return cachedRegistry.registry;
     }
 
-    if (!pendingRegistryLoad || pendingRegistryLoad.dbBinding !== env.DB) {
-        const dbBinding = env.DB;
-        pendingRegistryLoad = {
-            dbBinding,
-            promise: loadGenerationModelRegistry(dbBinding)
-                .then((registry) => {
-                    cachedRegistry = {
-                        dbBinding,
-                        expiresAt: Date.now() + REGISTRY_TTL_MS,
-                        registry,
-                    };
-                    return registry;
-                })
-                .finally(() => {
-                    if (pendingRegistryLoad?.dbBinding === dbBinding) {
-                        pendingRegistryLoad = null;
-                    }
-                }),
-        };
-    }
-
-    return pendingRegistryLoad.promise;
+    // Deliberately no in-flight promise cache: sharing one pending promise
+    // across requests hands request A's D1 I/O to requests B..N, and if A is
+    // cancelled the promise can never settle, wedging the isolate for good.
+    // Racing a few cheap SELECTs on cache expiry is the better trade.
+    const dbBinding = env.DB;
+    const registry = await loadGenerationModelRegistry(dbBinding);
+    cachedRegistry = {
+        dbBinding,
+        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        registry,
+    };
+    return registry;
 }
 
 export function resetGenerationModelRegistryCache(): void {
     cachedRegistry = null;
-    pendingRegistryLoad = null;
 }

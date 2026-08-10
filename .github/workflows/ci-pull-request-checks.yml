@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate app catalog
+        run: node .github/scripts/app-validate-catalog.js
+
       - name: Get changed files
         id: changed-files
         run: |
@@ -131,6 +134,13 @@ jobs:
           else
             echo "✅ No type errors in changed files"
           fi
+
+      - name: Test Enter billing registry
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: |
+          mkdir -p dist/client
+          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts
 
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files

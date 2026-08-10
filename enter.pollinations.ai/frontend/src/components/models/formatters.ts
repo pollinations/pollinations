@@ -26,6 +26,32 @@ export const formatPrice = (
     return formatter(price);
 };
 
+const displayPriceNumber = new Intl.NumberFormat("en", {
+    maximumFractionDigits: 4,
+});
+const smallDisplayPriceNumber = new Intl.NumberFormat("en", {
+    maximumFractionDigits: 6,
+});
+
+export const formatDisplayPrice = (
+    price: string,
+    tokenPrice = false,
+): { value: string; tokenScale: "K" | "M" } => {
+    const numericPrice = Number(price);
+    const tokenScale = tokenPrice && numericPrice >= 100 ? "K" : "M";
+    const scaledPrice = tokenScale === "K" ? numericPrice / 1000 : numericPrice;
+
+    return {
+        value: Number.isFinite(scaledPrice)
+            ? (Math.abs(scaledPrice) < 0.001
+                  ? smallDisplayPriceNumber
+                  : displayPriceNumber
+              ).format(scaledPrice)
+            : price,
+        tokenScale,
+    };
+};
+
 // Flat per-request price — one fee per image or audio generation, shown with
 // the "/gen" badge. Keeps 4 decimals below $1 so odd rates like $0.0376 render
 // exactly instead of rounding to $0.038.

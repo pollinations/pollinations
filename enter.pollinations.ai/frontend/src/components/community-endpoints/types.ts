@@ -10,10 +10,16 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
+
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
 
 export type CommunityEndpoint = {
     id: string;
@@ -24,7 +30,7 @@ export type CommunityEndpoint = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -66,8 +72,7 @@ export type EndpointFormState = {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
-    // Set only when the endpoint test receives a valid image edit response.
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
@@ -85,7 +90,7 @@ export type EndpointFormState = {
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
@@ -103,7 +108,7 @@ export type CommunityEndpointTestResponse = {
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[];
 };
 
 export type ActionState = {
@@ -120,7 +125,7 @@ const emptyPriceForm = Object.fromEntries(
 export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
-    supportsImageEdits: false,
+    inputModalities: ["text"],
     name: "",
     title: "",
     description: "",
@@ -207,7 +212,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
-        supportsImageEdits: endpoint.supportsImageEdits,
+        inputModalities: endpoint.inputModalities,
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -306,8 +311,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     return {
         modality: form.modality,
         imagePricing,
-        supportsImageEdits:
-            form.modality === "image" && form.supportsImageEdits,
+        inputModalities: form.inputModalities,
         name: modelName,
         title: form.title.trim(),
         description: form.description.trim(),
@@ -328,25 +332,20 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
-    if (key === "supportsImageEdits") return current;
     if (key === "modality") {
+        const modality = value === "image" ? "image" : "text";
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
-            supportsImageEdits: false,
+            modality,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                current.inputModalities,
+                modality,
+            ),
             // Targets must match the modality; the old choices no longer can.
             fallbackModelIds: [],
         };
     }
     const next = { ...current, [key]: value };
-    if (
-        key === "name" ||
-        key === "upstreamModel" ||
-        key === "baseUrl" ||
-        key === "bearerToken"
-    ) {
-        next.supportsImageEdits = false;
-    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

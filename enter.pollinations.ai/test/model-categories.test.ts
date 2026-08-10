@@ -80,18 +80,33 @@ describe("model categories", () => {
         ]);
     });
 
-    it("accepts both community category URLs", () => {
-        expect(validateModelSearch({ category: "community-text" })).toEqual({
-            category: "community-text",
+    it("uses a separate community scope with text and image categories", () => {
+        expect(validateModelSearch({ scope: "community" })).toEqual({
+            scope: "community",
+            category: undefined,
             q: undefined,
-            sort: undefined,
-            dir: undefined,
         });
-        expect(validateModelSearch({ category: "community-image" })).toEqual({
-            category: "community-image",
+        expect(
+            validateModelSearch({ scope: "community", category: "image" }),
+        ).toEqual({
+            scope: "community",
+            category: "image",
             q: undefined,
-            sort: undefined,
-            dir: undefined,
+        });
+        expect(
+            validateModelSearch({ scope: "community", category: "video" }),
+        ).toEqual({
+            scope: "community",
+            category: undefined,
+            q: undefined,
+        });
+    });
+
+    it("ignores obsolete model sort parameters", () => {
+        expect(validateModelSearch({ sort: "name", dir: "asc" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
         });
     });
 });

@@ -15,10 +15,12 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -153,6 +155,23 @@ export function CommunityEndpointDialog({
         setError(null);
     }
 
+    function toggleInputModality(modality: ModelInputModality): void {
+        setForm((current) => {
+            const selected = current.inputModalities.includes(modality);
+            if (selected && current.inputModalities.length === 1)
+                return current;
+            const next = new Set(current.inputModalities);
+            if (selected) next.delete(modality);
+            else next.add(modality);
+            return {
+                ...current,
+                inputModalities: COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                    current.modality
+                ].filter((value) => next.has(value)),
+            };
+        });
+    }
+
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
@@ -201,8 +220,6 @@ export function CommunityEndpointDialog({
                 form.modality === "image"
                     ? (body.imagePricing ?? "request")
                     : form.imagePricing;
-            const supportsImageEdits =
-                form.modality === "image" && body.supportsImageEdits === true;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -222,7 +239,11 @@ export function CommunityEndpointDialog({
             setForm((current) => ({
                 ...current,
                 imagePricing: detectedImagePricing,
-                supportsImageEdits,
+                inputModalities:
+                    current.modality === "image" &&
+                    body.inputModalities?.includes("image")
+                        ? (["text", "image"] as ModelInputModality[])
+                        : current.inputModalities,
                 // Changing pricing mode changes the units of these fields, so
                 // stale values must not carry across modes.
                 ...(detectedImagePricing !== current.imagePricing
@@ -401,30 +422,56 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="grid grid-cols-2 gap-2">
-                            {(["text", "image"] as const).map((modality) => {
-                                const selected = form.modality === modality;
+                        <ButtonGroup aria-label="Modality">
+                            {(["text", "image"] as const).map((modality) => (
+                                <TabButton
+                                    key={modality}
+                                    active={form.modality === modality}
+                                    disabled={isEdit}
+                                    onClick={() =>
+                                        updateForm("modality", modality)
+                                    }
+                                    size="sm"
+                                    className="min-w-20 gap-1.5 capitalize"
+                                >
+                                    {form.modality === modality && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    {modality}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
+                    </FieldStack>
+
+                    <FieldStack
+                        label="Accepted inputs"
+                        helper="Select every input type supported by this model. At least one is required."
+                        alignLabelRow
+                    >
+                        <ButtonGroup aria-label="Accepted input modalities">
+                            {COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                                form.modality
+                            ].map((modality) => {
+                                const selected =
+                                    form.inputModalities.includes(modality);
                                 return (
-                                    <button
+                                    <TabButton
                                         key={modality}
-                                        type="button"
-                                        disabled={isEdit}
-                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                            selected
-                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
-                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
-                                        }`}
+                                        active={selected}
                                         onClick={() =>
-                                            updateForm("modality", modality)
+                                            toggleInputModality(modality)
                                         }
+                                        size="sm"
+                                        className="min-w-20 gap-1.5 capitalize"
                                     >
-                                        {modality === "image"
-                                            ? "Image"
-                                            : "Text"}
-                                    </button>
+                                        {selected && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {modality}
+                                    </TabButton>
                                 );
                             })}
-                        </div>
+                        </ButtonGroup>
                     </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -755,40 +802,81 @@ export function CommunityEndpointDialog({
                         >
                             <div className="flex flex-col gap-2">
                                 {fallbackRows.map((selected, index) => (
-                                    <select
+                                    <Dropdown
                                         // Rows are positional: the same slot
                                         // keeps its identity as targets change.
                                         // biome-ignore lint/suspicious/noArrayIndexKey: positional by design
                                         key={index}
-                                        name={`community-fallback-model-${index}`}
-                                        value={selected}
-                                        className="rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
-                                        onChange={(e) =>
-                                            setFallbackAt(index, e.target.value)
-                                        }
+                                        align="start"
+                                        className="w-[var(--reference-width)] min-w-0 p-1"
+                                        trigger={(open) => (
+                                            <Button
+                                                type="button"
+                                                aria-label={`Fallback model ${index + 1}: ${selected || "None"}`}
+                                                className="w-full min-w-0 self-stretch justify-between gap-2"
+                                            >
+                                                <span className="min-w-0 truncate font-mono text-sm">
+                                                    {selected ||
+                                                        (index === 0
+                                                            ? "None"
+                                                            : "None (remove)")}
+                                                </span>
+                                                <ChevronIcon
+                                                    expanded={open}
+                                                    className="h-4 w-4 shrink-0"
+                                                />
+                                            </Button>
+                                        )}
                                     >
-                                        <option value="">
-                                            {index === 0
-                                                ? "None"
-                                                : "None (remove)"}
-                                        </option>
-                                        {visibleFallbackOptions
-                                            .filter(
-                                                (modelId) =>
-                                                    modelId === selected ||
-                                                    !form.fallbackModelIds.includes(
-                                                        modelId,
-                                                    ),
-                                            )
-                                            .map((modelId) => (
-                                                <option
-                                                    key={modelId}
-                                                    value={modelId}
+                                        {(close) => (
+                                            <ScrollArea className="max-h-64">
+                                                <DropdownItem
+                                                    onClick={() => {
+                                                        setFallbackAt(
+                                                            index,
+                                                            "",
+                                                        );
+                                                        close();
+                                                    }}
                                                 >
-                                                    {modelId}
-                                                </option>
-                                            ))}
-                                    </select>
+                                                    {index === 0
+                                                        ? "None"
+                                                        : "None (remove)"}
+                                                </DropdownItem>
+                                                {visibleFallbackOptions
+                                                    .filter(
+                                                        (modelId) =>
+                                                            modelId ===
+                                                                selected ||
+                                                            !form.fallbackModelIds.includes(
+                                                                modelId,
+                                                            ),
+                                                    )
+                                                    .map((modelId) => (
+                                                        <DropdownItem
+                                                            key={modelId}
+                                                            className={
+                                                                modelId ===
+                                                                selected
+                                                                    ? "bg-theme-bg-active text-theme-text-strong"
+                                                                    : undefined
+                                                            }
+                                                            onClick={() => {
+                                                                setFallbackAt(
+                                                                    index,
+                                                                    modelId,
+                                                                );
+                                                                close();
+                                                            }}
+                                                        >
+                                                            <span className="truncate font-mono">
+                                                                {modelId}
+                                                            </span>
+                                                        </DropdownItem>
+                                                    ))}
+                                            </ScrollArea>
+                                        )}
+                                    </Dropdown>
                                 ))}
                             </div>
                         </FieldStack>
@@ -798,6 +886,7 @@ export function CommunityEndpointDialog({
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
+                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}

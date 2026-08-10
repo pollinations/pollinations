@@ -283,7 +283,7 @@ export const track = (eventType: EventType) =>
                 // describes the body that usage extraction parses.
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
-                    : c.res.clone();
+                    : responseForTracking(c.res);
                 // What a rescue changes: the generation's cost, and which owner
                 // earns the reward. Not the price — the caller is charged the
                 // listing they asked for either way.
@@ -559,6 +559,21 @@ function withFinalResponseHeaders(
         status: override.status,
         headers,
     });
+}
+
+/**
+ * Tracking parses only SSE and JSON bodies; for binary media it reads headers
+ * alone. But cloning a Response and never reading the clone makes workerd
+ * buffer the entire body in memory with no backpressure, so an unread clone of
+ * a streamed audio response is pure cost. Hand tracking a headers-only view
+ * unless it is actually going to parse a body.
+ */
+function responseForTracking(res: Response): Response {
+    const contentType = res.headers.get("content-type") || "";
+    const parsesBody =
+        contentType.includes("text/event-stream") ||
+        contentType.includes("application/json");
+    return parsesBody ? res.clone() : new Response(null, res);
 }
 
 export async function trackResponse(

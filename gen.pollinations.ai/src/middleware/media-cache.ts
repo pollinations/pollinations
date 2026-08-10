@@ -95,7 +95,9 @@ export function createMediaCache(config: MediaCacheConfig) {
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
-            cacheMediaResponse(
+            // Swaps in the client's half of the tee'd body. Without this the
+            // cache would hold a branch nobody drains.
+            c.res = cacheMediaResponse(
                 c.env.IMAGE_BUCKET,
                 cacheKey,
                 c,

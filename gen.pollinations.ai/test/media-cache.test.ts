@@ -10,6 +10,7 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -209,5 +210,71 @@ describe("media cache", () => {
         expect(cached.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
+    });
+});
+
+/** Streams its body instead of buffering it, the way the audio routes do. */
+function createStreamingMediaApp(cache: MediaCache, contentType: string) {
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            await next();
+        })
+        .get("/media/:prompt", cache, async () => {
+            const stream = new ReadableStream<Uint8Array>({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode("streamed"));
+                    controller.close();
+                },
+            });
+            return new Response(stream, {
+                headers: { "Content-Type": contentType },
+            });
+        });
+    return app;
+}
+
+describe("media cache write independence", () => {
+    it.each([
+        { label: "audio", cache: audioCache, contentType: "audio/mpeg" },
+        { label: "image", cache: imageCache, contentType: "image/png" },
+    ])("caches a streamed $label response even when the client never reads the body", async ({
+        cache,
+        contentType,
+    }) => {
+        const app = createStreamingMediaApp(cache, contentType);
+        const bucket = createTestR2Bucket();
+        const env = createMediaCacheEnv(bucket);
+
+        // Deliberately do NOT read response.body. Under `clone()` the cache
+        // branch is only drained as fast as the client drains its own, so a
+        // caller that walks away could stall the write entirely.
+        const miss = await dispatch(app, "/media/streamed", undefined, env);
+        await miss.wait();
+
+        expect(bucket.putCount).toBe(1);
+        const stored = bucket.getObject(
+            generateCacheKey(
+                new URL("https://gen.pollinations.ai/media/streamed"),
+            ),
+        );
+        expect(new TextDecoder().decode(stored?.body)).toBe("streamed");
+
+        // The client's half is still intact and independently readable.
+        expect(await miss.response.text()).toBe("streamed");
+    });
+
+    it("serves the stored copy of a streamed response on the next request", async () => {
+        const app = createStreamingMediaApp(audioCache, "audio/mpeg");
+        const bucket = createTestR2Bucket();
+        const env = createMediaCacheEnv(bucket);
+
+        const miss = await dispatch(app, "/media/replayed", undefined, env);
+        await miss.wait();
+
+        const hit = await dispatch(app, "/media/replayed", undefined, env);
+        expect(await consumeAndWait(hit)).toBe("streamed");
+        expect(hit.response.headers.get("X-Cache")).toBe("HIT");
     });
 });

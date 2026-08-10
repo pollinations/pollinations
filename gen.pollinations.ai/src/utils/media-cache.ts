@@ -115,39 +115,69 @@ type MediaCacheEnv = {
     };
 };
 
+/**
+ * Caches a media response and returns the response to send to the client.
+ *
+ * The body is split with `tee()` rather than `clone()`, and our branch is
+ * consumed immediately. That matters because a cloned Response signals
+ * backpressure at the rate of the *faster* consumer: if one branch is never
+ * read, workerd buffers the whole body with no limit. Under `clone()` the
+ * cache write was therefore only as reliable as the client's willingness to
+ * read — fine for the fully buffered image/video/3D handlers, but for the
+ * audio routes, which pass the provider's stream straight through, a caller
+ * that hung up could stall the write and the media was silently never cached.
+ *
+ * Reading our branch ourselves makes the write independent of the client, so
+ * every media type caches the same way.
+ */
 export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): void {
-    c.executionCtx.waitUntil(
-        response
-            .clone()
-            .arrayBuffer()
-            .then((body) => {
-                if (body.byteLength === 0) {
-                    c.get("log").warn(
-                        "Skipping empty media cache write for {cacheKey}",
-                        { cacheKey },
-                    );
-                    return null;
-                }
+): Response {
+    if (!response.body) return response;
 
-                return bucket.put(cacheKey, body, {
-                    httpMetadata: removeUnset({
-                        contentType:
-                            response.headers.get("content-type") ||
-                            defaultContentType,
-                    } as R2HTTPMetadata),
-                    customMetadata: prepareCustomMetadata(response),
-                });
-            })
-            .catch((error) => {
-                c.get("log").error("Error caching response: {error}", {
-                    error,
-                });
-            }),
+    const [clientBody, cacheBody] = response.body.tee();
+    c.executionCtx.waitUntil(
+        storeMediaBody(
+            bucket,
+            cacheKey,
+            c.get("log"),
+            defaultContentType,
+            cacheBody,
+            response,
+        ),
     );
+    return new Response(clientBody, response);
+}
+
+async function storeMediaBody(
+    bucket: R2Bucket,
+    cacheKey: string,
+    log: Logger,
+    defaultContentType: string,
+    body: ReadableStream<Uint8Array>,
+    source: Response,
+): Promise<void> {
+    try {
+        const buffered = await new Response(body).arrayBuffer();
+        if (buffered.byteLength === 0) {
+            log.warn("Skipping empty media cache write for {cacheKey}", {
+                cacheKey,
+            });
+            return;
+        }
+
+        await bucket.put(cacheKey, buffered, {
+            httpMetadata: removeUnset({
+                contentType:
+                    source.headers.get("content-type") || defaultContentType,
+            } as R2HTTPMetadata),
+            customMetadata: prepareCustomMetadata(source),
+        });
+    } catch (error) {
+        log.error("Error caching response: {error}", { error });
+    }
 }

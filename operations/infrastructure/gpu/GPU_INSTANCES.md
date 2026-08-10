@@ -42,7 +42,7 @@ exists after the routing change deploys.
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
-`dreamshaper-lcm/`; Vast runs `/root/onstart.sh` after container start to
+`dreamshaper/`; Vast runs `/root/onstart.sh` after container start to
 restore the worker and named tunnel.
 
 Each Uvicorn process admits one running and one waiting request

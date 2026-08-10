@@ -6,7 +6,7 @@ set -euo pipefail
 GIT_BRANCH="${GIT_BRANCH:-main}"
 WORK_DIR="${WORK_DIR:-/workspace/pollinations}"
 VENV="${VENV:-/workspace/dreamshaper-venv}"
-APP_DIR="$WORK_DIR/image.pollinations.ai/dreamshaper-lcm"
+APP_DIR="$WORK_DIR/operations/infrastructure/gpu/dreamshaper"
 PUBLIC_HOSTNAME="${PUBLIC_HOSTNAME:-}"
 PORT="${PORT:-8766}"
 HEARTBEAT_ENABLED="${HEARTBEAT_ENABLED:-false}"

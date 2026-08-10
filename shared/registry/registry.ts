@@ -498,13 +498,7 @@ const MODEL_REGISTRY = {
     ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
-/**
- * Resolve a model name from a canonical name or alias
- * @param model - Model name or alias
- * @returns Resolved canonical model name
- * @throws Error if model is not found
- */
-export function resolveModelName(model: string): ModelName {
+function findModelName(model: string): ModelName | undefined {
     if (MODEL_REGISTRY[model as ModelName]) {
         return model as ModelName;
     }
@@ -513,8 +507,27 @@ export function resolveModelName(model: string): ModelName {
             return modelName as ModelName;
         }
     }
+    return undefined;
+}
+
+/**
+ * Resolve a model name from a canonical name or alias
+ * @param model - Model name or alias
+ * @returns Resolved canonical model name
+ * @throws Error if model is not found
+ */
+export function resolveModelName(model: string): ModelName {
+    const resolved = findModelName(model);
+    if (resolved) return resolved;
     throw new Error(
         `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+    );
+}
+
+/** Canonicalize known model IDs for storage while preserving community IDs. */
+export function normalizeModelAllowlist(models: readonly string[]): string[] {
+    return Array.from(
+        new Set(models.map((model) => findModelName(model) ?? model)),
     );
 }
 

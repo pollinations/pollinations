@@ -840,14 +840,15 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should omit retired models without rewriting stored permissions", async ({
+        test("should store known aliases as canonical model IDs", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-retired-model",
+                name: "key-with-model-aliases",
                 allowedModels: [
-                    "black-forest-labs/FLUX.1-schnell",
+                    "flux",
                     "nanobanana2",
+                    "google/gemini-3.1-flash-image",
                     "retired-model",
                 ],
             });
@@ -866,6 +867,7 @@ describe("API Key Management", () => {
             const listed = body.data.find((key) => key.id === created.id);
             expect(listed?.permissions?.models).toEqual([
                 "black-forest-labs/FLUX.1-schnell",
+                "google/gemini-3.1-flash-image",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -874,7 +876,7 @@ describe("API Key Management", () => {
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "black-forest-labs/FLUX.1-schnell",
-                "nanobanana2",
+                "google/gemini-3.1-flash-image",
                 "retired-model",
             ]);
         });
@@ -1028,10 +1030,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: [
-                            "black-forest-labs/FLUX.1-schnell",
-                            "openai/gpt-5.4-nano",
-                        ],
+                        allowedModels: ["flux", "openai"],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -1059,6 +1058,14 @@ describe("API Key Management", () => {
                 ],
                 account: ["profile", "usage"],
             });
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, keyId),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}")).toEqual(
+                updatedKey.permissions,
+            );
         });
 
         test("should reflect updated permissions immediately after update", async ({

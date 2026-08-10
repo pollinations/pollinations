@@ -11,6 +11,7 @@ import {
     getPriceDefinition,
     getRegistryModelDefinition,
     type ModelName,
+    normalizeModelAllowlist,
     resolveModelName,
     type UsageType,
 } from "@shared/registry/registry.js";
@@ -72,6 +73,21 @@ test.for(
 )("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
+});
+
+test("model allowlists store canonical IDs and preserve unknown IDs", () => {
+    expect(
+        normalizeModelAllowlist([
+            "flux",
+            "black-forest-labs/FLUX.1-schnell",
+            "nanobanana2",
+            "owner/community-model",
+        ]),
+    ).toEqual([
+        "black-forest-labs/FLUX.1-schnell",
+        "google/gemini-3.1-flash-image",
+        "owner/community-model",
+    ]);
 });
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {

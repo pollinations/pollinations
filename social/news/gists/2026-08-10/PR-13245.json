@@ -1,0 +1,34 @@
+{
+  "pr_number": 13245,
+  "title": "chore: remove legacy image backend root",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13245",
+  "merged_at": "2026-08-10T17:45:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the remaining image.pollinations.ai directory after active GPU workers moved into operations/infrastructure/gpu.\n- Deletes retired SANA-Sprint and LTX-2 implementations, the unreferenced TwinFlow experiment, obsolete AWS/io.net Flux tooling, and old service assets.\n- Removes the completed PR #7807 rotation checklist and obsolete image-service test command.\n- Updates repository architecture, monitoring, debugging, deployment guidance, and social path classification.\n- Does not change the public https://image.pollinations.ai hostname, model registry, routing, credentials, pricing, or live GPUs.\n\nSafety evidence:\n- Deleted backends have no current registry or workflow consumers.\n- SANA-Sprint and LTX-2 are documented as retired.\n- Current FLUX, Z-Image, Klein, and DreamShaper sources exist in the preceding stacked PRs.\n- Non-URL references to the deleted root are zero.\n\nValidation:\n- DreamShaper unit tests\n- operations deployment-detection tests\n- shell syntax checks for all active GPU scripts\n- repository path/reference scans\n- git diff --check\n\nStacked on #13244. Merge the stack in order. Existing GPU hosts must not pull the moved checkout until their setup script is rerun from its new path.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Old roots, clean garden",
+    "blurb": "The retired image backend root has been composted after its GPU workers settled into their new home. The public image hostname and live model garden keep humming exactly as before.",
+    "summary": "Removed the legacy image.pollinations.ai source tree, including retired SANA-Sprint and LTX-2 backends, TwinFlow, obsolete Flux deployment tooling, and outdated operational docs now that active GPU workers live under operations/infrastructure/gpu.",
+    "impact": "Public image.pollinations.ai routing, model registry, credentials, pricing, and live GPUs remain unchanged, while maintainers get one current location for active GPU infrastructure.",
+    "keywords": [
+      "infrastructure",
+      "gpu",
+      "image-backend",
+      "cleanup",
+      "retired-models",
+      "repository"
+    ],
+    "visual_concept": "A cozy garden-shed cleanup: Polli gently carries a labeled box of retired server scripts toward a compost bin while healthy GPU code-plants grow from the new operations/infrastructure/gpu path on a glowing CRT terminal. The scene represents removing unreferenced historical infrastructure without disturbing the active image service; a small sign reassures that the public image gateway is still blooming.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener scarf while carrying a box labeled \"LEGACY\" to a compost bin; beside her, flourishing code-plants grow around a retro CRT showing \"operations/infrastructure/gpu,\" with a small pixel sign reading \"IMAGE API STILL BLOOMING.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13245.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener scarf while carrying a box labeled \"LEGACY\" to a compost bin; beside her, flourishing code-plants grow around a retro CRT showing \"operations/infrastructure/gpu,\" with a small pixel sign reading \"IMAGE API STILL BLOOMING.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-10T17:47:10.237685+00:00"
+}

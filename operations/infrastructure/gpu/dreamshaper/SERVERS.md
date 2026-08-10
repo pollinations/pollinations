@@ -23,12 +23,10 @@ model=sana -> registry alias dreamshaper -> pool type sana
 
 There is no automatic external fallback. Both workers run
 `operations/infrastructure/gpu/dreamshaper/setup-vast.sh`, and Vast restores
-`/root/onstart.sh` after a
-container restart. See
-[`GPU_INSTANCES.md`](../../operations/infrastructure/gpu/GPU_INSTANCES.md) for the
-live fleet and qualification evidence, and
-[`DreamShaper README`](../../operations/infrastructure/gpu/dreamshaper/README.md)
-for deployment and API details.
+`/root/onstart.sh` after a container restart. See
+[`GPU_INSTANCES.md`](../GPU_INSTANCES.md) for the live fleet and qualification
+evidence, and [`DreamShaper README`](./README.md) for deployment and API
+details.
 
 ## Historical Sana infrastructure
 

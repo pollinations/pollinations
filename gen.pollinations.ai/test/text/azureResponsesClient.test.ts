@@ -223,6 +223,8 @@ describe("callAzureResponses", () => {
         ]);
         expect(message?.reasoning_content).toBe("thinking...");
         expect(completion.choices?.[0]?.finish_reason).toBe("tool_calls");
+        expect(completion.object).toBe("chat.completion");
+        expect(completion.created).toBe(456);
         expect(completion.usage).toEqual({
             prompt_tokens: 10,
             completion_tokens: 5,
@@ -400,6 +402,116 @@ describe("callAzureResponses", () => {
             finish_reason: "tool_calls",
         });
         expect(chunks[4]).toBe("[DONE]");
+    });
+
+    it("routes tool-call args to the right tool when item.id is missing", async () => {
+        const encoder = new TextEncoder();
+        const events = [
+            'data: {"type":"response.created","response":{"id":"resp_multi","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
+            'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":""}}\n\n',
+            'data: {"type":"response.output_item.added","output_index":1,"item":{"type":"function_call","call_id":"call_2","name":"get_news","arguments":""}}\n\n',
+            'data: {"type":"response.function_call_arguments.delta","item_id":"call_2","output_index":1,"delta":"{\\"topic\\":\\"AI\\"}"}\n\n',
+            'data: {"type":"response.completed","response":{"id":"resp_multi","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":"{}"},{"type":"function_call","id":"fc_2","call_id":"call_2","name":"get_news","arguments":"{\\"topic\\":\\"AI\\"}"}]}}\n\n',
+        ];
+
+        const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const event of events) {
+                    controller.enqueue(encoder.encode(event));
+                }
+                controller.close();
+            },
+        });
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async () => new Response(stream),
+        );
+
+        const completion = await callAzureResponses(
+            [{ role: "user", content: "hi" }],
+            { model: "gpt-5.6-sol", modelConfig, stream: true },
+        );
+
+        const reader = completion.responseStream?.getReader();
+        let output = "";
+        while (true) {
+            const { done, value } = await reader!.read();
+            if (done) break;
+            output += new TextDecoder().decode(value);
+        }
+
+        const chunks = output
+            .split("\n\n")
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => {
+                const raw = line.slice(6);
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    return raw;
+                }
+            });
+
+        expect(chunks[1].choices[0].delta.tool_calls[0]).toMatchObject({
+            index: 1,
+            id: "call_2",
+            function: { name: "get_news", arguments: "" },
+        });
+        expect(chunks[2].choices[0].delta.tool_calls[0]).toMatchObject({
+            index: 1,
+            function: { arguments: '{"topic":"AI"}' },
+        });
+    });
+
+    it("emits an error when the stream ends before completion", async () => {
+        const encoder = new TextEncoder();
+        const events = [
+            'data: {"type":"response.created","response":{"id":"resp_cut","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
+            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"partial"}\n\n',
+        ];
+
+        const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const event of events) {
+                    controller.enqueue(encoder.encode(event));
+                }
+                controller.close();
+            },
+        });
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async () => new Response(stream),
+        );
+
+        const completion = await callAzureResponses(
+            [{ role: "user", content: "hi" }],
+            { model: "gpt-5.6-sol", modelConfig, stream: true },
+        );
+
+        const reader = completion.responseStream?.getReader();
+        let output = "";
+        while (true) {
+            const { done, value } = await reader!.read();
+            if (done) break;
+            output += new TextDecoder().decode(value);
+        }
+
+        const errorEvents = output
+            .split("\n\n")
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => line.slice(6))
+            .filter((raw) => {
+                try {
+                    return Boolean(JSON.parse(raw).error);
+                } catch {
+                    return false;
+                }
+            });
+
+        expect(errorEvents.length).toBeGreaterThan(0);
+        expect(JSON.parse(errorEvents[0]).error.message).toBe(
+            "Stream ended unexpectedly before completion.",
+        );
     });
 
     it("throws when the Azure API key is missing", async () => {

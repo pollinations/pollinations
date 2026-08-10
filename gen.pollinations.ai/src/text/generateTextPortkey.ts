@@ -84,7 +84,9 @@ export async function generateTextPortkey(
     // GPT-5-family models on Azure only honor reasoning.effort through the
     // Responses API, which has a different request/response/stream shape.
     // Route them through the dedicated client (direct Azure call — Portkey
-    // cannot translate a Responses API request).
+    // cannot translate a Responses API request). Note: `additionalHeaders`
+    // (Portkey-specific, e.g. the request-timeout header) is intentionally not
+    // forwarded to Azure — the Responses client sets its own headers/timeout.
     if (modelDef?.useResponsesApi) {
         return callAzureResponses(state.messages, state.options);
     }

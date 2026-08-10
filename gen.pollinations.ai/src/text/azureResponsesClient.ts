@@ -17,6 +17,10 @@ const errorLog = debug("pollinations:error");
 
 const REASONING_EFFORT_VALUES = new Set(["minimal", "low", "medium", "high"]);
 
+// Cap the direct Azure request at the same deadline Portkey applies upstream,
+// so a hung connection cannot hold a request open indefinitely.
+const AZURE_REQUEST_TIMEOUT_MS = 290_000;
+
 interface ResponsesOutputItem {
     type?: string;
     id?: string;
@@ -377,8 +381,8 @@ function parseResponsesResponse(
 
     const completion: ChatCompletion = {
         id: data.id,
-        object: data.object || "chat.completion",
-        created: data.created_at,
+        object: "chat.completion",
+        created: data.created_at ?? Math.floor(Date.now() / 1000),
         model: data.model || modelName,
         choices: [
             {
@@ -460,11 +464,14 @@ function convertResponsesStream(
         controller: TransformStreamDefaultController,
     ) {
         if (event.data === "[DONE]") {
+            // A bare [DONE] before a terminal event means the stream
+            // was cut off; surface an error instead of a clean stop.
             if (!closed) {
                 emit(
                     controller,
-                    streamChunk(chunkId, created, modelName, {}, "stop") +
-                        "data: [DONE]\n\n",
+                    streamError(
+                        "Stream ended unexpectedly before completion.",
+                    ) + "data: [DONE]\n\n",
                 );
                 closed = true;
             }
@@ -502,7 +509,12 @@ function convertResponsesStream(
             if (item.type === "function_call") {
                 const toolIndex = nextToolIndex;
                 nextToolIndex += 1;
-                if (item.id) toolIndexByItemId.set(item.id, toolIndex);
+                const toolKey =
+                    item.call_id || item.id || `synthetic-${toolIndex}`;
+                // Args delta events reference the item by both its `id` and
+                // `call_id`; index by whichever the upstream provides.
+                toolIndexByItemId.set(item.id || toolKey, toolIndex);
+                toolIndexByItemId.set(item.call_id || toolKey, toolIndex);
                 emit(
                     controller,
                     streamChunk(
@@ -513,7 +525,7 @@ function convertResponsesStream(
                             tool_calls: [
                                 {
                                     index: toolIndex,
-                                    id: item.call_id || item.id,
+                                    id: toolKey,
                                     type: "function",
                                     function: {
                                         name: item.name,
@@ -548,8 +560,11 @@ function convertResponsesStream(
 
         if (type === "response.function_call_arguments.delta") {
             const delta = payload.delta;
-            const toolIndex =
-                toolIndexByItemId.get(String(payload.item_id ?? "")) ?? 0;
+            const toolKey =
+                (payload.item_id as string | undefined) ??
+                (payload.call_id as string | undefined) ??
+                "";
+            const toolIndex = toolIndexByItemId.get(toolKey) ?? 0;
             if (typeof delta === "string") {
                 emit(
                     controller,
@@ -645,12 +660,8 @@ function convertResponsesStream(
                     if (!closed) {
                         emit(
                             controller,
-                            streamChunk(
-                                chunkId,
-                                created,
-                                modelName,
-                                {},
-                                "stop",
+                            streamError(
+                                "Stream ended unexpectedly before completion.",
                             ) + "data: [DONE]\n\n",
                         );
                     }
@@ -775,6 +786,7 @@ export async function callAzureResponses(
                 "api-key": apiKey,
             },
             body: JSON.stringify(body),
+            signal: AbortSignal.timeout(AZURE_REQUEST_TIMEOUT_MS),
         });
     } catch (thrown: unknown) {
         throw withUpstreamContext(thrown, requestUrl);

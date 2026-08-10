@@ -89,11 +89,17 @@ export function createMediaCache(config: MediaCacheConfig) {
 
         const contentType = c.res?.headers.get("content-type");
         const xCache = c.res?.headers.get("x-cache");
+        const xCacheType = c.res?.headers.get("x-cache-type");
 
         const isMatchingContent = config.mediaTypes.some((type) =>
             contentType?.includes(type),
         );
-        if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
+        if (
+            c.res?.ok &&
+            isMatchingContent &&
+            xCache !== "HIT" &&
+            xCacheType !== "DURABLE"
+        ) {
             log.debug("Caching response");
             cacheMediaResponse(
                 c.env.IMAGE_BUCKET,

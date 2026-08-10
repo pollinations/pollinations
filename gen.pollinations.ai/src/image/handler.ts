@@ -2,9 +2,18 @@ import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type {
+    MediaGenerationJob,
+    MediaGenerationStatus,
+} from "@/durable-objects/MediaGeneration.ts";
 import type { Env } from "@/env.ts";
+import {
+    generateCacheKey,
+    setHttpMetadataHeaders,
+} from "@/utils/media-cache.ts";
 import { fallbackCandidates, withModelFallback } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {
@@ -43,6 +52,13 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+type MediaGenerationStub = DurableObjectStub & {
+    ensure(job: MediaGenerationJob): Promise<{
+        leader: boolean;
+        status: MediaGenerationStatus;
+    }>;
+    getStatus(): Promise<MediaGenerationStatus | undefined>;
+};
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -471,6 +487,88 @@ async function generateVideoResult(
     );
 }
 
+export async function generateDurableMediaResponse(
+    env: CloudflareBindings,
+    job: MediaGenerationJob,
+): Promise<Response> {
+    syncImageEnvironment(env);
+    try {
+        const result = await createAndReturnVideo(
+            job.prompt,
+            job.params,
+            job.requestId,
+        );
+        assertNonEmptyMedia(result.buffer, "Video provider");
+        const headers = mediaHeaders(
+            job.prompt,
+            job.params,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        for (const [name, value] of Object.entries(job.responseHeaders)) {
+            headers.set(name, value);
+        }
+        return new Response(bufferToUint8Array(result.buffer), { headers });
+    } catch (error) {
+        throwImageError(error);
+    }
+}
+
+async function generateDurableVideoResponse(
+    c: ImageContext,
+    prompt: string,
+    params: RuntimeImageParams,
+): Promise<Response> {
+    const cacheKey = generateCacheKey(
+        new URL(c.req.url),
+        c.req.header(SAFETY_HEADER_NAME),
+    );
+    const namespace = c.env.MEDIA_GENERATION;
+    const stub = namespace.get(
+        namespace.idFromName(cacheKey),
+    ) as MediaGenerationStub;
+    const job: MediaGenerationJob = {
+        cacheKey,
+        prompt,
+        params: params as ImageParams,
+        requestId: c.get("requestId"),
+        responseHeaders: c.get("safetyHeaders") ?? {},
+    };
+    const admission = await stub.ensure(job);
+
+    while (true) {
+        const status = await stub.getStatus();
+        if (status?.state === "failed") {
+            throw new UpstreamError(status.error.status, {
+                message: status.error.message,
+                errorCode: status.error.errorCode,
+            });
+        }
+        if (status?.state === "cached") {
+            const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
+            if (!cached) {
+                throw new UpstreamError(500, {
+                    message: "Generated media was not found in cache",
+                });
+            }
+            setHttpMetadataHeaders(
+                c,
+                cached.httpMetadata,
+                "video/mp4",
+                cached.customMetadata,
+            );
+            c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+            c.header("X-Cache", admission.leader ? "MISS" : "HIT");
+            c.header(
+                "X-Cache-Type",
+                admission.leader ? "DURABLE" : "COALESCED",
+            );
+            return c.body(cached.body);
+        }
+        await sleep(1000);
+    }
+}
+
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -484,6 +582,10 @@ export async function generateImageOrVideoResponse(
         hasImage: (safeParams.image?.length ?? 0) > 0,
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
+
+    if (c.req.method === "GET" && isVideoModel(safeParams.model)) {
+        return generateDurableVideoResponse(c, originalPrompt, safeParams);
+    }
 
     try {
         const { result, params, servedEntry, servedIndex } =

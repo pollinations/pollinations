@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 

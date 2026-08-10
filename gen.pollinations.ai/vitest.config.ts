@@ -13,6 +13,7 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const genAliases = [
     "content-filter.ts",
     "cache",
+    "durable-objects/MediaGeneration.ts",
     "durable-objects/PollenRateLimiter.ts",
     "env.ts",
     "error.ts",

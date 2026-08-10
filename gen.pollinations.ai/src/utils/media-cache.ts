@@ -15,11 +15,13 @@ import type { Context } from "hono";
 // and "key" are request controls that must never affect the cache key.
 export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
-const CACHED_HEADER_PREFIXES = ["x-safety-"];
+const CACHED_HEADER_PREFIXES = ["x-safety-", "x-usage-"];
 const CACHED_HEADER_NAMES = [
     "content-disposition",
     "content-security-policy",
+    "x-fallback-target",
     "x-content-type-options",
+    "x-model-used",
 ];
 
 function hasActiveSafety(value: string | null | undefined): boolean {
@@ -107,6 +109,25 @@ function prepareCustomMetadata(response: Response): Record<string, string> {
     return metadata;
 }
 
+export async function putMediaResponse(
+    bucket: R2Bucket,
+    cacheKey: string,
+    defaultContentType: string,
+    response: Response,
+): Promise<boolean> {
+    const body = await response.clone().arrayBuffer();
+    if (body.byteLength === 0) return false;
+
+    await bucket.put(cacheKey, body, {
+        httpMetadata: removeUnset({
+            contentType:
+                response.headers.get("content-type") || defaultContentType,
+        } as R2HTTPMetadata),
+        customMetadata: prepareCustomMetadata(response),
+    });
+    return true;
+}
+
 type MediaCacheEnv = {
     Bindings: CloudflareBindings;
     Variables: {
@@ -123,26 +144,14 @@ export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
     response: Response,
 ): void {
     c.executionCtx.waitUntil(
-        response
-            .clone()
-            .arrayBuffer()
-            .then((body) => {
-                if (body.byteLength === 0) {
+        putMediaResponse(bucket, cacheKey, defaultContentType, response)
+            .then((stored) => {
+                if (!stored) {
                     c.get("log").warn(
                         "Skipping empty media cache write for {cacheKey}",
                         { cacheKey },
                     );
-                    return null;
                 }
-
-                return bucket.put(cacheKey, body, {
-                    httpMetadata: removeUnset({
-                        contentType:
-                            response.headers.get("content-type") ||
-                            defaultContentType,
-                    } as R2HTTPMetadata),
-                    customMetadata: prepareCustomMetadata(response),
-                });
             })
             .catch((error) => {
                 c.get("log").error("Error caching response: {error}", {

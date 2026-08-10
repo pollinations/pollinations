@@ -187,6 +187,63 @@ describe("media cache", () => {
         expect(originHits).toBe(1);
     });
 
+    it("preserves billing headers written by a detached generation", async () => {
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/media/:prompt", imageCache, async () => {
+                return new Response("video", {
+                    headers: {
+                        "Content-Type": "video/mp4",
+                        "X-Model-Used": "wan-fast",
+                        "X-Usage-Completion-Video-Seconds": "5",
+                    },
+                });
+            });
+        const env = createMediaCacheEnv();
+
+        const miss = await dispatch(app, "/media/video", undefined, env);
+        await consumeAndWait(miss);
+        const hit = await dispatch(app, "/media/video", undefined, env);
+        await consumeAndWait(hit);
+
+        expect(hit.response.headers.get("X-Model-Used")).toBe("wan-fast");
+        expect(
+            hit.response.headers.get("X-Usage-Completion-Video-Seconds"),
+        ).toBe("5");
+    });
+
+    it("does not schedule a second cache write for durable responses", async () => {
+        const bucket = createTestR2Bucket();
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/media/:prompt", imageCache, async () => {
+                return new Response("video", {
+                    headers: {
+                        "Content-Type": "video/mp4",
+                        "X-Cache-Type": "DURABLE",
+                    },
+                });
+            });
+
+        const response = await dispatch(
+            app,
+            "/media/durable",
+            undefined,
+            createMediaCacheEnv(bucket),
+        );
+        await consumeAndWait(response);
+
+        expect(bucket.putCount).toBe(0);
+    });
+
     it("refreshes cached media TTL on aged cache hits", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");
         const bucket = createTestR2Bucket();

@@ -70,6 +70,9 @@ interface CloudflareBindings {
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    MEDIA_GENERATION: DurableObjectNamespace<
+        import("./src/durable-objects/MediaGeneration.ts").MediaGeneration
+    >;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

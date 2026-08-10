@@ -33,7 +33,7 @@ this gains explicit workspace handling (tracked in #11127).
 replacement. It is not an Enter Worker secret and does not belong in Enter
 SOPS files.
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/observability`)
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `operations/observability`)
 lives in the retired `pollinations_ai` workspace and has no rotation path —
 rotate manually or migrate observability off the legacy workspace and delete
 the token.
@@ -111,7 +111,7 @@ table's specifics as current without checking.
 
 Recipients are age public keys declared per path in `.sops.yaml`
 `creation_rules` — there is no separate role registry; that file is the source
-of truth. Economics secrets (`apps/operation/economics/**/secrets/*`) encrypt to
+of truth. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
 a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
 `env.json`) encrypt to the team key set. Rotating a recipient means changing the
 `age:` list on the relevant `creation_rules` entry, as a two-phase,

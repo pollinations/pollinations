@@ -22,4 +22,4 @@ Rules:
 - Do not pass encrypted `ENC[...]` values to providers.
 - Do not write API tokens into connector guides, entries, or reconciliation notes.
 - Prefer checking key presence by name only.
-- Keep this directory inside `apps/operation/economics/ingest/` so the ingest workspace is self-contained.
+- Keep this directory inside `operations/economics/ingest/` so the ingest workspace is self-contained.

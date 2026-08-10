@@ -2,6 +2,10 @@ import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
+    GENERATION_BUDGET_MINUTES,
+    GENERATION_BUDGET_MS,
+} from "../../src/image/util.ts";
+import {
     ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
@@ -58,7 +62,9 @@ describe("runReplicatePrediction", () => {
         const headers = new Headers(init.headers);
         expect(headers.get("Authorization")).toBe("Bearer r8_test_token");
         expect(headers.get("Prefer")).toBe("wait=60");
-        expect(headers.get("Cancel-After")).toBe("6m");
+        expect(headers.get("Cancel-After")).toBe(
+            `${GENERATION_BUDGET_MINUTES}m`,
+        );
         const body = JSON.parse(init.body as string);
         expect(body.input).toEqual({ prompt: "test" });
         expect(body.version).toBeUndefined();
@@ -131,6 +137,7 @@ describe("runReplicatePrediction", () => {
             status: 504,
         });
 
+        // An explicit predictionDeadlineMinutes still wins over the default.
         const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
         expect(new Headers(init.headers).get("Cancel-After")).toBe("15m");
         await vi.advanceTimersByTimeAsync(15 * 60_000 - 1);
@@ -298,7 +305,7 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
+        await vi.advanceTimersByTimeAsync(GENERATION_BUDGET_MS + 1_000);
         await assertion;
 
         const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
@@ -353,7 +360,7 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
+        await vi.advanceTimersByTimeAsync(GENERATION_BUDGET_MS + 1_000);
         await assertion;
 
         const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
@@ -395,7 +402,7 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(6 * 60_000 + 5_001);
+        await vi.advanceTimersByTimeAsync(GENERATION_BUDGET_MS + 5_001);
         await assertion;
 
         expect(cancelSignals).toHaveLength(1);

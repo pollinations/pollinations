@@ -10,14 +10,14 @@
 
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
-import { sleep } from "../util.ts";
+import { GENERATION_BUDGET_MINUTES, sleep } from "../util.ts";
 
 const API_BASE = "https://api.replicate.com/v1";
 const PREFER_WAIT_SECONDS = 60;
 const POLL_INTERVAL_MS = 5000;
 // One deadline controls both Replicate's Cancel-After header and local polling
 // so the upstream and Worker ceilings cannot drift apart.
-const DEFAULT_PREDICTION_DEADLINE_MINUTES = 6;
+const DEFAULT_PREDICTION_DEADLINE_MINUTES = GENERATION_BUDGET_MINUTES;
 const CANCEL_REQUEST_TIMEOUT_MS = 5000;
 
 export class ReplicateError extends Error {

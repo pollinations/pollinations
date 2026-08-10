@@ -235,6 +235,29 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
+    /**
+     * Guards a media response before its body is read.
+     *
+     * A 202 is `response.ok`, but its body is empty: the gateway accepted the
+     * generation, someone else is already running it, and the caller should
+     * retry the identical request. Reading it as media would silently hand
+     * back zero bytes, so surface it as a typed, retryable error instead.
+     */
+    private async checkResponse(response: Response): Promise<void> {
+        if (response.status === 202) {
+            const retryAfter = Number(response.headers.get("retry-after"));
+            throw new PollinationsError(
+                "Generation is already in progress. Retry the same request to receive it.",
+                "GENERATION_PENDING",
+                202,
+                undefined,
+                undefined,
+                Number.isFinite(retryAfter) ? retryAfter : undefined,
+            );
+        }
+        if (!response.ok) await this.handleErrorResponse(response);
+    }
+
     private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
         const response = await fetchWithTimeout(
             url,
@@ -357,9 +380,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const buffer = await response.arrayBuffer();
         const contentType =
@@ -416,9 +437,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const json = (await response.json()) as {
             data: Array<{ url?: string; b64_json?: string }>;
@@ -504,9 +523,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const json = (await response.json()) as {
             data: Array<{ url?: string; b64_json?: string }>;
@@ -641,9 +658,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const buffer = await response.arrayBuffer();
         const contentType = response.headers.get("content-type") || "video/mp4";
@@ -715,9 +730,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const data = (await response.json()) as ChatResponse;
         return data.choices[0]?.message?.content || "";
@@ -781,9 +794,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const reader = response.body?.getReader();
         if (!reader) {
@@ -888,9 +899,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         return response.json() as Promise<ChatResponse>;
     }
@@ -932,9 +941,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const reader = response.body?.getReader();
         if (!reader) {
@@ -1011,9 +1018,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const buffer = await response.arrayBuffer();
         const contentType =
@@ -1059,9 +1064,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         const buffer = await response.arrayBuffer();
         const contentType =
@@ -1175,9 +1178,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         if (
             options.responseFormat === "text" ||
@@ -1244,9 +1245,7 @@ export class Pollinations {
             options.signal,
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+        await this.checkResponse(response);
 
         return response.json() as Promise<UploadResponse>;
     }

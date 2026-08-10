@@ -6,6 +6,7 @@ import {
     callWanProAPI,
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
+import { GENERATION_BUDGET_MINUTES } from "../../src/image/util.ts";
 
 const REPLICATE_PREDICTIONS =
     /^https:\/\/api\.replicate\.com\/v1\/models\/(.+)\/predictions$/;
@@ -117,7 +118,7 @@ describe("wanVideoModel billing usage", () => {
         expect(calls).toHaveLength(1);
         expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
         expect(calls[0].input.resolution).toBe("720p");
-        expect(calls[0].cancelAfter).toBe("15m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(result.mimeType).toBe("video/mp4");
         // No separate completionAudioSeconds — audio is bundled into the rate.
         expect(result.trackingData).toEqual({
@@ -138,7 +139,7 @@ describe("wanVideoModel billing usage", () => {
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
         expect(calls[0].input.resolution).toBe("1080p");
-        expect(calls[0].cancelAfter).toBe("15m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(result.trackingData).toEqual({
             actualModel: "wan-pro",
             usage: { completionVideoSeconds: 5 },
@@ -160,7 +161,7 @@ describe("wanVideoModel billing usage", () => {
         // Landscape dims -> 720p landscape size; duration snapped to 5.
         expect(calls[0].input.size).toBe("1280*720");
         expect(calls[0].input.duration).toBe(5);
-        expect(calls[0].cancelAfter).toBe("6m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(result.trackingData).toEqual({
             actualModel: "wan",
             usage: { completionVideoSeconds: 5 },
@@ -179,7 +180,7 @@ describe("wanVideoModel billing usage", () => {
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-t2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
-        expect(calls[0].cancelAfter).toBe("6m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(result.trackingData).toEqual({
             actualModel: "wan-fast",
             usage: { completionVideoSeconds: 5 },
@@ -200,7 +201,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-i2v");
         expect(calls[0].input.resolution).toBe("720p");
-        expect(calls[0].cancelAfter).toBe("15m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(calls[0].input.first_frame as string).toMatch(EXPECTED_DATA_URI);
     });
 
@@ -217,7 +218,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-i2v");
         expect(calls[0].input.resolution).toBe("1080p");
-        expect(calls[0].cancelAfter).toBe("15m");
+        expect(calls[0].cancelAfter).toBe(`${GENERATION_BUDGET_MINUTES}m`);
         expect(calls[0].input.first_frame as string).toMatch(EXPECTED_DATA_URI);
     });
 

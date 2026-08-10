@@ -5,6 +5,7 @@ import {
     callOpenRouterGrokVideoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
+import { GENERATION_BUDGET_MS } from "../../src/image/util.ts";
 
 const SUBMIT_URL = "https://openrouter.ai/api/v1/videos";
 const POLL_URL = "https://openrouter.ai/api/v1/videos/job-happyhorse-test";
@@ -114,7 +115,7 @@ describe("openRouterVideoModel", () => {
         });
     });
 
-    it("times out after five minutes of rate-limited polls", async () => {
+    it("times out at the generation budget after rate-limited polls", async () => {
         vi.useFakeTimers();
         setOpenRouterEnv();
 
@@ -152,9 +153,10 @@ describe("openRouterVideoModel", () => {
             status: 504,
         });
 
-        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+        await vi.advanceTimersByTimeAsync(GENERATION_BUDGET_MS);
         await rejection;
-        expect(pollAttempts).toBe(10);
+        // These polls are spaced 30s apart by the mocked Retry-After.
+        expect(pollAttempts).toBe(GENERATION_BUDGET_MS / 30_000);
     });
 
     it("rejects non-integer durations before submitting a job", async () => {
@@ -335,7 +337,7 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it("enforces a three-minute timeout", async () => {
+    it("enforces the generation budget as its timeout", async () => {
         vi.useFakeTimers();
         setOpenRouterEnv();
 
@@ -373,9 +375,9 @@ describe("OpenRouter Grok Video Pro", () => {
             status: 504,
         });
 
-        await vi.advanceTimersByTimeAsync(3 * 60 * 1000);
+        await vi.advanceTimersByTimeAsync(GENERATION_BUDGET_MS);
         await rejection;
-        expect(pollAttempts).toBe(6);
+        expect(pollAttempts).toBe(GENERATION_BUDGET_MS / 30_000);
     });
 
     it.each([

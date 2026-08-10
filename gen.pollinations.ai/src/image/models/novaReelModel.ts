@@ -2,7 +2,11 @@ import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { sleep } from "../util.ts";
+import {
+    GENERATION_BUDGET_MINUTES,
+    GENERATION_BUDGET_MS,
+    sleep,
+} from "../util.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { transformImage } from "../utils/imageTransform.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
@@ -226,11 +230,15 @@ export async function callNovaReelAPI(
 
     // Poll for completion
 
-    const maxAttempts = 60; // 5 minutes max
+    // Was 60 attempts with 1.1x backoff capped at 15s, which sums to ~14
+    // minutes despite the "5 minutes" the code claimed.
+    const deadline = Date.now() + GENERATION_BUDGET_MS;
     let delayMs = 5000;
+    let attempt = 0;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
+    while (Date.now() < deadline) {
+        attempt++;
+        logOps(`Poll attempt ${attempt}...`);
 
         const getCommand = new GetAsyncInvokeCommand({
             invocationArn,
@@ -292,7 +300,7 @@ export async function callNovaReelAPI(
     }
 
     throw new HttpError(
-        "Nova Reel video generation timed out after 5 minutes",
+        `Nova Reel video generation timed out after ${GENERATION_BUDGET_MINUTES} minutes`,
         504,
     );
 }

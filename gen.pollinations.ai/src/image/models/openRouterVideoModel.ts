@@ -3,7 +3,7 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { sleep } from "../util.ts";
+import { GENERATION_BUDGET_MS, sleep } from "../util.ts";
 import {
     ASPECT_RATIOS,
     closestAspectRatio,
@@ -20,8 +20,8 @@ const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
-const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
-const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const HAPPYHORSE_POLL_TIMEOUT_MS = GENERATION_BUDGET_MS;
+const GROK_POLL_TIMEOUT_MS = GENERATION_BUDGET_MS;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",

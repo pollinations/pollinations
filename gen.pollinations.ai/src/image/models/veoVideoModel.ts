@@ -3,7 +3,11 @@ import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { sleep } from "../util.ts";
+import {
+    GENERATION_BUDGET_MINUTES,
+    GENERATION_BUDGET_MS,
+    sleep,
+} from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
@@ -260,11 +264,16 @@ async function pollVeoOperation(
     const pollUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${model}:fetchPredictOperation`;
     logOps("Poll URL:", pollUrl);
 
-    const maxAttempts = 90; // 3 minutes max
+    // Was 90 attempts with 1.2x backoff capped at 30s, which sums to ~40
+    // minutes despite the "3 minutes" the code claimed. Bounded by wall clock
+    // now so the number in the message is the number that happens.
+    const deadline = Date.now() + GENERATION_BUDGET_MS;
     let delayMs = 2000;
+    let attempt = 0;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
+    while (Date.now() < deadline) {
+        attempt++;
+        logOps(`Poll attempt ${attempt}...`);
 
         const pollResponse = await fetch(pollUrl, {
             method: "POST",
@@ -356,7 +365,7 @@ async function pollVeoOperation(
     }
 
     throw new HttpError(
-        "Video generation timed out after 3 minutes",
+        `Video generation timed out after ${GENERATION_BUDGET_MINUTES} minutes`,
         504,
         undefined,
         pollUrl,

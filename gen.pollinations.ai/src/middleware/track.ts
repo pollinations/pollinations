@@ -323,6 +323,10 @@ export const track = (eventType: EventType) =>
                         ),
                     });
                 }
+                // 202 means the caller joined an in-flight generation and is
+                // being told to come back. No generation ran for this request,
+                // so it must not be billed or counted as a generation.
+                if (response.status === 202) return;
                 const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,

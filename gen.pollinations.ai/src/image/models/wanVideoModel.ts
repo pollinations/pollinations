@@ -19,6 +19,7 @@ import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
+import { GENERATION_BUDGET_MINUTES } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
@@ -60,7 +61,7 @@ const WAN_FAST_FIXED_SECONDS = 5;
 const WAN_26_DURATIONS = [5, 10, 15] as const;
 const WAN_PRO_MIN_DURATION = 2;
 const WAN_PRO_MAX_DURATION = 15;
-const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
+const WAN_PRO_PREDICTION_DEADLINE_MINUTES = GENERATION_BUDGET_MINUTES;
 
 /** Pick the supported aspect ratio closest to the request. */
 function pickAspect<T extends string>(

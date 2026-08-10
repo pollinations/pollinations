@@ -136,3 +136,78 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+
+const DIMENSIONS_CACHE_TTL_SECONDS = 86_400;
+const DIMENSIONS_CACHE_PREFIX = "image:dimensions:v1:";
+
+type ImageDimensions = { width: number; height: number };
+
+async function dimensionsCacheKey(imageUrl: string): Promise<string> {
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(imageUrl),
+    );
+    const bytes = new Uint8Array(digest);
+    return `${DIMENSIONS_CACHE_PREFIX}${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function cachedDimensions(value: unknown): ImageDimensions | null {
+    if (!value || typeof value !== "object") return null;
+    const { width, height } = value as Record<string, unknown>;
+    return typeof width === "number" &&
+        typeof height === "number" &&
+        Number.isInteger(width) &&
+        Number.isInteger(height) &&
+        width > 0 &&
+        height > 0
+        ? { width, height }
+        : null;
+}
+
+function decodeDataUri(
+    dataUri: string,
+): { buffer: Buffer; mimeType: string } | null {
+    const match = dataUri.match(/^data:([^;,]+)[^,]*,(.*)$/s);
+    if (!match || !match[1].startsWith("image/")) return null;
+    try {
+        const encoded = match[2];
+        const buffer = dataUri.includes(";base64,")
+            ? base64ToBuffer(`data:${match[1]};base64,${encoded}`)
+            : Buffer.from(decodeURIComponent(encoded));
+        return { buffer, mimeType: match[1] };
+    } catch {
+        return null;
+    }
+}
+
+export async function getSourceImageDimensions(
+    imageUrl: string,
+    kv?: KVNamespace,
+): Promise<ImageDimensions | null> {
+    const inlineImage = imageUrl.startsWith("data:")
+        ? decodeDataUri(imageUrl)
+        : null;
+    if (inlineImage) {
+        return readImageDimensions(inlineImage.buffer, inlineImage.mimeType);
+    }
+
+    const cacheKey = kv ? await dimensionsCacheKey(imageUrl) : undefined;
+    if (kv && cacheKey) {
+        const cached = cachedDimensions(await kv.get(cacheKey, "json"));
+        if (cached) return cached;
+    }
+
+    try {
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
+        const dimensions = readImageDimensions(buffer, mimeType);
+        if (kv && cacheKey && dimensions) {
+            await kv.put(cacheKey, JSON.stringify(dimensions), {
+                expirationTtl: DIMENSIONS_CACHE_TTL_SECONDS,
+            });
+        }
+        return dimensions;
+    } catch {
+        return null;
+    }
+}

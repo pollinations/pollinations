@@ -1,0 +1,34 @@
+{
+  "pr_number": 13243,
+  "title": "refactor: move Klein GPU backend under operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13243",
+  "merged_at": "2026-08-10T17:38:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the active Klein worker from image.pollinations.ai/klein-runpod to operations/infrastructure/gpu/klein.\n- Updates Vast provisioning, fleet inventory, monitoring references, and the container-build workflow context.\n- Preserves the existing GHCR image name to avoid changing the registry contract.\n- Changes no model behavior, routing, credentials, pricing, or live Vast instances.\n\nOperational note:\n- Existing Klein workers keep running their currently checked-out files.\n- Do not pull this commit into an existing worker checkout by itself: /root/run-klein.sh points at the old path.\n- On a future reprovision or intentional worker update, run setup-vast.sh from the new path so it rewrites the restart command before relying on the new checkout.\n\nValidation:\n- operations deployment-detection tests\n- shell syntax and Python compilation checks\n- container context file checks\n- stale-path scan\n- git diff --check\n\nStacked on #13242.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Klein changes greenhouse",
+    "blurb": "The Klein GPU worker packed its pots and moved into the operations garden. Same GHCR image, same model behavior, tidier soil around the fleet tools.",
+    "summary": "Moved the active Klein GPU worker from image.pollinations.ai/klein-runpod to operations/infrastructure/gpu/klein, updating Vast provisioning, fleet inventory, monitoring references, and the container-build context while preserving the GHCR image name.",
+    "impact": "Future Klein reprovisions can use setup-vast.sh from the new operations path, while existing workers continue running unchanged until intentionally updated.",
+    "keywords": [
+      "klein",
+      "gpu",
+      "vast",
+      "operations",
+      "infrastructure",
+      "deployment"
+    ],
+    "visual_concept": "Depict Polli as a careful infrastructure gardener relocating a small cozy GPU-server planter labeled Klein from an image-generation shed into an organized operations greenhouse. Include a friendly CRT monitor robot checking a fleet inventory clipboard, with the same glowing container label carried safely between locations to represent the unchanged registry contract.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, helping a cheerful CRT monitor robot move a small GPU server planter labeled \"KLEIN\" into an organized operations greenhouse; code-vines, flower pots, and a preserved glowing container tag sit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13243.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, helping a cheerful CRT monitor robot move a small GPU server planter labeled \"KLEIN\" into an organized operations greenhouse; code-vines, flower pots, and a preserved glowing container tag sit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-10T17:40:42.355445+00:00"
+}

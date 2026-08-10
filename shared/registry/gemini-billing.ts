@@ -110,6 +110,12 @@ export function withOpenRouterGeminiCacheStorage(
                 unitCost:
                     (storageCostPerMillionTokenHours / 1_000_000) *
                     OPENROUTER_CACHE_TTL_HOURS,
+                publicPricing: {
+                    label: "Cache storage",
+                    quantity: 1_000_000,
+                    unit: "tokens written",
+                    suffix: "5 min",
+                },
                 countUnits: countOpenRouterCacheWriteTokens,
             },
         ],
@@ -125,6 +131,11 @@ export const OPENROUTER_GEMINI_SEARCH_BILLING: BillingRules = {
             kind: "search_request",
             unit: "request",
             unitCost: OPENROUTER_GOOGLE_SEARCH_COST_PER_REQUEST,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "search requests",
+            },
             countUnits: countOpenRouterWebSearchRequests,
         },
     ],
@@ -145,6 +156,12 @@ export function withVertexCacheStorage(
                 unitCost:
                     (storageCostPerMillionTokenHours / 1_000_000) *
                     VERTEX_CACHE_TTL_HOURS,
+                publicPricing: {
+                    label: "Cache storage",
+                    quantity: 1_000_000,
+                    unit: "tokens written",
+                    suffix: "1 hour",
+                },
                 countUnits: countVertexCacheWriteTokens,
             },
         ],
@@ -160,6 +177,11 @@ export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
             kind: "grounded_prompt",
             unit: "prompt",
             unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "grounded prompts",
+            },
             countUnits: countGeminiGroundedPrompt,
         },
     ],

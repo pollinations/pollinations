@@ -84,9 +84,12 @@ stored only in mode-0600 files on the rental host. Some Vast hosts drop the SRV
 DNS responses required by cloudflared despite resolving ordinary A records.
 `setup-vast.sh` detects that condition and enables a reboot-safe local
 DNS-over-HTTPS fallback; its log is `/root/tunnel-dns.log`. Hosts with working
-SRV resolution retain the provider's resolver. Hugging Face Xet is disabled by
-default because its token/download path failed on otherwise healthy Vast hosts;
-standard HTTP and process-level retries resume reliably from the local cache.
+SRV resolution retain the provider's resolver. When the production tunnel is
+disabled, `/root/onstart.sh` restores the provider resolver before stopping the
+local DNS helper so isolated model restarts keep outbound DNS. Hugging Face Xet
+is disabled by default because its token/download path failed on otherwise
+healthy Vast hosts; standard HTTP and process-level retries resume reliably
+from the local cache.
 
 ### July 2026 RTX 5090 canary
 

@@ -1,32 +1,32 @@
 # GPU Instances
 
-Last updated: 2026-08-10
+Last updated: 2026-08-11
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 2 | RTX 5090 + RTX PRO 4000 Blackwell | Vast.ai | $0.591111/hr all-in | **ACTIVE — two production, Vast-only** |
-| Z-Image | 2 | 2x RTX 5090 | Vast.ai | $0.712593/hr all-in | **ACTIVE — two production** |
+| Flux (FP4) | 2 | 2x RTX PRO 4000 Blackwell | Vast.ai | $0.460000/hr all-in | **ACTIVE — two production, Vast-only** |
+| Z-Image | 1 | RTX 5090 | Vast.ai | $0.351111/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the seven running Vast instances cost **$1.757037/hr** in total
-(**$1,265.07 per 30-day month**).
-All seven are production workers; there is no isolated canary left running.
+At capture time, the six running Vast instances cost **$1.264444/hr** in total
+(**$910.40 per 30-day month**).
+All six are production workers; there is no isolated canary left running.
 
-Live verification on 2026-08-10 confirmed that all seven instances are in both
+Live verification on 2026-08-11 confirmed that all six instances are in both
 `actual_status=running` and `intended_status=running`, every model server and
 named tunnel is healthy, and the registry contains both Flux hostnames, the
 shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
 heartbeat registry because production reaches it through the `KLEIN_VPC`
 Workers VPC binding.
 
-Two dashboard labels are historical: `zimage-vast-canary` on `46003779` and
-`flux-maintenance-canary-44731147` on `46491202`. Both are production workers,
-not spare canaries. Vast labels do not control routing; instance IDs,
-registered hostnames, and the Klein VPC tunnel are authoritative.
+The `zimage-vast-canary` dashboard label on `46003779` is historical; the
+instance is the production Z-Image worker, not a spare canary. Vast labels do
+not control routing; instance IDs, registered hostnames, and the Klein VPC
+tunnel are authoritative.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
 
@@ -98,7 +98,7 @@ is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.
 
-## Provider: Vast.ai — Flux (RTX 5090 + RTX PRO 4000 Blackwell, FP4)
+## Provider: Vast.ai — Flux (2x RTX PRO 4000 Blackwell, FP4)
 
 Two single-GPU instances, each fronted by a named Cloudflare Tunnel. Flux is
 Vast-only and has no external provider fallback. The gen worker dispatches to
@@ -106,14 +106,19 @@ the registered `flux` pool through `callSelfHostedServer`.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
-| flux-vast-04 | 46491202 | 138472 / California, US | RTX 5090 | $0.361111/hr | ACTIVE (promoted 2026-08-01) — registered hostname `flux-vast-04.pollinations.ai` |
+| flux-vast-04 | 47389078 | 59339 / France, FR | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-10) — registered hostname `flux-vast-04.pollinations.ai` |
 | flux-vast-06 | 47259458 | 102863 / Quebec, CA | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-09) — registered hostname `flux-vast-06.pollinations.ai` |
 
-Instance `47259458` replaced `47018211` while instance `46491202` remained
-active. The Quebec host is machine `102863`, has Vast reliability `0.99595`,
-and costs **$165.60 per 30-day month** in Vast credits. It saves
-**$0.057778/hr**, or **$41.60 per 30-day month**, compared with the replaced
-slot. The two-worker FLUX pool now costs `$0.591111/hr` all-in.
+Instance `47389078` replaced `46491202` on 2026-08-10. The France host is
+machine `59339`, has Vast reliability `0.998`, and costs **$165.60 per 30-day
+month** in Vast credits. It saves **$0.131111/hr**, or **$94.40 per 30-day
+month**, compared with the replaced RTX 5090 slot. The two-worker FLUX pool now
+costs `$0.460000/hr` all-in.
+
+Instance `47259458` previously replaced `47018211`. The Quebec host is machine
+`102863`, has Vast reliability `0.99595`, and costs **$165.60 per 30-day
+month** in Vast credits. It saves **$0.057778/hr**, or **$41.60 per 30-day
+month**, compared with the replaced slot.
 
 Qualification on the replacement passed authentication rejection, 512x512,
 1024x1024, 1024x768, and 768x1024 generation, four-request burst handling,
@@ -214,21 +219,42 @@ FLUX is Vast-only, so both production workers must remain healthy.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
 
-Z-Image uses one remotely managed Cloudflare Tunnel shared by the Vast
-workers. Cloudflare balances requests across its connectors, while the registry
-sees one stable backend URL.
+Z-Image uses one remotely managed Cloudflare Tunnel. The registry sees one
+stable backend URL; when multiple Vast connectors are present, Cloudflare
+balances requests across them.
 
 | Worker | Vast instance | Machine / region | Reliability | All-in rate | Status |
 |--------|---------------|------------------|-------------|-------------|--------|
-| zimage-vast-canary | 46003779 | 56097 / California, US | 0.99487 | $0.351111/hr | ACTIVE — production |
-| zimage-vast-04 | 47267292 | 137833 / California, US | 0.99507 | $0.361481/hr | ACTIVE — production (promoted 2026-08-09) |
+| zimage-vast-canary | 46003779 | 56097 / California, US | 0.996 | $0.351111/hr | ACTIVE — production |
 
-The active two-worker fleet costs `$0.712593/hr`. Instance `47267292` replaced
-`46598648`, saving `$0.029630/hr` or `$21.33` per 30-day month; the replaced
-instance was destroyed immediately after production verification. Compared
-with the original `$0.844444/hr` pair, the current fleet saves `$94.93` per
-30-day month. Both replicas are now in California on separate machines, so
-machine diversity remains but regional diversity is reduced.
+The active Vast worker costs `$0.351111/hr`, or **$252.80 per 30-day month** in
+Vast credits. Requests beyond its three admitted generation slots receive 503
+and spill to the hidden Fal fallback. Instance `47267292` was drained and
+destroyed on 2026-08-11, removing `$0.361481/hr` or **$260.27 per 30-day month**
+of fixed Vast spend (about **$130.13/month cash-equivalent** at the account's
+50% credit acquisition cost).
+
+**Single-worker cutover validation (2026-08-11):**
+
+- Production instance `46003779` moved from the retired
+  `image.pollinations.ai/z-image` checkout to
+  `operations/infrastructure/gpu/zimage` at commit `59f757c`.
+- Authentication rejection, 512x512, 1536x1536, and oversized-dimension tests
+  returned the expected 403, 200, 200, and 422 responses. The valid generations
+  completed in 3.97 and 2.53 seconds.
+- A four-request burst produced three images and shed the fourth with HTTP 503
+  in 15 milliseconds, confirming `QUEUE_LIMIT=3` before Fal spillover.
+- A supervised restart restored health in 54 seconds and completed a generation
+  in 2.17 seconds. The worker then re-established four QUIC tunnel connections,
+  passed a 1024x1024 shared-tunnel generation, and served an attributed real
+  production request with HTTP 200 while the retired connector was drained.
+- The migration exposed a DNS fallback edge case: disabling the tunnel stopped
+  the local DNS helper while `resolv.conf` still pointed to localhost.
+  `setup-vast.sh` now restores the provider resolver for isolated starts.
+
+Instance `47267292` had replaced `46598648` on 2026-08-09, saving
+`$0.029630/hr` while it was active. The replaced instance was destroyed
+immediately after production verification.
 
 **Replacement validation (2026-08-09):**
 
@@ -535,6 +561,6 @@ Non-SOPS keys:
 
 | Key | Provider | Location |
 |-----|----------|----------|
-| `~/.ssh/id_ed25519` | Vast.ai | All seven active Vast workers; query the current proxy host/port with `vastai show instance` |
+| `~/.ssh/id_ed25519` | Vast.ai | All six active Vast workers; query the current proxy host/port with `vastai show instance` |
 | `~/.ssh/enter-services-shared` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging` | EC2 staging | enter services |

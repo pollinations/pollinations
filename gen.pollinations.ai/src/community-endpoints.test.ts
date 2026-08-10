@@ -231,11 +231,15 @@ async function createCommunityFallbackPair({
     modality = "text",
     primaryName = "primary",
     fallbackName = "cheap",
+    primaryPerUserRpm,
+    fallbackPerUserRpm,
 }: {
     prefix: string;
     modality?: CommunityEndpointModality;
     primaryName?: string;
     fallbackName?: string;
+    primaryPerUserRpm?: number;
+    fallbackPerUserRpm?: number;
 }) {
     const primaryToken = "sk_primary_token";
     const fallbackToken = "sk_fallback_token";
@@ -276,6 +280,7 @@ async function createCommunityFallbackPair({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: primaryUserId,
             visibility: "public",
+            perUserRpm: primaryPerUserRpm,
             name: primaryName,
             modality,
             baseUrl: primaryHost,
@@ -293,6 +298,7 @@ async function createCommunityFallbackPair({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: fallbackUserId,
             visibility: "public",
+            perUserRpm: fallbackPerUserRpm,
             name: fallbackName,
             modality,
             baseUrl: fallbackHost,
@@ -729,6 +735,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                perUserRpm: null,
                 fallbackModelIds: [],
                 disabledAt: null,
                 disabledReason: null,
@@ -915,6 +922,7 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            perUserRpm: null,
             delegatesGeneration: false,
             fallbackModelIds: [],
             disabledAt: null,
@@ -977,6 +985,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
                 visibility: "public",
+                perUserRpm: null,
                 delegatesGeneration: true,
                 disabledAt: null,
                 disabledReason: null,
@@ -2934,6 +2943,7 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
+                    perUserRpm: 12,
                 }),
             }),
         );
@@ -2948,6 +2958,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
+            perUserRpm: 12,
             promptTextPrice: 0,
             completionTextPrice: 0,
             disabled: false,
@@ -3164,6 +3175,7 @@ fixtureTest(
         });
         expect(secondList.data[0]).toMatchObject({
             title: "Updated Model Title",
+            perUserRpm: 12,
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
@@ -3174,6 +3186,26 @@ fixtureTest(
         expect(registryEntry?.info).toMatchObject({
             brand: "Example AI",
             brand_url: "https://example.com/",
+        });
+        expect(registryEntry?.communityEndpoint.perUserRpm).toBe(12);
+
+        const clearLimitResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ perUserRpm: null }),
+                },
+            ),
+        );
+        expect(clearLimitResponse.status).toBe(200);
+        await expect(clearLimitResponse.json()).resolves.toMatchObject({
+            perUserRpm: null,
         });
     },
 );
@@ -3965,6 +3997,7 @@ fixtureTest(
             fallbackToken,
         } = await createCommunityFallbackPair({
             prefix: "text-success",
+            fallbackPerUserRpm: 1,
         });
 
         // Read inside the mock: request bodies cannot cross isolates.
@@ -4020,19 +4053,22 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
+        const request = (content: string) =>
+            SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: primaryModelId,
+                        messages: [{ role: "user", content }],
+                    }),
                 }),
-            }),
-        );
+            );
+
+        const response = await request("hello-first");
 
         expect(response.status).toBe(200);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
@@ -4079,6 +4115,16 @@ fixtureTest(
         expect(
             new Set(ingestedEvents.map((event) => event.requestId)).size,
         ).toBe(1);
+
+        const limitedResponse = await request("hello-second");
+        expect(limitedResponse.status).toBe(429);
+        expect(limitedResponse.headers.get("Retry-After")).toBeTruthy();
+        await expect(limitedResponse.json()).resolves.toMatchObject({
+            error: { code: "community_model_rate_limit" },
+        });
+        // The primary was attempted again, but its limited fallback was not.
+        expect(gatewayCalls).toHaveLength(3);
+        expect(gatewayCalls[2]?.customHost).toBe(primaryHost);
     },
 );
 

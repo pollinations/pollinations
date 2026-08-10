@@ -284,10 +284,11 @@ export type FailedCall = {
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
- * authentication, balance, rate limiting and moderation run exactly once no
- * matter how many models are tried. Every candidate is tried at most once: the
- * dominant failure is an exhausted quota, and asking the same endpoint again
- * would only spend more of a budget that is already gone.
+ * authentication, balance and moderation run exactly once no matter how many
+ * models are tried. A local per-candidate guard may run immediately before an
+ * attempt. Every candidate is tried at most once: the dominant failure is an
+ * exhausted quota, and asking the same endpoint again would only spend more of
+ * a budget that is already gone.
  *
  * Every failed call is appended to `failures`, including the one that ends the
  * request. Recording is not the same as retrying: this loop decides only which
@@ -301,8 +302,12 @@ export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
+        // Local gates are not upstream failures and must not trigger or be
+        // attributed to another fallback candidate.
+        await beforeAttempt?.(candidate);
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.

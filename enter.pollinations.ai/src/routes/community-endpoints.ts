@@ -278,6 +278,15 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const PerUserRpmSchema = z
+    .number()
+    .int()
+    .min(1)
+    .max(Number.MAX_SAFE_INTEGER)
+    .nullable()
+    .describe(
+        "Maximum requests per minute for each Pollinations user. Null means no Pollinations-side limit.",
+    );
 const EndpointFieldsSchema = {
     // This slug is used in `<owner>/<name>` model ids and by operational tools.
     // Keep it safe to pass as data without accepting shell or SQL syntax.
@@ -317,6 +326,7 @@ const CreateEndpointSchema = z.object({
     imagePricing: ImagePricingSchema.optional().default("request"),
     inputModalities: InputModalitiesSchema.optional().default(["text"]),
     visibility: VisibilitySchema.optional().default("private"),
+    perUserRpm: PerUserRpmSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -328,6 +338,7 @@ const UpdateEndpointSchema = z.object({
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
+    perUserRpm: PerUserRpmSchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -362,6 +373,7 @@ const CommunityEndpointResponseSchema = z.object({
     baseUrl: z.string(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
+    perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
@@ -510,6 +522,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
+        perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
@@ -869,6 +882,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         c.env.BETTER_AUTH_SECRET,
                     ),
                     visibility: input.visibility,
+                    perUserRpm: input.perUserRpm ?? null,
                     fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
@@ -1054,6 +1068,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.perUserRpm !== undefined) {
+                update.perUserRpm = input.perUserRpm;
             }
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;

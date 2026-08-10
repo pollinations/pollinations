@@ -43,6 +43,7 @@ import {
     endpointToForm,
     type FallbackModelOption,
     idleAction,
+    isValidPerUserRpm,
     nextFormState,
     providerModelHelper,
     readError,
@@ -319,6 +320,7 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
+    const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already saved as public
     // has server-validated pricing, so re-editing it (e.g. a price or
@@ -380,6 +382,7 @@ export function CommunityEndpointDialog({
         form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
+        hasValidPerUserRpm &&
         saveRequirementMet;
 
     return (
@@ -726,6 +729,23 @@ export function CommunityEndpointDialog({
                             )}
                         </FieldStack>
                     </div>
+
+                    <FieldStack
+                        label="Per-user RPM"
+                        helper="Optional. Maximum requests each Pollinations user can send per minute. Leave blank for no Pollinations-side limit."
+                    >
+                        <Input
+                            name="community-per-user-rpm"
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={form.perUserRpm}
+                            placeholder="No limit"
+                            onChange={(event) =>
+                                updateForm("perUserRpm", event.target.value)
+                            }
+                        />
+                    </FieldStack>
 
                     <FieldStack
                         label="API bearer token"

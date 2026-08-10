@@ -1,0 +1,34 @@
+{
+  "pr_number": 13237,
+  "title": "refactor: move model monitor to operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13237",
+  "merged_at": "2026-08-10T16:41:27Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Moves the official Model Monitor website from `apps/model-monitor` to `operations/model-monitor`.\n- Deletes its stale duplicate daemon files; the active Discord/leaderboard bot remains in `operations/community-monitor`.\n- Adds an operations-owned deployment manifest and detector.\n- Redeploys Model Monitor and Economics when their shared UI/SDK dependencies change.\n- Removes Model Monitor from community-app deployment ownership.\n\n## Cloudflare and bot safety\n\n- Reuses the existing `apps-model-monitor` Direct Upload Pages project.\n- Keeps both Model Monitor domains unchanged.\n- Uses the existing Pages-authorized GitHub Actions token; no secret is changed.\n- Allows production deployment only from the `production` branch.\n- A failed upload leaves the previous Pages deployment serving.\n- The live Community Monitor box already follows `operations/community-monitor`; today's text and image leaderboards posted successfully and tomorrow's generator files are present.\n\nAfter merge, the production sync triggers the new operations workflow. No direct Cloudflare deployment is performed by this PR.\n\n## Validation\n\n- Model Monitor build and local browser verification passed with live data and no console errors.\n- Operations detector and all GitHub script tests passed.\n- App catalog, workflow YAML, diff checks, and GitHub CI passed.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor joins operations",
+    "blurb": "Model Monitor has moved into the operations garden, where its deployment wiring and shared dependencies can be tended in one place. The old duplicate daemon files have been composted; the Community Monitor bot keeps buzzing along from its existing home.",
+    "summary": "Moved the Model Monitor website from apps/model-monitor to operations/model-monitor, added operations-owned deployment detection and manifests, and configured redeploys for Model Monitor and Economics when their shared UI/SDK dependencies change.",
+    "impact": "Model Monitor keeps its existing domains and Cloudflare Pages project while gaining operations-managed deployments that refresh both affected sites when shared dependencies change.",
+    "keywords": [
+      "model-monitor",
+      "operations",
+      "cloudflare-pages",
+      "deployments",
+      "community-monitor",
+      "dependency-detection"
+    ],
+    "visual_concept": "A cozy operations garden shed represents the new ownership: Polli carefully carries a glowing Model Monitor CRT screen from a community-app flower bed into an organized operations workbench. A friendly monitor robot watches model leaderboard charts on its screen while labeled code-plants for Model Monitor and Economics share a healthy root system, symbolizing coordinated redeploys and preserved service.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed operations room: the cute bee mascot with a tiny tool belt carefully moves a glowing CRT Model Monitor screen into an organized lime green (#ecf874) operations workbench, while a chunky monitor robot displays a cheerful model leaderboard beside two shared-root code-plants labeled “MODEL MONITOR” and “ECONOMICS.” The bee has a yellow body with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a small happy smile; include flowers and subtle pixel-font text “OPERATIONS,” cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13237.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed operations room: the cute bee mascot with a tiny tool belt carefully moves a glowing CRT Model Monitor screen into an organized lime green (#ecf874) operations workbench, while a chunky monitor robot displays a cheerful model leaderboard beside two shared-root code-plants labeled “MODEL MONITOR” and “ECONOMICS.” The bee has a yellow body with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a small happy smile; include flowers and subtle pixel-font text “OPERATIONS,” cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-10T16:42:27.497520+00:00"
+}

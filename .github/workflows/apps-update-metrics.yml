@@ -41,7 +41,7 @@ jobs:
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node apps/app-management/performance/update-metrics.js --verbose
 
-      - name: Regenerate greenhouse
+      - name: Regenerate catalog outputs
         run: node apps/app-management/generate-catalog-outputs.js
 
       - name: Check for changes

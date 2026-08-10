@@ -1,0 +1,34 @@
+{
+  "pr_number": 13236,
+  "title": "refactor: move operations to repository root",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13236",
+  "merged_at": "2026-08-10T16:23:27Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Moves `apps/operation/` to root-level `operations/`.\n- Renames `operations/infrastructure/azure-vms/` to provider-neutral `operations/infrastructure/cpu/`, ready for sibling `gpu/`.\n- Updates CI, workspaces, SOPS rules, ignores, skills, and docs.\n- Changes no application behavior or encrypted secret values.\n\n## Deployment ownership\n\nOperations deployments must become independent from community-app deployment management. A follow-up PR will add an operations-owned manifest/detector and deploy each operation on its own source changes plus shared `packages/ui`/`packages/sdk` changes when consumed.\n\n`apps/model-monitor` is an official operational dashboard. It lives in `apps/` only because it was moved there from `hacktoberfest-2025/`. Move it to `operations/model-monitor/` in that follow-up, transfer its Cloudflare Pages deployment ownership first, then remove it from `apps/deployments.json`. Its stale duplicate monitor service files should be deleted, not moved.\n\n## Required before merge\n\nSeed the transition-aware updater on the live monitor box:\n\n```bash\nscp operations/community-monitor/update-from-repo.sh community-monitor:/home/ubuntu/monitor/update-from-repo.sh\nssh community-monitor \"chmod +x /home/ubuntu/monitor/update-from-repo.sh && /home/ubuntu/monitor/update-from-repo.sh\"\n```\n\nIf the legacy observability rollback host pulls later, use `/opt/pollinations/operations/observability` before restarting Compose.\n\n## Validation\n\n- Economics tests, typecheck, and build passed.\n- KPI build, Wrangler dry-runs, scripts, YAML, path selection, SOPS decryption, and legacy-ignore checks passed.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The tool shed moved",
+    "blurb": "The hive's operational tools have a new address: root-level operations/. Same machinery, fewer questions about why the garden shed was filed under apps.",
+    "summary": "Moved the former apps/operation workspace to root-level operations/, renamed infrastructure/azure-vms to provider-neutral infrastructure/cpu, and updated deployment workflows, workspace paths, SOPS rules, documentation, and monitor updater scripts without changing application behavior or encrypted secrets.",
+    "impact": "Operations services now have a clear independent home and a CPU-ready infrastructure path that can sit alongside future GPU operations, while existing deployments keep their current behavior.",
+    "keywords": [
+      "operations",
+      "repository",
+      "deployment",
+      "infrastructure",
+      "monitoring",
+      "workspaces"
+    ],
+    "visual_concept": "A cozy garden shed is being reorganized into a clearly labeled operations workshop at the root of a pixel garden. Polli acts as the observant mover, carrying a small directory sign from an overflowing \"apps\" shelf to a tidy \"operations\" shed, while a CRT monitor robot eagerly labels two neighboring tool drawers \"CPU\" and \"GPU\". Code-plants, folders, and a softly glowing terminal represent deployment and monitoring tools finding independent ownership.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, carrying a pixel folder from an \"apps\" shelf into a tidy garden workshop signposted \"operations\"; beside her, a cute CRT-monitor robot happily labels two wooden drawers \"CPU\" and \"GPU\" while code-plants grow around a softly glowing terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13236.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, carrying a pixel folder from an \"apps\" shelf into a tidy garden workshop signposted \"operations\"; beside her, a cute CRT-monitor robot happily labels two wooden drawers \"CPU\" and \"GPU\" while code-plants grow around a softly glowing terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-10T16:24:23.690396+00:00"
+}

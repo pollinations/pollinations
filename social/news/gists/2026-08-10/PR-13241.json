@@ -1,0 +1,34 @@
+{
+  "pr_number": 13241,
+  "title": "refactor: move FLUX GPU backend under operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13241",
+  "merged_at": "2026-08-10T17:23:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the active FLUX/Nunchaku worker from image.pollinations.ai/nunchaku to operations/infrastructure/gpu/flux.\n- Updates provisioning, local setup, verification, fleet inventory, and skill links for the new path.\n- Adds a deployment-detection test proving GPU infrastructure changes select zero Cloudflare operations apps.\n- Changes no model behavior, routing, credentials, pricing, or live Vast instances.\n\nOperational note:\n- Existing FLUX workers keep running their currently checked-out files.\n- Do not pull this commit into an existing worker checkout by itself: its generated /root/run-flux.sh points at the old path.\n- On a future reprovision or intentional worker update, run setup-vast.sh from the new path so it rewrites the restart command before relying on the new checkout.\n\nValidation:\n- operations deployment-detection tests\n- shell syntax checks for every moved script\n- Python compilation checks\n- stale-path and relative-link checks\n- git diff --check\n\nStacked on #13240.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "FLUX found its toolbox",
+    "blurb": "The FLUX/Nunchaku GPU worker moved into the operations garden, where provisioning notes, fleet inventory, and setup scripts can grow together. Existing workers keep calmly buzzing along.",
+    "summary": "Moved the active FLUX/Nunchaku GPU worker from image.pollinations.ai/nunchaku to operations/infrastructure/gpu/flux, updating provisioning, verification, local setup, fleet inventory, and deployment-detection coverage without changing model behavior or live instances.",
+    "impact": "GPU operators now have the FLUX worker and its setup-vast.sh reprovisioning workflow in the operations infrastructure tree, while existing Vast workers continue running their current checkouts.",
+    "keywords": [
+      "infrastructure",
+      "gpu",
+      "flux",
+      "nunchaku",
+      "vast",
+      "operations"
+    ],
+    "visual_concept": "A cozy garden-shed operations scene: Polli helps a friendly CRT monitor robot carry a labeled FLUX GPU toolbox from an old image-generation shelf to a tidy operations workbench. Small code-plants, a warm server rack, and a clear path sign represent the repository relocation and maintained worker setup, rather than a user-facing model change.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, guides a cheerful CRT monitor robot carrying a crate labeled “FLUX” to a tidy operations workbench; lime green (#ecf874) code-plants and soft pastel flowers grow around gently glowing GPU servers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with a small pixel sign reading “OPERATIONS”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13241.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, guides a cheerful CRT monitor robot carrying a crate labeled “FLUX” to a tidy operations workbench; lime green (#ecf874) code-plants and soft pastel flowers grow around gently glowing GPU servers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with a small pixel sign reading “OPERATIONS”."
+  },
+  "generated_at": "2026-08-10T17:24:36.982222+00:00"
+}

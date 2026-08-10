@@ -1,5 +1,6 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
+import { callAzureResponses } from "./azureResponsesClient.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
@@ -72,6 +73,14 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
+
+    // GPT-5-family models on Azure only honor reasoning.effort through the
+    // Responses API, which has a different request/response/stream shape.
+    // Route them through the dedicated client (direct Azure call — Portkey
+    // cannot translate a Responses API request).
+    if (modelDef?.useResponsesApi) {
+        return callAzureResponses(state.messages, state.options);
+    }
 
     const completion = await genericOpenAIClient(
         state.messages,

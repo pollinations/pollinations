@@ -1,0 +1,33 @@
+{
+  "pr_number": 13230,
+  "title": "chore: update app metrics 2026-08-10",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13230",
+  "merged_at": "2026-08-10T04:37:04Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse took attendance",
+    "blurb": "The garden ledger got its daily tending. App health checks and catalog metrics are freshly counted, with no plants harmed in the bookkeeping.",
+    "summary": "Updated the daily app catalog, greenhouse report, and health-check metrics for 2026-08-10.",
+    "impact": "Community app listings and greenhouse status data now reflect the latest automated metrics snapshot.",
+    "keywords": [
+      "community-apps",
+      "metrics",
+      "greenhouse",
+      "catalog",
+      "health-checks"
+    ],
+    "visual_concept": "A cozy community-app greenhouse represented as rows of tiny code-plants with fresh status tags, while Polli records the day's growth on a clipboard beside a retro terminal. The scene makes routine metrics maintenance feel like gently tending an open garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside a retro terminal in a thriving greenhouse of code-plants with small healthy status markers; lime green (#ecf874) glows prominently from the monitor and flower pots, with soft mint, lavender, peach, and warm cream gradients. Cozy 8-bit pixel art aesthetic, chunky retro sprites, subtle CRT glow, warm lighting, nature-filled and emotionally warm, retro gaming vibes like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13230.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside a retro terminal in a thriving greenhouse of code-plants with small healthy status markers; lime green (#ecf874) glows prominently from the monitor and flower pots, with soft mint, lavender, peach, and warm cream gradients. Cozy 8-bit pixel art aesthetic, chunky retro sprites, subtle CRT glow, warm lighting, nature-filled and emotionally warm, retro gaming vibes like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-08-10T04:37:59.168157+00:00"
+}

@@ -23,9 +23,8 @@ function renderPrBody(report, runUrl) {
     const results = report.results || [];
     const updatedApps = report.updatedApps || [];
     const removedApps = report.removedApps || [];
-    const unresolved = results.filter(
-        (result) => !["approved", "confirmed_removal"].includes(result.outcome),
-    );
+    const kept = results.filter((result) => result.outcome === "keep").length;
+    const unresolved = results.filter((result) => result.outcome === "retry");
 
     const updates = updatedApps.flatMap((app) =>
         app.changes.map(
@@ -35,17 +34,27 @@ function renderPrBody(report, runUrl) {
     );
     const removals = removedApps.map(
         (app) =>
-            `| ${tableCell(app.name)} | ${tableCell(app.url)} | ${tableCell(app.reason)} |`,
+            `| ${tableCell(app.name)} | ${tableCell(app.url)} | ${tableCell(app.proposalReason || app.reason)} | ${tableCell(app.confirmationReason || app.reason)} |`,
     );
     const unresolvedRows = unresolved.map((result) =>
         [
             tableCell(result.name),
-            tableCell(result.outcome),
+            tableCell(result.retryKind || "unspecified"),
             tableCell(
-                result.uploadError ||
-                    result.error ||
-                    result.review?.reason ||
-                    "No usable screenshot",
+                [
+                    result.uploadError ||
+                        result.error ||
+                        result.review?.reason ||
+                        "No usable screenshot",
+                    result.review?.proposal?.reason
+                        ? `Proposed removal: ${result.review.proposal.reason}`
+                        : null,
+                    result.review?.confirmation?.reason
+                        ? `Independent review: ${result.review.confirmation.reason}`
+                        : null,
+                ]
+                    .filter(Boolean)
+                    .join(" — "),
             ),
             tableCell(result.evidenceUrl || result.evidenceFile),
         ].join(" | "),
@@ -58,7 +67,7 @@ function renderPrBody(report, runUrl) {
         )
         .map(
             (result) =>
-                `<details><summary>${html(result.name)}</summary>\n\n![Rejected terminal screen](${result.evidenceUrl})\n\n</details>`,
+                `<details><summary>${html(result.name)}</summary>\n\n![Retry evidence](${result.evidenceUrl})\n\n</details>`,
         );
     const marker =
         removedApps.length > 0
@@ -69,7 +78,8 @@ function renderPrBody(report, runUrl) {
 
     return `## Summary
 
-- Reviewed ${results.length} targets: ${updatedApps.length} catalog rows updated, ${removedApps.length} removed, ${unresolved.length} unresolved.
+- Reviewed ${results.length} targets: ${kept} kept, ${removedApps.length} removed, ${unresolved.length} queued for retry.
+- Updated ${updatedApps.length} catalog rows with accepted screenshots or metadata corrections.
 - [Structured report and anonymous screenshot evidence](${runUrl}) are retained for 30 days.
 
 ## Catalog updates
@@ -80,13 +90,13 @@ ${updates.join("\n") || "| — | — | — | — | None |"}
 
 ## Removed
 
-| App | URL | Confirmed reason |
-| --- | --- | --- |
-${removals.join("\n") || "| — | — | None |"}
+| App | URL | Agent finding | Independent confirmation |
+| --- | --- | --- | --- |
+${removals.join("\n") || "| — | — | — | None |"}
 
-## Unresolved — no catalog change
+## Retry queue — no catalog change
 
-| App | Outcome | Reason | Evidence |
+| App | Type | Reason | Evidence |
 | --- | --- | --- | --- |
 ${unresolvedRows.map((row) => `| ${row} |`).join("\n") || "| — | — | None | — |"}
 

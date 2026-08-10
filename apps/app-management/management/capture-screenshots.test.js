@@ -15,6 +15,7 @@ const {
     callScreenshotAgent,
     classifyAuthOrigin,
     classifyCaptureOutcome,
+    classifyRetryKind,
     collectAgentControls,
     compactGithubEvidence,
     githubApiUrl,
@@ -23,6 +24,7 @@ const {
     investigateTechnicalFailure,
     listReviewerKeyIds,
     navigateToTarget,
+    normalizeHttpUrl,
     normalizedPointToViewport,
     parseAgentJson,
     readStorageState,
@@ -32,10 +34,10 @@ const {
     revokeReviewerKeys,
     selectTargets,
     selectTargetsByUrl,
+    selectDailyTargets,
     setPollinationsAuthorizationLimits,
     validateAgentDecision,
     validateClickGuardDecision,
-    validateFinalQualityDecision,
     validateGoogleAuthRequest,
     validateFreshAgentDecision,
     validateRemovalDecision,
@@ -85,7 +87,8 @@ test("records failed cover uploads as unresolved outcomes", () => {
             },
         ],
     );
-    assert.equal(result.outcome, "upload_failed");
+    assert.equal(result.outcome, "retry");
+    assert.equal(result.retryKind, "upload");
     assert.equal(result.uploadError, "Media upload returned 503");
 });
 
@@ -416,7 +419,11 @@ test("invalid technical confirmation fails closed without losing the report", as
             "test-model",
         );
         assert.equal(calls, 2);
-        assert.equal(result.decision.decision, "reject");
+        assert.equal(result.decision.decision, "retry");
+        assert.equal(
+            result.decision.proposal.reason,
+            "The host no longer exists.",
+        );
         assert.match(result.decision.reason, /did not confirm removal/);
     } finally {
         global.fetch = originalFetch;
@@ -497,8 +504,10 @@ test("removes only explicitly confirmed catalog rows", () => {
     assert.deepEqual(update.apps, [apps[1]]);
     assert.deepEqual(update.removedApps, [
         {
+            confirmationReason: "The app returned HTTP 404 twice",
             issueUrl: apps[0].issueUrl,
             name: "Dead app",
+            proposalReason: "The app returned HTTP 404 twice",
             reason: "The app returned HTTP 404 twice",
             status: 404,
             url: "https://dead.test",
@@ -610,6 +619,75 @@ test("uses a repository only when no website URL is available", () => {
             targetUrl: "https://github.com/example/app",
         },
     );
+});
+
+test("normalizes a safe scheme-less app URL for review", () => {
+    assert.equal(
+        normalizeHttpUrl("example.test/app"),
+        "https://example.test/app",
+    );
+    assert.equal(
+        normalizeHttpUrl(" https://example.test/app "),
+        "https://example.test/app",
+    );
+    assert.equal(normalizeHttpUrl("localhost:3000"), null);
+    assert.equal(normalizeHttpUrl("127.0.0.1/app"), null);
+    assert.equal(normalizeHttpUrl("not a url"), null);
+
+    assert.deepEqual(resolveTarget({ url: "example.test/app" }, 8), {
+        catalogIndex: 8,
+        catalogUrlCorrection: {
+            from: "example.test/app",
+            reason: "The catalog URL was normalized to an absolute HTTPS URL",
+            to: "https://example.test/app",
+        },
+        source: "website",
+        targetUrl: "https://example.test/app",
+    });
+});
+
+test("applies a normalized URL only after its app is accepted", () => {
+    const apps = [
+        { name: "Accepted", url: "accepted.test" },
+        { name: "Retry", url: "retry.test" },
+    ];
+    const result = applyCatalogChanges(
+        apps,
+        [],
+        [
+            {
+                approved: true,
+                catalogIndices: [0],
+                catalogUrlCorrections: [
+                    {
+                        catalogIndex: 0,
+                        from: "accepted.test",
+                        reason: "The catalog URL was missing its HTTPS scheme",
+                        to: "https://accepted.test/",
+                    },
+                ],
+                review: { decision: "accept" },
+            },
+            {
+                approved: false,
+                catalogIndices: [1],
+                catalogUrlCorrections: [
+                    {
+                        catalogIndex: 1,
+                        from: "retry.test",
+                        reason: "The catalog URL was missing its HTTPS scheme",
+                        to: "https://retry.test/",
+                    },
+                ],
+                review: { decision: "retry" },
+            },
+        ],
+    );
+
+    assert.equal(result.apps[0].url, "https://accepted.test/");
+    assert.equal(result.apps[1].url, "retry.test");
+    assert.equal(result.metadataRowsUpdated, 1);
+    assert.equal(result.updatedApps[0].changes[0].field, "url");
 });
 
 test("uses the repository as the public cover for Discord bots", () => {
@@ -852,22 +930,7 @@ test("fails closed on invalid click-guard decisions", () => {
     );
 });
 
-test("final review gates cannot invent a removal", () => {
-    assert.equal(
-        validateFinalQualityDecision({
-            decision: "accept",
-            reason: "The cover is ready.",
-        }).decision,
-        "accept",
-    );
-    assert.throws(
-        () =>
-            validateFinalQualityDecision({
-                decision: "remove",
-                reason: "Wrong review phase.",
-            }),
-        /quality review was invalid/,
-    );
+test("the independent removal gate cannot accept a cover", () => {
     assert.equal(
         validateRemovalDecision({
             decision: "remove",
@@ -939,8 +1002,12 @@ test("a model-proposed removal requires independent confirmation", async (t) => 
             "test-model",
         );
         assert.equal(calls, 2);
-        assert.equal(result.decision, "reject");
-        assert.match(result.reason, /did not confirm removal/);
+        assert.equal(result.decision, "retry");
+        assert.equal(result.proposal.reason, "The page appears parked.");
+        assert.equal(
+            result.confirmation.reason,
+            "The evidence is not conclusive.",
+        );
     } finally {
         global.fetch = originalFetch;
     }
@@ -1012,7 +1079,7 @@ test("retries an invalid independent removal confirmation", async (t) => {
     }
 });
 
-test("retries an invalid final-quality confirmation", async (t) => {
+test("acceptance is terminal without a redundant confirmation", async (t) => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "app-quality-"));
     t.after(() => fs.rmSync(directory, { force: true, recursive: true }));
     const screenshotPath = path.join(directory, "screen.png");
@@ -1023,18 +1090,6 @@ test("retries an invalid final-quality confirmation", async (t) => {
             catalogUpdate: null,
             decision: "accept",
             reason: "The app is clearly visible.",
-        },
-        {
-            action: null,
-            catalogUpdate: null,
-            decision: "remove",
-            reason: "Invalid in the quality-review phase.",
-        },
-        {
-            action: null,
-            catalogUpdate: null,
-            decision: "accept",
-            reason: "The cover is readable and representative.",
         },
     ];
     const originalFetch = global.fetch;
@@ -1071,7 +1126,7 @@ test("retries an invalid final-quality confirmation", async (t) => {
             "test-token",
             "test-model",
         );
-        assert.equal(calls, 3);
+        assert.equal(calls, 1);
         assert.equal(result.decision, "accept");
     } finally {
         global.fetch = originalFetch;
@@ -1499,15 +1554,15 @@ test("checks page origin independently of action success", () => {
     );
 });
 
-test("reports capture outcomes separately", () => {
-    assert.equal(classifyCaptureOutcome({ approved: true }), "approved");
+test("reports only terminal keep, remove, or retry outcomes", () => {
+    assert.equal(classifyCaptureOutcome({ approved: true }), "keep");
     assert.equal(
         classifyCaptureOutcome({
             approved: false,
             review: { decision: "authenticate" },
             success: true,
         }),
-        "auth_required",
+        "retry",
     );
     assert.equal(
         classifyCaptureOutcome({
@@ -1515,16 +1570,26 @@ test("reports capture outcomes separately", () => {
             review: { decision: "remove" },
             success: true,
         }),
-        "confirmed_removal",
+        "remove",
     );
     assert.equal(
         classifyCaptureOutcome({ approved: false, success: true }),
-        "agent_rejected",
+        "retry",
     );
     assert.equal(
         classifyCaptureOutcome({ approved: false, success: false }),
-        "technical_failure",
+        "retry",
     );
+    assert.equal(
+        classifyRetryKind({
+            review: { decision: "authenticate" },
+            success: true,
+        }),
+        "authentication",
+    );
+    assert.equal(classifyRetryKind({ error: "HTTP 503" }), "technical");
+    assert.equal(classifyRetryKind({ success: true }), "ui");
+    assert.equal(classifyRetryKind({ approved: true }), null);
 });
 
 test("keeps only anonymous rejected screenshots as review evidence", (t) => {
@@ -1537,18 +1602,18 @@ test("keeps only anonymous rejected screenshots as review evidence", (t) => {
         [
             {
                 name: "Public rejection",
-                outcome: "agent_rejected",
+                outcome: "retry",
                 screenshotPath,
             },
             {
                 authentication: { provider: "google" },
                 name: "Authenticated rejection",
-                outcome: "agent_rejected",
+                outcome: "retry",
                 screenshotPath,
             },
             {
                 name: "Removal",
-                outcome: "confirmed_removal",
+                outcome: "remove",
                 screenshotPath,
             },
         ],
@@ -1584,4 +1649,30 @@ test("rotates deterministic daily batches across the target set", () => {
         batchIndex: 0,
         offset: 0,
     });
+});
+
+test("prioritizes missing covers before rotating refreshes", () => {
+    const targets = [
+        ...Array.from({ length: 3 }, (_, index) => ({
+            name: `Missing ${index}`,
+            needsScreenshot: true,
+        })),
+        ...Array.from({ length: 5 }, (_, index) => ({
+            name: `Refresh ${index}`,
+            needsScreenshot: false,
+        })),
+    ];
+    const selection = selectDailyTargets(
+        targets,
+        5,
+        new Date("2026-08-10T12:00:00Z"),
+    );
+
+    assert.equal(selection.targets.length, 5);
+    assert.deepEqual(
+        selection.targets.slice(0, 3).map(({ name }) => name),
+        ["Missing 0", "Missing 1", "Missing 2"],
+    );
+    assert.equal(selection.dailyBatch.missingSelected, 3);
+    assert.equal(selection.dailyBatch.refreshSelected, 2);
 });

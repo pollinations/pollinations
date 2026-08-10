@@ -267,7 +267,7 @@ export async function handleImageGeneration(c: Context<Env>) {
     );
 }
 
-function computeAspectRatioSize(
+export function computeAspectRatioSize(
     width: number,
     height: number,
     maxPixels: number = 1048576,

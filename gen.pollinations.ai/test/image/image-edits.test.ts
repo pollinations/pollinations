@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getSourceImageDimensions } from "../../src/image/utils/imageDownload.ts";
+import { computeAspectRatioSize } from "../../src/routes/images.ts";
 
 describe("getSourceImageDimensions (data URI)", () => {
     it("extracts PNG dimensions from a minimal data URI", async () => {
@@ -52,5 +53,47 @@ describe("getSourceImageDimensions (data URI)", () => {
             "data:text/plain;base64,aGVsbG8=",
         );
         expect(dims).toBeNull();
+    });
+});
+
+describe("computeAspectRatioSize", () => {
+    it("preserves landscape aspect ratio when under maxPixels", () => {
+        expect(computeAspectRatioSize(1024, 576)).toBe("1024x576");
+    });
+
+    it("preserves portrait aspect ratio when under maxPixels", () => {
+        expect(computeAspectRatioSize(576, 1024)).toBe("576x1024");
+    });
+
+    it("scales down landscape proportionally when over maxPixels", () => {
+        const result = computeAspectRatioSize(3840, 2160);
+        const [w, h] = result.split("x").map(Number);
+        expect(w / h).toBeCloseTo(3840 / 2160, 1);
+    });
+
+    it("scales down portrait proportionally when over maxPixels", () => {
+        const result = computeAspectRatioSize(2160, 3840);
+        const [w, h] = result.split("x").map(Number);
+        expect(h / w).toBeCloseTo(3840 / 2160, 1);
+    });
+
+    it("snaps dimensions to 16px multiples", () => {
+        const result = computeAspectRatioSize(100, 100);
+        const [w, h] = result.split("x").map(Number);
+        expect(w % 16).toBe(0);
+        expect(h % 16).toBe(0);
+    });
+
+    it("never produces dimensions smaller than 16px", () => {
+        const result = computeAspectRatioSize(1, 1);
+        const [w, h] = result.split("x").map(Number);
+        expect(w).toBeGreaterThanOrEqual(16);
+        expect(h).toBeGreaterThanOrEqual(16);
+    });
+
+    it("uses custom maxPixels", () => {
+        const result = computeAspectRatioSize(2000, 1000, 500000);
+        const [w, h] = result.split("x").map(Number);
+        expect(w * h).toBeLessThanOrEqual(500000 + 256);
     });
 });

@@ -9,7 +9,7 @@ const {
     inferPlatform,
     parseSubmission,
     validateSubmission,
-} = require("./lib/app-submission.js");
+} = require("./submission.js");
 
 const BODY = `### App Name
 Sunflower Studio
@@ -104,7 +104,7 @@ if (args[0] === "issue" && args[1] === "list") {
 
     const result = spawnSync(
         process.execPath,
-        [path.join(__dirname, "app-validate-submission.js")],
+        [path.join(__dirname, "validate-submission.js")],
         {
             encoding: "utf8",
             env: {

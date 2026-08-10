@@ -11,13 +11,13 @@
  * raced the re-insert and wiped the rows it had just added — leaving the table
  * empty. mode=replace swaps the data in one step with no window of emptiness.
  *
- * Usage: node .github/scripts/tinybird-sync-apps.js
+ * Usage: node apps/app-management/sync-catalog-to-tinybird.js
  *
  * Env vars:
  *   TINYBIRD_SYNC_TOKEN  Required — Tinybird token with DATASOURCES:CREATE on app_directory
  */
 
-const { readApps } = require("./lib/app-catalog.js");
+const { readApps } = require("./catalog.js");
 
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "app_directory";

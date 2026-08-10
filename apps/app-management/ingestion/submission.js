@@ -1,4 +1,4 @@
-const { readApps } = require("./app-catalog.js");
+const { readApps } = require("../catalog.js");
 
 const CATEGORIES = new Set([
     "image",

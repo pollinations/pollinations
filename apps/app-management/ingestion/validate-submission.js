@@ -6,7 +6,7 @@ const {
     findCatalogDuplicate,
     parseSubmission,
     validateSubmission,
-} = require("./lib/app-submission.js");
+} = require("./submission.js");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;

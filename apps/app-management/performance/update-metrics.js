@@ -7,7 +7,7 @@
  *   - Request count in last 24h (from Tinybird — by referrer domain)
  *   - Sort rows: BYOP first → requests desc → stars desc
  *
- * Usage: node .github/scripts/app-update-metrics.js [options]
+ * Usage: node apps/app-management/performance/update-metrics.js [options]
  *   --dry-run    Show changes without modifying files
  *   --verbose    Show detailed output
  *
@@ -17,7 +17,7 @@
  */
 
 const https = require("node:https");
-const { CATALOG_FILE, readApps, writeApps } = require("./lib/app-catalog.js");
+const { CATALOG_FILE, readApps, writeApps } = require("../catalog.js");
 
 const GITHUB_API = "api.github.com";
 const TINYBIRD_HOST = "api.europe-west2.gcp.tinybird.co";

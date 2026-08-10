@@ -84,13 +84,6 @@
     "title": "Changelog Generator",
     "description": "Generate beautiful changelogs from your git commits with AI"
   },
-  "gsoc": {
-    "subdomain": "gsoc",
-    "buildCommand": "npm run build",
-    "outputDir": "dist",
-    "title": "GSoC 2026 × POLLINATIONS.AI",
-    "description": "Join Google Summer of Code 2026 and build the future of open-source AI"
-  },
   "openclaw": {
     "subdomain": "openclaw",
     "buildCommand": null,

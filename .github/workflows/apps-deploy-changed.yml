@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       app_name:
-        description: "App to deploy (e.g., gsoc, virtual-makeup, chat)"
+        description: "App to deploy (e.g., playground, virtual-makeup, chat)"
         required: true
         type: string
   push:

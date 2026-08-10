@@ -93,7 +93,7 @@ Two traps that fail silently:
 ## Vast replacement operations
 
 The repository skill
-[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+[`manage-vast-gpu-fleet`](../../../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
 is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.

@@ -327,7 +327,8 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 Flux is self-hosted on Vast.ai 5090s since 2026-07-02 (PR #12171) with automatic
 Fireworks fallback: the worker sheds load with 503 beyond `QUEUE_LIMIT`, and the
 gateway retries those requests on Fireworks. Instance coordinates, provisioning
-one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
+one-liner, and host gotchas live in
+`operations/infrastructure/gpu/GPU_INSTANCES.md`
 (source of truth — instance IDs/IPs/ports change on recreate).
 
 **Check:**

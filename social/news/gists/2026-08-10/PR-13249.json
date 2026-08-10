@@ -1,0 +1,36 @@
+{
+  "pr_number": 13249,
+  "title": "Add FlashcardGeneratorAI to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13249",
+  "merged_at": "2026-08-10T18:05:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) to learn\n- With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition)\n\nFixes #13228",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study buds, now blooming",
+    "blurb": "FlashcardGeneratorAI has joined the learn garden. Feed it a topic, get interactive cards and matching games, then let repetition do its quiet little thing.",
+    "summary": "Added FlashcardGeneratorAI to the app catalog, giving learners a Pollinations-powered tool for generating interactive digital flashcards and card-matching games.",
+    "impact": "Users can now discover FlashcardGeneratorAI in learn and use generated flashcards plus matching games to reinforce concepts through repetition.",
+    "keywords": [
+      "community-app",
+      "learning",
+      "flashcards",
+      "education",
+      "interactive",
+      "pollinations-ai"
+    ],
+    "visual_concept": "Depict a cozy study garden with interactive flashcards growing like labeled plants from small pots, alongside paired cards being matched on a picnic-table study surface. Polli wears tiny librarian glasses and gently arranges matching cards while the eager CRT monitor robot displays a simple card pair; flowers and code-vines make the learning tool feel like a welcoming addition to the app garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she arranges glowing interactive flashcards in a warm garden study nook; a chunky CRT monitor robot happily shows two matching cards beside flowering code-plants and prominent lime green (#ecf874) card sprouts. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: 'MATCH!'; nostalgic, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13249.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she arranges glowing interactive flashcards in a warm garden study nook; a chunky CRT monitor robot happily shows two matching cards beside flowering code-plants and prominent lime green (#ecf874) card sprouts. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: 'MATCH!'; nostalgic, emotionally warm."
+  },
+  "generated_at": "2026-08-10T18:06:47.800476+00:00",
+  "app_name": "FlashcardGeneratorAI",
+  "app_url": "https://flashcardgeneratorai-pollinationsai-classic.pages.dev"
+}

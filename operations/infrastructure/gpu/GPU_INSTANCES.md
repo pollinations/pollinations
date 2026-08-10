@@ -309,7 +309,7 @@ Instance `47353224` replaced network-defective instance `47259457` on
 2026-08-10. The host has Vast reliability `0.997827` and costs
 **$0.002222/hr**, or **$1.60 per 30-day month**, more than the retired slot.
 
-**Provisioning:** use `image.pollinations.ai/klein-runpod/setup-vast.sh` with
+**Provisioning:** use `operations/infrastructure/gpu/klein/setup-vast.sh` with
 `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel`. The model is public and does not
 require `HF_TOKEN`. Pre-create a remotely managed tunnel with catch-all service
 `http://localhost:8000`, then pass only its scoped token to the Vast host.
@@ -322,7 +322,7 @@ vastai create instance <OFFER> \
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/id_ed25519.pub)"
 
 PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... TUNNEL_ENABLED=false \
-  bash image.pollinations.ai/klein-runpod/setup-vast.sh
+  bash operations/infrastructure/gpu/klein/setup-vast.sh
 ```
 
 The setup defaults to an isolated canary. After direct tests and explicit
@@ -331,7 +331,7 @@ enforces the Workers VPC QUIC qualification:
 
 ```bash
 PLN_GPU_TOKEN=... TUNNEL_ENABLED=true \
-  bash image.pollinations.ai/klein-runpod/setup-vast.sh
+  bash operations/infrastructure/gpu/klein/setup-vast.sh
 ```
 
 Do not manually create `/root/.cloudflared_tunnel_enabled`; doing so bypasses
@@ -455,7 +455,7 @@ runpodctl pod get <id>         # pod details
 - **HTTP**: `https://jmrbmje2fyuy46-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B manual rollback; not in the active production route
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
-- **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-runpod/handler.py`)
+- **Code**: `/workspace/handler.py` (mirrors `operations/infrastructure/gpu/klein/handler.py`)
 - **Logs**: `/workspace/klein.log`
 - **Restart**: `bash /workspace/restart.sh` (in-pod)
 

@@ -139,7 +139,8 @@ Symptom: dashboard banner "*This server has recently suffered a network outage*"
    chmod 600 /tmp/klein-key
    ssh -i /tmp/klein-key -p <publicPort> root@<publicIp>
    ```
-4. Copy `image.pollinations.ai/klein-runpod/handler.py` and `requirements.txt` to `/workspace`.
+4. Copy `operations/infrastructure/gpu/klein/handler.py` and
+   `requirements.txt` to `/workspace`.
 5. Install runtime packages without replacing the base CUDA torch:
    ```bash
    python -m venv --system-site-packages /workspace/venv
@@ -166,7 +167,10 @@ Symptom: dashboard banner "*This server has recently suffered a network outage*"
    ```
 10. Verify direct pod `/health`, direct authenticated `/generate`, and production `gen.pollinations.ai/image/...model=klein`, remove `/tmp/klein-key`, then terminate the old outage pod.
 
-Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.sh` live on the pod volume only (not baked into a Docker image despite `image.pollinations.ai/klein-runpod/Dockerfile`). The pod volume is destroyed on terminate.
+Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and
+`restart.sh` live on the pod volume only (not baked into a Docker image despite
+`operations/infrastructure/gpu/klein/Dockerfile`). The pod volume is destroyed
+on terminate.
 
 ---
 

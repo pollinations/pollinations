@@ -1,0 +1,35 @@
+{
+  "pr_number": 13242,
+  "title": "refactor: move Z-Image GPU backend under operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13242",
+  "merged_at": "2026-08-10T17:30:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the active Z-Image worker from image.pollinations.ai/z-image to operations/infrastructure/gpu/zimage.\n- Updates Vast, IO.NET, Docker entrypoint, fleet inventory, and monitoring references for the new path.\n- Changes no model behavior, routing, credentials, pricing, or live Vast instances.\n\nOperational note:\n- Existing Z-Image workers keep running their currently checked-out files.\n- Do not pull this commit into an existing worker checkout by itself: /root/run-zimage.sh points at the old path.\n- On a future reprovision or intentional worker update, run setup-vast.sh from the new path so it rewrites the restart command before relying on the new checkout.\n\nValidation:\n- operations deployment-detection tests\n- shell syntax checks for every moved script\n- Python compilation checks\n- stale-path and relative-link checks\n- git diff --check\n\nStacked on #13241.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Z-Image found its shed",
+    "blurb": "The Z-Image GPU worker packed its Dockerfiles, scripts, and monitoring notes into the operations garden. The bees kept making pixels while the tool shed got tidier.",
+    "summary": "Moved the active Z-Image GPU worker stack from image.pollinations.ai/z-image to operations/infrastructure/gpu/zimage, updating Vast, IO.NET, Docker entrypoint, fleet inventory, and monitoring references without changing live model behavior or routing.",
+    "impact": "Current Z-Image workers continue running unchanged, while future Vast or IO.NET reprovisions can use the consolidated operations path and its updated setup scripts.",
+    "keywords": [
+      "z-image",
+      "gpu",
+      "operations",
+      "vast",
+      "io.net",
+      "deployment",
+      "infrastructure"
+    ],
+    "visual_concept": "A cozy operations garden shed represents the new infrastructure home for the Z-Image worker: Polli carefully carries a small glowing image-server crate along a garden path toward a labeled GPU tool shed, while a friendly CRT monitor robot checks a deployment map. Code-plants and small GPU crates make the move feel organized rather than disruptive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carrying a glowing Z-Image server crate into a garden operations shed beside a helpful CRT monitor robot reviewing a deployment map; code-plants, flowers, and little GPU crates surround the path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font sign reading “GPU OPS”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13242.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carrying a glowing Z-Image server crate into a garden operations shed beside a helpful CRT monitor robot reviewing a deployment map; code-plants, flowers, and little GPU crates surround the path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font sign reading “GPU OPS”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-10T17:32:13.365175+00:00"
+}

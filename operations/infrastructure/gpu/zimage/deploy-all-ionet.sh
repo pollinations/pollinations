@@ -32,7 +32,7 @@ deploy_vm() {
     
     ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i "$SSH_KEY" -p "$ssh_port" ionet@$PUBLIC_IP \
         "export GPU0_PUBLIC_PORT=$gpu0_port GPU1_PUBLIC_PORT=$gpu1_port BRANCH=$BRANCH && \
-         curl -sL https://raw.githubusercontent.com/pollinations/pollinations/$BRANCH/image.pollinations.ai/z-image/setup-ionet.sh | bash"
+         curl -sL https://raw.githubusercontent.com/pollinations/pollinations/$BRANCH/operations/infrastructure/gpu/zimage/setup-ionet.sh | bash"
     
     log "VM$vm_num deployment complete!"
 }

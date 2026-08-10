@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-cd /home/ubuntu/pollinations/image.pollinations.ai/z-image
+cd /home/ubuntu/pollinations/operations/infrastructure/gpu/zimage
 source venv/bin/activate
 SECRETS_FILE="../secrets/env.json"
 if [ -f "$SECRETS_FILE" ]; then

@@ -21,6 +21,7 @@ from contextlib import asynccontextmanager
 import math
 from utility import StableDiffusionSafetyChecker, replace_numpy_with_python, replace_sets_with_lists, numpy_to_pil
 from transformers import AutoFeatureExtractor
+from generation_queue import GenerationQueue
 
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
@@ -94,8 +95,10 @@ UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size
 MAX_FINAL_PIXELS = 768 * 768 * 4  # Max output size with 2x upscaling
 ENABLE_SPAN_UPSCALER = True
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "3"))
 
 generate_lock = threading.Lock()
+generation_queue = GenerationQueue(QUEUE_LIMIT)
 
 
 class ImageRequest(BaseModel):
@@ -333,8 +336,17 @@ def check_nsfw(image_array, safety_checker_adj: float = 0.0):
     )
 
 
+def reserve_generation_slot():
+    with generation_queue.slot():
+        yield
+
+
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
+def generate(
+    request: ImageRequest,
+    _auth: bool = Depends(verify_backend_token),
+    _slot: None = Depends(reserve_generation_slot),
+):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

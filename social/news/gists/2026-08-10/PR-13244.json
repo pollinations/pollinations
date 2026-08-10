@@ -1,0 +1,34 @@
+{
+  "pr_number": 13244,
+  "title": "refactor: move DreamShaper GPU backend under operations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13244",
+  "merged_at": "2026-08-10T17:42:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the active DreamShaper worker from image.pollinations.ai/dreamshaper-lcm to operations/infrastructure/gpu/dreamshaper.\n- Colocates the active SANA alias topology document with DreamShaper.\n- Updates Vast provisioning and fleet inventory references.\n- Leaves only the retired SANA-Sprint implementation for the later legacy-cleanup PR.\n- Changes no model behavior, routing, credentials, pricing, or live Vast instances.\n\nOperational note:\n- Existing DreamShaper workers keep running their currently checked-out files.\n- Do not pull this commit into an existing worker checkout by itself: /root/run-dreamshaper.sh points at the old path.\n- On a future reprovision or intentional worker update, run setup-vast.sh from the new path so it rewrites the restart command before relying on the new checkout.\n\nValidation:\n- DreamShaper unit tests\n- operations deployment-detection tests\n- shell syntax and Python compilation checks\n- stale-path and relative-link checks\n- git diff --check\n\nStacked on #13243.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "DreamShaper finds its shed",
+    "blurb": "The active DreamShaper GPU worker moved into the operations garden, where its provisioning notes and fleet map can live beside it. Same model behavior; tidier soil.",
+    "summary": "Moved the active DreamShaper worker and its Vast provisioning references from image.pollinations.ai/dreamshaper-lcm to operations/infrastructure/gpu/dreamshaper, with no changes to routing, credentials, pricing, or live instances.",
+    "impact": "Future DreamShaper reprovisions can use setup-vast.sh from the new operations path, while existing workers continue running their current checked-out setup until intentionally updated.",
+    "keywords": [
+      "dreamshaper",
+      "gpu",
+      "vast",
+      "operations",
+      "provisioning",
+      "infrastructure"
+    ],
+    "visual_concept": "Polli, wearing a tiny tool belt, carries a labeled DreamShaper server crate from a small image-generation workshop into a cozy garden shed full of organized GPU tools and a fleet map; a code-plant and flowers make the infrastructure move feel calm and orderly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carefully moving a crate labeled “DreamShaper” into an organized garden shed of chunky GPU servers while a warm fleet map and code-plants glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13244.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carefully moving a crate labeled “DreamShaper” into an organized garden shed of chunky GPU servers while a warm fleet map and code-plants glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-10T17:43:25.073181+00:00"
+}

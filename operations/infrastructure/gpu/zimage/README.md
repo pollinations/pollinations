@@ -33,6 +33,18 @@ Using one remotely managed tunnel for the pool creates a Cloudflare replica per
 Vast worker. Cloudflare balances requests across those replicas, while the
 Pollinations registry sees one stable backend URL.
 
+Each worker admits at most three generation requests: one running and two
+waiting. Additional requests receive `503 Queue full`, which lets gen route
+the request to the configured Fal fallback instead of building an unbounded
+local queue. `QUEUE_LIMIT=3` is persisted by `setup-vast.sh` and can be
+overridden when provisioning. This absorbs short local bursts before paying
+for Fal while still bounding worst-case queue growth.
+
+Deploy the gen fallback before enabling this queue limit on production workers.
+After updating a worker, verify local saturation returns 503, normal generation
+still succeeds, and production telemetry attributes any overflow to
+`zimage-fal`. Only then drain and destroy a redundant Vast connector.
+
 The setup defaults to `HEARTBEAT_ENABLED=false`, which prevents registry
 registration but does not isolate a connector in the shared named tunnel.
 Validate local health and generation while cloudflared is stopped. The setup
@@ -72,9 +84,12 @@ stored only in mode-0600 files on the rental host. Some Vast hosts drop the SRV
 DNS responses required by cloudflared despite resolving ordinary A records.
 `setup-vast.sh` detects that condition and enables a reboot-safe local
 DNS-over-HTTPS fallback; its log is `/root/tunnel-dns.log`. Hosts with working
-SRV resolution retain the provider's resolver. Hugging Face Xet is disabled by
-default because its token/download path failed on otherwise healthy Vast hosts;
-standard HTTP and process-level retries resume reliably from the local cache.
+SRV resolution retain the provider's resolver. When the production tunnel is
+disabled, `/root/onstart.sh` restores the provider resolver before stopping the
+local DNS helper so isolated model restarts keep outbound DNS. Hugging Face Xet
+is disabled by default because its token/download path failed on otherwise
+healthy Vast hosts; standard HTTP and process-level retries resume reliably
+from the local cache.
 
 ### July 2026 RTX 5090 canary
 

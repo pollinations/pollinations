@@ -38,8 +38,12 @@ function create3dMocks() {
             state: { bodies: inferenceportBodies },
             handlerMap: {
                 "api.inferenceport.ai": async (request: Request) => {
-                    inferenceportBodies.push(await request.json());
+                    if (request.method === "POST") {
+                        inferenceportBodies.push(await request.json());
+                        return Response.json({ job_id: "job-1" });
+                    }
                     return Response.json({
+                        status: "completed",
                         data: [{ model_glb_b64_bytes: btoa("glTF") }],
                     });
                 },

@@ -92,7 +92,8 @@ function contentToParts(
                 typeof part.image_url === "string"
                     ? part.image_url
                     : (part.image_url as { url?: string } | undefined)?.url;
-            if (imageUrl) parts.push({ type: "input_image", image_url: imageUrl });
+            if (imageUrl)
+                parts.push({ type: "input_image", image_url: imageUrl });
         } else if (
             part.type === "input_text" ||
             part.type === "input_image" ||
@@ -138,7 +139,9 @@ function convertToolChoice(toolChoice: unknown): unknown {
     return entry;
 }
 
-function convertResponseFormat(responseFormat: Record<string, unknown>): Record<string, unknown> {
+function convertResponseFormat(
+    responseFormat: Record<string, unknown>,
+): Record<string, unknown> {
     const type = responseFormat.type;
     if (type === "json_object") return { type: "json_object" };
     if (type === "json_schema") {
@@ -186,7 +189,10 @@ function messageToResponsesItems(msg: ChatMessage): Record<string, unknown>[] {
             items.push({
                 type: "reasoning",
                 summary: [
-                    { type: "summary_text", text: String(msg.reasoning_content) },
+                    {
+                        type: "summary_text",
+                        text: String(msg.reasoning_content),
+                    },
                 ],
             });
         }
@@ -196,7 +202,9 @@ function messageToResponsesItems(msg: ChatMessage): Record<string, unknown>[] {
             items.push({ role: "assistant", content: parts });
         }
 
-        for (const raw of (msg.tool_calls as Record<string, unknown>[] | undefined) ?? []) {
+        for (const raw of (msg.tool_calls as
+            | Record<string, unknown>[]
+            | undefined) ?? []) {
             const fn = (raw.function ?? {}) as Record<string, unknown>;
             items.push({
                 type: "function_call",
@@ -215,7 +223,10 @@ function messageToResponsesItems(msg: ChatMessage): Record<string, unknown>[] {
             {
                 type: "function_call_output",
                 call_id: String(callId),
-                output: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content ?? ""),
+                output:
+                    typeof msg.content === "string"
+                        ? msg.content
+                        : JSON.stringify(msg.content ?? ""),
             },
         ];
     }
@@ -244,10 +255,7 @@ function buildResponsesBody(
                 : effort === "none"
                   ? undefined
                   : effort;
-        if (
-            normalizedEffort &&
-            REASONING_EFFORT_VALUES.has(normalizedEffort)
-        ) {
+        if (normalizedEffort && REASONING_EFFORT_VALUES.has(normalizedEffort)) {
             body.reasoning = { effort: normalizedEffort };
         }
     }
@@ -262,8 +270,7 @@ function buildResponsesBody(
         body.tool_choice = convertToolChoice(options.tool_choice);
     }
 
-    const maxTokens =
-        options.max_completion_tokens ?? options.max_tokens;
+    const maxTokens = options.max_completion_tokens ?? options.max_tokens;
     if (maxTokens !== undefined) body.max_output_tokens = maxTokens;
 
     for (const key of [
@@ -277,9 +284,7 @@ function buildResponsesBody(
     }
     if (options.stop !== undefined) {
         body.stop =
-            typeof options.stop === "string"
-                ? [options.stop]
-                : options.stop;
+            typeof options.stop === "string" ? [options.stop] : options.stop;
     }
 
     if (options.response_format) {
@@ -417,10 +422,7 @@ function streamError(message: string): string {
 
 function convertResponsesStream(
     source: ReadableStream<Uint8Array> | null,
-    {
-        modelName,
-        includeUsage,
-    }: { modelName: string; includeUsage: boolean },
+    { modelName, includeUsage }: { modelName: string; includeUsage: boolean },
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();
     let chunkId = "chatcmpl-azure-responses";
@@ -643,8 +645,13 @@ function convertResponsesStream(
                     if (!closed) {
                         emit(
                             controller,
-                            streamChunk(chunkId, created, modelName, {}, "stop") +
-                                "data: [DONE]\n\n",
+                            streamChunk(
+                                chunkId,
+                                created,
+                                modelName,
+                                {},
+                                "stop",
+                            ) + "data: [DONE]\n\n",
                         );
                     }
                 },

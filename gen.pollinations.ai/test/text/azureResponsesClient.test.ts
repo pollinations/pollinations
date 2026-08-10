@@ -103,7 +103,9 @@ describe("callAzureResponses", () => {
                 },
                 {
                     role: "user",
-                    content: [{ type: "input_text", text: "weather in Paris?" }],
+                    content: [
+                        { type: "input_text", text: "weather in Paris?" },
+                    ],
                 },
                 {
                     role: "assistant",
@@ -128,25 +130,29 @@ describe("callAzureResponses", () => {
     it("maps reasoning_effort values to Responses API semantics", async () => {
         const bodies: Array<Record<string, unknown>> = [];
 
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
-            bodies.push(JSON.parse(String(init?.body)));
-            return Response.json({
-                id: "resp_1",
-                object: "response",
-                model: "gpt-5.6-sol",
-                status: "completed",
-                output: [],
-            });
-        });
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (_input, init) => {
+                bodies.push(JSON.parse(String(init?.body)));
+                return Response.json({
+                    id: "resp_1",
+                    object: "response",
+                    model: "gpt-5.6-sol",
+                    status: "completed",
+                    output: [],
+                });
+            },
+        );
 
-        await callAzureResponses(
-            [{ role: "user", content: "hi" }],
-            { model: "gpt-5.6-sol", modelConfig, reasoning_effort: "xhigh" },
-        );
-        await callAzureResponses(
-            [{ role: "user", content: "hi" }],
-            { model: "gpt-5.6-sol", modelConfig, reasoning_effort: "none" },
-        );
+        await callAzureResponses([{ role: "user", content: "hi" }], {
+            model: "gpt-5.6-sol",
+            modelConfig,
+            reasoning_effort: "xhigh",
+        });
+        await callAzureResponses([{ role: "user", content: "hi" }], {
+            model: "gpt-5.6-sol",
+            modelConfig,
+            reasoning_effort: "none",
+        });
 
         expect(bodies[0].reasoning).toEqual({ effort: "high" });
         expect(bodies[1]).not.toHaveProperty("reasoning");
@@ -164,7 +170,9 @@ describe("callAzureResponses", () => {
                     {
                         type: "reasoning",
                         id: "rs_1",
-                        summary: [{ type: "summary_text", text: "thinking..." }],
+                        summary: [
+                            { type: "summary_text", text: "thinking..." },
+                        ],
                     },
                     {
                         type: "message",
@@ -237,7 +245,11 @@ describe("callAzureResponses", () => {
                         id: "msg_1",
                         role: "assistant",
                         content: [
-                            { type: "output_text", text: "truncated", annotations: [] },
+                            {
+                                type: "output_text",
+                                text: "truncated",
+                                annotations: [],
+                            },
                         ],
                     },
                 ],
@@ -271,10 +283,11 @@ describe("callAzureResponses", () => {
             },
         });
 
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
-            new Response(stream, {
-                headers: { "Content-Type": "text/event-stream" },
-            }),
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async () =>
+                new Response(stream, {
+                    headers: { "Content-Type": "text/event-stream" },
+                }),
         );
 
         const completion = await callAzureResponses(
@@ -341,8 +354,8 @@ describe("callAzureResponses", () => {
             },
         });
 
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
-            new Response(stream),
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async () => new Response(stream),
         );
 
         const completion = await callAzureResponses(
@@ -396,13 +409,10 @@ describe("callAzureResponses", () => {
         });
 
         await expect(
-            callAzureResponses(
-                [{ role: "user", content: "hi" }],
-                {
-                    model: "gpt-5.6-sol",
-                    modelConfig: { ...modelConfig, "azure-api-key": undefined },
-                },
-            ),
+            callAzureResponses([{ role: "user", content: "hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig: { ...modelConfig, "azure-api-key": undefined },
+            }),
         ).rejects.toThrow("AZURE_MYCELI_PROD_API_KEY is not configured");
     });
 });

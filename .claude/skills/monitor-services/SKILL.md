@@ -249,24 +249,23 @@ The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s T
 
 ---
 
-### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090) + Sana Sprint (GH200)
+### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090)
 
-Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model, on two
-Vast 3090s load-balanced by observed latency. The GH200 Sana backend has been
-drained out of the pool.
+Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model on two
+Vast 3090s load-balanced by observed latency. SANA-Sprint is retired.
 
 | Backend | Model | Host | Registered URL |
 |---------|-------|------|----------------|
-| dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46307858` | `https://dreamshaper-vast-01.pollinations.ai` |
+| dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46607014` | `https://dreamshaper-canary-46600159.myceli.ai` |
 | dreamshaper-vast-02 | DreamShaper 8 LCM | Vast 3090 `46387155` | `https://dreamshaper-vast-02.pollinations.ai` |
 
 ```bash
-# both members must be present, and the Vast one must show the HOSTNAME,
+# both members must be present, and each must show its hostname,
 # never a raw IP:port — gen cannot fetch a Vast IP:port, and the heartbeat
 # stays green while every request through it fails
 curl -s https://gen.pollinations.ai/register -H "authorization: Bearer $PLN_GPU_TOKEN" \
   | python3 -c "import json,sys;[print(s['type'],s['url'],s.get('lastMs')) for s in json.load(sys.stdin)]"
-curl -s --max-time 10 https://dreamshaper-vast-01.pollinations.ai/health
+curl -s --max-time 10 https://dreamshaper-canary-46600159.myceli.ai/health
 ```
 
 Each host runs `WORKERS=3` uvicorn processes and sustains ~8 img/s; a single
@@ -282,35 +281,8 @@ Cloudflare bot protection 403s `User-Agent: Python-urllib/*` on these tunnel
 hostnames. Use curl or set a UA, or health checks will look broken when they
 are fine.
 
-Sana on the GH200, for reference:
-
-| Instance | GPU | Host | Port | SSH |
-|----------|-----|------|------|-----|
-| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105` |
-
-**Health check:**
-```bash
-curl -s --connect-timeout 5 --max-time 10 http://192.222.51.105:8766/health
-```
-Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
-
-**Sana registry check (OVH side):**
-```bash
-ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
-```
-Expected: 1 worker with 0% error rate
-
-**Restart:**
-```bash
-ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart sana"
-```
-
-**Notes:**
-- GH200 generates at ~0.165s/img
-- Runs alongside LTX-2 (port 8765) and ACE-Step (port 8189) on the same host
-- Oracle A10/A100 instances decommissioned on 2026-04-12
-- Server code: `image.pollinations.ai/sana/server.py` (MAX_DIM=768, MAX_PIXELS=512*512)
-- Systemd service: `sana.service`
+Deployment and restart details live in
+`operations/infrastructure/gpu/dreamshaper/`.
 
 ---
 

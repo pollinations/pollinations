@@ -5,6 +5,8 @@ DESCRIPTION >
 Model health statistics, grouped by model and event type.
 Returns request counts, 4xx/5xx error counts, response times, and a
 completion-token throughput estimate (tokens/sec) for monitoring dashboards.
+Also separates primary queue rejection from successful fallback rescue so a
+healthy final response is not reported as a model outage.
 Time window is controlled by the `minutes` parameter (default 60).
 
 NODE model_health_stats
@@ -33,6 +35,11 @@ SQL >
         -- read as a permanently dead model.
         countIf(NOT fallback_used) as own_calls,
         countIf(NOT fallback_used AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        countIf(NOT fallback_used AND response_status = 503) as primary_503s,
+        countIf(
+            is_final AND fallback_used
+            AND response_status >= 200 AND response_status < 300
+        ) as fallback_rescues,
         maxIf(start_time, is_final AND response_status >= 500) as last_error_at,
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,

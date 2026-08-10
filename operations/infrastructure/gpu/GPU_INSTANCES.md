@@ -292,8 +292,8 @@ machine diversity remains but regional diversity is reduced.
   cloudflared; inspect `/root/tunnel-dns.log` on affected hosts.
 - Normal PyPI delivered the verified PyTorch 2.9.1 CUDA 12.8 Blackwell wheel
   much faster than the dedicated PyTorch index on the canary.
-- See `z-image/README.md`, `z-image/setup-vast.sh`, and
-  `z-image/verify-vast.sh` for provisioning and verification.
+- See `zimage/README.md`, `zimage/setup-vast.sh`, and
+  `zimage/verify-vast.sh` for provisioning and verification.
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 

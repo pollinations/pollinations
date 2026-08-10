@@ -99,7 +99,7 @@ else
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
 
-ZIMAGE_DIR="$WORK_DIR/image.pollinations.ai/z-image"
+ZIMAGE_DIR="$WORK_DIR/operations/infrastructure/gpu/zimage"
 mkdir -p "$MODEL_CACHE/span"
 
 if [ ! -d "$VENV" ]; then

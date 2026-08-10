@@ -201,7 +201,10 @@ curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Conten
 ssh -i /tmp/zk -p <PORT> -o StrictHostKeyChecking=no root@<IP> \
   "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader; ps aux | grep 'z-image/server.py' | grep -v grep; ss -ltn | grep 8767"
 ```
-Code lives at `/root/pollinations/image.pollinations.ai/z-image/`; service auto-sources env from PID 1 (port 8767, `ZIMAGE_MODEL_ID`, `PLN_GPU_TOKEN`, `HF_TOKEN`). Direct `curl /generate` returns **403 without the GPU token** — a 403 still proves the server is up.
+Code lives at `/root/pollinations/operations/infrastructure/gpu/zimage/`;
+service auto-sources env from PID 1 (port 8767, `ZIMAGE_MODEL_ID`,
+`PLN_GPU_TOKEN`, `HF_TOKEN`). Direct `curl /generate` returns **403 without the
+GPU token** — a 403 still proves the server is up.
 
 **Recovery decision tree:**
 

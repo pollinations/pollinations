@@ -49,7 +49,7 @@ else
     git checkout $BRANCH
 fi
 
-WORKDIR="$HOME/pollinations/image.pollinations.ai/z-image"
+WORKDIR="$HOME/pollinations/operations/infrastructure/gpu/zimage"
 cd $WORKDIR
 
 # 3. Python environment

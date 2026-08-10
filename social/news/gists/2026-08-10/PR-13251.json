@@ -1,0 +1,33 @@
+{
+  "pr_number": 13251,
+  "title": "chore: remove GSoC app",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13251",
+  "merged_at": "2026-08-10T18:15:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes only the obsolete `apps/gsoc` application.\n- Drops its deployment registration and replaces the stale GSoC manual-deploy example.\n- Reflects that Pollinations is not participating in GSoC 2026.\n- Validated with Biome, JSON parsing, reference checks, and the deployment-consumer test.\n\nDeployment note: the existing Cloudflare project or domain can be retired separately after merge.",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The old garden plot rests",
+    "blurb": "The retired GSoC app and its deployment entry have been gently cleared away. The hive's map now matches 2026: no GSoC stop this season.",
+    "summary": "Removed the obsolete apps/gsoc application, its seven-entry deployment registration, and the stale manual-deploy example now that Pollinations is not participating in GSoC 2026.",
+    "impact": "Deployment consumers and repository contributors now see an accurate app registry and no longer encounter the retired GSoC 2026 materials.",
+    "keywords": [
+      "community",
+      "gsoc",
+      "app-removal",
+      "deployments",
+      "repository-maintenance"
+    ],
+    "visual_concept": "A cozy garden-shed cleanup represents retiring an obsolete community application: Polli carefully packs a small old GSoC sign and code printouts into a labeled archive box while a deployment map has the corresponding garden plot neatly cleared. Keep the mood warm and respectful rather than mournful, with fresh flowers and sprouts showing that the community garden continues growing.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, gently places an old \"GSoC\" pixel sign and code papers into an archive box beside a neatly updated deployment map; fresh code-plants and flowers bloom around a prominent lime green (#ecf874) workbench. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but hopeful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13251.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, gently places an old \"GSoC\" pixel sign and code papers into an archive box beside a neatly updated deployment map; fresh code-plants and flowers bloom around a prominent lime green (#ecf874) workbench. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but hopeful."
+  },
+  "generated_at": "2026-08-10T18:16:02.886432+00:00"
+}

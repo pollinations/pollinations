@@ -1,0 +1,35 @@
+{
+  "pr_number": 13231,
+  "title": "docs: update README — 2026-08-10",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13231",
+  "merged_at": "2026-08-10T07:39:09Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news in the garden",
+    "blurb": "The README’s Latest News patch has been refreshed for August 10. The front door gets its daily watering so newcomers can see what’s blooming.",
+    "summary": "Updated the root README’s Latest News section for 2026-08-10, keeping the project’s public landing documentation current.",
+    "impact": "Visitors to the repository will see the latest Pollinations news when they open the README.",
+    "keywords": [
+      "documentation",
+      "readme",
+      "news",
+      "community",
+      "repository"
+    ],
+    "visual_concept": "Depict Polli tending a small README-shaped garden noticeboard whose “Latest News” paper has just been replaced, with tiny flowers and code-plants growing around it; the scene represents the repository front page being kept fresh.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, pinning a fresh “LATEST NEWS” note onto a README-shaped garden noticeboard while code-plants and pastel flowers bloom nearby. Prominent soft lime green (#ecf874) glow, warm cream and lavender gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT-style scanlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-10/PR-13231.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, pinning a fresh “LATEST NEWS” note onto a README-shaped garden noticeboard while code-plants and pastel flowers bloom nearby. Prominent soft lime green (#ecf874) glow, warm cream and lavender gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT-style scanlines."
+  },
+  "generated_at": "2026-08-10T07:40:06.934744+00:00"
+}

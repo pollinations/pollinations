@@ -42,7 +42,7 @@ Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
 ## Setup
 
 ```bash
-cd apps/operation/kpi
+cd operations/kpi
 npm install
 
 # Load secrets (requires SOPS + age key)
@@ -59,7 +59,7 @@ npm run dev
 This is NOT on the Pollinations account. You must be logged into the myceli Cloudflare account.
 
 ```bash
-cd apps/operation/kpi
+cd operations/kpi
 
 # 1. Login to the myceli account (opens browser)
 npx wrangler login

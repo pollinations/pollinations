@@ -60,13 +60,13 @@ immediately.
 ## Deploying runtime changes
 
 ```bash
-scp apps/operation/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+scp operations/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
-scp apps/operation/community-monitor/seven-day-health.mjs \
+scp operations/community-monitor/seven-day-health.mjs \
   community-monitor:/home/ubuntu/monitor/
-scp apps/operation/community-monitor/leaderboard/{build-leaderboard.mjs,build-image-leaderboard.mjs,fonts-embedded.css} \
+scp operations/community-monitor/leaderboard/{build-leaderboard.mjs,build-image-leaderboard.mjs,fonts-embedded.css} \
   community-monitor:/home/ubuntu/monitor/leaderboard/
-scp apps/operation/community-monitor/community-monitor.service \
+scp operations/community-monitor/community-monitor.service \
   community-monitor:/tmp/community-monitor.service
 ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
   /etc/systemd/system/community-monitor.service && \

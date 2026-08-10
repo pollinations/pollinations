@@ -5,7 +5,7 @@ set -euo pipefail
 
 REPO=/home/ubuntu/pollinations
 MONITOR=/home/ubuntu/monitor
-SOURCE=apps/operation/community-monitor
+SOURCE=operations/community-monitor
 REF=refs/remotes/origin/main
 
 git -C "$REPO" fetch --quiet origin main:refs/remotes/origin/main

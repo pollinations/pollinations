@@ -24,7 +24,7 @@ ephemeral, so dashboards and alerting must stay provisioned from git.
 ## Quick Start
 
 ```bash
-cd apps/operation/observability
+cd operations/observability
 
 # 1. Create .env with local secrets
 cp /path/to/shared/.env .env
@@ -86,7 +86,7 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 ## Cloudflare Deployment
 
 ```bash
-cd apps/operation/observability
+cd operations/observability
 npm install
 
 # Validate Worker config and container image (requires Docker)
@@ -110,13 +110,13 @@ Cloudflare container migration is being verified.
 
 ```bash
 ssh root@207.154.253.25
-cd /opt/pollinations/apps/operation/observability
+cd /opt/pollinations/operations/observability
 docker compose -f docker-compose.prod.yml up -d
 ```
 
 The legacy container bind-mounts:
 
-- `/opt/pollinations/apps/operation/observability/provisioning` -> `/etc/grafana/provisioning`
+- `/opt/pollinations/operations/observability/provisioning` -> `/etc/grafana/provisioning`
 - `grafana-data` -> `/var/lib/grafana`
 
 ## Common Commands

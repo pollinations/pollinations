@@ -456,6 +456,8 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`apps/`](./apps/): Community apps and the app catalog (`catalog.json`, `GREENHOUSE.md`).
 
+- [`operations/`](./operations/): Internal dashboards, monitoring, economics, and infrastructure.
+
 - [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service — upload files and get a URL to use with Pollinations models, with public tag galleries.
 
 - [`social/`](./social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
@@ -507,4 +509,3 @@ pollinations.ai is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the pollinations.ai team
-

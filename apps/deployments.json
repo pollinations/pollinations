@@ -77,13 +77,6 @@
     "title": "Pollinations Chat",
     "description": "Chat with multiple AI models in one interface"
   },
-  "model-monitor": {
-    "subdomain": "model-monitor",
-    "buildCommand": "npm run build",
-    "outputDir": "dist",
-    "title": "Model Monitor",
-    "description": "Real-time health monitoring for Pollinations AI models"
-  },
   "changelog-generator": {
     "subdomain": "changelog-generator",
     "buildCommand": "npm run build",

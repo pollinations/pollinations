@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-// Daily community-model leaderboard: fetch 24h token/speed/success stats from
-// Tinybird, render the arcade-style HTML board, screenshot it via chromium,
-// upload the PNG via polli, and print the Discord post (image URL + markdown)
-// to stdout as JSON. Run manually or from CYCLE.md's daily duty.
+// Daily community image-model leaderboard: fetch 24h image/speed/success stats
+// from Tinybird, render the arcade-style HTML board, screenshot it via
+// chromium, upload the PNG via polli, and print the Discord post to stdout.
 //
-// Design provenance: pixel-art "arcade high-score" template validated across
-// several rounds of feedback (tokens-first ranking, PERFECT/heart stability
-// badges, embedded fonts) — see .claude/skills/community-leaderboard/SKILL.md
-// for the full design rationale and how to rebuild fonts-embedded.css.
+// Design provenance: the same pixel-art "arcade high-score" template as the
+// text leaderboard, with images generated and median seconds per image as the
+// image equivalents of tokens served and token speed.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -22,7 +20,7 @@ if (!TB_TOKEN) {
 }
 
 const TB_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const MIN_REQUESTS = 50; // ignore models too quiet to be meaningful
+const MIN_REQUESTS = 10; // image traffic is much lower than text traffic
 const TOP_N = 10;
 const SPEED_TOP_N = 3;
 
@@ -43,36 +41,49 @@ async function tbSql(query) {
 async function fetchLeaderboardData() {
     const rows = await tbSql(`
     SELECT
-      model_requested AS model,
+      resolved_model_requested AS model,
       count() AS requests,
-      sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
-      round(medianIf((token_count_completion_text + token_count_completion_reasoning) / (response_time / 1000), response_status < 300 AND response_time > 0 AND token_count_completion_text + token_count_completion_reasoning >= 20), 1) AS median_tps,
-      round(100 * countIf(response_status >= 200 AND response_status < 300) / greatest(countIf(response_status < 400 OR response_status >= 500), 1), 2) AS success
+      countIf(response_status >= 200 AND response_status < 300) AS images,
+      round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300 AND response_time > 0) / 1000, 1) AS median_seconds,
+      round(100 * countIf(response_status >= 200 AND response_status < 300) / greatest(countIf(
+        (response_status >= 200 AND response_status < 300)
+        OR response_status >= 500
+        OR (response_status >= 400 AND response_status < 500 AND startsWith(error_message, 'Image provider error:'))
+      ), 1), 2) AS success
     FROM generation_event_v2
-    WHERE start_time > now() - INTERVAL 24 HOUR AND model_requested LIKE '%/%' AND is_final
+    WHERE environment = 'production'
+      AND start_time > now() - INTERVAL 24 HOUR
+      AND event_type = 'generate.image'
+      AND position(resolved_model_requested, '/') > 0
+      AND is_final
     GROUP BY model
-    HAVING requests >= ${MIN_REQUESTS}
-    ORDER BY total_tokens DESC
+    HAVING requests >= ${MIN_REQUESTS} AND images > 0
+    ORDER BY images DESC
     FORMAT JSON
   `);
 
     const totals = (
         await tbSql(`
     SELECT count() AS requests,
-           sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
-           uniq(model_requested) AS models
+           countIf(response_status >= 200 AND response_status < 300) AS images,
+           uniq(resolved_model_requested) AS models
     FROM generation_event_v2
-    WHERE start_time > now() - INTERVAL 24 HOUR AND model_requested LIKE '%/%' AND is_final
+    WHERE environment = 'production'
+      AND start_time > now() - INTERVAL 24 HOUR
+      AND event_type = 'generate.image'
+      AND position(resolved_model_requested, '/') > 0
+      AND is_final
     FORMAT JSON
   `)
     )[0];
 
-    const byTokens = rows.slice(0, TOP_N);
+    const byImages = rows.slice(0, TOP_N);
     const bySpeed = [...rows]
-        .sort((a, b) => b.median_tps - a.median_tps)
+        .filter((row) => row.median_seconds > 0)
+        .sort((a, b) => a.median_seconds - b.median_seconds)
         .slice(0, SPEED_TOP_N);
 
-    return { rows: byTokens, speedChampions: bySpeed, totals };
+    return { rows: byImages, speedChampions: bySpeed, totals };
 }
 
 function hpBadge(success) {
@@ -86,13 +97,12 @@ function hpBadge(success) {
                 ? [1, "warn"]
                 : [0, "bad"];
     if (n === 0) return '<i class="skull"></i>';
-    return Array.from(
-        { length: n },
-        () => '<i class="ph ' + cls + '"></i>',
-    ).join("");
+    return Array.from({ length: n }, () => `<i class="ph ${cls}"></i>`).join(
+        "",
+    );
 }
 
-function formatTokens(n) {
+function formatCount(n) {
     return n.toLocaleString("en-US").replace(/,/g, "<i>,</i>");
 }
 
@@ -101,46 +111,46 @@ function buildHtml({ rows, speedChampions, totals, date }) {
         join(__dirname, "fonts-embedded.css"),
         "utf8",
     );
-    const maxTokens = rows[0].total_tokens;
+    const maxImages = rows[0].images;
 
     const bodyRows = rows
         .map((r, i) => {
             const isFirst = i === 0;
             const [owner, ...rest] = r.model.split("/");
             const model = rest.join("/");
-            const pct = (r.total_tokens / maxTokens) * 100;
+            const pct = (r.images / maxImages) * 100;
             const crown = isFirst ? '<span class="crown"></span>' : "";
             return `  <div class="row${isFirst ? " first" : ""}">
     <div class="bar" style="width:${pct}%"></div>
-    <span class="score">${formatTokens(r.total_tokens)}</span>
+    <span class="score">${formatCount(r.images)}</span>
     <span class="name">${crown}<b>${owner}</b>/${model}</span>
-    <span class="tpsl">${r.median_tps}</span>
+    <span class="speed">${r.median_seconds}</span>
     <span class="hp">${hpBadge(r.success)}</span>
   </div>`;
         })
         .join("\n");
 
-    const maxSpeed = speedChampions[0].median_tps;
+    const fastestSeconds = speedChampions[0].median_seconds;
     const cards = speedChampions
         .map((c, i) => {
             const [owner, ...rest] = c.model.split("/");
             const model = rest.join("/");
-            const pct = (c.median_tps / maxSpeed) * 100;
+            const pct = (fastestSeconds / c.median_seconds) * 100;
             const gold = i === 0 ? " gold" : "";
             const medal = i === 0 ? '<span class="medal">FASTEST</span>' : "";
             return `    <div class="card${gold}">
       ${medal}
-      <div class="big">${c.median_tps} <span class="unit">T/S</span></div>
+      <div class="big">${c.median_seconds} <span class="unit">SEC</span></div>
       <div class="sbar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="who"><b>${owner}</b>/${model}</div>
     </div>`;
         })
         .join("\n");
 
-    const tokensDisplay = totals.total_tokens.toLocaleString("en-US");
+    const imagesDisplay = totals.images.toLocaleString("en-US");
 
     return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Community Model Leaderboard</title>
+<html><head><meta charset="utf-8"><title>Community Image Model Leaderboard</title>
 <style id="fonts">${fontsCss}</style>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; border-radius:0 !important; }
@@ -180,7 +190,7 @@ function buildHtml({ rows, speedChampions, totals, date }) {
   .score i { font-style:normal; color:#a89fc0; }
   .name { font-size:14px; font-weight:400; color:#4a3f5c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .name b { font-weight:700; color:#110518; }
-  .tpsl { text-align:right; font-weight:700; font-size:13px; color:#4a3f5c; }
+  .speed { text-align:right; font-weight:700; font-size:13px; color:#4a3f5c; }
   .hp { display:flex; justify-content:center; align-items:center; }
   .ph { display:inline-block; width:3px; height:3px; background:transparent; position:relative; top:-8px; margin-right:24px;
     box-shadow: 3px 0 0 currentColor, 6px 0 0 currentColor, 12px 0 0 currentColor, 15px 0 0 currentColor, 0 3px 0 currentColor, 3px 3px 0 currentColor, 6px 3px 0 currentColor, 9px 3px 0 currentColor, 12px 3px 0 currentColor, 15px 3px 0 currentColor, 18px 3px 0 currentColor, 0 6px 0 currentColor, 3px 6px 0 currentColor, 6px 6px 0 currentColor, 9px 6px 0 currentColor, 12px 6px 0 currentColor, 15px 6px 0 currentColor, 18px 6px 0 currentColor, 3px 9px 0 currentColor, 6px 9px 0 currentColor, 9px 9px 0 currentColor, 12px 9px 0 currentColor, 15px 9px 0 currentColor, 6px 12px 0 currentColor, 9px 12px 0 currentColor, 12px 12px 0 currentColor, 9px 15px 0 currentColor; }
@@ -193,7 +203,7 @@ function buildHtml({ rows, speedChampions, totals, date }) {
   .row.first .bar { background:#E8F372; border-right:none; }
   .row.first .name { font-size:17px; }
   .row.first .score { font-size:14px; }
-  .row.first .tpsl { font-size:14px; color:#110518; }
+  .row.first .speed { font-size:14px; color:#110518; }
   .crown { width:3px; height:3px; background:transparent; position:relative; top:-6px; margin-right:30px; display:inline-block;
     box-shadow: 0 0 0 #110518, 12px 0 0 #110518, 24px 0 0 #110518, 0 3px 0 #110518, 3px 3px 0 #110518, 9px 3px 0 #110518, 12px 3px 0 #110518, 15px 3px 0 #110518, 21px 3px 0 #110518, 24px 3px 0 #110518, 0 6px 0 #110518, 3px 6px 0 #110518, 6px 6px 0 #110518, 9px 6px 0 #110518, 12px 6px 0 #110518, 15px 6px 0 #110518, 18px 6px 0 #110518, 21px 6px 0 #110518, 24px 6px 0 #110518, 0 9px 0 #110518, 3px 9px 0 #110518, 6px 9px 0 #110518, 9px 9px 0 #110518, 12px 9px 0 #110518, 15px 9px 0 #110518, 18px 9px 0 #110518, 21px 9px 0 #110518, 24px 9px 0 #110518; }
   .bonus { margin-top:26px; }
@@ -229,26 +239,26 @@ function buildHtml({ rows, speedChampions, totals, date }) {
 </div>
 <div class="titlebar">
   <div class="star"></div>
-  <h1>MODEL LEADERBOARD</h1>
+  <h1>IMAGE LEADERBOARD</h1>
   <div class="star flip"></div>
 </div>
-<div class="subtitle">RANKED BY TOKENS SERVED &middot; LAST 24 HOURS</div>
+<div class="subtitle">RANKED BY IMAGES GENERATED &middot; LAST 24 HOURS</div>
 <div class="counterwrap">
   <div class="counter">
-    <span class="cdig">${tokensDisplay}</span>
-    <span class="cunit">TOKENS<br>&middot; 24H &middot;</span>
+    <span class="cdig">${imagesDisplay}</span>
+    <span class="cunit">IMAGES<br>&middot; 24H &middot;</span>
   </div>
   <div class="csub">${totals.requests.toLocaleString("en-US")} REQUESTS &middot; ${totals.models} MODELS</div>
 </div>
 <div class="cab">
-  <div class="thead"><span>TOKENS &middot; 24H</span><span>MODEL</span><span class="r">SPEED T/S</span><span class="c">SUCCESS</span></div>
+  <div class="thead"><span>IMAGES &middot; 24H</span><span>MODEL</span><span class="r">MEDIAN SEC</span><span class="c">SUCCESS</span></div>
 ${bodyRows}
 </div>
 <div class="bonus">
   <div class="bonus-title">
     <span class="px">FASTEST</span>
     <div class="dash"></div>
-    <span class="px" style="font-size:8px;color:#6b5f80">MEDIAN TOKENS PER SECOND &middot; 24H</span>
+    <span class="px" style="font-size:8px;color:#6b5f80">MEDIAN SECONDS PER IMAGE &middot; 24H</span>
   </div>
   <div class="cards">
 ${cards}
@@ -326,9 +336,9 @@ async function polliUpload(pngPath) {
     form.append(
         "file",
         new Blob([buf], { type: "image/png" }),
-        "leaderboard.png",
+        "image-leaderboard.png",
     );
-    form.append("tags", "community:leaderboard");
+    form.append("tags", "community:image-leaderboard");
 
     const res = await fetch(`${mediaUrl}/upload`, {
         method: "POST",
@@ -358,12 +368,12 @@ function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
     const mrModel = mrRest.join("/");
 
     const lines = [
-        `# 🏆 COMMUNITY MODEL LEADERBOARD — ${date}`,
+        `# 🖼️ COMMUNITY IMAGE MODEL LEADERBOARD — ${date}`,
         "",
-        `**${totals.total_tokens.toLocaleString("en-US")} tokens** served in 24 hours across ${totals.models} models.`,
+        `**${totals.images.toLocaleString("en-US")} images** generated in 24 hours across ${totals.models} models (${totals.requests.toLocaleString("en-US")} requests).`,
         "",
-        `👑 \`${topOwner}/${topModel}\` — ${top.total_tokens.toLocaleString("en-US")} tokens · ${top.success}% success`,
-        `⚡ speed crown: \`${fastOwner}/${fastModel}\` — **${fastest.median_tps} tokens/sec** median`,
+        `👑 \`${topOwner}/${topModel}\` — ${top.images.toLocaleString("en-US")} images · ${top.success}% success`,
+        `⚡ fastest: \`${fastOwner}/${fastModel}\` — **${fastest.median_seconds} sec/image** median`,
     ];
     if (mostRequests.model !== top.model) {
         lines.push(
@@ -394,9 +404,9 @@ async function main() {
     const html = buildHtml({ ...data, date });
 
     if (dryRun) {
-        writeFileSync("/tmp/leaderboard-preview.html", html);
+        writeFileSync("/tmp/image-leaderboard-preview.html", html);
         console.error(
-            "Dry run: wrote /tmp/leaderboard-preview.html, skipping render/upload.",
+            "Dry run: wrote /tmp/image-leaderboard-preview.html, skipping render/upload.",
         );
         console.log(
             JSON.stringify(
@@ -411,7 +421,10 @@ async function main() {
         return;
     }
 
-    const outPng = join("/home/ubuntu/monitor", `leaderboard-${date}.png`);
+    const outPng = join(
+        "/home/ubuntu/monitor",
+        `image-leaderboard-${date}.png`,
+    );
     renderPng(html, outPng);
     const imageUrl = await polliUpload(outPng);
     const markdown = buildDiscordMarkdown({ ...data, date }).replace(

@@ -97,14 +97,14 @@ Rollback below).
 
 | Worker | Pod / Host | SSH target | Restart |
 |---|---|---|---|
-| Flux | Vast.ai 5090 instance(s) — see `image.pollinations.ai/GPU_INSTANCES.md` for current instance | `vastai show instances` for IP/port | restart `flux` screen |
+| Flux | Vast.ai instance(s) — see `operations/infrastructure/gpu/GPU_INSTANCES.md` for the current fleet | `vastai show instances` for IP/port | restart `flux` screen |
 | Z-Image | 3× RunPod single-GPU pods (`runpodctl pod list`) | rotating tcp port via RunPod GraphQL | `/root/relaunch-zimage.sh` |
 | Klein 4B | RunPod (id changes if recreated — verify with `runpodctl pod list` and `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json`) | RunPod relay, interactive-only | `/workspace/restart.sh` (token baked in via `export`; edit + re-run inside an interactive session) |
 | LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | SSH key in enter SOPS | `systemctl restart ltx2 acestep sana` |
 
 Hosts move (pods get recreated, Flux migrated from RunPod to Vast.ai in
 2026-07) — confirm current host/pod identity against
-`image.pollinations.ai/GPU_INSTANCES.md` before rotating; don't trust this
+`operations/infrastructure/gpu/GPU_INSTANCES.md` before rotating; don't trust this
 table's specifics as current without checking.
 
 ## SOPS recipient rotation

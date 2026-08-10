@@ -11,19 +11,12 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
-import { createMiddleware } from "hono/factory";
-import type { RequestIdVariables } from "hono/request-id";
-import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheMediaResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
-
-type MediaCacheEnv = {
-    Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
-};
+import { createGenerationCache } from "./generation-cache.ts";
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
@@ -35,74 +28,65 @@ type MediaCacheConfig = {
 };
 
 export function createMediaCache(config: MediaCacheConfig) {
-    return createMiddleware<MediaCacheEnv>(async (c, next) => {
-        const log = c.get("log").getChild(config.label);
-
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
-        if (seedParam === "-1") {
-            log.debug("seed=-1 detected, skipping cache");
-            return next();
-        }
-
-        const cacheKey = generateCacheKey(
-            new URL(c.req.url),
-            c.req.header(SAFETY_HEADER_NAME),
-        );
-        log.debug("Cache key: {key}", { key: cacheKey });
-
-        try {
-            const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
-            if (cached) {
-                log.info("Cache HIT");
-                setHttpMetadataHeaders(
-                    c,
-                    cached.httpMetadata,
-                    config.defaultContentType,
-                    cached.customMetadata,
-                );
-                c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-                c.header("X-Cache", "HIT");
-                c.header("X-Cache-Type", "EXACT");
-                return c.body(
-                    refreshR2ObjectTtl(
-                        c.env.IMAGE_BUCKET,
-                        cacheKey,
-                        cached,
-                        (promise) => c.executionCtx.waitUntil(promise),
-                        (error) => {
-                            log.error(
-                                "Error refreshing media cache TTL: {error}",
-                                { error },
-                            );
-                        },
-                    ),
-                );
+    return createGenerationCache({
+        label: config.label,
+        getKey(c, log) {
+            const seedParam = new URL(c.req.url).searchParams.get("seed");
+            if (seedParam === "-1") {
+                log.debug("seed=-1 detected, skipping cache");
+                return null;
             }
+            return generateCacheKey(
+                new URL(c.req.url),
+                c.req.header(SAFETY_HEADER_NAME),
+            );
+        },
+        async get(c, cacheKey) {
+            const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
+            if (!cached) return null;
 
-            log.debug("Cache MISS");
-            c.header("X-Cache", "MISS");
-        } catch (error) {
-            log.error("Error retrieving cached response: {error}", { error });
-        }
-
-        await next();
-
-        const contentType = c.res?.headers.get("content-type");
-        const xCache = c.res?.headers.get("x-cache");
-
-        const isMatchingContent = config.mediaTypes.some((type) =>
-            contentType?.includes(type),
-        );
-        if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
-            log.debug("Caching response");
+            setHttpMetadataHeaders(
+                c,
+                cached.httpMetadata,
+                config.defaultContentType,
+                cached.customMetadata,
+            );
+            c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+            c.header("X-Cache", "HIT");
+            c.header("X-Cache-Type", "EXACT");
+            return c.body(
+                refreshR2ObjectTtl(
+                    c.env.IMAGE_BUCKET,
+                    cacheKey,
+                    cached,
+                    (promise) => c.executionCtx.waitUntil(promise),
+                    (error) => {
+                        c.get("log").error(
+                            "Error refreshing media cache TTL: {error}",
+                            { error },
+                        );
+                    },
+                ),
+            );
+        },
+        shouldCache(response) {
+            const contentType = response.headers.get("content-type");
+            return (
+                response.ok &&
+                response.headers.get("x-cache") !== "HIT" &&
+                config.mediaTypes.some((type) => contentType?.includes(type))
+            );
+        },
+        capture(c, cacheKey, response) {
             cacheMediaResponse(
                 c.env.IMAGE_BUCKET,
                 cacheKey,
                 c,
                 config.defaultContentType,
-                c.res,
+                response,
             );
-        }
+            return response;
+        },
     });
 }
 

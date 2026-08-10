@@ -27,6 +27,7 @@ const {
     normalizeHttpUrl,
     normalizedPointToViewport,
     parseAgentJson,
+    preferDismissalBeforeAuthentication,
     readStorageState,
     requestAgentDecision,
     reviewContextOptions,
@@ -900,8 +901,15 @@ test("loads a focused screenshot-agent system prompt", () => {
         /advertising is a removal signal/,
     );
     assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /API-key prompt/);
-    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /Adult or sexual products/);
+    assert.match(
+        SCREENSHOT_AGENT_SYSTEM_PROMPT,
+        /Explicit sexual or pornographic products/,
+    );
     assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /not adult evidence/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /Horror, violence, fear/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /When Source is repository/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /Authentication is forbidden/);
+    assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /email\/password form/);
     assert.match(SCREENSHOT_AGENT_SYSTEM_PROMPT, /multi-step onboarding/);
     assert.doesNotMatch(
         SCREENSHOT_AGENT_SYSTEM_PROMPT,
@@ -945,6 +953,27 @@ test("the independent removal gate cannot accept a cover", () => {
                 reason: "Wrong review phase.",
             }),
         /removal review was invalid/,
+    );
+});
+
+test("dismisses an explicit presentation layer before authentication", () => {
+    assert.deepEqual(
+        preferDismissalBeforeAuthentication(
+            {
+                action: { elementId: "authorize", type: "authenticate" },
+                decision: "authenticate",
+                reason: "Authentication is visible.",
+            },
+            [
+                { elementId: "authorize", label: "Authorize & Continue" },
+                { elementId: "close", label: "Close" },
+            ],
+        ),
+        {
+            action: { elementId: "close", type: "click" },
+            decision: "act",
+            reason: "Dismiss the presentation layer before considering authentication",
+        },
     );
 });
 

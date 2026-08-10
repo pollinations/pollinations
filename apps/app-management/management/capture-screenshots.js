@@ -1449,6 +1449,21 @@ function validateFreshAgentDecision(decision, history) {
     return decision;
 }
 
+function preferDismissalBeforeAuthentication(decision, elements) {
+    if (decision.decision !== "authenticate") return decision;
+    const dismissal = elements.find(({ label }) =>
+        /^(close|dismiss|skip|not now)$/i.test(String(label).trim()),
+    );
+    return dismissal
+        ? {
+              ...decision,
+              action: { elementId: dismissal.elementId, type: "click" },
+              decision: "act",
+              reason: "Dismiss the presentation layer before considering authentication",
+          }
+        : decision;
+}
+
 function hasAllowedOrigin(page, allowedOrigin) {
     try {
         return new URL(page.url()).origin === allowedOrigin;
@@ -1651,6 +1666,7 @@ async function requestAgentDecision(
     if (validated.decision === "reject") {
         validated = { ...validated, decision: "retry" };
     }
+    validated = preferDismissalBeforeAuthentication(validated, elements);
     if (validated.decision === "accept") return validated;
     if (validated.decision !== "remove") return validated;
 
@@ -2546,6 +2562,7 @@ module.exports = {
     normalizeHttpUrl,
     normalizedPointToViewport,
     parseAgentJson,
+    preferDismissalBeforeAuthentication,
     readStorageState,
     requestAgentDecision,
     reviewContextOptions,

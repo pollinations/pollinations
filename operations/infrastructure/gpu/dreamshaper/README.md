@@ -2,7 +2,7 @@
 
 FastAPI worker serving `dreamshaper` (alias `sana`) — DreamShaper-8 with the
 LCM-LoRA fused in, a TAESD tiny decoder, and 3 sampling steps at 512×512.
-Replaces the SANA-Sprint worker in `../sana/`.
+Replaces the retired SANA-Sprint worker.
 
 ## Why this config
 

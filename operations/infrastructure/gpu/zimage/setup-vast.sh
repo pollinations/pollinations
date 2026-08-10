@@ -25,6 +25,7 @@ SERVICE_TYPE="${SERVICE_TYPE:-zimage}"
 PORT="${PORT:-10002}"
 HEARTBEAT_ENABLED="${HEARTBEAT_ENABLED:-false}"
 HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
+QUEUE_LIMIT="${QUEUE_LIMIT:-3}"
 SUDO=""
 [ "$(id -u)" != "0" ] && SUDO="sudo"
 
@@ -174,6 +175,7 @@ log "Writing runtime environment to $ENV_FILE"
     printf 'export SPAN_MODEL_PATH=%q\n' "$SPAN_MODEL_PATH"
     printf 'export HF_HUB_CACHE=%q\n' "$MODEL_CACHE/hub"
     printf 'export HF_HUB_DISABLE_XET=%q\n' "$HF_HUB_DISABLE_XET"
+    printf 'export QUEUE_LIMIT=%q\n' "$QUEUE_LIMIT"
     printf 'export CUDA_VISIBLE_DEVICES=0\n'
     # cuDNN v8's VAE convolution path segfaults with exit 139 on the tested
     # RTX 5090 / driver 570 / cu128 stack. The legacy API remains GPU-backed

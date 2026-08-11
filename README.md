@@ -463,7 +463,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service — upload files and get a URL to use with Pollinations models, with public tag galleries.
 
-- [`social/`](./social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
+- [`operations/social/`](./operations/social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
 

@@ -9,7 +9,7 @@ Publishes daily content from the news branch. Two modes via PUBLISH_MODE env var
 
 LinkedIn and Instagram are weekly-only (no daily posts).
 
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import os

@@ -374,7 +374,7 @@ def main() -> int:
         # Operator-driven republish path: no staging dir on this runner, and
         # REPUBLISH=1 was set explicitly. Read discord.json from the news
         # branch and post only — no commit.
-        file_path = f"social/news/models/{target_date}/discord.json"
+        file_path = f"operations/social/news/models/{target_date}/discord.json"
         print(f"REPUBLISH=1; loading {file_path} from {GISTS_BRANCH} branch.")
         discord = read_news_file(file_path, github_token, owner, repo)
         if not discord:

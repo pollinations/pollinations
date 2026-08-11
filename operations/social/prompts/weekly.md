@@ -43,7 +43,7 @@ Given PR gists for the past 7 days (grouped by date), weave them into a weekly d
 - `arcs`: 3-7 thematic groups spanning the whole week. Each has a headline, summary, which days contributed, and importance.
 - `mood`: Week's vibe. Options: "shipping week", "debugging marathon", "spring cleaning", "productive", "laser focus", "new beginnings", "quiet week", "tending the garden", "building walls", "tuning the engine", "community harvest", "buzzing". Vary it — match the actual work.
 - `theme`: One sentence capturing the week's overall direction.
-- `changelog_md`: Markdown-formatted weekly changelog (same format as existing `social/news/YYYY-MM-DD.md` files).
+- `changelog_md`: Markdown-formatted weekly changelog (same format as existing `operations/social/news/YYYY-MM-DD.md` files).
 - `pr_summary`: Formatted PR list for platform prompts (injected as `{updates}`).
 
 Return ONLY the JSON object. No markdown fences, no explanation.

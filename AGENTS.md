@@ -32,7 +32,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, economics, and infrastructure
-- `social/` — Discord/Reddit/GitHub automation
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 

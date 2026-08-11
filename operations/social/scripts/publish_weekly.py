@@ -7,7 +7,7 @@ Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env va
   - "direct": Deploy Reddit to VPS + Discord webhook (called by news-publish-social.yml cron at 18:00 UTC Sunday)
   - "all" (default): Both
 
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import json

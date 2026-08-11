@@ -62,28 +62,13 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
-      - name: Get changed operations scripts
-        id: operations-scripts
-        run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(\.github/scripts/|operations/app-management/|operations/deployment/).*\.(c?js)$' || true)
-          echo "Changed operations scripts:"
-          echo "$FILES"
-          if [ -n "$FILES" ]; then
-            echo "any_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "any_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Test operations scripts
-        if: steps.operations-scripts.outputs.any_changed == 'true'
-        run: |
-          if compgen -G ".github/scripts/*.test.js" > /dev/null; then
-            node --test .github/scripts/*.test.js
-          fi
-          mapfile -t APP_TESTS < <(find operations/app-management operations/deployment -name '*.test.*js' -type f)
-          if (( ${#APP_TESTS[@]} )); then
-            node --test "${APP_TESTS[@]}"
-          fi
+      - name: Test maintenance scripts
+        run: >-
+          node --test
+          enter.pollinations.ai/scripts/*.test.mjs
+          operations/app-management/*.test.js
+          operations/app-management/ingestion/*.test.js
+          operations/deployment/*.test.cjs
 
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files

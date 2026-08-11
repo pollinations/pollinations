@@ -1,0 +1,35 @@
+{
+  "pr_number": 13289,
+  "title": "feat: improve economics reconciliation workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13289",
+  "merged_at": "2026-08-11T23:24:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds secure Google Drive invoice previews for individual transaction documents.\n- Opens folders directly for transactions backed by multiple documents and marks missing evidence clearly.\n- Defaults the dashboard to the latest closed month so incomplete month-to-date data is not selected automatically.\n- Normalizes Vast vendor naming across economics datasets.\n- Validated with Biome, the full economics test suite (171 tests), and TypeScript type checking.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Receipts find their flowers",
+    "blurb": "The economics dashboard now follows transaction evidence more neatly: single invoices open as secure previews, bundles lead straight to their folder, and missing paperwork stops pretending to be invisible.",
+    "summary": "Improved the internal economics reconciliation dashboard with secure Google Drive previews for single transaction invoices, direct folder links for multi-document transactions, explicit missing-evidence states, latest-closed-month defaults, and normalized Vast vendor names.",
+    "impact": "Finance operators can reconcile completed months with clearer document trails, while invoice bundles and missing evidence are immediately distinguishable.",
+    "keywords": [
+      "economics",
+      "reconciliation",
+      "google-drive",
+      "invoices",
+      "dashboard",
+      "vast",
+      "transactions"
+    ],
+    "visual_concept": "A cozy bookkeeping garden: Polli, wearing tiny accountant glasses and a green visor, sorts transaction receipts into labeled flower pots while a CRT monitor robot opens a secure document preview and a folder full of multiple invoices. A calendar flower is set to the latest completed month, and a clearly empty evidence pot is marked with a gentle pixel icon rather than hidden.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed bookkeeping desk where the cute pollinations bee mascot has a tiny green accountant visor and round glasses, sorting invoice papers into lime green (#ecf874) flower pots beside a CRT monitor robot showing a secure document preview; a folder of several receipts sits nearby and one empty pot is clearly marked \"MISSING\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, code-vines and small flowers around the desk, emotionally warm and gently organized."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-11/PR-13289.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed bookkeeping desk where the cute pollinations bee mascot has a tiny green accountant visor and round glasses, sorting invoice papers into lime green (#ecf874) flower pots beside a CRT monitor robot showing a secure document preview; a folder of several receipts sits nearby and one empty pot is clearly marked \"MISSING\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, code-vines and small flowers around the desk, emotionally warm and gently organized."
+  },
+  "generated_at": "2026-08-11T23:34:22.028667+00:00"
+}

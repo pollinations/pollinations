@@ -167,7 +167,7 @@ Deterministic cache — same prompt+duration = same bytes. Always `--instrumenta
 
 ## Brand voice for generated content
 
-See `social/prompts/tone/linkedin.md`, `social/prompts/brand/about.md`.
+See `operations/social/prompts/tone/linkedin.md`, `operations/social/prompts/brand/about.md`.
 
 - Dry, information-dense, anti-corporate.
 - No "excited to announce", "game-changing", hashtag spam.

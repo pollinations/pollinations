@@ -5,7 +5,7 @@ Discord Real-Time Post — Per-PR Announcement
 Reads the gist JSON committed by generate_realtime.py and posts
 a Discord announcement using shared format + platform voice.
 
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import base64

@@ -2,7 +2,7 @@ import os
 import re
 import argparse
 
-HIGHLIGHTS_PATH = "social/news/highlights.md"
+HIGHLIGHTS_PATH = "operations/social/news/highlights.md"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
 
@@ -85,7 +85,7 @@ def update_readme_local(highlights_path: str, readme_path: str) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Update README Latest News section from highlights.md")
-    parser.add_argument("--repo-root", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")),
+    parser.add_argument("--repo-root", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")),
                         help="Repository root directory")
     args = parser.parse_args()
 

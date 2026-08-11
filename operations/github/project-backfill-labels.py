@@ -4,20 +4,20 @@ Backfill labels and priority for issues/PRs in a GitHub project.
 
 Usage:
     # Full backfill (replace all)
-    python project-backfill-labels.py --project dev
+    python operations/github/project-backfill-labels.py --project dev
 
     # Only fill missing fields (don't replace existing)
-    python project-backfill-labels.py --project dev --only-missing
+    python operations/github/project-backfill-labels.py --project dev --only-missing
 
     # Include priority updates
-    python project-backfill-labels.py --project dev --with-priority --only-missing
+    python operations/github/project-backfill-labels.py --project dev --with-priority --only-missing
 
     # Skip labels (useful for priority-only runs)
-    python project-backfill-labels.py --project dev --skip-labels --with-priority
+    python operations/github/project-backfill-labels.py --project dev --skip-labels --with-priority
 
     # Process PRs
-    python project-backfill-labels.py --project dev --include-prs
-    python project-backfill-labels.py --project dev --prs-only
+    python operations/github/project-backfill-labels.py --project dev --include-prs
+    python operations/github/project-backfill-labels.py --project dev --prs-only
 
 Options:
     --project        Required. Project to process: dev, support, apps

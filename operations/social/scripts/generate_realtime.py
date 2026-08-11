@@ -7,7 +7,7 @@ On PR merge:
   Step 2: Generate pixel art image → commit image + gist to news branch
 
 Discord posting is handled separately by publish_realtime.py.
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import json
@@ -205,7 +205,7 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
 
     # Commit image to repo on news branch
     date_str = gist["merged_at"][:10]
-    image_path = f"social/news/gists/{date_str}/PR-{gist['pr_number']}.jpg"
+    image_path = f"operations/social/news/gists/{date_str}/PR-{gist['pr_number']}.jpg"
     image_url = commit_image_to_branch(
         image_bytes, image_path, GISTS_BRANCH,
         github_token, owner, repo,

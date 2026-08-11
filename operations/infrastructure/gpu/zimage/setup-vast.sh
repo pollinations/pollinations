@@ -204,6 +204,13 @@ screen -S zimage -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
 screen -S tunnel-dns -X quit 2>/dev/null || true
 
+# The DoH fallback points resolv.conf at localhost while it is running. Restore
+# the provider resolver before an isolated start; otherwise disabling the
+# production tunnel also disables outbound DNS needed during model startup.
+if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ] && [ -s "$TUNNEL_RESOLV_BACKUP" ]; then
+    cp "$TUNNEL_RESOLV_BACKUP" /etc/resolv.conf
+fi
+
 screen -dmS zimage bash -c 'while true; do /root/run-zimage.sh >> /root/zimage.log 2>&1; sleep 5; done'
 
 if [ ! -f "$TUNNEL_ENABLED_FILE" ]; then

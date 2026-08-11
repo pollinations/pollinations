@@ -1828,7 +1828,7 @@ describe("trackResponse malformed SSE chunks", () => {
     it("survives a malformed data event and still processes later valid events", async () => {
         const sse = [
             // Malformed chunk — not valid JSON.
-            'data: {broken json\n\n',
+            "data: {broken json\n\n",
             // Valid chunk with content but no usage yet.
             'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\n',
             // Valid chunk with usage.
@@ -1855,8 +1855,8 @@ describe("trackResponse malformed SSE chunks", () => {
     it("emits a usage_missing row when the entire stream is malformed", async () => {
         // Every data event is unparseable, but the stream otherwise completes.
         const sse = [
-            'data: {not valid\n\n',
-            'data: also not json\n\n',
+            "data: {not valid\n\n",
+            "data: also not json\n\n",
             "data: [DONE]\n\n",
         ].join("");
         const tracking = await trackResponse(
@@ -1877,7 +1877,7 @@ describe("trackResponse malformed SSE chunks", () => {
         const sse = [
             'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"first"}}]}\n\n',
             // Middle chunk is garbage.
-            'data: {{{oops\n\n',
+            "data: {{{oops\n\n",
             'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"last"}}],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\n',
             "data: [DONE]\n\n",
         ].join("");

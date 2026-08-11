@@ -6,14 +6,20 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
+import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
+} from "./models/openRouterImageModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
@@ -23,10 +29,10 @@ import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
-    callSeedreamProAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
+import { callZImageFalAPI } from "./models/zImageFalModel.ts";
 import type { ImageParams } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
@@ -35,7 +41,6 @@ import {
     type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
-import { isAccountLevelBlock } from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -48,7 +53,6 @@ import {
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
-import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
 // Loggers
@@ -77,6 +81,7 @@ type AzureGPTImageUsage = {
 
 export type ImageGenerationResult = {
     buffer: Buffer;
+    mimeType?: string;
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
@@ -86,7 +91,6 @@ export type ImageGenerationResult = {
 export type AuthResult = {
     tokenAuth: boolean;
     userId: string | null;
-    username: string | null;
 };
 
 function safeTokenCount(value: unknown): number {
@@ -205,9 +209,10 @@ export const callSelfHostedServer = async (
 
         let response = null;
 
-        // Single attempt - no retry logic
+        // The pool helper retries each other registered worker once when the
+        // selected backend rejects the request with queue-full 503.
         try {
-            response = await fetchFromWeightedServer(poolType, {
+            const requestInit = {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -216,7 +221,8 @@ export const callSelfHostedServer = async (
                     }),
                 },
                 body: JSON.stringify(body),
-            });
+            };
+            response = await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -231,7 +237,10 @@ export const callSelfHostedServer = async (
 
         if (!response.ok) {
             logError("Error from server. input was", body);
-            throw new Error(`Server responded with ${response.status}`);
+            throw new HttpError(
+                `Server responded with ${response.status}`,
+                response.status,
+            );
         }
 
         const jsonResponse = await response.json();
@@ -242,7 +251,7 @@ export const callSelfHostedServer = async (
 
         if (!image) {
             logError("image is null");
-            throw new Error("image is null");
+            throw new HttpError("Image server returned no image", 502);
         }
 
         logOps("decoding base64 image");
@@ -263,27 +272,6 @@ export const callSelfHostedServer = async (
     } catch (e) {
         logError("Error in callSelfHostedServer:", e);
         throw e;
-    }
-};
-
-/**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
- * no worker is registered or the pool request fails.
- * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
- * workerd it broke every pool request (all traffic silently fell back to
- * Fireworks for ~1.5h on 2026-07-02) while passing in the local test runtime.
- */
-export const callFluxWithFallback = async (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> => {
-    try {
-        return await callSelfHostedServer(prompt, safeParams, "flux");
-    } catch (error) {
-        // Log the full error (not just message) so unexpected error types
-        // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Fireworks:", error);
-        return await callFireworksFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -364,36 +352,12 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 
 let gptImageEndpointIndex = 0;
 
-function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
+/** Round robins the Azure regions to spread load. One region per request. */
+function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
-    if (configs.length === 1) return configs;
-
-    const start = gptImageEndpointIndex;
-    gptImageEndpointIndex += 1;
-    if (gptImageEndpointIndex === configs.length) gptImageEndpointIndex = 0;
-    return [...configs.slice(start), ...configs.slice(0, start)];
-}
-
-function isRetryableGPTImageError(error: unknown): boolean {
-    if (error instanceof HttpError) {
-        // Azure blocks a resource (403) after aggregate abuse, and every prompt
-        // on it fails until the block lifts. The block is per-resource, so the
-        // sibling region still serves — fail over instead of failing the caller.
-        // A genuine content rejection is NOT retried: it would be refused in
-        // every region, so retrying only burns a second upstream call.
-        const blockText = `${error.message} ${
-            typeof error.details === "string"
-                ? error.details
-                : JSON.stringify(error.details ?? "")
-        }`;
-        if (isAccountLevelBlock(blockText)) return true;
-        return error.status === 429 || error.status >= 500;
-    }
-    return (
-        error instanceof TypeError ||
-        (error instanceof Error &&
-            error.message === "Invalid response from GPT Image API")
-    );
+    const config = configs[gptImageEndpointIndex % configs.length];
+    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    return config;
 }
 
 const callGPTImageWithEndpoint = async (
@@ -664,31 +628,24 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "gptimage",
 ): Promise<ImageGenerationResult> => {
-    const configs = orderedGPTImageConfigs(model);
-    let lastError: unknown;
-
-    for (let index = 0; index < configs.length; index++) {
-        const config = configs[index];
-        try {
-            return await callGPTImageWithEndpoint(
-                prompt,
-                safeParams,
-                userInfo,
-                config,
-            );
-        } catch (error) {
-            lastError = error;
-            const retry =
-                index < configs.length - 1 && isRetryableGPTImageError(error);
-            logError(
-                `Error calling Azure GPT Image API (${config.modelName}, ${config.region})${retry ? "; trying next region" : ""}:`,
-                error,
-            );
-            if (!retry) throw error;
-        }
+    // One region, one attempt. Azure bills a generation it completed even when
+    // we never saw the response, so a second region would pay for a second
+    // image to answer a request the caller has already been told failed.
+    const config = nextGPTImageConfig(model);
+    try {
+        return await callGPTImageWithEndpoint(
+            prompt,
+            safeParams,
+            userInfo,
+            config,
+        );
+    } catch (error) {
+        logError(
+            `Error calling Azure GPT Image API (${config.modelName}, ${config.region}):`,
+            error,
+        );
+        throw error;
     }
-
-    throw lastError;
 };
 
 /**
@@ -735,7 +692,28 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
-        case "nanobanana-2-lite":
+        case "nanobanana-2-lite": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",
@@ -747,10 +725,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGemini(prompt, safeParams);
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
+                    "OpenRouter Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -781,7 +759,7 @@ const generateImage = async (
             return await callSeedreamAPI(prompt, safeParams);
 
         case "seedream-pro":
-            return await callSeedreamProAPI(prompt, safeParams);
+            return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);
@@ -795,6 +773,9 @@ const generateImage = async (
         case "klein":
             return await callFluxKleinAPI(prompt, safeParams);
 
+        case "krea":
+            return await callKreaImageAPI(prompt, safeParams);
+
         case "p-image":
             return await callPrunaImageAPI(prompt, safeParams);
 
@@ -806,11 +787,10 @@ const generateImage = async (
             );
 
         case "grok-imagine-pro":
-            return await callXaiImageAPI(
-                prompt,
-                safeParams,
-                "grok-imagine-image-quality",
-            );
+            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+
+        case "recraft-v4.1-vector":
+            return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
@@ -827,8 +807,15 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
+        case "dreamshaper":
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
+            return await callSelfHostedServer(prompt, safeParams, "sana");
+
         case "flux":
-            return await callFluxWithFallback(prompt, safeParams);
+            return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "zimage-fal":
+            return await callZImageFalAPI(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch
@@ -892,6 +879,7 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
+    metadataModel = safeParams.model,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
@@ -912,17 +900,24 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
+        const metadataObj = prepareMetadata(prompt, originalPrompt, {
+            ...safeParams,
+            model: metadataModel,
+        });
 
-        // Process the image buffer
-        const processedBuffer = await processImageBuffer(
-            result.buffer,
-            metadataObj,
-            maturity,
-        );
+        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        const processedBuffer =
+            result.mimeType === "image/svg+xml"
+                ? result.buffer
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
 
         return {
             buffer: processedBuffer,
+            mimeType: result.mimeType,
             isChild,
             isMature,
             trackingData: result.trackingData,

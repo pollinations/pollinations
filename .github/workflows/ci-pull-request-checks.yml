@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate app catalog
+        run: node apps/app-management/catalog.js validate
+
       - name: Get changed files
         id: changed-files
         run: |
@@ -59,11 +62,11 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
-      - name: Get changed GitHub scripts
-        id: github-scripts
+      - name: Get changed operations scripts
+        id: operations-scripts
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.github/scripts/.*\.js$' || true)
-          echo "Changed GitHub scripts:"
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(\.github/scripts/|apps/app-management/).*\.js$' || true)
+          echo "Changed operations scripts:"
           echo "$FILES"
           if [ -n "$FILES" ]; then
             echo "any_changed=true" >> $GITHUB_OUTPUT
@@ -71,13 +74,15 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Test GitHub scripts
-        if: steps.github-scripts.outputs.any_changed == 'true'
+      - name: Test operations scripts
+        if: steps.operations-scripts.outputs.any_changed == 'true'
         run: |
           if compgen -G ".github/scripts/*.test.js" > /dev/null; then
             node --test .github/scripts/*.test.js
-          else
-            echo "No GitHub script tests found"
+          fi
+          mapfile -t APP_TESTS < <(find apps/app-management -name '*.test.js' -type f)
+          if (( ${#APP_TESTS[@]} )); then
+            node --test "${APP_TESTS[@]}"
           fi
 
       - name: Get changed TypeScript files in enter.pollinations.ai
@@ -131,6 +136,13 @@ jobs:
           else
             echo "✅ No type errors in changed files"
           fi
+
+      - name: Test Enter billing registry
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: |
+          mkdir -p dist/client
+          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts
 
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files

@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
+import {
+    chat,
+    configure,
+    generateAudio,
+    generateImage,
+    generateText,
+    generateVideo,
+    resetClient,
+} from "./helpers.js";
 import { PollinationsError } from "./types.js";
 
 // Build a minimal Response-like object good enough for the client paths.
@@ -72,8 +81,62 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    resetClient();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+});
+
+describe("Convenience helpers", () => {
+    beforeEach(() => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+    });
+
+    it("makes one request per media helper without inventing a seed", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await generateImage("a cat");
+        await generateVideo("a cat running");
+        await generateAudio("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("seed")).toBe(false);
+        }
+    });
+
+    it("makes one request per text helper without inventing a seed", async () => {
+        const response = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "test",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+
+        await generateText("hello");
+        await generateText("hello", { raw: true });
+        await chat([{ role: "user", content: "hello" }]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).seed)).toEqual([
+            undefined,
+            undefined,
+            undefined,
+        ]);
+    });
 });
 
 // Helper: pull the seed query param from an image/video GET URL.
@@ -88,6 +151,33 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it("keeps video requests alive until the 20-minute default timeout", async () => {
+        vi.useFakeTimers();
+        let aborted = false;
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_, reject) => {
+                    init.signal?.addEventListener("abort", () => {
+                        aborted = true;
+                        reject(new DOMException("Aborted", "AbortError"));
+                    });
+                }),
+        );
+
+        const request = newClient().video("a long-running scene");
+        const assertion = expect(request).rejects.toMatchObject({
+            code: "TIMEOUT",
+            status: 408,
+            message: "Request timed out after 1200000ms",
+        });
+
+        await vi.advanceTimersByTimeAsync(1_200_000 - 1);
+        expect(aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await assertion;
+        expect(aborted).toBe(true);
+    });
+
     it("does not retry uploads after a network failure", async () => {
         const client = newClient();
         fetchMock.mockRejectedValue(new Error("boom"));
@@ -161,6 +251,105 @@ describe("Pollinations media upload", () => {
         const formData = request.body as FormData;
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
+    });
+});
+
+describe("Pollinations server-owned defaults", () => {
+    it("omits unset models from URL requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await client.image("a cat");
+        await client.video("a cat running");
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("model")).toBe(
+                false,
+            );
+        }
+    });
+
+    it("omits unset models from JSON requests", async () => {
+        const client = newClient();
+        const completion = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "server-default",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "audio/mpeg",
+                }),
+            );
+
+        await client.imageGenerate("a cat");
+        await client.imageEdit("make it blue", {
+            image: "https://example.test/cat.png",
+        });
+        await client.text("hello");
+        for await (const _ of client.textStream("hello")) {
+            // consume stream
+        }
+        await client.chat([{ role: "user", content: "hello" }]);
+        for await (const _ of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            // consume stream
+        }
+        await client.audioSpeech("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(7);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).model)).toEqual(
+            Array(7).fill(undefined),
+        );
+        expect(bodyOf(fetchMock.mock.calls[6]).voice).toBeUndefined();
+    });
+
+    it("omits an unset transcription model", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(new ArrayBuffer(8));
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect((request.body as FormData).has("model")).toBe(false);
     });
 });
 

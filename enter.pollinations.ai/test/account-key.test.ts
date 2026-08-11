@@ -1,6 +1,8 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 const endpoint = "/api/account/key";
 
@@ -50,6 +52,41 @@ test(
 );
 
 test(
+    "GET /api/account/key - accepts an agent run token",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("tinybird");
+        const parent = await authenticateApiKeyRequest({
+            request: new Request("http://localhost", {
+                headers: { Authorization: `Bearer ${apiKey}` },
+            }),
+            env,
+        });
+        expect(parent?.user?.id).toBeTruthy();
+
+        const runToken = await signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent?.apiKey.id as string,
+            runId: crypto.randomUUID(),
+        });
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: { Authorization: `Bearer ${runToken}` },
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data).toMatchObject({
+            valid: true,
+            type: "secret",
+            userId: parent?.user?.id,
+            byopClientKeyId: parent?.apiKey.byopClientKeyId ?? null,
+        });
+        // A run token never carries account scope, only generation access.
+        expect(data.permissions.account).toBeNull();
+    },
+);
+
+test(
     "GET /api/account/key - returns key status for publishable key",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
@@ -85,6 +122,28 @@ test(
         const data = await response.json();
         expect(data.permissions).toBeDefined();
         expect(data.permissions.models).toEqual(["openai-fast", "flux"]);
+    },
+);
+
+test(
+    "GET /api/account/key - omits retired models from permissions",
+    { timeout: 30000 },
+    async ({ sessionToken, mocks }) => {
+        await mocks.enable("tinybird");
+        const created = await createApiKeyViaApi(sessionToken, {
+            name: "current-key-with-retired-model",
+            allowedModels: ["openai-fast", "retired-model"],
+        });
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${created.key}`,
+            },
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.permissions.models).toEqual(["openai-fast"]);
     },
 );
 

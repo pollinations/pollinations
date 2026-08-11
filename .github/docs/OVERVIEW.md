@@ -36,13 +36,13 @@ Scripts follow a similar pattern:
 | Pattern                 | Examples                                                |
 | ----------------------- | ------------------------------------------------------- |
 | `entity_action_what.py` | `app_check_duplicate.py`, `app_prepend_row.py`          |
-| `app-action-what.js`    | `app-prepend-row.js`, `app-check-links.js`              |
+| `action-object.js`      | `generate-catalog-outputs.js`, `validate-submission.js` |
 
 ---
 
 ## Authentication
 
-Most workflows use **Polly Bot** (GitHub App) for authentication instead of personal access tokens.
+Most workflows use **Polli Bot** (GitHub App) for authentication instead of personal access tokens.
 
 **Benefits:**
 

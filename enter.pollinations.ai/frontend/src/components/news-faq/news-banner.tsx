@@ -25,6 +25,18 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-07-15",
+        dateLabel: "Limited time",
+        emoji: "☀️",
+        title: "GPT-5.6 launch promotion",
+        description:
+            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
+        details: [
+            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
+            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
+        ],
+    },
+    {
         date: "2026-06-30",
         dateLabel: "Now live",
         emoji: "🎯",

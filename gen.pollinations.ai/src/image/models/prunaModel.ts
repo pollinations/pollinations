@@ -1,37 +1,34 @@
 /**
- * Pruna p-image, p-image-edit, and p-video via Replicate (prunaai/*).
+ * Pruna image generation via DeepInfra and video generation via Replicate.
  *
- * Migrated off the direct api.pruna.ai predictions API to Replicate, which
- * hosts the identical Pruna-optimised models under the `prunaai` account:
- *   - p-image      → prunaai/p-image       (text-to-image)
- *   - p-image-edit → prunaai/p-image-edit  (multi-image editing, $0.01/img)
- *   - p-video      → prunaai/p-video       (text/image-to-video)
- *
- * Same engines, so output is unchanged. The move also drops the standalone
- * PRUNA_API_KEY (auth is now REPLICATE_API_TOKEN via runReplicatePrediction)
- * and inherits the shared Replicate client's reliability properties:
- *   - bounded polling → a stuck prediction surfaces as a controlled 504
- *     instead of the old 10-minute hang
- *   - error classification → 429/400/422 are passed through to the caller
- *     instead of the old blanket 500
+ * DeepInfra hosts the exact PrunaAI/p-image and PrunaAI/p-image-Edit
+ * checkpoints at the same prices as Replicate. p-video stays on Replicate and
+ * uses one canonical model with request-selected resolution pricing.
  */
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestByRatio, closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { toDataUri } from "../utils/imageDownload.ts";
+import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
 const logError = debug("pollinations:pruna:error");
+const DEEPINFRA_INFERENCE_BASE = "https://api.deepinfra.com/v1/inference";
+const DEEPINFRA_TIMEOUT_MS = 120_000;
+const DEEPINFRA_IMAGE_MODELS = {
+    "p-image": "PrunaAI/p-image",
+    "p-image-edit": "PrunaAI/p-image-Edit",
+} as const;
 
 // p-image-edit / p-video accept up to this many reference images.
 const MAX_EDIT_IMAGES = 5;
@@ -83,10 +80,78 @@ interface PVideoInput {
     seed?: number;
 }
 
+interface DeepInfraInferenceStatus {
+    cost?: number;
+    runtime_ms?: number;
+}
+
+interface DeepInfraImageOutput {
+    images?: string[];
+    inference_status?: DeepInfraInferenceStatus;
+}
+
+async function generatePrunaImage(
+    actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
+    input: PImageInput | PImageEditInput,
+): Promise<ImageGenerationResult> {
+    const displayName = `Pruna ${actualModel}`;
+    const apiKey = getImageEnv("DEEPINFRA_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "DEEPINFRA_API_KEY environment variable is required",
+            500,
+        );
+    }
+
+    const url = `${DEEPINFRA_INFERENCE_BASE}/${DEEPINFRA_IMAGE_MODELS[actualModel]}`;
+    const response = await fetchUpstream(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+        signal: AbortSignal.timeout(DEEPINFRA_TIMEOUT_MS),
+        errorLabel: `${displayName} generation failed`,
+    });
+
+    let result: DeepInfraImageOutput;
+    try {
+        result = (await response.json()) as DeepInfraImageOutput;
+    } catch {
+        throw new HttpError(
+            `${displayName} returned invalid JSON`,
+            502,
+            undefined,
+            url,
+        );
+    }
+    const image = result.images?.[0];
+    if (!image) throw new HttpError(`${displayName} returned no image`, 502);
+
+    const buffer = base64ToBuffer(image);
+    logOps(`Generated ${actualModel}:`, {
+        bytes: buffer.length,
+        providerCost: result.inference_status?.cost,
+        runtimeMs: result.inference_status?.runtime_ms,
+    });
+    return {
+        buffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel,
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
+}
+
 /**
- * Run a prunaai/* prediction on Replicate and return the output URL plus
- * metrics. The output schema for all three models is a single URI string.
- * ReplicateError (already status-classified) is remapped to HttpError so the
+ * Run a Pruna video prediction on Replicate.
+ * Replicate failures are remapped to HttpError so the
  * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
  */
 async function runPrunaPrediction<TInput>(
@@ -112,14 +177,7 @@ async function runPrunaPrediction<TInput>(
         };
     } catch (err) {
         logError(`${displayName} prediction failed:`, err);
-        if (err instanceof HttpError) throw err;
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(err, `${displayName} generation failed`);
     }
 }
 
@@ -158,27 +216,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    const { output } = await runPrunaPrediction<PImageInput>(
-        "prunaai/p-image",
-        input,
-        "Pruna p-image",
-    );
-
-    const buffer = await downloadOutput(output, "Pruna p-image");
-    logOps("Downloaded image, buffer size:", buffer.length);
-
-    return {
-        buffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "p-image",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
+    return generatePrunaImage("p-image", input);
 }
 
 // =============================================================================
@@ -207,49 +245,24 @@ export async function callPrunaImageEditAPI(
         );
     }
 
-    const resolvedImages = await Promise.all(images.map(toDataUri));
-
-    const input: PImageEditInput = { prompt, images: resolvedImages };
+    const input: PImageEditInput = { prompt, images };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
 
     logOps("p-image-edit input:", {
         prompt: prompt.slice(0, 80),
-        images: `[${resolvedImages.length} data uris]`,
+        images: `[${images.length} image references]`,
     });
 
-    const { output } = await runPrunaPrediction<PImageEditInput>(
-        "prunaai/p-image-edit",
-        input,
-        "Pruna p-image-edit",
-    );
-
-    const buffer = await downloadOutput(output, "Pruna p-image-edit");
-    logOps("Downloaded edited image, buffer size:", buffer.length);
-
-    return {
-        buffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "p-image-edit",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
+    return generatePrunaImage("p-image-edit", input);
 }
 
 // =============================================================================
 // p-video: Text/Image-to-Video
 // =============================================================================
 
-// prunaai/p-video is one Replicate model priced per second by resolution
-// (720p $0.02/s, 1080p $0.04/s). The registry carries one flat rate per model,
-// so each tier is its own model (p-video-720p / p-video-1080p) and the
-// resolution is locked here rather than inferred from the requested height —
-// this keeps recorded cost exact and lets the user opt into the 1080p rate
-// explicitly by model name.
+// prunaai/p-video is priced per second by resolution (720p $0.02/s, 1080p
+// $0.04/s in standard mode). Resolution is explicit and never inferred from
+// width/height, so provider routing and registry billing use the same fact.
 async function generatePrunaVideo(
     resolution: "720p" | "1080p",
     prompt: string,
@@ -308,7 +321,7 @@ async function generatePrunaVideo(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: `p-video-${resolution}`,
+            actualModel: "p-video",
             usage: {
                 completionVideoSeconds: billedDuration,
             },
@@ -316,16 +329,13 @@ async function generatePrunaVideo(
     };
 }
 
-/** Pruna p-video at 720p ($0.02/s). */
-export const callPrunaVideo720API = (
+/** Pruna p-video; request resolution defaults to the 720p base tier. */
+export const callPrunaVideoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("720p", prompt, safeParams);
-
-/** Pruna p-video at 1080p ($0.04/s). */
-export const callPrunaVideo1080API = (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("1080p", prompt, safeParams);
+    generatePrunaVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );

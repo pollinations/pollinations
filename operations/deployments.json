@@ -1,0 +1,32 @@
+{
+  "kpi": {
+    "paths": ["operations/kpi/"]
+  },
+  "quest-dashboard": {
+    "paths": ["operations/quest-dashboard/"]
+  },
+  "economics": {
+    "paths": [
+      "operations/economics/",
+      "packages/ui/",
+      "packages/sdk/",
+      "package.json",
+      "package-lock.json"
+    ]
+  },
+  "observability": {
+    "paths": ["operations/observability/"]
+  },
+  "model-monitor": {
+    "paths": [
+      "operations/model-monitor/",
+      "packages/ui/",
+      "packages/sdk/",
+      "package.json",
+      "package-lock.json"
+    ],
+    "cloudflareProject": "apps-model-monitor",
+    "originUrl": "https://model-monitor.myceli.ai",
+    "publicUrl": "https://model-monitor.pollinations.ai"
+  }
+}

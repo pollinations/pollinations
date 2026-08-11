@@ -31,7 +31,7 @@
 
 ## Characters — Recurring Cast
 
-### Polly (The Bee) — Main Character (MANDATORY in every image)
+### Polli (The Bee) — Main Character (MANDATORY in every image)
 
 The pollinations.ai bee MUST appear in every image, interacting with the scene.
 
@@ -67,7 +67,7 @@ The pollinations.ai bee MUST appear in every image, interacting with the scene.
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- At least one character from the cast (Polly always, Robot or Nomnom when it fits)
+- At least one character from the cast (Polli always, Robot or Nomnom when it fits)
 - Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

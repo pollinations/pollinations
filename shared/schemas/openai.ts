@@ -318,6 +318,14 @@ export const CreateChatCompletionRequestSchema = z
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
             )
             .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+            )
+            .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
@@ -584,6 +592,10 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
+            description:
+                "Output resolution for resolution-priced video models (Pollinations extension)",
+        }),
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -594,13 +606,27 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
+});
+
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
 });
 
 export const CreateImageResponseSchema = z
     .object({
         created: z.number().int(),
         data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
     })
     .meta({ $id: "CreateImageResponse" });
 

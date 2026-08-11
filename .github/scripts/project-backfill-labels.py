@@ -40,18 +40,10 @@ Environment:
 
 import argparse
 import sys
-import os
 import time
-import json
 import re
 import requests
-import importlib.util
-
-# Import shared functions from project-manager.py (hyphen in filename requires special import)
-script_dir = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location("project_manager", os.path.join(script_dir, "project-manager.py"))
-pm = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(pm)
+import project_manager as pm
 
 CONFIG = pm.CONFIG
 VALID_LABELS = pm.VALID_LABELS
@@ -63,14 +55,27 @@ REPO_OWNER = pm.REPO_OWNER
 REPO_NAME = pm.REPO_NAME
 log_debug = pm.log_debug
 log_error = pm.log_error
-read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
 is_paid_customer = pm.is_paid_customer
 
-POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
+
+def classify_issue(
+    title: str,
+    body: str,
+    author: str,
+    is_internal: bool,
+    is_pr: bool = False,
+) -> dict:
+    classification = pm.classify_with_ai(
+        is_internal,
+        title=title,
+        body=body,
+        author=author,
+        is_pull_request=is_pr,
+    )
+    return classification if classification.get("project") else {}
 
 
 def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None) -> list:
@@ -100,7 +105,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -113,7 +122,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -180,8 +193,6 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # Current SERVICE labels
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
-        # TOPIC label
-        "TIER",
         # Old labels to clean up during migration
         "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
@@ -217,61 +228,6 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
             log_error(f"Failed to remove label '{label}' from #{issue_number}")
     
     return [l for l in current_labels if l not in to_remove]
-
-
-def classify_issue(title: str, body: str, author: str, is_internal: bool, is_pr: bool = False) -> dict:
-    """Classify an issue or PR using the AI (same as project-manager.py)."""
-    base_prompt = read_prompt_file()
-    item_kind = "pull request" if is_pr else "issue"
-
-    system_prompt = f"""{base_prompt}
-
----
-**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
-"""
-
-    user_prompt = f"""
-Item Type: {item_kind}
-Author: {author}
-Author Type: {"Internal" if is_internal else "External"}
-Title: {title}
-Body: {(body or "")[:2000]}
-"""
-
-    for attempt in range(3):
-        try:
-            r = requests.post(
-                POLLINATIONS_API,
-                headers={
-                    "content-type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
-                },
-                json={
-                    "model": "openai-large",
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    "max_tokens": 400,
-                },
-                timeout=120,
-            )
-
-            if r.status_code != 200:
-                log_error(f"AI HTTP {r.status_code}: {r.text}")
-                time.sleep(2 ** attempt)
-                continue
-
-            data = r.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "{}")
-            
-            return json.loads(content)
-        except Exception as e:
-            log_error(f"Classification error: {e}")
-            time.sleep(2 ** attempt)
-    
-    return {}
 
 
 def add_to_project(project_id: str, content_node_id: str) -> str:
@@ -320,17 +276,17 @@ def add_labels(issue_number: int, labels: list, dry_run: bool):
         log_error(f"Failed to add labels to #{issue_number}: {r.status_code}")
 
 
-def get_real_author(author: str, body: str) -> str:
+def get_real_author(author: str, author_id: int | None, body: str) -> tuple[str, int | None]:
     """Extract real author from Discord UID if issue was created by bot."""
-    if author and "pollinations-ai" in author.lower():
+    if author_id == CONFIG["discord_relay_bot_id"]:
         uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', body or "")
         if uid_match:
             discord_uid = uid_match.group(1)
             github_user = CONFIG.get("discord_uid_to_github", {}).get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
-                return github_user
-    return author
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user['login']} (id={github_user['id']})")
+                return github_user["login"], github_user["id"]
+    return author, author_id
 
 
 def main():
@@ -382,16 +338,20 @@ def main():
             issue_number = issue["number"]
             title = issue["title"]
             body = issue.get("body", "") or ""
-            author = (issue.get("author") or {}).get("login", "")
+            author_record = issue.get("author") or {}
+            author = author_record.get("login", "")
+            author_id = author_record.get("databaseId")
             is_pr = issue.get("_is_pr", False)
             content_node_id = issue.get("id")
             source_item_id = issue.get("_item_id")
 
             log_debug(f"\n--- Migrating #{issue_number} ({'PR' if is_pr else 'issue'}): {title[:60]}...")
 
-            real_author = get_real_author(author, body)
-            is_internal = pm.is_org_member(real_author)
-            classification = classify_issue(title, body, real_author, is_internal, is_pr=is_pr)
+            real_author, real_author_id = get_real_author(author, author_id, body)
+            is_internal = pm.is_org_member(real_author_id)
+            classification = classify_issue(
+                title, body, real_author, is_internal, is_pr=is_pr
+            )
             if not classification:
                 log_error(f"Failed to classify #{issue_number}; skipping migration")
                 time.sleep(1)
@@ -428,7 +388,9 @@ def main():
         issue_number = issue["number"]
         title = issue["title"]
         body = issue.get("body", "") or ""
-        author = issue.get("author", {}).get("login", "")
+        author_record = issue.get("author") or {}
+        author = author_record.get("login", "")
+        author_id = author_record.get("databaseId")
         
         log_debug(f"\n--- Processing #{issue_number}: {title[:50]}...")
         
@@ -439,7 +401,7 @@ def main():
         protected = PROTECTED_LABELS.get(project_key, set())
         has_protected = protected & set(current_labels_upper)
 
-        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER") for l in current_labels)
+        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT") for l in current_labels)
         needs_labels = not args.skip_labels and (not args.only_missing or not has_project_labels)
         needs_priority = args.with_priority and project_key in ("dev", "support") and (not args.only_missing or not current_priority)
         
@@ -452,10 +414,12 @@ def main():
                 remove_project_labels(issue_number, project_key, args.dry_run)
             
             # Classify - resolve real author from Discord UID if bot-created
-            real_author = get_real_author(author, body)
-            is_internal = pm.is_org_member(real_author)
+            real_author, real_author_id = get_real_author(author, author_id, body)
+            is_internal = pm.is_org_member(real_author_id)
             log_debug(f"Author: {author} -> Real: {real_author}, Internal: {is_internal}")
-            classification = classify_issue(title, body, real_author, is_internal)
+            classification = classify_issue(
+                title, body, real_author, is_internal
+            )
             
             if not classification:
                 log_error(f"Failed to classify #{issue_number}")
@@ -470,18 +434,19 @@ def main():
         # Priority processing (needs classification)
         if needs_priority:
             if not classification:
-                real_author = get_real_author(author, body)
-                is_internal = pm.is_org_member(real_author)
-                classification = classify_issue(title, body, real_author, is_internal)
+                real_author, real_author_id = get_real_author(author, author_id, body)
+                is_internal = pm.is_org_member(real_author_id)
+                classification = classify_issue(
+                    title, body, real_author, is_internal
+                )
             
             if classification:
                 priority = classification.get("priority")
                 if project_key == "support" and priority not in {"High", "Low"}:
                     log_debug(f"Backfill: AI returned non-{{High,Low}} priority '{priority}' for #{issue_number}; clamping to Low")
                     priority = "Low"
-                author_id = (issue.get("author") or {}).get("databaseId")
-                if project_key == "support" and is_paid_customer(author_id):
-                    log_debug(f"Author {author} (id={author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
+                if project_key == "support" and is_paid_customer(real_author_id):
+                    log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
                     priority = "Urgent"
                 priority_option = project.get("priority_options", {}).get(priority)
                 item_id = issue.get("_item_id")

@@ -13,40 +13,54 @@ SQL >
     SELECT
         resolved_model_requested as model,
         event_type,
-        topK(1)(model_provider_used)[1] as provider,
-        topK(1)(model_used)[1] as model_used,
-        count() as total_requests,
-        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
-        countIf(response_status >= 400 AND response_status < 500) as errors_4xx,
-        countIf(response_status >= 500) as errors_5xx,
-        maxIf(start_time, response_status >= 500) as last_error_at,
+        topKIf(1)(model_provider_used, is_final)[1] as provider,
+        topKIf(1)(model_used, is_final)[1] as model_used,
+        -- What a caller asking for this model experiences. A request that was
+        -- rescued by a fallback succeeded, and says so here.
+        countIf(is_final) as total_requests,
+        countIf(is_final AND response_status >= 200 AND response_status < 300) as status_2xx,
+        countIf(is_final AND response_status >= 400 AND response_status < 500) as errors_4xx,
+        countIf(is_final AND response_status >= 500) as errors_5xx,
+        -- Whether this model's OWN upstream works, which the columns above
+        -- cannot show: a model rescued on every request reads 100% healthy up
+        -- there and 0% here. Keyed on fallback_used so a primary's group never
+        -- absorbs the health of the fallbacks it borrowed.
+        --
+        -- Not `model_used = resolved_model_requested`: model_used holds the
+        -- UPSTREAM name on a successful call (`deepseek-chat`) and our registry
+        -- id on a failed one (`voodoohop/anyvm-deepseek-chat`), so that
+        -- comparison is false for 97% of successful community calls and would
+        -- read as a permanently dead model.
+        countIf(NOT fallback_used) as own_calls,
+        countIf(NOT fallback_used AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        maxIf(start_time, is_final AND response_status >= 500) as last_error_at,
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
-        max(start_time) as last_request_at,
+        maxIf(start_time, is_final) as last_request_at,
         -- Completion tokens per second of full request duration. response_time
         -- now covers the whole streamed response (see #12378), so no separate
-        -- generation-only column is needed. Cache hits are excluded since they
-        -- return full token counts in near-zero time. The same condition is
-        -- used for both sums so numerator and denominator cover identical rows.
+        -- generation-only column is needed. generation_event_v2 contains no
+        -- cache hits. The same condition is used for both sums so numerator
+        -- and denominator cover identical rows.
         if(
             sumIf(
                 response_time,
-                response_status >= 200 AND response_status < 300 AND cache_hit = false
+                response_status >= 200 AND response_status < 300
                 AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                 AND response_time > 0
             ) > 0,
             round(
                 sumIf(
                     toUInt64(token_count_completion_text) + toUInt64(token_count_completion_reasoning),
-                    response_status >= 200 AND response_status < 300 AND cache_hit = false
+                    response_status >= 200 AND response_status < 300
                     AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                     AND response_time > 0
                 )
                 / (
                     sumIf(
                         response_time,
-                        response_status >= 200 AND response_status < 300 AND cache_hit = false
+                        response_status >= 200 AND response_status < 300
                         AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                         AND response_time > 0
                     ) / 1000
@@ -55,7 +69,10 @@ SQL >
             ),
             NULL
         ) as tokens_per_second
-    FROM generation_event
+    FROM generation_event_v2
+    -- No is_final filter here: the per-request columns carry their
+    -- own, and own_calls needs the per-call rows this PR started emitting.
+    -- Latency and throughput gate on 2xx, which a failed call never is.
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY model, event_type
     ORDER BY total_requests DESC

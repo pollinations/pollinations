@@ -65,7 +65,7 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
         choices: [
             {
                 groundingMetadata: {
-                    webSearchQueries: ["latest Gemini pricing"],
+                    webSearchQueries: ["current news"],
                 },
             },
         ],
@@ -114,7 +114,7 @@ test("GPT-5.5 is available without paid-only gating", () => {
     expect(definition.paidOnly).toBeUndefined();
 });
 
-test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => {
+test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
     for (const model of [
         "gpt-5.6-sol",
         "gpt-5.6-terra",
@@ -124,7 +124,9 @@ test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => 
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(0.75);
+        expect(definition.priceMultiplier).toBe(
+            model === "gpt-5.6-luna" ? 0.2 : 0.5,
+        );
     }
 });
 
@@ -134,6 +136,12 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
+});
+
+test("Amazon Nova media models use the Bedrock registry provider", () => {
+    for (const model of ["nova-canvas", "nova-reel"] as const) {
+        expect(getRegistryModelDefinition(model).provider).toBe("bedrock");
+    }
 });
 
 test("DeepSeek V4 models are billed at provider cost", () => {

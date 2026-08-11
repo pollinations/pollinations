@@ -1,13 +1,5 @@
-import {
-    CardIcon,
-    CopyButton,
-    cn,
-    InfoTip,
-    SproutIcon,
-    Surface,
-    Tooltip,
-} from "@pollinations/ui";
-import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
+import { CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -23,8 +15,16 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelStatusChips } from "./model-status-chips.tsx";
-import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
+import {
+    ModelPricingControls,
+    ModelPricingLedger,
+    useModelPricingSelection,
+} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -36,13 +36,71 @@ type ModelIdProps = {
 };
 
 export const ModelId: FC<ModelIdProps> = ({ name }) => (
-    <span
-        className="min-w-0 truncate font-mono text-xs font-medium text-theme-text-muted"
-        title={name}
+    <CopyButton
+        value={name}
+        tooltip={
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {name}
+            </span>
+        }
+        copiedTooltip="Copied model id"
+        aria-label={`Copy model id ${name}`}
+        tooltipAlign="start"
+        className={(copied) =>
+            cn(
+                "pointer-events-auto flex min-w-0 cursor-pointer text-left font-mono text-xs font-medium transition-colors",
+                copied
+                    ? "text-intent-success-text"
+                    : "text-theme-text-muted hover:text-theme-text-soft",
+            )
+        }
     >
-        {name}
-    </span>
+        <span className="min-w-0 truncate">{name}</span>
+    </CopyButton>
 );
+
+export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
+    const value = calculatePerPollen(model);
+    const isFree = value === "∞";
+    const isUnavailable = value === "—";
+    const balanceLabel = isPaidOnly(model) ? (
+        <span className="inline-flex items-center gap-1">
+            <WalletKindIcon kind="paid" />
+            Paid Pollen
+        </span>
+    ) : (
+        <span className="inline-flex flex-wrap items-center gap-1">
+            <WalletKindIcon kind="tier" />
+            Quest Pollen first, then <WalletKindIcon kind="paid" />
+            Paid Pollen if needed
+        </span>
+    );
+    const tooltip = isFree ? (
+        "This model is free to use."
+    ) : isUnavailable ? (
+        "Recent usage data is unavailable, so this estimate cannot be calculated."
+    ) : (
+        <span className="flex flex-col gap-0.5">
+            <span>
+                ≈ {value} {unitLabels[model.type] ?? "requests"} /pollen
+            </span>
+            {balanceLabel}
+        </span>
+    );
+
+    return (
+        <Tooltip content={tooltip} displayContents>
+            <span className="pointer-events-auto inline-flex flex-col items-center gap-1 whitespace-nowrap">
+                <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
+                    {value}
+                </span>
+                <span className="text-xs font-normal text-theme-text-muted">
+                    {isFree ? "free" : "gen /pollen"}
+                </span>
+            </span>
+        </Tooltip>
+    );
+};
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
@@ -56,34 +114,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
+    const pricing = useModelPricingSelection(model);
 
-    const genPerPollen = calculatePerPollen(model);
-    const balanceLabel = showPaidOnly ? (
-        <span className="inline-flex items-center gap-1">
-            <WalletKindIcon kind="paid" />
-            Paid Pollen only
-        </span>
-    ) : (
-        <span className="inline-flex items-center gap-1">
-            <WalletKindIcon kind="tier" />
-            Quest or <WalletKindIcon kind="paid" />
-            Paid Pollen
+    const modelNameTooltip = (
+        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
+            {modelDescription && <span>{modelDescription}</span>}
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {model.name}
+            </span>
         </span>
     );
-    const perPollenTooltip =
-        genPerPollen === "—" ? (
-            balanceLabel
-        ) : (
-            <span className="flex flex-col gap-0.5">
-                <span>
-                    ≈ {genPerPollen} {unitLabels[model.type] ?? "requests"} per
-                    pollen
-                </span>
-                {balanceLabel}
-            </span>
-        );
-    const inputPriceBadges = getModelPriceBadges(model, "input");
-    const outputPriceBadges = getModelPriceBadges(model, "output");
 
     return (
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
@@ -129,12 +170,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="flex min-w-0 items-center gap-2">
                         <CopyButton
                             value={model.name}
-                            tooltip={`Copy "${model.name}"`}
-                            copiedTooltip={null}
+                            tooltip={modelNameTooltip}
+                            copiedTooltip="Copied model id"
                             aria-label={`Copy model id ${model.name}`}
+                            tooltipAlign="start"
+                            tooltipClassName="min-w-0"
                             className={(copied) =>
                                 cn(
-                                    "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
+                                    "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
                                     copied
                                         ? "text-intent-success-text"
                                         : "hover:text-theme-text-soft",
@@ -145,18 +188,26 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         </CopyButton>
-                        {modelDescription && (
-                            <InfoTip
-                                content={modelDescription}
-                                label={`About ${publicModelName}`}
-                            />
-                        )}
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                     </div>
                     <ModelId name={model.name} />
+                    {model.brandUrl && model.brand && (
+                        <a
+                            href={model.brandUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                        >
+                            {model.brand}
+                        </a>
+                    )}
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -199,41 +250,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </div>
                         </div>
                     )}
+                    <ModelPricingControls model={model} pricing={pricing} />
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; gold + card for paid-only models, green
-                + sprout for models that can use Quest Pollen. */}
+            {/* Generation estimate — fixed width; keep the number visually neutral. */}
             <div className="w-[90px] text-center shrink-0">
-                <Tooltip content={perPollenTooltip} displayContents>
-                    {showPaidOnly ? (
-                        <PaidChip>
-                            <CardIcon className="h-3.5 w-3.5" />
-                            {genPerPollen}
-                        </PaidChip>
-                    ) : (
-                        <TierChip>
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            {genPerPollen}
-                        </TierChip>
-                    )}
-                </Tooltip>
+                <PerPollenEstimate model={model} />
             </div>
 
-            {/* Input prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={inputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
-            </div>
-
-            {/* Output prices — fixed width */}
-            <div className="w-[100px] shrink-0">
-                <PriceBadgeList
-                    badges={outputPriceBadges}
-                    className="flex flex-col gap-1 items-end"
-                />
+            <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
+                <ModelPricingLedger pricing={pricing} />
             </div>
         </Surface>
     );

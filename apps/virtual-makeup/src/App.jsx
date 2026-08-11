@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
@@ -60,7 +60,7 @@ function App() {
     const [uploadedFile, setUploadedFile] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
     const [apiKey, setApiKey] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isAuthenticated = Boolean(apiKey);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -72,7 +72,6 @@ function App() {
         if (keyFromUrl) {
             sessionStorage.setItem("pollinations_api_key", keyFromUrl);
             setApiKey(keyFromUrl);
-            setIsAuthenticated(true);
             window.history.replaceState(
                 {},
                 document.title,
@@ -82,7 +81,6 @@ function App() {
             const savedKey = sessionStorage.getItem("pollinations_api_key");
             if (savedKey) {
                 setApiKey(savedKey);
-                setIsAuthenticated(true);
             }
         }
     }, []);
@@ -98,7 +96,6 @@ function App() {
     const handleLogout = () => {
         sessionStorage.removeItem("pollinations_api_key");
         setApiKey(null);
-        setIsAuthenticated(false);
     };
 
     const handleImageUpload = (event) => {
@@ -117,9 +114,10 @@ function App() {
         }
     };
 
-    const uploadToPollinations = async (file) => {
+    const uploadToPollinations = async (file, tag) => {
         const formData = new FormData();
         formData.append("file", file);
+        if (tag) formData.append("tags", tag);
 
         const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
@@ -136,11 +134,11 @@ function App() {
         }
 
         const data = await response.json();
-        return data.url || data.secure_url || data.media_url;
+        return data.url;
     };
 
     const applyMakeup = async () => {
-        if (!uploadedImage || !uploadedFile || !apiKey) return;
+        if (!uploadedFile || !apiKey) return;
 
         setIsLoading(true);
         setImageLoaded(false);
@@ -172,15 +170,26 @@ function App() {
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            let resultUrl;
+            try {
+                resultUrl = await uploadToPollinations(
+                    new File([blob], "virtual-makeup-result.png", {
+                        type: blob.type,
+                    }),
+                    "virtual-makeup",
+                );
+            } catch (error) {
+                console.error("Failed to publish makeup result:", error);
+                resultUrl = URL.createObjectURL(blob);
+            }
+            setMakeupImage(resultUrl);
             setImageLoaded(true);
-            setIsLoading(false);
         } catch (error) {
             console.error("Error applying makeup:", error);
             setErrorMessage(
                 error.message || "Something went wrong. Please try again.",
             );
+        } finally {
             setIsLoading(false);
         }
     };

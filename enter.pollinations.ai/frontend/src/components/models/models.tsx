@@ -11,17 +11,28 @@ import {
     TabButton,
     TokensIcon,
     TrendUpIcon,
+    UsageIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { CommunityEndpoints } from "../community-endpoints";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+import {
+    CommunityEndpoints,
+    publicCommunityFallbackOptions,
+} from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
+import type { ModelScope } from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -38,17 +49,24 @@ type ModelsProps = {
     canPublish?: boolean;
 };
 
-const SECTION_ORDER: SectionType[] = [
+const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
+    "text",
     "image",
     "video",
     "3d",
     "audio",
     "realtime",
-    "text",
-    "community",
     "embedding",
 ];
+
+const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const SCOPE_LABELS: Record<ModelScope, string> = {
+    pollinations: "Official",
+    community: "Community",
+};
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -58,39 +76,34 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    community: "community",
     embedding: "embedding",
-};
-
-const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack =
-        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
-    return {
+    const categorized: Record<SectionType, ModelPrice[]> = {
         all: models,
-        image: models.filter((m) => m.type === "image"),
-        video: models.filter((m) => m.type === "video"),
-        "3d": models.filter((m) => m.type === "3d"),
-        audio: models.filter((m) => m.type === "audio"),
-        realtime: models.filter((m) => m.type === "realtime"),
-        text: models.filter((m) => m.type === "text" && !m.community),
-        community: models.filter((m) => m.community),
-        embedding: models.filter((m) => m.type === "embedding"),
+        image: [],
+        video: [],
+        "3d": [],
+        audio: [],
+        realtime: [],
+        text: [],
+        embedding: [],
     };
+
+    for (const model of models) {
+        categorized[model.type].push(model);
+    }
+    return categorized;
 }
 
 export const Models: FC<ModelsProps> = ({
@@ -99,10 +112,11 @@ export const Models: FC<ModelsProps> = ({
 }) => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
-    const search = modelSearch.q ?? "";
-    const sortKey = modelSearch.sort ?? "perPollen";
-    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
+    const urlSearch = modelSearch.q ?? "";
+    const [search, setSearch] = useState(urlSearch);
+    const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -111,10 +125,20 @@ export const Models: FC<ModelsProps> = ({
         [catalogModels, stats],
     );
     const query = search.trim().toLowerCase();
+    const scopedModels = useMemo(
+        () =>
+            allModels.filter(
+                (model) =>
+                    Boolean(model.community) === (activeScope === "community"),
+            ),
+        [activeScope, allModels],
+    );
     const filteredModels = useMemo(
         () =>
-            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
-        [allModels, query],
+            query
+                ? scopedModels.filter((model) => matchesQuery(model, query))
+                : scopedModels,
+        [query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -124,7 +148,8 @@ export const Models: FC<ModelsProps> = ({
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),
@@ -135,38 +160,53 @@ export const Models: FC<ModelsProps> = ({
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    // Tab visibility follows the full catalog so a search query never hides
-    // or auto-switches away from a tab — only its contents are filtered.
-    const sectionModelsAll = useMemo(
-        () => categorizeModels(allModels),
-        [allModels],
-    );
     const sectionModels = useMemo(
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
+    const sectionOrder =
+        activeScope === "community"
+            ? COMMUNITY_SECTION_ORDER
+            : POLLINATIONS_SECTION_ORDER;
+    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
-    const availableSections =
-        allModels.length > 0
-            ? SECTION_ORDER.filter(
-                  (section) => sectionModelsAll[section].length,
-              )
-            : SECTION_ORDER;
+    const searchTarget =
+        activeTab === "all"
+            ? `${scopeLabel} models`
+            : `${scopeLabel} ${searchLabel} models`;
 
-    useEffect(() => {
-        if (!availableSections.includes(activeTab)) {
+    const pushSearch = useCallback(
+        (nextSearch: string) => {
+            if (nextSearch === lastPushedSearchRef.current) return;
+
+            lastPushedSearchRef.current = nextSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    category:
-                        availableSections[0] === "all"
-                            ? undefined
-                            : availableSections[0],
+                    q: nextSearch || undefined,
                 }),
                 replace: true,
             });
-        }
-    }, [activeTab, availableSections, navigate]);
+        },
+        [navigate],
+    );
+
+    useEffect(() => {
+        if (urlSearch === lastPushedSearchRef.current) return;
+
+        lastPushedSearchRef.current = urlSearch;
+        setSearch(urlSearch);
+    }, [urlSearch]);
+
+    useEffect(() => {
+        if (search === lastPushedSearchRef.current) return;
+
+        const timeout = window.setTimeout(() => {
+            pushSearch(search);
+        }, 200);
+
+        return () => window.clearTimeout(timeout);
+    }, [pushSearch, search]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -177,32 +217,17 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const setSearch = (q: string) => {
+    const setActiveScope = (scope: ModelScope) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                q: q || undefined,
-            }),
-            replace: true,
-        });
-    };
-
-    const onSort = (key: ModelSortKey) => {
-        const nextDirection =
-            key === sortKey
-                ? sortDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : DEFAULT_SORT_DIRECTIONS[key];
-
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                sort: key === "perPollen" ? undefined : key,
-                dir:
-                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
+                scope: scope === "pollinations" ? undefined : scope,
+                category:
+                    scope === "community" &&
+                    previous.category !== "text" &&
+                    previous.category !== "image"
                         ? undefined
-                        : nextDirection,
+                        : previous.category,
             }),
         });
     };
@@ -237,28 +262,42 @@ export const Models: FC<ModelsProps> = ({
                 }
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-wrap gap-1.5">
-                        {availableSections.map((section) => (
-                            <TabButton
-                                key={section}
-                                active={activeTab === section}
-                                onClick={() => setActiveTab(section)}
-                                ariaLabel={
-                                    section === "community"
-                                        ? "Community alpha models"
-                                        : undefined
-                                }
-                            >
-                                <span className="inline-flex items-center gap-1.5">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {SCOPE_ORDER.map((scope) => (
+                                <TabButton
+                                    key={scope}
+                                    active={activeScope === scope}
+                                    onClick={() => setActiveScope(scope)}
+                                    size="lg"
+                                    ariaLabel={
+                                        scope === "community"
+                                            ? "Community alpha models"
+                                            : undefined
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {SCOPE_LABELS[scope]}
+                                        {scope === "community" && (
+                                            <Chip intent="alpha" size="sm">
+                                                Alpha
+                                            </Chip>
+                                        )}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {sectionOrder.map((section) => (
+                                <TabButton
+                                    key={section}
+                                    active={activeTab === section}
+                                    onClick={() => setActiveTab(section)}
+                                >
                                     {sectionLabels[section]}
-                                    {section === "community" && (
-                                        <Chip intent="alpha" size="sm">
-                                            ALPHA
-                                        </Chip>
-                                    )}
-                                </span>
-                            </TabButton>
-                        ))}
+                                </TabButton>
+                            ))}
+                        </div>
                     </div>
                     <div className="relative w-full sm:w-72">
                         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
@@ -266,8 +305,9 @@ export const Models: FC<ModelsProps> = ({
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder={`Search ${searchLabel} models…`}
-                            aria-label={`Search ${searchLabel} models`}
+                            onBlur={() => pushSearch(search)}
+                            placeholder={`Search ${searchTarget}…`}
+                            aria-label={`Search ${searchTarget}`}
                             className="w-full pl-9"
                         />
                     </div>
@@ -279,12 +319,12 @@ export const Models: FC<ModelsProps> = ({
                 )}
                 {query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {sectionLabels[activeTab].toLowerCase()} models match
-                        “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
+                            listKey={`${activeScope}:${activeTab}:${query}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}
@@ -292,12 +332,8 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityModels={sectionModels.community}
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
-                            sortKey={sortKey}
-                            sortDir={sortDir}
-                            onSort={onSort}
                         />
                     </div>
                 )}
@@ -312,7 +348,8 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/M</strong> — per million tokens.
+                            <strong>/K · /M</strong> — rates per thousand or
+                            million tokens.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -322,11 +359,20 @@ export const Models: FC<ModelsProps> = ({
                             TTS is estimated from text length.
                         </span>
                     </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>gen /pollen</strong> — how many generations
+                            you can make with 1 Pollen, estimated from average
+                            usage over the last 7 days.
+                        </span>
+                    </p>
                 </div>
             </Section>
             {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
+                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13263,
+  "title": "refactor: simplify app management and deployments",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13263",
+  "merged_at": "2026-08-11T21:20:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the unchanged 882-row community catalog and its ingestion, validation, metrics, and Tinybird sync code to `operations/app-management/` as `app.json` and `app.js`.\n- Leaves `apps/` for application directories only; removes obsolete generated listings, templates, and stale deployment guides.\n- Replaces central deployment registries and three workflows with per-application `deploy.json` manifests and one production-only deployment engine.\n- Catalog-only and deployment-engine-only changes do not trigger application deployments.\n- Tinybird changes are descriptive only; no schema, SQL, or endpoint behavior changes.\n\nRollout:\n- Merge requires an immediate main→production sync and website deploy because the live bundle reads the catalog from `main` at runtime.\n- The first production sync adds all 20 manifests and therefore deploys all 20 applications; monitor that run. Future engine-only edits deploy none.\n\nChecks:\n- 11 tests pass\n- Catalog validates with 882 byte-identical rows\n- Workflow YAML, shell syntax, and diff checks pass",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One hive, fewer levers",
+    "blurb": "App deployments have stopped consulting several ancient scrolls. Each app now carries its own small deployment manifest, while one engine handles the actual gardening.",
+    "summary": "Replaced central deployment registries and three deployment workflows with per-app deploy.json manifests for 20 applications and a single production deployment engine, while moving the unchanged 882-entry community catalog into operations/app-management.",
+    "impact": "Application directories are now cleaner and deployment changes are more targeted: catalog-only or deployment-engine-only edits do not redeploy apps, while each app declares its own deployment configuration beside its code.",
+    "keywords": [
+      "deployments",
+      "app-management",
+      "manifests",
+      "github-actions",
+      "community-catalog",
+      "operations"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper replacing a tangled wall of old deployment maps and switches with neat labeled seed packets, one beside each tiny app-shaped planter. A friendly CRT monitor robot can help organize the manifests, with a cozy app garden and a single glowing deployment watering system representing the unified engine.",
+    "image_prompt": "A cozy pixel art garden shed full of tiny app-shaped planters, each with a neat little deploy.json seed packet, while Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings—wears a tiny gardener tool belt and tidies away tangled old deployment maps; a chunky CRT monitor robot helps beside one glowing watering machine. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-vines and pixel flowers, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13263.jpg",
+    "prompt": "A cozy pixel art garden shed full of tiny app-shaped planters, each with a neat little deploy.json seed packet, while Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings—wears a tiny gardener tool belt and tidies away tangled old deployment maps; a chunky CRT monitor robot helps beside one glowing watering machine. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-vines and pixel flowers, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-11T21:21:13.647812+00:00"
+}

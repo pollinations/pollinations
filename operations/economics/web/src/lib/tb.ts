@@ -39,6 +39,10 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
     return body.data;
 }
 
+export function canonicalVendor(vendor: string): string {
+    return vendor === "vast" ? "vast.ai" : vendor;
+}
+
 export async function loadAll(): Promise<Data> {
     // All four pipes are required contracts. A missing pipe (404) must surface
     // as an error, never render as plausible-but-empty economics data.
@@ -49,5 +53,13 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<OpRunwayRow>("op_runway_api"),
     ]);
 
-    return { opTransactions, opCloud, opPollen, opRunway };
+    return {
+        opTransactions,
+        opCloud,
+        opPollen: opPollen.map((row) => ({
+            ...row,
+            vendor: canonicalVendor(row.vendor),
+        })),
+        opRunway,
+    };
 }

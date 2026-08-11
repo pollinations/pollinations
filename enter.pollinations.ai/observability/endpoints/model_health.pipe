@@ -35,6 +35,7 @@ SQL >
         -- read as a permanently dead model.
         countIf(NOT fallback_used) as own_calls,
         countIf(NOT fallback_used AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        countIf(NOT fallback_used AND response_status >= 500) as primary_5xx,
         countIf(NOT fallback_used AND response_status = 503) as primary_503s,
         countIf(
             is_final AND fallback_used

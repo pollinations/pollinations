@@ -72,7 +72,7 @@ const INITIAL_STATE: FetchState = {
 type IconComponent = ComponentType<{ className?: string }>;
 type RewardIconKind = "paid" | "tier";
 
-// ── Category model ──────────────────────────────────────────────────────────
+// ── Category model ─────────────────────────────────────────────────────────[...]
 // One lane per backend quest.category, mapped 1:1. The source group that found
 // a quest is intentionally separate from the category that organizes it.
 type CategoryKey = QuestCatalogItem["category"];
@@ -198,7 +198,7 @@ async function loadQuestData(): Promise<QuestData> {
     };
 }
 
-// ── Card model ──────────────────────────────────────────────────────────────
+// ── Card model ──────────────────────────────────────────────────────────[...]
 // A single quest row. Open shows the possible reward; claimable means the reward
 // exists but has not moved into the balance; claimed means pollen was deposited.
 export type QuestCardStatus = "open" | "claimable" | "claimed";
@@ -877,6 +877,28 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
             <Surface variant="panel">
+                {/* Contribution help banner */}
+                <div className="mb-4 rounded-md border border-divider bg-theme-bg-subtle px-4 py-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <GitHubIcon className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Contributed a PR? How to get credit</div>
+                      <div className="mt-1 text-theme-text-muted">
+                        If your pull request to {" "}
+                        <InlineLink href="https://github.com/pollinations/pollinations" showIcon={false}>
+                          pollinations/pollinations
+                        </InlineLink>{" "}
+                        was merged, the contribution quest is detected automatically. Open your dashboard at{" "}
+                        <InlineLink href="/quests" showIcon={false}>
+                          enter.pollinations.ai/quests
+                        </InlineLink>{" "}
+                        and wait a few seconds for the automatic check (the page checks itself on open). If you worked from a POLLEN-QUEST issue, make sure the issue has the <span className="font-mono">POLLEN-QUEST</span> label and that the issue body includes a
+                        <span className="font-mono"> ### Reward</span> line with the numeric amount.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {!state.anonymous && (
                     <>
                         {/* Responsive summary. Bucket cards are conditional on the

@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Validate app catalog
-        run: node apps/app-management/catalog.js validate
+        run: node operations/app-management/app.js validate
 
       - name: Get changed files
         id: changed-files
@@ -65,7 +65,7 @@ jobs:
       - name: Get changed operations scripts
         id: operations-scripts
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(\.github/scripts/|apps/app-management/).*\.js$' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(\.github/scripts/|operations/app-management/|operations/deployment/).*\.(c?js)$' || true)
           echo "Changed operations scripts:"
           echo "$FILES"
           if [ -n "$FILES" ]; then
@@ -80,7 +80,7 @@ jobs:
           if compgen -G ".github/scripts/*.test.js" > /dev/null; then
             node --test .github/scripts/*.test.js
           fi
-          mapfile -t APP_TESTS < <(find apps/app-management -name '*.test.js' -type f)
+          mapfile -t APP_TESTS < <(find operations/app-management operations/deployment -name '*.test.*js' -type f)
           if (( ${#APP_TESTS[@]} )); then
             node --test "${APP_TESTS[@]}"
           fi

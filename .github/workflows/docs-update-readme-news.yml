@@ -67,7 +67,7 @@ jobs:
           # Create PR with auto-merge
           PR_URL=$(gh pr create \
             --title "docs: update README — ${DATE}" \
-            --body "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)" \
+            --body "Daily README update: Latest News section. Recent Apps is refreshed when an app is published." \
             --label "NEWS" \
             --base main)
           echo "Created PR: $PR_URL"

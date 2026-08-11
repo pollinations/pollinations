@@ -16,6 +16,7 @@
 
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
+<!-- recent-apps:start -->
 ## 🆕 Recent Apps
 
 | Name | Description | Author |
@@ -31,7 +32,9 @@
 | [🤖 Lucia](https://t.me/MissLucia_bot) | Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU). | [@Ad101DP](https://github.com/Ad101DP) |
 | [📚 Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) | Pollination EduCard AI provides an “About the App” section describing the app. | [@Satwata-Bandopadhyay](https://github.com/Satwata-Bandopadhyay) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[Browse all apps →](https://pollinations.ai/apps)
+<!-- recent-apps:end -->
+
 ## 🚀 Unified API
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video, 3D, embeddings — all in one place.
@@ -452,7 +455,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 
-- [`apps/`](./apps/): Community apps and the app catalog (`catalog.json`, `GREENHOUSE.md`).
+- [`apps/`](./apps/): Applications maintained in this repository.
 
 - [`operations/`](./operations/): Internal dashboards, monitoring, economics,
   and infrastructure, including the
@@ -509,4 +512,3 @@ pollinations.ai is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the pollinations.ai team
-

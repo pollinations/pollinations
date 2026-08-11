@@ -22,7 +22,7 @@ Live mode uses a password gate. The Tinybird read token lives only in
 `secrets/web.json` and is exposed only to the local/production Worker, never to
 the browser bundle.
 
-Production deploys through `.github/workflows/deploy-operations-cloudflare.yml`
+Production deploys through `.github/workflows/deploy-applications.yml`
 on the `production` branch. The workflow deploys the Worker with both custom
 domains and verifies both session endpoints.
 

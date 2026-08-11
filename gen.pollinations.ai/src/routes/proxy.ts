@@ -1,6 +1,11 @@
 import { type Context, Hono } from "hono";
 import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
+import {
+    generateEmbeddings,
+    getEmbeddingProviderModelId,
+} from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";

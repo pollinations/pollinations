@@ -16,6 +16,7 @@ import {
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
+    COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
     MAX_FALLBACK_TARGETS,
@@ -426,7 +427,7 @@ export function CommunityEndpointDialog({
                         alignLabelRow
                     >
                         <ButtonGroup aria-label="Modality">
-                            {(["text", "image"] as const).map((modality) => (
+                            {COMMUNITY_ENDPOINT_MODALITIES.map((modality) => (
                                 <TabButton
                                     key={modality}
                                     active={form.modality === modality}
@@ -639,7 +640,10 @@ export function CommunityEndpointDialog({
                                                 placeholder={
                                                     form.modality === "image"
                                                         ? "gpt-image-2"
-                                                        : "gpt-4o-mini"
+                                                        : form.modality ===
+                                                            "embedding"
+                                                          ? "text-embedding-3-small"
+                                                          : "gpt-4o-mini"
                                                 }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
@@ -706,7 +710,9 @@ export function CommunityEndpointDialog({
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : "gpt-4o-mini"
+                                            : form.modality === "embedding"
+                                              ? "text-embedding-3-small"
+                                              : "gpt-4o-mini"
                                     }
                                     autoComplete="off"
                                     autoCapitalize="none"

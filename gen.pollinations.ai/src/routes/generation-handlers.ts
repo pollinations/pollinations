@@ -12,6 +12,7 @@ import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
 } from "@/embeddings/handler.ts";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
 import {
@@ -148,8 +149,16 @@ export async function generateEmbeddingsResponse(
     >;
     const { response, servedEntry } = await withModelFallbackResponse(
         c.var.model,
-        (candidate) =>
-            generateEmbeddings(
+        (candidate) => {
+            if (candidate.communityEndpoint) {
+                return generateCommunityEmbeddings(
+                    candidate.communityEndpoint,
+                    requestBody,
+                    candidate.id,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+            }
+            return generateEmbeddings(
                 c.env,
                 {
                     ...requestBody,
@@ -157,7 +166,8 @@ export async function generateEmbeddingsResponse(
                 },
                 candidate.definition ?? c.var.model.definition,
                 candidate.id,
-            ),
+            );
+        },
         c.var.track?.failedCalls,
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);

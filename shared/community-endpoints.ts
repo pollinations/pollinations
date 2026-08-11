@@ -1,4 +1,5 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import { POLLEN_BILLING_PRECISION } from "./billing/precision.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -8,12 +9,17 @@ import {
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
+    OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_MODALITIES = [
+    "text",
+    "image",
+    "embedding",
+] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -33,12 +39,17 @@ export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+// Fixed per-request prices (per-request embedding mode, per-image image
+// mode) floor at the smallest billable pollen unit instead of the per-token
+// rate, which only makes sense for token-priced usage buckets.
+export const MIN_COMMUNITY_PRICE_PER_UNIT = 10 ** -POLLEN_BILLING_PRECISION;
 // Keep typos and malicious configurations from exposing callers to extreme
 // charges.
 export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+export const MAX_COMMUNITY_PRICE_PER_REQUEST = 0.25;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
@@ -47,6 +58,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    embedding: ["text"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
@@ -164,19 +176,45 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+// Embedding endpoints bill token usage per 1M like text, unless the owner
+// sets a fixed per-request price (completionTextPrice) — that mode charges
+// the fixed rate once per request regardless of token usage.
+const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
+    {
+        key: "promptTextPrice",
+        usageType: "promptTextTokens",
+        label: "Prompt text",
+        priceUnit: "million",
+        rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
+    },
+    {
+        key: "completionTextPrice",
+        usageType: "completionTextTokens",
+        label: "Embedding request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
+    },
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
-    if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
-    return imagePricing === "tokens"
-        ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
-        : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    if (modality === "image") {
+        return imagePricing === "tokens"
+            ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
+            : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    }
+    if (modality === "embedding") {
+        return COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS;
+    }
+    return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
 }
 
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
@@ -252,7 +290,9 @@ export function isCommunityFallbackPricingAllowed(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
-    return value === "image" ? "image" : "text";
+    if (value === "image") return "image";
+    if (value === "embedding") return "embedding";
+    return "text";
 }
 
 export function normalizeCommunityEndpointImagePricing(
@@ -458,12 +498,17 @@ export function communityImageEditsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
 }
 
+export function communityEmbeddingsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/embeddings`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
         "/chat/completions",
         "/images/generations",
         "/images/edits",
+        "/embeddings",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -526,9 +571,13 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isEmbedding = modality === "embedding";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
+    // Embedding endpoints with a fixed per-request price are flat-rate too;
+    // token-priced ones bill usage at the per-1M text rate.
+    const isFlatRateEmbedding = isEmbedding && endpoint.completionTextPrice > 0;
     const inputModalities = normalizeCommunityEndpointInputModalities(
         endpoint.inputModalities,
         modality,
@@ -540,20 +589,28 @@ export function communityModelDefinition(
         provider: "community",
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : "text",
+        category: isImage ? "image" : isEmbedding ? "embedding" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isImage
+            ? ["image"]
+            : isEmbedding
+              ? ["embedding"]
+              : ["text"],
         paidOnly: false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
-        ...(isImage ? { flatRate: isFlatRateImage } : {}),
+        ...(isImage
+            ? { flatRate: isFlatRateImage }
+            : isEmbedding && isFlatRateEmbedding
+              ? { flatRate: true }
+              : {}),
     };
 }
 

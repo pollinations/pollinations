@@ -27,6 +27,10 @@ export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 
+export function communityEmbeddingSupportedEndpoints(): string[] {
+    return ["/v1/embeddings"];
+}
+
 export function communityImageSupportedEndpoints(
     inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {

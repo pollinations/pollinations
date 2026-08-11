@@ -9,8 +9,11 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_REQUEST,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
@@ -61,11 +64,18 @@ export function publicCommunityFallbackOptions(
         .filter(
             (model) =>
                 model.community &&
-                (model.type === "text" || model.type === "image"),
+                (model.type === "text" ||
+                    model.type === "image" ||
+                    model.type === "embedding"),
         )
         .map((model) => ({
             modelId: model.name,
-            modality: model.type === "image" ? "image" : "text",
+            modality:
+                model.type === "image"
+                    ? "image"
+                    : model.type === "embedding"
+                      ? "embedding"
+                      : "text",
         }));
 }
 
@@ -195,14 +205,18 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "request"
+              ? MAX_COMMUNITY_PRICE_PER_REQUEST
+              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+    const minimum =
+        priceUnit === "million"
+            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
+            : MIN_COMMUNITY_PRICE_PER_UNIT;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
         parsed <= maximum &&
-        (priceUnit === "image" ||
-            parsed === 0 ||
-            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+        (priceUnit === "image" || parsed === 0 || parsed >= minimum)
     );
 }
 
@@ -349,7 +363,7 @@ export function nextFormState(
     value: string,
 ): EndpointFormState {
     if (key === "modality") {
-        const modality = value === "image" ? "image" : "text";
+        const modality = normalizeCommunityEndpointModality(value);
         return {
             ...current,
             modality,

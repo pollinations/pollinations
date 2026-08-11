@@ -18,6 +18,7 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityEmbeddingSupportedEndpoints,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
@@ -129,7 +130,9 @@ function communityEntryToGenerationEntry(
                 ? communityImageSupportedEndpoints(
                       entry.definition.inputModalities,
                   )
-                : communityTextSupportedEndpoints(),
+                : eventType === "generate.embedding"
+                  ? communityEmbeddingSupportedEndpoints()
+                  : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

@@ -788,9 +788,16 @@ async function* extractResponseStream(
         .pipeThrough(textDecoder)
         .pipeThrough(sseParser);
 
+    const log = getLogger(["hono", "track", "stream"]);
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+        try {
+            yield JSON.parse(event.data);
+        } catch {
+            log.warn("Skipping malformed SSE event data", {
+                dataPreview: String(event.data).slice(0, 200),
+            });
+        }
     }
 }
 

@@ -1824,6 +1824,79 @@ describe("trackResponse missing usage", () => {
     });
 });
 
+describe("trackResponse malformed SSE chunks", () => {
+    it("survives a malformed data event and still processes later valid events", async () => {
+        const sse = [
+            // Malformed chunk — not valid JSON.
+            'data: {broken json\n\n',
+            // Valid chunk with content but no usage yet.
+            'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\n',
+            // Valid chunk with usage.
+            'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}\n\n',
+            "data: [DONE]\n\n",
+        ].join("");
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(sse, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+        // Must emit a row — the malformed event is skipped, not fatal.
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.modelUsed).toBe("openai");
+        expect(tracking.usage).toMatchObject({
+            promptTokens: 10,
+            completionTokens: 5,
+            totalTokens: 15,
+        });
+    });
+
+    it("emits a usage_missing row when the entire stream is malformed", async () => {
+        // Every data event is unparseable, but the stream otherwise completes.
+        const sse = [
+            'data: {not valid\n\n',
+            'data: also not json\n\n',
+            "data: [DONE]\n\n",
+        ].join("");
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(sse, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.modelUsed).toBe("openai");
+        expect(tracking.errorTracking).toMatchObject({
+            errorResponseCode: "usage_missing",
+        });
+    });
+
+    it("skips a malformed event then picks up usage from a later event", async () => {
+        const sse = [
+            'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"first"}}]}\n\n',
+            // Middle chunk is garbage.
+            'data: {{{oops\n\n',
+            'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"last"}}],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\n',
+            "data: [DONE]\n\n",
+        ].join("");
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(sse, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.usage).toMatchObject({
+            promptTokens: 2,
+            completionTokens: 1,
+            totalTokens: 3,
+        });
+    });
+});
+
 function makeAdjustment(
     ruleId: string,
     cost: number,

@@ -12,7 +12,7 @@ const INSERT_BEFORE = "## 🚀 Unified API";
 function cell(value) {
     return String(value ?? "")
         .replace(/\s+/g, " ")
-        .replace(/\|/g, "\\|")
+        .replace(/\|/g, "&#124;")
         .trim();
 }
 

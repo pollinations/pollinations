@@ -87,6 +87,31 @@ const MODEL_SCOPES = [
     { key: "community", title: "Community" },
 ];
 
+const FILTER_KEY = "model-monitor-filter";
+
+function loadFilterState() {
+    try {
+        const raw = localStorage.getItem(FILTER_KEY);
+        if (!raw) return null;
+        const { scope, type } = JSON.parse(raw);
+        const validScope = MODEL_SCOPES.some((s) => s.key === scope)
+            ? scope
+            : null;
+        const validType = MODEL_TYPES.some((t) => t.key === type) ? type : null;
+        return { scope: validScope, type: validType };
+    } catch {
+        return null;
+    }
+}
+
+function saveFilterState(filter) {
+    try {
+        localStorage.setItem(FILTER_KEY, JSON.stringify(filter));
+    } catch {
+        // storage full or blocked — silently ignore
+    }
+}
+
 const LOW_SAMPLE_REQUESTS = 10;
 
 const EXTERNAL_LINKS = [
@@ -437,8 +462,11 @@ function App() {
         useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
-    const [scopeFilter, setScopeFilter] = useState("official");
-    const [typeFilter, setTypeFilter] = useState(null);
+    const [initialFilter] = useState(loadFilterState);
+    const [scopeFilter, setScopeFilter] = useState(
+        initialFilter?.scope ?? "official",
+    );
+    const [typeFilter, setTypeFilter] = useState(initialFilter?.type ?? null);
     const [favorites, setFavorites] = useState(loadFavorites);
     const [favoritesOnly, setFavoritesOnly] = useState(false);
     const catalogUnavailable = endpointStatus.catalog === false;
@@ -446,6 +474,10 @@ function App() {
     useEffect(() => {
         saveFavorites(favorites);
     }, [favorites]);
+
+    useEffect(() => {
+        saveFilterState({ scope: scopeFilter, type: typeFilter });
+    }, [scopeFilter, typeFilter]);
 
     const toggleFavorite = useCallback((key) => {
         setFavorites((prev) =>

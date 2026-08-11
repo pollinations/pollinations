@@ -36,7 +36,7 @@ Scripts follow a similar pattern:
 | Pattern                 | Examples                                                |
 | ----------------------- | ------------------------------------------------------- |
 | `entity_action_what.py` | `app_check_duplicate.py`, `app_prepend_row.py`          |
-| `action-object.js`      | `generate-catalog-outputs.js`, `validate-submission.js` |
+| `action-object.js`      | `sync-to-tinybird.js`, `validate-submission.js`        |
 
 ---
 

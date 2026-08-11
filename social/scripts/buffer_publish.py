@@ -5,7 +5,6 @@ Triggered when a post PR is merged
 """
 
 import os
-import json
 import time
 import requests
 import yaml
@@ -14,8 +13,8 @@ from datetime import datetime, timezone, timedelta
 
 from common import (
     LINKEDIN_MAX_CHARS,
-    get_env,
     get_post_image_urls,
+    read_news_file,
 )
 from buffer_utils import (
     get_channel_by_service,
@@ -268,3 +267,33 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         multi_image=True,
         metadata_fn=_instagram_metadata,
     )
+
+
+def stage_buffer_posts(
+    post_dir: str,
+    publishers: dict,
+    access_token: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> dict[str, bool]:
+    """Load and stage the configured news posts to Buffer."""
+    results = {}
+
+    for platform, publish_fn in publishers.items():
+        filename = f"{platform}.json"
+        post_data = read_news_file(
+            os.path.join(post_dir, filename), github_token, owner, repo
+        )
+        if not post_data:
+            print(f"  No {filename} found — skipping {platform}")
+            continue
+
+        print(f"\n  Staging {platform}...")
+        try:
+            results[platform] = publish_fn(post_data, access_token)
+        except Exception as error:
+            print(f"  Error staging {platform}: {error}")
+            results[platform] = False
+
+    return results

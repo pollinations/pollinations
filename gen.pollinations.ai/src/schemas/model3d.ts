@@ -23,6 +23,9 @@ export const Generate3dRequestQueryParamsSchema = z.object({
             description:
                 "Model to use. See /3d/models for the full list and per-model input requirements.",
         }),
+    resolution: z.enum(["low", "medium", "high"]).optional().meta({
+        description: "Output detail for `trellis-2`. Defaults to `low`.",
+    }),
     image: z
         .string()
         .transform((value: string) => {
@@ -58,3 +61,51 @@ export const Generate3dRequestQueryParamsSchema = z.object({
 export type Generate3dRequestQueryParams = z.infer<
     typeof Generate3dRequestQueryParamsSchema
 >;
+
+export const Generate3dRequestBodySchema = z
+    .object({
+        model: z
+            .enum(VALID_3D_MODELS as unknown as [string, ...string[]])
+            .optional()
+            .default(DEFAULT_3D_MODEL)
+            .meta({
+                description:
+                    "Model to use for 3D generation. See /3d/models for the full list and per-model input requirements.",
+            }),
+        image: z
+            .union([z.string(), z.array(z.string())])
+            .optional()
+            .refine(
+                (value) => {
+                    if (value === undefined) return true;
+                    const urls = Array.isArray(value) ? value : [value];
+                    return urls.every(
+                        (url) =>
+                            url.startsWith("http://") ||
+                            url.startsWith("https://"),
+                    );
+                },
+                { message: "Invalid image URL." },
+            )
+            .transform((value) => {
+                if (value === undefined || Array.isArray(value)) return value;
+                return [value];
+            })
+            .meta({
+                description:
+                    "Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL.",
+            }),
+        resolution: z
+            .enum(["low", "medium", "high"])
+            .optional()
+            .default("low")
+            .meta({
+                description:
+                    "Output voxel-grid resolution for `trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more.",
+            }),
+        seed: z.number().int().optional().meta({
+            description:
+                "Seed for varied generations. Passed to models that support it.",
+        }),
+    })
+    .strict();

@@ -14,6 +14,8 @@ import {
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     communityEndpointPriceFieldsForModality,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -181,6 +183,10 @@ function PriceInputCell({
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
     const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
+    const maximum =
+        field.priceUnit === "image"
+            ? MAX_COMMUNITY_PRICE_PER_IMAGE
+            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -192,6 +198,7 @@ function PriceInputCell({
                         type="number"
                         step="any"
                         min="0"
+                        max={String(maximum)}
                         inputMode="decimal"
                         hideNumberSteppers
                         value={value}
@@ -210,7 +217,9 @@ function PriceInputCell({
                 </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        Enter 0 (free) or a valid positive price.
+                        {field.priceUnit === "image"
+                            ? `Enter 0–${maximum} ${unitLabel}.`
+                            : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
                 )}
             </div>

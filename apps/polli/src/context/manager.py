@@ -1,10 +1,10 @@
 import logging
 
+from ..core.config import config
 from .session import ConversationSession
 
 logger = logging.getLogger(__name__)
 
-SESSION_TIMEOUT = 300
 MAX_SESSIONS = 500
 
 
@@ -16,7 +16,7 @@ class SessionManager:
     def get_session(self, thread_id: int) -> ConversationSession | None:
         session = self._sessions.get(thread_id)
 
-        if session and session.is_expired(SESSION_TIMEOUT):
+        if session and session.is_expired(config.bot.session_timeout_seconds):
             self._cleanup_session(thread_id)
             return None
 
@@ -75,7 +75,7 @@ class SessionManager:
         logger.info(f"LRU evicted {to_evict} oldest sessions (capacity: {self._max_sessions})")
 
     def cleanup_expired(self) -> int:
-        expired = [thread_id for thread_id, session in self._sessions.items() if session.is_expired(SESSION_TIMEOUT)]
+        expired = [thread_id for thread_id, session in self._sessions.items() if session.is_expired(config.bot.session_timeout_seconds)]
         for thread_id in expired:
             self._cleanup_session(thread_id)
 

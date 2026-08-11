@@ -1,4 +1,4 @@
-<div align="center">
+ <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg" />
     <img src="packages/ui/src/brand/lockup-horizontal-black.svg" alt="pollinations.ai" width="100%" />

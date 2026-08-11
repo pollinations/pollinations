@@ -1,0 +1,34 @@
+{
+  "pr_number": 13284,
+  "title": "fix: restart degraded Klein tunnel",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13284",
+  "merged_at": "2026-08-11T12:09:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restarts cloudflared when Klein stays below two HA connections for 30 seconds\n- Preserves the required QUIC Workers VPC transport and existing four-connection promotion gate\n- Documents the August 11 tunnel recovery incident and live mitigation\n\nVerification: shell syntax checks pass; the watchdog is active on production instance 47353224.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tunnel learns to self-heal",
+    "blurb": "Klein now notices when its cloudflared tunnel is running thin and gives it a polite restart. The bees keep finding their way home.",
+    "summary": "Added a Klein cloudflared watchdog that restarts the tunnel after it remains below two HA connections for 30 seconds, while retaining the required QUIC Workers VPC transport and four-connection promotion gate.",
+    "impact": "Image GPU traffic gets more reliable tunnel recovery when Klein loses HA connections, reducing the need for someone to manually investigate a grumpy cloudflared process.",
+    "keywords": [
+      "klein",
+      "cloudflared",
+      "tunnel",
+      "high-availability",
+      "gpu-infrastructure",
+      "reliability"
+    ],
+    "visual_concept": "Depict Klein's network tunnel as a cozy garden burrow with four glowing connection paths, two of which are being carefully restored by Polli. Polli wears a tiny mechanic tool belt and checks a small retro terminal watchdog while code-vines and flowers grow around the tunnel, representing automatic recovery without changing its existing transport rules.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, tending a garden tunnel with four glowing network paths while a small retro terminal displays a friendly watchdog icon; two connection flowers are freshly blooming again. Prominent lime green (#ecf874) tunnel glow with warm cream, mint, lavender, and peach gradients, code-plants and vines around the burrow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13284.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, tending a garden tunnel with four glowing network paths while a small retro terminal displays a friendly watchdog icon; two connection flowers are freshly blooming again. Prominent lime green (#ecf874) tunnel glow with warm cream, mint, lavender, and peach gradients, code-plants and vines around the burrow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-11T12:10:59.057748+00:00"
+}

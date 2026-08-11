@@ -1,0 +1,35 @@
+{
+  "pr_number": 13279,
+  "title": "docs: update README — 2026-08-11",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13279",
+  "merged_at": "2026-08-11T07:34:07Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pollen on the README",
+    "blurb": "The README's Latest News patch got its daily tending. The front door now points visitors toward the newest things growing in the garden.",
+    "summary": "Refreshed the README's Latest News section for 2026-08-11, keeping the project overview current for visitors and contributors.",
+    "impact": "People landing on the repository will see the latest pollinations.ai news directly in the README.",
+    "keywords": [
+      "documentation",
+      "readme",
+      "news",
+      "community",
+      "repository"
+    ],
+    "visual_concept": "A cozy open-source garden noticeboard represents the refreshed README news feed: Polli pins a fresh dated update beside sprouting code-plants, while a retro terminal glows nearby. The scene should make the repository front page feel like a warmly maintained community garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, pinning a fresh 'LATEST NEWS' note onto a garden noticeboard beside a retro terminal and sprouting code-plants. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes; pixel-font text: 'LATEST NEWS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13279.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, pinning a fresh 'LATEST NEWS' note onto a garden noticeboard beside a retro terminal and sprouting code-plants. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes; pixel-font text: 'LATEST NEWS'."
+  },
+  "generated_at": "2026-08-11T07:35:18.495171+00:00"
+}

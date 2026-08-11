@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-10",
+  "period_start": "2026-08-10",
+  "period_end": "2026-08-10",
+  "generated_at": "2026-08-11T06:25:39.787324+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-10/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Z-Image now has a bounded queue with Fal spillover, so traffic has somewhere polite to go. Trellis 2 moved to async jobs without making callers rewrite. also: 3 community apps and a sturdier community monitor. 11 PRs."
+}

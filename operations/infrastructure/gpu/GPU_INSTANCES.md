@@ -385,9 +385,12 @@ healthy connections with zero request errors. A host that briefly registers
 four connections after a failed UDP precheck is still disqualified.
 
 **Health and restart:** Vast runs `/root/onstart.sh` on container startup. It
-supervises `klein` and `cloudflared` screen sessions with restart loops. Tokens
-are mode-600 files and cloudflared uses `--token-file`, keeping its token out of
-process listings.
+supervises `klein` and `cloudflared` screen sessions with restart loops. A
+watchdog also restarts a live-but-degraded connector if fewer than two HA
+connections remain for 30 seconds; otherwise one surviving connection can keep
+the process alive while the missing replicas never recover. Tokens are mode-600
+files and cloudflared uses `--token-file`, keeping its token out of process
+listings.
 
 ```bash
 vastai show instance 47353224 --raw
@@ -416,6 +419,13 @@ curl -s http://127.0.0.1:8000/health
 - During the comparison, retired host `47259457` logged 90 additional tunnel
   dial or termination failures while its local model remained healthy. It was
   destroyed immediately after the human-approved cutover.
+
+**Tunnel recovery incident (2026-08-11):** instance `47353224` lost all four
+QUIC connections during a transient Vast network failure while the local model
+remained healthy. One connection eventually returned, but `cloudflared` stayed
+alive and did not restore the other replicas, causing ten gateway 502s. A clean
+connector restart restored the supported QUIC path and production traffic. The
+runtime watchdog now restarts this live-but-degraded state automatically.
 
 **Previous replacement qualification (2026-08-09):**
 

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-10",
+  "period_start": "2026-08-10",
+  "period_end": "2026-08-10",
+  "generated_at": "2026-08-11T06:25:39.787324+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-10/images/reddit.jpg"
+    }
+  ],
+  "title": "Z-Image queueing and Trellis async landed",
+  "text": "11 PRs merged today.\n\nThe operational change is Z-Image queueing. The Fal fallback now has a bounded queue instead of becoming an accidental infinite waiting room, and the Vast cutover logic was reconciled around that path. The intended behavior is fairly boring: use the normal route, spill over when needed, and fail predictably when capacity is actually exhausted. Boring is good for image infrastructure.\n\nTrellis 2 was moved onto InferencePort async jobs, so longer-running work can finish on its own schedule without making existing callers redesign their request flow.\n\nCommunity model monitoring also got a reliability/safety cleanup. That keeper has more guardrails now; production monitors tend to discover every edge case eventually, usually at an inconvenient hour.\n\nThree community projects were added to the public garden: Tessera Lumen under writing, INKRUSH under image, and FlashcardGeneratorAI under learn. We also corrected community-app metadata, refreshed the README, and switched supporter logos to static assets rather than relying on a dynamic source for a thing that should load every time.\n\nPRs: https://github.com/pollinations/pollinations/pulls\nDocs and source: https://github.com/pollinations/pollinations\n\nThe queue limits and spillover behavior are the parts most worth kicking the tires on."
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13271,
+  "title": "chore: backfill community app screenshots",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13271",
+  "merged_at": "2026-08-11T00:08:32Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds screenshots to 762 retained community catalog rows.\n- Refreshes screenshots for 7 retained community catalog rows.\n- Does not remove apps or change other metadata.\n- Includes 20 previously missing retained-app covers rechecked in the browser immediately before merge.\n\n## Refreshed screenshots\n\nNew screenshot additions are reviewable directly in the catalog diff. Previously\npopulated screenshot URLs that changed are listed below.\n\n| App | New screenshot URL |\n| --- | --- |\n| LLM Playground | https://media.pollinations.ai/b89a692b-c90a-445a-9c96-0db3c5b76a53 |\n| AI · RPG Engine | https://media.pollinations.ai/93112bb6-9116-4347-8475-33ea8e558a81 |\n| AI · RPG Engine | https://media.pollinations.ai/93112bb6-9116-4347-8475-33ea8e558a81 |\n| excelformula.pro | https://media.pollinations.ai/76282566-dab5-4719-a6ab-bb8707eb4c0f |\n| Strudel AI REPL | https://media.pollinations.ai/3e22c780-e344-498c-bf1d-c82f3df046f2 |\n| Convince the CRAZY Idol to let you free | https://media.pollinations.ai/478009e4-a9cd-4895-b5ed-9e14d824cff4 |\n| Sirius Cybernetics Elevator Challenge | https://media.pollinations.ai/caf95830-d507-420e-ae02-9b56d3da91ca |\n\n## Validation\n\n- All 20 newly captured media URLs return HTTP 200 with `image/jpeg`.\n- The latest commit changes only missing `screenshotUrl` values.\n- Catalog row count and all non-screenshot fields are unchanged.\n\n## Merge order\n\n- Merge this screenshot PR first.\n- Then refresh #13258 against the resulting `main` before merging the removals.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The app garden got portraits",
+    "blurb": "762 community apps now have a proper window into what they do, with seven familiar faces freshly repainted. The catalog remains the same garden; it is simply much easier to wander through.",
+    "summary": "Backfilled screenshot URLs for 762 retained community catalog apps and refreshed screenshots for 7 existing entries, without changing app metadata or catalog row count.",
+    "impact": "Visitors browsing the community catalog now get visual previews for hundreds more apps, including 20 covers rechecked in-browser immediately before merge.",
+    "keywords": [
+      "community",
+      "app-catalog",
+      "screenshots",
+      "discovery",
+      "greenhouse",
+      "apps"
+    ],
+    "visual_concept": "Depict the community app catalog as a cozy greenhouse gallery: rows of small framed app screenshots bloom like flower displays, while Polli carefully hangs a new picture frame and admiringly checks the garden. A CRT monitor robot can hold a tiny catalog card or frame, emphasizing that many apps are now visible at a glance.",
+    "image_prompt": "A cozy pixel art greenhouse gallery filled with rows of tiny framed community app screenshots growing among flowers and code-plants, with lime green (#ecf874) prominently glowing from the catalog display wall. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret while hanging a new screenshot frame as a cute CRT monitor robot holds another frame. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'APP GARDEN', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13271.jpg",
+    "prompt": "A cozy pixel art greenhouse gallery filled with rows of tiny framed community app screenshots growing among flowers and code-plants, with lime green (#ecf874) prominently glowing from the catalog display wall. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret while hanging a new screenshot frame as a cute CRT monitor robot holds another frame. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'APP GARDEN', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-11T00:09:36.892442+00:00"
+}

@@ -14,10 +14,20 @@ export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 export const MODEL_SCOPES = ["pollinations", "community"] as const;
 export type ModelScope = (typeof MODEL_SCOPES)[number];
 
+export const MODEL_SORTS = [
+    "recommended",
+    "most-used",
+    "newest",
+    "price-low",
+    "price-high",
+] as const;
+export type ModelSort = (typeof MODEL_SORTS)[number];
+
 export type ModelSearch = {
     scope?: ModelScope;
     category?: ModelCategory;
     q?: string;
+    sort?: ModelSort;
 };
 
 function includes<T extends string>(
@@ -36,6 +46,9 @@ export function validateModelSearch(
     const category = includes(MODEL_CATEGORIES, search.category)
         ? search.category
         : "all";
+    const sort = includes(MODEL_SORTS, search.sort)
+        ? search.sort
+        : "recommended";
 
     return {
         scope: scope === "community" ? scope : undefined,
@@ -50,5 +63,6 @@ export function validateModelSearch(
             typeof search.q === "string" && search.q.length > 0
                 ? search.q
                 : undefined,
+        sort: sort === "recommended" ? undefined : sort,
     };
 }

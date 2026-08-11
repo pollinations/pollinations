@@ -85,6 +85,7 @@ describe("model categories", () => {
             scope: "community",
             category: undefined,
             q: undefined,
+            sort: undefined,
         });
         expect(
             validateModelSearch({ scope: "community", category: "image" }),
@@ -92,6 +93,7 @@ describe("model categories", () => {
             scope: "community",
             category: "image",
             q: undefined,
+            sort: undefined,
         });
         expect(
             validateModelSearch({ scope: "community", category: "video" }),
@@ -99,14 +101,22 @@ describe("model categories", () => {
             scope: "community",
             category: undefined,
             q: undefined,
+            sort: undefined,
         });
     });
 
-    it("ignores obsolete model sort parameters", () => {
+    it("accepts model sort options and ignores obsolete values", () => {
+        expect(validateModelSearch({ sort: "most-used" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: "most-used",
+        });
         expect(validateModelSearch({ sort: "name", dir: "asc" })).toEqual({
             scope: undefined,
             category: undefined,
             q: undefined,
+            sort: undefined,
         });
     });
 });

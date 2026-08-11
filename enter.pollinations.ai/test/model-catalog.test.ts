@@ -88,3 +88,15 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
         ],
     });
 });
+
+it("carries usage statistics into sortable model data", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text", pricing: {} }],
+        { "popular-model": { avgCost: 0.25, requestCount: 1_200 } },
+    );
+
+    expect(model).toMatchObject({
+        realAvgCost: 0.25,
+        requestCount: 1_200,
+    });
+});

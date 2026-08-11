@@ -1,5 +1,6 @@
 import {
     Alert,
+    ChevronIcon,
     Chip,
     ClockIcon,
     ExternalLinkButton,
@@ -32,7 +33,8 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelScope } from "./model-search.ts";
+import type { ModelScope, ModelSort } from "./model-search.ts";
+import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -67,6 +69,14 @@ const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
     community: "Community",
 };
+
+const SORT_OPTIONS: Array<{ value: ModelSort; label: string }> = [
+    { value: "recommended", label: "Recommended" },
+    { value: "most-used", label: "Most used" },
+    { value: "newest", label: "Newest" },
+    { value: "price-low", label: "Price: Low to high" },
+    { value: "price-high", label: "Price: High to low" },
+];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -114,6 +124,7 @@ export const Models: FC<ModelsProps> = ({
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
+    const activeSort = modelSearch.sort ?? "recommended";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const lastPushedSearchRef = useRef(urlSearch);
@@ -161,8 +172,8 @@ export const Models: FC<ModelsProps> = ({
     }, [loadModelCatalog]);
 
     const sectionModels = useMemo(
-        () => categorizeModels(filteredModels),
-        [filteredModels],
+        () => categorizeModels(sortModels(filteredModels, activeSort)),
+        [activeSort, filteredModels],
     );
     const sectionOrder =
         activeScope === "community"
@@ -228,6 +239,15 @@ export const Models: FC<ModelsProps> = ({
                     previous.category !== "image"
                         ? undefined
                         : previous.category,
+            }),
+        });
+    };
+
+    const setActiveSort = (sort: ModelSort) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: sort === "recommended" ? undefined : sort,
             }),
         });
     };
@@ -299,17 +319,44 @@ export const Models: FC<ModelsProps> = ({
                             ))}
                         </div>
                     </div>
-                    <div className="relative w-full sm:w-72">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                        <Input
-                            type="search"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onBlur={() => pushSearch(search)}
-                            placeholder={`Search ${searchTarget}…`}
-                            aria-label={`Search ${searchTarget}`}
-                            className="w-full pl-9"
-                        />
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="relative w-full sm:w-72">
+                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <Input
+                                type="search"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onBlur={() => pushSearch(search)}
+                                placeholder={`Search ${searchTarget}…`}
+                                aria-label={`Search ${searchTarget}`}
+                                className="w-full pl-9"
+                            />
+                        </div>
+                        <div className="relative w-full sm:w-52">
+                            <label htmlFor="model-sort" className="sr-only">
+                                Sort models by
+                            </label>
+                            <select
+                                id="model-sort"
+                                value={activeSort}
+                                onChange={(event) =>
+                                    setActiveSort(
+                                        event.target.value as ModelSort,
+                                    )
+                                }
+                                className="polli-input h-[42px] w-full cursor-pointer appearance-none rounded-lg border px-3 pr-9 text-sm text-theme-text-strong transition-colors"
+                            >
+                                {SORT_OPTIONS.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-theme-text-muted" />
+                        </div>
                     </div>
                 </div>
                 {catalogError && (
@@ -324,7 +371,7 @@ export const Models: FC<ModelsProps> = ({
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
-                            listKey={`${activeScope}:${activeTab}:${query}`}
+                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}

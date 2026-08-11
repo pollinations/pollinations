@@ -1,0 +1,34 @@
+{
+  "pr_number": 13292,
+  "title": "fix: use explicit news branch raw URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13292",
+  "merged_at": "2026-08-11T23:27:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses explicit `refs/heads/news` raw GitHub URLs in the Enter news banner and website diary.\n- Avoids the shorthand branch URL, which continued returning 404 after the `news` branch path migration while the explicit ref returned 200.\n- Keeps the already-correct website highlights consumer unchanged.\n\nValidation:\n- New `news` branch contains 5,915 files under `operations/social` and zero under the old path.\n- Explicit raw highlight URL returns HTTP 200.\n- Biome and diff checks pass.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "News found its branch",
+    "blurb": "The hive’s noticeboard was asking GitHub for directions with an outdated shortcut. It now uses the explicit `refs/heads/news` path, and the latest dispatches are back where they belong.",
+    "summary": "Updated the Enter news banner and website diary to fetch GitHub raw content from explicit `refs/heads/news` URLs, restoring news data after the news-branch path migration made shorthand URLs return 404.",
+    "impact": "Visitors can again see current news-banner highlights and diary entries instead of empty feeds caused by the old shorthand branch URLs.",
+    "keywords": [
+      "news",
+      "diary",
+      "GitHub",
+      "frontend",
+      "bugfix",
+      "content"
+    ],
+    "visual_concept": "Polli acts as a tiny postal worker or librarian, following a clearly labeled `refs/heads/news` garden path to reconnect a retro news terminal with a flourishing community noticeboard. The path replaces a faded, incorrect shortcut sign, while code-plants and pinned update cards show that the feed is flowing again.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny postal cap, guiding a glowing cable from a retro terminal through a garden sign labeled `refs/heads/news` to a flourishing community news board; the old shortcut sign is gently crossed out, with code-plants and flowers around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-11/PR-13292.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny postal cap, guiding a glowing cable from a retro terminal through a garden sign labeled `refs/heads/news` to a flourishing community news board; the old shortcut sign is gently crossed out, with code-plants and flowers around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-11T23:28:52.746287+00:00"
+}

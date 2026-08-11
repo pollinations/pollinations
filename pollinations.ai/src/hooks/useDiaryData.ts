@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const RAW_BASE =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news";
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news";
 const TREE_API =
     "https://api.github.com/repos/pollinations/pollinations/git/trees/news?recursive=1";
-const TREE_CACHE_KEY = "diary_tree_v2";
+const TREE_CACHE_KEY = "diary_tree_v3";
 
 // --- Types ---
 
@@ -154,9 +154,9 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
     };
 
     for (const p of treePaths) {
-        // Gists: social/news/gists/2026-02-15/PR-8234.json
+        // Gists: operations/social/news/gists/2026-02-15/PR-8234.json
         const gistMatch = p.match(
-            /^social\/news\/gists\/(\d{4}-\d{2}-\d{2})\/PR-(\d+)\.json$/,
+            /^operations\/social\/news\/gists\/(\d{4}-\d{2}-\d{2})\/PR-(\d+)\.json$/,
         );
         if (gistMatch) {
             const entry = ensure(gistMatch[1]);
@@ -167,9 +167,9 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             continue;
         }
 
-        // Gist images: social/news/gists/2026-02-15/PR-8234.jpg
+        // Gist images: operations/social/news/gists/2026-02-15/PR-8234.jpg
         const gistImgMatch = p.match(
-            /^social\/news\/gists\/(\d{4}-\d{2}-\d{2})\/PR-(\d+)\.jpg$/,
+            /^operations\/social\/news\/gists\/(\d{4}-\d{2}-\d{2})\/PR-(\d+)\.jpg$/,
         );
         if (gistImgMatch) {
             ensure(gistImgMatch[1]).prImages.push({
@@ -179,11 +179,11 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             continue;
         }
 
-        // Daily images: social/news/daily/2026-03-08/images/twitter.jpg
+        // Daily images: operations/social/news/daily/2026-03-08/images/twitter.jpg
         // → covers PRs from 2026-03-07, so shift date back by 1 day
         // URL uses the ORIGINAL folder date (not the shifted display date)
         const dailyImgMatch = p.match(
-            /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
+            /^operations\/social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
         );
         if (dailyImgMatch) {
             const shiftedDate = subtractOneDay(dailyImgMatch[1]);
@@ -195,7 +195,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         }
 
         const dailySummaryMatch = p.match(
-            /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
+            /^operations\/social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
         );
         if (dailySummaryMatch) {
             const shiftedDate = subtractOneDay(dailySummaryMatch[1]);
@@ -207,7 +207,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
 
         // Daily JSON: marks a date as having a daily summary (shift date back)
         const dailyJsonMatch = p.match(
-            /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
+            /^operations\/social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
         );
         if (dailyJsonMatch) {
             const shiftedDate = subtractOneDay(dailyJsonMatch[1]);
@@ -215,9 +215,9 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             continue;
         }
 
-        // Weekly images: social/news/weekly/2026-02-15/images/linkedin.jpg
+        // Weekly images: operations/social/news/weekly/2026-02-15/images/linkedin.jpg
         const weeklyImgMatch = p.match(
-            /^social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
+            /^operations\/social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
         );
         if (weeklyImgMatch) {
             const entry = ensure(weeklyImgMatch[1]);
@@ -230,7 +230,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         }
 
         const weeklySummaryMatch = p.match(
-            /^social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
+            /^operations\/social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
         );
         if (weeklySummaryMatch) {
             const entry = ensure(weeklySummaryMatch[1]);
@@ -241,7 +241,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
 
         // Weekly JSON (marks date as weekly even without images)
         const weeklyJsonMatch = p.match(
-            /^social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
+            /^operations\/social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
         );
         if (weeklyJsonMatch) {
             ensure(weeklyJsonMatch[1]).hasWeekly = true;
@@ -428,7 +428,7 @@ async function fetchTreePaths(signal: AbortSignal): Promise<string[]> {
     if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
     const data = await res.json();
     const paths = (data.tree as { path: string; type: string }[])
-        .filter((t) => t.path.startsWith("social/news/"))
+        .filter((t) => t.path.startsWith("operations/social/news/"))
         .map((t) => t.path);
     try {
         localStorage.setItem(

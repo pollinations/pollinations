@@ -27,8 +27,8 @@ jobs:
 
       - name: Overlay news branch data
         run: |
-          git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
-          git restore --staged social/news/ || true
+          git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
+          git restore --staged operations/social/news/ || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,7 +36,7 @@ jobs:
           python-version: '3.11'
 
       - name: Update Latest News section
-        run: python social/scripts/update_readme.py
+        run: python operations/social/scripts/update_readme.py
 
       - name: Check for changes
         id: changes

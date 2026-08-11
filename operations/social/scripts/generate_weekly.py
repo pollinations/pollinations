@@ -12,7 +12,7 @@ Sunday 06:00 UTC:
 Buffer staging happens immediately after in news-generate-summary.yml.
 Direct channels (Reddit, Discord) publish via news-publish-social.yml cron.
 
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import sys
@@ -46,7 +46,7 @@ from common import (
 
 # ── Constants ────────────────────────────────────────────────────────
 
-WEEKLY_REL_DIR = "social/news/weekly"
+WEEKLY_REL_DIR = "operations/social/news/weekly"
 
 def _weekly_image_context() -> str:
     """Load weekly image identity from weekly.md (everything after '## Weekly Image Identity')."""

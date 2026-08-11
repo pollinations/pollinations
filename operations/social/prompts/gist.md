@@ -49,7 +49,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 - Only mark `user_facing: true` if it improves performance or reliability users notice (faster deploys, better uptime)
 
 **Social / News pipeline** (category: `infrastructure`, `publish_tier: "none"`):
-- `social/` — the social media pipeline itself, never user-facing
+- `operations/social/` — the social media pipeline itself, never user-facing
 
 **Mixed PRs** — when files span multiple categories, classify by the most user-impactful change. A PR touching both `enter.pollinations.ai/` and `.github/` is a core platform change, not infrastructure.
 

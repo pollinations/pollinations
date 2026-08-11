@@ -37,7 +37,7 @@ GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch pr
 
 
 # Models-weekly staging
-MODELS_NEWS_DIR = "social/news/models"
+MODELS_NEWS_DIR = "operations/social/news/models"
 
 
 def models_news_staging_dir(date_str: str) -> str:
@@ -214,7 +214,7 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
 
 
 def load_prompt(name: str) -> str:
-    """Load a prompt file from social/prompts/{name}.md
+    """Load a prompt file from operations/social/prompts/{name}.md
 
     Automatically injects brand components:
     - {about} -> content from brand/about.md
@@ -387,7 +387,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "quality": "hd",
             "seed": seed,
             "key": token,
-            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
+            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg",
         }
 
         if attempt == 0:
@@ -514,7 +514,7 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
 # ── Gist I/O helpers ─────────────────────────────────────────────────
 
 # Directory where gist JSONs live, relative to repo root
-GISTS_REL_DIR = "social/news/gists"
+GISTS_REL_DIR = "operations/social/news/gists"
 
 # Required top-level keys for a valid gist
 _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
@@ -576,7 +576,7 @@ def apply_publish_tier_rules(gist: Dict) -> str:
     return ai_tier
 
 def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
-    """Return the repo-relative path for a gist file: social/news/gists/YYYY-MM-DD/PR-{n}.json"""
+    """Return the repo-relative path for a gist file: operations/social/news/gists/YYYY-MM-DD/PR-{n}.json"""
     date_str = merged_at[:10]  # YYYY-MM-DD from ISO timestamp
     return f"{GISTS_REL_DIR}/{date_str}/PR-{pr_number}.json"
 
@@ -655,7 +655,7 @@ def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
 def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
     """Read a JSON file from the news branch (local overlay first, GitHub API fallback).
 
-    The workflow overlays social/news/ from the news branch onto the local checkout,
+    The workflow overlays operations/social/news/ from the news branch onto the local checkout,
     so local reads work during CI. Falls back to the GitHub API with ?ref=news.
     """
     # Try local first (workflow overlay)

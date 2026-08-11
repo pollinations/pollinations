@@ -8,10 +8,4 @@ export const COPY_CONSTANTS = {
 
     // API
     apiBaseUrl: "gen.pollinations.ai",
-
-    // Supporter logo generation
-    supporterLogoPrompt:
-        "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
-    supporterLogoSeed: 1,
-    supporterLogoModel: "zimage",
 };

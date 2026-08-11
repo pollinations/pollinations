@@ -4,16 +4,16 @@
 Snapshots public Pollinations model endpoints, diffs against the previous
 snapshot stored on the `news` branch, and writes:
 
-- social/news/models/snapshots/YYYY-MM-DD.json (raw API responses)
-- social/news/models/diffs/YYYY-MM-DD.json (added/removed/changed)
-- social/news/models/YYYY-MM-DD/discord.json (AI-formatted Discord post)
-- social/news/models/models.md (cumulative changelog, AI-prepended section)
+- operations/social/news/models/snapshots/YYYY-MM-DD.json (raw API responses)
+- operations/social/news/models/diffs/YYYY-MM-DD.json (added/removed/changed)
+- operations/social/news/models/YYYY-MM-DD/discord.json (AI-formatted Discord post)
+- operations/social/news/models/models.md (cumulative changelog, AI-prepended section)
 
 If the diff is empty, the script exits silently with code 0 — no commit, no
 post. The publish step keys off the existence of discord.json on the news
 branch.
 
-Required env vars (matches existing social/* conventions):
+Required env vars (matches existing operations/social/* conventions):
 - GITHUB_TOKEN: token with contents:write for the news branch
 - POLLINATIONS_TOKEN: bearer token for gen.pollinations.ai
 - GITHUB_REPOSITORY: owner/repo (auto-set in Actions)
@@ -158,10 +158,10 @@ def find_previous_snapshot_date(
     """List snapshots/ on news branch via Contents API, return latest date strictly before `before`.
 
     Returns None when this is the first run for the models report — either the
-    news branch doesn't exist yet, or it exists but `social/news/models/` was
+    news branch doesn't exist yet, or it exists but `operations/social/news/models/` was
     never created (no baseline can have been lost because none ever existed).
 
-    Raises MissingPriorSnapshotError when `social/news/models/` exists but
+    Raises MissingPriorSnapshotError when `operations/social/news/models/` exists but
     `snapshots/` is missing/empty — that means a baseline was wiped and
     silently rebuilding it would skip announcing any pending changes.
     Set ALLOW_BASELINE_REBUILD=1 to override (e.g. after an intentional reset).

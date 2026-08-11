@@ -107,7 +107,7 @@ PR merge ──→ generate_realtime.py
 
 All generated content lives on the **`news` branch**.
 
-### PR Gists: `social/news/gists/YYYY-MM-DD/PR-{number}.json`
+### PR Gists: `operations/social/news/gists/YYYY-MM-DD/PR-{number}.json`
 
 - Committed directly to `news` branch (no PR needed — small auto-generated JSON)
 - One file per merged PR per day
@@ -188,7 +188,7 @@ else:
 
 This means: deps/chore PRs can't sneak into daily summaries, features always make it, and everything else the AI decides with a bias toward inclusion.
 
-### Daily Posts: `social/news/daily/YYYY-MM-DD/`
+### Daily Posts: `operations/social/news/daily/YYYY-MM-DD/`
 
 - `summary.json` — canonical daily summary used by the website
 - `twitter.json` — simplified platform envelope
@@ -196,7 +196,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `reddit.json` — simplified platform envelope (LinkedIn is weekly-only, no daily file)
 - `images/` — all generated images
 
-### Weekly: `social/news/weekly/YYYY-MM-DD/`
+### Weekly: `operations/social/news/weekly/YYYY-MM-DD/`
 
 `YYYY-MM-DD` is the Sunday publish date. The content still covers the previous Sun→Sat window.
 
@@ -252,7 +252,7 @@ The `PUBLISH_MODE` env var controls which channels fire:
 Both `news-generate-summary.yml` and `news-publish-social.yml` overlay the `news` branch data onto the checkout:
 
 ```bash
-git fetch origin news && git checkout origin/news -- social/news/
+git fetch origin news && git checkout origin/news -- operations/social/news/
 ```
 
 This makes all generated content available locally for scripts that read files (e.g. `read_news_file()` in common.py).
@@ -395,7 +395,7 @@ AI calls scale as N+4 (N per-PR gists + summary + two platform posts + highlight
 
 ## Verification
 
-1. **Tier 1 — happy path**: Merge a test PR → verify gist JSON committed to `news` branch `social/news/gists/` + image generated + Discord post sent (separate step)
+1. **Tier 1 — happy path**: Merge a test PR → verify gist JSON committed to `news` branch `operations/social/news/gists/` + image generated + Discord post sent (separate step)
 2. **Tier 1 — AI failure**: Mock AI to fail → verify workflow fails, no gist is committed, and Discord does not post
 3. **Tier 2 — happy path**: Manually trigger daily workflow → verify platform posts + images committed to `news` branch + README PR to main
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no content generated
@@ -414,16 +414,16 @@ AI calls scale as N+4 (N per-PR gists + summary + two platform posts + highlight
 
 | File | Role |
 |---|---|
-| `social/scripts/common.py` | Shared utilities: prompt loading, brand injection, API calls, gist I/O, `read_news_file()`, retry logic, constants |
-| `social/scripts/buffer_publish.py` | Buffer API staging with scheduled delivery |
-| `social/buffer-schedule.yml` | Delivery schedule for all platforms |
+| `operations/social/scripts/common.py` | Shared utilities: prompt loading, brand injection, API calls, gist I/O, `read_news_file()`, retry logic, constants |
+| `operations/social/scripts/buffer_publish.py` | Buffer API staging with scheduled delivery |
+| `operations/social/buffer-schedule.yml` | Delivery schedule for all platforms |
 
 ## Prompts
 
-All prompts live in `social/prompts/`:
+All prompts live in `operations/social/prompts/`:
 
 ```
-social/prompts/
+operations/social/prompts/
   brand/                       # Brand components (auto-injected via placeholders)
     about.md                   # Company description       → {about}
     visual.md                  # Pixel art style guide     → {visual_style}

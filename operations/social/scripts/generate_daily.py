@@ -12,7 +12,7 @@ At 06:00 UTC daily:
   6. Generate highlights from gists
   7. Commit all content (posts, images, highlights) to the news branch
 
-See social/PIPELINE.md for full architecture.
+See operations/social/PIPELINE.md for full architecture.
 """
 
 import os
@@ -48,8 +48,8 @@ from common import (
 
 # ── Constants ────────────────────────────────────────────────────────
 
-DAILY_REL_DIR = "social/news/daily"
-HIGHLIGHTS_PATH = "social/news/highlights.md"
+DAILY_REL_DIR = "operations/social/news/daily"
+HIGHLIGHTS_PATH = "operations/social/news/highlights.md"
 
 
 # ── Highlights ────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ def commit_daily_to_news(
             ),
         ))
     if highlights_content:
-        files_to_commit.append(("social/news/highlights.md", highlights_content))
+        files_to_commit.append(("operations/social/news/highlights.md", highlights_content))
 
     if not files_to_commit:
         print("  No files to commit")
@@ -415,7 +415,7 @@ def main():
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {github_token}",
         }
-        gists_dir = f"social/news/gists/{date_str}"
+        gists_dir = f"operations/social/news/gists/{date_str}"
         resp = github_api_request(
             "GET",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}?ref={GISTS_BRANCH}",

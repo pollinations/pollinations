@@ -166,7 +166,7 @@ def get_script_dir() -> str:
 
 
 def read_prompt_file() -> str:
-    prompt_path = os.path.join(get_script_dir(), "..", "prompts", "project-manager.md")
+    prompt_path = os.path.join(get_script_dir(), "project-manager.md")
     try:
         with open(prompt_path, "r") as f:
             return f.read()

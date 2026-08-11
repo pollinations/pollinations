@@ -1,7 +1,0 @@
-{
-  "target": "worker",
-  "credentials": "myceli",
-  "subdomain": "weaver",
-  "install": "npm install --silent",
-  "deploy": "npx wrangler deploy worker.js"
-}

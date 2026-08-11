@@ -1,0 +1,32 @@
+{
+  "name": "floret",
+  "main": "worker.js",
+  "compatibility_date": "2026-01-01",
+  "containers": [
+    {
+      "class_name": "FloretContainer",
+      "image": "./Dockerfile",
+      "max_instances": 2,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "FLORET", "class_name": "FloretContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FloretContainer"] }],
+  // Worker-backed apps bind their own hostnames; deploy.sh gates on the myceli
+  // origin serving before it verifies the public URL, so both are needed.
+  "routes": [
+    {
+      "pattern": "floret.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "floret.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": { "enabled": true }
+}

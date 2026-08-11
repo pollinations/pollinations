@@ -1,0 +1,34 @@
+{
+  "pr_number": 13288,
+  "title": "refactor: colocate repository maintenance tooling",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13288",
+  "merged_at": "2026-08-11T22:23:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves repository maintenance scripts beside the systems they maintain: username synchronization into `enter.pollinations.ai`, Polli embeddings into `apps/polli`, and GitHub project automation into `operations/github`.\n- Colocates the project-manager prompt and operational documentation with their consumers, fixes prompt resolution, and removes the stale GitHub automation overview.\n- Updates the minimal GitHub workflows and Tinybird source reference to use the new paths, while simplifying CI test discovery.\n- Leaves `.github` focused on issue templates and workflow entrypoints; runtime behavior is otherwise unchanged.\n\nValidation:\n- 15 Node tests pass.\n- Python modules compile and the relocated prompt loads successfully.\n- Changed workflows parse as valid YAML.\n- `git diff --check` passes.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tools found their gardens",
+    "blurb": "The maintenance tools have moved closer to the systems they tend. Less wandering through `.github`, more sensible little tool sheds.",
+    "summary": "Repository maintenance tooling was relocated beside its consumers: username sync scripts now live in `enter.pollinations.ai`, Polli embedding code in `apps/polli`, and GitHub project automation in `operations/github`, with workflow paths and prompt resolution updated accordingly.",
+    "impact": "Contributors get clearer ownership and more reliable local tooling paths while GitHub workflow entrypoints remain lean and runtime behavior stays the same.",
+    "keywords": [
+      "repository-maintenance",
+      "github-actions",
+      "tooling",
+      "project-automation",
+      "polli",
+      "ci"
+    ],
+    "visual_concept": "Depict a cozy garden shed organization scene: Polli, wearing a tiny tool belt, carries labeled maintenance tools to nearby garden plots representing `enter`, `apps/polli`, and `operations/github`. Small code-plants grow beside each plot while a CRT monitor robot happily files workflow scrolls into a compact `.github` mailbox.",
+    "image_prompt": "A cozy pixel art garden workshop where the cute pollinations bee mascot, with a tiny tool belt, places labeled script boxes beside three tidy code-plots for enter, Polli, and GitHub operations; a cheerful CRT monitor robot sorts small workflow scrolls nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RIGHT TOOL, RIGHT GARDEN'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13288.jpg",
+    "prompt": "A cozy pixel art garden workshop where the cute pollinations bee mascot, with a tiny tool belt, places labeled script boxes beside three tidy code-plots for enter, Polli, and GitHub operations; a cheerful CRT monitor robot sorts small workflow scrolls nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RIGHT TOOL, RIGHT GARDEN'."
+  },
+  "generated_at": "2026-08-11T22:25:20.168199+00:00"
+}

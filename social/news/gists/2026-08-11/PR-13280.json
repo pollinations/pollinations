@@ -1,0 +1,35 @@
+{
+  "pr_number": 13280,
+  "title": "refactor: rename Weaver to Floret",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13280",
+  "merged_at": "2026-08-11T20:32:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames `apps/weaver` and its Python package to `apps/floret` / `floret`.\n- Renames the API model and service IDs, Worker/container identifiers, package metadata, docs, and tests.\n- Moves the public routes from `weaver.*` to `floret.myceli.ai` and `floret.pollinations.ai`.\n- Updates the deployment registry to use the `floret` key and subdomain.\n- Validated with Biome, Python syntax compilation, dependency installation, deployment-consumer tests, reference checks, and a Wrangler Worker dry run.\n\nThis is a clean rename with no compatibility fallback. The PR does not deploy production directly; deployment remains handled by GitHub Actions after merge.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Weaver blooms into Floret",
+    "blurb": "The little service formerly known as Weaver has put down fresh roots as Floret. Its app, package, model IDs, workers, and public routes now all share one flower-shaped name.",
+    "summary": "Renamed the Weaver app and Python package to Floret, moving model, service, deployment, Worker, and container identifiers plus public routes from weaver.* to floret.myceli.ai and floret.pollinations.ai.",
+    "impact": "Developers should update Weaver model/service references and route URLs to the new Floret names and domains, which are now the single supported set of identifiers.",
+    "keywords": [
+      "floret",
+      "weaver",
+      "rename",
+      "routes",
+      "deployment",
+      "python-package",
+      "myceli"
+    ],
+    "visual_concept": "Depict a cozy garden workshop where Polli helps a small code-flower shed replace an old \"WEAVER\" sign with a fresh \"FLORET\" sign, while a CRT monitor robot carefully reroutes glowing vine-like cables toward two tiny route markers for floret.myceli.ai and floret.pollinations.ai. The flower metaphor makes the renamed service feel like a natural new bloom while the swapped sign and redirected cables communicate the clean identifier and domain migration.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, warmly hangs a pixel-font sign reading \"FLORET\" over a blooming code-flower shed while a helpful CRT monitor robot redirects glowing vine cables from an old crossed-out \"WEAVER\" plaque toward tiny route signs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13280.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, warmly hangs a pixel-font sign reading \"FLORET\" over a blooming code-flower shed while a helpful CRT monitor robot redirects glowing vine cables from an old crossed-out \"WEAVER\" plaque toward tiny route signs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-11T20:33:41.912632+00:00"
+}

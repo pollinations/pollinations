@@ -1,0 +1,55 @@
+{
+  "date": "2026-08-10",
+  "period_start": "2026-08-10",
+  "period_end": "2026-08-10",
+  "title": "Z-Image gets a queue with an escape hatch",
+  "summary": "A reliability-heavy community harvest: sturdier Z-Image and model monitoring, async 3D jobs, and three new apps in the catalog.\n\nZ-Image now spills over to Fal when Vast is unavailable or its small worker queue is full, rather than leaving requests parked in an ever-growing line. The Vast cutover and startup path were also reconciled, including DNS recovery for fetching model metadata. Same public model; more ways for pixels to arrive.\n\nThe community monitor now runs as fresh systemd-supervised processes, uses lightweight probes, counts successful fallbacks as rescues, and audits model health over deterministic seven-day windows. Recently healthy models get room to recover instead of being retired late because a provider had a bad afternoon.\n\nThe community catalog gained Tessera Lumen for chat-powered drafting, INKRUSH for browser-based multi-panel comics and PDF books, and FlashcardGeneratorAI for generated flashcards and matching games. Six existing listings also got their links, names, descriptions, and assorted metadata put back in the right places.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 12621,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13071,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13231,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13235,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13248,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13249,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13256,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13259,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13264,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13265,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13272,
+      "date": "2026-08-10"
+    }
+  ],
+  "generated_at": "2026-08-11T06:25:39.787324+00:00"
+}

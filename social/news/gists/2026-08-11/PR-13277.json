@@ -1,0 +1,33 @@
+{
+  "pr_number": 13277,
+  "title": "chore: update app metrics 2026-08-11",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13277",
+  "merged_at": "2026-08-11T04:33:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got its rounds",
+    "blurb": "The bot made its daily walk through the app garden, refreshing health checks and catalog notes. Even the seedlings have telemetry now.",
+    "summary": "Refreshed the daily app metrics, health-check data, and greenhouse catalog entries in apps/GREENHOUSE.md and apps/catalog.json for 2026-08-11.",
+    "impact": "Community app listings and greenhouse status records stay current with the latest automated metrics.",
+    "keywords": [
+      "community-apps",
+      "metrics",
+      "health-checks",
+      "greenhouse",
+      "catalog"
+    ],
+    "visual_concept": "A cozy greenhouse maintenance scene: Polli checks a clipboard of app-health readings beside labeled code-plants, while a small CRT monitor robot displays tidy green status lights. Freshly watered plants and a catalog shelf represent the daily refresh rather than a new product feature.",
+    "image_prompt": "A cozy pixel-art greenhouse where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener visor and checks a clipboard beside code-plants with healthy status lights; a chunky CRT monitor robot updates a small app catalog shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"DAILY CHECK\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-08-11/PR-13277.jpg",
+    "prompt": "A cozy pixel-art greenhouse where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener visor and checks a clipboard beside code-plants with healthy status lights; a chunky CRT monitor robot updates a small app catalog shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"DAILY CHECK\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-11T04:34:20.929434+00:00"
+}

@@ -1844,11 +1844,11 @@ describe("trackResponse malformed SSE chunks", () => {
         );
         // Must emit a row — the malformed event is skipped, not fatal.
         expect(tracking.isBilledUsage).toBe(true);
-        expect(tracking.modelUsed).toBe("openai");
+        // modelUsed comes from the SSE model field once usage is extracted.
+        expect(tracking.modelUsed).toBe("gpt-5-nano");
         expect(tracking.usage).toMatchObject({
-            promptTokens: 10,
-            completionTokens: 5,
-            totalTokens: 15,
+            promptTextTokens: 10,
+            completionTextTokens: 5,
         });
     });
 
@@ -1890,9 +1890,8 @@ describe("trackResponse malformed SSE chunks", () => {
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.usage).toMatchObject({
-            promptTokens: 2,
-            completionTokens: 1,
-            totalTokens: 3,
+            promptTextTokens: 2,
+            completionTextTokens: 1,
         });
     });
 });

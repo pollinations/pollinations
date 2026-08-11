@@ -12,8 +12,8 @@
  * - Wrangler-authenticated Cloudflare credentials with D1 write access
  *
  * Usage:
- *   node .github/scripts/sync-github-usernames.mjs
- *   node .github/scripts/sync-github-usernames.mjs --dry-run
+ *   node enter.pollinations.ai/scripts/sync-github-usernames.mjs
+ *   node enter.pollinations.ai/scripts/sync-github-usernames.mjs --dry-run
  */
 
 import { execFile } from "node:child_process";
@@ -21,9 +21,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-export const enterWorkdir = fileURLToPath(
-    new URL("../../enter.pollinations.ai/", import.meta.url),
-);
+export const enterWorkdir = fileURLToPath(new URL("../", import.meta.url));
 
 const D1_PAGE_SIZE = 5_000;
 const GITHUB_BATCH_SIZE = 100;

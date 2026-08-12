@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-11",
+  "period_start": "2026-08-11",
+  "period_end": "2026-08-11",
+  "generated_at": "2026-08-12T06:36:37.655695+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-11/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: 762 screenshots for the community app catalog, current news feeds again, and auto-recovery for Klein’s degraded image GPU tunnel. also updated the README. four small chores; fewer invisible apps and stuck tunnels."
+}

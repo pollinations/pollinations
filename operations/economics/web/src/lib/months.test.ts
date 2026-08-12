@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
-import { collectMonths, matchesMonth, monthLabel, yearsOf } from "./months";
+import {
+    collectMonths,
+    latestClosedMonth,
+    matchesMonth,
+    monthLabel,
+    yearsOf,
+} from "./months";
 
 const data: Data = {
     opTransactions: FIXTURES.op_transactions_api,
@@ -45,6 +51,24 @@ describe("matchesMonth", () => {
 
     it("undated rows are excluded from month drilldowns", () => {
         expect(matchesMonth("", "2026-03")).toBe(false);
+    });
+});
+
+describe("latestClosedMonth", () => {
+    it("uses the previous month when current-month data already exists", () => {
+        expect(
+            latestClosedMonth(
+                ["2026-06", "2026-07", "2026-08"],
+                new Date(2026, 7, 3),
+            ),
+        ).toBe("2026-07");
+    });
+
+    it("uses the latest available month when no closed month exists", () => {
+        expect(latestClosedMonth(["2026-08"], new Date(2026, 7, 3))).toBe(
+            "2026-08",
+        );
+        expect(latestClosedMonth([], new Date(2026, 7, 3))).toBeNull();
     });
 });
 

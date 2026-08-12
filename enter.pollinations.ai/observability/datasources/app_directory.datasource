@@ -1,7 +1,7 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    catalog.json directory synced daily — all community apps with categories, platforms, and metadata
+    app.json directory synced daily — all community apps with categories, platforms, and metadata
 
 SCHEMA >
     `emoji` String `json:$.emoji`,

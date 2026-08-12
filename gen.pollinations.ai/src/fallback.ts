@@ -147,7 +147,10 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(error: unknown): boolean {
+export function isRetryableFallbackError(
+    error: unknown,
+    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
+): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
@@ -159,10 +162,10 @@ export function isRetryableFallbackError(error: unknown): boolean {
     if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    if (
-        !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !isGatewayRoutingFailure(failure)
-    ) {
+    const gatewayRoutingFailure =
+        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
+        isGatewayRoutingFailure(failure);
+    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -304,6 +307,7 @@ export async function withModelFallback<T>(
     failures?: FailedCall[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
         // attributed to another fallback candidate.
@@ -317,7 +321,7 @@ export async function withModelFallback<T>(
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error);
+                !isRetryableFallbackError(error, allowedStatusCodes);
             failures?.push({
                 candidate,
                 error,

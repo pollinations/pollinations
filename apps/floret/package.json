@@ -1,0 +1,11 @@
+{
+  "name": "floret",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker that fronts the Floret container",
+  "main": "worker.js",
+  "type": "module",
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7"
+  }
+}

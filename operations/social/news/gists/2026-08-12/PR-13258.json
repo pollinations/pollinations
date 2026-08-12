@@ -1,0 +1,33 @@
+{
+  "pr_number": 13258,
+  "title": "chore: remove unavailable community apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13258",
+  "merged_at": "2026-08-12T10:44:19Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Removes 56 catalog rows representing 54 approved review targets.\n- Preserves 7 verified apps and excludes 2 inconclusive apps from this PR.\n- Does not change retained-app metadata or screenshots.\n\n| App | Reviewed target | Reason | Evidence |\n| --- | --- | --- | --- |\n| BeDream APP | https://bedream.xyz | The public product explicitly promotes uncensored character chat and doujinshi content. | In-app Browser: uncensored roleplay and Doujinshi navigation are visible |\n| Anura Hub AI | https://meow-script.vercel.all | The catalog host does not exist in DNS. | DNS ENOTFOUND for meow-script.vercel.all |\n| Film ze Snu | https://sen.i-ty.pl | The catalog host does not exist in DNS. | DNS ENOTFOUND for sen.i-ty.pl |\n| rynzen | https://rynzen.uk/ | The catalog host does not exist in DNS. | DNS ENOTFOUND for rynzen.uk |\n| Polli-com | https://polli-com.vercel.app/ | A private access-code gate blocks the public app. | In-app Browser: System Locked, AUTHORIZED PERSONNEL ONLY, and ACCESS CODE gate |\n| Splash Tool | https://n8n-image-generator.vercel.app | The public deployment is disabled for nonpayment. | HTTP 402 DEPLOYMENT_DISABLED from Vercel |\n| Heia - Polly Intelligence update | https://heia-polly.vercel.app/ | The public deployment is disabled for nonpayment. | HTTP 402 DEPLOYMENT_DISABLED from Vercel |\n| Soy Cosmo | https://soy-cosmo.web.app | The destination now serves an unrelated legal-analysis product. | HTTP 200 page title CJF Pro - Analizador de Sentencias |\n| Soy Cosmo | https://soy-cosmo.web.app | The destination now serves an unrelated legal-analysis product. | HTTP 200 page title CJF Pro - Analizador de Sentencias |\n| PezzAI | https://chat.pezzai.com | The catalog host does not exist in DNS. | DNS ENOTFOUND for chat.pezzai.com |\n| PollenQuill | https://zevrinbuilds.github.io/Pollendash-engine/ | The app requires terms acceptance before its restricted generation workflow can be used. | In-app Browser: Access Restricted plus mandatory terms checkbox",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden got weeded",
+    "blurb": "The app garden got a careful cleanup: 56 stale catalog rows are gone, while 7 verified apps remain exactly as they were. Polli checked the labels twice.",
+    "summary": "Removed 56 catalog rows covering 54 unavailable or unsuitable community-app review targets, while preserving 7 verified apps and leaving 2 inconclusive apps untouched.",
+    "impact": "The community app catalog now leads visitors toward the verified apps that remain available, with retained app metadata and screenshots unchanged.",
+    "keywords": [
+      "community-apps",
+      "catalog",
+      "app-management",
+      "cleanup",
+      "verification"
+    ],
+    "visual_concept": "Depict Polli as a gentle garden curator with a tiny clipboard, tending a cozy app-directory garden: healthy labeled code-plants remain in neat pots while faded, empty pots are being quietly cleared away. Use a small CRT monitor robot to help inspect the surviving plants, emphasizing careful verification rather than failure or removal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside a warm community-app garden of healthy code-plants in prominently lime green (#ecf874) pots; a cute CRT monitor robot gently carries away a few faded empty pots while flowers and vines bloom around the verified plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-12/PR-13258.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside a warm community-app garden of healthy code-plants in prominently lime green (#ecf874) pots; a cute CRT monitor robot gently carries away a few faded empty pots while flowers and vines bloom around the verified plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-12T10:45:23.621766+00:00"
+}

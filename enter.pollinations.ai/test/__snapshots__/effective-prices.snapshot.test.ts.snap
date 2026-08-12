@@ -232,14 +232,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.002,
     },
   },
-  "flux-replicate": {
-    "cost": {
-      "completionImageTokens": 0.003,
-    },
-    "price": {
-      "completionImageTokens": 0.003,
-    },
-  },
   "gemini": {
     "cost": {
       "completionTextTokens": 0.0000075,
@@ -463,10 +455,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.000003,
-      "promptCacheWriteTokens": 0.000000625,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.0000012,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.0000002,
     },
   },
   "gpt-5.6-sol": {
@@ -704,6 +696,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000002,
       "promptImageTokens": 0.00000125,
       "promptTextTokens": 0.00000125,
+    },
+  },
+  "grok-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000277777777777778,
     },
   },
   "grok-video-pro": {
@@ -1693,6 +1693,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.004,
+    },
+  },
+  "zimage-fal": {
+    "cost": {
+      "completionImageTokens": 0,
+    },
+    "price": {
+      "completionImageTokens": 0,
     },
   },
 }

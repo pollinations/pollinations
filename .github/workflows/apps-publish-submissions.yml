@@ -61,12 +61,11 @@ jobs:
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
           TODAY=$(date -u +%F)
-          APPROVED_DATE="$TODAY" node .github/scripts/app-validate-submission.js > "$RUNNER_TEMP/app-validation.json"
+          APPROVED_DATE="$TODAY" node operations/app-management/ingestion/validate-submission.js > "$RUNNER_TEMP/app-validation.json"
           jq -e '.valid == true' "$RUNNER_TEMP/app-validation.json" >/dev/null
+          APP_JSON=$(jq -c .app "$RUNNER_TEMP/app-validation.json")
           {
-            echo 'row<<APP_ROW_EOF'
-            jq -r .row "$RUNNER_TEMP/app-validation.json"
-            echo 'APP_ROW_EOF'
+            echo "app=$APP_JSON"
             echo "name=$(jq -r .submission.name "$RUNNER_TEMP/app-validation.json")"
             echo "category=$(jq -r .submission.category "$RUNNER_TEMP/app-validation.json")"
             echo "url=$(jq -r '.submission.appUrl // .submission.repoUrl' "$RUNNER_TEMP/app-validation.json")"
@@ -77,7 +76,7 @@ jobs:
       - name: Add app to catalog
         id: branch
         env:
-          APP_ROW: ${{ steps.app.outputs.row }}
+          APP_JSON: ${{ steps.app.outputs.app }}
           APP_NAME: ${{ steps.app.outputs.name }}
           APP_CATEGORY: ${{ steps.app.outputs.category }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
@@ -88,11 +87,11 @@ jobs:
         run: |
           BRANCH="auto/app-${ISSUE_NUMBER}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           git switch -c "$BRANCH" origin/main
-          NEW_ROW="$APP_ROW" node .github/scripts/app-prepend-row.js
-          node .github/scripts/app-update-greenhouse.js
+          NEW_APP="$APP_JSON" node operations/app-management/app.js prepend
+          node operations/app-management/update-readme.js
           git config user.name "$BOT_LOGIN"
           git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
-          git add apps/APPS.md apps/GREENHOUSE.md README.md
+          git add operations/app-management/app.json README.md
           git commit -m "Add ${APP_NAME} to ${APP_CATEGORY}
 
           Co-authored-by: ${ISSUE_AUTHOR} <${USER_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>

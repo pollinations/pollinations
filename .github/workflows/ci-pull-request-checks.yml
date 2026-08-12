@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate app catalog
+        run: node operations/app-management/app.js validate
+
       - name: Get changed files
         id: changed-files
         run: |
@@ -59,26 +62,13 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
-      - name: Get changed GitHub scripts
-        id: github-scripts
-        run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.github/scripts/.*\.js$' || true)
-          echo "Changed GitHub scripts:"
-          echo "$FILES"
-          if [ -n "$FILES" ]; then
-            echo "any_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "any_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Test GitHub scripts
-        if: steps.github-scripts.outputs.any_changed == 'true'
-        run: |
-          if compgen -G ".github/scripts/*.test.js" > /dev/null; then
-            node --test .github/scripts/*.test.js
-          else
-            echo "No GitHub script tests found"
-          fi
+      - name: Test maintenance scripts
+        run: >-
+          node --test
+          enter.pollinations.ai/scripts/*.test.mjs
+          operations/app-management/*.test.js
+          operations/app-management/ingestion/*.test.js
+          operations/deployment/*.test.cjs
 
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files

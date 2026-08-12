@@ -311,6 +311,7 @@ export type CommunityEndpointRuntime = {
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    addedDate?: number;
     title?: string | null;
     description: string | null;
     providerName?: string | null;
@@ -539,7 +540,7 @@ export function communityModelDefinition(
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
-        addedDate: 0,
+        addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,

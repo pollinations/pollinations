@@ -96,6 +96,23 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
     return typeof status === "number" ? status : undefined;
 }
 
+/** The deadline we send to Portkey is the request's terminal time budget. */
+function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
+    if (upstreamStatus(failure) !== 408) return false;
+    const details = failure.details;
+    if (!details || typeof details !== "object") return false;
+    const error = (details as { error?: unknown }).error;
+    if (!error || typeof error !== "object") return false;
+    const timeoutError = error as { message?: unknown; type?: unknown };
+    return (
+        timeoutError.type === "timeout_error" &&
+        typeof timeoutError.message === "string" &&
+        timeoutError.message.startsWith(
+            "Request exceeded the timeout sent in the request:",
+        )
+    );
+}
+
 /**
  * Every place a provider might have put its reason. Content-policy detection is
  * a case-insensitive substring match, so the whole details bag is worth handing
@@ -130,18 +147,25 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(error: unknown): boolean {
+export function isRetryableFallbackError(
+    error: unknown,
+    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
+): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
     if (!status) return false;
+    // A generic provider 408 can benefit from a fallback. Portkey's exact
+    // timeout envelope is our own total deadline and must not multiply across
+    // fallback candidates.
+    if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    if (
-        !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !isGatewayRoutingFailure(failure)
-    ) {
+    const gatewayRoutingFailure =
+        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
+        isGatewayRoutingFailure(failure);
+    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -281,6 +305,7 @@ export async function withModelFallback<T>(
     attempt: (candidate: FallbackCandidate) => Promise<T>,
     failures?: FailedCall[],
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
@@ -291,7 +316,7 @@ export async function withModelFallback<T>(
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error);
+                !isRetryableFallbackError(error, allowedStatusCodes);
             failures?.push({
                 candidate,
                 error,

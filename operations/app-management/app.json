@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "IMADreamer",
+    "url": "https://fastnow.github.io/imadreamer",
+    "description": "IMADreamer is a free AI image generation tool built on the Pollinations API.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "fastnow",
+    "githubUserId": "177708607",
+    "repositoryUrl": "https://github.com/fastnow/fastnow.github.io",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11403",
+    "approvedDate": "2026-08-12",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "FlashcardGeneratorAI",
     "url": "https://flashcardgeneratorai-pollinationsai-classic.pages.dev",

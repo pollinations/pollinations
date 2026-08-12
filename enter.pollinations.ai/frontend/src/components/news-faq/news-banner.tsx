@@ -2,9 +2,9 @@ import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
 const DYNAMIC_NEWS_COUNT = 6;
 

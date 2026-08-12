@@ -31,14 +31,17 @@ export function createMediaCache(config: MediaCacheConfig) {
     return createGenerationCache({
         label: config.label,
         getKey(c, log) {
-            const seedParam = new URL(c.req.url).searchParams.get("seed");
+            const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
+            const seedParam = cacheUrl.searchParams.get("seed");
             if (seedParam === "-1") {
                 log.debug("seed=-1 detected, skipping cache");
                 return null;
             }
             return generateCacheKey(
-                new URL(c.req.url),
-                c.req.header(SAFETY_HEADER_NAME),
+                cacheUrl,
+                c.var.generationCacheUrl
+                    ? undefined
+                    : c.req.header(SAFETY_HEADER_NAME),
             );
         },
         async get(c, cacheKey) {

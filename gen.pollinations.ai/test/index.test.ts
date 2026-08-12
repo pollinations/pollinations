@@ -712,6 +712,52 @@ fixtureTest(
         expect(generation.usage.total_tokens).toBe(1);
         await waitOnExecutionContext(generationContext);
 
+        const urlContext = createExecutionContext();
+        const urlResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "recraft-vector",
+                        prompt: "vector flower",
+                        response_format: "url",
+                        size: "1024x1024",
+                        seed: 902,
+                    }),
+                },
+            ),
+            bindings,
+            urlContext,
+        );
+        expect(urlResponse.status).toBe(200);
+        expect(urlResponse.headers.get("x-cache")).toBe("HIT");
+        expect(urlResponse.headers.get("x-cache-type")).toBe("EXACT");
+        const urlGeneration = (await urlResponse.json()) as {
+            data: Array<{ url: string; media_type?: string }>;
+        };
+        expect(urlGeneration.data[0]?.media_type).toBe("image/svg+xml");
+        await waitOnExecutionContext(urlContext);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            new Request(urlGeneration.data[0]?.url || ""),
+            bindings,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(cachedResponse.headers.get("x-cache-type")).toBe("EXACT");
+        expect(cachedResponse.headers.get("content-type")).toBe(
+            "image/svg+xml",
+        );
+        expect(await cachedResponse.text()).toBe(svg);
+        await waitOnExecutionContext(cachedContext);
+
         const editContext = createExecutionContext();
         const editResponse = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/images/edits", {

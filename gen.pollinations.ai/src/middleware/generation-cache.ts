@@ -6,7 +6,12 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 
 export type GenerationCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+};
+
+export type GenerationCacheVariables = {
+    /** Alternate request identity for routes which wrap a media response. */
+    generationCacheUrl?: URL;
 };
 
 export type GenerationCacheAdapter = {

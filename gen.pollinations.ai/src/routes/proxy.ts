@@ -19,7 +19,12 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { handleImageEdit, handleImageGeneration } from "./images.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageEdit,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -1148,6 +1153,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        generationAccess,
+        prepareOpenAIImageGeneration,
+        formatOpenAIImageGeneration,
+        imageCache,
         handleImageGeneration,
     )
     .post(

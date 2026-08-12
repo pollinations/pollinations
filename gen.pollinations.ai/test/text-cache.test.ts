@@ -232,6 +232,38 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(1);
     });
 
+    it("keeps cache headers authoritative on streaming misses", async () => {
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .post("/v1/chat/completions", textCache, () => {
+                return new Response("data: [DONE]\n\n", {
+                    headers: {
+                        "Content-Type": "text/event-stream",
+                        "Cache-Control": "no-cache",
+                    },
+                });
+            });
+
+        const result = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "stream" }],
+                stream: true,
+            }),
+        );
+        await consumeAndWait(result);
+
+        expect(result.response.headers.get("Cache-Control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
+    });
+
     it("treats different POST bodies as different cache entries", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;

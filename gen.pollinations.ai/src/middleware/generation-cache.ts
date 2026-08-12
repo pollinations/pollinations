@@ -51,7 +51,16 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
 
         if (c.res && adapter.shouldCache(c.res)) {
             log.debug("Caching response");
-            c.res = adapter.capture(c, cacheKey, c.res);
+            const captured = adapter.capture(c, cacheKey, c.res);
+            if (captured !== c.res) {
+                // Hono's response setter gives the previous response headers
+                // precedence. Copy adapter-owned headers onto that response
+                // first so cache headers survive the body replacement.
+                for (const [name, value] of captured.headers) {
+                    c.res.headers.set(name, value);
+                }
+                c.res = captured;
+            }
         }
     });
 }

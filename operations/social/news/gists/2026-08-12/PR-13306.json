@@ -1,0 +1,35 @@
+{
+  "pr_number": 13306,
+  "title": "Add IMADreamer to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13306",
+  "merged_at": "2026-08-12T19:54:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [IMADreamer](https://fastnow.github.io/imadreamer) to image\n- IMADreamer is a free AI image generation tool built on the Pollinations API.\n\nFixes #11403",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dreams join the garden",
+    "blurb": "IMADreamer has landed in the app garden: a free image generator built on the Pollinations API. More pixels, fewer permission slips.",
+    "summary": "Added IMADreamer to the Pollinations app directory, highlighting a free AI image-generation tool built on the Pollinations API.",
+    "impact": "People can now discover IMADreamer through Pollinations as another free, API-powered way to turn prompts into images.",
+    "keywords": [
+      "IMADreamer",
+      "image-generation",
+      "community-app",
+      "Pollinations-API",
+      "apps"
+    ],
+    "visual_concept": "Depict IMADreamer as a cozy dream-image workshop: Polli helps a small retro monitor bloom vivid imaginary landscape postcards from a prompt-fed code plant. The image generator is represented by a gently glowing CRT and framed pixel artworks, with flowers and vines showing that it belongs in the wider Pollinations app garden.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where the cute Pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny painter's beret while tending a code-plant that grows dreamy landscape postcards beside a glowing retro CRT labeled \"IMADREAMER\"; a small monitor robot eagerly holds one generated picture. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, flowers and vines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-12/PR-13306.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where the cute Pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny painter's beret while tending a code-plant that grows dreamy landscape postcards beside a glowing retro CRT labeled \"IMADREAMER\"; a small monitor robot eagerly holds one generated picture. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, flowers and vines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-12T19:55:34.444346+00:00",
+  "app_name": "IMADreamer",
+  "app_url": "https://fastnow.github.io/imadreamer"
+}

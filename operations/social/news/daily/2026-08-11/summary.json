@@ -1,0 +1,27 @@
+{
+  "date": "2026-08-11",
+  "period_start": "2026-08-11",
+  "period_end": "2026-08-11",
+  "title": "The community app catalog gained 762 visual previews",
+  "summary": "A garden-tending day: hundreds more app previews, restored news feeds, and a self-healing path to image GPUs.\n\nHundreds of retained community apps now have screenshot URLs in the catalog, with seven existing previews refreshed and a batch of covers checked in-browser before merge. Finding something interesting to build with should involve fewer mystery boxes.\n\nThe Enter news banner and website diary now fetch from explicit news-branch URLs, restoring the highlights and diary entries that disappeared after GitHub branch-path shorthand started returning 404s. The README's Latest News section was refreshed alongside it.\n\nA watchdog now restarts Klein's cloudflared tunnel when high-availability connections stay low for 30 seconds, while preserving the existing QUIC transport and promotion safeguards. Less manual investigation of a grumpy tunnel process.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 13271,
+      "date": "2026-08-11"
+    },
+    {
+      "number": 13279,
+      "date": "2026-08-11"
+    },
+    {
+      "number": 13284,
+      "date": "2026-08-11"
+    },
+    {
+      "number": 13292,
+      "date": "2026-08-11"
+    }
+  ],
+  "generated_at": "2026-08-12T06:36:37.655695+00:00"
+}

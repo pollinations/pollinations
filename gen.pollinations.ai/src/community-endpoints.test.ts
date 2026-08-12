@@ -1594,6 +1594,7 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
+                per_user_rpm?: number | null;
             }[];
         };
 
@@ -1624,6 +1625,7 @@ fixtureTest(
             expect.arrayContaining([
                 expect.objectContaining({
                     id: modelId,
+                    per_user_rpm: 0.5,
                     supported_endpoints: expect.arrayContaining([
                         "/v1/chat/completions",
                     ]),

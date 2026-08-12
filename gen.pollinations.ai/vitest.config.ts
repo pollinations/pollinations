@@ -55,6 +55,7 @@ const genAliases = [
 
 const baseConfig = defineConfig({
     resolve: {
+        dedupe: ["hono"],
         alias: [
             ...genAliases.map((path) => ({
                 find: `@/${path}`,

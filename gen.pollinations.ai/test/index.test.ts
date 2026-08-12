@@ -65,6 +65,23 @@ async function optionsWorker(
 }
 
 describe("gen worker routing", () => {
+    it("returns 401 for unauthenticated generation cache misses", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/image/unauthenticated-cache-miss?model=zimage",
+            ),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code: "UNAUTHORIZED" },
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 

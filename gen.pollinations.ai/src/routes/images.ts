@@ -253,6 +253,7 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
 
         const resolved = resolveParams(body);
         Object.assign(body, resolved, { model });
+        c.set("generationReplayBody", JSON.stringify(body));
 
         const imageUrl = new URL(
             `/image/${encodeURIComponent(body.prompt)}`,

@@ -1143,12 +1143,13 @@ test("OpenAI image generation returns token usage", async ({
             model: "flux",
             prompt: "vcr red square",
             size: "1280x720",
-            seed: 42,
             response_format: "b64_json",
         }),
     });
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-cache")).toBe("HIT");
+    expect(response.headers.get("x-cache-type")).toBe("GENERATED");
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],
         usage: {

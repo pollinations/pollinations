@@ -1164,6 +1164,7 @@ export const proxyRoutes = new Hono<Env>()
         prepareOpenAIImageGeneration,
         formatOpenAIImageGeneration,
         imageCache,
+        deduplicateGeneration,
         handleImageGeneration,
     )
     .post(

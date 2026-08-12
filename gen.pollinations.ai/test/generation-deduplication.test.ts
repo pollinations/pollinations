@@ -61,7 +61,11 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
     };
 }
 
-function createApp(adapter: GenerationCacheAdapter, stream = false) {
+function createApp(
+    adapter: GenerationCacheAdapter,
+    stream = false,
+    replayBody?: string,
+) {
     let preflights = 0;
     let originHits = 0;
     const app = new Hono<TestEnv>()
@@ -69,6 +73,7 @@ function createApp(adapter: GenerationCacheAdapter, stream = false) {
             c.set("log", testLog);
             c.set("requestId", "request-1");
             c.set("track", { streamRequested: stream });
+            if (replayBody) c.set("generationReplayBody", replayBody);
             c.set("auth", {
                 user: { id: "user-1", tier: "seed" } as never,
                 apiKey: { id: "key-1", rawKey: "pk-secret" },
@@ -126,7 +131,16 @@ describe("generation request deduplication", () => {
                 return { role, outcome: { status: "cached" as const } };
             },
         };
-        const generation = createApp(createAdapter(cache));
+        const generation = createApp(
+            createAdapter(cache),
+            false,
+            JSON.stringify({
+                model: "resolved-model",
+                prompt: "hello",
+                seed: 123,
+                key: "body-secret",
+            }),
+        );
         const bindings = {
             GENERATION_COORDINATOR: { getByName: () => coordinator },
         } as unknown as CloudflareBindings;
@@ -184,7 +198,11 @@ describe("generation request deduplication", () => {
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
         expect(jobs[0].request.body).toBe(
-            JSON.stringify({ model: "test", prompt: "hello" }),
+            JSON.stringify({
+                model: "resolved-model",
+                prompt: "hello",
+                seed: 123,
+            }),
         );
     });
 

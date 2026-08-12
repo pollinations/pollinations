@@ -125,7 +125,9 @@ async function createJob(
 ): Promise<GenerationJob> {
     let body: string | undefined;
     if (c.req.method !== "GET" && c.req.method !== "HEAD") {
-        body = sanitizeJsonBody(await c.req.text());
+        body = sanitizeJsonBody(
+            c.var.generationReplayBody ?? (await c.req.text()),
+        );
     }
 
     return {

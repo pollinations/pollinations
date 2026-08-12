@@ -658,6 +658,9 @@ fixtureTest(
         const bindings = {
             ...env,
             OPENROUTER_API_KEY: "test-openrouter-key",
+            // This fixture mocks fetch in the route isolate; detached
+            // generation runs in a separate Durable Object isolate.
+            GENERATION_COORDINATOR: undefined,
         } as unknown as CloudflareBindings;
 
         const getContext = createExecutionContext();

@@ -27,6 +27,8 @@ export type GenerationCacheVariables = {
     };
     /** Alternate request identity for routes which wrap a media response. */
     generationCacheUrl?: URL;
+    /** Normalized body to persist when detached execution must replay a POST. */
+    generationReplayBody?: string;
 };
 
 export type GenerationCacheEnv = {

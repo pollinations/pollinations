@@ -1,5 +1,69 @@
 # Pollinations Model Changelog
 
+## 2026-08-12
+
+### Added
+- `guus6457/gemma-4-12b` (Community, text) — text, image, audio, and video input; text output.
+- `YoannDev90/muse-glimmer-30b:free` (Community, text) — text and image input; text output.
+- `gggff123/Inkling` (Community, text) — text input and output.
+- `Catniti/kimi-k2.6` (Catniti AI, text) — text input and output.
+- `gggff123/step-3.7-flash` (Community, text) — text input and output.
+- `vendouple/gpt-5.6-sol` (OrchidLLM Proxy, text) — text and image input; daily limit.
+- `YoannDev90/ling-3.0-flash:free` (Community, text) — text input and output.
+- `solarnode-developement/k3` (Community, text) — text and image input; text output.
+- `morriszdweck/osaii-api-fast` (OSAII, text) — text input and output.
+- `Catniti/command-r-plus` (Catniti AI, text) — text input and output.
+- `vendouple/qwen3.8-max` (OrchidLLM Proxy, text) — text and image input; text output.
+- `Catniti/claude-sonnet-5` (Catniti AI, text) — text and image input; text output.
+- `solarnode-developement/hy3` (Community, text) — text input and output.
+- `Catniti/agnes-2.5-flash` (Catniti AI, text) — text input and output.
+- `Circuit-Overtime/OreoLook` (Elixpo, text) — text and image input; text output.
+- `vendouple/gpt-image-2` (OrchidLLM Proxy, image) — text-to-image generation.
+- `vendouple/flux-2-dev` (OrchidLLM Proxy, image) — text-to-image generation.
+- `grok-transcribe` (xAI, audio) — audio-to-text transcription via `/v1/audio/transcriptions`.
+
+### Changed
+- `gpt-5.6-luna` — completion token price cut ~60%.
+- `vendouple/kimi-k3` — completion token price cut ~10%.
+- `MarcosFRG/glm-5.2` — completion token price cut ~45%.
+- `MarcosFRG/minimax-m3` — completion token price +50%.
+- `MarcosFRG/deepseek-v4-pro` — completion token price +40%.
+- `MarcosFRG/deepseek-v4-flash` — completion token price +5%.
+- `CloudCompile/afforda-claude-haiku-4.5` — added image and audio input.
+- `CloudCompile/agnes-image-2.0-flash` — added image input.
+- `sharktide/inferenceport-ai-lightning-image-turbo` — added image input.
+- `universal-2` — added `/v1/audio/transcriptions` endpoint.
+- `universal-3.5-pro` — added `/v1/audio/transcriptions` endpoint.
+- `scribe` — added `/v1/audio/transcriptions` endpoint.
+- `whisper` — added `/v1/audio/transcriptions` endpoint.
+- `perplexity` — added search pricing adjustment.
+- `perplexity-fast` — added low- and high-context search pricing adjustments.
+- `perplexity-reasoning` — added search pricing adjustment.
+- `gemini` — added search and cache-storage pricing adjustments.
+- `gemini-flash-lite-3.5` — added search and cache-storage pricing adjustments.
+- `gemini-fast` — added search and cache-storage pricing adjustments.
+- `gemini-large` — added search and cache-storage pricing adjustments.
+- `gemini-search` — added grounded-prompt and cache-storage pricing adjustments.
+- `gemini-3-flash` — added search and cache-storage pricing adjustments.
+
+### Removed
+- `voodoohop/airforce-grok-4-fast` (was: text)
+- `Catniti/agnes-2.0-flash` (was: text)
+- `solarnode-developement/glm-5.2-cheap` (was: text)
+- `vendouple/nemotron-3-ultra:free` (was: text)
+- `timemachine-studio/mercury2` (was: text)
+- `vendouple/kimi-k2.6` (was: text)
+- `vendouple/kimi-k3:s2` (was: text)
+- `MarcosFRG/glm-4.6v-flash` (was: text)
+- `MarcosFRG/north-mini-code` (was: text)
+- `vendouple/claude-opus-4-8` (was: text)
+- `vendouple/qwen3.8-max-preview` (was: text)
+- `vendouple/gpt-5.5` (was: text)
+- `vendouple/uncensored-image` (was: image)
+- `vendouple/flux-2` (was: image)
+- `vendouple/imagen-4-ultra` (was: image)
+- `meow18838/image-1` (was: image)
+
 ## 2026-08-05
 
 ### Added

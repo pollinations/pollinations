@@ -1,0 +1,33 @@
+{
+  "pr_number": 13300,
+  "title": "fix(sdk): return model arrays and reject failed images",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13300",
+  "merged_at": "2026-08-12T12:05:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Points `Pollinations.models()` at `/models`, matching its documented array return type.\n- Rejects non-2xx generated-image URL downloads through the existing SDK error parser.\n- Adds focused regression coverage for both paths.\n\nChecks: SDK tests (37), typecheck, build, Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Models, now in a proper row",
+    "blurb": "The SDK has stopped handing you a mystery-shaped model response. `Pollinations.models()` now returns the array it promised, and failed image downloads raise a useful error instead of quietly pretending to be pixels.",
+    "summary": "Fixed the SDK so `Pollinations.models()` calls `/models` and returns its documented model array, while generated-image URL downloads now reject non-2xx responses through the existing SDK error parser.",
+    "impact": "SDK users can reliably iterate over available models and receive actionable errors when an image-generation download fails instead of treating an error response as an image.",
+    "keywords": [
+      "sdk",
+      "models",
+      "image-generation",
+      "error-handling",
+      "api"
+    ],
+    "visual_concept": "Polli is organizing a neat row of model cards from a retro terminal's `/models` output, while a friendly CRT monitor robot spots a failed image download and routes it into a clearly labeled error jar rather than the pixel gallery. Code-plants and small flowers make the SDK repair feel like careful garden maintenance.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, arranging a clean array of glowing model cards beside a retro terminal labeled '/models'; a cute CRT monitor robot carefully catches a red error-page pixel before it reaches a framed generated image. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'ARRAY OK'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-12/PR-13300.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, arranging a clean array of glowing model cards beside a retro terminal labeled '/models'; a cute CRT monitor robot carefully catches a red error-page pixel before it reaches a framed generated image. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'ARRAY OK'."
+  },
+  "generated_at": "2026-08-12T12:06:16.801707+00:00"
+}

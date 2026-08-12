@@ -8,6 +8,7 @@ import {
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
 import {
+    bytesToHex,
     getRealClientIp,
     hashIp,
     stripIPv4MappedPrefix,
@@ -71,6 +72,7 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
@@ -97,6 +99,7 @@ type RequestTrackingData = {
 type ResponseTrackingData = {
     responseStatus: number;
     cacheHit: boolean;
+    cacheType?: string;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
     /** False only on a call that was moved on from; the outcome row leaves it true. */
@@ -150,7 +153,8 @@ export type TrackEnv = {
         BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
-        ModelVariables;
+        ModelVariables &
+        GenerationCacheVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -205,6 +209,23 @@ export const track = (eventType: EventType) =>
                 c.var.balance.balanceCheckResult?.selectedMeterSlug,
             balances: c.var.balance.balanceCheckResult?.balances || {},
         });
+        let cacheKeyPromise: Promise<string | undefined> | undefined;
+        const cacheKeyForTracking = () => {
+            if (!cacheKeyPromise) {
+                const cache = c.var.generationCache;
+                cacheKeyPromise = cache
+                    ? crypto.subtle
+                          .digest(
+                              "SHA-256",
+                              new TextEncoder().encode(
+                                  `${cache.adapter.storage}:${cache.key}`,
+                              ),
+                          )
+                          .then(bytesToHex)
+                    : Promise.resolve(undefined);
+            }
+            return cacheKeyPromise;
+        };
 
         /**
          * The one place a generation row is built and sent.
@@ -237,6 +258,7 @@ export const track = (eventType: EventType) =>
                 endTime: row.endTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
+                cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
@@ -595,12 +617,14 @@ export async function trackResponse(
     const modelProviderUsed =
         servedModelDefinition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
+    const cacheType = response.headers.get("x-cache-type") ?? undefined;
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
         responseStatus: response.status,
         cacheHit,
+        cacheType,
         isBilledUsage: false,
         fallbackUsed,
         modelProviderUsed,
@@ -678,6 +702,7 @@ export async function trackResponse(
             return {
                 responseStatus: response.status,
                 cacheHit,
+                cacheType,
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
@@ -721,6 +746,7 @@ export async function trackResponse(
     return {
         responseStatus: response.status,
         cacheHit,
+        cacheType,
         isBilledUsage: true,
         fallbackUsed,
         cost,
@@ -855,6 +881,7 @@ type TrackingEventInput = {
     eventType: EventType;
     ipSubnet?: string;
     ipHash?: string;
+    cacheKey?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -896,6 +923,7 @@ function createTrackingEvent({
     eventType,
     ipSubnet,
     ipHash,
+    cacheKey,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -917,6 +945,14 @@ function createTrackingEvent({
         eventType,
         ipSubnet,
         ipHash,
+
+        ...(cacheKey && {
+            cacheHit: responseTracking.cacheHit,
+            cacheType:
+                responseTracking.cacheType ??
+                (responseTracking.cacheHit ? "EXACT" : "MISS"),
+            cacheKey,
+        }),
 
         ...userTracking,
         ...requestTracking.referrerData,

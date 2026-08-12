@@ -10,6 +10,7 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+const CACHE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 type PersistedJob = Omit<GenerationJob, "request"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
@@ -24,6 +25,7 @@ type ActiveJob = {
 type UnknownJob = {
     status: "unknown";
     cache: GenerationCacheIdentity;
+    createdAt: number;
 };
 
 type StoredJob = ActiveJob | UnknownJob;
@@ -49,7 +51,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         let wait: Promise<GenerationOutcome> | undefined;
 
         await this.ctx.blockConcurrencyWhile(async () => {
-            const stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
+            let stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
 
             if (stored?.status === "unknown") {
                 if (await cacheExists(this.env, stored.cache)) {
@@ -57,8 +59,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                     immediate = { status: "cached" };
                     return;
                 }
-                immediate = { status: "unknown" };
-                return;
+                if (Date.now() - stored.createdAt < CACHE_RETENTION_MS) {
+                    immediate = { status: "unknown" };
+                    return;
+                }
+                // R2 objects expire after 30 days. Once an ambiguous
+                // submission has outlived that same window, release the key.
+                await this.clear();
+                stored = undefined;
             }
 
             if (!stored) {
@@ -218,6 +226,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         await this.ctx.storage.put<StoredJob>(JOB_KEY, {
             status: "unknown",
             cache: job.job.cache,
+            createdAt: Date.now(),
         });
         await this.ctx.storage.deleteAlarm();
         if (job.job.bodyChunks > 0) {

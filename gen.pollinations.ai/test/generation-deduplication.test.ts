@@ -132,7 +132,10 @@ describe("generation request deduplication", () => {
                     method: "POST",
                     headers: {
                         Authorization: "Bearer header-secret",
+                        "CF-Connecting-IP": "203.0.113.42",
                         "Content-Type": "application/json",
+                        "X-Forwarded-Host": "gen.pollinations.ai",
+                        "X-Original-Client-IP": "203.0.113.42",
                     },
                     body: JSON.stringify({
                         model: "test",
@@ -165,6 +168,13 @@ describe("generation request deduplication", () => {
             "authorization",
             "Bearer header-secret",
         ]);
+        expect(jobs[0].request.headers).toEqual(
+            expect.arrayContaining([
+                ["cf-connecting-ip", "203.0.113.42"],
+                ["x-forwarded-host", "gen.pollinations.ai"],
+                ["x-original-client-ip", "203.0.113.42"],
+            ]),
+        );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
         expect(jobs[0].request.body).toBe(
             JSON.stringify({ model: "test", prompt: "hello" }),

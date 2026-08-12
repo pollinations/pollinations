@@ -103,6 +103,24 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         return { role, outcome: await wait };
     }
 
+    async getStatus(): Promise<
+        | { status: "idle" | "queued" | "running" }
+        | { status: "unknown"; retryAfterSeconds: number }
+    > {
+        const stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
+        if (!stored) return { status: "idle" };
+        if (stored.status !== "unknown") return { status: stored.status };
+
+        const remaining = Math.max(
+            0,
+            UNKNOWN_RETENTION_MS - (Date.now() - stored.createdAt),
+        );
+        return {
+            status: "unknown",
+            retryAfterSeconds: Math.max(1, Math.ceil(remaining / 1000)),
+        };
+    }
+
     async alarm(): Promise<void> {
         if (this.alarmRunning) return;
         this.alarmRunning = true;

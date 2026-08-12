@@ -151,6 +151,39 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it("retries coordinated pending responses using Retry-After", async () => {
+        vi.useFakeTimers();
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse(
+                    { status: "pending" },
+                    {
+                        status: 202,
+                        headers: {
+                            "Retry-After": "10",
+                            "X-Cache-Type": "PENDING",
+                        },
+                    },
+                ),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "image/png",
+                }),
+            );
+
+        const request = newClient().image("a long-running scene");
+        await vi.advanceTimersByTimeAsync(9_999);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+
+        await expect(request).resolves.toMatchObject({
+            contentType: "image/png",
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
     it("keeps video requests alive until the 20-minute default timeout", async () => {
         vi.useFakeTimers();
         let aborted = false;

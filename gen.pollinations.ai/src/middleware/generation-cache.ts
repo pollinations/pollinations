@@ -35,7 +35,6 @@ export type GenerationCacheEnv = {
 export type GenerationCacheAdapter = {
     storage: GenerationCacheStorage;
     label: string;
-    coordinate?: boolean;
     getKey: (
         c: Context<GenerationCacheEnv>,
         log: Logger,
@@ -63,8 +62,7 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
                 track?: { streamRequested?: boolean };
             }
         ).track?.streamRequested;
-        const coordinate =
-            adapter.coordinate !== false && streamRequested !== true;
+        const coordinate = streamRequested !== true;
 
         log.debug("Cache key: {key}", { key: cacheKey });
         try {

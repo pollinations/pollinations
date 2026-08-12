@@ -10704,6 +10704,26 @@
     "screenshotUrl": "https://media.pollinations.ai/f5a3d1db-eef5-43eb-9666-92b2dcdcc754"
   },
   {
+    "emoji": "🤖",
+    "name": "AI Girlfriend",
+    "url": "https://aigf-project.vercel.app/",
+    "description": "Generates on-demand companion images using Pollinations text-to-image API.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Abhij248",
+    "githubUserId": "117417663",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "devilswolf.",
+    "other": null,
+    "submittedDate": "2025-12-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/6558",
+    "approvedDate": "2026-01-12",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Whiskautoz",
     "url": "https://whiskautoz.vercel.app/",

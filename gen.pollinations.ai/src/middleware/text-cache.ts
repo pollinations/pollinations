@@ -23,6 +23,7 @@ import { createGenerationCache } from "./generation-cache.ts";
  * Non-cacheable routes like /v1/models should NOT use this middleware
  */
 export const textCache = createGenerationCache({
+    storage: "text",
     label: "text-cache",
     async getKey(c, log) {
         // Hono caches body text across c.req.json()/text(), so this still works
@@ -71,8 +72,8 @@ export const textCache = createGenerationCache({
         return response.ok && response.body !== null;
     },
     capture(c, cacheKey, response) {
-        const captureStream = createCaptureStream(c, cacheKey, response);
-        const transformedBody = response.body?.pipeThrough(captureStream);
+        const capture = createCaptureStream(c, cacheKey, response);
+        const transformedBody = response.body?.pipeThrough(capture.stream);
         const captured = new Response(transformedBody, {
             status: response.status,
             statusText: response.statusText,
@@ -81,6 +82,6 @@ export const textCache = createGenerationCache({
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
         captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-        return captured;
+        return { response: captured, write: capture.write };
     },
 });

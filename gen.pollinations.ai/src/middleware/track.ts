@@ -335,6 +335,15 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
+                    if (response.headers.get("x-cache-type") === "COALESCED") {
+                        await emitRow({
+                            startTime,
+                            endTime: new Date(),
+                            balanceTracking: balanceTracking(),
+                            responseTracking,
+                            errorTracking: {},
+                        });
+                    }
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for

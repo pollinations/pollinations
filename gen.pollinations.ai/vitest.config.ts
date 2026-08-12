@@ -11,9 +11,11 @@ const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 
 const genAliases = [
+    "app.ts",
     "content-filter.ts",
     "cache",
     "durable-objects/PollenRateLimiter.ts",
+    "durable-objects/GenerationCoordinator.ts",
     "env.ts",
     "error.ts",
     "events.ts",
@@ -21,6 +23,8 @@ const genAliases = [
     "logger.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
+    "middleware/generation-cache.ts",
+    "middleware/generation-deduplication.ts",
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
@@ -40,7 +44,9 @@ const genAliases = [
     "util.ts",
     "utils/api-docs.ts",
     "utils/bedrock-guardrail.ts",
+    "utils/execute-generation.ts",
     "utils/generation-access.ts",
+    "utils/generation-execution.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
     "utils/safety-features.ts",

@@ -12,8 +12,8 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import {
-    cacheMediaResponse,
     generateCacheKey,
+    putMediaResponse,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
 import { createGenerationCache } from "./generation-cache.ts";
@@ -25,11 +25,15 @@ type MediaCacheConfig = {
     defaultContentType: string;
     /** Label for log messages */
     label: string;
+    /** Streaming responses stay on the request path until fan-out is supported. */
+    coordinate?: boolean;
 };
 
 export function createMediaCache(config: MediaCacheConfig) {
     return createGenerationCache({
+        storage: "media",
         label: config.label,
+        coordinate: config.coordinate,
         getKey(c, log) {
             const seedParam = new URL(c.req.url).searchParams.get("seed");
             if (seedParam === "-1") {
@@ -78,14 +82,16 @@ export function createMediaCache(config: MediaCacheConfig) {
             );
         },
         capture(c, cacheKey, response) {
-            cacheMediaResponse(
-                c.env.IMAGE_BUCKET,
-                cacheKey,
-                c,
-                config.defaultContentType,
+            return {
                 response,
-            );
-            return response;
+                write: putMediaResponse(
+                    c.env.IMAGE_BUCKET,
+                    cacheKey,
+                    c,
+                    config.defaultContentType,
+                    response,
+                ),
+            };
         },
     });
 }
@@ -100,6 +106,7 @@ export const audioCache = createMediaCache({
     mediaTypes: ["audio/"],
     defaultContentType: "audio/mpeg",
     label: "audio-cache",
+    coordinate: false,
 });
 
 export const model3dCache = createMediaCache({

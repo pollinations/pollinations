@@ -3,14 +3,29 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import {
+    isGenerationExecution,
+    registerGenerationCacheWrite,
+} from "@/utils/generation-execution.ts";
+
+export type GenerationCacheStorage = "media" | "text";
+
+export type GenerationCacheVariables = {
+    generationCache?: {
+        adapter: GenerationCacheAdapter;
+        key: string;
+    };
+};
 
 export type GenerationCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
 };
 
 export type GenerationCacheAdapter = {
+    storage: GenerationCacheStorage;
     label: string;
+    coordinate?: boolean;
     getKey: (
         c: Context<GenerationCacheEnv>,
         log: Logger,
@@ -24,7 +39,7 @@ export type GenerationCacheAdapter = {
         c: Context<GenerationCacheEnv>,
         key: string,
         response: Response,
-    ) => Response;
+    ) => { response: Response; write: Promise<void> };
 };
 
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
@@ -33,6 +48,13 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         const log = c.get("log").getChild(adapter.label);
         const cacheKey = await adapter.getKey(c, log);
         if (!cacheKey) return next();
+        const streamRequested = (
+            c.var as GenerationCacheEnv["Variables"] & {
+                track?: { streamRequested?: boolean };
+            }
+        ).track?.streamRequested;
+        const coordinate =
+            adapter.coordinate !== false && streamRequested !== true;
 
         log.debug("Cache key: {key}", { key: cacheKey });
         try {
@@ -45,13 +67,43 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
             c.header("X-Cache", "MISS");
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
+            if (coordinate) {
+                return new Response(
+                    "Generation cache is temporarily unavailable",
+                    { status: 503 },
+                );
+            }
+        }
+
+        if (coordinate) {
+            c.set("generationCache", { adapter, key: cacheKey });
         }
 
         await next();
 
-        if (c.res && adapter.shouldCache(c.res)) {
+        // A coordinator response was already materialized in R2. Do not make
+        // every joined caller rewrite it or extend its cache lifetime.
+        if (
+            c.res &&
+            c.res.headers.get("X-Cache") !== "HIT" &&
+            adapter.shouldCache(c.res)
+        ) {
             log.debug("Caching response");
-            c.res = adapter.capture(c, cacheKey, c.res);
+            const capture = adapter.capture(c, cacheKey, c.res);
+            const internal = isGenerationExecution(c.executionCtx);
+            if (internal) {
+                registerGenerationCacheWrite(c.executionCtx, capture.write);
+                c.executionCtx.waitUntil(capture.write);
+            } else {
+                c.executionCtx.waitUntil(
+                    capture.write.catch((error) => {
+                        log.error("Error caching response: {error}", {
+                            error,
+                        });
+                    }),
+                );
+            }
+            c.res = capture.response;
         }
     });
 }

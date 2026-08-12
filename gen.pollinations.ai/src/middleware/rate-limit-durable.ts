@@ -4,6 +4,7 @@ import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { safeRound } from "@/util.ts";
+import { isGenerationExecution } from "@/utils/generation-execution.ts";
 
 export type FrontendKeyRateLimitVariables = {
     frontendKeyRateLimit?: {
@@ -18,6 +19,7 @@ type FrontendKeyRateLimitEnv = {
 
 export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
     async (c, next) => {
+        if (isGenerationExecution(c.executionCtx)) return next();
         const log = c.get("log").getChild("ratelimit");
 
         const apiKey = c.var?.auth?.apiKey;

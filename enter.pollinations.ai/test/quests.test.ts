@@ -122,23 +122,26 @@ async function seedByopConnections(
             updatedAt: now,
         })),
     );
-    await db.insert(schema.apikey).values([
-        {
-            id: appKeyId,
-            key: `pk_${prefix}`,
-            userId: ownerUserId,
-            createdAt: now,
-            updatedAt: now,
-        },
-        ...userIds.map((userId, index) => ({
-            id: `${prefix}-user-key-${index}`,
-            key: `sk_${prefix}_${index}`,
-            userId,
-            byopClientKeyId: appKeyId,
-            createdAt: now,
-            updatedAt: now,
-        })),
-    ]);
+    await db.insert(schema.apikey).values({
+        id: appKeyId,
+        key: `pk_${prefix}`,
+        userId: ownerUserId,
+        createdAt: now,
+        updatedAt: now,
+    });
+    const userKeys = userIds.map((userId, index) => ({
+        id: `${prefix}-user-key-${index}`,
+        key: `sk_${prefix}_${index}`,
+        userId,
+        byopClientKeyId: appKeyId,
+        createdAt: now,
+        updatedAt: now,
+    }));
+    for (let offset = 0; offset < userKeys.length; offset += 5) {
+        await db
+            .insert(schema.apikey)
+            .values(userKeys.slice(offset, offset + 5));
+    }
     return userIds;
 }
 
@@ -339,14 +342,24 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 15,
         balanceBucket: "tier",
     });
-    expectStableCatalogFields("app_growing", {
+    expectStableCatalogFields("app_users_3", {
         state: "available",
-        rewardAmount: 20,
+        rewardAmount: 10,
         balanceBucket: "tier",
     });
-    expectStableCatalogFields("app_thriving", {
+    expectStableCatalogFields("app_users_10", {
         state: "available",
-        rewardAmount: 50,
+        rewardAmount: 25,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("app_pollen_1", {
+        state: "available",
+        rewardAmount: 10,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("app_pollen_10", {
+        state: "available",
+        rewardAmount: 25,
         balanceBucket: "tier",
     });
 });
@@ -1002,8 +1015,10 @@ test("app growth quests record connection, paid usage, reach, and Pollen milesto
         new Set([
             "app_active",
             "app_paid_request",
-            "app_growing",
-            "app_thriving",
+            "app_users_3",
+            "app_users_10",
+            "app_pollen_1",
+            "app_pollen_10",
             "app_listed",
         ]),
     );
@@ -1040,7 +1055,7 @@ test("app growth quests record connection, paid usage, reach, and Pollen milesto
     ]);
 });
 
-test("app growth milestones require both external reach and Pollen usage", async ({
+test("app user and Pollen milestones are independent", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1064,8 +1079,10 @@ test("app growth milestones require both external reach and Pollen usage", async
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("app_growing")).toBe(true);
-    expect(questIds.has("app_thriving")).toBe(false);
+    expect(questIds.has("app_users_3")).toBe(true);
+    expect(questIds.has("app_users_10")).toBe(true);
+    expect(questIds.has("app_pollen_1")).toBe(true);
+    expect(questIds.has("app_pollen_10")).toBe(false);
     expect(questIds.has("app_paid_request")).toBe(false);
 });
 

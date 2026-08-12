@@ -267,10 +267,12 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 { status: 503 },
             );
         }
-        response.headers.set(
-            "X-Cache-Type",
-            role === "owner" ? "GENERATED" : "COALESCED",
-        );
+        const cacheType = role === "owner" ? "GENERATED" : "COALESCED";
+        // Some adapters set cache headers on the Hono context as well as the
+        // returned Response. Override both so Hono cannot restore EXACT while
+        // merging the final response headers.
+        c.header("X-Cache-Type", cacheType);
+        response.headers.set("X-Cache-Type", cacheType);
         return response;
     },
 );

@@ -44,8 +44,9 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
         storage: "text",
         label: "test-cache",
         getKey: () => "same-request",
-        get: async (_c, key) => {
+        get: async (c, key) => {
             const body = cache.get(key);
+            if (body) c.header("X-Cache-Type", "EXACT");
             return body
                 ? new Response(body, { headers: { "X-Cache": "HIT" } })
                 : null;

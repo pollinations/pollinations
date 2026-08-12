@@ -18,8 +18,13 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
+import {
+    normalizeSafeValue,
+    SAFETY_HEADER_NAME,
+    type SafeValue,
+} from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
+import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
@@ -31,6 +36,17 @@ import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const CACHE_PARAMS = [
+    "image",
+    "transparent",
+    "guidance_scale",
+    "reasoning",
+    "duration",
+    "fps",
+    "resolution",
+    "aspectRatio",
+    "audio",
+] as const;
 
 function imageResponse(
     data: { url?: string; b64_json?: string; media_type?: string },
@@ -51,6 +67,7 @@ function responseImageUsage(
     const usage = parseUsageHeaders(response.headers);
     const modelUsed = response.headers.get("x-model-used");
     if (!modelUsed) throw new Error("Image response is missing x-model-used");
+    c.header("x-model-used", modelUsed);
 
     for (const [name, value] of Object.entries(
         buildUsageHeaders(modelUsed, usage),
@@ -63,6 +80,27 @@ function responseImageUsage(
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
     return usageToOpenAIImageUsage(usage);
+}
+
+function copyCacheHeaders(c: Context<Env>, response: Response): void {
+    for (const name of [
+        "cache-control",
+        "x-cache",
+        "x-cache-date",
+        "x-cache-key",
+        "x-cache-type",
+    ]) {
+        const value = response.headers.get(name);
+        if (value) c.header(name, value);
+    }
+}
+
+function setUrlParam(url: URL, name: string, value: unknown): void {
+    if (value === undefined || value === null) return;
+    url.searchParams.set(
+        name,
+        Array.isArray(value) ? value.join("|") : String(value),
+    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -200,19 +238,100 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-export async function handleImageGeneration(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
+/** Resolve the POST body to the equivalent public media URL used for caching. */
+export const prepareOpenAIImageGeneration = createMiddleware<Env>(
+    async (c, next) => {
+        const body = c.req.valid("json" as never) as CreateImageRequest &
+            Record<string, unknown>;
+        const model = c.var.model.resolved;
+        if (body.response_format === "url" && c.var.model.communityEndpoint) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message:
+                    'Community image models support response_format "b64_json" only',
+            });
+        }
 
+        const resolved = resolveParams(body);
+        Object.assign(body, resolved, { model });
+
+        const imageUrl = new URL(
+            `/image/${encodeURIComponent(body.prompt)}`,
+            getPublicOrigin(c),
+        );
+        for (const [name, value] of Object.entries({
+            model,
+            ...resolved,
+            ...collectPassthrough(body, ...CACHE_PARAMS),
+        })) {
+            setUrlParam(imageUrl, name, value);
+        }
+        const safeValue = normalizeSafeValue(
+            (body.safe ?? c.req.header(SAFETY_HEADER_NAME)) as SafeValue,
+        );
+        if (safeValue) imageUrl.searchParams.set("safe", safeValue);
+        c.set("generationCacheUrl", imageUrl);
+
+        await next();
+    },
+);
+
+/** Convert the cached binary media response to the OpenAI Images shape. */
+export const formatOpenAIImageGeneration = createMiddleware<Env>(
+    async (c, next) => {
+        await next();
+        const response = c.res;
+        if (!response.ok) return;
+
+        const mediaType = response.headers.get("content-type") || undefined;
+        if (
+            !mediaType?.startsWith("image/") &&
+            !mediaType?.startsWith("video/")
+        ) {
+            return;
+        }
+
+        const body = c.req.valid("json" as never) as CreateImageRequest;
+        const usage = responseImageUsage(c, response);
+        copyCacheHeaders(c, response);
+        const mediaData =
+            mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
+
+        if (body.response_format === "url") {
+            await response.arrayBuffer();
+            c.res = withSafetyHeaders(
+                c,
+                c.json(
+                    imageResponse(
+                        {
+                            url: c.var.generationCacheUrl?.toString(),
+                            ...mediaData,
+                        },
+                        body.prompt,
+                        usage,
+                    ),
+                ),
+            );
+            return;
+        }
+
+        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        c.res = withSafetyHeaders(
+            c,
+            c.json(
+                imageResponse(
+                    { b64_json: base64, ...mediaData },
+                    body.prompt,
+                    usage,
+                ),
+            ),
+        );
+    },
+);
+
+export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
-    if (body.response_format === "url" && c.var.model.communityEndpoint) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                'Community image models support response_format "b64_json" only',
-        });
-    }
-    const resolved = resolveParams(body);
     const safePrompt = await applySafety(
         c,
         body.prompt,
@@ -223,56 +342,10 @@ export async function handleImageGeneration(c: Context<Env>) {
         ...body,
         prompt: safePrompt,
         ...collectPassthrough(body, "image"),
-        ...resolved,
         model,
     });
     c.var.track.overrideResponseTracking(response.clone());
-    const usage = responseImageUsage(c, response);
-    const mediaType = response.headers.get("content-type") || undefined;
-    const mediaData =
-        mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
-
-    if (body.response_format === "url") {
-        const origin = getPublicOrigin(c);
-        const imageUrl = new URL(
-            `${origin}/image/${encodeURIComponent(safePrompt)}`,
-        );
-        for (const [key, value] of Object.entries({
-            model,
-            ...resolved,
-        }))
-            imageUrl.searchParams.set(key, String(value));
-        if (typeof body.resolution === "string") {
-            imageUrl.searchParams.set("resolution", body.resolution);
-        }
-        const safeValue = normalizeSafeValue(body.safe as SafeValue);
-        if (safeValue) {
-            imageUrl.searchParams.set("safe", safeValue);
-        }
-        await response.arrayBuffer();
-        return withSafetyHeaders(
-            c,
-            c.json(
-                imageResponse(
-                    { url: imageUrl.toString(), ...mediaData },
-                    safePrompt,
-                    usage,
-                ),
-            ),
-        );
-    }
-
-    const base64 = arrayBufferToBase64(await response.arrayBuffer());
-    return withSafetyHeaders(
-        c,
-        c.json(
-            imageResponse(
-                { b64_json: base64, ...mediaData },
-                safePrompt,
-                usage,
-            ),
-        ),
-    );
+    return withSafetyHeaders(c, response);
 }
 
 export async function handleImageEdit(c: Context<Env>) {

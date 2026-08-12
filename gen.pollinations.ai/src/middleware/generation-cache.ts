@@ -25,6 +25,8 @@ export type GenerationCacheVariables = {
         adapter: GenerationCacheAdapter;
         key: string;
     };
+    /** Alternate request identity for routes which wrap a media response. */
+    generationCacheUrl?: URL;
 };
 
 export type GenerationCacheEnv = {

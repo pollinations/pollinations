@@ -19,6 +19,7 @@ export type Env = {
         AuthVariables &
         BalanceVariables &
         FrontendKeyRateLimitVariables &
+        GenerationCacheVariables &
         SafetyVariables &
         TrackVariables &
         ModelVariables &

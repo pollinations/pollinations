@@ -18,9 +18,9 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v23: use_app and app_active (7 Pollen) are now available;
-// app_paid_request reward set to 15 while still coming_soon.
-const CACHE_KEY = "quests:catalog:v23";
+// Bumped past the pending v24 quest launch: app_paid_request, app_growing, and
+// app_thriving are now available.
+const CACHE_KEY = "quests:catalog:v25";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

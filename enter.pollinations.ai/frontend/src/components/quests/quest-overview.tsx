@@ -24,10 +24,8 @@ import { formatPollen } from "@pollinations/ui/wallet";
 import {
     type ComponentType,
     type FC,
-    useCallback,
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
@@ -590,54 +588,32 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
-    const autoCheckedRef = useRef(false);
-    // Refs, not state: an overlapping trigger (visibility fires while the mount
-    // check or a scheduled retry is still pending) must be dropped without
-    // re-rendering, and a stale closure here would double-fire the check.
-    const checkInFlightRef = useRef(false);
-    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // A check can still be in flight when the page is left. Without this the
-    // 429 branch would schedule a retry AFTER unmount, which the mount effect's
-    // cleanup has already run past and can never clear.
-    const mountedRef = useRef(true);
-    // Bumped on every claim, so a background check that started before the
-    // claim can tell its refresh is stale and skip the merge instead of
-    // reverting the reward the user just claimed.
-    const claimSeqRef = useRef(0);
     // Logged-out visitors see a preview: every quest shown open (so all
     // descriptions render) and the off-board/unearned visibility filter
     // relaxed, since there is no per-user progress to gate on.
     const previewAll = state.anonymous;
 
-    // One quest check + reward refresh, shared by the mount effect, the
-    // visibility listener and the single retry. The automatic check is
-    // best-effort: a throttled or failed check leaves the already-loaded quests
-    // intact and does NOT surface a red error — the cached data is still valid.
-    const runCheck: (allowRetry: boolean) => Promise<void> = useCallback(
-        async (allowRetry) => {
-            // Already running, or a retry is still scheduled — the pending run
-            // covers this trigger too.
-            if (checkInFlightRef.current || retryTimerRef.current !== null)
-                return;
-            checkInFlightRef.current = true;
-            const claimSeq = claimSeqRef.current;
+    // Load cached quest data, then keep it current when users return from
+    // completing an off-site quest. A throttled check retries once using the
+    // server-provided delay; overlapping visibility events share that work.
+    useEffect(() => {
+        let cancelled = false;
+        let authenticated = false;
+        let checkInFlight = false;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+        async function runCheck(allowRetry: boolean): Promise<void> {
+            if (!authenticated || checkInFlight || retryTimer !== null) return;
+            checkInFlight = true;
             setState((current) => ({ ...current, checking: true }));
             try {
                 const response = await apiClient.quests.check.$post();
-                // Left the page while this was in flight: don't refresh dead
-                // state, and above all don't schedule a retry nothing will
-                // clear — it would burn the user's next 60s server throttle
-                // window from a page they already closed.
-                if (!mountedRef.current) return;
+                if (cancelled) return;
                 if (response.ok) {
                     const refreshed = await loadQuestData();
+                    if (cancelled) return;
                     setState((current) =>
-                        // A claim started while this check was in flight
-                        // already refreshed (or is about to refresh) the
-                        // rewards; merging this older snapshot would revert it.
-                        claimSeqRef.current !== claimSeq ||
-                        current.claimingRewardId !== null
+                        current.claimingRewardId
                             ? { ...current, checking: false }
                             : {
                                   ...current,
@@ -649,10 +625,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     );
                     return;
                 }
-                // Throttled (the server allows one check per minute per user).
-                // Retry exactly once, after the server's Retry-After. The
-                // indicator goes idle for the wait, so the page stays fully
-                // interactive instead of dimming for up to a minute.
                 const retryAfter = Number(response.headers.get("Retry-After"));
                 if (
                     allowRetry &&
@@ -660,44 +632,40 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     Number.isFinite(retryAfter) &&
                     retryAfter > 0
                 ) {
-                    retryTimerRef.current = setTimeout(() => {
-                        retryTimerRef.current = null;
+                    retryTimer = setTimeout(() => {
+                        retryTimer = null;
                         void runCheck(false);
                     }, retryAfter * 1000);
                 }
                 setState((current) => ({ ...current, checking: false }));
             } catch {
-                setState((current) => ({ ...current, checking: false }));
+                if (!cancelled) {
+                    setState((current) => ({ ...current, checking: false }));
+                }
             } finally {
-                checkInFlightRef.current = false;
+                checkInFlight = false;
             }
-        },
-        [],
-    );
+        }
 
-    // On open: render cached quest data immediately (fast D1 read), THEN run one
-    // automatic quest check (slow GitHub + Tinybird fan-out) and refresh. There
-    // is no manual button — quests check themselves when the page opens.
-    useEffect(() => {
-        let cancelled = false;
-        mountedRef.current = true;
+        function onVisibilityChange() {
+            if (document.visibilityState === "visible") void runCheck(true);
+        }
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+
         (async () => {
             try {
                 const questData = await loadQuestData();
                 if (cancelled) return;
-                // `checking` is deliberately carried over, not reset: runCheck
-                // owns that flag, and a visibility check can already be in
-                // flight by the time this initial load resolves.
-                setState((current) => ({
-                    ...current,
+                setState({
                     ...questData,
                     loading: false,
+                    checking: false,
                     error: null,
                     claimingRewardId: null,
-                }));
-                // No per-user check for logged-out visitors — the catalog
-                // preview is all they get.
+                });
                 if (questData.anonymous) return;
+                authenticated = true;
             } catch (error) {
                 if (cancelled) return;
                 setState({
@@ -710,44 +678,20 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 });
                 return;
             }
-
-            // StrictMode double-mounts the effect; run the check at most once.
-            if (cancelled || autoCheckedRef.current) return;
-            autoCheckedRef.current = true;
             await runCheck(true);
         })();
+
         return () => {
             cancelled = true;
-            mountedRef.current = false;
-            // Don't leave a scheduled retry behind after unmount.
-            if (retryTimerRef.current !== null) {
-                clearTimeout(retryTimerRef.current);
-                retryTimerRef.current = null;
-            }
-        };
-    }, [runCheck]);
-
-    // Quests are completed off-site (star a repo, open an issue) while this tab
-    // stays open, so the mount check alone misses them. Re-check whenever the
-    // page becomes visible again. Anonymous visitors run no check (it would
-    // 401).
-    useEffect(() => {
-        function onVisibilityChange() {
-            if (state.anonymous || document.visibilityState !== "visible")
-                return;
-            void runCheck(true);
-        }
-        document.addEventListener("visibilitychange", onVisibilityChange);
-        return () => {
             document.removeEventListener(
                 "visibilitychange",
                 onVisibilityChange,
             );
+            if (retryTimer !== null) clearTimeout(retryTimer);
         };
-    }, [state.anonymous, runCheck]);
+    }, []);
 
     async function handleClaimReward(rewardId: string): Promise<void> {
-        claimSeqRef.current += 1;
         setState((current) => ({
             ...current,
             claimingRewardId: rewardId,
@@ -773,14 +717,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 error: null,
             }));
         } catch (error) {
-            // A check that finished mid-claim skipped its merge so it could not
-            // revert this claim, and the failure means the claim's own refresh
-            // above never ran — so reload here too, or rewards that check
-            // registered would stay hidden until the next visibility event.
-            const questData = await loadQuestData().catch(() => null);
             setState((current) => ({
                 ...current,
-                ...questData,
                 claimingRewardId: null,
                 error:
                     error instanceof Error

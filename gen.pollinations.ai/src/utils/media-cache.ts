@@ -15,11 +15,16 @@ import type { Context } from "hono";
 // and "key" are request controls that must never affect the cache key.
 export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
-const CACHED_HEADER_PREFIXES = ["x-safety-"];
+const CACHED_HEADER_PREFIXES = ["x-safety-", "x-usage-"];
 const CACHED_HEADER_NAMES = [
     "content-disposition",
     "content-security-policy",
     "x-content-type-options",
+    "x-elevenlabs-reference-song-id",
+    "x-elevenlabs-song-id",
+    "x-model-used",
+    "x-tts-voice",
+    "x-voice-changer-voice",
 ];
 
 function hasActiveSafety(value: string | null | undefined): boolean {

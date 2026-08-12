@@ -1125,6 +1125,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.audio"),
         audioCache,
         generationAccess,
+        deduplicateGeneration,
         handleSimpleAudio,
     )
     .post(

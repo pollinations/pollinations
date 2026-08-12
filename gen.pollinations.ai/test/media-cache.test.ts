@@ -213,6 +213,40 @@ describe("media cache", () => {
         expect(originHits).toBe(1);
     });
 
+    it("preserves generation metadata on media cache hits", async () => {
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get(
+                "/media/:prompt",
+                audioCache,
+                () =>
+                    new Response("audio", {
+                        headers: {
+                            "Content-Type": "audio/wav",
+                            "X-Model-Used": "qwen-tts",
+                            "X-TTS-Voice": "Serena",
+                            "X-Usage-Completion-Audio-Tokens": "10",
+                        },
+                    }),
+            );
+        const env = createMediaCacheEnv();
+
+        const warm = await dispatch(app, "/media/metadata", undefined, env);
+        await consumeAndWait(warm);
+        const hit = await dispatch(app, "/media/metadata", undefined, env);
+        await consumeAndWait(hit);
+
+        expect(hit.response.headers.get("X-Model-Used")).toBe("qwen-tts");
+        expect(hit.response.headers.get("X-TTS-Voice")).toBe("Serena");
+        expect(
+            hit.response.headers.get("X-Usage-Completion-Audio-Tokens"),
+        ).toBe("10");
+    });
+
     it("refreshes cached media TTL on aged cache hits", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");
         const bucket = createTestR2Bucket();

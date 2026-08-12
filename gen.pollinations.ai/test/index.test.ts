@@ -826,6 +826,7 @@ fixtureTest(
             ),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 DASHSCOPE_API_KEY: "test-dashscope-key",
             } as unknown as CloudflareBindings,
             ctx,

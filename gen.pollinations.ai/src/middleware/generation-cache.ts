@@ -1,4 +1,5 @@
 import type { Logger } from "@logtape/logtape";
+import { bytesToHex } from "@shared/client-ip.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
@@ -9,6 +10,15 @@ import {
 } from "@/utils/generation-execution.ts";
 
 export type GenerationCacheStorage = "media" | "text";
+
+/** Opaque identity shared by coordination and low-volume cache telemetry. */
+export async function hashGenerationCacheIdentity(
+    storage: GenerationCacheStorage,
+    key: string,
+): Promise<string> {
+    const bytes = new TextEncoder().encode(`${storage}:${key}`);
+    return bytesToHex(await crypto.subtle.digest("SHA-256", bytes));
+}
 
 export type GenerationCacheVariables = {
     generationCache?: {

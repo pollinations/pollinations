@@ -8,7 +8,6 @@ import {
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
 import {
-    bytesToHex,
     getRealClientIp,
     hashIp,
     stripIPv4MappedPrefix,
@@ -72,7 +71,10 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
-import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
+import {
+    type GenerationCacheVariables,
+    hashGenerationCacheIdentity,
+} from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
@@ -214,14 +216,10 @@ export const track = (eventType: EventType) =>
             if (!cacheKeyPromise) {
                 const cache = c.var.generationCache;
                 cacheKeyPromise = cache
-                    ? crypto.subtle
-                          .digest(
-                              "SHA-256",
-                              new TextEncoder().encode(
-                                  `${cache.adapter.storage}:${cache.key}`,
-                              ),
-                          )
-                          .then(bytesToHex)
+                    ? hashGenerationCacheIdentity(
+                          cache.adapter.storage,
+                          cache.key,
+                      )
                     : Promise.resolve(undefined);
             }
             return cacheKeyPromise;

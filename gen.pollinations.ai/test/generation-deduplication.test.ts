@@ -1,7 +1,7 @@
 import type { Logger } from "@logtape/logtape";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import {
     createGenerationCache,
@@ -102,6 +102,10 @@ function createApp(adapter: GenerationCacheAdapter, stream = false) {
 }
 
 describe("generation request deduplication", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it("authorizes every caller but starts one detached generation", async () => {
         const cache = new Map<string, string>();
         const jobs: GenerationJob[] = [];
@@ -208,5 +212,71 @@ describe("generation request deduplication", () => {
         expect(await response.text()).toBe("origin");
         expect(starts).toBe(0);
         expect(generation.originHits).toBe(1);
+    });
+
+    it("preserves a detached generation error for every caller", async () => {
+        const generation = createApp(createAdapter(new Map()));
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async () => ({
+                        role: "owner",
+                        outcome: {
+                            status: "failed",
+                            error: {
+                                httpStatus: 422,
+                                headers: [
+                                    ["content-type", "application/json"],
+                                    ["retry-after", "30"],
+                                ],
+                                body: new TextEncoder().encode(
+                                    JSON.stringify({ error: "blocked" }),
+                                ),
+                            },
+                        },
+                    }),
+                }),
+            },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+
+        expect(response.status).toBe(422);
+        expect(response.headers.get("content-type")).toContain(
+            "application/json",
+        );
+        expect(response.headers.get("retry-after")).toBe("30");
+        expect(await response.json()).toEqual({ error: "blocked" });
+    });
+
+    it("returns 202 while detached generation continues past the caller wait", async () => {
+        vi.useFakeTimers();
+        let coordinatorName = "";
+        const generation = createApp(createAdapter(new Map()));
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: (name: string) => {
+                    coordinatorName = name;
+                    return { startAndWait: () => new Promise(() => {}) };
+                },
+            },
+        } as unknown as CloudflareBindings;
+
+        const responsePromise = generation.app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+        await vi.advanceTimersByTimeAsync(90_000);
+        const response = await responsePromise;
+
+        expect(response.status).toBe(202);
+        expect(response.headers.get("retry-after")).toBe("10");
+        expect(coordinatorName).toMatch(/^[0-9a-f]{64}$/);
+        expect(await response.json()).toMatchObject({ status: "pending" });
     });
 });

@@ -1,5 +1,8 @@
 import { app } from "@/app.ts";
-import type { GenerationExecutionResult } from "@/middleware/generation-deduplication.ts";
+import type {
+    GenerationErrorSnapshot,
+    GenerationExecutionResult,
+} from "@/middleware/generation-deduplication.ts";
 import type { GenerationAuthSnapshot } from "@/utils/generation-execution.ts";
 
 async function drainResponse(response: Response): Promise<void> {
@@ -19,12 +22,60 @@ async function settleWaitUntil(promises: Promise<unknown>[]): Promise<void> {
     }
 }
 
+const ERROR_BODY_BYTES = 64 * 1024;
+const ERROR_HEADERS = new Set(["content-type", "retry-after"]);
+const ERROR_HEADER_PREFIXES = ["x-moderation-", "x-safety-"];
+
+async function captureError(
+    response: Response,
+): Promise<GenerationErrorSnapshot> {
+    const reader = response.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let capturedBytes = 0;
+    if (reader) {
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (capturedBytes < ERROR_BODY_BYTES) {
+                const remaining = ERROR_BODY_BYTES - capturedBytes;
+                const chunk = value.slice(0, remaining);
+                chunks.push(chunk);
+                capturedBytes += chunk.byteLength;
+            }
+        }
+    }
+    const body = new Uint8Array(capturedBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+        body.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return {
+        httpStatus: response.status,
+        headers: [...response.headers.entries()].filter(([name]) => {
+            const lowerName = name.toLowerCase();
+            return (
+                ERROR_HEADERS.has(lowerName) ||
+                ERROR_HEADER_PREFIXES.some((prefix) =>
+                    lowerName.startsWith(prefix),
+                )
+            );
+        }),
+        body,
+    };
+}
+
+export type DetachedGeneration = {
+    result: GenerationExecutionResult;
+    settlement: Promise<void>;
+};
+
 /** Runs the same route under the Durable Object alarm's lifetime. */
 export async function executeGeneration(
     request: Request,
     auth: GenerationAuthSnapshot,
     env: CloudflareBindings,
-): Promise<GenerationExecutionResult> {
+): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
     let cacheWrite: Promise<void> | undefined;
     const executionCtx = {
@@ -39,29 +90,25 @@ export async function executeGeneration(
     } as ExecutionContext;
 
     const response = await app.fetch(request, env, executionCtx);
-    await drainResponse(response);
+    const failed = !response.ok;
+    const error = failed ? await captureError(response) : undefined;
+    if (!failed) await drainResponse(response);
+    const settlement = settleWaitUntil(promises);
 
     if (response.headers.get("x-cache") === "HIT") {
-        await settleWaitUntil(promises);
-        return { status: "cached" };
+        return { result: { status: "cached" }, settlement };
     }
-    if (!response.ok) {
-        await settleWaitUntil(promises);
-        return { status: "failed", httpStatus: response.status };
+    if (error) {
+        return { result: { status: "failed", error }, settlement };
     }
     if (!cacheWrite) {
-        await settleWaitUntil(promises);
-        return { status: "unknown" };
+        return { result: { status: "unknown" }, settlement };
     }
 
     try {
         await cacheWrite;
     } catch {
-        await settleWaitUntil(promises);
-        return { status: "unknown" };
+        return { result: { status: "unknown" }, settlement };
     }
-    // Billing and telemetry are non-critical to cache correctness, but the
-    // detached invocation still keeps them alive and observes failures.
-    await settleWaitUntil(promises);
-    return { status: "cached" };
+    return { result: { status: "cached" }, settlement };
 }

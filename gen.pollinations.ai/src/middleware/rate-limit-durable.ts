@@ -19,7 +19,7 @@ type FrontendKeyRateLimitEnv = {
 
 export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
     async (c, next) => {
-        if (isGenerationExecution(c.executionCtx)) return next();
+        const internalGeneration = isGenerationExecution(c.executionCtx);
         const log = c.get("log").getChild("ratelimit");
 
         const apiKey = c.var?.auth?.apiKey;
@@ -60,19 +60,30 @@ export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
         const stub = rateLimiter.get(
             id,
         ) as DurableObjectStub<PollenRateLimiter>;
-        const result = await stub.checkRateLimit();
+        // The caller already passed admission before the request was detached.
+        // Reconstruct the same limiter here only so billing can consume the
+        // generated price after the background execution completes.
+        if (!internalGeneration) {
+            const result = await stub.checkRateLimit();
 
-        if (!result.allowed) {
-            const retryAfterSeconds = safeRound((result.waitMs || 0) / 1000, 2);
-            c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
-            return c.json(
-                {
-                    error: "Rate limit exceeded",
-                    message: `Rate limit exceeded. Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
-                    retryAfterSeconds,
-                },
-                429,
-            );
+            if (!result.allowed) {
+                const retryAfterSeconds = safeRound(
+                    (result.waitMs || 0) / 1000,
+                    2,
+                );
+                c.header(
+                    "Retry-After",
+                    Math.ceil(retryAfterSeconds).toString(),
+                );
+                return c.json(
+                    {
+                        error: "Rate limit exceeded",
+                        message: `Rate limit exceeded. Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
+                        retryAfterSeconds,
+                    },
+                    429,
+                );
+            }
         }
 
         c.set("frontendKeyRateLimit", {

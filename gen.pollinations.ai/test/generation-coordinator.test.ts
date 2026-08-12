@@ -52,7 +52,7 @@ describe("GenerationCoordinator", () => {
         // An interrupted/ambiguous submission is never started a second time.
         expect(await stub.startAndWait(job)).toEqual({
             role: "joiner",
-            outcome: { status: "unknown" },
+            outcome: { status: "unknown", retryAfterSeconds: 3600 },
         });
     });
 

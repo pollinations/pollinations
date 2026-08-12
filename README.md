@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ IMADreamer](https://fastnow.github.io/imadreamer) | IMADreamer is a free AI image generation tool built on the Pollinations API. | [@fastnow](https://github.com/fastnow) |
 | [📚 FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) | With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition) | [@rpbmultiongh](https://github.com/rpbmultiongh) |
 | [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |
 | [✍️ Tessera Lumen](https://app.963.co.za) | This app uses a backend proxy integration with Pollinations.ai. **Pollinations endpoint used** - https://gen.pollinations.ai/v1/chat/completions **Repository evidence** - POLLINATIONS.md : https://git | [@Jeraque007](https://github.com/Jeraque007) |
@@ -30,7 +31,6 @@
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) |
 | [🛠️ AIOPE Headless](https://xnet.ngo) | Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster | [@xnet-admin-1](https://github.com/xnet-admin-1) |
 | [🤖 Lucia](https://t.me/MissLucia_bot) | Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU). | [@Ad101DP](https://github.com/Ad101DP) |
-| [📚 Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) | Pollination EduCard AI provides an “About the App” section describing the app. | [@Satwata-Bandopadhyay](https://github.com/Satwata-Bandopadhyay) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13301,
+  "title": "fix(mcp): remove global request timeout",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13301",
+  "merged_at": "2026-08-12T12:11:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the generic 30-second abort timer from authenticated MCP requests.\n- Preserves caller-provided transport/request cancellation through the native `signal` option.\n- Removes the obsolete chat `timeoutMs` option and adds a cancellation regression to the existing smoke test.\n\nChecks: MCP smoke test (3/3), Node syntax check, Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Let the requests breathe",
+    "blurb": "The MCP client has stopped carrying a generic 30-second sand timer around. Long-running authenticated requests can finish their work, while callers still keep the cancel button.",
+    "summary": "Removed the generic 30-second abort timer from authenticated MCP requests, retired the chat timeoutMs option, and preserved caller-supplied cancellation via the native signal option.",
+    "impact": "MCP users can run authenticated requests beyond 30 seconds when needed, while transport and request cancellation remains available through AbortSignal.",
+    "keywords": [
+      "mcp",
+      "authentication",
+      "requests",
+      "cancellation",
+      "abortsignal",
+      "sdk"
+    ],
+    "visual_concept": "Depict Polli tending a cozy terminal garden where a long-running MCP request travels safely along a vine instead of being cut off by an oversized 30-second hourglass; a CRT monitor robot can hold a small, clearly labeled cancel lever to represent native AbortSignal cancellation. Include code-plants and soft glowing request packets to make the change feel like reliable, patient infrastructure.",
+    "image_prompt": "A cozy pixel art hackerspace garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny mechanic goggles while guiding a glowing request packet along a flourishing code-vine past an unused 30-second hourglass; a cute CRT-monitor robot holds a small cancel lever beside blooming flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-12/PR-13301.jpg",
+    "prompt": "A cozy pixel art hackerspace garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny mechanic goggles while guiding a glowing request packet along a flourishing code-vine past an unused 30-second hourglass; a cute CRT-monitor robot holds a small cancel lever beside blooming flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-12T12:12:15.148908+00:00"
+}

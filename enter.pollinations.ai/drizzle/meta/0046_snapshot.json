@@ -447,7 +447,7 @@
         },
         "per_user_rpm": {
           "name": "per_user_rpm",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

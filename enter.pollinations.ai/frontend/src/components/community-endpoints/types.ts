@@ -311,7 +311,7 @@ export function observedUsageValue(
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     if (!isValidPerUserRpm(form.perUserRpm)) {
-        throw new Error("Per-user RPM must be a positive whole number");
+        throw new Error("Per-user RPM must be a positive number");
     }
     const modelName = form.name.trim();
     const imagePricing =
@@ -339,7 +339,7 @@ export function isValidPerUserRpm(value: string): boolean {
     const trimmed = value.trim();
     if (!trimmed) return true;
     const parsed = Number(trimmed);
-    return Number.isSafeInteger(parsed) && parsed >= 1;
+    return Number.isFinite(parsed) && parsed > 0;
 }
 
 /** Keep the public model id in sync with the provider model until edited. */

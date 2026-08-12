@@ -13,9 +13,9 @@ describe("community endpoint per-user RPM input", () => {
         expect(toEndpointPayload(emptyForm).perUserRpm).toBeNull();
     });
 
-    it("accepts only positive whole numbers", () => {
+    it("accepts positive whole and fractional rates", () => {
         expect(isValidPerUserRpm("1")).toBe(true);
-        expect(isValidPerUserRpm("1.5")).toBe(false);
+        expect(isValidPerUserRpm("0.5")).toBe(true);
         expect(isValidPerUserRpm("0")).toBe(false);
     });
 });

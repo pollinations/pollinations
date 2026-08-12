@@ -1550,6 +1550,7 @@ fixtureTest(
             visibility: "public",
             name: modelName,
             description: "Public community model",
+            perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -1581,6 +1582,7 @@ fixtureTest(
             aliases?: string[];
             category?: string;
             community?: boolean;
+            per_user_rpm?: number | null;
             alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
@@ -1604,6 +1606,7 @@ fixtureTest(
                 ],
                 category: "text",
                 community: true,
+                per_user_rpm: 0.5,
                 alpha: true,
                 title: "Public community model",
                 description: "Public community model",
@@ -2943,7 +2946,7 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
-                    perUserRpm: 12,
+                    perUserRpm: 0.5,
                 }),
             }),
         );
@@ -2958,7 +2961,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
-            perUserRpm: 12,
+            perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
             disabled: false,
@@ -3175,7 +3178,7 @@ fixtureTest(
         });
         expect(secondList.data[0]).toMatchObject({
             title: "Updated Model Title",
-            perUserRpm: 12,
+            perUserRpm: 0.5,
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
@@ -3187,7 +3190,7 @@ fixtureTest(
             brand: "Example AI",
             brand_url: "https://example.com/",
         });
-        expect(registryEntry?.communityEndpoint.perUserRpm).toBe(12);
+        expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
 
         const clearLimitResponse = await fetchEnterApi(
             enterApi,

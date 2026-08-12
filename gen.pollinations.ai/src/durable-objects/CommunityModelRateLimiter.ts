@@ -1,22 +1,22 @@
 import { DurableObject } from "cloudflare:workers";
 
-const WINDOW_MS = 60_000;
+const MINUTE_MS = 60_000;
 
-type RateLimitWindow = {
-    count: number;
-    startedAt: number;
+type RateLimitState = {
+    rpm: number;
+    tokens: number;
+    updatedAt: number;
 };
 
-/** One fixed-window counter per community endpoint and Pollinations user. */
+/** One token bucket per community endpoint and Pollinations user. */
 export class CommunityModelRateLimiter extends DurableObject {
-    private window: RateLimitWindow = { count: 0, startedAt: 0 };
+    private state: RateLimitState | null = null;
 
     constructor(ctx: DurableObjectState, env: CloudflareBindings) {
         super(ctx, env);
         ctx.blockConcurrencyWhile(async () => {
-            this.window =
-                (await ctx.storage.get<RateLimitWindow>("window")) ??
-                this.window;
+            this.state =
+                (await ctx.storage.get<RateLimitState>("state")) ?? null;
         });
     }
 
@@ -26,27 +26,43 @@ export class CommunityModelRateLimiter extends DurableObject {
         { allowed: true } | { allowed: false; retryAfterSeconds: number }
     > {
         const now = Date.now();
-        const newWindow = now - this.window.startedAt >= WINDOW_MS;
-        if (newWindow) this.window = { count: 0, startedAt: now };
+        const capacity = Math.max(1, limit);
+        const state =
+            this.state?.rpm === limit
+                ? {
+                      ...this.state,
+                      tokens: Math.min(
+                          capacity,
+                          this.state.tokens +
+                              ((now - this.state.updatedAt) * limit) /
+                                  MINUTE_MS,
+                      ),
+                      updatedAt: now,
+                  }
+                : { rpm: limit, tokens: capacity, updatedAt: now };
 
-        if (this.window.count >= limit) {
+        if (state.tokens < 1) {
+            this.state = state;
             return {
                 allowed: false,
                 retryAfterSeconds: Math.max(
                     1,
-                    Math.ceil((this.window.startedAt + WINDOW_MS - now) / 1000),
+                    Math.ceil(((1 - state.tokens) * MINUTE_MS) / limit / 1000),
                 ),
             };
         }
 
-        this.window.count += 1;
-        await this.ctx.storage.put("window", this.window);
-        if (newWindow) await this.ctx.storage.setAlarm(now + WINDOW_MS);
+        state.tokens -= 1;
+        this.state = state;
+        await this.ctx.storage.put("state", state);
+        await this.ctx.storage.setAlarm(
+            now + ((capacity - state.tokens) * MINUTE_MS) / limit,
+        );
         return { allowed: true };
     }
 
     async alarm(): Promise<void> {
-        this.window = { count: 0, startedAt: 0 };
+        this.state = null;
         await this.ctx.storage.deleteAll();
     }
 }

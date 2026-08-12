@@ -145,9 +145,9 @@ export function CommunityEndpointCard({
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
                     label="Per-user limit"
                     value={
-                        endpoint.perUserRpm
-                            ? `${endpoint.perUserRpm} RPM`
-                            : "No limit"
+                        endpoint.perUserRpm !== null
+                            ? `${endpoint.perUserRpm} RPM/user`
+                            : "No Pollinations cap"
                     }
                 />
                 {priceGroups.map((group) => (

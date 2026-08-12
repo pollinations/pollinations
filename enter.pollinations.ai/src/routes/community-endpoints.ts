@@ -280,12 +280,11 @@ const VisibilitySchema = z
     );
 const PerUserRpmSchema = z
     .number()
-    .int()
-    .min(1)
-    .max(Number.MAX_SAFE_INTEGER)
+    .finite()
+    .positive()
     .nullable()
     .describe(
-        "Maximum requests per minute for each Pollinations user. Null means no Pollinations-side limit.",
+        "Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit.",
     );
 const EndpointFieldsSchema = {
     // This slug is used in `<owner>/<name>` model ids and by operational tools.

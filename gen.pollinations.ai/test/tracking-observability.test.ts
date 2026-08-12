@@ -524,7 +524,85 @@ describe("tracking observability", () => {
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
+    it("keeps tracking alive after a malformed SSE chunk", async () => {
+  const tracking = await trackResponse(
+    "generate.text",
+    requestTrackingFixture(true),
+    new Response(
+      [
+        "data: {invalid json",
+        "",
+        'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}',
+        "",
+        'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}',
+        "",
+        "data: [DONE]",
+        "",
+      ].join("\n"),
+      {
+        headers: { "content-type": "text/event-stream" },
+      },
+    ),
+  );
 
+  expect(tracking.isBilledUsage).toBe(true);
+  expect(tracking.modelUsed).toBe("gpt-5-nano");
+  expect(tracking.usage).toMatchObject({
+    promptTextTokens: 10,
+    completionTextTokens: 5,
+  });
+});
+
+it("emits usage_missing when every SSE chunk is malformed", async () => {
+  const tracking = await trackResponse(
+    "generate.text",
+    requestTrackingFixture(true),
+    new Response(
+      [
+        "data: {broken",
+        "",
+        "data: still broken",
+        "",
+        "data: [DONE]",
+        "",
+      ].join("\n"),
+      {
+        headers: { "content-type": "text/event-stream" },
+      },
+    ),
+  );
+
+  expect(tracking.isBilledUsage).toBe(false);
+  expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+});
+
+it("skips malformed events and still reads later usage", async () => {
+  const tracking = await trackResponse(
+    "generate.text",
+    requestTrackingFixture(true),
+    new Response(
+      [
+        'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"first"}}]}',
+        "",
+        "data: {{{oops",
+        "",
+        'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
+        "",
+        "data: [DONE]",
+        "",
+      ].join("\n"),
+      {
+        headers: { "content-type": "text/event-stream" },
+      },
+    ),
+  );
+
+  expect(tracking.isBilledUsage).toBe(true);
+  expect(tracking.usage).toMatchObject({
+    promptTextTokens: 2,
+    completionTextTokens: 1,
+  });
+});
     it("still bills a flat request fee when token usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

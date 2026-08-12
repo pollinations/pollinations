@@ -51,6 +51,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-11** – **🌟 The app garden got portraits** The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai) <!-- app -->
 - **2026-08-10** – **🚀 Trellis 2 handles longer 3D jobs** Generate finished GLB files with `trellis-2` and its quality aliases through the usual API flow; some meshes simply needed more time to become meshes. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-10** – **✨ Tessera Lumen joins the writing garden** A chat-powered drafting app for turning the blank page into a slightly more negotiable problem. [Try it](https://app.963.co.za) <!-- app -->
 - **2026-08-10** – **🎨 INKRUSH makes AI comic books in the browser** Build multi-panel stories with locked characters, speech bubbles, retro styles, and PDF export. [Try it](https://inkrush-comic-studio.onrender.com) <!-- app -->
@@ -60,7 +61,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-08-09** – **✨ Image queues found another door** FLUX and DreamShaper requests can retry another worker when one is full or unreachable—less waiting, fewer dead ends.
 - **2026-08-06** – **🌟 The app garden got roots** The community directory now runs on a validated, newest-first catalog, so [browse 859 community apps](https://pollinations.ai/apps) without relying on a heroic Markdown file.
 - **2026-08-06** – **✨ Two gardens, one search** The model catalog now separates Official and Community models, with shared search and cleaner modality filters for finding the thing you actually need. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-08-06** – **⚡ The catalog stopped hauling furniture** The Official model catalog now progressively loads rows while you browse, making search, filtering, and opening the list substantially lighter.
 ---
 
 ## 🌱 Introduction

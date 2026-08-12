@@ -103,7 +103,15 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
                     }),
                 );
             }
-            c.res = capture.response;
+            if (capture.response !== c.res) {
+                // Hono's response setter gives the previous response headers
+                // precedence. Copy adapter-owned headers onto that response
+                // first so cache headers survive the body replacement.
+                for (const [name, value] of capture.response.headers) {
+                    c.res.headers.set(name, value);
+                }
+                c.res = capture.response;
+            }
         }
     });
 }

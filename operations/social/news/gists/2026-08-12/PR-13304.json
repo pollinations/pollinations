@@ -1,0 +1,33 @@
+{
+  "pr_number": 13304,
+  "title": "chore: allow chigwell community publishing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13304",
+  "merged_at": "2026-08-12T16:12:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `chigwell`’s immutable GitHub user ID to the community-model publisher allowlist.\n- Keeps the approval stable if the username changes.\n\nChecks:\n- Biome 2.3.10\n- Allowlist membership and uniqueness assertion\n- `git diff --check`",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A new gardener gets keys",
+    "blurb": "Chigwell can now publish community models through the hive. The permission is tied to their GitHub ID, so a username makeover will not confuse the gatekeeper.",
+    "summary": "Added chigwell’s immutable GitHub user ID to the community-model publisher allowlist, keeping publishing approval stable across username changes.",
+    "impact": "Chigwell can publish community models with an identity-based approval that continues to work if their GitHub username changes.",
+    "keywords": [
+      "community-models",
+      "github",
+      "allowlist",
+      "publishing",
+      "identity"
+    ],
+    "visual_concept": "A cozy community garden gate represents publisher access: Polli, wearing a tiny gardener hat, hands a durable ID badge-shaped key to a new gardener beside a code-plant. The key is engraved with simple pixel ID marks rather than a username, showing that the approval follows the contributor’s stable identity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, welcoming a fellow community gardener through a lime green (#ecf874) garden gate with an ID-badge-shaped key; code-plants and small flowers bloom around them, with a retro terminal showing a simple pixel ID icon. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and friendly."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-12/PR-13304.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, welcoming a fellow community gardener through a lime green (#ecf874) garden gate with an ID-badge-shaped key; code-plants and small flowers bloom around them, with a retro terminal showing a simple pixel ID icon. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and friendly."
+  },
+  "generated_at": "2026-08-12T16:13:08.946621+00:00"
+}

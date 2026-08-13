@@ -6,7 +6,6 @@ import {
 } from "./cost-variants";
 import {
     GEMINI_25_GROUNDING_BILLING,
-    OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
@@ -555,20 +554,20 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter promotional rates through 2026-08-27 for the pinned
-        // google-vertex/global route.
+        // Standard rates for the pinned google-vertex/global route, effective
+        // after the OpenRouter promotion ends on 2026-08-27.
         cost: {
-            promptTextTokens: perMillion(0.375),
-            promptCachedTokens: perMillion(0.0375),
-            promptCacheWriteTokens: perMillion(0.375),
-            promptAudioTokens: perMillion(0.375),
-            promptImageTokens: perMillion(0.375),
-            promptVideoTokens: perMillion(0.375),
-            completionTextTokens: perMillion(1.875),
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
         billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
-            0.25,
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            0.5,
         ),
         title: "Gemini 3.7 Flash",
         description:

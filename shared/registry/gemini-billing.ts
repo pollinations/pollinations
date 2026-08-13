@@ -1,7 +1,6 @@
 import type { BillingRules } from "./registry";
 
 const OPENROUTER_GOOGLE_SEARCH_COST_PER_REQUEST = 14 / 1000;
-const OPENROUTER_GOOGLE_DISCOUNTED_SEARCH_COST_PER_REQUEST = 7 / 1000;
 const OPENROUTER_CACHE_TTL_HOURS = 5 / 60;
 const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const VERTEX_CACHE_TTL_HOURS = 1;
@@ -123,34 +122,24 @@ export function withOpenRouterGeminiCacheStorage(
     };
 }
 
-function openRouterGeminiSearchBilling(costPerRequest: number): BillingRules {
-    return {
-        adjustments: [
-            {
-                id: "openrouter.google.web_search.v1",
-                description: `OpenRouter native Google Search adds $${costPerRequest * 1000} / 1K search requests reported by provider usage.`,
-                kind: "search_request",
-                unit: "request",
-                unitCost: costPerRequest,
-                publicPricing: {
-                    label: "Search",
-                    quantity: 1_000,
-                    unit: "search requests",
-                },
-                countUnits: countOpenRouterWebSearchRequests,
+export const OPENROUTER_GEMINI_SEARCH_BILLING: BillingRules = {
+    adjustments: [
+        {
+            id: "openrouter.google.web_search.v1",
+            description:
+                "OpenRouter native Google Search adds $14 / 1K search requests reported by provider usage.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: OPENROUTER_GOOGLE_SEARCH_COST_PER_REQUEST,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "search requests",
             },
-        ],
-    };
-}
-
-export const OPENROUTER_GEMINI_SEARCH_BILLING = openRouterGeminiSearchBilling(
-    OPENROUTER_GOOGLE_SEARCH_COST_PER_REQUEST,
-);
-
-export const OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING =
-    openRouterGeminiSearchBilling(
-        OPENROUTER_GOOGLE_DISCOUNTED_SEARCH_COST_PER_REQUEST,
-    );
+            countUnits: countOpenRouterWebSearchRequests,
+        },
+    ],
+};
 
 export function withVertexCacheStorage(
     base: BillingRules,

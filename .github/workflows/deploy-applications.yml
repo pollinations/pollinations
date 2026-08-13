@@ -1,0 +1,110 @@
+name: Deploy / Applications
+
+on:
+  push:
+    branches: [production]
+    paths:
+      - "apps/**"
+      - "operations/**"
+      - "packages/sdk/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-applications.yml"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Application name or path, or all"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+      skip: ${{ steps.detect.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test deployment discovery
+        run: node --test operations/deployment/discover.test.cjs
+
+      - name: Detect changed applications
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SELECTED_APP: ${{ github.event.inputs.app || 'all' }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_REF" != "refs/heads/production" ]; then
+            echo "Application deployments must run from production"
+            exit 1
+          fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$SELECTED_APP" = "all" ]; then
+              APPS=$(node operations/deployment/discover.cjs --scope=all)
+            else
+              APPS=$(node operations/deployment/discover.cjs --scope=all --app="$SELECTED_APP")
+            fi
+          else
+            if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+              git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
+            else
+              git diff --name-only HEAD~1 HEAD > changed.txt
+            fi
+            APPS=$(node operations/deployment/discover.cjs --scope=all --changed=changed.txt)
+          fi
+
+          if [ "$APPS" = "[]" ]; then
+            echo "No deployable application changes detected"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Applications: $APPS"
+            echo "apps=$APPS" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: detect
+    if: needs.detect.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.apps) }}
+    concurrency:
+      group: deploy-${{ matrix.app.path }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup SOPS
+        if: matrix.app.sops != 'none'
+        uses: nhedger/setup-sops@v2
+
+      - name: Verify Docker
+        if: matrix.app.docker
+        run: docker info
+
+      - name: Deploy ${{ matrix.app.path }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ matrix.app.credentials == 'observability' && secrets.CLOUDFLARE_API_TOKEN_OBSERVABILITY || matrix.app.credentials == 'apps' && secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS || matrix.app.credentials == 'myceli' && secrets.CLOUDFLARE_API_TOKEN_MYCELI || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ matrix.app.credentials != 'none' && matrix.app.credentials != 'polli' && secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI || '' }}
+          SOPS_AGE_KEY: ${{ matrix.app.sops == 'economics' && secrets.SOPS_AGE_KEY_ECONOMICS || matrix.app.sops == 'default' && secrets.SOPS_AGE_KEY || '' }}
+          POLLI_AZURE_HOST: ${{ matrix.app.credentials == 'polli' && secrets.POLLI_AZURE_HOST || '' }}
+          POLLI_AZURE_USER: ${{ matrix.app.credentials == 'polli' && secrets.POLLI_AZURE_USER || '' }}
+          POLLI_AZURE_SSH_KEY: ${{ matrix.app.credentials == 'polli' && secrets.POLLI_AZURE_SSH_KEY || '' }}
+        run: operations/deployment/deploy.sh "${{ matrix.app.path }}"

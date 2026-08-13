@@ -174,9 +174,6 @@ export const Models: FC<ModelsProps> = ({
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
-    const [searchExpanded, setSearchExpanded] = useState(Boolean(urlSearch));
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const shouldFocusSearchRef = useRef(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -258,14 +255,7 @@ export const Models: FC<ModelsProps> = ({
 
         lastPushedSearchRef.current = urlSearch;
         setSearch(urlSearch);
-        setSearchExpanded(Boolean(urlSearch));
     }, [urlSearch]);
-
-    useEffect(() => {
-        if (!searchExpanded || !shouldFocusSearchRef.current) return;
-        shouldFocusSearchRef.current = false;
-        searchInputRef.current?.focus();
-    }, [searchExpanded]);
 
     useEffect(() => {
         if (search === lastPushedSearchRef.current) return;
@@ -385,100 +375,73 @@ export const Models: FC<ModelsProps> = ({
                         </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">
-                        {searchExpanded ? (
-                            <div className="relative w-full">
-                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                                <Input
-                                    ref={searchInputRef}
-                                    type="search"
-                                    value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
-                                    onBlur={() => {
-                                        const normalizedSearch = search.trim();
-                                        setSearch(normalizedSearch);
-                                        pushSearch(normalizedSearch);
-                                        if (!normalizedSearch) {
-                                            setSearchExpanded(false);
-                                        }
-                                    }}
-                                    placeholder={`Search ${searchTarget}…`}
-                                    aria-label={`Search ${searchTarget}`}
-                                    className="w-full pl-9"
-                                />
-                            </div>
-                        ) : (
-                            <>
+                        <div className="relative min-w-0 max-w-md flex-1">
+                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <Input
+                                type="search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                onBlur={() => {
+                                    const normalizedSearch = search.trim();
+                                    setSearch(normalizedSearch);
+                                    pushSearch(normalizedSearch);
+                                }}
+                                placeholder={`Search ${searchTarget}…`}
+                                aria-label={`Search ${searchTarget}`}
+                                className="w-full pl-9"
+                            />
+                        </div>
+                        <Dropdown
+                            align="end"
+                            className="w-max p-2"
+                            trigger={(open) => (
                                 <Button
                                     type="button"
-                                    size="sm"
-                                    aria-label={`Search ${searchTarget}`}
-                                    onClick={() => {
-                                        shouldFocusSearchRef.current = true;
-                                        setSearchExpanded(true);
-                                    }}
-                                    className="h-[42px] w-[42px] shrink-0 p-0"
+                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
                                 >
-                                    <SearchIcon className="h-4 w-4" />
+                                    <span className="text-right">
+                                        {activeSortLabel}
+                                    </span>
+                                    <ChevronIcon expanded={open} />
                                 </Button>
-                                <Dropdown
-                                    align="end"
-                                    className="w-max p-2"
-                                    trigger={(open) => (
-                                        <Button
-                                            type="button"
-                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                            className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
-                                        >
-                                            <span className="text-right">
-                                                {activeSortLabel}
-                                            </span>
-                                            <ChevronIcon expanded={open} />
-                                        </Button>
-                                    )}
+                            )}
+                        >
+                            {(close) => (
+                                <div
+                                    role="menu"
+                                    aria-label="Sort models"
+                                    onKeyDown={handleSortMenuKeyDown}
+                                    className="flex flex-col gap-1"
                                 >
-                                    {(close) => (
-                                        <div
-                                            role="menu"
-                                            aria-label="Sort models"
-                                            onKeyDown={handleSortMenuKeyDown}
-                                            className="flex flex-col gap-1"
+                                    {SORT_OPTIONS.map((option) => (
+                                        <DropdownItem
+                                            key={option.value}
+                                            role="menuitemradio"
+                                            aria-label={option.accessibleLabel}
+                                            aria-checked={
+                                                activeSort === option.value
+                                            }
+                                            onClick={() => {
+                                                setActiveSort(option.value);
+                                                close();
+                                            }}
+                                            className={
+                                                activeSort === option.value
+                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                    : "justify-end text-right"
+                                            }
                                         >
-                                            {SORT_OPTIONS.map((option) => (
-                                                <DropdownItem
-                                                    key={option.value}
-                                                    role="menuitemradio"
-                                                    aria-label={
-                                                        option.accessibleLabel
-                                                    }
-                                                    aria-checked={
-                                                        activeSort ===
-                                                        option.value
-                                                    }
-                                                    onClick={() => {
-                                                        setActiveSort(
-                                                            option.value,
-                                                        );
-                                                        close();
-                                                    }}
-                                                    className={
-                                                        activeSort ===
-                                                        option.value
-                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                            : "justify-end text-right"
-                                                    }
-                                                >
-                                                    <span className="flex-1 text-right">
-                                                        {option.label}
-                                                    </span>
-                                                </DropdownItem>
-                                            ))}
-                                        </div>
-                                    )}
-                                </Dropdown>
-                            </>
-                        )}
+                                            <span className="flex-1 text-right">
+                                                {option.label}
+                                            </span>
+                                        </DropdownItem>
+                                    ))}
+                                </div>
+                            )}
+                        </Dropdown>
                     </div>
                 </div>
                 {catalogError && (

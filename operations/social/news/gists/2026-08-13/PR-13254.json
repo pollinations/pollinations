@@ -11,25 +11,25 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "GPT-5.6 found its route",
-    "blurb": "The three GPT-5.6 travelers now take Azure's Responses road when the trip needs tools, reasoning, images, or structured output. Plain seeded requests can still enjoy the familiar Chat Completions path; software contains multiverses now.",
-    "summary": "Routed gpt-5.6-sol, gpt-5.6-terra, and gpt-5.6-luna through Azure OpenAI's /openai/v1/responses endpoint for Responses-only capabilities while preserving Pollinations' Chat Completions-compatible response format and seeded plain-request path.",
-    "impact": "GPT-5.6 users can reliably combine tools, structured output, images, reasoning, streaming, and parallel tool calls, with clear 400 responses for controls Azure GPT-5.6 does not support.",
+    "headline": "GPT-5.6 Found Its Route",
+    "blurb": "The three GPT-5.6 siblings now take Azure’s Responses API when the request calls for its particular set of bells and levers. Same Pollinations response shape, fewer adventures in incompatible endpoints.",
+    "summary": "Routed gpt-5.6-sol, gpt-5.6-terra, and gpt-5.6-luna through Azure OpenAI’s POST /openai/v1/responses endpoint for tools, images, structured output, reasoning, and streaming, while keeping plain seeded requests on Chat Completions.",
+    "impact": "GPT-5.6 requests can now use parallel tools, normalized tool output, streaming, and Responses-only capabilities reliably, with clear 400 errors for unsupported minimal, stop, logit_bias, and logprob controls.",
     "keywords": [
       "gpt-5.6",
-      "azure-openai",
+      "azure",
       "responses-api",
-      "text-generation",
+      "chat-completions",
       "tool-calling",
       "streaming",
-      "structured-output"
+      "text-api"
     ],
-    "visual_concept": "Depict three labeled celestial seed packets—Sol, Terra, and Luna—being sorted onto the correct glowing API railway by Polli, representing intelligent routing between Chat Completions and Azure Responses. A CRT monitor robot eagerly watches clean tool-call and streaming symbols travel along the Responses track, with code-plants and flowers growing beside the rails.",
-    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny railway conductor hat as she guides three glowing seed parcels labeled “SOL”, “TERRA”, and “LUNA” onto a signposted “RESPONSES” rail beside a retro terminal. A cute chunky CRT monitor robot watches tool icons and streaming dots pass through the correct route while code-plants bloom from lime green (#ecf874) pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+    "visual_concept": "A cozy API routing garden: Polli acts as a tiny railway conductor guiding three labeled GPT-5.6 seed-pods—Sol, Terra, and Luna—onto a clearly open Azure Responses track, while a quieter seeded-request track continues toward Chat Completions. A CRT monitor robot watches the streams of tool icons, image tiles, and structured-code flowers arrive safely, making the compatibility routing visible without making Azure feel like a corporate billboard.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny railway conductor hat as she guides three small seed-pod trains labeled “SOL”, “TERRA”, and “LUNA” onto a glowing Azure Responses rail line; a second calm rail line labeled “SEEDED CHAT” continues nearby, with code-flowers, tool icons, image tiles, and a friendly CRT monitor robot watching. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13254.jpg",
-    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny railway conductor hat as she guides three glowing seed parcels labeled “SOL”, “TERRA”, and “LUNA” onto a signposted “RESPONSES” rail beside a retro terminal. A cute chunky CRT monitor robot watches tool icons and streaming dots pass through the correct route while code-plants bloom from lime green (#ecf874) pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny railway conductor hat as she guides three small seed-pod trains labeled “SOL”, “TERRA”, and “LUNA” onto a glowing Azure Responses rail line; a second calm rail line labeled “SEEDED CHAT” continues nearby, with code-flowers, tool icons, image tiles, and a friendly CRT monitor robot watching. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-08-13T22:20:07.553225+00:00"
+  "generated_at": "2026-08-13T22:24:28.149202+00:00"
 }

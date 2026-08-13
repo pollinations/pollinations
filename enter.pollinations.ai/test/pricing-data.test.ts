@@ -340,7 +340,9 @@ test("catalog prices expose audio second rates from registry pricing", () => {
 
     for (const modelPrice of getCatalogModelPrices()) {
         const model = sourceByName.get(modelPrice.name);
-        if (model?.category !== "audio") continue;
+        if (model?.category !== "audio" && model?.category !== "realtime") {
+            continue;
+        }
 
         const promptAudioSeconds = Number(model.pricing.promptAudioSeconds);
         const completionAudioSeconds = Number(

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13327,
+  "title": "Add Article Illustrator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13327",
+  "merged_at": "2026-08-13T17:35:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Article Illustrator](https://article.240801.xyz) to image\n- An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai/). https://github.com/pollinations/pollinations/issues/1\n\nFixes #13323",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Articles, Meet Their Illustrator",
+    "blurb": "Article Illustrator has joined the garden: give it a piece of writing and it helps grow a fitting image beside it. The words no longer have to do all the visual heavy lifting.",
+    "summary": "Added Article Illustrator, a React app deployed on Cloudflare Pages that uses Pollinations.ai image generation to create illustrations for articles.",
+    "impact": "Writers and publishers can now discover a Pollinations-powered tool for turning article ideas and text into accompanying visuals.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "article-illustration",
+      "react",
+      "cloudflare-pages",
+      "creative-tools"
+    ],
+    "visual_concept": "Depict Article Illustrator as a cozy writing desk where an article scroll transforms into a framed pixel landscape illustration. Polli, wearing a tiny painter's beret, gently paints color from the page into the image while code-plants and small flowers grow around the desk.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny painter's beret as she paints an article scroll into a framed illustration on a retro CRT computer; the desk is surrounded by flowering code-plants and vines, with lime green (#ecf874) glowing prominently across the screen and garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text reading “ARTICLE ILLUSTRATOR”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13327.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny painter's beret as she paints an article scroll into a framed illustration on a retro CRT computer; the desk is surrounded by flowering code-plants and vines, with lime green (#ecf874) glowing prominently across the screen and garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text reading “ARTICLE ILLUSTRATOR”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-13T17:36:33.141482+00:00",
+  "app_name": "Article Illustrator",
+  "app_url": "https://article.240801.xyz"
+}

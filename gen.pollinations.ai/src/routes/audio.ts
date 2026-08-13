@@ -1136,7 +1136,10 @@ async function uploadMusicReference(opts: {
     file: File;
     apiKey: string;
     log: Logger;
-}): Promise<{ song_id?: string }> {
+}): Promise<{
+    song_id?: string;
+    composition_plan?: { chunks?: { duration_ms?: unknown }[] };
+}> {
     const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
     const formData = new FormData();
     const filename =
@@ -1144,6 +1147,10 @@ async function uploadMusicReference(opts: {
             ? opts.file.name
             : "reference.mp3";
     formData.append("file", opts.file, filename);
+    // ElevenLabs does not return duration or usage headers for music uploads.
+    // The extracted v2 plan contains the provider-metered chunk durations and
+    // does not add to the $0.15/minute ingestion price.
+    formData.append("extract_composition_plan", "music_v2");
 
     opts.log.info("ElevenLabs music upload: filename={filename}, size={size}", {
         filename,
@@ -1156,7 +1163,38 @@ async function uploadMusicReference(opts: {
         body: formData,
     });
     const response = await ensureUpstreamOk(rawResponse, uploadUrl);
-    return (await response.json()) as { song_id?: string };
+    return (await response.json()) as {
+        song_id?: string;
+        composition_plan?: { chunks?: { duration_ms?: unknown }[] };
+    };
+}
+
+function getUploadedMusicDurationSeconds(upload: {
+    composition_plan?: { chunks?: { duration_ms?: unknown }[] };
+}): number {
+    const chunks = upload.composition_plan?.chunks;
+    if (!chunks?.length) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "ElevenLabs music upload response missing reference duration",
+        });
+    }
+
+    const totalMilliseconds = chunks.reduce((total, chunk) => {
+        if (
+            typeof chunk.duration_ms !== "number" ||
+            !Number.isFinite(chunk.duration_ms) ||
+            chunk.duration_ms <= 0
+        ) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "ElevenLabs music upload response contained an invalid reference duration",
+            });
+        }
+        return total + chunk.duration_ms;
+    }, 0);
+
+    return totalMilliseconds / 1000;
 }
 
 export async function generateMusic(
@@ -1185,6 +1223,7 @@ export async function generateMusic(
 
     const modelId = "music_v2";
     let uploadedSongId: string | undefined;
+    let uploadedReferenceDuration: number | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
 
@@ -1200,6 +1239,7 @@ export async function generateMusic(
                 message: "ElevenLabs music upload response missing song_id",
             });
         }
+        uploadedReferenceDuration = getUploadedMusicDurationSeconds(upload);
         if (conditioningRef === undefined) {
             conditioningRef = {
                 song_id: uploadedSongId,
@@ -1280,10 +1320,14 @@ export async function generateMusic(
     const estimatedDuration =
         audioBuffer.byteLength / MUSIC_MP3_BYTES_PER_SECOND;
 
-    const usageHeaders = buildUsageHeaders(
-        "elevenmusic",
-        createCompletionAudioSecondsUsage(estimatedDuration),
-    );
+    const usage = createCompletionAudioSecondsUsage(estimatedDuration);
+    if (uploadedReferenceDuration !== undefined) {
+        Object.assign(
+            usage,
+            createAudioSecondsUsage(uploadedReferenceDuration),
+        );
+    }
+    const usageHeaders = buildUsageHeaders("elevenmusic", usage);
     const responseHeaders: Record<string, string> = {
         "Content-Type": contentType,
         ...usageHeaders,

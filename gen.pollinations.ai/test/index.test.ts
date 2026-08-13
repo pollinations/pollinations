@@ -1388,7 +1388,15 @@ fixtureTest(
                     expect((file as File).type).toBe(
                         "application/octet-stream",
                     );
-                    return Response.json({ song_id: "reference-song" });
+                    expect(formData.get("extract_composition_plan")).toBe(
+                        "music_v2",
+                    );
+                    return Response.json({
+                        song_id: "reference-song",
+                        composition_plan: {
+                            chunks: [{ duration_ms: 30_000 }],
+                        },
+                    });
                 }
 
                 if (request.url === composeUrl) {
@@ -1444,6 +1452,7 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("30");
         await waitOnExecutionContext(ctx);
         expect(calls).toEqual(
             expect.arrayContaining([referenceAudioUrl, uploadUrl, composeUrl]),

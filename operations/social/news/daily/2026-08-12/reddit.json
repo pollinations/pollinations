@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-12",
+  "period_start": "2026-08-12",
+  "period_end": "2026-08-12",
+  "generated_at": "2026-08-13T06:38:28.132923+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-12/images/reddit.jpg"
+    }
+  ],
+  "title": "SDK results, MCP timeouts, and IMADreamer",
+  "text": "Four PRs merged today.\n\nThe SDK now returns model arrays rather than leaving callers to infer what is available, and it rejects image jobs that fail instead of handing back something that looks superficially successful. That should make model discovery and failure handling less ceremonial for SDK users. PR: https://github.com/pollinations/pollinations/pull/13300\n\nMCP also dropped its global request timeout. Some requests are legitimately slow, especially when the work behind them is image or media generation; a single blanket timeout was mostly a machine for converting slow work into ambiguous failures. PR: https://github.com/pollinations/pollinations/pull/13301\n\nIMADreamer was added to the image directory, so there is another image app in the list for people browsing what others have built. PR: https://github.com/pollinations/pollinations/pull/13306\n\nThe README news section was updated for 2026-08-12 as well. Small maintenance, but the public changelog should not become an archaeological site. PR: https://github.com/pollinations/pollinations/pull/13298\n\nRepo and current README: https://github.com/pollinations/pollinations"
+}

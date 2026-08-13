@@ -1,3 +1,6 @@
+- **2026-08-12** – **🎨 IMADreamer joins the garden** A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer) <!-- app -->
+- **2026-08-12** – **💡 Models, now in a proper row** `Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)
+- **2026-08-12** – **🔗 Let MCP requests breathe** Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
 - **2026-08-11** – **🌟 The app garden got portraits** The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai) <!-- app -->
 - **2026-08-10** – **🚀 Trellis 2 handles longer 3D jobs** Generate finished GLB files with `trellis-2` and its quality aliases through the usual API flow; some meshes simply needed more time to become meshes. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-10** – **✨ Tessera Lumen joins the writing garden** A chat-powered drafting app for turning the blank page into a slightly more negotiable problem. [Try it](https://app.963.co.za) <!-- app -->

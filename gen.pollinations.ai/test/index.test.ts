@@ -1356,6 +1356,172 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
 });
 
 fixtureTest(
+    "loads elevenmusic reference_audio from the media service",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-music-reference";
+        const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
+        const composeUrl = "https://api.elevenlabs.io/v1/music";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (request.url === uploadUrl) {
+                    expect(request.headers.get("xi-api-key")).toBe(
+                        "test-eleven-key",
+                    );
+                    const formData = await request.formData();
+                    expect(formData.get("file")).toBeInstanceOf(File);
+                    return Response.json({ song_id: "reference-song" });
+                }
+
+                if (request.url === composeUrl) {
+                    const body = (await request.json()) as {
+                        composition_plan: {
+                            chunks: Array<{
+                                conditioning_ref: { song_id: string };
+                            }>;
+                        };
+                    };
+                    expect(
+                        body.composition_plan.chunks[0].conditioning_ref
+                            .song_id,
+                    ).toBe("reference-song");
+                    return new Response(new Uint8Array([1, 2, 3, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm indie disco",
+                    duration: 30,
+                    reference_audio: referenceAudioUrl,
+                }),
+            }),
+            {
+                ...env,
+                ELEVENLABS_API_KEY: "test-eleven-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await waitOnExecutionContext(ctx);
+        expect(calls).toEqual(
+            expect.arrayContaining([referenceAudioUrl, uploadUrl, composeUrl]),
+        );
+    },
+);
+
+fixtureTest(
+    "rejects reference_audio URLs outside the media service",
+    async ({ paidApiKey }) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm indie disco",
+                    reference_audio: "https://example.com/reference.mp3",
+                }),
+            }),
+            env as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "reference_audio must use https://media.pollinations.ai",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+    },
+);
+
+fixtureTest(
+    "does not expose the dedicated music upload endpoint",
+    async ({ paidApiKey }) => {
+        const formData = new FormData();
+        formData.append(
+            "file",
+            new File([new Uint8Array([73, 68, 51, 4])], "reference.mp3", {
+                type: "audio/mpeg",
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/audio/music/upload",
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                    body: formData,
+                },
+            ),
+            env as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(404);
+        await waitOnExecutionContext(ctx);
+    },
+);
+
+fixtureTest(
     "routes stable-audio-3-medium requests through fal",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
@@ -1449,12 +1615,20 @@ fixtureTest(
         const a2aEndpoint =
             "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
         const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
         let sentAudioUrl: unknown;
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
                 calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
 
                 if (request.url === a2aEndpoint) {
                     expect(request.headers.get("authorization")).toBe(
@@ -1492,22 +1666,19 @@ fixtureTest(
             },
         );
 
-        const form = new FormData();
-        form.append("model", "stable-audio-3-medium");
-        form.append("input", "warm pads");
-        form.append(
-            "reference_audio",
-            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
-                type: "audio/wav",
-            }),
-        );
-
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${paidApiKey}` },
-                body: form,
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                }),
             }),
             {
                 ...env,
@@ -1531,6 +1702,7 @@ fixtureTest(
 
         await waitOnExecutionContext(ctx);
 
+        expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(falFileUrl);
     },
@@ -1656,11 +1828,19 @@ fixtureTest(
         const generationId = "test-a2a-generation-id";
         const a2aEndpoint =
             "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
                 calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
 
                 // Submit goes to the audio-to-audio endpoint with the clip.
                 if (request.url === a2aEndpoint) {
@@ -1704,22 +1884,19 @@ fixtureTest(
             },
         );
 
-        const form = new FormData();
-        form.append("model", "stable-audio-3-large");
-        form.append("input", "warm pads");
-        form.append(
-            "reference_audio",
-            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
-                type: "audio/wav",
-            }),
-        );
-
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${paidApiKey}` },
-                body: form,
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-large",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                }),
             }),
             {
                 ...env,
@@ -1739,6 +1916,7 @@ fixtureTest(
 
         await waitOnExecutionContext(ctx);
 
+        expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(
             `https://api.stability.ai/v2beta/results/${generationId}`,

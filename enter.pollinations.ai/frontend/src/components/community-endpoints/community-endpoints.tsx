@@ -1,19 +1,27 @@
 import {
     Alert,
     Button,
+    FieldStack,
+    Input,
     Section,
     SproutIcon,
     Surface,
     TokensIcon,
 } from "@pollinations/ui";
-import { useCallback, useEffect, useState } from "react";
+import {
+    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
+    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+} from "@shared/community-endpoints.ts";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type CommunityEndpoint,
+    type CommunityProviderProfile,
     type EndpointPayload,
+    type FallbackModelOption,
     readError,
 } from "./types.ts";
 
@@ -22,15 +30,26 @@ type CommunityEndpointsProps = {
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
     canPublish: boolean;
+    // Public community models offered as fallback targets in the dialog.
+    fallbackOptions: FallbackModelOption[];
 };
 
 export function CommunityEndpoints({
     onChange,
     canPublish,
+    fallbackOptions,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [providerName, setProviderName] = useState("");
+    const [providerUrl, setProviderUrl] = useState("");
+    const [savedProvider, setSavedProvider] =
+        useState<CommunityProviderProfile>({ name: null, url: null });
+    const [isSavingProvider, setIsSavingProvider] = useState(false);
+    const providerIsSaved =
+        providerName === (savedProvider.name ?? "") &&
+        providerUrl === (savedProvider.url ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -44,8 +63,14 @@ export function CommunityEndpoints({
             setIsLoading(false);
             return;
         }
-        const body = (await response.json()) as { data: CommunityEndpoint[] };
+        const body = (await response.json()) as {
+            data: CommunityEndpoint[];
+            provider: CommunityProviderProfile;
+        };
         setEndpoints(body.data);
+        setProviderName(body.provider.name ?? "");
+        setProviderUrl(body.provider.url ?? "");
+        setSavedProvider(body.provider);
         setIsLoading(false);
     }, []);
 
@@ -99,6 +124,35 @@ export function CommunityEndpoints({
                     ? thrown.message
                     : "Endpoint delete failed",
             );
+        }
+    }
+
+    async function handleProviderSubmit(
+        event: FormEvent<HTMLFormElement>,
+    ): Promise<void> {
+        event.preventDefault();
+        setIsSavingProvider(true);
+        setError(null);
+        try {
+            const response = await apiClient.account[
+                "my-models"
+            ].provider.$post({
+                json: { name: providerName, url: providerUrl },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const profile = (await response.json()) as CommunityProviderProfile;
+            setProviderName(profile.name ?? "");
+            setProviderUrl(profile.url ?? "");
+            setSavedProvider(profile);
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Provider profile update failed",
+            );
+        } finally {
+            setIsSavingProvider(false);
         }
     }
 
@@ -171,6 +225,7 @@ export function CommunityEndpoints({
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
                         canPublish={canPublish}
+                        fallbackOptions={fallbackOptions}
                         trigger={
                             <Button
                                 type="button"
@@ -183,6 +238,64 @@ export function CommunityEndpoints({
                     />
                 }
             >
+                {canPublish && !isLoading && (
+                    <Surface className="mb-3 p-4">
+                        <form
+                            className="flex flex-col gap-4"
+                            onSubmit={(event) =>
+                                void handleProviderSubmit(event)
+                            }
+                        >
+                            <div>
+                                <p className="text-sm font-semibold">Brand</p>
+                                <p className="mt-0.5 text-xs text-theme-text-soft">
+                                    Shown on all your public models.
+                                </p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FieldStack label="Name">
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                                <FieldStack label="Website">
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                            </div>
+                            <div>
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        isSavingProvider || providerIsSaved
+                                    }
+                                >
+                                    {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Surface>
+                )}
                 {error && (
                     <Alert intent="danger" className="mb-3">
                         {error}
@@ -245,6 +358,7 @@ export function CommunityEndpoints({
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
                 canPublish={canPublish}
+                fallbackOptions={fallbackOptions}
             />
 
             <CommunityEndpointDeleteConfirmation

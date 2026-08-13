@@ -2,15 +2,15 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the row to `apps/APPS.md`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
 
-APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
+Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
 Platforms (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
 
@@ -24,13 +24,15 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
 - `gen.pollinations.ai/` — Edge router + text generation Worker
-- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
+- `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `APPS.md`
-- `social/` — Discord/Reddit/GitHub automation
+- `apps/` — Applications maintained in this repository
+- `operations/app-management/` — Community app catalog and automation
+- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
@@ -41,7 +43,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
-  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
+  connector prompt (`operations/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
@@ -75,14 +77,33 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+- Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
+
+## Secret Mutation Safety
+
+**CRITICAL — never mutate a secret without the user's separate, explicit, scoped approval.**
+
+- A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
+- Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
+- For a first-time secret addition, require: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`
+- For replacing an existing secret, require: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+- Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
+- Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
+- If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
+- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
+- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
+- Never synchronize production secrets from an unmerged commit or a branch other than `production`.
+- For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
 
 ## Cloudflare Production Deployment Safety
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
 - Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
-- If CI credentials lack a required permission, update the scoped GitHub Actions secret and rerun the workflow. Never bypass CI with a local Cloudflare OAuth session.
+- If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
 
 ## Tinybird Deployment Safety
@@ -142,7 +163,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 Commands:
 - enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
 - gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
 
 Run individually — full suite is slow:
 ```bash
@@ -158,7 +178,7 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `operations/infrastructure/gpu/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.
@@ -172,25 +192,13 @@ npx vitest run test/file.test.ts
 ## Workflow Orchestration
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
-- Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
+- Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
-- Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
-- Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
-
-## Task Management
-
-1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
 
 ## Compact Instructions
 
 Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
-
-## Core Principles
-
-- Simplicity first — minimal code impact.
-- No laziness — find root causes, no temp fixes, senior standards.
-- Minimal impact — touch only what's necessary.
 
 ## Git Workflow
 

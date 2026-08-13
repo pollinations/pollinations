@@ -6,11 +6,11 @@ import {
     getVideoModelIds,
     IMAGE_SERVICES,
 } from "@shared/registry/image.ts";
+import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
-    getModel3dModelsInfo,
-    getRealtimeModelsInfo,
-} from "@shared/registry/model-info.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_VOICE_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -221,9 +221,7 @@ const videoModelDisplayNames = getVideoModelIds().join(", ");
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
-const realtimeModelDisplayNames = getRealtimeModelsInfo()
-    .map((model) => model.name)
-    .join(", ");
+const realtimeModelDisplayNames = REALTIME_VOICE_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");

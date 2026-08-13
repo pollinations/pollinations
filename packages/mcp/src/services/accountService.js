@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
+    buildUrl,
     createMCPResponse,
     createTextContent,
     fetchJsonWithAuth,
@@ -9,7 +9,7 @@ import {
 
 async function getBalance(_params) {
     requireApiKey();
-    const data = await fetchJsonWithAuth(`${API_BASE_URL}/account/balance`);
+    const data = await fetchJsonWithAuth(buildUrl("/account/balance"));
     return createMCPResponse([
         createTextContent(
             {
@@ -27,8 +27,7 @@ async function getUsage(params) {
     const { daily = false, days, limit } = params || {};
 
     const url = new URL(
-        daily ? "/account/usage/daily" : "/account/usage",
-        API_BASE_URL,
+        buildUrl(daily ? "/account/usage/daily" : "/account/usage"),
     );
     if (days !== undefined) url.searchParams.set("days", String(days));
     if (!daily && limit !== undefined) {
@@ -78,6 +77,12 @@ async function getUsage(params) {
     ]);
 }
 
+async function listQuests(_params) {
+    requireApiKey();
+    const data = await fetchJsonWithAuth(buildUrl("/account/quests"));
+    return createMCPResponse([createTextContent(data, true)]);
+}
+
 export const accountTools = [
     [
         "getBalance",
@@ -119,5 +124,13 @@ export const accountTools = [
                 ),
         },
         getUsage,
+    ],
+    [
+        "listQuests",
+        "List quests and earned rewards for the authenticated account. " +
+            "Read-only; claiming rewards requires a dashboard session. " +
+            "Requires 'account:usage' permission.",
+        {},
+        listQuests,
     ],
 ];

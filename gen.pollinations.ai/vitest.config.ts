@@ -35,6 +35,7 @@ const genAliases = [
     "schemas/model3d.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
+    "userImage.ts",
     "util",
     "util.ts",
     "utils/api-docs.ts",

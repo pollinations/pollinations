@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isRetryableFallbackError } from "../../src/fallback.ts";
 import {
     __resetLatencyStateForTests,
     registerServer,
     setServerRegistryBinding,
 } from "../../src/image/availableServers.ts";
-import { callFluxWithFallback } from "../../src/image/createAndReturnImages.ts";
-import { syncImageEnv } from "../../src/image/env.ts";
+import { callSelfHostedServer } from "../../src/image/createAndReturnImages.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 // Minimal in-memory KV stub matching the subset of KVNamespace we use
@@ -79,22 +79,22 @@ const poolResponse = () =>
 beforeEach(() => {
     setServerRegistryBinding(makeKv(), "test");
     __resetLatencyStateForTests();
-    syncImageEnv(
-        { FIREWORKS_API_KEY: "fw-test-key" } as unknown as CloudflareBindings,
-        ["FIREWORKS_API_KEY"] as never[],
-    );
 });
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("callFluxWithFallback", () => {
+describe("Flux primary route", () => {
     it("serves from the self-hosted flux pool when a worker is registered", async () => {
         await registerServer("https://gpu1.example", "flux");
         const calls = mockFetch(() => poolResponse());
 
-        const result = await callFluxWithFallback("a red apple", fluxParams);
+        const result = await callSelfHostedServer(
+            "a red apple",
+            fluxParams,
+            "flux",
+        );
 
         expect(calls).toEqual(["https://gpu1.example/generate"]);
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
@@ -103,36 +103,32 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData?.actualModel).toBe("flux");
     });
 
-    it("falls back to Fireworks when no flux worker is registered", async () => {
-        const calls = mockFetch(
-            () => new Response(JPEG_BYTES, { status: 200 }),
-        );
+    it("marks an empty pool as a retryable upstream failure", async () => {
+        let error: unknown;
+        try {
+            await callSelfHostedServer("a red apple", fluxParams, "flux");
+        } catch (caught) {
+            error = caught;
+        }
 
-        const result = await callFluxWithFallback("a red apple", fluxParams);
-
-        expect(calls).toHaveLength(1);
-        expect(calls[0]).toContain("api.fireworks.ai");
-        expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
-            true,
-        );
-        expect(result.isMature).toBe(false);
+        expect(error).toMatchObject({ status: 503 });
+        expect(isRetryableFallbackError(error)).toBe(true);
     });
 
-    it("falls back to Fireworks when the pool request fails", async () => {
+    it("preserves a pool 5xx as a retryable upstream failure", async () => {
         await registerServer("https://gpu1.example", "flux");
-        const calls = mockFetch((url) =>
-            new URL(url).hostname === "gpu1.example"
-                ? new Response("CUDA error", { status: 500 })
-                : new Response(JPEG_BYTES, { status: 200 }),
+        const calls = mockFetch(
+            () => new Response("CUDA error", { status: 500 }),
         );
+        let error: unknown;
+        try {
+            await callSelfHostedServer("a red apple", fluxParams, "flux");
+        } catch (caught) {
+            error = caught;
+        }
 
-        const result = await callFluxWithFallback("a red apple", fluxParams);
-
-        expect(calls).toHaveLength(2);
-        expect(calls[0]).toBe("https://gpu1.example/generate");
-        expect(calls[1]).toContain("api.fireworks.ai");
-        expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
-            true,
-        );
+        expect(calls).toEqual(["https://gpu1.example/generate"]);
+        expect(error).toMatchObject({ status: 500 });
+        expect(isRetryableFallbackError(error)).toBe(true);
     });
 });

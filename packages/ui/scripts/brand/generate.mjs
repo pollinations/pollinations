@@ -107,10 +107,10 @@ const arWord = wordBB[2] / wordBB[3];
 function lockupHorizontal() {
     const ht = 96;
     const wt = ht * arWord;
-    const hm = ht * 1.15; // lotus ~ text height (compact)
+    const hm = ht * 1.1;
     const wm = hm * arMark;
-    const gap = ht * 0.12; // tight — mark + text read as one unit
-    const pad = ht * 0.4;
+    const gap = ht * 0.22;
+    const pad = 0;
     const H = Math.max(hm, ht) + pad * 2;
     const W = pad + wm + gap + wt + pad;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${round(W)} ${round(H)}" fill="currentColor">

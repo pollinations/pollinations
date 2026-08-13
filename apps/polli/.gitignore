@@ -1,72 +1,10 @@
-# Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
 .venv/
-ENV/
-
-# Environment variables
+venv/
 .env
-.env.*
-!.env.example
-
-# Private keys and secrets
-*.pem
-*.key
-polli.pem
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Claude Code local settings
-.claude/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Data directories (local only)
 data/
-ref/
-
-# Logs
-*.log
 logs/
-
-# Database
-*.db
-*.sqlite3
-subscriptions.json
-
-# Embeddings cache
-*.npy
-*.pkl
-chroma_db/
-
-# Testing
+*.pem
 .pytest_cache/
-.coverage
-htmlcov/
-
-# Others 
-Polli-starter.sh
-Polli-stopper.sh
-
-# Build
-dist/
-build/
-*.egg-info/
-
-# Private extensions (VPS-only, closed source)
-src/extensions/
-
-# Dev tracking docs
-TRACKING.md
+.ruff_cache/

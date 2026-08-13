@@ -136,7 +136,34 @@ describe("docs routes", () => {
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(schema.paths["/v1/audio/transcriptions/realtime"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        const model3dPost = (
+            schema.paths["/3d/{prompt}"] as Record<string, unknown>
+        )?.post as Record<string, unknown>;
+        expect(model3dPost).toBeDefined();
+        const model3dRequestBody = model3dPost.requestBody as {
+            content: {
+                "application/json": {
+                    schema: {
+                        additionalProperties?: boolean;
+                        properties: Record<string, unknown>;
+                    };
+                };
+            };
+        };
+        const model3dBodySchema =
+            model3dRequestBody.content["application/json"].schema;
+        expect(Object.keys(model3dBodySchema.properties)).toHaveLength(4);
+        expect(Object.keys(model3dBodySchema.properties)).toEqual(
+            expect.arrayContaining(["model", "image", "resolution", "seed"]),
+        );
+        expect(model3dBodySchema.properties.safe).toBeUndefined();
+        expect(
+            (model3dBodySchema.properties.resolution as { default?: string })
+                .default,
+        ).toBe("low");
+        expect(model3dBodySchema.additionalProperties).toBe(false);
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();
@@ -204,6 +231,18 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+
+        const scribeRealtimeGet = (
+            schema.paths["/v1/audio/transcriptions/realtime"] as Record<
+                string,
+                unknown
+            >
+        )?.get as Record<string, unknown> | undefined;
+        const scribeRealtimeResponses = scribeRealtimeGet?.responses as
+            | Record<string, unknown>
+            | undefined;
+        expect(scribeRealtimeResponses?.["426"]).toBeDefined();
+        expect(scribeRealtimeResponses?.["503"]).toBeDefined();
 
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
@@ -330,6 +369,14 @@ describe("docs routes", () => {
         // Stable heading marker proves the realtime modality is composed into
         // the api section, without pinning volatile mid-prose wording.
         expect(apiBody).toContain("## Realtime Voice");
+        const realtimeSection = apiBody.slice(
+            apiBody.indexOf("## Realtime Voice"),
+            apiBody.indexOf("## 3D Generation"),
+        );
+        expect(realtimeSection).not.toContain("scribe-realtime");
+        expect(apiBody).toContain(
+            "`GET /v1/audio/transcriptions/realtime` | WebSocket realtime transcription",
+        );
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

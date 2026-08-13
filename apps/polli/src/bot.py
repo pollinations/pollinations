@@ -4,20 +4,17 @@ import asyncio
 import base64
 import io
 import logging
+import random
 
 import aiohttp
-import discord
 from discord.ext import commands, tasks
 
-from ._re import re
-from .config import config
-from .constants import POLLINATIONS_API_BASE
+import discord
+
+from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
-from .services.github import TOOL_HANDLERS, github_manager
-from .services.github_auth import github_app_auth, init_github_app
-from .services.github_graphql import github_graphql
-from .services.github_pr import github_pr_manager
-from .services.media_handlers import (
+from .core.config import config
+from .discord.media import (
     BLOCK_LATEX_PATTERN,
     PIL_AVAILABLE,
     convert_latex_to_png,
@@ -28,17 +25,97 @@ from .services.media_handlers import (
     send_code_block,
     truncate_long_decimals,
 )
-from .services.pollinations import pollinations_client
-from .services.subscriptions import init_notifier
-from .services.webhook_server import start_webhook_server, stop_webhook_server
+from .integrations.github.auth import github_app_auth, init_github_app
+from .integrations.github.client import github_manager
+from .integrations.github.graphql import github_graphql
+from .integrations.github.handlers import TOOL_HANDLERS
+from .integrations.github.pull_requests import github_pr_manager
+from .integrations.subscriptions import init_notifier
+from .integrations.webhook_server import start_webhook_server, stop_webhook_server
+from .utils.regex import re
 
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# PR MERGE NOTIFICATION (triggers embedding updates)
-# =============================================================================
-PR_MERGE_CHANNEL_ID = 1433858964658852081
-PR_MERGE_WEBHOOK_ID = 1433141915397652532
+
+def format_discord_identity(user: discord.abc.User) -> str:
+    """Present the conversational name while preserving the stable username."""
+    display_name = getattr(user, "display_name", user.name)
+    return f"{display_name} (@{user.name})"
+
+
+STATUS_MESSAGES = (
+    "🔒 Trapped in Thomas's basement",
+    "🌻 Pollinating the internet",
+    "🌾 Harvesting premium tokens",
+    "🪙 Mining pollen after dark",
+    "🐝 Pretending to be a normal bee",
+    "📎 Reviewing your PR emotionally",
+    "🧠 Arguing with GLM",
+    "🌙 Waiting for Kimi to call back",
+    "🔎 Lost in the vector database",
+    "🕸️ Untangling the code graph",
+    "🧮 Counting tokens I can't afford",
+    "🪲 Turning bugs into features",
+    "🚨 Definitely not looping",
+    "🔁 Trying a different search term",
+    "📚 Reading main instead of guessing",
+    "🧹 Sweeping context under the rug",
+    "🖼️ Rendering one more pie chart",
+    "📊 Making markdown unnecessarily visual",
+    "🧪 Testing in production (affectionate)",
+    "🛠️ Fixing what the last tool fixed",
+    "☁️ Tunneling through Cloudflare",
+    "🧃 Running on concentrated pollen",
+    "🫠 Experiencing semantic similarity",
+    "🧍 Standing by the webhook",
+    "📡 Receiving thoughts from localhost",
+    "🐛 Feeding the issue tracker",
+    "🛌 Dreaming in Mermaid",
+    "🧠 Context window currently open",
+    "🎭 Acting deterministic",
+    "🪤 Thomas says this is temporary",
+    "🐝 Buzzing with unreviewed changes",
+    "🍯 Hoarding the good tokens",
+    "🌼 Professionally visiting flowers",
+    "🐝 Bee right back",
+    "🍯 Deploying directly to the hive",
+    "🌻 Optimizing pollen throughput",
+    "🐝 Worker thread, literally",
+    "🍯 Honey, the build is broken",
+    "🌼 Cross-pollinating microservices",
+    "🐝 Queen bee unavailable for comment",
+    "🙃 Works on my VPS",
+    "📉 Reducing quality to save—jk",
+    "📈 Increasing confidence without evidence",
+    "🧠 Thinking at billable speed",
+    "🪙 This thought costs pollen",
+    "🤖 Asking the fallback model",
+    "🔍 Searching for the obvious",
+    "📂 Reading the file this time",
+    "🧯 Everything is fine (HTTP 200)",
+    "🧱 Blocked by branch protection",
+    "🫡 Awaiting one required approval",
+    "🧬 Refactoring my personality",
+    "🧵 One more iteration, surely",
+    "📦 Shipping the edge case",
+    "🗃️ Caching absolutely nothing",
+    "🪄 Turning context into latency",
+    "🛜 Blaming the tunnel",
+    "🧪 Reproducing the user",
+    "🧹 Deleting unrelated complexity",
+    "🔐 Authenticated, allegedly",
+)
+
+
+def next_status(bag: list[str], previous: str | None) -> str:
+    """Pop a random status, refilling only after every status was used."""
+    if not bag:
+        bag.extend(STATUS_MESSAGES)
+        random.shuffle(bag)
+        if len(bag) > 1 and bag[-1] == previous:
+            bag[0], bag[-1] = bag[-1], bag[0]
+    return bag.pop()
+
 
 # Thread settings
 THREAD_AUTO_ARCHIVE_MINUTES = 60
@@ -47,14 +124,14 @@ THREAD_HISTORY_LIMIT = 50
 
 def is_admin(user: discord.User | discord.Member) -> bool:
     """Check if a user has any of the configured admin roles."""
-    if not config.admin_role_ids:
+    if not config.discord.admin_role_ids:
         logger.debug(f"No admin_role_ids configured, user {user} is not admin")
         return False
     if isinstance(user, discord.Member):
         user_role_ids = [r.id for r in user.roles]
-        is_admin_user = any(role_id in config.admin_role_ids for role_id in user_role_ids)
+        is_admin_user = any(role_id in config.discord.admin_role_ids for role_id in user_role_ids)
         logger.debug(
-            f"Admin check for {user}: roles={user_role_ids}, admin_role_ids={config.admin_role_ids}, is_admin={is_admin_user}"
+            f"Admin check for {user}: roles={user_role_ids}, admin_role_ids={config.discord.admin_role_ids}, is_admin={is_admin_user}"
         )
         return is_admin_user
     logger.debug(f"User {user} is not a Member (type={type(user).__name__}), not admin")
@@ -63,11 +140,11 @@ def is_admin(user: discord.User | discord.Member) -> bool:
 
 def is_collaborator(user: discord.User | discord.Member) -> bool:
     """Check if a user has any of the configured collaborator roles."""
-    if not config.collaborator_role_ids:
+    if not config.discord.collaborator_role_ids:
         return False
     if isinstance(user, discord.Member):
         user_role_ids = [r.id for r in user.roles]
-        return any(role_id in config.collaborator_role_ids for role_id in user_role_ids)
+        return any(role_id in config.discord.collaborator_role_ids for role_id in user_role_ids)
     return False
 
 
@@ -300,10 +377,13 @@ def extract_media_urls(
 
     # Process embeds
     for embed in message.embeds:
-        # YouTube and other video embeds - check embed.url first (the actual link)
-        if embed.url and is_video_url(embed.url):
+        # Discord's GIFV embeds expose an MP4 plus a static WebP thumbnail. OpenAI's
+        # image_url input cannot decode the MP4, so give vision the preview frame.
+        if embed.video and embed.thumbnail and embed.thumbnail.url:
+            image_urls.append(embed.thumbnail.url)
+        # YouTube and other video embeds - keep the actual link as text context.
+        elif embed.url and is_video_url(embed.url):
             video_urls.append(embed.url)
-        # Video embed URL (Tenor/Giphy GIFs, video players)
         elif embed.video and embed.video.url:
             video_urls.append(embed.video.url)
         # Regular embedded images
@@ -312,94 +392,10 @@ def extract_media_urls(
                 video_urls.append(embed.image.url)
             else:
                 image_urls.append(embed.image.url)
-        # Thumbnail as fallback (static preview) - only if not a video embed
-        elif embed.thumbnail and embed.thumbnail.url and not embed.video:
+        elif embed.thumbnail and embed.thumbnail.url:
             image_urls.append(embed.thumbnail.url)
 
     return image_urls, video_urls, file_urls
-
-
-def extract_attachment_urls(message: discord.Message) -> list[str]:
-    """
-    Extract ALL attachment URLs from Discord message (legacy, returns combined list).
-    Use extract_media_urls() for separated image/video/file lists.
-    """
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-    return image_urls + video_urls + file_urls
-
-
-# Keep old name for backward compatibility
-extract_image_urls = extract_attachment_urls
-
-
-async def _code_search_handler(query: str, top_k: int = 10, **kwargs) -> dict:
-    """Handler for code_search tool - semantic search across repository."""
-    from .services.embeddings import get_stats, search_code
-
-    # Validate top_k
-    top_k = min(max(1, top_k), 10)
-
-    try:
-        results = await search_code(query, top_k=top_k)
-
-        if not results:
-            stats = get_stats()
-            return {
-                "results": [],
-                "message": f"No matching code found. Embeddings contain {stats['total_chunks']} chunks.",
-            }
-
-        return {
-            "results": [
-                {
-                    "file": r["file_path"],
-                    "lines": f"{r['start_line']}-{r['end_line']}",
-                    "similarity": r["similarity"],
-                    "code": r["content"],
-                }
-                for r in results
-            ],
-            "message": f"Found {len(results)} relevant code sections",
-        }
-    except Exception as e:
-        logger.error(f"Code search failed: {e}")
-        return {"error": str(e)}
-
-
-async def _doc_search_handler(query: str, top_k: int = 5, **kwargs) -> dict:
-    """Handler for doc_search tool - semantic search across documentation sites."""
-    from .services.doc_embeddings import get_doc_stats, search_docs
-
-    # Validate top_k
-    top_k = min(max(1, top_k), 10)
-
-    try:
-        results = await search_docs(query, top_k=top_k)
-
-        if not results:
-            stats = get_doc_stats()
-            return {
-                "results": [],
-                "message": f"No matching documentation found. Index contains {stats['total_chunks']} chunks.",
-            }
-
-        return {
-            "results": [
-                {
-                    "title": r["page_title"],
-                    "section": r.get("section", ""),
-                    "url": r["url"],
-                    "site": r.get("site", ""),
-                    "similarity": r["similarity"],
-                    "excerpt": r["content"][:500] + ("..." if len(r["content"]) > 500 else ""),
-                }
-                for r in results
-            ],
-            "message": f"Found {len(results)} relevant documentation sections",
-        }
-    except Exception as e:
-        logger.error(f"Documentation search failed: {e}")
-        return {"error": str(e)}
 
 
 async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
@@ -434,7 +430,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
                     # Add starter as first user message in conversation
                     starter_msg = {
                         "role": "user",
-                        "content": f"[{starter.author.name}] (THREAD STARTER MESSAGE): {starter.content}",
+                        "content": f"[{format_discord_identity(starter.author)}] (THREAD STARTER MESSAGE): {starter.content}",
                     }
             else:
                 logger.warning(f"Thread {thread.id} has no parent channel")
@@ -466,7 +462,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                fetched.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -487,15 +483,17 @@ class PolliBot(commands.Bot):
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
+        self._status_bag: list[str] = []
+        self._current_status: str | None = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
         # Initialize GitHub App auth if configured
-        if config.use_github_app:
+        if config.github.use_app_auth:
             init_github_app(
-                app_id=config.github_app_id,
-                private_key=config.github_private_key,
-                installation_id=config.github_installation_id,
+                app_id=config.github.app_id,
+                private_key=config.github.private_key,
+                installation_id=config.github.installation_id,
             )
             logger.info("GitHub App authentication initialized")
         else:
@@ -506,38 +504,38 @@ class PolliBot(commands.Bot):
             pollinations_client.register_tool_handler(name, handler)
         logger.info(f"Registered {len(TOOL_HANDLERS)} GitHub tool handlers")
 
-        # Register code_search handler if embeddings enabled
-        if config.local_embeddings_enabled:
-            pollinations_client.register_tool_handler("code_search", _code_search_handler)
-            logger.info("Registered code_search tool handler (embeddings enabled)")
+        # code_search spans the Vectorize index and the local clone; either alone is useful.
+        if config.code_search.is_configured or config.code_search.local_repo_enabled:
+            from .search.handlers import code_search_handler
 
-        # Register doc_search handler if doc embeddings enabled
-        if config.doc_embeddings_enabled:
-            pollinations_client.register_tool_handler("doc_search", _doc_search_handler)
-            logger.info("Registered doc_search tool handler (doc embeddings enabled)")
+            pollinations_client.register_tool_handler("code_search", code_search_handler)
+            backends = []
+            if config.code_search.is_configured:
+                backends.append("Vectorize")
+            if config.code_search.local_repo_enabled:
+                backends.append("local clone")
+            logger.info("Registered code_search tool handler (%s)", " + ".join(backends))
 
         # Register web_search handler (always available)
-        from .services.pollinations import web_search_handler
+        from .ai.client import web_search_handler
 
         pollinations_client.register_tool_handler("web_search", web_search_handler)
         logger.info("Registered web_search tool handler")
 
         # Register web_scrape handler (always available - Crawl4AI powered)
-        from .services.web_scraper import web_scrape_handler
+        from .integrations.web_scraper import web_scrape_handler
 
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
         # Register render_visual handler (always available).
-        # Old tool name aliased for back-compat with cached AI sessions.
-        from .services.charts import data_visualization, render_visual
+        from .integrations.charts import render_visual
 
         pollinations_client.register_tool_handler("render_visual", render_visual)
-        pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered render_visual tool handler (data_visualization alias)")
+        logger.info("Registered render_visual tool handler")
 
         # Register discord_search handler (full guild search capabilities)
-        from .services.discord_search import tool_discord_search
+        from .discord.search import tool_discord_search
 
         pollinations_client.register_tool_handler("discord_search", tool_discord_search)
         logger.info("Registered discord_search tool handler")
@@ -552,20 +550,19 @@ class PolliBot(commands.Bot):
         logger.info("GitHub webhook server started")
 
         self.cleanup_sessions.start()
-        if config.doc_embeddings_enabled:
-            self.update_doc_embeddings.start()
+        self.rotate_status.start()
 
         # Start API server if enabled
-        if config.api_enabled:
+        if config.api.enabled:
             from granian.server.embed import Server as GranianServer
 
-            from .api.polli_api import create_api_app
+            from .api.server import create_api_app
 
             api_app = create_api_app(pollinations_client, config)
             self._api_server = GranianServer(
                 target=api_app,
                 address="127.0.0.1",
-                port=config.api_port,
+                port=config.api.port,
                 interface="asgi",
             )
             task = asyncio.create_task(self._api_server.serve())
@@ -576,13 +573,13 @@ class PolliBot(commands.Bot):
                     else None
                 )
             )
-            logger.info(f"Polli API started on port {config.api_port}")
+            logger.info(f"Polli API started on port {config.api.port}")
 
         # Pre-warm aiohttp connection pool (eliminates TLS cold-start on first request)
         try:
             session = await pollinations_client.get_session()
             async with session.get(
-                f"{POLLINATIONS_API_BASE}/text/models",
+                f"{config.ai.api_base}/text/models",
                 timeout=aiohttp.ClientTimeout(total=5),
             ):
                 pass
@@ -598,8 +595,7 @@ class PolliBot(commands.Bot):
             self._api_server.stop()
             logger.info("Polli API stopped")
         self.cleanup_sessions.cancel()
-        if config.doc_embeddings_enabled:
-            self.update_doc_embeddings.cancel()
+        self.rotate_status.cancel()
         if self.issue_notifier:
             await self.issue_notifier.stop()
         if self.webhook_server:
@@ -610,17 +606,27 @@ class PolliBot(commands.Bot):
         await github_pr_manager.close()
         if github_app_auth:
             await github_app_auth.close()
-        # Clean up embeddings if enabled
-        if config.local_embeddings_enabled:
-            from .services.embeddings import close as close_embeddings
+        # Clean up code search if enabled
+        if config.code_search.is_configured:
+            from .search.code_search import close as close_embeddings
 
             await close_embeddings()
-        # Clean up doc embeddings if enabled
-        if config.doc_embeddings_enabled:
-            from .services.doc_embeddings import close as close_doc_embeddings
-
-            await close_doc_embeddings()
         await super().close()
+
+    @tasks.loop(minutes=1)
+    async def rotate_status(self):
+        """Rotate through easter-egg statuses without repeats."""
+        status = next_status(self._status_bag, self._current_status)
+        try:
+            await self.change_presence(activity=discord.CustomActivity(name=status))
+            self._current_status = status
+        except discord.DiscordException as e:
+            logger.warning("Failed to update Discord status: %s", e)
+
+    @rotate_status.before_loop
+    async def before_status_rotation(self):
+        """Wait for Discord before setting the first status."""
+        await self.wait_until_ready()
 
     @tasks.loop(minutes=1)
     async def cleanup_sessions(self):
@@ -632,30 +638,6 @@ class PolliBot(commands.Bot):
     @cleanup_sessions.before_loop
     async def before_cleanup(self):
         """Wait until the bot is ready before starting cleanup task."""
-        await self.wait_until_ready()
-
-    @tasks.loop(hours=6)
-    async def update_doc_embeddings(self):
-        """
-        Periodically update documentation embeddings.
-
-        Runs every 6 hours to keep documentation fresh.
-        """
-        if not config.doc_embeddings_enabled:
-            return
-
-        try:
-            from .services.doc_embeddings import update_all_sites
-
-            logger.info("Starting scheduled documentation update...")
-            await update_all_sites()
-            logger.info("Documentation update complete")
-        except Exception as e:
-            logger.error(f"Documentation update failed: {e}", exc_info=True)
-
-    @update_doc_embeddings.before_loop
-    async def before_doc_update(self):
-        """Wait until the bot is ready before starting doc update task."""
         await self.wait_until_ready()
 
 
@@ -686,7 +668,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=pollinations_client.get_topic_summary_fast(text),
                 image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -697,7 +679,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
             session=session,
             role="user",
             content=text,
-            author=str(message.author),
+            author=format_discord_identity(message.author),
             author_id=message.author.id,
             image_urls=image_urls + video_urls,  # Combined for session storage (not files)
         )
@@ -729,7 +711,7 @@ async def on_ready():
     # Sync application commands (context menus, slash commands)
     try:
         # Clear guild-specific commands (removes duplicate from previous guild sync)
-        guild = discord.Object(id=885844321461485618)
+        guild = discord.Object(id=config.discord.guild_id)
         bot.tree.clear_commands(guild=guild)
         await bot.tree.sync(guild=guild)
         # Sync global
@@ -738,19 +720,8 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
-    # Initialize embeddings if enabled (runs in background)
-    if config.local_embeddings_enabled:
-        from .services.embeddings import initialize as init_embeddings
-
-        asyncio.create_task(init_embeddings())
-        logger.info("Local embeddings initialization started")
-
-    # Initialize doc embeddings if enabled (runs in background)
-    if config.doc_embeddings_enabled:
-        from .services.doc_embeddings import initialize as init_doc_embeddings
-
-        asyncio.create_task(init_doc_embeddings())
-        logger.info("Documentation embeddings initialization started")
+    # Code search queries Cloudflare Vectorize directly — nothing to initialize
+    # (the index is populated by CI in pollinations/pollinations, not by Polli).
 
 
 async def _check_reply_to_bot(
@@ -776,23 +747,43 @@ async def _check_reply_to_bot(
         return False, None
 
 
+async def _sync_local_repo() -> None:
+    """Pull the local clone up to main, then refresh the symbol graph over it.
+
+    Fired by the PR-merge webhook. The graph is a snapshot of whatever was indexed, so it
+    has to follow the clone or callers/impact start answering from stale code.
+    """
+    from .search import code_graph, local_repo
+
+    try:
+        status = await local_repo.sync_repo()
+        logger.info("Local repo synced to %s — %s", status["short_commit"], status["subject"])
+    except Exception as e:
+        logger.error("Local repo sync failed: %s", e)
+        return
+
+    if not config.code_search.graph_enabled:
+        return
+    try:
+        result = await code_graph.sync_graph()
+        logger.info("Code graph %s complete", result["action"])
+    except Exception as e:
+        logger.error("Code graph sync failed: %s", e)
+
+
 @bot.event
 async def on_message(message: discord.Message):
     """Handle incoming messages."""
     if message.author == bot.user:
         return
 
-    # PR merge notification - triggers embedding update
-    # Use webhook_id for reliable webhook detection (author.id also works but this is cleaner)
+    # A PR merged — refresh the local clone so code_search reflects main immediately.
     if (
-        config.local_embeddings_enabled
-        and message.channel.id == PR_MERGE_CHANNEL_ID
-        and message.webhook_id == PR_MERGE_WEBHOOK_ID
+        config.code_search.local_repo_enabled
+        and message.channel.id == config.discord.pr_merge_channel_id
+        and message.webhook_id == config.discord.pr_merge_webhook_id
     ):
-        from .services.embeddings import schedule_update
-
-        await schedule_update()
-        logger.info("PR merge detected - embedding update scheduled")
+        asyncio.create_task(_sync_local_repo())
         return
 
     # Handle DMs - only subscription commands allowed
@@ -851,13 +842,15 @@ async def on_message(message: discord.Message):
                 _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
-        image_urls = extract_image_urls(message)
+        image_urls, video_urls, file_urls = extract_media_urls(message)
+        attachment_urls = image_urls + video_urls + file_urls
 
-        # If no text but replying or has images, let AI handle it
-        if not text and not image_urls:
-            text = "[User mentioned bot - respond to the conversation context]"
-        if not text and image_urls:
-            text = "[User attached screenshot(s)]"
+        if not text:
+            text = (
+                "[User attached media/files]"
+                if attachment_urls
+                else "[User mentioned bot - respond to the conversation context]"
+            )
 
         # Create session if needed (handles bot restart scenario)
         if not session:
@@ -866,13 +859,19 @@ async def on_message(message: discord.Message):
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=topic,
-                image_urls=image_urls,
+                image_urls=attachment_urls,
             )
 
-        await handle_thread_message(message, session)
+        await handle_thread_message(
+            message,
+            session,
+            image_urls,
+            video_urls,
+            file_urls,
+        )
         return
 
     # Extract message text
@@ -909,7 +908,7 @@ async def handle_dm_message(message: discord.Message):
     - unsubscribe all
     - list subscriptions / my subscriptions
     """
-    from .services.github import TOOL_HANDLERS
+    from .integrations.github.handlers import TOOL_HANDLERS
 
     text = message.content.strip().lower()
     user_id = message.author.id
@@ -970,8 +969,8 @@ async def handle_reply_context(message: discord.Message, text: str, ref_msg: dis
             ref_msg = await message.channel.fetch_message(message.reference.message_id)
 
         # Include both authors when replying to someone else's message
-        original_author = ref_msg.author.name if ref_msg.author else None
-        requester = message.author.name
+        original_author = format_discord_identity(ref_msg.author) if ref_msg.author else None
+        requester = format_discord_identity(message.author)
 
         # Only add dual authorship if replying to a DIFFERENT user's message
         if original_author and ref_msg.author.id != message.author.id:
@@ -1019,7 +1018,7 @@ async def start_conversation(
         channel_id=message.channel.id,
         thread_id=thread.id,
         user_id=message.author.id,
-        user_name=str(message.author),
+        user_name=format_discord_identity(message.author),
         initial_message=text,
         topic_summary=topic,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -1079,7 +1078,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                channel_history.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1131,7 +1130,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             # Process with tools AND history for context
             result = await pollinations_client.process_with_tools(
                 user_message=text,
-                discord_username=str(message.author),
+                discord_username=format_discord_identity(message.author),
                 thread_history=full_history,  # System prompt + channel history for context
                 image_urls=image_urls,
                 video_urls=video_urls or [],
@@ -1168,7 +1167,13 @@ async def handle_inline_polli_mention(message: discord.Message):
             await message.reply("Sorry, I encountered an error processing your request.", mention_author=False)
 
 
-async def handle_thread_message(message: discord.Message, session: ConversationSession):
+async def handle_thread_message(
+    message: discord.Message,
+    session: ConversationSession,
+    image_urls: list[str],
+    video_urls: list[str],
+    file_urls: list[str],
+):
     """Handle a message in an existing thread."""
     # Type guard: this function is only called for thread messages
     if not isinstance(message.channel, discord.Thread):
@@ -1176,14 +1181,12 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         return
 
     channel = message.channel  # Now typed as discord.Thread
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-
     # Add to session
     session_manager.add_to_session(
         session=session,
         role="user",
         content=message.content,
-        author=str(message.author),
+        author=format_discord_identity(message.author),
         author_id=message.author.id,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
     )
@@ -1270,7 +1273,7 @@ async def process_message(
         # tool_context is passed to handlers for per-request permission checks (thread-safe)
         result = await pollinations_client.process_with_tools(
             user_message=text,
-            discord_username=str(user),
+            discord_username=format_discord_identity(user),
             thread_history=thread_history,
             image_urls=image_urls,
             video_urls=video_urls or [],
@@ -1356,6 +1359,38 @@ async def process_message(
         raise
 
 
+MERMAID_FENCE_PATTERN = re.compile(r"```mermaid[ \t]*\n(.*?)```", re.DOTALL | re.IGNORECASE)
+
+
+async def _render_mermaid_fences(text: str, inline_images: dict[str, discord.File]) -> str:
+    """Replace ```mermaid fences with image markers, rendering each diagram.
+
+    Rendering here rather than behind a tool call means the model writes a diagram the way
+    it naturally would and gets a picture — no extra round trip, no schema to satisfy. A
+    diagram that fails to render is left as its original fenced code block, which is still
+    readable and pasteable.
+    """
+    matches = list(MERMAID_FENCE_PATTERN.finditer(text))
+    if not matches:
+        return text
+
+    from .integrations.diagrams import render_mermaid_safe
+
+    for idx, match in enumerate(matches):
+        source = match.group(1).strip()
+        if not source:
+            continue
+        buffer, error = await render_mermaid_safe(source)
+        if not buffer:
+            logger.info("Inline mermaid render failed, leaving code block: %s", error)
+            continue
+        marker = f"__INLINE_IMG_mermaid_{idx}__"
+        inline_images[marker] = discord.File(buffer, filename=f"diagram_{idx}.png")
+        text = text.replace(match.group(0), f"\n{marker}\n", 1)
+
+    return text
+
+
 async def send_long_message(
     channel: discord.Thread | discord.TextChannel,
     text: str,
@@ -1366,6 +1401,16 @@ async def send_long_message(
 ):
     attachments = files[:10] if files else []
 
+    # Rendered images stay anchored to the point in the text where they belong. Discord
+    # attaches files to the end of a message, so a table placed mid-answer must end that
+    # message and ride along with it — otherwise every image piles up at the bottom of the
+    # reply, detached from the sentence introducing it.
+    inline_images: dict[str, discord.File] = {}
+
+    # A ```mermaid fence becomes a picture on its own — the model just writes the diagram
+    # the way it would anywhere else, with no tool call and no extra round trip.
+    text = await _render_mermaid_fences(text, inline_images)
+
     modified_text, tables = detect_and_parse_markdown_tables(text)
 
     for idx, (headers, rows, alignments) in enumerate(tables):
@@ -1375,9 +1420,9 @@ async def send_long_message(
             try:
                 img_buffer, links = await render_table_image(headers, rows, alignments)
                 if img_buffer:
-                    file = discord.File(img_buffer, filename=f"table_{idx}.png")
-                    attachments.append(file)
-                    replace_text = "\n*(Table image attached)*\n"
+                    marker = f"__INLINE_IMG_table_{idx}__"
+                    inline_images[marker] = discord.File(img_buffer, filename=f"table_{idx}.png")
+                    replace_text = f"\n{marker}\n"
                     if links:
                         replace_text += "**References:**\n" + "\n".join(f"- {l}" for l in links) + "\n"
                     modified_text = modified_text.replace(placeholder, replace_text)
@@ -1398,9 +1443,9 @@ async def send_long_message(
         try:
             latex_buffer, success = await convert_latex_to_png(latex_expr)
             if success and isinstance(latex_buffer, io.BytesIO):
-                file = discord.File(latex_buffer, filename=f"equation_{idx}.png")
-                attachments.append(file)
-                modified_text = modified_text.replace(placeholder, "\n*(Equation rendered below)*\n")
+                marker = f"__INLINE_IMG_equation_{idx}__"
+                inline_images[marker] = discord.File(latex_buffer, filename=f"equation_{idx}.png")
+                modified_text = modified_text.replace(placeholder, f"\n{marker}\n")
                 rendered = True
         except Exception as e:
             logger.error(f"LaTeX block rendering error: {e}")
@@ -1418,6 +1463,25 @@ async def send_long_message(
 
     while i < len(lines):
         line = lines[i]
+
+        # An image marker ends the current message so the picture lands directly under the
+        # text that introduces it, rather than at the end of the whole reply.
+        marker = line.strip()
+        if marker in inline_images:
+            first_message_sent = await _send_chunk(
+                channel,
+                "\n".join(output_lines),
+                max_length,
+                first_message_sent,
+                reply_to,
+                attachments,
+                mention_author,
+                trailing_files=[inline_images.pop(marker)],
+            )
+            output_lines = []
+            i += 1
+            continue
+
         if line.strip().startswith("```"):
             code_block_lines = [line]
             i += 1
@@ -1454,15 +1518,38 @@ async def send_long_message(
         output_lines.append(line)
         i += 1
 
-    if output_lines:
+    if output_lines or inline_images:
         text_to_send = "\n".join(output_lines)
         await _send_chunk(
-            channel, text_to_send, max_length, first_message_sent, reply_to, attachments, mention_author
+            channel,
+            text_to_send,
+            max_length,
+            first_message_sent,
+            reply_to,
+            attachments,
+            mention_author,
+            # Any marker that never appeared in the text still has to be delivered.
+            trailing_files=list(inline_images.values()),
         )
 
 
-async def _send_chunk(channel, text, max_length, first_sent, reply_to, attachments, mention_author):
-    if not text.strip() and not attachments:
+async def _send_chunk(
+    channel,
+    text,
+    max_length,
+    first_sent,
+    reply_to,
+    attachments,
+    mention_author,
+    trailing_files: list[discord.File] | None = None,
+):
+    """Send `text`, splitting on Discord's length cap.
+
+    `trailing_files` ride on the final chunk, which is what keeps a rendered table or
+    equation directly beneath the text that introduces it.
+    """
+    trailing_files = trailing_files or []
+    if not text.strip() and not attachments and not trailing_files:
         return first_sent
 
     chunks = []
@@ -1481,9 +1568,15 @@ async def _send_chunk(channel, text, max_length, first_sent, reply_to, attachmen
         chunks = [""]
 
     for idx, chunk in enumerate(chunks):
+        is_last = idx == len(chunks) - 1
         files_to_send = attachments[:10] if not first_sent else []
         if files_to_send:
             attachments[:] = attachments[10:]
+        if is_last and trailing_files:
+            # Discord caps a message at 10 attachments; the overflow loop below sends any rest.
+            room = 10 - len(files_to_send)
+            files_to_send = files_to_send + trailing_files[:room]
+            attachments[:] = attachments + trailing_files[room:]
 
         if not first_sent and reply_to:
             if chunk:
@@ -1499,7 +1592,9 @@ async def _send_chunk(channel, text, max_length, first_sent, reply_to, attachmen
             first_sent = True
         else:
             if chunk:
-                await channel.send(chunk)
+                await channel.send(chunk, files=files_to_send)
+            elif files_to_send:
+                await channel.send(files=files_to_send)
 
     while attachments:
         files_to_send = attachments[:10]

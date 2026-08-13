@@ -581,6 +581,9 @@ export class Pollinations {
                 this.imageTimeout,
                 signal,
             );
+            if (!imgResponse.ok) {
+                await this.handleErrorResponse(imgResponse);
+            }
             const buffer = await imgResponse.arrayBuffer();
             const contentType =
                 imgResponse.headers.get("content-type") || "image/png";
@@ -1136,7 +1139,7 @@ export class Pollinations {
     }
 
     /**
-     * Get available models (OpenAI-compatible endpoint)
+     * Get all available models
      *
      * @example
      * ```ts
@@ -1144,7 +1147,7 @@ export class Pollinations {
      * ```
      */
     async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/v1/models`);
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
     }
 
     // ============================================================================

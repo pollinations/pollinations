@@ -84,19 +84,6 @@ function responseImageUsage(
     return usageToOpenAIImageUsage(usage);
 }
 
-function copyCacheHeaders(c: Context<Env>, response: Response): void {
-    for (const name of [
-        "cache-control",
-        "x-cache",
-        "x-cache-date",
-        "x-cache-key",
-        "x-cache-type",
-    ]) {
-        const value = response.headers.get(name);
-        if (value) c.header(name, value);
-    }
-}
-
 function setUrlParam(url: URL, name: string, value: unknown): void {
     if (value === undefined || value === null) return;
     url.searchParams.set(
@@ -300,7 +287,6 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
 
         const body = c.req.valid("json" as never) as CreateImageRequest;
         const usage = responseImageUsage(c, response);
-        copyCacheHeaders(c, response);
         const mediaData =
             mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
 

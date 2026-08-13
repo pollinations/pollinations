@@ -1,7 +1,7 @@
-## Idempotency and timeouts
+## Retrying timed-out requests
 
-Cache-backed generation requests are idempotent while the result remains cached. Identical requests share one in-progress generation and later receive the same completed result. Only the generated result is billed; joined requests and cache hits are not.
+If your client or proxy times out, send the exact same request again. Keep the endpoint, body, query parameters, and seed unchanged.
 
-The API keeps the request open until generation finishes. If your client or proxy times out, retry the exact same request: keep the endpoint, body, query parameters, and seed unchanged. The generation continues after the connection closes, so the retry joins it while it is running or receives the cached result after completion.
+The generation continues after the connection closes. The retry waits for the generation already in progress or receives the completed cached result, instead of starting another generation. Only the generation is billed; retries and cache hits are not.
 
 This applies to non-streaming `/v1/chat/completions` and `/text`, `/v1/images/generations`, and the cache-backed `GET` text, image, video, audio, and 3D routes. Streaming text and uncached endpoints run independently.

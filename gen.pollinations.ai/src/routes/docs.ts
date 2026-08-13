@@ -60,7 +60,7 @@ type OpenApiSchema = Record<string, unknown>;
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
-    idempotency: "Idempotency",
+    idempotency: "Retries and timeouts",
     byop: "BYOP",
     cli: "CLI",
     mcpServer: "MCP Server",

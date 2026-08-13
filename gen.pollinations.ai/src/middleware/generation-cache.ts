@@ -1,4 +1,5 @@
 import { bytesToHex } from "@shared/client-ip.ts";
+import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
@@ -23,7 +24,11 @@ export type GenerationCacheVariables = {
     /** Alternate request identity for routes which wrap a media response. */
     generationCacheUrl?: URL;
     /** Normalized POST body passed to the generation executor. */
-    generationRequestBody?: string;
+    generationRequestBody?: string | Uint8Array;
+    /** Content type for a normalized multipart body. */
+    generationRequestContentType?: string;
+    /** Canonical body identity used by body-aware cache adapters. */
+    generationCacheBody?: string;
     /** Executor callback used to await durable cache materialization. */
     registerGenerationCacheWrite?: (promise: Promise<void>) => void;
 };
@@ -48,6 +53,89 @@ export type GenerationCacheAdapter = {
         response: Response,
     ) => { response: Response; write: Promise<void> };
 };
+
+function normalizedJsonBody(body: string): string {
+    try {
+        const parsed = JSON.parse(body);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            for (const key of Object.keys(parsed)) {
+                if (key.toLowerCase() === "key") delete parsed[key];
+            }
+        }
+        return stableStringify(parsed);
+    } catch {
+        return body;
+    }
+}
+
+async function normalizedFormData(formData: FormData): Promise<{
+    body: Uint8Array;
+    contentType: string;
+    identity: string;
+}> {
+    const sanitized = new FormData();
+    const identity = new Map<string, unknown[]>();
+
+    for (const [name, value] of formData.entries()) {
+        if (name.toLowerCase() === "key") continue;
+        const values = identity.get(name) ?? [];
+        if (value instanceof File) {
+            const bytes = new Uint8Array(await value.arrayBuffer());
+            values.push({
+                file: value.name,
+                type: value.type,
+                hash: bytesToHex(await crypto.subtle.digest("SHA-256", bytes)),
+            });
+            sanitized.append(name, value, value.name);
+        } else {
+            values.push(value);
+            sanitized.append(name, value);
+        }
+        identity.set(name, values);
+    }
+
+    const encoded = new Response(sanitized);
+    return {
+        body: new Uint8Array(await encoded.arrayBuffer()),
+        contentType: encoded.headers.get("content-type") ?? "",
+        identity: stableStringify(Object.fromEntries(identity)),
+    };
+}
+
+/** Captures one replayable body and one stable identity for every POST route. */
+export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
+    async (c, next) => {
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
+            return next();
+        }
+
+        if (c.var.generationRequestBody !== undefined) {
+            const body = c.var.generationRequestBody;
+            const identity =
+                typeof body === "string"
+                    ? normalizedJsonBody(body)
+                    : bytesToHex(await crypto.subtle.digest("SHA-256", body));
+            if (typeof body === "string") {
+                c.set("generationRequestBody", identity);
+            }
+            c.set("generationCacheBody", identity);
+            return next();
+        }
+
+        if (c.var.formData) {
+            const normalized = await normalizedFormData(c.var.formData);
+            c.set("generationRequestBody", normalized.body);
+            c.set("generationRequestContentType", normalized.contentType);
+            c.set("generationCacheBody", normalized.identity);
+            return next();
+        }
+
+        const body = normalizedJsonBody(await c.req.text());
+        c.set("generationRequestBody", body);
+        c.set("generationCacheBody", body);
+        return next();
+    },
+);
 
 function replaceCapturedResponse(
     c: Context<GenerationCacheEnv>,

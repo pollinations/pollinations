@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
@@ -189,10 +190,10 @@ workerTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 

@@ -1,13 +1,10 @@
 import { type Context, Hono } from "hono";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import {
-    generateEmbeddings,
-    getEmbeddingProviderModelId,
-} from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
@@ -53,12 +50,10 @@ import {
     CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
-import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
-import { handle3dPrompt } from "@/model3d/handler.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -74,7 +69,6 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
-import { withModelFallbackResponse } from "../fallback.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -82,6 +76,7 @@ import {
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
+    generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
     generateSimpleText,
@@ -571,28 +566,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateEmbeddingRequestSchema),
         resolveModel("generate.embedding"),
         track("generate.embedding"),
+        prepareGenerationRequest,
+        textCache,
         generationAccess,
-        async (c) => {
-            const requestBody = c.req.valid("json" as never) as z.infer<
-                typeof CreateEmbeddingRequestSchema
-            >;
-            const { response, servedEntry } = await withModelFallbackResponse(
-                c.var.model,
-                (candidate) =>
-                    generateEmbeddings(
-                        c.env,
-                        {
-                            ...requestBody,
-                            model: getEmbeddingProviderModelId(candidate.id),
-                        },
-                        candidate.definition ?? c.var.model.definition,
-                        candidate.id,
-                    ),
-                c.var.track?.failedCalls,
-            );
-            if (servedEntry) c.set("servedModelEntry", servedEntry);
-            return response;
-        },
+        deduplicateGeneration,
+        generateEmbeddingsResponse,
     )
     .post(
         "/text",
@@ -807,7 +785,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model With JSON",
             description:
-                "Generate a 3D model from a text prompt or reference image using JSON parameters. POST requests bypass the server-side media cache, so repeated requests regenerate and are billed. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -848,18 +826,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),
+        prepareGenerationRequest,
+        model3dCache,
         generationAccess,
-        async (c) => {
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-            };
-            const prompt = await applySafety(
-                c,
-                c.req.param("prompt") || "",
-                query.safe,
-            );
-            return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
-        },
+        deduplicateGeneration,
+        generateModel3d,
     )
     .get(
         "/audio/:text",
@@ -939,6 +910,7 @@ export const proxyRoutes = new Hono<Env>()
         generationAccess,
         prepareOpenAIImageGeneration,
         formatOpenAIImageGeneration,
+        prepareGenerationRequest,
         imageCache,
         deduplicateGeneration,
         handleImageGeneration,
@@ -971,5 +943,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
+        prepareGenerationRequest,
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
         handleImageEdit,
     );

@@ -117,7 +117,7 @@ async function fetch3d(
     return response;
 }
 
-test("POST /3d sends JSON Trellis parameters through billing without URL-only caching", async () => {
+test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     syncModel3dEnvironment({
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
@@ -147,7 +147,7 @@ test("POST /3d sends JSON Trellis parameters through billing without URL-only ca
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("X-Cache")).toBeNull();
+        expect(response.headers.get("X-Cache")).toBe("HIT");
         expect(await response.text()).toBe("glTF");
     }
 

@@ -102,7 +102,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         const body = job.request.body;
         const chunks: Uint8Array[] = [];
         if (body !== undefined) {
-            const bytes = new TextEncoder().encode(body);
+            const bytes = body;
             for (let offset = 0; offset < bytes.byteLength; ) {
                 const end = Math.min(
                     offset + BODY_CHUNK_BYTES,
@@ -129,7 +129,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     private async restore(job: PersistedJob): Promise<GenerationJob> {
-        let body: string | undefined;
+        let body: Uint8Array | undefined;
         if (job.bodyChunks > 0) {
             const keys = Array.from(
                 { length: job.bodyChunks },
@@ -155,7 +155,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 bytes.set(chunk, offset);
                 offset += chunk.byteLength;
             }
-            body = new TextDecoder().decode(bytes);
+            body = bytes;
         }
         return {
             cache: job.cache,

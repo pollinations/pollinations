@@ -34,7 +34,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
         // after upstream validators have parsed JSON.
         let bodyText: string | undefined;
         if (c.req.method === "POST" || c.req.method === "PUT") {
-            bodyText = await c.req.text();
+            bodyText = c.var.generationCacheBody ?? (await c.req.text());
         }
 
         return generateCacheKey(c.req.raw, bodyText);

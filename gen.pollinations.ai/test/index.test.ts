@@ -6,6 +6,7 @@ import {
 import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
@@ -387,24 +388,24 @@ describe("gen worker routing", () => {
         }
     });
 
-    it.each([
-        "/models",
-        "/audio/models",
-    ] as const)("advertises transcription endpoints on %s", async (path) => {
-        const response = await fetchWorker(path, envWithEnter());
+    it.each(["/models", "/audio/models"] as const)(
+        "advertises transcription endpoints on %s",
+        async (path) => {
+            const response = await fetchWorker(path, envWithEnter());
 
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            supported_endpoints?: string[];
-        }[];
-        for (const name of TRANSCRIPTION_MODEL_IDS) {
-            expect(
-                models.find((model) => model.name === name)
-                    ?.supported_endpoints,
-            ).toEqual(["/v1/audio/transcriptions"]);
-        }
-    });
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as {
+                name: string;
+                supported_endpoints?: string[];
+            }[];
+            for (const name of TRANSCRIPTION_MODEL_IDS) {
+                expect(
+                    models.find((model) => model.name === name)
+                        ?.supported_endpoints,
+                ).toEqual(["/v1/audio/transcriptions"]);
+            }
+        },
+    );
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -553,6 +554,91 @@ describe("gen worker routing", () => {
         );
     });
 });
+
+fixtureTest(
+    "coordinates every finite POST generation endpoint",
+    async ({ paidApiKey }) => {
+        const coordinatedPaths: string[] = [];
+        const bindings = {
+            ...env,
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async (job: GenerationJob) => {
+                        coordinatedPaths.push(
+                            new URL(job.request.url).pathname,
+                        );
+                        return {
+                            status: "failed" as const,
+                            error: {
+                                httpStatus: 418,
+                                headers: [["content-type", "text/plain"]],
+                                body: new TextEncoder().encode("coordinated"),
+                            },
+                        };
+                    },
+                }),
+            },
+        } as unknown as CloudflareBindings;
+        const json = (path: string, body: Record<string, unknown>) =>
+            new Request(`https://staging.gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            });
+        const multipart = (
+            path: string,
+            fileField: string,
+            extra: Record<string, string> = {},
+        ) => {
+            const body = new FormData();
+            for (const [name, value] of Object.entries(extra)) {
+                body.append(name, value);
+            }
+            body.append(
+                fileField,
+                new File([new Uint8Array([1, 2, 3])], "input.wav", {
+                    type: "audio/wav",
+                }),
+            );
+            return new Request(`https://staging.gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body,
+            });
+        };
+        const requests = [
+            json("/v1/embeddings", { input: "hello" }),
+            json("/3d/object", {}),
+            json("/v1/images/edits", {
+                prompt: "make it blue",
+                image: "https://example.com/source.png",
+            }),
+            json("/v1/audio/dialogue", {
+                inputs: [{ text: "hello", voice: "alloy" }],
+            }),
+            multipart("/v1/audio/voice-changer", "audio"),
+            multipart("/v1/audio/voice-isolator", "audio"),
+            json("/v1/audio/speech", { input: "hello" }),
+            json("/v1/audio/speech/with-timestamps", { input: "hello" }),
+            multipart("/v1/audio/transcriptions", "file"),
+        ];
+
+        for (const request of requests) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request, bindings, ctx);
+            expect(response.status).toBe(418);
+            expect(await response.text()).toBe("coordinated");
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(coordinatedPaths).toEqual(
+            requests.map((request) => new URL(request.url).pathname),
+        );
+    },
+);
 
 describe("model status", () => {
     it("reports the source timestamp and marks stale fallback data", async () => {
@@ -1056,10 +1142,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1225,10 +1311,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1577,10 +1663,10 @@ fixtureTest(
                 headers: { Authorization: `Bearer ${paidApiKey}` },
                 body: form,
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 FAL_KEY: "test-fal-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1790,10 +1876,10 @@ fixtureTest(
                 headers: { Authorization: `Bearer ${paidApiKey}` },
                 body: form,
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 STABILITY_API_KEY: "test-stability-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 

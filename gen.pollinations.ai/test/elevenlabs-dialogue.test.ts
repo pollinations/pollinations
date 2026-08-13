@@ -8,6 +8,7 @@ import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
@@ -186,10 +187,10 @@ workerTest(
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 request,
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
             expect(response.status).toBe(200);

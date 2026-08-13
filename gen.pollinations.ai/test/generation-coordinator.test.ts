@@ -10,7 +10,9 @@ function testJob(key: string, body?: string): GenerationJob {
             url: "https://gen.pollinations.ai/robots.txt",
             method: body === undefined ? "GET" : "POST",
             headers: [],
-            ...(body !== undefined && { body }),
+            ...(body !== undefined && {
+                body: new TextEncoder().encode(body),
+            }),
         },
         auth: {
             user: { id: "user-1", tier: "seed" },

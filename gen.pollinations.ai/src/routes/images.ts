@@ -30,7 +30,6 @@ import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
-import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
@@ -337,8 +336,6 @@ export async function handleImageGeneration(c: Context<Env>) {
 }
 
 export async function handleImageEdit(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
-
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
     const safePrompt = await applySafety(c, prompt, safe);

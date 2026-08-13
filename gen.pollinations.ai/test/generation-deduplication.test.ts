@@ -7,6 +7,7 @@ import {
     createGenerationCache,
     type GenerationCacheAdapter,
     type GenerationCacheVariables,
+    prepareGenerationRequest,
 } from "@/middleware/generation-cache.ts";
 import {
     deduplicateGeneration,
@@ -29,6 +30,7 @@ type TestEnv = {
         AuthVariables &
         GenerationCacheVariables & {
             track: { streamRequested: boolean };
+            formData?: FormData;
         };
 };
 
@@ -191,7 +193,7 @@ describe("generation request deduplication", () => {
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
-        expect(jobs[0].request.body).toBe(
+        expect(new TextDecoder().decode(jobs[0].request.body)).toBe(
             JSON.stringify({
                 model: "resolved-model",
                 prompt: "hello",
@@ -224,6 +226,84 @@ describe("generation request deduplication", () => {
         expect(await response.text()).toBe("origin");
         expect(starts).toBe(0);
         expect(generation.originHits).toBe(1);
+    });
+
+    it("replays multipart files without putting API keys in the job", async () => {
+        const cache = new Map<string, string>();
+        const jobs: GenerationJob[] = [];
+        const adapter = createAdapter(cache);
+        adapter.getKey = (c) => c.var.generationCacheBody ?? "";
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "request-1");
+                c.set("track", { streamRequested: false });
+                c.set("formData", await c.req.formData());
+                c.set("auth", {
+                    user: { id: "user-1", tier: "seed" } as never,
+                    apiKey: { id: "key-1", rawKey: "pk-secret" },
+                    requireAuthorization: async () => {},
+                    requireUser: () =>
+                        ({ id: "user-1", tier: "seed" }) as never,
+                    requireModelAccess: () => {},
+                });
+                await next();
+            })
+            .post(
+                "/upload",
+                prepareGenerationRequest,
+                createGenerationCache(adapter),
+                deduplicateGeneration,
+            );
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async (job: GenerationJob) => {
+                        jobs.push(job);
+                        cache.set(job.cache.key, "generated");
+                        return { status: "cached" as const };
+                    },
+                }),
+            },
+        } as unknown as CloudflareBindings;
+        const form = new FormData();
+        form.append("model", "voice-transform");
+        form.append("key", "body-secret");
+        form.append(
+            "audio",
+            new File([new Uint8Array([1, 2, 3])], "voice.wav", {
+                type: "audio/wav",
+            }),
+        );
+
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+            }),
+            bindings,
+            executionContext(),
+        );
+
+        expect(await response.text()).toBe("generated");
+        expect(jobs).toHaveLength(1);
+        const job = jobs[0];
+        const contentType = new Headers(job.request.headers).get(
+            "content-type",
+        );
+        expect(contentType).toContain("multipart/form-data; boundary=");
+        const replayed = await new Request(job.request.url, {
+            method: "POST",
+            headers: job.request.headers,
+            body: job.request.body,
+        }).formData();
+        expect(replayed.get("key")).toBeNull();
+        expect(replayed.get("model")).toBe("voice-transform");
+        const audio = replayed.get("audio");
+        expect(audio).toBeInstanceOf(File);
+        expect(new Uint8Array(await (audio as File).arrayBuffer())).toEqual(
+            new Uint8Array([1, 2, 3]),
+        );
     });
 
     it("fails closed when the coordinator binding is missing", async () => {

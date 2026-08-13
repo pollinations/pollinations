@@ -38,7 +38,7 @@ export type GenerationRequestSnapshot = {
     url: string;
     method: string;
     headers: [string, string][];
-    body?: string;
+    body?: Uint8Array;
 };
 
 export type GenerationJob = {
@@ -89,11 +89,10 @@ function sanitizeUrl(rawUrl: string): string {
 function sanitizeJsonBody(body: string): string {
     try {
         const parsed = JSON.parse(body);
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-            return body;
-        }
-        for (const key of Object.keys(parsed)) {
-            if (key.toLowerCase() === "key") delete parsed[key];
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            for (const key of Object.keys(parsed)) {
+                if (key.toLowerCase() === "key") delete parsed[key];
+            }
         }
         return JSON.stringify(parsed);
     } catch {
@@ -106,11 +105,27 @@ async function createJob(
     adapter: GenerationCacheAdapter,
     key: string,
 ): Promise<GenerationJob> {
-    let body: string | undefined;
+    let body: Uint8Array | undefined;
     if (c.req.method !== "GET" && c.req.method !== "HEAD") {
-        body = sanitizeJsonBody(
-            c.var.generationRequestBody ?? (await c.req.text()),
+        const captured = c.var.generationRequestBody;
+        body =
+            captured instanceof Uint8Array
+                ? captured
+                : new TextEncoder().encode(
+                      sanitizeJsonBody(captured ?? (await c.req.text())),
+                  );
+    }
+
+    const headers = [...c.req.raw.headers.entries()].filter(([name]) =>
+        EXECUTOR_HEADERS.has(name.toLowerCase()),
+    );
+    if (c.var.generationRequestContentType) {
+        const contentType = c.var.generationRequestContentType;
+        const existing = headers.findIndex(
+            ([name]) => name.toLowerCase() === "content-type",
         );
+        if (existing === -1) headers.push(["content-type", contentType]);
+        else headers[existing] = [headers[existing][0], contentType];
     }
 
     return {
@@ -118,9 +133,7 @@ async function createJob(
         request: {
             url: sanitizeUrl(c.req.url),
             method: c.req.method,
-            headers: [...c.req.raw.headers.entries()].filter(([name]) =>
-                EXECUTOR_HEADERS.has(name.toLowerCase()),
-            ),
+            headers,
             ...(body !== undefined && { body }),
         },
         auth: createAuthSnapshot(c.var.auth),

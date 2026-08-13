@@ -20,6 +20,7 @@ import {
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
+    hashGenerationCacheIdentity,
 } from "./generation-cache.ts";
 
 type MediaCacheConfig = {
@@ -35,8 +36,17 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
     return {
         storage: "media",
         label: config.label,
-        getKey(c) {
+        async getKey(c) {
             const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
+            if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
+                cacheUrl.searchParams.set(
+                    "__request_body",
+                    await hashGenerationCacheIdentity(
+                        "media",
+                        c.var.generationCacheBody,
+                    ),
+                );
+            }
             return generateCacheKey(
                 cacheUrl,
                 c.var.generationCacheUrl

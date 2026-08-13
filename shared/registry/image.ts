@@ -694,6 +694,45 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
+    "qwen-image-3": {
+        aliases: [],
+        provider: "fal",
+        brand: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptImageTokens: 0.003, // per reference image ingested by Fal
+            completionImageTokens: 0.04, // per image up to 1536x1536
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.003,
+                    completionImageTokens: 0.075,
+                },
+            },
+            ({ input }) =>
+                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
+                    ? "2k"
+                    : undefined,
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                },
+            },
+            "1K",
+        ),
+        title: "Qwen Image 3",
+        description:
+            "Creates and edits detailed images with crisp multilingual text and complex layouts",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
+    },
     "grok-imagine": {
         aliases: ["grok-imagine-image"],
         provider: "xai",

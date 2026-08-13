@@ -106,7 +106,7 @@ export const simpleAudioQuerySchema = z.object({
         }),
     seed: z.coerce.number().int().min(-1).max(4294967295).optional().meta({
         description:
-            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
+            "Seed passed to the model. Same seed + parameters return the same cached result while available.",
         example: "42",
     }),
     key: z.string().optional().meta({

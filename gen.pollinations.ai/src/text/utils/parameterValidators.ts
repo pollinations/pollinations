@@ -1,6 +1,3 @@
-/** INT32_MAX - for compatibility with strict providers like Vertex AI */
-const MAX_SEED_VALUE = 2147483647;
-
 function validateFloat(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
     const parsed = Number.parseFloat(String(value));
@@ -11,15 +8,6 @@ function validateInt(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
     const parsed = Number.parseInt(String(value), 10);
     return Number.isNaN(parsed) ? undefined : parsed;
-}
-
-/**
- * Processes seed value. seed=-1 means "random" (parity with image generation).
- */
-function processSeed(value: unknown): number | undefined {
-    const seed = validateInt(value);
-    if (seed === undefined) return undefined;
-    return seed === -1 ? Math.floor(Math.random() * MAX_SEED_VALUE) : seed;
 }
 
 function validateBoolean(value: unknown): boolean | undefined {
@@ -68,7 +56,7 @@ export function validateTextGenerationParams(
         presence_penalty: validateFloat(data.presence_penalty),
         frequency_penalty: validateFloat(data.frequency_penalty),
         repetition_penalty: validateFloat(data.repetition_penalty),
-        seed: processSeed(data.seed),
+        seed: validateInt(data.seed),
         stream: validateBoolean(data.stream),
         model: validateString(data.model),
         voice: validateString(data.voice),

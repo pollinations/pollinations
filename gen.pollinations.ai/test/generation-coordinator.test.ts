@@ -39,13 +39,10 @@ describe("GenerationCoordinator", () => {
             coordinator.startAndWait(testJob(key)),
         );
 
-        expect(result).toEqual({
-            role: "joiner",
-            outcome: { status: "cached" },
-        });
+        expect(result).toEqual({ status: "cached" });
     });
 
-    it("admits one owner and one joiner for the same cache identity", async () => {
+    it("joins concurrent callers for the same cache identity", async () => {
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,
         );
@@ -61,13 +58,9 @@ describe("GenerationCoordinator", () => {
                 return Promise.all([owner, joiner]);
             },
         );
-        expect(results.map((result) => result.role).sort()).toEqual([
-            "joiner",
-            "owner",
-        ]);
-        expect(
-            results.every((result) => result.outcome.status === "failed"),
-        ).toBe(true);
+        expect(results.every((result) => result.status === "failed")).toBe(
+            true,
+        );
     });
 
     it("persists request bodies larger than one storage value", async () => {
@@ -85,7 +78,7 @@ describe("GenerationCoordinator", () => {
                 );
                 await waitForAlarm(state);
                 await coordinator.alarm();
-                return (await result).outcome.status;
+                return (await result).status;
             },
         );
 

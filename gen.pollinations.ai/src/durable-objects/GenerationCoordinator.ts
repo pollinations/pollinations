@@ -39,11 +39,7 @@ function unavailable(message: string): GenerationOutcome {
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
 
-    async startAndWait(job: GenerationJob): Promise<{
-        role: "owner" | "joiner";
-        outcome: GenerationOutcome;
-    }> {
-        let role: "owner" | "joiner" = "joiner";
+    async startAndWait(job: GenerationJob): Promise<GenerationOutcome> {
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
 
@@ -59,7 +55,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
             if (!stored) {
                 await this.persist(job);
-                role = "owner";
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -67,9 +62,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             });
         });
 
-        if (immediate) return { role, outcome: immediate };
+        if (immediate) return immediate;
         if (!wait) throw new Error("Generation waiter was not registered");
-        return { role, outcome: await wait };
+        return wait;
     }
 
     async alarm(): Promise<void> {

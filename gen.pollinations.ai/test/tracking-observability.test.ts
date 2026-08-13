@@ -530,7 +530,7 @@ describe("tracking observability", () => {
             trackingUser,
             undefined,
             undefined,
-            { "x-cache": "HIT", "x-cache-type": "COALESCED" },
+            { "x-cache": "HIT" },
             generationCache,
         ).fetch(request(), bindings, joinerCtx);
         await waitOnExecutionContext(joinerCtx);

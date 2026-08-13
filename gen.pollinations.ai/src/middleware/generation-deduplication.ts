@@ -55,7 +55,10 @@ type DeduplicationEnv = {
     Bindings: CloudflareBindings;
     Variables: GenerationCacheEnv["Variables"] &
         AuthVariables & {
-            track?: { streamRequested?: boolean };
+            track?: {
+                streamRequested?: boolean;
+                detachedExecutionTracked?: boolean;
+            };
         };
 };
 
@@ -130,7 +133,6 @@ function failedResponse(error: GenerationErrorSnapshot): Response {
             ? error.httpStatus
             : 502;
     const headers = new Headers(error.headers);
-    headers.set("X-Cache-Type", "COALESCED-ERROR");
     const body = error.body.buffer.slice(
         error.body.byteOffset,
         error.body.byteOffset + error.body.byteLength,
@@ -161,9 +163,9 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let result: Awaited<ReturnType<typeof stub.startAndWait>>;
+        let outcome: Awaited<ReturnType<typeof stub.startAndWait>>;
         try {
-            result = await stub.startAndWait(job);
+            outcome = await stub.startAndWait(job);
         } catch (error) {
             c.get("log").error(
                 "Generation coordination failed before completion: {error}",
@@ -173,9 +175,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 status: 503,
             });
         }
-        const { role, outcome } = result;
-
         if (outcome.status === "failed") {
+            if (c.var.track) c.var.track.detachedExecutionTracked = true;
             return failedResponse(outcome.error);
         }
 
@@ -200,14 +201,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 { status: 503 },
             );
         }
-        const cacheType = role === "owner" ? "GENERATED" : "COALESCED";
-        // Some adapters set cache headers on the Hono context as well as the
-        // returned Response. Override both so Hono cannot restore EXACT while
-        // merging the final response headers.
         c.header("X-Cache", "HIT");
-        c.header("X-Cache-Type", cacheType);
         response.headers.set("X-Cache", "HIT");
-        response.headers.set("X-Cache-Type", cacheType);
         return response;
     },
 );

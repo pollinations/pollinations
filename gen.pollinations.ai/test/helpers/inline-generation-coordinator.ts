@@ -20,10 +20,7 @@ export function withInlineGenerationCoordinator(
                         coordinated,
                     );
                     await execution.settlement;
-                    return {
-                        role: "owner" as const,
-                        outcome: execution.result,
-                    };
+                    return execution.result;
                 },
             } as never;
         },

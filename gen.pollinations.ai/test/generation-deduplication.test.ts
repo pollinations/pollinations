@@ -44,9 +44,8 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
         storage: "text",
         label: "test-cache",
         getKey: () => "same-request",
-        get: async (c, key) => {
+        get: async (_c, key) => {
             const body = cache.get(key);
-            if (body) c.header("X-Cache-Type", "EXACT");
             return body
                 ? new Response(body, { headers: { "X-Cache": "HIT" } })
                 : null;
@@ -120,7 +119,6 @@ describe("generation request deduplication", () => {
         const coordinator = {
             async startAndWait(job: GenerationJob) {
                 jobs.push(job);
-                const role = active ? "joiner" : "owner";
                 if (!active) {
                     owners += 1;
                     active = Promise.resolve().then(() => {
@@ -128,7 +126,7 @@ describe("generation request deduplication", () => {
                     });
                 }
                 await active;
-                return { role, outcome: { status: "cached" as const } };
+                return { status: "cached" as const };
             },
         };
         const generation = createApp(
@@ -174,12 +172,8 @@ describe("generation request deduplication", () => {
         expect(generation.preflights).toBe(2);
         expect(generation.originHits).toBe(0);
         expect(owners).toBe(1);
-        expect(
-            new Set([
-                owner.headers.get("X-Cache-Type"),
-                joiner.headers.get("X-Cache-Type"),
-            ]),
-        ).toEqual(new Set(["GENERATED", "COALESCED"]));
+        expect(owner.headers.get("X-Cache-Type")).toBeNull();
+        expect(joiner.headers.get("X-Cache-Type")).toBeNull();
         expect(owner.headers.get("X-Cache")).toBe("HIT");
         expect(joiner.headers.get("X-Cache")).toBe("HIT");
         expect(jobs[0].request.url).toBe(
@@ -215,10 +209,7 @@ describe("generation request deduplication", () => {
                 getByName: () => ({
                     startAndWait: async () => {
                         starts += 1;
-                        return {
-                            role: "owner",
-                            outcome: { status: "cached" },
-                        };
+                        return { status: "cached" };
                     },
                 }),
             },
@@ -257,19 +248,16 @@ describe("generation request deduplication", () => {
             GENERATION_COORDINATOR: {
                 getByName: () => ({
                     startAndWait: async () => ({
-                        role: "owner",
-                        outcome: {
-                            status: "failed",
-                            error: {
-                                httpStatus: 422,
-                                headers: [
-                                    ["content-type", "application/json"],
-                                    ["retry-after", "30"],
-                                ],
-                                body: new TextEncoder().encode(
-                                    JSON.stringify({ error: "blocked" }),
-                                ),
-                            },
+                        status: "failed",
+                        error: {
+                            httpStatus: 422,
+                            headers: [
+                                ["content-type", "application/json"],
+                                ["retry-after", "30"],
+                            ],
+                            body: new TextEncoder().encode(
+                                JSON.stringify({ error: "blocked" }),
+                            ),
                         },
                     }),
                 }),
@@ -287,6 +275,7 @@ describe("generation request deduplication", () => {
             "application/json",
         );
         expect(response.headers.get("retry-after")).toBe("30");
+        expect(response.headers.get("x-cache-type")).toBeNull();
         expect(await response.json()).toEqual({ error: "blocked" });
     });
 
@@ -294,10 +283,7 @@ describe("generation request deduplication", () => {
         vi.useFakeTimers();
         let coordinatorName = "";
         const cache = new Map<string, string>();
-        let finish!: (result: {
-            role: "owner";
-            outcome: { status: "cached" };
-        }) => void;
+        let finish!: (result: { status: "cached" }) => void;
         const generation = createApp(createAdapter(cache));
         const bindings = {
             GENERATION_COORDINATOR: {
@@ -331,7 +317,7 @@ describe("generation request deduplication", () => {
         expect(settled).toBe(false);
 
         cache.set("same-request", "generated-after-three-minutes");
-        finish({ role: "owner", outcome: { status: "cached" } });
+        finish({ status: "cached" });
         const response = await responsePromise;
 
         expect(response.status).toBe(200);

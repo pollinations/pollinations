@@ -101,7 +101,6 @@ type RequestTrackingData = {
 type ResponseTrackingData = {
     responseStatus: number;
     cacheHit: boolean;
-    cacheType?: string;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
     /** False only on a call that was moved on from; the outcome row leaves it true. */
@@ -134,6 +133,7 @@ export type TrackVariables = {
         modelRequested: string | null;
         resolvedModelRequested: string;
         streamRequested: boolean;
+        detachedExecutionTracked?: boolean;
         overrideResponseTracking: (response: Response) => void;
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
@@ -288,7 +288,7 @@ export const track = (eventType: EventType) =>
 
         // Detached execution already tracked the provider failure. The outer
         // caller only receives that captured result and must not emit it again.
-        if (c.res.headers.get("x-cache-type") === "COALESCED-ERROR") return;
+        if (c.var.track.detachedExecutionTracked) return;
 
         c.executionCtx.waitUntil(
             (async () => {
@@ -610,14 +610,12 @@ export async function trackResponse(
     const modelProviderUsed =
         servedModelDefinition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
-    const cacheType = response.headers.get("x-cache-type") ?? undefined;
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
         responseStatus: response.status,
         cacheHit,
-        cacheType,
         isBilledUsage: false,
         fallbackUsed,
         modelProviderUsed,
@@ -695,7 +693,6 @@ export async function trackResponse(
             return {
                 responseStatus: response.status,
                 cacheHit,
-                cacheType,
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
@@ -739,7 +736,6 @@ export async function trackResponse(
     return {
         responseStatus: response.status,
         cacheHit,
-        cacheType,
         isBilledUsage: true,
         fallbackUsed,
         cost,
@@ -941,9 +937,7 @@ function createTrackingEvent({
 
         ...(cacheKey && {
             cacheHit: responseTracking.cacheHit,
-            cacheType:
-                responseTracking.cacheType ??
-                (responseTracking.cacheHit ? "EXACT" : "MISS"),
+            cacheType: responseTracking.cacheHit ? "EXACT" : "MISS",
             cacheKey,
         }),
 

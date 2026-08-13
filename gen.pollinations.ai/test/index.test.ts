@@ -754,7 +754,7 @@ fixtureTest(
         );
         expect(urlResponse.status).toBe(200);
         expect(urlResponse.headers.get("x-cache")).toBe("HIT");
-        expect(urlResponse.headers.get("x-cache-type")).toBe("EXACT");
+        expect(urlResponse.headers.get("x-cache-type")).toBeNull();
         const urlGeneration = (await urlResponse.json()) as {
             data: Array<{ url: string; media_type?: string }>;
         };
@@ -769,7 +769,7 @@ fixtureTest(
         );
         expect(cachedResponse.status).toBe(200);
         expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(cachedResponse.headers.get("x-cache-type")).toBe("EXACT");
+        expect(cachedResponse.headers.get("x-cache-type")).toBeNull();
         expect(cachedResponse.headers.get("content-type")).toBe(
             "image/svg+xml",
         );

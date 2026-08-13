@@ -56,7 +56,6 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
             c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
             c.header("X-Cache", "HIT");
-            c.header("X-Cache-Type", "EXACT");
             return c.body(
                 refreshR2ObjectTtl(
                     c.env.IMAGE_BUCKET,

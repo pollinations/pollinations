@@ -1,0 +1,34 @@
+{
+  "pr_number": 13330,
+  "title": "fix: allow public audio reference URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13330",
+  "merged_at": "2026-08-13T22:42:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Accepts any public HTTP(S) URL in `reference_audio` instead of requiring `media.pollinations.ai`.\n- Reuses the same URL validation policy as existing image inputs, rejecting credentialed, loopback, and literal-IP hosts.\n- Preserves the 20 MB limit, 30-second timeout, MIME validation, one-time fetch, and 400-class user errors from #13317.\n- Updates the audio endpoint descriptions and regression tests for third-party URLs.\n\nRoot cause: #13317 hardcoded the Pollinations media origin instead of following the repository's established user-media URL behavior.\n\nChecks:\n- `npm run typecheck`\n- `npx biome check src/routes/audio.ts src/routes/proxy.ts src/userImage.ts src/utils/user-media-url.ts test/index.test.ts`\n- Focused audio/OpenAPI tests: 8 passed\n- Image download regression tests: 17 passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Audio leaves the garden",
+    "blurb": "Reference audio can now arrive from any safe public HTTP(S) URL, not just our own media patch. Polli checked the address book, kept the suspicious hosts out, and let the songs in.",
+    "summary": "The audio API now accepts reference_audio from any validated public HTTP(S) URL, replacing the media.pollinations.ai-only restriction while retaining the 20 MB limit, 30-second timeout, MIME checks, and single-fetch behavior.",
+    "impact": "Users can supply third-party hosted reference audio directly, with the same safe URL policy already used for image inputs and clear 400-class errors for invalid sources.",
+    "keywords": [
+      "audio",
+      "reference_audio",
+      "api",
+      "url-validation",
+      "third-party-media",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict Polli as a friendly audio librarian or sound engineer opening a garden gate for musical notes and tiny waveform scrolls arriving from several distant public web signposts, while a cozy validation checkpoint politely redirects unsafe-looking paths. A retro terminal and blooming code-plants show the API connection; the scene represents broader source compatibility without dropping safety checks.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny sound-engineer headphones, welcoming floating waveform scrolls through a leafy garden gate from several little public HTTP(S) signposts while a retro terminal safely stamps them approved beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'REFERENCE AUDIO'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13330.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny sound-engineer headphones, welcoming floating waveform scrolls through a leafy garden gate from several little public HTTP(S) signposts while a retro terminal safely stamps them approved beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'REFERENCE AUDIO'."
+  },
+  "generated_at": "2026-08-13T22:42:58.435925+00:00"
+}

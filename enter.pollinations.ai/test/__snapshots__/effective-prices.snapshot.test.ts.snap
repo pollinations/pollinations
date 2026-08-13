@@ -1500,15 +1500,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "seedance-2.5": {
     "cost": {
-      "completionVideoSeconds": 0.1028056,
+      "completionVideoSeconds": 0.1028,
     },
     "costVariants": {
       "720p": {
-        "completionVideoSeconds": 0.23112,
+        "completionVideoSeconds": 0.2312,
       },
     },
     "price": {
-      "completionVideoSeconds": 0.1028056,
+      "completionVideoSeconds": 0.1028,
     },
   },
   "seedance-pro": {

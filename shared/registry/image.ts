@@ -820,19 +820,19 @@ export const IMAGE_SERVICES = {
     },
     "seedance-2.5": {
         aliases: [],
-        provider: "openrouter",
+        provider: "replicate",
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-09").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.1028056, // per sec at 480p
+            completionVideoSeconds: 0.1028, // per sec at 480p
         },
         ...defineCostVariants(
             {
                 "720p": {
-                    completionVideoSeconds: 0.23112,
+                    completionVideoSeconds: 0.2312,
                 },
             },
             matchResolution("720p"),

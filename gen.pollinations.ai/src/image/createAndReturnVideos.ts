@@ -9,9 +9,9 @@ import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
-    callOpenRouterSeedance25API,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
+import { callSeedance25API } from "./models/seedance25VideoModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
@@ -68,7 +68,7 @@ export async function createAndReturnVideo(
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "seedance-2.5":
-            result = await callOpenRouterSeedance25API(prompt, safeParams);
+            result = await callSeedance25API(prompt, safeParams);
             break;
         case "happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);

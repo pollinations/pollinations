@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) | Create comic strips quickly with HQ IA, an AI-powered comic book creator. | [@wljrodrigues](https://github.com/wljrodrigues) |
 | [🖼️ IMADreamer](https://fastnow.github.io/imadreamer) | IMADreamer is a free AI image generation tool built on the Pollinations API. | [@fastnow](https://github.com/fastnow) |
 | [📚 FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) | With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition) | [@rpbmultiongh](https://github.com/rpbmultiongh) |
 | [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |
@@ -30,7 +31,6 @@
 | [🎮 NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) | Supports an AI-driven cyberpunk RPG experience for "NEON SHADOWS: CHRONICLES OF THE CORE". | [@KT-Society](https://github.com/KT-Society) |
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) |
 | [🛠️ AIOPE Headless](https://xnet.ngo) | Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster | [@xnet-admin-1](https://github.com/xnet-admin-1) |
-| [🤖 Lucia](https://t.me/MissLucia_bot) | Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU). | [@Ad101DP](https://github.com/Ad101DP) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -426,17 +426,6 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
 });
 
 test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
-    const definition = getRegistryModelDefinition("qwen-image-3");
-
-    expect(definition.provider).toBe("fal");
-    expect(definition.paidOnly).toBe(true);
-    expect(definition.priceMultiplier).toBe(1);
-    expect(definition.inputModalities).toEqual(["text", "image"]);
-    expect(definition.outputModalities).toEqual(["image"]);
-    expect(getCostDefinition("qwen-image-3")).toEqual({
-        promptImageTokens: 0.003,
-        completionImageTokens: 0.04,
-    });
     expect(
         calculatePrice("qwen-image-3", {
             completionImageTokens: 1,

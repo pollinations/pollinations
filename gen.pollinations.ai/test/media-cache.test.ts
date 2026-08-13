@@ -173,6 +173,29 @@ describe("media cache", () => {
         },
     );
 
+    it("excludes cache-control query parameters case-insensitively", async () => {
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const env = createMediaCacheEnv();
+
+        const warm = await dispatch(
+            media.app,
+            "/media/case-insensitive?Key=secret&NoFeed=true",
+            { headers: { Authorization: "Bearer test-key" } },
+            env,
+        );
+        expect(await consumeAndWait(warm)).toBe("origin:1");
+
+        const cached = await dispatch(
+            media.app,
+            "/media/case-insensitive",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(cached)).toBe("origin:1");
+        expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+        expect(media.originHits).toBe(1);
+    });
+
     it("preserves SVG content and browser safety headers on cache hits", async () => {
         const svgHeaders = {
             "Content-Type": "image/svg+xml",

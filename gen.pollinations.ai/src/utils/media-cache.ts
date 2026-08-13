@@ -43,7 +43,7 @@ export function generateCacheKey(url: URL, safeHeader?: string | null): string {
 
     normalizedUrl.search = "";
     for (const [key, value] of params) {
-        if (!EXCLUDED_PARAMS.includes(key)) {
+        if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
             normalizedUrl.searchParams.append(key, value);
         }
     }

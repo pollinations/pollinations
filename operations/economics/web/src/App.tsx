@@ -43,7 +43,11 @@ import {
 } from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
 import { insightVendorOptions, vendorPlanes } from "./lib/insights";
-import { collectMonths, type MonthFilterValue } from "./lib/months";
+import {
+    collectMonths,
+    latestClosedMonth,
+    type MonthFilterValue,
+} from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
@@ -894,7 +898,8 @@ export default function App() {
     useEffect(() => {
         if (!monthFilterInitialized.current && months.length > 0) {
             monthFilterInitialized.current = true;
-            setSelectedMonths([months[months.length - 1]]);
+            const initialMonth = latestClosedMonth(months);
+            setSelectedMonths(initialMonth ? [initialMonth] : []);
             return;
         }
         setSelectedMonths((current) =>

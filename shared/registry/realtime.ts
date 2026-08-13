@@ -78,8 +78,35 @@ export const REALTIME_SERVICES = {
         description: "Live voice conversations with instant, reasoned replies",
         contextLength: 128000,
     },
+    "scribe-realtime": {
+        aliases: [],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "realtime",
+        addedDate: new Date("2026-08-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Scribe v2 Realtime: $0.39 per streamed audio hour.
+            promptAudioSeconds: 0.39 / 3600,
+        },
+        title: "Scribe v2 Realtime",
+        description:
+            "Live transcription in 90+ languages with partial results and word timestamps",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions/realtime"],
+    },
 } satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,
 ) as RealtimeModelName[];
+
+export const REALTIME_VOICE_MODEL_NAMES = REALTIME_MODEL_NAMES.filter(
+    (model) => {
+        const endpoints = (REALTIME_SERVICES[model] as ModelDefinition)
+            .supportedEndpoints;
+        return endpoints === undefined || endpoints.includes("/v1/realtime");
+    },
+);

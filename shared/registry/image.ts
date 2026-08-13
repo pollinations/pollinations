@@ -818,6 +818,42 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
+    "seedance-2.5": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.1028, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.2312,
+                },
+            },
+            matchResolution("720p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5",
+        description:
+            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
         provider: "openrouter",

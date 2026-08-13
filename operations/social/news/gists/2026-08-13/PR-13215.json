@@ -1,0 +1,35 @@
+{
+  "pr_number": 13215,
+  "title": "feat: add Seedance 2.5",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13215",
+  "merged_at": "2026-08-13T17:47:12Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds paid-only `seedance-2.5` as a new model; existing Seedance services remain unchanged.\n- Routes Replicate `bytedance/seedance-2.5` with no alias, Pollinations GPU, or fallback.\n- Supports four-second 480p and 720p video, first/last frames, and audio.\n- Defaults omitted aspect ratio to 16:9 and documents the model-specific image and duration contract.\n- Bills $0.1028/second at 480p and $0.2312/second at 720p with multiplier 1.\n\n## Verification\n\n- Local Gen text-only E2E: 480p 119.68s; 720p 124.50s (accepted exception).\n- Two concurrent 480p calls passed in 118.25–118.36s.\n- 720p with two frames and audio succeeded in 295.70s; output was 4.06s H.264 with stereo AAC.\n- Exact billing passed at $0.4112/480p and $0.9248/720p. Identical retries were 27–41ms cache hits without rebilling.\n- Auth, paid-only, errors, catalog, OpenAPI, registry pricing, snapshots, builds, tests, and typechecks passed.\n\n## Merge gate\n\n- Explicitly accept the 295.70s conditioned 720p path or narrow the public capability contract before merging.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seedance gets cinematic",
+    "blurb": "A new paid Seedance model just landed in the garden, bringing four-second clips with frame control and sound. Polli has directed a tiny film. The budget was mostly pollen.",
+    "summary": "Added paid-only Replicate model `seedance-2.5` for four-second 480p or 720p video generation, with optional first/last frames and audio, a default 16:9 aspect ratio, and pricing of $0.1028/sec at 480p or $0.2312/sec at 720p.",
+    "impact": "Developers can now generate short Seedance 2.5 video clips through Pollinations with image-to-video framing and audio support, while identical retries return cached results without being billed again.",
+    "keywords": [
+      "seedance-2.5",
+      "video-generation",
+      "replicate",
+      "audio",
+      "image-to-video",
+      "paid-models",
+      "billing"
+    ],
+    "visual_concept": "Depict a cozy miniature film set for Seedance 2.5: Polli directs a retro CRT camera/monitor showing a four-second 16:9 video strip, with two small picture-frame props representing first and last frames and musical notes representing audio. Surround the set with code-plants, flowers, and a Seedance-labeled film reel; the monitor robot can eagerly hold the completed reel while Polli, wearing a director beret, watches the scene come alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny director beret and guiding a miniature film set; a chunky CRT monitor robot holds a Seedance 2.5 film reel beside two framed stills for the first and last video frames, while musical notes drift from a tiny speaker and code-plants bloom around the camera. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle CRT glow, pixel-font text reading \"4 SEC\", retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13215.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny director beret and guiding a miniature film set; a chunky CRT monitor robot holds a Seedance 2.5 film reel beside two framed stills for the first and last video frames, while musical notes drift from a tiny speaker and code-plants bloom around the camera. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle CRT glow, pixel-font text reading \"4 SEC\", retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-13T17:48:10.851042+00:00"
+}

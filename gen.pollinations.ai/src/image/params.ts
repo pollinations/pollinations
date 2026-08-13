@@ -2,6 +2,10 @@ import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
 import { getDefaultSideLength } from "./models.js";
+import {
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
@@ -141,3 +145,45 @@ export const ImageParamsSchema = z
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
+
+/**
+ * Preserve the input image's aspect ratio when the caller did not specify
+ * dimensions. Editing defaults to the source image's proportions — scaled
+ * down into the model's default pixel budget so an edit without an explicit
+ * size never costs more than one does today — instead of the model's square
+ * default. Explicit width/height/size always win (dimensionsExplicit), and
+ * any probe failure falls back to the square default so this never rejects
+ * a request the current pipeline accepts. `dimensionsExplicit` stays false:
+ * derived dimensions are still a default, and models that branch on the
+ * caller's intent (e.g. seedream-4's pixel-precise custom mode) should keep
+ * treating them as one.
+ */
+export async function deriveDimensionsFromInputImage<
+    T extends {
+        width: number;
+        height: number;
+        image: string[];
+        dimensionsExplicit: boolean;
+        model: string;
+    },
+>(params: T): Promise<T> {
+    if (params.dimensionsExplicit || params.image.length === 0) return params;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(params.image[0]);
+        const source = readImageDimensions(buffer, mimeType);
+        if (!source) return params;
+        const budget =
+            getDefaultSideLength(params.model as ImageModelName) ** 2;
+        const scale = Math.min(
+            1,
+            Math.sqrt(budget / (source.width * source.height)),
+        );
+        return {
+            ...params,
+            width: Math.max(1, Math.round(source.width * scale)),
+            height: Math.max(1, Math.round(source.height * scale)),
+        };
+    } catch {
+        return params;
+    }
+}

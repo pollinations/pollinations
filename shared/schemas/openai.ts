@@ -556,6 +556,13 @@ const imageNField = z
 const imageSizeField = z.string().optional().default("1024x1024").meta({
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
 });
+// Edits deliberately have no size default: an omitted size means "preserve the
+// input image's aspect ratio", which the gateway derives from the source image.
+// A schema default of 1024x1024 would erase that signal and square every edit.
+const imageEditSizeField = z.string().optional().meta({
+    description:
+        "Image size as WIDTHxHEIGHT (e.g., 1024x1024). When omitted, the output matches the input image's aspect ratio",
+});
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -655,7 +662,7 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
         safe: SafeSchema,
     })

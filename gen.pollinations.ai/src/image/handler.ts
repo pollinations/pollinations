@@ -29,7 +29,11 @@ import {
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { type ImageParams, ImageParamsSchema } from "./params.ts";
+import {
+    deriveDimensionsFromInputImage,
+    type ImageParams,
+    ImageParamsSchema,
+} from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -478,7 +482,13 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    let safeParams = parseImageParams(c, body);
+    // Editing an image without an explicit size should keep its proportions,
+    // not reshape it to the model's square default. Video models keep their
+    // aspectRatio/resolution semantics untouched.
+    if (!isVideoModel(safeParams.model)) {
+        safeParams = await deriveDimensionsFromInputImage(safeParams);
+    }
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         hasImage: (safeParams.image?.length ?? 0) > 0,

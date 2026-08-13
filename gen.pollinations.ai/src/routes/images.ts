@@ -65,8 +65,10 @@ function responseImageUsage(
     response: Response,
 ): OpenAIImageUsage {
     const usage = parseUsageHeaders(response.headers);
-    const modelUsed = response.headers.get("x-model-used");
-    if (!modelUsed) throw new Error("Image response is missing x-model-used");
+    // Objects cached before usage metadata was introduced have no model
+    // header. The route already resolved the model before the cache lookup.
+    const modelUsed =
+        response.headers.get("x-model-used") ?? c.var.model.resolved;
     c.header("x-model-used", modelUsed);
 
     for (const [name, value] of Object.entries(
@@ -252,7 +254,12 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         }
 
         const resolved = resolveParams(body);
-        Object.assign(body, resolved, { model });
+        const safePrompt = await applySafety(
+            c,
+            body.prompt,
+            body.safe as SafeValue,
+        );
+        Object.assign(body, resolved, { model, prompt: safePrompt });
         c.set("generationReplayBody", JSON.stringify(body));
 
         const imageUrl = new URL(
@@ -333,15 +340,9 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
-    const safePrompt = await applySafety(
-        c,
-        body.prompt,
-        body.safe as SafeValue,
-    );
 
-    const response = await generateImageOrVideoResponse(c, safePrompt, {
+    const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
-        prompt: safePrompt,
         ...collectPassthrough(body, "image"),
         model,
     });

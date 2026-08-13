@@ -16,8 +16,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),
     seed: z.coerce.number().int().min(-1).optional().default(0).meta({
-        description:
-            "Seed for reproducible results. -1 selects a random seed for a new generation; repeated non-streaming requests may return the cached result.",
+        description: "Seed for reproducible results.",
     }),
     system: z.string().optional().meta({
         description:

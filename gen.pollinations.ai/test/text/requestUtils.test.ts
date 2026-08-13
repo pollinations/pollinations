@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { getRequestData } from "../../src/text/requestUtils.js";
 
 describe("getRequestData", () => {
+    it("preserves seed -1 as a literal seed", () => {
+        const requestData = getRequestData({
+            query: { seed: "-1" },
+            body: {},
+            path: "/text/prompt",
+            params: { 0: "hello" },
+            method: "GET",
+            headers: {},
+        });
+
+        expect(requestData.seed).toBe(-1);
+    });
+
     it("coerces token limits from query strings", () => {
         const requestData = getRequestData({
             query: {

@@ -1108,7 +1108,7 @@ export const proxyRoutes = new Hono<Env>()
                     .optional()
                     .meta({
                         description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
+                            "Seed passed to the model. Same seed + parameters return the same cached result while available.",
                         example: "42",
                     }),
                 key: z.string().optional().meta({

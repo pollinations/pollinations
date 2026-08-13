@@ -48,7 +48,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. -1 selects a random seed for a new generation; repeated identical requests may return the cached result. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z

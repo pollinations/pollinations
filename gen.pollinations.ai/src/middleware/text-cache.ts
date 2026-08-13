@@ -37,31 +37,12 @@ export const textCache = createGenerationCache({
                     );
                     return null;
                 }
-                try {
-                    const bodyObj = JSON.parse(bodyText);
-                    if (bodyObj.seed === -1) {
-                        log.debug(
-                            "[TEXT-CACHE] seed=-1 detected, skipping cache for random generation",
-                        );
-                        return null;
-                    }
-                } catch {
-                    // Non-JSON bodies are keyed as-is.
-                }
             } catch {
                 log.warn(
                     "[TEXT-CACHE] Could not read request body, skipping cache",
                 );
                 return null;
             }
-        }
-
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
-        if (seedParam === "-1") {
-            log.debug(
-                "[TEXT-CACHE] seed=-1 in query, skipping cache for random generation",
-            );
-            return null;
         }
 
         return generateCacheKey(c.req.raw, bodyText);

@@ -115,6 +115,7 @@ type RealtimeBillingContext = {
     settlementAttempts: number;
     settled: boolean;
     deduction?: RealtimeDeduction;
+    deductionAttempted: boolean;
     rateLimitConsumed: boolean;
 };
 
@@ -169,7 +170,6 @@ async function connectAzureRealtime(
     const upstreamSocket = response.webSocket;
     if (upstreamSocket) {
         upstreamSocket.binaryType = "arraybuffer";
-        upstreamSocket.accept({ allowHalfOpen: true });
         return upstreamSocket;
     }
 
@@ -733,16 +733,19 @@ async function settleRealtimeSession(
         typeof handleBalanceDeduction
     >[0]["db"];
 
-    tracking.deduction ??= await handleBalanceDeduction({
-        db,
-        isBilledUsage: true,
-        totalPrice: price.totalPrice,
-        userId: tracking.userId,
-        apiKeyId: tracking.apiKeyId,
-        apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-        byopClientKeyId: tracking.byopClientKeyId,
-        modelPaidOnly: tracking.modelDefinition.paidOnly,
-    });
+    if (!tracking.deduction) {
+        tracking.deductionAttempted = true;
+        tracking.deduction = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: price.totalPrice,
+            userId: tracking.userId,
+            apiKeyId: tracking.apiKeyId,
+            apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+            byopClientKeyId: tracking.byopClientKeyId,
+            modelPaidOnly: tracking.modelDefinition.paidOnly,
+        });
+    }
 
     if (!tracking.rateLimitConsumed) {
         await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
@@ -828,7 +831,11 @@ function scheduleRealtimeSettlement(
                     error:
                         error instanceof Error ? error.message : String(error),
                 });
-                if (tracking.settled || tracking.settlementAttempts >= 2) {
+                if (
+                    tracking.settled ||
+                    tracking.settlementAttempts >= 2 ||
+                    (tracking.deductionAttempted && !tracking.deduction)
+                ) {
                     return;
                 }
                 return settleRealtimeSession(c, tracking).catch(
@@ -858,12 +865,24 @@ function wireClose(
     tracking: RealtimeBillingContext,
 ): void {
     source.addEventListener("close", (event) => {
-        closeSocket(target, event.code, event.reason);
-        scheduleRealtimeSettlement(c, tracking);
+        try {
+            closeSocket(target, event.code, event.reason);
+            if (source.readyState !== WebSocket.CLOSED) {
+                const closeCode = normalizeCloseCode(event.code);
+                if (closeCode) source.close(closeCode, event.reason);
+                else source.close();
+            }
+        } finally {
+            scheduleRealtimeSettlement(c, tracking);
+        }
     });
     source.addEventListener("error", () => {
-        closeSocket(target, 1011, "Realtime proxy error");
-        scheduleRealtimeSettlement(c, tracking);
+        try {
+            closeSocket(target, 1011, "Realtime proxy error");
+            closeSocket(source, 1011, "Realtime proxy error");
+        } finally {
+            scheduleRealtimeSettlement(c, tracking);
+        }
     });
 }
 
@@ -904,8 +923,6 @@ function proxyRealtimeWebSockets(
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
 
     downstream.binaryType = "arraybuffer";
-    downstream.accept({ allowHalfOpen: true });
-
     collectBillingEvents(c, upstream, tracking);
     forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
         scheduleRealtimeSettlement(c, tracking),
@@ -915,6 +932,8 @@ function proxyRealtimeWebSockets(
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
+    downstream.accept({ allowHalfOpen: true });
+    upstream.accept({ allowHalfOpen: true });
 
     return new Response(null, {
         status: 101,
@@ -997,6 +1016,7 @@ async function createRealtimeBillingContext(
         settlementInFlight: false,
         settlementAttempts: 0,
         settled: false,
+        deductionAttempted: false,
         rateLimitConsumed: false,
     };
 }
@@ -1026,6 +1046,7 @@ export async function handleRealtimeWebSocket(
     }
     const userId = await authorizeRealtimeSession(c);
 
+    const tracking = await createRealtimeBillingContext(c);
     const upstream = await connectAzureRealtime(
         c,
         userId,
@@ -1033,11 +1054,7 @@ export async function handleRealtimeWebSocket(
     );
     if (upstream instanceof Response) return upstream;
 
-    return proxyRealtimeWebSockets(
-        c,
-        upstream,
-        await createRealtimeBillingContext(c),
-    );
+    return proxyRealtimeWebSockets(c, upstream, tracking);
 }
 
 export async function handleScribeRealtimeWebSocket(

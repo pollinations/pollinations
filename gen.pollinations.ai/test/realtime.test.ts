@@ -5,7 +5,10 @@ import {
 } from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -168,17 +171,23 @@ async function openPaidRealtimeSession({
     name,
     model = "gpt-realtime-2",
     referrer,
+    initialProviderMessage,
 }: {
     name: string;
     model?: string;
     referrer?: string;
+    initialProviderMessage?: string;
 }) {
-    const { key, userId } = await createTestApiKey({
+    const {
+        key,
+        id: apiKeyId,
+        userId,
+    } = await createTestApiKey({
         name,
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockRealtimeProvider();
+    const upstream = mockRealtimeProvider(initialProviderMessage);
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -193,10 +202,20 @@ async function openPaidRealtimeSession({
     expect(response.status).toBe(101);
     const client = response.webSocket;
     if (!client) throw new Error("Expected downstream WebSocket");
+    const initialClientMessage = initialProviderMessage
+        ? nextMessage(client)
+        : undefined;
     client.accept();
-    upstream.server.accept();
+    if (!upstream.serverAccepted) upstream.server.accept();
 
-    return { client, ctx, upstream, userId };
+    return {
+        apiKeyId,
+        client,
+        ctx,
+        upstream,
+        userId,
+        initialClientMessage,
+    };
 }
 
 async function openPaidScribeSession({
@@ -238,14 +257,15 @@ async function openPaidScribeSession({
 }
 
 type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
+type RealtimeSession = Pick<PaidRealtimeSession, "client" | "ctx" | "upstream">;
 
-async function closeRealtimeSession(session: PaidRealtimeSession) {
+async function closeRealtimeSession(session: RealtimeSession) {
     session.client.close();
     session.upstream.server.close();
     await waitOnExecutionContext(session.ctx);
 }
 
-async function closeAndReadTelemetry(session: PaidRealtimeSession) {
+async function closeAndReadTelemetry(session: RealtimeSession) {
     await closeRealtimeSession(session);
     await waitForTinybirdRequests(session.upstream);
     expect(session.upstream.tinybirdRequests).toHaveLength(1);
@@ -367,6 +387,37 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     client.close();
     upstream.server.close();
     await waitOnExecutionContext(ctx);
+});
+
+test("forwards the initial Azure session event after listeners are attached", async () => {
+    const initialProviderMessage = JSON.stringify({
+        type: "session.created",
+        session: { model: "gpt-realtime-2" },
+    });
+    const session = await openPaidRealtimeSession({
+        name: "azure-realtime-initial-event-key",
+        initialProviderMessage,
+    });
+
+    await expect(session.initialClientMessage).resolves.toBe(
+        initialProviderMessage,
+    );
+    await closeRealtimeSession(session);
+});
+
+test("completes both sides of the Azure close handshake", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "azure-realtime-close-key",
+    });
+    const clientClose = nextClose(session.client);
+    const upstreamClose = nextClose(session.upstream.server);
+
+    session.client.close(1000, "done");
+
+    await expect(clientClose).resolves.toMatchObject({ code: 1000 });
+    await expect(upstreamClose).resolves.toMatchObject({ code: 1000 });
+    await waitOnExecutionContext(session.ctx);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
 });
 
 test("routes the mini model through the working East US 2 deployment", async ({
@@ -894,6 +945,54 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("does not retry a partially completed realtime deduction", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "realtime-partial-deduction-key",
+    });
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 135,
+                output_tokens: 75,
+                input_token_details: {
+                    text_tokens: 100,
+                    audio_tokens: 10,
+                    image_tokens: 5,
+                    cached_tokens: 20,
+                    cached_tokens_details: {
+                        text_tokens: 20,
+                        audio_tokens: 0,
+                        image_tokens: 0,
+                    },
+                },
+                output_token_details: {
+                    text_tokens: 50,
+                    audio_tokens: 25,
+                },
+            },
+        },
+    });
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(usageEvent);
+    await expect(forwardedEvent).resolves.toBe(usageEvent);
+
+    await drizzle(env.DB)
+        .delete(apiKeyTable)
+        .where(eq(apiKeyTable.id, session.apiKeyId));
+    session.client.close();
+    await waitOnExecutionContext(session.ctx);
+
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - 0.003553 * 0.75, 8);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect((await getUserBalances(session.userId))?.packBalance).toBeCloseTo(
+        user?.packBalance ?? 0,
+        8,
+    );
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
 });
 
 test.each([

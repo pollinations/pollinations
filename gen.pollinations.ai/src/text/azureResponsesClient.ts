@@ -10,350 +10,278 @@ import type {
     ServiceError,
     TransformOptions,
 } from "./types.js";
-import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:azure-responses");
 const errorLog = debug("pollinations:error");
+const REQUEST_TIMEOUT_MS = 290_000;
+const REASONING_EFFORTS = new Set([
+    "none",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+]);
 
-const REASONING_EFFORT_VALUES = new Set(["minimal", "low", "medium", "high"]);
+type Json = Record<string, unknown>;
 
-// Cap the direct Azure request at the same deadline Portkey applies upstream,
-// so a hung connection cannot hold a request open indefinitely.
-const AZURE_REQUEST_TIMEOUT_MS = 290_000;
-
-interface ResponsesOutputItem {
+interface ResponseItem {
     type?: string;
     id?: string;
     call_id?: string;
     name?: string;
     arguments?: string;
-    role?: string;
-    content?: Array<{
-        type?: string;
-        text?: string;
-        annotations?: Array<{ type?: string; url?: string }>;
-    }>;
-    summary?: Array<{ type?: string; text?: string }>;
+    content?: Array<{ type?: string; text?: string; refusal?: string }>;
+    summary?: Array<{ text?: string }>;
 }
 
 interface ResponsesUsage {
     input_tokens?: number;
     output_tokens?: number;
     total_tokens?: number;
+    input_tokens_details?: {
+        cached_tokens?: number;
+        cache_write_tokens?: number;
+    };
     output_tokens_details?: { reasoning_tokens?: number };
 }
 
 interface ResponsesData {
     id?: string;
-    object?: string;
     created_at?: number;
     model?: string;
     status?: string;
     incomplete_details?: { reason?: string };
-    output?: ResponsesOutputItem[];
+    output?: ResponseItem[];
     usage?: ResponsesUsage;
-    error?: {
-        code?: string | number;
-        message?: string;
-        status?: number;
-    };
+    error?: { message?: string; status?: number };
 }
 
-interface ResponsesChunk {
-    id: string;
-    object: "chat.completion.chunk";
-    created: number;
-    model: string;
-    choices: Array<{
-        index: number;
-        delta: Record<string, unknown>;
-        finish_reason: string | null;
-    }>;
-    usage?: Record<string, unknown>;
-}
-
-// =============================================================================
-// Request conversion (Chat Completions -> Responses API)
-// =============================================================================
-
-function contentToParts(
+function contentParts(
     content: unknown,
     textType: "input_text" | "output_text",
-): Array<Record<string, unknown>> {
+): Json[] {
     if (typeof content === "string") {
         return content ? [{ type: textType, text: content }] : [];
     }
     if (!Array.isArray(content)) return [];
 
-    const parts: Array<Record<string, unknown>> = [];
+    const result: Json[] = [];
     for (const raw of content) {
         if (!raw || typeof raw !== "object") continue;
-        const part = raw as Record<string, unknown>;
+        const part = raw as Json;
         if (part.type === "text") {
-            parts.push({ type: textType, text: String(part.text ?? "") });
-        } else if (part.type === "image_url") {
-            const imageUrl =
-                typeof part.image_url === "string"
-                    ? part.image_url
-                    : (part.image_url as { url?: string } | undefined)?.url;
-            if (imageUrl)
-                parts.push({ type: "input_image", image_url: imageUrl });
-        } else if (
-            part.type === "input_text" ||
-            part.type === "input_image" ||
-            part.type === "input_audio"
-        ) {
-            parts.push(part);
+            result.push({ type: textType, text: String(part.text ?? "") });
+            continue;
         }
+        if (textType !== "input_text") continue;
+        if (part.type === "input_text" || part.type === "input_image") {
+            result.push(part);
+            continue;
+        }
+        if (part.type !== "image_url") continue;
+
+        const image = part.image_url as
+            | string
+            | { url?: string; detail?: string }
+            | undefined;
+        const imageUrl = typeof image === "string" ? image : image?.url;
+        if (!imageUrl) continue;
+        result.push({
+            type: "input_image",
+            image_url: imageUrl,
+            ...(typeof image === "object" && image.detail
+                ? { detail: image.detail }
+                : {}),
+        });
     }
-    return parts;
+    return result;
 }
 
-function toolCallArguments(argumentsValue: unknown): string {
-    if (typeof argumentsValue === "string") return argumentsValue;
+function stringifyArguments(value: unknown): string {
+    if (typeof value === "string") return value;
     try {
-        return JSON.stringify(argumentsValue ?? {});
+        return JSON.stringify(value ?? {});
     } catch {
         return "";
     }
 }
 
-function convertTool(tool: unknown): Record<string, unknown> | null {
-    if (!tool || typeof tool !== "object") return null;
-    const entry = tool as Record<string, unknown>;
-    if (entry.type !== "function") return null;
-    const fn = (entry.function ?? {}) as Record<string, unknown>;
-    const converted: Record<string, unknown> = {
-        type: "function",
-        name: fn.name,
-        description: fn.description,
-        parameters: fn.parameters,
-    };
-    if (fn.strict !== undefined) converted.strict = fn.strict;
-    return converted;
-}
-
-function convertToolChoice(toolChoice: unknown): unknown {
-    if (!toolChoice || typeof toolChoice !== "object") return toolChoice;
-    const entry = toolChoice as Record<string, unknown>;
-    if (entry.type === "function") {
-        const fn = (entry.function ?? {}) as { name?: string };
-        return fn.name ? { type: "function", name: fn.name } : "auto";
-    }
-    return entry;
-}
-
-function convertResponseFormat(
-    responseFormat: Record<string, unknown>,
-): Record<string, unknown> {
-    const type = responseFormat.type;
-    if (type === "json_object") return { type: "json_object" };
-    if (type === "json_schema") {
-        const schema = responseFormat.json_schema as
-            | { name?: string; schema?: unknown; strict?: boolean }
-            | undefined;
-        return {
-            type: "json_schema",
-            name: schema?.name ?? "structured_output",
-            schema: schema?.schema ?? responseFormat.schema,
-            strict: schema?.strict ?? responseFormat.strict,
-        };
-    }
-    return { type: "text" };
-}
-
-function messageToResponsesItems(msg: ChatMessage): Record<string, unknown>[] {
-    const role = msg.role;
-
-    if (role === "system" || role === "developer") {
+function messageItems(message: ChatMessage): Json[] {
+    if (["system", "developer", "user"].includes(message.role)) {
         return [
             {
-                role,
-                content: contentToParts(msg.content, "input_text"),
+                role: message.role,
+                content: contentParts(message.content, "input_text"),
             },
         ];
     }
-
-    if (role === "user") {
-        return [
-            {
-                role: "user",
-                content: contentToParts(msg.content, "input_text"),
-            },
-        ];
-    }
-
-    if (role === "assistant") {
-        const items: Record<string, unknown>[] = [];
-
-        // Feed prior-turn reasoning back so the model keeps its context across
-        // tool-call loops (only present for clients that persist it, e.g. via
-        // the reasoning_content field we emit on responses).
-        if (msg.reasoning_content) {
-            items.push({
-                type: "reasoning",
-                summary: [
-                    {
-                        type: "summary_text",
-                        text: String(msg.reasoning_content),
-                    },
-                ],
-            });
-        }
-
-        const parts = contentToParts(msg.content, "output_text");
-        if (parts.length) {
-            items.push({ role: "assistant", content: parts });
-        }
-
-        for (const raw of (msg.tool_calls as
-            | Record<string, unknown>[]
-            | undefined) ?? []) {
-            const fn = (raw.function ?? {}) as Record<string, unknown>;
+    if (message.role === "assistant") {
+        const items: Json[] = [];
+        const content = contentParts(message.content, "output_text");
+        if (content.length) items.push({ role: "assistant", content });
+        for (const raw of message.tool_calls ?? []) {
+            if (!raw || typeof raw !== "object") continue;
+            const toolCall = raw as Json;
+            const fn = (toolCall.function ?? {}) as Json;
             items.push({
                 type: "function_call",
-                call_id: String(raw.id ?? ""),
+                call_id: String(toolCall.id ?? ""),
                 name: String(fn.name ?? ""),
-                arguments: toolCallArguments(fn.arguments),
+                arguments: stringifyArguments(fn.arguments),
             });
         }
-
         return items;
     }
-
-    if (role === "tool" || role === "function") {
-        const callId = msg.tool_call_id ?? msg.name ?? "";
+    if (message.role === "tool" || message.role === "function") {
         return [
             {
                 type: "function_call_output",
-                call_id: String(callId),
+                call_id: String(message.tool_call_id ?? message.name ?? ""),
                 output:
-                    typeof msg.content === "string"
-                        ? msg.content
-                        : JSON.stringify(msg.content ?? ""),
+                    typeof message.content === "string"
+                        ? message.content
+                        : JSON.stringify(message.content ?? ""),
             },
         ];
     }
-
-    return [
-        {
-            role: "user",
-            content: contentToParts(msg.content, "input_text"),
-        },
-    ];
+    return [];
 }
 
-function buildResponsesBody(
-    messages: ChatMessage[],
-    options: TransformOptions,
-): Record<string, unknown> {
-    const input = messages.flatMap(messageToResponsesItems);
+function responseFormat(format: Json): Json {
+    if (format.type === "json_object") return { type: "json_object" };
+    if (format.type !== "json_schema") return { type: "text" };
+    const schema = (format.json_schema ?? {}) as Json;
+    return {
+        type: "json_schema",
+        name: schema.name ?? "structured_output",
+        schema: schema.schema ?? format.schema,
+        strict: schema.strict ?? format.strict,
+    };
+}
 
-    const body: Record<string, unknown> = { model: options.model, input };
-
-    const effort = options.reasoning_effort;
-    if (effort) {
-        const normalizedEffort =
-            effort === "xhigh"
-                ? "high"
-                : effort === "none"
-                  ? undefined
-                  : effort;
-        if (normalizedEffort && REASONING_EFFORT_VALUES.has(normalizedEffort)) {
-            body.reasoning = { effort: normalizedEffort };
-        }
+function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
+    const body: Json = {
+        model: options.model,
+        input: messages.flatMap(messageItems),
+        store: false,
+    };
+    if (
+        typeof options.reasoning_effort === "string" &&
+        REASONING_EFFORTS.has(options.reasoning_effort)
+    ) {
+        body.reasoning = { effort: options.reasoning_effort };
     }
-
     if (Array.isArray(options.tools) && options.tools.length) {
-        const converted = options.tools
-            .map(convertTool)
-            .filter((tool) => tool !== null);
-        if (converted.length) body.tools = converted;
+        body.tools = options.tools.flatMap((raw) => {
+            if (!raw || typeof raw !== "object") return [];
+            const tool = raw as Json;
+            if (tool.type !== "function") return [];
+            const fn = (tool.function ?? {}) as Json;
+            return [
+                {
+                    type: "function",
+                    name: fn.name,
+                    description: fn.description,
+                    parameters: fn.parameters ?? null,
+                    strict: fn.strict ?? false,
+                },
+            ];
+        });
     }
     if (options.tool_choice !== undefined) {
-        body.tool_choice = convertToolChoice(options.tool_choice);
+        const choice = options.tool_choice as Json;
+        body.tool_choice =
+            choice?.type === "function"
+                ? {
+                      type: "function",
+                      name: (choice.function as Json | undefined)?.name,
+                  }
+                : options.tool_choice;
     }
-
+    if (typeof options.parallel_tool_calls === "boolean") {
+        body.parallel_tool_calls = options.parallel_tool_calls;
+    }
     const maxTokens = options.max_completion_tokens ?? options.max_tokens;
     if (maxTokens !== undefined) body.max_output_tokens = maxTokens;
-
-    for (const key of [
-        "temperature",
-        "top_p",
-        "seed",
-        "frequency_penalty",
-        "presence_penalty",
-    ] as const) {
-        if (options[key] !== undefined) body[key] = options[key];
+    if (options.temperature !== undefined)
+        body.temperature = options.temperature;
+    if (options.top_p !== undefined) body.top_p = options.top_p;
+    if (typeof options.user === "string") {
+        body.safety_identifier = options.user;
     }
-    if (options.stop !== undefined) {
-        body.stop =
-            typeof options.stop === "string" ? [options.stop] : options.stop;
-    }
-
     if (options.response_format) {
-        body.text = { format: convertResponseFormat(options.response_format) };
+        body.text = { format: responseFormat(options.response_format) };
     }
-
     if (options.stream) body.stream = true;
-
-    return cleanNullAndUndefined(body) as Record<string, unknown>;
+    return body;
 }
 
-// =============================================================================
-// Response conversion (Responses API -> Chat Completions)
-// =============================================================================
-
-function mapResponsesUsage(usage: ResponsesUsage): Record<string, unknown> {
-    const mapped: Record<string, unknown> = {
+function chatUsage(usage: ResponsesUsage): Json {
+    const result: Json = {
         prompt_tokens: usage.input_tokens ?? 0,
         completion_tokens: usage.output_tokens ?? 0,
         total_tokens: usage.total_tokens ?? 0,
     };
-    if (usage.output_tokens_details?.reasoning_tokens !== undefined) {
-        mapped.completion_tokens_details = {
-            reasoning_tokens: usage.output_tokens_details.reasoning_tokens,
+    if (usage.input_tokens_details) {
+        result.prompt_tokens_details = {
+            cached_tokens: usage.input_tokens_details.cached_tokens ?? 0,
+            cache_write_tokens:
+                usage.input_tokens_details.cache_write_tokens ?? 0,
         };
     }
-    return mapped;
+    if (usage.output_tokens_details) {
+        result.completion_tokens_details = {
+            reasoning_tokens: usage.output_tokens_details.reasoning_tokens ?? 0,
+        };
+    }
+    return result;
 }
 
-function parseResponsesResponse(
-    data: ResponsesData,
-    modelName: string,
-): ChatCompletion {
-    const outputItems = data.output ?? [];
+function finishReason(data: {
+    output?: ResponseItem[];
+    incomplete_details?: { reason?: string };
+}): string {
+    if (data.output?.some((item) => item.type === "function_call")) {
+        return "tool_calls";
+    }
+    if (data.incomplete_details?.reason === "max_output_tokens") {
+        return "length";
+    }
+    if (data.incomplete_details?.reason === "content_filter") {
+        return "content_filter";
+    }
+    return "stop";
+}
 
-    const messageTexts: string[] = [];
-    const reasoningTexts: string[] = [];
-    const toolCalls: Array<Record<string, unknown>> = [];
-    const citations: string[] = [];
+function parseResponse(data: ResponsesData, requestedModel: string) {
+    const texts: string[] = [];
+    const refusals: string[] = [];
+    const reasoning: string[] = [];
+    const toolCalls: Json[] = [];
 
-    for (const item of outputItems) {
+    for (const item of data.output ?? []) {
         if (item.type === "reasoning") {
-            for (const part of item.summary ?? []) {
-                if (part.text) reasoningTexts.push(part.text);
-            }
-            for (const part of item.content ?? []) {
-                if (part.text) reasoningTexts.push(part.text);
+            for (const part of [
+                ...(item.summary ?? []),
+                ...(item.content ?? []),
+            ]) {
+                if (part.text) reasoning.push(part.text);
             }
         } else if (item.type === "message") {
             for (const part of item.content ?? []) {
                 if (part.type === "output_text" && part.text) {
-                    messageTexts.push(part.text);
-                }
-                for (const annotation of part.annotations ?? []) {
-                    if (annotation.type === "url_citation" && annotation.url) {
-                        citations.push(annotation.url);
-                    }
+                    texts.push(part.text);
+                } else if (part.type === "refusal" && part.refusal) {
+                    refusals.push(part.refusal);
                 }
             }
         } else if (item.type === "function_call") {
             toolCalls.push({
-                id: item.call_id || item.id,
+                id: item.call_id ?? item.id ?? "",
                 type: "function",
                 function: {
-                    name: item.name,
+                    name: item.name ?? "",
                     arguments: item.arguments ?? "",
                 },
             });
@@ -362,317 +290,80 @@ function parseResponsesResponse(
 
     const message: ChatMessage = {
         role: "assistant",
-        content: messageTexts.join(""),
+        content: texts.length ? texts.join("") : null,
+        refusal: refusals.length ? refusals.join("") : null,
     };
     if (toolCalls.length) message.tool_calls = toolCalls;
-    if (reasoningTexts.length) {
-        message.reasoning_content = reasoningTexts.join("\n");
-    }
-
-    let finish_reason: string | null = "stop";
-    if (toolCalls.length) {
-        finish_reason = "tool_calls";
-    } else if (
-        data.status === "incomplete" &&
-        data.incomplete_details?.reason === "max_output_tokens"
-    ) {
-        finish_reason = "length";
-    }
+    if (reasoning.length) message.reasoning_content = reasoning.join("\n");
 
     const completion: ChatCompletion = {
         id: data.id,
         object: "chat.completion",
         created: data.created_at ?? Math.floor(Date.now() / 1000),
-        model: data.model || modelName,
+        model: data.model ?? requestedModel,
         choices: [
             {
                 index: 0,
                 message,
-                finish_reason,
+                finish_reason: finishReason(data),
             },
         ],
     };
-    if (data.usage) completion.usage = mapResponsesUsage(data.usage);
-    if (citations.length) completion.citations = citations;
+    if (data.usage) completion.usage = chatUsage(data.usage);
     return completion;
 }
 
-// =============================================================================
-// Streaming conversion (Responses API SSE -> Chat Completions SSE)
-// =============================================================================
-
-function streamChunk(
-    id: string,
-    created: number,
-    model: string,
-    delta: Record<string, unknown>,
-    finish_reason: string | null,
-    usage?: Record<string, unknown>,
-): string {
-    const chunk: ResponsesChunk = {
-        id,
-        object: "chat.completion.chunk",
-        created,
-        model,
-        choices: [{ index: 0, delta, finish_reason }],
-    };
-    if (usage) chunk.usage = usage;
-    return `data: ${JSON.stringify(chunk)}\n\n`;
+function dataEvent(value: unknown) {
+    return `data: ${typeof value === "string" ? value : JSON.stringify(value)}\n\n`;
 }
 
-function streamError(message: string): string {
-    return `data: ${JSON.stringify({ error: { message } })}\n\n`;
+function terminalError(message: string) {
+    return `${dataEvent({ error: { message } })}${dataEvent("[DONE]")}`;
 }
 
-function convertResponsesStream(
+function convertStream(
     source: ReadableStream<Uint8Array<ArrayBuffer>> | null,
-    { modelName, includeUsage }: { modelName: string; includeUsage: boolean },
-): ReadableStream<Uint8Array> {
+    model: string,
+    includeUsage: boolean,
+) {
     const encoder = new TextEncoder();
-    let chunkId = "chatcmpl-azure-responses";
+    let id = "chatcmpl-azure-responses";
     let created = Math.floor(Date.now() / 1000);
-    const toolIndexByItemId = new Map<string, number>();
+    let terminal = false;
     let nextToolIndex = 0;
-    let closed = false;
+    const toolIndexes = new Map<string, number>();
 
     if (!source) {
         return new ReadableStream<Uint8Array>({
             start(controller) {
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                controller.enqueue(
+                    encoder.encode(
+                        terminalError("The upstream response had no body."),
+                    ),
+                );
                 controller.close();
             },
         });
     }
 
-    function emit(controller: TransformStreamDefaultController, event: string) {
-        controller.enqueue(encoder.encode(event));
-    }
-
-    function finishReasonFromResponse(
-        output: ResponsesOutputItem[] | undefined,
-        incompleteDetails: { reason?: string } | undefined,
-    ): string | null {
-        if (output?.some((item) => item.type === "function_call")) {
-            return "tool_calls";
-        }
-        if (incompleteDetails?.reason === "max_output_tokens") return "length";
-        return "stop";
-    }
-
-    function handleEvent(
-        event: EventSourceMessage,
-        controller: TransformStreamDefaultController,
-    ) {
-        if (event.data === "[DONE]") {
-            // A bare [DONE] before a terminal event means the stream
-            // was cut off; surface an error instead of a clean stop.
-            if (!closed) {
-                emit(
-                    controller,
-                    streamError(
-                        "Stream ended unexpectedly before completion.",
-                    ) + "data: [DONE]\n\n",
-                );
-                closed = true;
-            }
-            return;
-        }
-
-        let payload: Record<string, unknown>;
-        try {
-            payload = JSON.parse(event.data) as Record<string, unknown>;
-        } catch {
-            return;
-        }
-
-        const type = payload.type;
-
-        if (type === "response.created") {
-            const response = (payload.response ?? {}) as {
-                id?: string;
-                created_at?: number;
-            };
-            if (response.id) chunkId = response.id;
-            if (typeof response.created_at === "number") {
-                created = response.created_at;
-            }
-            return;
-        }
-
-        if (type === "response.output_item.added") {
-            const item = (payload.item ?? {}) as {
-                type?: string;
-                id?: string;
-                call_id?: string;
-                name?: string;
-            };
-            if (item.type === "function_call") {
-                const toolIndex = nextToolIndex;
-                nextToolIndex += 1;
-                const toolKey =
-                    item.call_id || item.id || `synthetic-${toolIndex}`;
-                // Args delta events reference the item by both its `id` and
-                // `call_id`; index by whichever the upstream provides.
-                toolIndexByItemId.set(item.id || toolKey, toolIndex);
-                toolIndexByItemId.set(item.call_id || toolKey, toolIndex);
-                emit(
-                    controller,
-                    streamChunk(
-                        chunkId,
-                        created,
-                        modelName,
-                        {
-                            tool_calls: [
-                                {
-                                    index: toolIndex,
-                                    id: toolKey,
-                                    type: "function",
-                                    function: {
-                                        name: item.name,
-                                        arguments: "",
-                                    },
-                                },
-                            ],
-                        },
-                        null,
-                    ),
-                );
-            }
-            return;
-        }
-
-        if (type === "response.output_text.delta") {
-            const delta = payload.delta;
-            if (typeof delta === "string") {
-                emit(
-                    controller,
-                    streamChunk(
-                        chunkId,
-                        created,
-                        modelName,
-                        { content: delta },
-                        null,
-                    ),
-                );
-            }
-            return;
-        }
-
-        // Reasoning content arrives as raw (response.reasoning_text.delta) or
-        // summarized (response.reasoning_summary_text.delta) text deltas;
-        // surface both as reasoning_content so streaming clients see the
-        // model's reasoning like the non-stream path does. The corresponding
-        // *.part.added events (e.g. response.reasoning_summary_part.added)
-        // carry no useful text — content streams through the deltas instead.
-        if (
-            type === "response.reasoning_text.delta" ||
-            type === "response.reasoning_summary_text.delta"
-        ) {
-            const delta = payload.delta;
-            if (typeof delta === "string") {
-                emit(
-                    controller,
-                    streamChunk(
-                        chunkId,
-                        created,
-                        modelName,
-                        { reasoning_content: delta },
-                        null,
-                    ),
-                );
-            }
-            return;
-        }
-
-        if (type === "response.function_call_arguments.delta") {
-            const delta = payload.delta;
-            const toolKey =
-                (payload.item_id as string | undefined) ??
-                (payload.call_id as string | undefined) ??
-                "";
-            const toolIndex = toolIndexByItemId.get(toolKey) ?? 0;
-            if (typeof delta === "string") {
-                emit(
-                    controller,
-                    streamChunk(
-                        chunkId,
-                        created,
-                        modelName,
-                        {
-                            tool_calls: [
-                                {
-                                    index: toolIndex,
-                                    function: { arguments: delta },
-                                },
-                            ],
-                        },
-                        null,
-                    ),
-                );
-            }
-            return;
-        }
-
-        if (type === "response.completed") {
-            if (closed) return;
-            const response = (payload.response ?? {}) as {
-                output?: ResponsesOutputItem[];
-                incomplete_details?: { reason?: string };
-                usage?: ResponsesUsage;
-            };
-            const finishReason = finishReasonFromResponse(
-                response.output,
-                response.incomplete_details,
-            );
-            let events = streamChunk(
-                chunkId,
-                created,
-                modelName,
-                {},
-                finishReason,
-            );
-            if (includeUsage && response.usage) {
-                events += streamChunk(
-                    chunkId,
-                    created,
-                    modelName,
-                    {},
-                    null,
-                    mapResponsesUsage(response.usage),
-                );
-            }
-            events += "data: [DONE]\n\n";
-            emit(controller, events);
-            closed = true;
-            return;
-        }
-
-        if (type === "response.failed") {
-            if (closed) return;
-            const response = (payload.response ?? {}) as {
-                error?: { message?: string };
-            };
-            emit(
-                controller,
-                streamError(
-                    response.error?.message ?? "The model request failed.",
-                ) + "data: [DONE]\n\n",
-            );
-            closed = true;
-            return;
-        }
-
-        if (type === "error") {
-            if (closed) return;
-            const error = (payload.error ?? {}) as { message?: string };
-            emit(
-                controller,
-                streamError(error.message ?? "Unknown streaming error") +
-                    "data: [DONE]\n\n",
-            );
-            closed = true;
-        }
-    }
+    const chatChunk = (delta: Json, finish_reason: string | null = null) =>
+        dataEvent({
+            id,
+            object: "chat.completion.chunk",
+            created,
+            model,
+            choices: [{ index: 0, delta, finish_reason }],
+            ...(includeUsage ? { usage: null } : {}),
+        });
+    const usageChunk = (usage: ResponsesUsage) =>
+        dataEvent({
+            id,
+            object: "chat.completion.chunk",
+            created,
+            model,
+            choices: [],
+            usage: chatUsage(usage),
+        });
 
     return source
         .pipeThrough(new TextDecoderStream())
@@ -680,15 +371,136 @@ function convertResponsesStream(
         .pipeThrough(
             new TransformStream<EventSourceMessage, Uint8Array>({
                 transform(event, controller) {
-                    handleEvent(event, controller);
+                    const emit = (value: string) =>
+                        controller.enqueue(encoder.encode(value));
+                    if (event.data === "[DONE]") {
+                        if (!terminal) {
+                            emit(
+                                terminalError(
+                                    "Stream ended unexpectedly before completion.",
+                                ),
+                            );
+                            terminal = true;
+                        }
+                        return;
+                    }
+
+                    let payload: Json;
+                    try {
+                        payload = JSON.parse(event.data) as Json;
+                    } catch {
+                        return;
+                    }
+                    const type = payload.type;
+
+                    if (type === "response.created") {
+                        const response = (payload.response ??
+                            {}) as ResponsesData;
+                        id = response.id ?? id;
+                        created = response.created_at ?? created;
+                        emit(chatChunk({ role: "assistant", content: "" }));
+                        return;
+                    }
+                    if (type === "response.output_item.added") {
+                        const item = (payload.item ?? {}) as ResponseItem;
+                        if (item.type !== "function_call") return;
+                        const index = nextToolIndex++;
+                        const key = item.call_id ?? item.id ?? String(index);
+                        if (item.id) toolIndexes.set(item.id, index);
+                        if (item.call_id) toolIndexes.set(item.call_id, index);
+                        emit(
+                            chatChunk({
+                                tool_calls: [
+                                    {
+                                        index,
+                                        id: key,
+                                        type: "function",
+                                        function: {
+                                            name: item.name ?? "",
+                                            arguments: "",
+                                        },
+                                    },
+                                ],
+                            }),
+                        );
+                        return;
+                    }
+                    if (type === "response.output_text.delta") {
+                        if (typeof payload.delta === "string") {
+                            emit(chatChunk({ content: payload.delta }));
+                        }
+                        return;
+                    }
+                    if (type === "response.refusal.delta") {
+                        if (typeof payload.delta === "string") {
+                            emit(chatChunk({ refusal: payload.delta }));
+                        }
+                        return;
+                    }
+                    if (
+                        type === "response.reasoning_text.delta" ||
+                        type === "response.reasoning_summary_text.delta"
+                    ) {
+                        if (typeof payload.delta === "string") {
+                            emit(
+                                chatChunk({ reasoning_content: payload.delta }),
+                            );
+                        }
+                        return;
+                    }
+                    if (type === "response.function_call_arguments.delta") {
+                        if (typeof payload.delta !== "string") return;
+                        const key = String(
+                            payload.item_id ?? payload.call_id ?? "",
+                        );
+                        emit(
+                            chatChunk({
+                                tool_calls: [
+                                    {
+                                        index: toolIndexes.get(key) ?? 0,
+                                        function: { arguments: payload.delta },
+                                    },
+                                ],
+                            }),
+                        );
+                        return;
+                    }
+                    if (
+                        type === "response.completed" ||
+                        type === "response.incomplete"
+                    ) {
+                        if (terminal) return;
+                        const response = (payload.response ??
+                            {}) as ResponsesData;
+                        emit(chatChunk({}, finishReason(response)));
+                        if (includeUsage && response.usage) {
+                            emit(usageChunk(response.usage));
+                        }
+                        emit(dataEvent("[DONE]"));
+                        terminal = true;
+                        return;
+                    }
+                    if (type === "response.failed" || type === "error") {
+                        if (terminal) return;
+                        const response = (payload.response ??
+                            payload) as ResponsesData;
+                        emit(
+                            terminalError(
+                                response.error?.message ??
+                                    "The model request failed.",
+                            ),
+                        );
+                        terminal = true;
+                    }
                 },
                 flush(controller) {
-                    if (!closed) {
-                        emit(
-                            controller,
-                            streamError(
-                                "Stream ended unexpectedly before completion.",
-                            ) + "data: [DONE]\n\n",
+                    if (!terminal) {
+                        controller.enqueue(
+                            encoder.encode(
+                                terminalError(
+                                    "Stream ended unexpectedly before completion.",
+                                ),
+                            ),
                         );
                     }
                 },
@@ -696,165 +508,112 @@ function convertResponsesStream(
         );
 }
 
-// =============================================================================
-// Client
-// =============================================================================
-
-function toServiceError(thrown: unknown): ServiceError {
-    return thrown instanceof Error
-        ? (thrown as ServiceError)
-        : (new Error(String(thrown), { cause: thrown }) as ServiceError);
-}
-
-function withUpstreamContext(thrown: unknown, requestUrl: URL): ServiceError {
-    const error = toServiceError(thrown);
-    error.requestUrl ??= requestUrl;
-    error.status ??= 502;
-    return error;
-}
-
-function createApiError(
-    response: Response,
-    details: unknown,
-    modelName: string,
-    requestUrl: URL,
-): ServiceError {
-    const message =
-        typeof details === "object" &&
-        details &&
-        "error" in details &&
-        typeof (details as { error: { message?: unknown } }).error?.message ===
-            "string"
-            ? (details as { error: { message: string } }).error.message
-            : typeof details === "string"
-              ? details
-              : null;
-    const error = new Error(
-        message
-            ? `${response.status} ${response.statusText}: ${message}`
-            : `${response.status} ${response.statusText}`,
-    ) as ServiceError;
-    error.status = remapUpstreamStatus(response.status);
-    error.upstreamStatus = response.status;
-    error.details = details;
-    error.model = modelName;
-    error.requestUrl = requestUrl;
-    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
-    return error;
-}
-
-function withResponseMetadata(
-    completion: ChatCompletion,
-    requestUrl: URL,
-): ChatCompletion {
+function withRequestUrl(completion: ChatCompletion, requestUrl: URL) {
     Object.defineProperty(completion, "upstreamRequestUrl", {
         value: requestUrl,
         enumerable: false,
-        configurable: true,
-        writable: true,
     });
     return completion;
 }
 
-/**
- * Generates text through the Azure OpenAI Responses API, translating the
- * standard Chat Completions request/response shapes (and SSE stream) to the
- * Responses API shapes. Required for GPT-5-family models, where
- * `reasoning.effort` is only honored by the Responses API.
- */
+function serviceError(
+    message: string,
+    requestUrl?: URL,
+    status = 502,
+    details?: unknown,
+): ServiceError {
+    const error = new Error(message) as ServiceError;
+    error.status = status;
+    error.requestUrl = requestUrl;
+    error.details = details;
+    return error;
+}
+
 export async function callAzureResponses(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    const config = (options.modelConfig ?? {}) as Record<string, unknown>;
+    const config = (options.modelConfig ?? {}) as Json;
     const apiKey =
         (config["azure-api-key"] as string | undefined) ??
         process.env.AZURE_MYCELI_PROD_API_KEY;
-    const resourceName = config["azure-resource-name"] as string | undefined;
-    const deploymentId = config["azure-deployment-id"] as string | undefined;
-    const apiVersion = config["azure-api-version"] as string | undefined;
-
+    const resource = config["azure-resource-name"] as string | undefined;
+    const deployment = config["azure-deployment-id"] as string | undefined;
     if (!apiKey) {
-        const error = new Error(
-            "AZURE_MYCELI_PROD_API_KEY is not configured",
-        ) as ServiceError;
-        error.status = 502;
-        throw error;
+        throw serviceError("AZURE_MYCELI_PROD_API_KEY is not configured");
     }
-    if (!resourceName || !deploymentId || !apiVersion) {
-        const error = new Error(
+    if (!resource || !deployment) {
+        throw serviceError(
             `Invalid Azure Responses API config for model ${options.model}`,
-        ) as ServiceError;
-        error.status = 502;
-        throw error;
+        );
     }
 
-    const modelName = options.model ?? deploymentId;
-    const endpoint = `https://${resourceName}.openai.azure.com/openai/deployments/${deploymentId}/responses?api-version=${encodeURIComponent(apiVersion)}`;
-    const requestUrl = new URL(endpoint);
+    const model = options.model ?? deployment;
+    const requestUrl = new URL(
+        `https://${resource}.openai.azure.com/openai/v1/responses`,
+    );
     const requestId = crypto.randomUUID();
-    const startTime = Date.now();
-
-    const body = buildResponsesBody(messages, options);
-
-    log(`[${requestId}] POST ${endpoint}`, {
-        model: modelName,
-        stream: options.stream === true,
-        optionKeys: Object.keys(options),
-    });
+    const started = Date.now();
 
     let response: Response;
     try {
-        response = await fetch(endpoint, {
+        response = await fetch(requestUrl, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "api-key": apiKey,
-            },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(AZURE_REQUEST_TIMEOUT_MS),
+            headers: { "Content-Type": "application/json", "api-key": apiKey },
+            body: JSON.stringify(buildBody(messages, options)),
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
-    } catch (thrown: unknown) {
-        throw withUpstreamContext(thrown, requestUrl);
+    } catch (thrown) {
+        const error =
+            thrown instanceof Error
+                ? (thrown as ServiceError)
+                : serviceError(String(thrown));
+        error.status ??= 502;
+        error.requestUrl ??= requestUrl;
+        throw error;
     }
 
     if (!response.ok) {
-        let errorText: string;
+        const text = await response.text();
+        let details: unknown = text;
         try {
-            errorText = await response.text();
-        } catch (thrown: unknown) {
-            throw withUpstreamContext(thrown, requestUrl);
-        }
-        let details: unknown = errorText;
-        try {
-            details = JSON.parse(errorText);
+            details = JSON.parse(text);
         } catch {
-            // keep raw text
+            // Keep the raw upstream error.
         }
-        errorLog(`[${requestId}] API error (${response.status}):`, details);
-        throw createApiError(response, details, modelName, requestUrl);
+        const message =
+            typeof details === "object" &&
+            details &&
+            typeof (details as { error?: { message?: unknown } }).error
+                ?.message === "string"
+                ? (details as { error: { message: string } }).error.message
+                : `${response.status} ${response.statusText}`;
+        errorLog(`[${requestId}] Azure Responses error`, details);
+        const error = serviceError(
+            `${response.status} ${response.statusText}: ${message}`,
+            requestUrl,
+            remapUpstreamStatus(response.status),
+            details,
+        );
+        error.upstreamStatus = response.status;
+        error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+        throw error;
     }
 
     if (options.stream) {
-        const streamToReturn = convertResponsesStream(response.body, {
-            modelName,
-            includeUsage: Boolean(options.stream_options?.include_usage),
-        });
-        return withResponseMetadata(
+        return withRequestUrl(
             {
                 id: `azure-responses-${requestId}`,
                 object: "chat.completion.chunk",
-                created: Math.floor(startTime / 1000),
-                model: modelName,
+                created: Math.floor(started / 1000),
+                model,
                 stream: true,
-                responseStream: streamToReturn,
-                choices: [
-                    {
-                        delta: { content: "" },
-                        finish_reason: null,
-                        index: 0,
-                    },
-                ],
+                responseStream: convertStream(
+                    response.body,
+                    model,
+                    options.stream_options?.include_usage === true,
+                ),
+                choices: [{ index: 0, delta: {}, finish_reason: null }],
             },
             requestUrl,
         );
@@ -863,30 +622,25 @@ export async function callAzureResponses(
     let data: ResponsesData;
     try {
         data = (await response.json()) as ResponsesData;
-    } catch (thrown: unknown) {
-        throw withUpstreamContext(thrown, requestUrl);
+    } catch (thrown) {
+        throw serviceError(
+            thrown instanceof Error ? thrown.message : String(thrown),
+            requestUrl,
+        );
     }
-
     if (data.error) {
-        const error = new Error(
-            data.error.message || "Text generation failed",
-        ) as ServiceError;
-        error.status = remapUpstreamStatus(data.error.status ?? 502);
-        error.upstreamStatus = data.error.status;
-        error.details = data.error;
-        error.model = modelName;
-        error.requestUrl = requestUrl;
-        error.upstreamHeaders = collectUpstreamHeaders(response.headers);
-        throw error;
+        throw serviceError(
+            data.error.message ?? "Text generation failed",
+            requestUrl,
+            remapUpstreamStatus(data.error.status ?? 502),
+            data.error,
+        );
     }
 
     log(
-        `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
+        `[${requestId}] Azure Responses completed in ${Date.now() - started}ms`,
     );
-
-    const completion = parseResponsesResponse(data, modelName);
-    if (!completion.id) {
-        completion.id = `azure-responses-${requestId}`;
-    }
-    return withResponseMetadata(completion, requestUrl);
+    const completion = parseResponse(data, model);
+    completion.id ??= `azure-responses-${requestId}`;
+    return withRequestUrl(completion, requestUrl);
 }

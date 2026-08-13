@@ -1,120 +1,197 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { callAzureResponses } from "../../src/text/azureResponsesClient.js";
-import type { ChatMessage } from "../../src/text/types.js";
+import type { ChatCompletion, ChatMessage } from "../../src/text/types.js";
 
+const ENDPOINT =
+    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses";
 const modelConfig = {
     provider: "azure-openai",
     "azure-api-key": "test-key",
     "azure-resource-name": "myceli-prod-eastus",
     "azure-deployment-id": "gpt-5.6-sol",
-    "azure-api-version": "2025-04-01-preview",
 };
-
-const RESPONSES_ENDPOINT =
-    "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/responses?api-version=2025-04-01-preview";
 
 afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.AZURE_MYCELI_PROD_API_KEY;
 });
 
-describe("callAzureResponses", () => {
-    it("converts a Chat Completions request into a Responses API body", async () => {
-        let capturedBody: Record<string, unknown> | undefined;
+function mockJson(data: Record<string, unknown>, status = 200) {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        Response.json(data, { status }),
+    );
+}
 
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+function mockStream(events: string[]) {
+    const encoder = new TextEncoder();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(
+            new ReadableStream<Uint8Array>({
+                start(controller) {
+                    for (const event of events) {
+                        controller.enqueue(encoder.encode(event));
+                    }
+                    controller.close();
+                },
+            }),
+            { headers: { "Content-Type": "text/event-stream" } },
+        ),
+    );
+}
+
+async function chunks(completion: ChatCompletion) {
+    const reader = completion.responseStream?.getReader();
+    if (!reader) throw new Error("Expected a response stream");
+    let output = "";
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        output += new TextDecoder().decode(value);
+    }
+    return output
+        .split("\n\n")
+        .filter((line) => line.startsWith("data: "))
+        .map((line) => {
+            const data = line.slice(6);
+            try {
+                return JSON.parse(data);
+            } catch {
+                return data;
+            }
+        });
+}
+
+describe("callAzureResponses", () => {
+    it("sends the documented Azure OpenAI v1 Responses shape", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
-                expect(String(input)).toBe(RESPONSES_ENDPOINT);
+                expect(String(input)).toBe(ENDPOINT);
                 expect(new Headers(init?.headers).get("api-key")).toBe(
                     "test-key",
                 );
-                capturedBody = JSON.parse(String(init?.body));
+                bodies.push(JSON.parse(String(init?.body)));
                 return Response.json({
                     id: "resp_1",
-                    object: "response",
-                    created_at: 123,
                     model: "gpt-5.6-sol",
                     status: "completed",
                     output: [],
-                    usage: {
-                        input_tokens: 1,
-                        output_tokens: 1,
-                        total_tokens: 2,
-                    },
                 });
             },
         );
 
         const messages: ChatMessage[] = [
-            { role: "system", content: "be concise" },
-            { role: "user", content: "weather in Paris?" },
+            { role: "system", content: "Be concise." },
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Weather?" },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/png;base64,AA==",
+                            detail: "low",
+                        },
+                    },
+                ],
+            },
             {
                 role: "assistant",
-                content: "Let me check.",
+                content: "Checking.",
                 tool_calls: [
                     {
                         id: "call_1",
                         type: "function",
                         function: {
-                            name: "get_weather",
+                            name: "weather",
                             arguments: '{"city":"Paris"}',
                         },
                     },
                 ],
             },
-            { role: "tool", content: "sunny", tool_call_id: "call_1" },
+            { role: "tool", tool_call_id: "call_1", content: "sunny" },
         ];
+        const tool = {
+            type: "function",
+            function: {
+                name: "weather",
+                description: "Get weather",
+                parameters: { type: "object" },
+                strict: true,
+            },
+        };
 
         await callAzureResponses(messages, {
             model: "gpt-5.6-sol",
             modelConfig,
-            reasoning_effort: "medium",
-            tools: [
-                {
-                    type: "function",
-                    function: {
-                        name: "get_weather",
-                        description: "Get the weather",
-                        parameters: { type: "object" },
-                    },
+            reasoning_effort: "max",
+            tools: [tool],
+            tool_choice: { type: "function", function: { name: "weather" } },
+            max_completion_tokens: 128,
+            user: "hashed-user",
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "answer",
+                    strict: true,
+                    schema: { type: "object" },
                 },
-            ],
-            tool_choice: "auto",
-            max_completion_tokens: 1024,
+            },
+        });
+        await callAzureResponses([{ role: "user", content: "Hi" }], {
+            model: "gpt-5.6-sol",
+            modelConfig,
+            reasoning_effort: "none",
         });
 
-        expect(capturedBody).toMatchObject({
+        expect(bodies[0]).toMatchObject({
             model: "gpt-5.6-sol",
-            reasoning: { effort: "medium" },
-            max_output_tokens: 1024,
-            tool_choice: "auto",
+            store: false,
+            reasoning: { effort: "max" },
+            max_output_tokens: 128,
+            safety_identifier: "hashed-user",
             tools: [
                 {
                     type: "function",
-                    name: "get_weather",
-                    description: "Get the weather",
+                    name: "weather",
+                    description: "Get weather",
                     parameters: { type: "object" },
+                    strict: true,
                 },
             ],
+            tool_choice: { type: "function", name: "weather" },
+            text: {
+                format: {
+                    type: "json_schema",
+                    name: "answer",
+                    strict: true,
+                    schema: { type: "object" },
+                },
+            },
             input: [
                 {
                     role: "system",
-                    content: [{ type: "input_text", text: "be concise" }],
+                    content: [{ type: "input_text", text: "Be concise." }],
                 },
                 {
                     role: "user",
                     content: [
-                        { type: "input_text", text: "weather in Paris?" },
+                        { type: "input_text", text: "Weather?" },
+                        {
+                            type: "input_image",
+                            image_url: "data:image/png;base64,AA==",
+                            detail: "low",
+                        },
                     ],
                 },
                 {
                     role: "assistant",
-                    content: [{ type: "output_text", text: "Let me check." }],
+                    content: [{ type: "output_text", text: "Checking." }],
                 },
                 {
                     type: "function_call",
                     call_id: "call_1",
-                    name: "get_weather",
+                    name: "weather",
                     arguments: '{"city":"Paris"}',
                 },
                 {
@@ -124,176 +201,107 @@ describe("callAzureResponses", () => {
                 },
             ],
         });
-        expect(capturedBody).not.toHaveProperty("stream");
+        expect(bodies[1].reasoning).toEqual({ effort: "none" });
     });
 
-    it("maps reasoning_effort values to Responses API semantics", async () => {
-        const bodies: Array<Record<string, unknown>> = [];
-
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (_input, init) => {
-                bodies.push(JSON.parse(String(init?.body)));
-                return Response.json({
-                    id: "resp_1",
-                    object: "response",
-                    model: "gpt-5.6-sol",
-                    status: "completed",
-                    output: [],
-                });
-            },
-        );
-
-        await callAzureResponses([{ role: "user", content: "hi" }], {
+    it("maps output, tool calls, finish reason, and every billable usage field", async () => {
+        mockJson({
+            id: "resp_tool",
+            created_at: 123,
             model: "gpt-5.6-sol",
-            modelConfig,
-            reasoning_effort: "xhigh",
-        });
-        await callAzureResponses([{ role: "user", content: "hi" }], {
-            model: "gpt-5.6-sol",
-            modelConfig,
-            reasoning_effort: "none",
-        });
-
-        expect(bodies[0].reasoning).toEqual({ effort: "high" });
-        expect(bodies[1]).not.toHaveProperty("reasoning");
-    });
-
-    it("parses a Responses API output array into a ChatCompletion", async () => {
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
-            Response.json({
-                id: "resp_tool",
-                object: "response",
-                created_at: 456,
-                model: "gpt-5.6-sol",
-                status: "completed",
-                output: [
-                    {
-                        type: "reasoning",
-                        id: "rs_1",
-                        summary: [
-                            { type: "summary_text", text: "thinking..." },
-                        ],
-                    },
-                    {
-                        type: "message",
-                        id: "msg_1",
-                        role: "assistant",
-                        status: "completed",
-                        content: [
-                            {
-                                type: "output_text",
-                                text: "The weather in Paris is sunny.",
-                                annotations: [],
-                            },
-                        ],
-                    },
-                    {
-                        type: "function_call",
-                        id: "fc_1",
-                        call_id: "call_9",
-                        name: "get_weather",
-                        arguments: '{"city":"Paris"}',
-                    },
-                ],
-                usage: {
-                    input_tokens: 10,
-                    output_tokens: 5,
-                    total_tokens: 15,
-                    output_tokens_details: { reasoning_tokens: 3 },
+            status: "completed",
+            output: [
+                {
+                    type: "reasoning",
+                    summary: [{ type: "summary_text", text: "Checked." }],
                 },
-            }),
-        );
-
-        const completion = await callAzureResponses(
-            [{ role: "user", content: "weather in Paris?" }],
-            { model: "gpt-5.6-sol", modelConfig },
-        );
-
-        const message = completion.choices?.[0]?.message;
-        expect(message?.content).toBe("The weather in Paris is sunny.");
-        expect(message?.tool_calls).toEqual([
-            {
-                id: "call_9",
-                type: "function",
-                function: {
-                    name: "get_weather",
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Calling." }],
+                },
+                {
+                    type: "function_call",
+                    call_id: "call_9",
+                    name: "weather",
                     arguments: '{"city":"Paris"}',
                 },
+            ],
+            usage: {
+                input_tokens: 10,
+                input_tokens_details: {
+                    cached_tokens: 4,
+                    cache_write_tokens: 2,
+                },
+                output_tokens: 5,
+                output_tokens_details: { reasoning_tokens: 3 },
+                total_tokens: 15,
             },
-        ]);
-        expect(message?.reasoning_content).toBe("thinking...");
-        expect(completion.choices?.[0]?.finish_reason).toBe("tool_calls");
-        expect(completion.object).toBe("chat.completion");
-        expect(completion.created).toBe(456);
-        expect(completion.usage).toEqual({
-            prompt_tokens: 10,
-            completion_tokens: 5,
-            total_tokens: 15,
-            completion_tokens_details: { reasoning_tokens: 3 },
         });
-    });
-
-    it("maps incomplete max_output_tokens to finish_reason length", async () => {
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
-            Response.json({
-                id: "resp_trunc",
-                object: "response",
-                model: "gpt-5.6-sol",
-                status: "incomplete",
-                incomplete_details: { reason: "max_output_tokens" },
-                output: [
-                    {
-                        type: "message",
-                        id: "msg_1",
-                        role: "assistant",
-                        content: [
-                            {
-                                type: "output_text",
-                                text: "truncated",
-                                annotations: [],
-                            },
-                        ],
-                    },
-                ],
-            }),
-        );
 
         const completion = await callAzureResponses(
-            [{ role: "user", content: "write a lot" }],
+            [{ role: "user", content: "Weather?" }],
             { model: "gpt-5.6-sol", modelConfig },
         );
 
+        expect(completion).toMatchObject({
+            id: "resp_tool",
+            object: "chat.completion",
+            created: 123,
+            choices: [
+                {
+                    finish_reason: "tool_calls",
+                    message: {
+                        role: "assistant",
+                        content: "Calling.",
+                        refusal: null,
+                        reasoning_content: "Checked.",
+                        tool_calls: [
+                            {
+                                id: "call_9",
+                                type: "function",
+                                function: {
+                                    name: "weather",
+                                    arguments: '{"city":"Paris"}',
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+            usage: {
+                prompt_tokens: 10,
+                prompt_tokens_details: {
+                    cached_tokens: 4,
+                    cache_write_tokens: 2,
+                },
+                completion_tokens: 5,
+                completion_tokens_details: { reasoning_tokens: 3 },
+                total_tokens: 15,
+            },
+        });
+    });
+
+    it("maps incomplete responses to OpenAI finish reasons", async () => {
+        mockJson({
+            status: "incomplete",
+            incomplete_details: { reason: "max_output_tokens" },
+            output: [{ type: "message", content: [] }],
+        });
+        const completion = await callAzureResponses(
+            [{ role: "user", content: "Write" }],
+            { model: "gpt-5.6-sol", modelConfig },
+        );
         expect(completion.choices?.[0]?.finish_reason).toBe("length");
     });
 
-    it("converts the Responses API SSE stream to Chat Completions chunks", async () => {
-        const encoder = new TextEncoder();
-        const events = [
-            'data: {"type":"response.created","response":{"id":"resp_stream","created_at":1234,"model":"gpt-5.6-sol"}}\n\n',
-            'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":"msg_1","role":"assistant","status":"in_progress"}}\n\n',
-            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"Hello"}\n\n',
-            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":" world"}\n\n',
-            'data: {"type":"response.completed","response":{"id":"resp_stream","status":"completed","output":[{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Hello world"}]}],"usage":{"input_tokens":3,"output_tokens":2,"total_tokens":5}}}\n\n',
-        ];
-
-        const stream = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(encoder.encode(event));
-                }
-                controller.close();
-            },
-        });
-
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async () =>
-                new Response(stream, {
-                    headers: { "Content-Type": "text/event-stream" },
-                }),
-        );
-
+    it("emits OpenAI-compatible text, usage, and DONE stream chunks", async () => {
+        mockStream([
+            'data: {"type":"response.created","response":{"id":"resp_stream","created_at":1234}}\n\n',
+            'data: {"type":"response.output_text.delta","delta":"Hello"}\n\n',
+            'data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"message"}],"usage":{"input_tokens":3,"input_tokens_details":{"cached_tokens":1,"cache_write_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5}}}\n\n',
+        ]);
         const completion = await callAzureResponses(
-            [{ role: "user", content: "hi" }],
+            [{ role: "user", content: "Hi" }],
             {
                 model: "gpt-5.6-sol",
                 modelConfig,
@@ -301,291 +309,98 @@ describe("callAzureResponses", () => {
                 stream_options: { include_usage: true },
             },
         );
+        const output = await chunks(completion);
 
-        const reader = completion.responseStream?.getReader();
-        let output = "";
-        while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            output += new TextDecoder().decode(value);
-        }
-
-        const chunks = output
-            .split("\n\n")
-            .filter((line) => line.startsWith("data: "))
-            .map((line) => {
-                const raw = line.slice(6);
-                try {
-                    return JSON.parse(raw);
-                } catch {
-                    return raw;
-                }
-            });
-
-        expect(chunks[0].choices[0].delta).toEqual({ content: "Hello" });
-        expect(chunks[1].choices[0].delta).toEqual({ content: " world" });
-        expect(chunks[2].choices[0]).toMatchObject({
-            delta: {},
-            finish_reason: "stop",
+        expect(output[0]).toMatchObject({
+            id: "resp_stream",
+            object: "chat.completion.chunk",
+            created: 1234,
+            usage: null,
+            choices: [
+                {
+                    delta: { role: "assistant", content: "" },
+                    finish_reason: null,
+                },
+            ],
         });
-        expect(chunks[2].id).toBe("resp_stream");
-        expect(chunks[3].usage).toEqual({
-            prompt_tokens: 3,
-            completion_tokens: 2,
-            total_tokens: 5,
-        });
-        expect(chunks[4]).toBe("[DONE]");
-    });
-
-    it("streams tool-call arguments deltas", async () => {
-        const encoder = new TextEncoder();
-        const events = [
-            'data: {"type":"response.created","response":{"id":"resp_tc","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
-            'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":""}}\n\n',
-            'data: {"type":"response.function_call_arguments.delta","item_id":"fc_1","output_index":0,"delta":"{\\"city\\":\\"Par"}\n\n',
-            'data: {"type":"response.function_call_arguments.delta","item_id":"fc_1","output_index":0,"delta":"is\\"}"}\n\n',
-            'data: {"type":"response.completed","response":{"id":"resp_tc","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":"{\\"city\\":\\"Paris\\"}"}]}}\n\n',
-        ];
-
-        const stream = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(encoder.encode(event));
-                }
-                controller.close();
+        expect(output[1].choices[0].delta).toEqual({ content: "Hello" });
+        expect(output[2].choices[0].finish_reason).toBe("stop");
+        expect(output[3]).toMatchObject({
+            choices: [],
+            usage: {
+                prompt_tokens: 3,
+                prompt_tokens_details: {
+                    cached_tokens: 1,
+                    cache_write_tokens: 0,
+                },
+                completion_tokens: 2,
+                completion_tokens_details: { reasoning_tokens: 0 },
+                total_tokens: 5,
             },
         });
+        expect(output[4]).toBe("[DONE]");
+    });
 
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async () => new Response(stream),
-        );
-
+    it("streams reasoning and indexed function-call deltas", async () => {
+        mockStream([
+            'data: {"type":"response.created","response":{"id":"resp_tool","created_at":1}}\n\n',
+            'data: {"type":"response.reasoning_summary_text.delta","delta":"Think"}\n\n',
+            'data: {"type":"response.output_item.added","item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"weather"}}\n\n',
+            'data: {"type":"response.function_call_arguments.delta","item_id":"fc_1","delta":"{\\"city\\":\\"Paris\\"}"}\n\n',
+            'data: {"type":"response.completed","response":{"output":[{"type":"function_call"}]}}\n\n',
+        ]);
         const completion = await callAzureResponses(
-            [{ role: "user", content: "hi" }],
+            [{ role: "user", content: "Weather?" }],
             { model: "gpt-5.6-sol", modelConfig, stream: true },
         );
+        const output = await chunks(completion);
 
-        const reader = completion.responseStream?.getReader();
-        let output = "";
-        while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            output += new TextDecoder().decode(value);
-        }
-
-        const chunks = output
-            .split("\n\n")
-            .filter((line) => line.startsWith("data: "))
-            .map((line) => {
-                const raw = line.slice(6);
-                try {
-                    return JSON.parse(raw);
-                } catch {
-                    return raw;
-                }
-            });
-
-        expect(chunks[0].choices[0].delta.tool_calls[0]).toMatchObject({
+        expect(output[1].choices[0].delta).toEqual({
+            reasoning_content: "Think",
+        });
+        expect(output[2].choices[0].delta.tool_calls[0]).toMatchObject({
             index: 0,
             id: "call_1",
-            type: "function",
-            function: { name: "get_weather", arguments: "" },
+            function: { name: "weather", arguments: "" },
         });
-        expect(
-            chunks[1].choices[0].delta.tool_calls[0].function.arguments,
-        ).toBe('{"city":"Par');
-        expect(
-            chunks[2].choices[0].delta.tool_calls[0].function.arguments,
-        ).toBe('is"}');
-        expect(chunks[3].choices[0]).toMatchObject({
-            delta: {},
-            finish_reason: "tool_calls",
+        expect(output[3].choices[0].delta.tool_calls[0]).toMatchObject({
+            index: 0,
+            function: { arguments: '{"city":"Paris"}' },
         });
-        expect(chunks[4]).toBe("[DONE]");
+        expect(output[4].choices[0].finish_reason).toBe("tool_calls");
+        expect(output[5]).toBe("[DONE]");
     });
 
-    it("routes tool-call args to the right tool when item.id is missing", async () => {
-        const encoder = new TextEncoder();
-        const events = [
-            'data: {"type":"response.created","response":{"id":"resp_multi","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
-            'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":""}}\n\n',
-            'data: {"type":"response.output_item.added","output_index":1,"item":{"type":"function_call","call_id":"call_2","name":"get_news","arguments":""}}\n\n',
-            'data: {"type":"response.function_call_arguments.delta","item_id":"call_2","output_index":1,"delta":"{\\"topic\\":\\"AI\\"}"}\n\n',
-            'data: {"type":"response.completed","response":{"id":"resp_multi","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":"{}"},{"type":"function_call","id":"fc_2","call_id":"call_2","name":"get_news","arguments":"{\\"topic\\":\\"AI\\"}"}]}}\n\n',
-        ];
-
-        const stream = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(encoder.encode(event));
-                }
-                controller.close();
+    it("surfaces truncated streams and Azure errors", async () => {
+        mockStream([
+            'data: {"type":"response.created","response":{"id":"resp_cut"}}\n\n',
+            'data: {"type":"response.output_text.delta","delta":"partial"}\n\n',
+        ]);
+        const streamed = await callAzureResponses(
+            [{ role: "user", content: "Hi" }],
+            { model: "gpt-5.6-sol", modelConfig, stream: true },
+        );
+        expect(await chunks(streamed)).toContainEqual({
+            error: {
+                message: "Stream ended unexpectedly before completion.",
             },
         });
 
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async () => new Response(stream),
-        );
-
-        const completion = await callAzureResponses(
-            [{ role: "user", content: "hi" }],
-            { model: "gpt-5.6-sol", modelConfig, stream: true },
-        );
-
-        const reader = completion.responseStream?.getReader();
-        let output = "";
-        while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            output += new TextDecoder().decode(value);
-        }
-
-        const chunks = output
-            .split("\n\n")
-            .filter((line) => line.startsWith("data: "))
-            .map((line) => {
-                const raw = line.slice(6);
-                try {
-                    return JSON.parse(raw);
-                } catch {
-                    return raw;
-                }
-            });
-
-        expect(chunks[1].choices[0].delta.tool_calls[0]).toMatchObject({
-            index: 1,
-            id: "call_2",
-            function: { name: "get_news", arguments: "" },
-        });
-        expect(chunks[2].choices[0].delta.tool_calls[0]).toMatchObject({
-            index: 1,
-            function: { arguments: '{"topic":"AI"}' },
-        });
-    });
-
-    it("streams reasoning deltas as reasoning_content", async () => {
-        const encoder = new TextEncoder();
-        const events = [
-            'data: {"type":"response.created","response":{"id":"resp_reason","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
-            'data: {"type":"response.reasoning_summary_part.added","item_id":"rs_1","output_index":0,"summary_index":0,"part":{"type":"summary_text","text":""}}\n\n',
-            'data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":"think"}\n\n',
-            'data: {"type":"response.reasoning_text.delta","item_id":"rp_1","output_index":1,"content_index":0,"delta":"deep"}\n\n',
-            'data: {"type":"response.reasoning_text.delta","item_id":"rp_1","output_index":1,"content_index":0,"delta":"er"}\n\n',
-            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":2,"content_index":0,"delta":"answer"}\n\n',
-            'data: {"type":"response.completed","response":{"id":"resp_reason","status":"completed","output":[{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"answer"}]}]}}\n\n',
-        ];
-
-        const stream = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(encoder.encode(event));
-                }
-                controller.close();
-            },
-        });
-
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async () => new Response(stream),
-        );
-
-        const completion = await callAzureResponses(
-            [{ role: "user", content: "hi" }],
-            { model: "gpt-5.6-sol", modelConfig, stream: true },
-        );
-
-        const reader = completion.responseStream?.getReader();
-        let output = "";
-        while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            output += new TextDecoder().decode(value);
-        }
-
-        const chunks = output
-            .split("\n\n")
-            .filter((line) => line.startsWith("data: "))
-            .map((line) => {
-                const raw = line.slice(6);
-                try {
-                    return JSON.parse(raw);
-                } catch {
-                    return raw;
-                }
-            });
-
-        expect(chunks[0].choices[0].delta).toEqual({
-            reasoning_content: "think",
-        });
-        expect(chunks[1].choices[0].delta).toEqual({
-            reasoning_content: "deep",
-        });
-        expect(chunks[2].choices[0].delta).toEqual({
-            reasoning_content: "er",
-        });
-        expect(chunks[3].choices[0].delta).toEqual({ content: "answer" });
-    });
-
-    it("emits an error when the stream ends before completion", async () => {
-        const encoder = new TextEncoder();
-        const events = [
-            'data: {"type":"response.created","response":{"id":"resp_cut","created_at":1,"model":"gpt-5.6-sol"}}\n\n',
-            'data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"partial"}\n\n',
-        ];
-
-        const stream = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(encoder.encode(event));
-                }
-                controller.close();
-            },
-        });
-
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async () => new Response(stream),
-        );
-
-        const completion = await callAzureResponses(
-            [{ role: "user", content: "hi" }],
-            { model: "gpt-5.6-sol", modelConfig, stream: true },
-        );
-
-        const reader = completion.responseStream?.getReader();
-        let output = "";
-        while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            output += new TextDecoder().decode(value);
-        }
-
-        const errorEvents = output
-            .split("\n\n")
-            .filter((line) => line.startsWith("data: "))
-            .map((line) => line.slice(6))
-            .filter((raw) => {
-                try {
-                    return Boolean(JSON.parse(raw).error);
-                } catch {
-                    return false;
-                }
-            });
-
-        expect(errorEvents.length).toBeGreaterThan(0);
-        expect(JSON.parse(errorEvents[0]).error.message).toBe(
-            "Stream ended unexpectedly before completion.",
-        );
-    });
-
-    it("throws when the Azure API key is missing", async () => {
-        delete process.env.AZURE_MYCELI_PROD_API_KEY;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
-            throw new Error("unexpected fetch");
-        });
+        mockJson({ error: { message: "bad request" } }, 400);
+        await expect(
+            callAzureResponses([{ role: "user", content: "Hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({ status: 400, upstreamStatus: 400 });
 
         await expect(
-            callAzureResponses([{ role: "user", content: "hi" }], {
+            callAzureResponses([{ role: "user", content: "Hi" }], {
                 model: "gpt-5.6-sol",
-                modelConfig: { ...modelConfig, "azure-api-key": undefined },
+                modelConfig: {
+                    ...modelConfig,
+                    "azure-api-key": undefined,
+                },
             }),
         ).rejects.toThrow("AZURE_MYCELI_PROD_API_KEY is not configured");
     });

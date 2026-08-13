@@ -15,6 +15,7 @@ export type GenerationExecutionProps = {
 type ContextWithGenerationExecution = ExecutionContext & {
     props?: unknown;
     registerGenerationCacheWrite?: (promise: Promise<void>) => void;
+    getGenerationCacheWrite?: () => Promise<void> | undefined;
 };
 
 export function getGenerationExecutionProps(
@@ -45,4 +46,12 @@ export function registerGenerationCacheWrite(
         throw new Error("Generation cache write registrar is missing");
     }
     register(promise);
+}
+
+export function getGenerationCacheWrite(
+    executionCtx: ExecutionContext,
+): Promise<void> | undefined {
+    return (
+        executionCtx as ContextWithGenerationExecution
+    ).getGenerationCacheWrite?.();
 }

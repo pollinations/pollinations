@@ -474,7 +474,52 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
-    it("correlates provider work and coalesced callers by hashed cache key", async () => {
+    it("does not bill when detached result persistence fails", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const ctx = Object.assign(createExecutionContext(), {
+            props: { type: "generation-execution" },
+            getGenerationCacheWrite: () =>
+                Promise.reject(new Error("R2 write failed")),
+        }) as ExecutionContext;
+
+        await createTestApp(consumePollen).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(consumePollen).not.toHaveBeenCalled();
+        expect(tinybirdRequests).toHaveLength(0);
+    });
+
+    it("tracks provider work but not coalesced cache hits", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -535,24 +580,15 @@ describe("tracking observability", () => {
         ).fetch(request(), bindings, joinerCtx);
         await waitOnExecutionContext(joinerCtx);
 
-        expect(tinybirdRequests).toHaveLength(2);
-        const [providerEvent, joinerEvent] = (await Promise.all(
-            tinybirdRequests.map((sent) => sent.json()),
-        )) as [TinybirdEvent, TinybirdEvent];
+        expect(tinybirdRequests).toHaveLength(1);
+        const providerEvent =
+            (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(providerEvent).toMatchObject({
             cacheHit: false,
             cacheType: "MISS",
             isBilledUsage: true,
         });
-        expect(joinerEvent).toMatchObject({
-            cacheHit: true,
-            cacheType: "COALESCED",
-            isBilledUsage: false,
-            totalCost: 0,
-            totalPrice: 0,
-        });
         expect(providerEvent.cacheKey).toMatch(/^[a-f0-9]{64}$/);
-        expect(joinerEvent.cacheKey).toBe(providerEvent.cacheKey);
         expect(providerEvent.cacheKey).not.toContain("same-request");
         expect(providerConsume.mock.calls[0]?.[0]).toBeGreaterThan(0);
         expect(joinerConsume).toHaveBeenCalledWith(0);

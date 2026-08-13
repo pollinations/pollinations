@@ -10,26 +10,12 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
-const UNKNOWN_RETENTION_MS = 60 * 60 * 1000;
 const SETTLEMENT_WAIT_MS = 30_000;
 
 type PersistedJob = Omit<GenerationJob, "request"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
     bodyChunks: number;
 };
-
-type ActiveJob = {
-    status: "queued" | "running";
-    job: PersistedJob;
-};
-
-type UnknownJob = {
-    status: "unknown";
-    cache: GenerationCacheIdentity;
-    createdAt: number;
-};
-
-type StoredJob = ActiveJob | UnknownJob;
 
 async function cacheExists(
     env: CloudflareBindings,
@@ -38,6 +24,17 @@ async function cacheExists(
     const bucket =
         cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
     return (await bucket.head(cache.key)) !== null;
+}
+
+function unavailable(message: string): GenerationOutcome {
+    return {
+        status: "failed",
+        error: {
+            httpStatus: 503,
+            headers: [["content-type", "text/plain; charset=UTF-8"]],
+            body: new TextEncoder().encode(message),
+        },
+    };
 }
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
@@ -51,12 +48,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         let role: "owner" | "joiner" = "joiner";
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
-        // R2 is external I/O. Keep it outside blockConcurrencyWhile and use
-        // the storage-only section below to serialize admission.
-        const cachePresent = await cacheExists(this.env, job.cache);
 
         await this.ctx.blockConcurrencyWhile(async () => {
-            let stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
+            const cachePresent = await cacheExists(this.env, job.cache);
+            let stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
             if (cachePresent) {
                 if (stored) await this.clear();
@@ -64,19 +59,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 return;
             }
 
-            if (stored?.status === "unknown") {
-                const remaining =
-                    UNKNOWN_RETENTION_MS - (Date.now() - stored.createdAt);
-                if (remaining > 0) {
-                    immediate = {
-                        status: "unknown",
-                        retryAfterSeconds: Math.max(
-                            1,
-                            Math.ceil(remaining / 1000),
-                        ),
-                    };
-                    return;
-                }
+            if (
+                stored &&
+                !this.alarmRunning &&
+                (await this.ctx.storage.getAlarm()) === null
+            ) {
                 await this.clear();
                 stored = undefined;
             }
@@ -84,13 +71,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             if (!stored) {
                 await this.persist(job);
                 role = "owner";
-            } else if (
-                !this.alarmRunning &&
-                (await this.ctx.storage.getAlarm()) === null
-            ) {
-                // queued: recover a lost alarm; running: reconcile an alarm
-                // interrupted by a deployment without replaying generation.
-                await this.ctx.storage.setAlarm(Date.now());
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -103,92 +83,34 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         return { role, outcome: await wait };
     }
 
-    async getStatus(): Promise<
-        | { status: "idle" | "queued" | "running" }
-        | { status: "unknown"; retryAfterSeconds: number }
-    > {
-        const stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
-        if (!stored) return { status: "idle" };
-        if (stored.status !== "unknown") return { status: stored.status };
-
-        const remaining = Math.max(
-            0,
-            UNKNOWN_RETENTION_MS - (Date.now() - stored.createdAt),
-        );
-        return {
-            status: "unknown",
-            retryAfterSeconds: Math.max(1, Math.ceil(remaining / 1000)),
-        };
-    }
-
     async alarm(): Promise<void> {
         if (this.alarmRunning) return;
         this.alarmRunning = true;
         let settlement: Promise<void> | undefined;
         try {
-            const stored = await this.ctx.storage.get<StoredJob>(JOB_KEY);
+            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
             if (!stored) return;
 
-            if (stored.status === "unknown") {
-                if (await cacheExists(this.env, stored.cache)) {
-                    await this.finish({ status: "cached" });
-                }
-                return;
-            }
-
-            if (stored.status === "running") {
-                if (await cacheExists(this.env, stored.job.cache)) {
-                    await this.finish({ status: "cached" });
-                } else {
-                    await this.markUnknown(stored);
-                }
-                return;
-            }
-
-            // A previous request may have filled R2 between the caller's MISS
-            // and this alarm. Recheck immediately before generation begins.
-            if (await cacheExists(this.env, stored.job.cache)) {
+            if (await cacheExists(this.env, stored.cache)) {
                 await this.finish({ status: "cached" });
                 return;
             }
 
-            // Restoring persisted input is retryable because no provider call
-            // has started while the job remains queued.
-            const job = await this.restore(stored.job);
-            const running: ActiveJob = { ...stored, status: "running" };
-            await this.ctx.storage.put<StoredJob>(JOB_KEY, running);
-
-            try {
-                const execution = await executeGeneration(
-                    new Request(job.request.url, {
-                        method: job.request.method,
-                        headers: job.request.headers,
-                        body: job.request.body,
-                    }),
-                    job.auth,
-                    this.env,
-                );
-                settlement = execution.settlement;
-                const { result } = execution;
-
-                if (result.status === "failed") {
-                    await this.finish(result);
-                    return;
-                }
-                if (
-                    result.status === "cached" &&
-                    (await cacheExists(this.env, job.cache))
-                ) {
-                    await this.finish({ status: "cached" });
-                    return;
-                }
-                await this.markUnknown(running);
-            } catch (error) {
-                // Provider acceptance can be ambiguous after an interruption.
-                // Do not clear this tombstone and risk submitting it again.
-                console.error("Detached generation failed ambiguously", error);
-                await this.markUnknown(running);
-            }
+            const job = await this.restore(stored);
+            const execution = await executeGeneration(
+                new Request(job.request.url, {
+                    method: job.request.method,
+                    headers: job.request.headers,
+                    body: job.request.body,
+                }),
+                job.auth,
+                this.env,
+            );
+            settlement = execution.settlement;
+            await this.finish(execution.result);
+        } catch (error) {
+            console.error("Detached generation failed", error);
+            await this.finish(unavailable("Detached generation failed"));
         } finally {
             this.alarmRunning = false;
             if (settlement) await this.waitForSettlement(settlement);
@@ -211,14 +133,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         }
 
         const { body: _body, ...request } = job.request;
-        const stored: ActiveJob = {
-            status: "queued",
-            job: {
-                cache: job.cache,
-                auth: job.auth,
-                request,
-                bodyChunks: chunks.length,
-            },
+        const stored: PersistedJob = {
+            cache: job.cache,
+            auth: job.auth,
+            request,
+            bodyChunks: chunks.length,
         };
         const entries: Record<string, unknown> = { [JOB_KEY]: stored };
         for (const [index, chunk] of chunks.entries()) {
@@ -264,27 +183,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         };
     }
 
-    private async markUnknown(job: ActiveJob): Promise<void> {
-        await this.ctx.storage.put<StoredJob>(JOB_KEY, {
-            status: "unknown",
-            cache: job.job.cache,
-            createdAt: Date.now(),
-        });
-        await this.ctx.storage.deleteAlarm();
-        if (job.job.bodyChunks > 0) {
-            await this.ctx.storage.delete(
-                Array.from(
-                    { length: job.job.bodyChunks },
-                    (_, index) => `${BODY_KEY_PREFIX}${index}`,
-                ),
-            );
-        }
-        this.resolveWaiters({
-            status: "unknown",
-            retryAfterSeconds: UNKNOWN_RETENTION_MS / 1000,
-        });
-    }
-
     private async waitForSettlement(settlement: Promise<void>): Promise<void> {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const timedOut = await Promise.race([
@@ -300,17 +198,15 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     private async finish(outcome: GenerationOutcome): Promise<void> {
-        await this.clear();
-        this.resolveWaiters(outcome);
+        await this.ctx.blockConcurrencyWhile(async () => {
+            await this.clear();
+            for (const resolve of this.waiters) resolve(outcome);
+            this.waiters.clear();
+        });
     }
 
     private async clear(): Promise<void> {
         await this.ctx.storage.deleteAlarm();
         await this.ctx.storage.deleteAll();
-    }
-
-    private resolveWaiters(outcome: GenerationOutcome): void {
-        for (const resolve of this.waiters) resolve(outcome);
-        this.waiters.clear();
     }
 }

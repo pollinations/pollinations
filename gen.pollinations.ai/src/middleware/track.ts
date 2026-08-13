@@ -79,6 +79,10 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
+import {
+    getGenerationCacheWrite,
+    isGenerationExecution,
+} from "@/utils/generation-execution.ts";
 import type { FailedCall } from "../fallback.ts";
 
 export type ModelUsage = {
@@ -304,6 +308,24 @@ export const track = (eventType: EventType) =>
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
                     : responseForTracking(c.res);
+                if (isGenerationExecution(c.executionCtx)) {
+                    const cacheWrite = getGenerationCacheWrite(c.executionCtx);
+                    if (!cacheWrite) {
+                        log.error(
+                            "Skipping billing because the generated result was not cacheable",
+                        );
+                        return;
+                    }
+                    try {
+                        await cacheWrite;
+                    } catch (error) {
+                        log.error(
+                            "Skipping billing because the generated result was not stored: {error}",
+                            { error },
+                        );
+                        return;
+                    }
+                }
                 // What a rescue changes: the generation's cost, and which owner
                 // earns the reward. Not the price — the caller is charged the
                 // listing they asked for either way.
@@ -355,15 +377,6 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
-                    if (response.headers.get("x-cache-type") === "COALESCED") {
-                        await emitRow({
-                            startTime,
-                            endTime: new Date(),
-                            balanceTracking: balanceTracking(),
-                            responseTracking,
-                            errorTracking: {},
-                        });
-                    }
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for

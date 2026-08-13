@@ -15,7 +15,6 @@ export type Env = {
     Variables: RequestIdVariables &
         LoggerVariables &
         ErrorVariables &
-        GenerationCacheVariables &
         AuthVariables &
         BalanceVariables &
         FrontendKeyRateLimitVariables &

@@ -23,8 +23,6 @@ const REPLAYED_HEADERS = new Set([
     "x-original-client-ip",
     SAFETY_HEADER_NAME.toLowerCase(),
 ]);
-const RETRY_AFTER_SECONDS = 10;
-const COORDINATOR_ATTEMPTS = 2;
 
 export type GenerationErrorSnapshot = {
     httpStatus: number;
@@ -52,23 +50,15 @@ export type GenerationJob = {
 
 export type GenerationOutcome =
     | { status: "cached" }
-    | { status: "failed"; error: GenerationErrorSnapshot }
-    | { status: "unknown"; retryAfterSeconds: number };
+    | { status: "failed"; error: GenerationErrorSnapshot };
 
-export type GenerationExecutionResult =
-    | { status: "cached" }
-    | { status: "failed"; error: GenerationErrorSnapshot }
-    | { status: "unknown" };
+export type GenerationExecutionResult = GenerationOutcome;
 
 type CoordinatorStub = {
     startAndWait(job: GenerationJob): Promise<{
         role: "owner" | "joiner";
         outcome: GenerationOutcome;
     }>;
-    getStatus(): Promise<
-        | { status: "idle" | "queued" | "running" }
-        | { status: "unknown"; retryAfterSeconds: number }
-    >;
 };
 
 type DeduplicationEnv = {
@@ -158,49 +148,10 @@ function failedResponse(error: GenerationErrorSnapshot): Response {
     return new Response(body, { status, headers });
 }
 
-function unknownResponse(retryAfterSeconds: number): Response {
-    return new Response(
-        "Generation outcome is unknown; duplicate generation was not started",
-        {
-            status: 503,
-            headers: {
-                "Retry-After": retryAfterSeconds.toString(),
-                "X-Cache-Type": "PENDING",
-            },
-        },
-    );
-}
-
-function pendingResponse(): Response {
-    return Response.json(
-        {
-            status: "pending",
-            message:
-                "Generation is still in progress; retry the same request to rejoin it",
-        },
-        {
-            status: 202,
-            headers: {
-                "Retry-After": RETRY_AFTER_SECONDS.toString(),
-                "X-Cache-Type": "PENDING",
-            },
-        },
-    );
-}
-
 async function coordinatorName(
     cache: GenerationCacheIdentity,
 ): Promise<string> {
     return hashGenerationCacheIdentity(cache.storage, cache.key);
-}
-
-function isRetryableCoordinatorError(error: unknown): boolean {
-    if (!(error instanceof Error)) return false;
-    const rpcError = error as Error & {
-        retryable?: boolean;
-        overloaded?: boolean;
-    };
-    return rpcError.retryable === true && rpcError.overloaded !== true;
 }
 
 /** Runs after generationAccess, so every caller is authorized before joining. */
@@ -220,67 +171,18 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             storage: cache.adapter.storage,
             key: cache.key,
         });
-        const getStub = () =>
-            c.env.GENERATION_COORDINATOR.getByName(
-                name,
-            ) as unknown as CoordinatorStub;
+        const stub = c.env.GENERATION_COORDINATOR.getByName(
+            name,
+        ) as unknown as CoordinatorStub;
         const job = await createJob(c, cache.adapter, cache.key);
         let result: Awaited<ReturnType<CoordinatorStub["startAndWait"]>>;
-        let coordinationError: unknown;
         try {
-            for (let attempt = 1; ; attempt += 1) {
-                try {
-                    result = await getStub().startAndWait(job);
-                    break;
-                } catch (error) {
-                    coordinationError = error;
-                    if (
-                        attempt >= COORDINATOR_ATTEMPTS ||
-                        !isRetryableCoordinatorError(error)
-                    ) {
-                        throw error;
-                    }
-                }
-            }
+            result = await stub.startAndWait(job);
         } catch (error) {
             c.get("log").error(
                 "Generation coordination failed before completion: {error}",
                 { error },
             );
-
-            // A retryable RPC interruption may happen after the job was
-            // durably admitted. Prefer a completed cache entry, then report an
-            // active job as pending instead of turning a healthy generation
-            // into a 5xx response.
-            if (isRetryableCoordinatorError(coordinationError)) {
-                try {
-                    const cached = await cache.adapter.get(
-                        c as unknown as Context<GenerationCacheEnv>,
-                        cache.key,
-                    );
-                    if (cached) {
-                        c.header("X-Cache", "HIT");
-                        cached.headers.set("X-Cache", "HIT");
-                        return cached;
-                    }
-
-                    const status = await getStub().getStatus();
-                    if (
-                        status.status === "queued" ||
-                        status.status === "running"
-                    ) {
-                        return pendingResponse();
-                    }
-                    if (status.status === "unknown") {
-                        return unknownResponse(status.retryAfterSeconds);
-                    }
-                } catch (recoveryError) {
-                    c.get("log").error(
-                        "Generation coordination recovery failed: {error}",
-                        { error: recoveryError },
-                    );
-                }
-            }
             return new Response("Generation coordination is unavailable", {
                 status: 503,
             });
@@ -289,9 +191,6 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
 
         if (outcome.status === "failed") {
             return failedResponse(outcome.error);
-        }
-        if (outcome.status === "unknown") {
-            return unknownResponse(outcome.retryAfterSeconds);
         }
 
         let response: Response | null;

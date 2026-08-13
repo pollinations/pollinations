@@ -8,6 +8,7 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
+import { isGenerationExecution } from "@/utils/generation-execution.ts";
 import { getEstimatedPrice } from "@/utils/model-stats.ts";
 
 type GenerationAccessVariables = AuthVariables &
@@ -80,6 +81,7 @@ export async function requireGenerationAccess(
 
 export const generationAccess = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
+        if (isGenerationExecution(c.executionCtx)) return next();
         await requireGenerationAccess(c.var, c.env);
         await next();
     },

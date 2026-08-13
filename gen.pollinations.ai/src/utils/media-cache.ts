@@ -22,6 +22,7 @@ const CACHED_HEADER_NAMES = [
     "x-content-type-options",
     "x-elevenlabs-reference-song-id",
     "x-elevenlabs-song-id",
+    "x-fallback-target",
     "x-model-used",
     "x-tts-voice",
     "x-voice-changer-voice",

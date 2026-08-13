@@ -16,7 +16,7 @@ import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
-const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
+const CACHED_HEADER_NAMES = new Set(["x-fallback-target", "x-model-used"]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 

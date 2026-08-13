@@ -181,5 +181,4 @@ Each upload gets its own unique id — re-uploading the same bytes yields a new 
 - **Use `pk_` keys in browsers.** Anywhere a `sk_` key could be read off the wire, use a publishable key with a tight budget and an allow-list of models.
 - **One key per app.** Child keys scope budget and permissions independently — easier to audit, easier to revoke without touching production.
 - **Cache-backed generation requests are idempotent while cached.** Identical image, video, audio, and 3D `GET` requests, plus non-streaming text requests, join the same generation. If a long request disconnects, retry the exact request to rejoin it or receive the completed cached result.
-- **Honor a `202` with `X-Cache-Type: PENDING`.** A rare coordination interruption can return this recovery response; retry the exact request after `Retry-After` without changing its parameters.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` from us means upstream provider — usually transient.

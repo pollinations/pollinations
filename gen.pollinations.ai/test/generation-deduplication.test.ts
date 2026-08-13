@@ -323,56 +323,14 @@ describe("generation request deduplication", () => {
         expect(coordinatorName).toMatch(/^[0-9a-f]{64}$/);
     });
 
-    it("retries a retryable coordinator interruption without starting a direct generation", async () => {
-        const cache = new Map<string, string>();
-        let attempts = 0;
-        const retryable = Object.assign(new Error("rpc reset"), {
-            retryable: true,
-        });
-        const generation = createApp(createAdapter(cache));
-        const bindings = {
-            GENERATION_COORDINATOR: {
-                getByName: () => ({
-                    startAndWait: async () => {
-                        attempts += 1;
-                        if (attempts === 1) throw retryable;
-                        cache.set("same-request", "recovered");
-                        return {
-                            role: "joiner" as const,
-                            outcome: { status: "cached" as const },
-                        };
-                    },
-                }),
-            },
-        } as unknown as CloudflareBindings;
-
-        const response = await generation.app.fetch(
-            new Request("https://gen.pollinations.ai/generate"),
-            bindings,
-            executionContext(),
-        );
-
-        expect(response.status).toBe(200);
-        expect(await response.text()).toBe("recovered");
-        expect(response.headers.get("X-Cache")).toBe("HIT");
-        expect(attempts).toBe(2);
-        expect(generation.originHits).toBe(0);
-    });
-
-    it("returns 202 only when retryable interruptions leave a known active job", async () => {
-        const retryable = Object.assign(new Error("rpc reset"), {
-            retryable: true,
-        });
-        let attempts = 0;
+    it("returns 503 when coordination fails without starting a direct generation", async () => {
         const generation = createApp(createAdapter(new Map()));
         const bindings = {
             GENERATION_COORDINATOR: {
                 getByName: () => ({
                     startAndWait: async () => {
-                        attempts += 1;
-                        throw retryable;
+                        throw new Error("rpc reset");
                     },
-                    getStatus: async () => ({ status: "running" as const }),
                 }),
             },
         } as unknown as CloudflareBindings;
@@ -383,10 +341,10 @@ describe("generation request deduplication", () => {
             executionContext(),
         );
 
-        expect(response.status).toBe(202);
-        expect(response.headers.get("Retry-After")).toBe("10");
-        expect(await response.json()).toMatchObject({ status: "pending" });
-        expect(attempts).toBe(2);
+        expect(response.status).toBe(503);
+        expect(await response.text()).toBe(
+            "Generation coordination is unavailable",
+        );
         expect(generation.originHits).toBe(0);
     });
 });

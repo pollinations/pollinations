@@ -10,10 +10,6 @@ type CoordinatorStub = {
         role: "owner" | "joiner";
         outcome: GenerationOutcome;
     }>;
-    getStatus(): Promise<
-        | { status: "idle" | "queued" | "running" }
-        | { status: "unknown"; retryAfterSeconds: number }
-    >;
 };
 
 function testJob(key: string, body?: string): GenerationJob {
@@ -42,7 +38,6 @@ describe("GenerationCoordinator", () => {
         const owner = stub.startAndWait(job);
         const joiner = stub.startAndWait(job);
         await new Promise((resolve) => setTimeout(resolve, 0));
-        expect((await stub.getStatus()).status).toBe("queued");
         await runDurableObjectAlarm(stub as never);
 
         const results = await Promise.all([owner, joiner]);
@@ -51,18 +46,8 @@ describe("GenerationCoordinator", () => {
             "owner",
         ]);
         expect(
-            results.every((result) => result.outcome.status === "unknown"),
+            results.every((result) => result.outcome.status === "failed"),
         ).toBe(true);
-
-        // An interrupted/ambiguous submission is never started a second time.
-        expect(await stub.startAndWait(job)).toEqual({
-            role: "joiner",
-            outcome: { status: "unknown", retryAfterSeconds: 3600 },
-        });
-        expect(await stub.getStatus()).toMatchObject({
-            status: "unknown",
-            retryAfterSeconds: 3600,
-        });
     });
 
     it("persists request bodies larger than one storage value", async () => {

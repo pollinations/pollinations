@@ -65,6 +65,17 @@ async function captureError(
     };
 }
 
+function persistenceFailure(message: string): GenerationExecutionResult {
+    return {
+        status: "failed",
+        error: {
+            httpStatus: 503,
+            headers: [["content-type", "text/plain; charset=UTF-8"]],
+            body: new TextEncoder().encode(message),
+        },
+    };
+}
+
 export type DetachedGeneration = {
     result: GenerationExecutionResult;
     settlement: Promise<void>;
@@ -82,6 +93,9 @@ export async function executeGeneration(
         props: { type: "generation-execution", auth },
         registerGenerationCacheWrite(promise: Promise<void>) {
             cacheWrite = promise;
+        },
+        getGenerationCacheWrite() {
+            return cacheWrite;
         },
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
@@ -102,13 +116,21 @@ export async function executeGeneration(
         return { result: { status: "failed", error }, settlement };
     }
     if (!cacheWrite) {
-        return { result: { status: "unknown" }, settlement };
+        return {
+            result: persistenceFailure(
+                "Generation completed without a cacheable result",
+            ),
+            settlement,
+        };
     }
 
     try {
         await cacheWrite;
     } catch {
-        return { result: { status: "unknown" }, settlement };
+        return {
+            result: persistenceFailure("Generation result could not be stored"),
+            settlement,
+        };
     }
     return { result: { status: "cached" }, settlement };
 }

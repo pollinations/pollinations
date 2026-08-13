@@ -95,35 +95,27 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
     };
 }
 
-export function createMediaCache(config: MediaCacheConfig) {
-    return createGenerationCache(mediaCacheAdapter(config));
-}
-
-function createMediaExecutionCache(config: MediaCacheConfig) {
-    return createGenerationExecutionCache(mediaCacheAdapter(config));
-}
-
-const imageCacheConfig = {
+const imageAdapter = mediaCacheAdapter({
     mediaTypes: ["image/", "video/"],
     defaultContentType: "image/jpeg",
     label: "image-cache",
-};
-export const imageCache = createMediaCache(imageCacheConfig);
-export const imageExecutionCache = createMediaExecutionCache(imageCacheConfig);
+});
+export const imageCache = createGenerationCache(imageAdapter);
+export const imageExecutionCache = createGenerationExecutionCache(imageAdapter);
 
-const audioCacheConfig = {
+const audioAdapter = mediaCacheAdapter({
     mediaTypes: ["audio/"],
     defaultContentType: "audio/mpeg",
     label: "audio-cache",
-};
-export const audioCache = createMediaCache(audioCacheConfig);
-export const audioExecutionCache = createMediaExecutionCache(audioCacheConfig);
+});
+export const audioCache = createGenerationCache(audioAdapter);
+export const audioExecutionCache = createGenerationExecutionCache(audioAdapter);
 
-const model3dCacheConfig = {
+const model3dAdapter = mediaCacheAdapter({
     mediaTypes: ["model/"],
     defaultContentType: "model/gltf-binary",
     label: "3d-cache",
-};
-export const model3dCache = createMediaCache(model3dCacheConfig);
+});
+export const model3dCache = createGenerationCache(model3dAdapter);
 export const model3dExecutionCache =
-    createMediaExecutionCache(model3dCacheConfig);
+    createGenerationExecutionCache(model3dAdapter);

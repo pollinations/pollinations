@@ -47,7 +47,6 @@ const genAliases = [
     "utils/bedrock-guardrail.ts",
     "utils/execute-generation.ts",
     "utils/generation-access.ts",
-    "utils/generation-executor-context.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
     "utils/safety-features.ts",

@@ -12,7 +12,7 @@ import type {
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
 
-const REPLAYED_HEADERS = new Set([
+const EXECUTOR_HEADERS = new Set([
     "accept",
     "cf-connecting-ip",
     "content-type",
@@ -50,8 +50,6 @@ export type GenerationJob = {
 export type GenerationOutcome =
     | { status: "cached" }
     | { status: "failed"; error: GenerationErrorSnapshot };
-
-export type GenerationExecutionResult = GenerationOutcome;
 
 type CoordinatorStub = {
     startAndWait(job: GenerationJob): Promise<{
@@ -115,7 +113,7 @@ async function createJob(
     let body: string | undefined;
     if (c.req.method !== "GET" && c.req.method !== "HEAD") {
         body = sanitizeJsonBody(
-            c.var.generationReplayBody ?? (await c.req.text()),
+            c.var.generationRequestBody ?? (await c.req.text()),
         );
     }
 
@@ -125,7 +123,7 @@ async function createJob(
             url: sanitizeUrl(c.req.url),
             method: c.req.method,
             headers: [...c.req.raw.headers.entries()].filter(([name]) =>
-                REPLAYED_HEADERS.has(name.toLowerCase()),
+                EXECUTOR_HEADERS.has(name.toLowerCase()),
             ),
             ...(body !== undefined && { body }),
         },

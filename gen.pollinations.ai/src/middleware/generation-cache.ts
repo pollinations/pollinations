@@ -3,7 +3,6 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import { registerGenerationCacheWrite } from "@/utils/generation-executor-context.ts";
 
 export type GenerationCacheStorage = "media" | "text";
 
@@ -23,8 +22,10 @@ export type GenerationCacheVariables = {
     };
     /** Alternate request identity for routes which wrap a media response. */
     generationCacheUrl?: URL;
-    /** Normalized body to persist when detached execution must replay a POST. */
-    generationReplayBody?: string;
+    /** Normalized POST body passed to the generation executor. */
+    generationRequestBody?: string;
+    /** Executor callback used to await durable cache materialization. */
+    registerGenerationCacheWrite?: (promise: Promise<void>) => void;
 };
 
 export type GenerationCacheEnv = {
@@ -61,6 +62,42 @@ function replaceCapturedResponse(
     c.res = captured;
 }
 
+async function lookup(
+    c: Context<GenerationCacheEnv>,
+    adapter: GenerationCacheAdapter,
+    cacheKey: string,
+): Promise<Response | null> {
+    const log = c.get("log").getChild(adapter.label);
+    log.debug("Cache key: {key}", { key: cacheKey });
+    const cached = await adapter.get(c, cacheKey);
+    if (cached) {
+        log.info("Cache HIT");
+    } else {
+        log.debug("Cache MISS");
+        c.header("X-Cache", "MISS");
+    }
+    return cached;
+}
+
+function capture(
+    c: Context<GenerationCacheEnv>,
+    adapter: GenerationCacheAdapter,
+    cacheKey: string,
+): Promise<void> | undefined {
+    if (
+        !c.res ||
+        c.res.headers.get("X-Cache") === "HIT" ||
+        !adapter.shouldCache(c.res)
+    ) {
+        return;
+    }
+
+    c.get("log").getChild(adapter.label).debug("Caching response");
+    const captured = adapter.capture(c, cacheKey, c.res);
+    replaceCapturedResponse(c, captured.response);
+    return captured.write;
+}
+
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
@@ -73,15 +110,9 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         ).track?.streamRequested;
         const coordinate = streamRequested !== true;
 
-        log.debug("Cache key: {key}", { key: cacheKey });
         try {
-            const cached = await adapter.get(c, cacheKey);
-            if (cached) {
-                log.info("Cache HIT");
-                return cached;
-            }
-            log.debug("Cache MISS");
-            c.header("X-Cache", "MISS");
+            const cached = await lookup(c, adapter, cacheKey);
+            if (cached) return cached;
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
             if (coordinate) {
@@ -98,21 +129,13 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
 
         await next();
 
-        // A coordinator response was already materialized in R2. Do not make
-        // every joined caller rewrite it or extend its cache lifetime.
-        if (
-            c.res &&
-            c.res.headers.get("X-Cache") !== "HIT" &&
-            adapter.shouldCache(c.res)
-        ) {
-            log.debug("Caching response");
-            const capture = adapter.capture(c, cacheKey, c.res);
+        const cacheWrite = capture(c, adapter, cacheKey);
+        if (cacheWrite) {
             c.executionCtx.waitUntil(
-                capture.write.catch((error) => {
+                cacheWrite.catch((error) => {
                     log.error("Error caching response: {error}", { error });
                 }),
             );
-            replaceCapturedResponse(c, capture.response);
         }
     });
 }
@@ -125,15 +148,9 @@ export function createGenerationExecutionCache(
         const log = c.get("log").getChild(adapter.label);
         const cacheKey = await adapter.getKey(c);
 
-        log.debug("Cache key: {key}", { key: cacheKey });
         try {
-            const cached = await adapter.get(c, cacheKey);
-            if (cached) {
-                log.info("Cache HIT");
-                return cached;
-            }
-            log.debug("Cache MISS");
-            c.header("X-Cache", "MISS");
+            const cached = await lookup(c, adapter, cacheKey);
+            if (cached) return cached;
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
             return new Response("Generation cache is temporarily unavailable", {
@@ -144,15 +161,11 @@ export function createGenerationExecutionCache(
         c.set("generationCache", { adapter, key: cacheKey });
         await next();
 
-        if (
-            c.res &&
-            c.res.headers.get("X-Cache") !== "HIT" &&
-            adapter.shouldCache(c.res)
-        ) {
-            log.debug("Caching response");
-            const capture = adapter.capture(c, cacheKey, c.res);
-            registerGenerationCacheWrite(c.executionCtx, capture.write);
-            replaceCapturedResponse(c, capture.response);
-        }
+        const cacheWrite = capture(c, adapter, cacheKey);
+        if (!cacheWrite) return;
+
+        const register = c.var.registerGenerationCacheWrite;
+        if (!register) throw new Error("Generation cache registrar is missing");
+        register(cacheWrite);
     });
 }

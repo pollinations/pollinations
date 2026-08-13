@@ -64,7 +64,7 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
 function createApp(
     adapter: GenerationCacheAdapter,
     stream = false,
-    replayBody?: string,
+    executorBody?: string,
 ) {
     let preflights = 0;
     let originHits = 0;
@@ -73,7 +73,7 @@ function createApp(
             c.set("log", testLog);
             c.set("requestId", "request-1");
             c.set("track", { streamRequested: stream });
-            if (replayBody) c.set("generationReplayBody", replayBody);
+            if (executorBody) c.set("generationRequestBody", executorBody);
             c.set("auth", {
                 user: { id: "user-1", tier: "seed" } as never,
                 apiKey: { id: "key-1", rawKey: "pk-secret" },

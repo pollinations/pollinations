@@ -313,7 +313,7 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         reasoning_effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
             )

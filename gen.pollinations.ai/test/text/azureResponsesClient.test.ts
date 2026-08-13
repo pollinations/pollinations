@@ -13,7 +13,7 @@ const modelConfig = {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.AZURE_MYCELI_PROD_API_KEY;
+    vi.useRealTimers();
 });
 
 function mockJson(data: Record<string, unknown>, status = 200) {
@@ -109,7 +109,11 @@ describe("callAzureResponses", () => {
                     },
                 ],
             },
-            { role: "tool", tool_call_id: "call_1", content: "sunny" },
+            {
+                role: "tool",
+                tool_call_id: "call_1",
+                content: [{ type: "text", text: "sunny" }],
+            },
         ];
         const tool = {
             type: "function",
@@ -127,6 +131,7 @@ describe("callAzureResponses", () => {
             reasoning_effort: "max",
             tools: [tool],
             tool_choice: { type: "function", function: { name: "weather" } },
+            parallel_tool_calls: false,
             max_completion_tokens: 128,
             user: "hashed-user",
             response_format: {
@@ -149,6 +154,7 @@ describe("callAzureResponses", () => {
             store: false,
             reasoning: { effort: "max" },
             max_output_tokens: 128,
+            parallel_tool_calls: false,
             safety_identifier: "hashed-user",
             tools: [
                 {
@@ -347,6 +353,7 @@ describe("callAzureResponses", () => {
             'data: {"type":"response.reasoning_summary_text.delta","delta":"Think"}\n\n',
             'data: {"type":"response.output_item.added","item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"weather"}}\n\n',
             'data: {"type":"response.function_call_arguments.delta","item_id":"fc_1","delta":"{\\"city\\":\\"Paris\\"}"}\n\n',
+            'data: {"type":"response.function_call_arguments.delta","item_id":"unknown","delta":"corrupt"}\n\n',
             'data: {"type":"response.completed","response":{"output":[{"type":"function_call"}]}}\n\n',
         ]);
         const completion = await callAzureResponses(
@@ -402,6 +409,51 @@ describe("callAzureResponses", () => {
                     "azure-api-key": undefined,
                 },
             }),
-        ).rejects.toThrow("AZURE_MYCELI_PROD_API_KEY is not configured");
+        ).rejects.toThrow("Azure Responses API key is not configured");
+    });
+
+    it("clears the request timeout after response headers arrive", async () => {
+        vi.useFakeTimers();
+        let signal: AbortSignal | null | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                signal = init?.signal;
+                return Response.json({
+                    id: "resp_timeout",
+                    status: "completed",
+                    output: [],
+                });
+            },
+        );
+
+        await callAzureResponses([{ role: "user", content: "Hi" }], {
+            model: "gpt-5.6-sol",
+            modelConfig,
+        });
+        await vi.advanceTimersByTimeAsync(290_001);
+
+        expect(signal).toBeInstanceOf(AbortSignal);
+        expect(signal?.aborted).toBe(false);
+    });
+
+    it.each([
+        ["minimal reasoning", { reasoning_effort: "minimal" }, "minimal"],
+        ["stop", { stop: ["END"] }, "stop is not supported"],
+        ["logit bias", { logit_bias: { "1": 1 } }, "logit_bias"],
+        ["logprobs", { logprobs: true }, "logprobs are not supported"],
+        ["top logprobs", { top_logprobs: 2 }, "logprobs are not supported"],
+    ])("returns a client error for unsupported %s", async (_name, extra, message) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAzureResponses([{ role: "user", content: "Hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig,
+                ...extra,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(message),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 });

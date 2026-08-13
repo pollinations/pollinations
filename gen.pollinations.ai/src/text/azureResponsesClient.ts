@@ -107,6 +107,25 @@ function stringifyArguments(value: unknown): string {
     }
 }
 
+function toolOutput(content: unknown): string {
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+        const text = content.flatMap((raw) => {
+            if (!raw || typeof raw !== "object") return [];
+            const part = raw as Json;
+            return part.type === "text" && typeof part.text === "string"
+                ? [part.text]
+                : [];
+        });
+        if (text.length) return text.join("");
+    }
+    try {
+        return JSON.stringify(content ?? "");
+    } catch {
+        return "";
+    }
+}
+
 function messageItems(message: ChatMessage): Json[] {
     if (["system", "developer", "user"].includes(message.role)) {
         return [
@@ -138,10 +157,7 @@ function messageItems(message: ChatMessage): Json[] {
             {
                 type: "function_call_output",
                 call_id: String(message.tool_call_id ?? message.name ?? ""),
-                output:
-                    typeof message.content === "string"
-                        ? message.content
-                        : JSON.stringify(message.content ?? ""),
+                output: toolOutput(message.content),
             },
         ];
     }
@@ -453,11 +469,13 @@ function convertStream(
                         const key = String(
                             payload.item_id ?? payload.call_id ?? "",
                         );
+                        const index = toolIndexes.get(key);
+                        if (index === undefined) return;
                         emit(
                             chatChunk({
                                 tool_calls: [
                                     {
-                                        index: toolIndexes.get(key) ?? 0,
+                                        index,
                                         function: { arguments: payload.delta },
                                     },
                                 ],
@@ -512,6 +530,8 @@ function withRequestUrl(completion: ChatCompletion, requestUrl: URL) {
     Object.defineProperty(completion, "upstreamRequestUrl", {
         value: requestUrl,
         enumerable: false,
+        configurable: true,
+        writable: true,
     });
     return completion;
 }
@@ -534,13 +554,11 @@ export async function callAzureResponses(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     const config = (options.modelConfig ?? {}) as Json;
-    const apiKey =
-        (config["azure-api-key"] as string | undefined) ??
-        process.env.AZURE_MYCELI_PROD_API_KEY;
+    const apiKey = config["azure-api-key"] as string | undefined;
     const resource = config["azure-resource-name"] as string | undefined;
     const deployment = config["azure-deployment-id"] as string | undefined;
     if (!apiKey) {
-        throw serviceError("AZURE_MYCELI_PROD_API_KEY is not configured");
+        throw serviceError("Azure Responses API key is not configured");
     }
     if (!resource || !deployment) {
         throw serviceError(
@@ -552,16 +570,46 @@ export async function callAzureResponses(
     const requestUrl = new URL(
         `https://${resource}.openai.azure.com/openai/v1/responses`,
     );
+    if (options.reasoning_effort === "minimal") {
+        throw serviceError(
+            'reasoning_effort "minimal" is not supported by GPT-5.6',
+            requestUrl,
+            400,
+        );
+    }
+    if (options.stop !== undefined && options.stop !== null) {
+        throw serviceError(
+            "stop is not supported by the Azure Responses API",
+            requestUrl,
+            400,
+        );
+    }
+    if (options.logit_bias !== undefined && options.logit_bias !== null) {
+        throw serviceError(
+            "logit_bias is not supported by the Azure Responses API",
+            requestUrl,
+            400,
+        );
+    }
+    if (options.logprobs === true || options.top_logprobs != null) {
+        throw serviceError(
+            "logprobs are not supported by GPT-5.6",
+            requestUrl,
+            400,
+        );
+    }
     const requestId = crypto.randomUUID();
     const started = Date.now();
 
     let response: Response;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
         response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json", "api-key": apiKey },
             body: JSON.stringify(buildBody(messages, options)),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: controller.signal,
         });
     } catch (thrown) {
         const error =
@@ -571,6 +619,8 @@ export async function callAzureResponses(
         error.status ??= 502;
         error.requestUrl ??= requestUrl;
         throw error;
+    } finally {
+        clearTimeout(timeout);
     }
 
     if (!response.ok) {

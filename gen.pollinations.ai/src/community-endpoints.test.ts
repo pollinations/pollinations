@@ -1832,6 +1832,133 @@ fixtureTest(
 );
 
 fixtureTest(
+    "filters model catalogs with ?community query parameter",
+    async () => {
+        const ownerGithubUsername = `filter-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `qp-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Community filter test model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        type ListedModel = { name: string; community?: boolean };
+
+        const [
+            allDefault,
+            allExclude,
+            allOnly,
+            textExclude,
+            textOnly,
+            openaiExclude,
+            openaiOnly,
+            imageExclude,
+            allExcludeNumeric,
+            allOnlyNumeric,
+        ] = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/models"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=false"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=true"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?community=false",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?community=true",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/v1/models?community=false",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/v1/models?community=true",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?community=false",
+            ),
+            SELF.fetch("https://gen.pollinations.ai/models?community=0"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=1"),
+        ]);
+
+        for (const r of [
+            allDefault,
+            allExclude,
+            allOnly,
+            textExclude,
+            textOnly,
+            openaiExclude,
+            openaiOnly,
+            imageExclude,
+            allExcludeNumeric,
+            allOnlyNumeric,
+        ]) {
+            expect(r.status).toBe(200);
+        }
+
+        const defaultModels = (await allDefault.json()) as ListedModel[];
+        const excludeModels = (await allExclude.json()) as ListedModel[];
+        const onlyModels = (await allOnly.json()) as ListedModel[];
+        const textExcludeModels =
+            (await textExclude.json()) as ListedModel[];
+        const textOnlyModels = (await textOnly.json()) as ListedModel[];
+        const openaiExcludeData = (await openaiExclude.json()) as {
+            data: { id: string }[];
+        };
+        const openaiOnlyData = (await openaiOnly.json()) as {
+            data: { id: string }[];
+        };
+        const imageExcludeModels =
+            (await imageExclude.json()) as ListedModel[];
+        const excludeNumeric =
+            (await allExcludeNumeric.json()) as ListedModel[];
+        const onlyNumeric = (await allOnlyNumeric.json()) as ListedModel[];
+
+        expect(defaultModels.some((m) => m.community)).toBe(true);
+        expect(defaultModels.some((m) => !m.community)).toBe(true);
+
+        expect(excludeModels.every((m) => !m.community)).toBe(true);
+        expect(excludeModels.find((m) => m.name === modelId)).toBeUndefined();
+
+        expect(onlyModels.every((m) => m.community === true)).toBe(true);
+        expect(onlyModels.find((m) => m.name === modelId)).toBeDefined();
+
+        expect(textExcludeModels.every((m) => !m.community)).toBe(true);
+        expect(textOnlyModels.every((m) => m.community === true)).toBe(true);
+
+        expect(
+            openaiExcludeData.data.find((m) => m.id === modelId),
+        ).toBeUndefined();
+        expect(
+            openaiOnlyData.data.find((m) => m.id === modelId),
+        ).toBeDefined();
+
+        expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
+
+        expect(excludeNumeric.map((m) => m.name)).toEqual(
+            excludeModels.map((m) => m.name),
+        );
+        expect(onlyNumeric.map((m) => m.name)).toEqual(
+            onlyModels.map((m) => m.name),
+        );
+    },
+);
+
+fixtureTest(
     "rejects a direct chat completion against a deactivated community model",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

@@ -236,8 +236,24 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
+// Optionally filter entries by the `?community` query parameter.
+// `community=false` excludes community models, `community=true` returns only
+// community models, and omitting the parameter returns everything.
+function filterEntriesByCommunityParam(
+    entries: GenerationModelEntry[],
+    communityParam: string | undefined,
+): GenerationModelEntry[] {
+    if (communityParam === undefined || communityParam === "") return entries;
+    const wantCommunity = communityParam === "true" || communityParam === "1";
+    return entries.filter(
+        (entry) =>
+            (entry.communityEndpoint !== undefined) === wantCommunity,
+    );
+}
+
 // Factory for model-list endpoints: filters the given models by API key
-// permissions and paid balance, then returns them as JSON.
+// permissions, paid balance, and community query parameter, then returns
+// them as JSON.
 const modelsListHandler =
     (
         getEntries: (
@@ -248,10 +264,13 @@ const modelsListHandler =
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         const paidBalance = hasPaidBalance(c);
         return c.json(
-            filterEntriesByPermissions(
-                await getEntries(c),
-                allowedModels,
-                paidBalance,
+            filterEntriesByCommunityParam(
+                filterEntriesByPermissions(
+                    await getEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                c.req.query("community"),
             ).map((entry) => entry.info),
         );
     };
@@ -312,7 +331,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -328,10 +347,13 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByPermissions(
-                await getVisibleModelEntries(c),
-                allowedModels,
-                paidBalance,
+            const modelEntries = filterEntriesByCommunityParam(
+                filterEntriesByPermissions(
+                    await getVisibleModelEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                c.req.query("community"),
             );
             const now = Date.now();
 
@@ -363,7 +385,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -415,7 +437,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -467,7 +489,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",

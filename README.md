@@ -51,6 +51,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-12** – **🎨 IMADreamer joins the garden** A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer) <!-- app -->
+- **2026-08-12** – **💡 Models, now in a proper row** `Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)
+- **2026-08-12** – **🔗 Let MCP requests breathe** Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
 - **2026-08-11** – **🌟 The app garden got portraits** The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai) <!-- app -->
 - **2026-08-10** – **🚀 Trellis 2 handles longer 3D jobs** Generate finished GLB files with `trellis-2` and its quality aliases through the usual API flow; some meshes simply needed more time to become meshes. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-10** – **✨ Tessera Lumen joins the writing garden** A chat-powered drafting app for turning the blank page into a slightly more negotiable problem. [Try it](https://app.963.co.za) <!-- app -->
@@ -58,9 +61,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-08-10** – **💡 FlashcardGeneratorAI turns study material into games** Generate digital flashcards and matching games for repetition with better graphics. [Try it](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) <!-- app -->
 - **2026-08-09** – **🎨 Stoicky joins the app garden** An AI video-automation tool for faceless creators, built with Pollinations image and text inference. [Try it](https://stoicky.vercel.app) <!-- app -->
 - **2026-08-09** – **🔗 Model Monitor gets two gardens** Inspect Official and Community models separately, with modality health, outage badges, and no-traffic models scoped to the view. [Check the monitor](https://model-monitor.pollinations.ai)
-- **2026-08-09** – **✨ Image queues found another door** FLUX and DreamShaper requests can retry another worker when one is full or unreachable—less waiting, fewer dead ends.
-- **2026-08-06** – **🌟 The app garden got roots** The community directory now runs on a validated, newest-first catalog, so [browse 859 community apps](https://pollinations.ai/apps) without relying on a heroic Markdown file.
-- **2026-08-06** – **✨ Two gardens, one search** The model catalog now separates Official and Community models, with shared search and cleaner modality filters for finding the thing you actually need. [Browse models](https://gen.pollinations.ai/v1/models)
 ---
 
 ## 🌱 Introduction

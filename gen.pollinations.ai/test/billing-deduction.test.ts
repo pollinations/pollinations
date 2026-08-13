@@ -1,9 +1,17 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import {
+    atomicDeductUserBalance,
+    atomicReserveApiKeyBalance,
+} from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { createTestApiKey } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -27,6 +35,14 @@ async function createUser({
         updatedAt: new Date(),
     });
     return userId;
+}
+
+async function getApiKeyBalance(apiKeyId: string) {
+    const [row] = await db
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return row.pollenBalance;
 }
 
 describe("billing deduction", () => {
@@ -143,5 +159,66 @@ describe("billing deduction", () => {
         balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(-0.01, 10);
+    });
+
+    it("admits only as many concurrent API key reservations as the budget covers", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 10,
+        });
+
+        const results = await Promise.all(
+            Array.from({ length: 5 }, () =>
+                atomicReserveApiKeyBalance(db, apiKeyId, 3),
+            ),
+        );
+
+        expect(results.filter((result) => result.ok)).toHaveLength(3);
+        expect(await getApiKeyBalance(apiKeyId)).toBe(1);
+    });
+
+    it("settles an API key reservation against the actual price", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 10,
+        });
+
+        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 5);
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 3,
+            userId,
+            apiKeyId,
+            apiKeyPollenBalance: 10,
+            apiKeyReservedAmount: reserved,
+        });
+
+        expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(7, 10);
+    });
+
+    it("refunds the API key reservation when usage is not billed", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 10,
+        });
+
+        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 4);
+        expect(await getApiKeyBalance(apiKeyId)).toBe(6);
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: false,
+            userId,
+            apiKeyId,
+            apiKeyPollenBalance: 10,
+            apiKeyReservedAmount: reserved,
+        });
+
+        expect(await getApiKeyBalance(apiKeyId)).toBe(10);
     });
 });

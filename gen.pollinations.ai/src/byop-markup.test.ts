@@ -16,6 +16,7 @@ import {
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
+import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
@@ -197,7 +198,7 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    pollenBalance: 2,
+                    pollenBalance: null,
                 },
             },
             balance: {
@@ -231,7 +232,7 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    pollenBalance: 2,
+                    pollenBalance: null,
                 },
             },
             balance: {
@@ -255,7 +256,7 @@ describe("BYOP markup", () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 2 },
+                apiKey: { id: "sk-test", pollenBalance: null },
             },
             balance: {
                 getBalance: async () => ({
@@ -279,7 +280,7 @@ describe("BYOP markup", () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 2 },
+                apiKey: { id: "sk-test", pollenBalance: null },
             },
             balance: {
                 getBalance: async () => ({
@@ -299,10 +300,11 @@ describe("BYOP markup", () => {
     });
 
     it("rejects finite API key budgets that are not above the model estimate", async () => {
+        const { id: apiKeyId } = await createTestApiKey({ pollenBudget: 1 });
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 1 },
+                apiKey: { id: apiKeyId, pollenBalance: 1 },
             },
             balance: {
                 getBalance: async () => ({
@@ -322,11 +324,12 @@ describe("BYOP markup", () => {
     });
 
     it("uses the baseline estimate for BYOP API key budget preflight", async () => {
+        const { id: apiKeyId } = await createTestApiKey({ pollenBudget: 1.1 });
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
-                    id: "sk-test",
+                    id: apiKeyId,
                     byopClientKeyId: "pk-test",
                     pollenBalance: 1.1,
                 },
@@ -341,14 +344,10 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
-        await checkBalance(vars, {
-            ...fakeStatsEnv(1),
-            DB: {
-                prepare: () => {
-                    throw new Error("DB should not be used in preflight");
-                },
-            } as unknown as D1Database,
-        } as CloudflareBindings);
+        // With markup the estimate would be 1.2 and this budget would be refused.
+        await checkBalance(vars, fakeStatsEnv(1));
+
+        expect(vars.balance.apiKeyReservation).toEqual({ apiKeyId, amount: 1 });
     });
 
     it("uses the baseline estimate for BYOP user balance preflight", async () => {
@@ -358,7 +357,7 @@ describe("BYOP markup", () => {
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-test",
-                    pollenBalance: 10,
+                    pollenBalance: null,
                 },
             },
             balance: {

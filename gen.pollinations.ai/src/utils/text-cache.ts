@@ -165,6 +165,7 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
     }
 
     headers.set("X-Cache", "HIT");
+    headers.set("X-Cache-Type", "EXACT");
     headers.set("X-Cache-Key", key.substring(0, 16));
     headers.set(
         "X-Cache-Date",

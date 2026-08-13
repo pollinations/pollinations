@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "HQ IA",
+    "url": "https://editoraitacaiunas.com.br/app/quadrinhos-ia",
+    "description": "Create comic strips quickly with HQ IA, an AI-powered comic book creator.",
+    "language": "pt-BR",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "wljrodrigues",
+    "githubUserId": "39343032",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-06-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11729",
+    "approvedDate": "2026-08-13",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "IMADreamer",
     "url": "https://fastnow.github.io/imadreamer",
     "description": "IMADreamer is a free AI image generation tool built on the Pollinations API.",

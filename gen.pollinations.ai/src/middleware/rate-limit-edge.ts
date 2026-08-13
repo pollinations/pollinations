@@ -1,7 +1,6 @@
 import { getRealClientIp } from "@shared/client-ip.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { isGenerationExecution } from "@/utils/generation-execution.ts";
 
 type EdgeRateLimiterEnv = {
     Bindings: CloudflareBindings & {
@@ -19,7 +18,6 @@ type EdgeRateLimiterEnv = {
  */
 export const edgeRateLimit = createMiddleware<EdgeRateLimiterEnv>(
     async (c, next) => {
-        if (isGenerationExecution(c.executionCtx)) return next();
         if (!c.env.EDGE_RATE_LIMITER) {
             return next();
         }

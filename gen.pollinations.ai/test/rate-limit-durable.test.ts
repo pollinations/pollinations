@@ -5,7 +5,7 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     type FrontendKeyRateLimitVariables,
-    frontendKeyRateLimit,
+    frontendKeyBilling,
 } from "@/middleware/rate-limit-durable.ts";
 
 const testLog = {
@@ -36,7 +36,7 @@ function createApp() {
             });
             await next();
         })
-        .use(frontendKeyRateLimit)
+        .use(frontendKeyBilling)
         .get("/", async (c) => {
             await c.var.frontendKeyRateLimit?.consumePollen(0.25);
             return c.text("ok");
@@ -44,7 +44,7 @@ function createApp() {
 }
 
 describe("publishable key rate limiting", () => {
-    it("skips duplicate admission but consumes detached generation cost", async () => {
+    it("consumes detached generation cost without a second admission", async () => {
         const checkRateLimit = vi.fn(async () => ({ allowed: true }));
         const consumePollen = vi.fn(async () => {});
         const env = {
@@ -53,21 +53,11 @@ describe("publishable key rate limiting", () => {
                 get: () => ({ checkRateLimit, consumePollen }),
             },
         } as unknown as CloudflareBindings;
-        const executionCtx = {
-            props: {
-                type: "generation-execution",
-                auth: { user: { id: "user-1", tier: "seed" } },
-            },
-            waitUntil() {},
-            passThroughOnException() {},
-        } as unknown as ExecutionContext;
-
         const response = await createApp().fetch(
             new Request("https://gen.pollinations.ai/", {
                 headers: { "CF-Connecting-IP": "203.0.113.42" },
             }),
             env,
-            executionCtx,
         );
 
         expect(response.status).toBe(200);

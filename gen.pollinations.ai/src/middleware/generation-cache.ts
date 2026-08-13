@@ -3,10 +3,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import {
-    isGenerationExecution,
-    registerGenerationCacheWrite,
-} from "@/utils/generation-execution.ts";
+import { registerGenerationCacheWrite } from "@/utils/generation-executor-context.ts";
 
 export type GenerationCacheStorage = "media" | "text";
 
@@ -50,6 +47,19 @@ export type GenerationCacheAdapter = {
         response: Response,
     ) => { response: Response; write: Promise<void> };
 };
+
+function replaceCapturedResponse(
+    c: Context<GenerationCacheEnv>,
+    captured: Response,
+): void {
+    if (captured === c.res) return;
+    // Hono's response setter gives the previous response headers precedence.
+    // Copy adapter-owned headers first so they survive the body replacement.
+    for (const [name, value] of captured.headers) {
+        c.res.headers.set(name, value);
+    }
+    c.res = captured;
+}
 
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
@@ -97,28 +107,52 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         ) {
             log.debug("Caching response");
             const capture = adapter.capture(c, cacheKey, c.res);
-            const internal = isGenerationExecution(c.executionCtx);
-            if (internal) {
-                registerGenerationCacheWrite(c.executionCtx, capture.write);
-                c.executionCtx.waitUntil(capture.write);
-            } else {
-                c.executionCtx.waitUntil(
-                    capture.write.catch((error) => {
-                        log.error("Error caching response: {error}", {
-                            error,
-                        });
-                    }),
-                );
+            c.executionCtx.waitUntil(
+                capture.write.catch((error) => {
+                    log.error("Error caching response: {error}", { error });
+                }),
+            );
+            replaceCapturedResponse(c, capture.response);
+        }
+    });
+}
+
+/** Cache lifecycle used only by the detached generation executor. */
+export function createGenerationExecutionCache(
+    adapter: GenerationCacheAdapter,
+) {
+    return createMiddleware<GenerationCacheEnv>(async (c, next) => {
+        const log = c.get("log").getChild(adapter.label);
+        const cacheKey = await adapter.getKey(c);
+
+        log.debug("Cache key: {key}", { key: cacheKey });
+        try {
+            const cached = await adapter.get(c, cacheKey);
+            if (cached) {
+                log.info("Cache HIT");
+                return cached;
             }
-            if (capture.response !== c.res) {
-                // Hono's response setter gives the previous response headers
-                // precedence. Copy adapter-owned headers onto that response
-                // first so cache headers survive the body replacement.
-                for (const [name, value] of capture.response.headers) {
-                    c.res.headers.set(name, value);
-                }
-                c.res = capture.response;
-            }
+            log.debug("Cache MISS");
+            c.header("X-Cache", "MISS");
+        } catch (error) {
+            log.error("Error retrieving cached response: {error}", { error });
+            return new Response("Generation cache is temporarily unavailable", {
+                status: 503,
+            });
+        }
+
+        c.set("generationCache", { adapter, key: cacheKey });
+        await next();
+
+        if (
+            c.res &&
+            c.res.headers.get("X-Cache") !== "HIT" &&
+            adapter.shouldCache(c.res)
+        ) {
+            log.debug("Caching response");
+            const capture = adapter.capture(c, cacheKey, c.res);
+            registerGenerationCacheWrite(c.executionCtx, capture.write);
+            replaceCapturedResponse(c, capture.response);
         }
     });
 }

@@ -1,17 +1,16 @@
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import type { AuthVariables } from "@/middleware/auth.ts";
+import type {
+    AuthVariables,
+    GenerationAuthSnapshot,
+} from "@/middleware/auth.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheEnv,
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
-import {
-    type GenerationAuthSnapshot,
-    isGenerationExecution,
-} from "@/utils/generation-execution.ts";
 
 const REPLAYED_HEADERS = new Set([
     "accept",
@@ -157,10 +156,7 @@ async function coordinatorName(
 /** Runs after generationAccess, so every caller is authorized before joining. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
-        if (
-            isGenerationExecution(c.executionCtx) ||
-            c.var.track?.streamRequested === true
-        ) {
+        if (c.var.track?.streamRequested === true) {
             return next();
         }
 

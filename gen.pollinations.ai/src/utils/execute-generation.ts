@@ -1,9 +1,19 @@
-import { app } from "@/app.ts";
+import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
+import { Hono } from "hono";
+import type { Env } from "@/env.ts";
+import {
+    authFromSnapshot,
+    type GenerationAuthSnapshot,
+} from "@/middleware/auth.ts";
+import { balance } from "@/middleware/balance.ts";
 import type {
     GenerationErrorSnapshot,
     GenerationExecutionResult,
 } from "@/middleware/generation-deduplication.ts";
-import type { GenerationAuthSnapshot } from "@/utils/generation-execution.ts";
+import { logger } from "@/middleware/logger.ts";
+import { frontendKeyBilling } from "@/middleware/rate-limit-durable.ts";
+import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -61,7 +71,19 @@ export type DetachedGeneration = {
     settlement: Promise<void>;
 };
 
-/** Runs the same route under the Durable Object alarm's lifetime. */
+function generationExecutor(auth: GenerationAuthSnapshot): Hono<Env> {
+    const executor = new Hono<Env>()
+        .use("*", requestId())
+        .use("*", logger)
+        .use("*", authFromSnapshot(auth))
+        .use("*", frontendKeyBilling)
+        .use("*", balance)
+        .route("/", generationExecutorRoutes);
+    executor.onError(handleError);
+    return executor;
+}
+
+/** Runs a provider handler under the Durable Object alarm's lifetime. */
 export async function executeGeneration(
     request: Request,
     auth: GenerationAuthSnapshot,
@@ -70,7 +92,6 @@ export async function executeGeneration(
     const promises: Promise<unknown>[] = [];
     let cacheWrite: Promise<void> | undefined;
     const executionCtx = {
-        props: { type: "generation-execution", auth },
         registerGenerationCacheWrite(promise: Promise<void>) {
             cacheWrite = promise;
         },
@@ -80,7 +101,11 @@ export async function executeGeneration(
         passThroughOnException() {},
     } as ExecutionContext;
 
-    const response = await app.fetch(request, env, executionCtx);
+    const response = await generationExecutor(auth).fetch(
+        request,
+        env,
+        executionCtx,
+    );
     const failed = !response.ok;
     const error = failed ? await captureError(response) : undefined;
     if (!failed) await drainResponse(response);

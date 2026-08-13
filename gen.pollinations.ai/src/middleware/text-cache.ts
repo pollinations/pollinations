@@ -10,7 +10,11 @@ import {
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
-import { createGenerationCache } from "./generation-cache.ts";
+import {
+    createGenerationCache,
+    createGenerationExecutionCache,
+    type GenerationCacheAdapter,
+} from "./generation-cache.ts";
 
 /**
  * Text cache middleware
@@ -22,7 +26,7 @@ import { createGenerationCache } from "./generation-cache.ts";
  * Note: Only apply this middleware to cacheable routes (e.g., /v1/chat/completions, /text/:prompt)
  * Non-cacheable routes like /v1/models should NOT use this middleware
  */
-export const textCache = createGenerationCache({
+const textCacheAdapter: GenerationCacheAdapter = {
     storage: "text",
     label: "text-cache",
     async getKey(c) {
@@ -52,4 +56,8 @@ export const textCache = createGenerationCache({
         captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
         return { response: captured, write: capture.write };
     },
-});
+};
+
+export const textCache = createGenerationCache(textCacheAdapter);
+export const textExecutionCache =
+    createGenerationExecutionCache(textCacheAdapter);

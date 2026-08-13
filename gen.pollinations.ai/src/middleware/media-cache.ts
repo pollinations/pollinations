@@ -16,7 +16,11 @@ import {
     putMediaResponse,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
-import { createGenerationCache } from "./generation-cache.ts";
+import {
+    createGenerationCache,
+    createGenerationExecutionCache,
+    type GenerationCacheAdapter,
+} from "./generation-cache.ts";
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
@@ -27,8 +31,8 @@ type MediaCacheConfig = {
     label: string;
 };
 
-export function createMediaCache(config: MediaCacheConfig) {
-    return createGenerationCache({
+function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
+    return {
         storage: "media",
         label: config.label,
         getKey(c) {
@@ -88,23 +92,38 @@ export function createMediaCache(config: MediaCacheConfig) {
                 ),
             };
         },
-    });
+    };
 }
 
-export const imageCache = createMediaCache({
+export function createMediaCache(config: MediaCacheConfig) {
+    return createGenerationCache(mediaCacheAdapter(config));
+}
+
+function createMediaExecutionCache(config: MediaCacheConfig) {
+    return createGenerationExecutionCache(mediaCacheAdapter(config));
+}
+
+const imageCacheConfig = {
     mediaTypes: ["image/", "video/"],
     defaultContentType: "image/jpeg",
     label: "image-cache",
-});
+};
+export const imageCache = createMediaCache(imageCacheConfig);
+export const imageExecutionCache = createMediaExecutionCache(imageCacheConfig);
 
-export const audioCache = createMediaCache({
+const audioCacheConfig = {
     mediaTypes: ["audio/"],
     defaultContentType: "audio/mpeg",
     label: "audio-cache",
-});
+};
+export const audioCache = createMediaCache(audioCacheConfig);
+export const audioExecutionCache = createMediaExecutionCache(audioCacheConfig);
 
-export const model3dCache = createMediaCache({
+const model3dCacheConfig = {
     mediaTypes: ["model/"],
     defaultContentType: "model/gltf-binary",
     label: "3d-cache",
-});
+};
+export const model3dCache = createMediaCache(model3dCacheConfig);
+export const model3dExecutionCache =
+    createMediaExecutionCache(model3dCacheConfig);

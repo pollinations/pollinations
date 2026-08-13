@@ -34,9 +34,9 @@ afterEach(() => {
 
 describe("Seedance 2.5 via Replicate", () => {
     it.each([
-        [undefined, "480p"],
-        ["720p", "720p"],
-    ] as const)("routes resolution %s as %s", async (resolution, expected) => {
+        [undefined, "480p", undefined, "16:9"],
+        ["720p", "720p", "4:3", "4:3"],
+    ] as const)("routes resolution %s as %s with aspect ratio %s", async (resolution, expected, aspectRatio, expectedAspectRatio) => {
         syncImageEnv(
             {
                 REPLICATE_API_TOKEN: "replicate-test-key",
@@ -80,6 +80,7 @@ describe("Seedance 2.5 via Replicate", () => {
         const result = await callSeedance25API("a paper boat", {
             ...baseParams,
             resolution,
+            aspectRatio,
         });
 
         expect(inputs).toEqual([
@@ -87,7 +88,7 @@ describe("Seedance 2.5 via Replicate", () => {
                 prompt: "a paper boat",
                 duration: 4,
                 resolution: expected,
-                aspect_ratio: "4:3",
+                aspect_ratio: expectedAspectRatio,
                 generate_audio: true,
                 seed: 42,
                 image: expect.stringMatching(/^data:image\/png;base64,/),

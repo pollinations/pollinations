@@ -43,6 +43,7 @@ function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
             400,
         );
     }
+    if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(
         safeParams.width,
         safeParams.height,

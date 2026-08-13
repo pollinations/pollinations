@@ -1,0 +1,34 @@
+{
+  "pr_number": 12665,
+  "title": "feat: add Qwen Image 3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12665",
+  "merged_at": "2026-08-13T23:08:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `qwen-image-3` as a separate model; existing `qwen-image` remains unchanged. No aliases, fallback, or Pollinations GPU.\n- Routes generation and up-to-three-image editing to Fal: `alibaba/qwen-image-3/text-to-image` and `alibaba/qwen-image-3/edit`.\n- Adds variable pricing: $0.04 per output through 1536² total pixels, $0.075 above that threshold, plus $0.003 per reference image; multiplier 1.\n- Preserves public `media.pollinations.ai` reference URLs through guarded ingestion and reports exact input/output image usage.\n- Verified direct and through isolated local Gen: 1K/2K, both OpenAI response formats, 1/3-reference edits, cache MISS→HIT, paid-only permissions, validation errors, exact wallet deductions, and 5/5 concurrent burst. Slowest local path: 75.3s.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Qwen grows a third eye",
+    "blurb": "Qwen Image 3 has joined the garden as its own paid model. It can paint from a prompt or rework an image with up to three reference pictures, because apparently one canvas was not enough.",
+    "summary": "Added paid-only qwen-image-3, routed through Fal's text-to-image and edit endpoints, with 1K/2K generation and editing that accepts up to three reference images while keeping qwen-image unchanged.",
+    "impact": "Developers can call qwen-image-3 for Fal-backed image generation or multi-reference edits, with $0.04 outputs through 1536² total pixels, $0.075 above that, and $0.003 per reference image.",
+    "keywords": [
+      "qwen-image-3",
+      "image-generation",
+      "image-editing",
+      "fal",
+      "paid-models",
+      "pricing"
+    ],
+    "visual_concept": "Depict Qwen Image 3 as a cozy three-panel pixel-art canvas or magical easel: one prompt-made image beside an artwork being lovingly revised from three small reference postcards. Polli, wearing a painter's beret, arranges the reference cards and paints with the new tool; a small retro monitor can show the three-image edit flow. Surround the scene with code-plants, flowers, and a prominent lime-green glow to make the new model feel like a fresh seedling rather than a corporate product launch.",
+    "image_prompt": "Cozy pixel art art studio where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret and arranges three reference-image postcards beside a glowing three-panel canvas; a retro monitor shows a prompt becoming a polished picture, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"QWEN IMAGE 3\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-12665.jpg",
+    "prompt": "Cozy pixel art art studio where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret and arranges three reference-image postcards beside a glowing three-panel canvas; a retro monitor shows a prompt becoming a polished picture, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"QWEN IMAGE 3\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-13T23:09:47.268685+00:00"
+}

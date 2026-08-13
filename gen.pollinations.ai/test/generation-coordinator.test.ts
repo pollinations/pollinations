@@ -18,6 +18,12 @@ function testJob(key: string, body?: string): GenerationJob {
             user: { id: "user-1", tier: "seed" },
             apiKey: { id: "key-1" },
         },
+        requestId: "request-1",
+        balanceCheckResult: {
+            selectedMeterId: "local:tier",
+            selectedMeterSlug: "v1:meter:tier",
+            balances: { "v1:meter:tier": 1, "v1:meter:pack": 2 },
+        },
     };
 }
 

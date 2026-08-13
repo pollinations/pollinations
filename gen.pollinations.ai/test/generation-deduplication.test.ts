@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
 import {
     createGenerationCache,
     type GenerationCacheAdapter,
@@ -28,6 +29,7 @@ type TestEnv = {
     Variables: LoggerVariables &
         RequestIdVariables &
         AuthVariables &
+        BalanceVariables &
         GenerationCacheVariables & {
             track: { streamRequested: boolean };
             formData?: FormData;
@@ -73,6 +75,17 @@ function createApp(
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "request-1");
+            c.set("balance", {
+                getBalance: async () => ({
+                    tierBalance: 1,
+                    packBalance: 2,
+                }),
+                balanceCheckResult: {
+                    selectedMeterId: "local:tier",
+                    selectedMeterSlug: "v1:meter:tier",
+                    balances: { "v1:meter:tier": 1, "v1:meter:pack": 2 },
+                },
+            });
             c.set("track", { streamRequested: stream });
             if (executorBody) c.set("generationRequestBody", executorBody);
             c.set("auth", {
@@ -193,6 +206,11 @@ describe("generation request deduplication", () => {
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
+        expect(jobs[0].requestId).toBe("request-1");
+        expect(jobs[0].balanceCheckResult.balances).toEqual({
+            "v1:meter:tier": 1,
+            "v1:meter:pack": 2,
+        });
         expect(new TextDecoder().decode(jobs[0].request.body)).toBe(
             JSON.stringify({
                 model: "resolved-model",
@@ -237,6 +255,20 @@ describe("generation request deduplication", () => {
             .use("*", async (c, next) => {
                 c.set("log", testLog);
                 c.set("requestId", "request-1");
+                c.set("balance", {
+                    getBalance: async () => ({
+                        tierBalance: 1,
+                        packBalance: 2,
+                    }),
+                    balanceCheckResult: {
+                        selectedMeterId: "local:tier",
+                        selectedMeterSlug: "v1:meter:tier",
+                        balances: {
+                            "v1:meter:tier": 1,
+                            "v1:meter:pack": 2,
+                        },
+                    },
+                });
                 c.set("track", { streamRequested: false });
                 c.set("formData", await c.req.formData());
                 c.set("auth", {
@@ -295,7 +327,7 @@ describe("generation request deduplication", () => {
         const replayed = await new Request(job.request.url, {
             method: "POST",
             headers: job.request.headers,
-            body: job.request.body,
+            body: job.request.body?.slice().buffer,
         }).formData();
         expect(replayed.get("key")).toBeNull();
         expect(replayed.get("model")).toBe("voice-transform");

@@ -388,24 +388,24 @@ describe("gen worker routing", () => {
         }
     });
 
-    it.each(["/models", "/audio/models"] as const)(
-        "advertises transcription endpoints on %s",
-        async (path) => {
-            const response = await fetchWorker(path, envWithEnter());
+    it.each([
+        "/models",
+        "/audio/models",
+    ] as const)("advertises transcription endpoints on %s", async (path) => {
+        const response = await fetchWorker(path, envWithEnter());
 
-            expect(response.status).toBe(200);
-            const models = (await response.json()) as {
-                name: string;
-                supported_endpoints?: string[];
-            }[];
-            for (const name of TRANSCRIPTION_MODEL_IDS) {
-                expect(
-                    models.find((model) => model.name === name)
-                        ?.supported_endpoints,
-                ).toEqual(["/v1/audio/transcriptions"]);
-            }
-        },
-    );
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            supported_endpoints?: string[];
+        }[];
+        for (const name of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.find((model) => model.name === name)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
+    });
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -1682,6 +1682,7 @@ fixtureTest(
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("1");
         // reference clip is forwarded as a base64 data-URI audio_url.
         expect(String(sentAudioUrl)).toMatch(/^data:audio\/wav;base64,/);
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -1891,6 +1892,7 @@ fixtureTest(
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 

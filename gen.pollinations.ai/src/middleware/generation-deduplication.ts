@@ -1,3 +1,4 @@
+import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -5,6 +6,7 @@ import type {
     AuthVariables,
     GenerationAuthSnapshot,
 } from "@/middleware/auth.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheEnv,
@@ -45,6 +47,8 @@ export type GenerationJob = {
     cache: GenerationCacheIdentity;
     request: GenerationRequestSnapshot;
     auth: GenerationAuthSnapshot;
+    requestId: string;
+    balanceCheckResult: BalanceCheckResult;
 };
 
 export type GenerationOutcome =
@@ -55,6 +59,7 @@ type DeduplicationEnv = {
     Bindings: CloudflareBindings;
     Variables: GenerationCacheEnv["Variables"] &
         AuthVariables & {
+            balance: BalanceVariables["balance"];
             track?: {
                 streamRequested?: boolean;
                 detachedExecutionTracked?: boolean;
@@ -105,6 +110,11 @@ async function createJob(
     adapter: GenerationCacheAdapter,
     key: string,
 ): Promise<GenerationJob> {
+    const balanceCheckResult = c.var.balance.balanceCheckResult;
+    if (!balanceCheckResult) {
+        throw new Error("Generation balance snapshot is missing");
+    }
+
     let body: Uint8Array | undefined;
     if (c.req.method !== "GET" && c.req.method !== "HEAD") {
         const captured = c.var.generationRequestBody;
@@ -137,6 +147,8 @@ async function createJob(
             ...(body !== undefined && { body }),
         },
         auth: createAuthSnapshot(c.var.auth),
+        requestId: c.get("requestId"),
+        balanceCheckResult,
     };
 }
 
@@ -176,9 +188,9 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let outcome: Awaited<ReturnType<typeof stub.startAndWait>>;
+        let outcome: GenerationOutcome;
         try {
-            outcome = await stub.startAndWait(job);
+            outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
             c.get("log").error(
                 "Generation coordination failed before completion: {error}",

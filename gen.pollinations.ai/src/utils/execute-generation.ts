@@ -1,5 +1,5 @@
+import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { handleError } from "@shared/error.ts";
-import { requestId } from "@shared/middleware/request-id.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
 import {
@@ -55,10 +55,16 @@ export type DetachedGeneration = {
 
 function generationExecutor(
     auth: GenerationAuthSnapshot,
+    requestId: string,
+    balanceCheckResult: BalanceCheckResult,
     registerGenerationCacheWrite: (promise: Promise<void>) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
-        .use("*", requestId())
+        .use("*", async (c, next) => {
+            c.set("requestId", requestId);
+            c.header("X-Request-Id", requestId);
+            await next();
+        })
         .use("*", logger)
         .use("*", authFromSnapshot(auth))
         .use("*", async (c, next) => {
@@ -67,6 +73,10 @@ function generationExecutor(
         })
         .use("*", frontendKeyBilling)
         .use("*", balance)
+        .use("*", async (c, next) => {
+            c.var.balance.balanceCheckResult = balanceCheckResult;
+            await next();
+        })
         .route("/", generationExecutorRoutes);
     executor.onError(handleError);
     return executor;
@@ -76,6 +86,8 @@ function generationExecutor(
 export async function executeGeneration(
     request: Request,
     auth: GenerationAuthSnapshot,
+    requestId: string,
+    balanceCheckResult: BalanceCheckResult,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
@@ -87,9 +99,14 @@ export async function executeGeneration(
         passThroughOnException() {},
     } as ExecutionContext;
 
-    const response = await generationExecutor(auth, (promise) => {
-        cacheWrite = promise;
-    }).fetch(request, env, executionCtx);
+    const response = await generationExecutor(
+        auth,
+        requestId,
+        balanceCheckResult,
+        (promise) => {
+            cacheWrite = promise;
+        },
+    ).fetch(request, env, executionCtx);
     const failed = !response.ok;
     const error = failed ? await captureError(response) : undefined;
     if (!failed) await drainResponse(response);

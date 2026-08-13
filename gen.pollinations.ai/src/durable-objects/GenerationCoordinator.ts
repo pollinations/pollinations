@@ -83,9 +83,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 new Request(job.request.url, {
                     method: job.request.method,
                     headers: job.request.headers,
-                    body: job.request.body,
+                    body: job.request.body?.slice().buffer,
                 }),
                 job.auth,
+                job.requestId,
+                job.balanceCheckResult,
                 this.env,
             );
             settlement = execution.settlement;
@@ -117,6 +119,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         const stored: PersistedJob = {
             cache: job.cache,
             auth: job.auth,
+            requestId: job.requestId,
+            balanceCheckResult: job.balanceCheckResult,
             request,
             bodyChunks: chunks.length,
         };
@@ -160,6 +164,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         return {
             cache: job.cache,
             auth: job.auth,
+            requestId: job.requestId,
+            balanceCheckResult: job.balanceCheckResult,
             request: { ...job.request, ...(body !== undefined && { body }) },
         };
     }

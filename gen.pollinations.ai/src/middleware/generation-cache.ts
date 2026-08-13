@@ -2,6 +2,7 @@ import { bytesToHex } from "@shared/client-ip.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
@@ -25,6 +26,8 @@ export type GenerationCacheVariables = {
     generationCacheUrl?: URL;
     /** Normalized POST body passed to the generation executor. */
     generationRequestBody?: string | Uint8Array;
+    /** Multipart body parsed during model resolution and reused downstream. */
+    formData?: FormData;
     /** Content type for a normalized multipart body. */
     generationRequestContentType?: string;
     /** Canonical body identity used by body-aware cache adapters. */
@@ -114,7 +117,12 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
             const identity =
                 typeof body === "string"
                     ? normalizedJsonBody(body)
-                    : bytesToHex(await crypto.subtle.digest("SHA-256", body));
+                    : bytesToHex(
+                          await crypto.subtle.digest(
+                              "SHA-256",
+                              body.slice().buffer,
+                          ),
+                      );
             if (typeof body === "string") {
                 c.set("generationRequestBody", identity);
             }
@@ -122,8 +130,22 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
             return next();
         }
 
-        if (c.var.formData) {
-            const normalized = await normalizedFormData(c.var.formData);
+        const contentType = c.req.header("content-type") ?? "";
+        if (
+            c.var.formData ||
+            contentType.toLowerCase().includes("multipart/form-data")
+        ) {
+            let formData = c.var.formData;
+            if (!formData) {
+                try {
+                    formData = await c.req.formData();
+                } catch {
+                    throw new HTTPException(400, {
+                        message: "Invalid multipart form data",
+                    });
+                }
+            }
+            const normalized = await normalizedFormData(formData);
             c.set("generationRequestBody", normalized.body);
             c.set("generationRequestContentType", normalized.contentType);
             c.set("generationCacheBody", normalized.identity);

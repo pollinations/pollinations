@@ -1,4 +1,5 @@
 import { type Context, Hono } from "hono";
+import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
@@ -826,8 +827,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),
-        prepareGenerationRequest,
-        model3dCache,
+        every(prepareGenerationRequest, model3dCache),
         generationAccess,
         deduplicateGeneration,
         generateModel3d,
@@ -908,8 +908,7 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.image"),
         track("generate.image"),
         generationAccess,
-        prepareOpenAIImageGeneration,
-        formatOpenAIImageGeneration,
+        every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
         deduplicateGeneration,

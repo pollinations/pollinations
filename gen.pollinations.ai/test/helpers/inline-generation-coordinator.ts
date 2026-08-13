@@ -14,9 +14,11 @@ export function withInlineGenerationCoordinator(
                         new Request(job.request.url, {
                             method: job.request.method,
                             headers: job.request.headers,
-                            body: job.request.body,
+                            body: job.request.body?.slice().buffer,
                         }),
                         job.auth,
+                        job.requestId,
+                        job.balanceCheckResult,
                         coordinated,
                     );
                     await execution.settlement;

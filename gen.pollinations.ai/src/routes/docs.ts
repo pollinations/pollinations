@@ -44,6 +44,7 @@ import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
+import IDEMPOTENCY_MD from "../docs/idempotency.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
@@ -59,6 +60,7 @@ type OpenApiSchema = Record<string, unknown>;
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
+    idempotency: "Idempotency",
     byop: "BYOP",
     cli: "CLI",
     mcpServer: "MCP Server",
@@ -110,6 +112,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.authentication]: docsIcon(
         '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
+    ),
+    [DOC_TAGS.idempotency]: docsIcon(
+        '<path d="M20 11a8.1 8.1 0 1 0 .5 4" /><polyline points="20 4 20 11 13 11" />',
     ),
     [DOC_TAGS.byop]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
@@ -190,6 +195,7 @@ const interpolate = (md: string, vars: Record<string, string>): string =>
 const INTRODUCTION_DOCS = INTRODUCTION_MD.trim();
 const QUICK_START_DOCS = QUICK_START_MD.trim();
 const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
+const IDEMPOTENCY_DOCS = IDEMPOTENCY_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
@@ -315,6 +321,7 @@ const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
     AUTHENTICATION_DOCS,
+    IDEMPOTENCY_DOCS,
     TEXT_GENERATION_DOCS,
     IMAGE_GENERATION_DOCS,
     VIDEO_GENERATION_DOCS,
@@ -444,7 +451,11 @@ function generationDocumentation(): OpenApiSchema {
         "x-tagGroups": [
             {
                 name: "Get Started",
-                tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
+                tags: [
+                    DOC_TAGS.quickStart,
+                    DOC_TAGS.authentication,
+                    DOC_TAGS.idempotency,
+                ],
             },
             {
                 name: "Integrations",
@@ -483,6 +494,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.authentication,
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.idempotency,
+                description: stripLeadingHeading(IDEMPOTENCY_DOCS),
             },
             {
                 name: DOC_TAGS.byop,

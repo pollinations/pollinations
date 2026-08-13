@@ -157,14 +157,21 @@ async function coordinatorName(
 /** Runs after generationAccess, so every caller is authorized before joining. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
-        const cache = c.var.generationCache;
         if (
-            !cache ||
-            !c.env.GENERATION_COORDINATOR ||
             isGenerationExecution(c.executionCtx) ||
             c.var.track?.streamRequested === true
         ) {
             return next();
+        }
+
+        const cache = c.var.generationCache;
+        if (!cache || !c.env.GENERATION_COORDINATOR) {
+            c.get("log").error(
+                "Generation cache identity or coordinator binding is missing",
+            );
+            return new Response("Generation coordination is unavailable", {
+                status: 503,
+            });
         }
 
         const name = await coordinatorName({

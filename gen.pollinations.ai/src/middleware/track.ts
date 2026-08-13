@@ -286,6 +286,10 @@ export const track = (eventType: EventType) =>
 
         await next();
 
+        // Detached execution already tracked the provider failure. The outer
+        // caller only receives that captured result and must not emit it again.
+        if (c.res.headers.get("x-cache-type") === "COALESCED-ERROR") return;
+
         c.executionCtx.waitUntil(
             (async () => {
                 const userId = userTracking.userId;

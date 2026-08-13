@@ -1,4 +1,3 @@
-import type { Logger } from "@logtape/logtape";
 import { bytesToHex } from "@shared/client-ip.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -39,10 +38,7 @@ export type GenerationCacheEnv = {
 export type GenerationCacheAdapter = {
     storage: GenerationCacheStorage;
     label: string;
-    getKey: (
-        c: Context<GenerationCacheEnv>,
-        log: Logger,
-    ) => Promise<string | null> | string | null;
+    getKey: (c: Context<GenerationCacheEnv>) => Promise<string> | string;
     get: (
         c: Context<GenerationCacheEnv>,
         key: string,
@@ -59,8 +55,7 @@ export type GenerationCacheAdapter = {
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
-        const cacheKey = await adapter.getKey(c, log);
-        if (!cacheKey) return next();
+        const cacheKey = await adapter.getKey(c);
         const streamRequested = (
             c.var as GenerationCacheEnv["Variables"] & {
                 track?: { streamRequested?: boolean };

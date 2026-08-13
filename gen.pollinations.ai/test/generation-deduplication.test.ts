@@ -235,6 +235,22 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(1);
     });
 
+    it("fails closed when the coordinator binding is missing", async () => {
+        const generation = createApp(createAdapter(new Map()));
+
+        const response = await generation.app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            {} as CloudflareBindings,
+            executionContext(),
+        );
+
+        expect(response.status).toBe(503);
+        expect(await response.text()).toBe(
+            "Generation coordination is unavailable",
+        );
+        expect(generation.originHits).toBe(0);
+    });
+
     it("preserves a detached generation error for every caller", async () => {
         const generation = createApp(createAdapter(new Map()));
         const bindings = {

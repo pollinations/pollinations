@@ -31,13 +31,8 @@ export function createMediaCache(config: MediaCacheConfig) {
     return createGenerationCache({
         storage: "media",
         label: config.label,
-        getKey(c, log) {
+        getKey(c) {
             const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
-            const seedParam = cacheUrl.searchParams.get("seed");
-            if (seedParam === "-1") {
-                log.debug("seed=-1 detected, skipping cache");
-                return null;
-            }
             return generateCacheKey(
                 cacheUrl,
                 c.var.generationCacheUrl

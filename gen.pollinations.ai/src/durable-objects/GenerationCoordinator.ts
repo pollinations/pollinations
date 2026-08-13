@@ -50,21 +50,12 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const cachePresent = await cacheExists(this.env, job.cache);
-            let stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
             if (cachePresent) {
                 if (stored) await this.clear();
                 immediate = { status: "cached" };
                 return;
-            }
-
-            if (
-                stored &&
-                !this.alarmRunning &&
-                (await this.ctx.storage.getAlarm()) === null
-            ) {
-                await this.clear();
-                stored = undefined;
             }
 
             if (!stored) {

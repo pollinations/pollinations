@@ -25,44 +25,12 @@ import { createGenerationCache } from "./generation-cache.ts";
 export const textCache = createGenerationCache({
     storage: "text",
     label: "text-cache",
-    async getKey(c, log) {
+    async getKey(c) {
         // Hono caches body text across c.req.json()/text(), so this still works
         // after upstream validators have parsed JSON.
         let bodyText: string | undefined;
         if (c.req.method === "POST" || c.req.method === "PUT") {
-            try {
-                bodyText = await c.req.text();
-                if (!bodyText) {
-                    log.debug(
-                        "[TEXT-CACHE] Empty body for POST/PUT, skipping cache",
-                    );
-                    return null;
-                }
-                try {
-                    const bodyObj = JSON.parse(bodyText);
-                    if (bodyObj.seed === -1) {
-                        log.debug(
-                            "[TEXT-CACHE] seed=-1 detected, skipping cache for random generation",
-                        );
-                        return null;
-                    }
-                } catch {
-                    // Non-JSON bodies are keyed as-is.
-                }
-            } catch {
-                log.warn(
-                    "[TEXT-CACHE] Could not read request body, skipping cache",
-                );
-                return null;
-            }
-        }
-
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
-        if (seedParam === "-1") {
-            log.debug(
-                "[TEXT-CACHE] seed=-1 in query, skipping cache for random generation",
-            );
-            return null;
+            bodyText = await c.req.text();
         }
 
         return generateCacheKey(c.req.raw, bodyText);

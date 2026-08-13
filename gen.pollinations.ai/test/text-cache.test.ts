@@ -460,7 +460,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(2);
     });
 
-    it("bypasses cache for seed -1 in POST bodies and GET query params", async () => {
+    it("caches seed -1 in POST bodies and GET query params", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();
@@ -505,11 +505,11 @@ describe("text cache", () => {
         );
         await consumeAndWait(secondGet);
 
-        expect(firstPost.response.headers.get("X-Cache")).toBeNull();
-        expect(secondPost.response.headers.get("X-Cache")).toBeNull();
-        expect(firstGet.response.headers.get("X-Cache")).toBeNull();
-        expect(secondGet.response.headers.get("X-Cache")).toBeNull();
-        expect(cache.originHits).toBe(4);
+        expect(firstPost.response.headers.get("X-Cache")).toBe("MISS");
+        expect(secondPost.response.headers.get("X-Cache")).toBe("HIT");
+        expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
+        expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
+        expect(cache.originHits).toBe(2);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

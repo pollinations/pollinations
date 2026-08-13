@@ -425,25 +425,47 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
-test("Qwen Image 3 is paid-only and billed at the fal flat image rate", () => {
+test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     const definition = getRegistryModelDefinition("qwen-image-3");
 
     expect(definition.provider).toBe("fal");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
-    expect(definition.inputModalities).toEqual(["text"]);
+    expect(definition.inputModalities).toEqual(["text", "image"]);
     expect(definition.outputModalities).toEqual(["image"]);
     expect(getCostDefinition("qwen-image-3")).toEqual({
-        completionImageTokens: 0.075,
+        promptImageTokens: 0.003,
+        completionImageTokens: 0.04,
     });
-    expect(getPriceDefinition("qwen-image-3")).toEqual(
-        getCostDefinition("qwen-image-3"),
-    );
     expect(
         calculatePrice("qwen-image-3", {
             completionImageTokens: 1,
         }).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: (1536 * 1536) / 1_000_000 },
+        ).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: 2.4 },
+        ).totalPrice,
     ).toBeCloseTo(0.075, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { promptImageTokens: 3, completionImageTokens: 1 },
+            undefined,
+            { megapixels: 4.194304 },
+        ).totalPrice,
+    ).toBeCloseTo(0.084, 8);
 });
 
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {

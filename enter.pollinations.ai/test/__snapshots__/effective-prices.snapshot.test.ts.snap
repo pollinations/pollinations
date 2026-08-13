@@ -1332,10 +1332,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-image-3": {
     "cost": {
-      "completionImageTokens": 0.075,
+      "completionImageTokens": 0.04,
+      "promptImageTokens": 0.003,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.075,
+        "promptImageTokens": 0.003,
+      },
     },
     "price": {
-      "completionImageTokens": 0.075,
+      "completionImageTokens": 0.04,
+      "promptImageTokens": 0.003,
     },
   },
   "qwen-large": {

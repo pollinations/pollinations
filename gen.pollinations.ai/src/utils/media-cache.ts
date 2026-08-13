@@ -20,6 +20,7 @@ const CACHED_HEADER_NAMES = [
     "content-disposition",
     "content-security-policy",
     "x-content-type-options",
+    "x-fallback-target",
     "x-model-used",
 ];
 

@@ -154,6 +154,7 @@ describe("media cache", () => {
             "Content-Security-Policy":
                 "default-src 'none'; style-src 'unsafe-inline'; sandbox",
             "X-Content-Type-Options": "nosniff",
+            "X-Fallback-Target": "fallback-model",
         };
         let originHits = 0;
         const app = new Hono<TestEnv>()
@@ -183,6 +184,9 @@ describe("media cache", () => {
         );
         expect(hit.response.headers.get("X-Content-Type-Options")).toBe(
             "nosniff",
+        );
+        expect(hit.response.headers.get("X-Fallback-Target")).toBe(
+            "fallback-model",
         );
         expect(originHits).toBe(1);
     });

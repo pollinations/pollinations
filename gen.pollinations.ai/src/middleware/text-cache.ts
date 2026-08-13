@@ -68,7 +68,7 @@ export const textCache = createGenerationCache({
     },
     get: getCachedResponse,
     shouldCache(response) {
-        return response.ok && response.body !== null;
+        return response.status === 200 && response.body !== null;
     },
     capture(c, cacheKey, response) {
         const captureStream = createCaptureStream(c, cacheKey, response);

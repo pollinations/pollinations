@@ -49,6 +49,7 @@ function createTextCacheApp() {
                         headers: {
                             "Content-Type": "application/json; charset=utf-8",
                             "x-model-used": "openai-fast",
+                            "x-fallback-target": "openai",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
@@ -226,6 +227,7 @@ describe("text cache", () => {
             "application/json; charset=utf-8",
         );
         expect(second.headers.get("x-model-used")).toBe("openai-fast");
+        expect(second.headers.get("x-fallback-target")).toBe("openai");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
@@ -262,6 +264,31 @@ describe("text cache", () => {
         expect(result.response.headers.get("Cache-Control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
+    });
+
+    it("does not cache accepted responses", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/text/:prompt", textCache, () => {
+                originHits += 1;
+                return Response.json({ status: "pending" }, { status: 202 });
+            });
+        const env = createTextCacheEnv();
+
+        const first = await dispatch(app, "/text/test", undefined, env);
+        await consumeAndWait(first);
+        const second = await dispatch(app, "/text/test", undefined, env);
+        await consumeAndWait(second);
+
+        expect(first.response.status).toBe(202);
+        expect(second.response.status).toBe(202);
+        expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(originHits).toBe(2);
     });
 
     it("treats different POST bodies as different cache entries", async () => {

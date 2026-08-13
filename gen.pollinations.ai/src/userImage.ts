@@ -1,6 +1,7 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "./image/httpError.ts";
+import { readResponseBytes } from "./utils/response-bytes.ts";
 
 /**
  * A user-supplied image we could not use.
@@ -101,61 +102,6 @@ function assertAllowedImageUrl(value: string): URL {
     }
 
     return url;
-}
-
-/**
- * Reads a response body, refusing to buffer more than `maxBytes`.
- *
- * Streams and checks a running total so an oversized image is abandoned partway
- * rather than after it has already been held in memory — `Content-Length` is the
- * host's claim, not a limit, so it cannot be the only check.
- */
-async function readImageBytes(
-    response: Response,
-    maxBytes: number,
-): Promise<Uint8Array> {
-    if (maxBytes <= 0) {
-        throw new UserImageError(
-            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
-            "image_too_large",
-        );
-    }
-
-    const tooLarge = (total: number) =>
-        new UserImageError(
-            `Image too large: ${total} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
-            "image_too_large",
-        );
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-        const arrayBuffer = await response.arrayBuffer();
-        if (arrayBuffer.byteLength > maxBytes)
-            throw tooLarge(arrayBuffer.byteLength);
-        return new Uint8Array(arrayBuffer);
-    }
-
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.byteLength;
-            if (total > maxBytes) throw tooLarge(total);
-            chunks.push(value);
-        }
-    } finally {
-        reader.releaseLock();
-    }
-
-    const bytes = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-    }
-    return bytes;
 }
 
 /** The image host's own status, phrased as something the caller can act on. */
@@ -333,20 +279,24 @@ export async function fetchUserImage(
     }
 
     const cap = Math.min(MAX_IMAGE_SIZE, maxBytes);
-    // Not redundant with the streaming cap below, which catches the same images
-    // only after transferring `cap` bytes of them. An honest host declaring
-    // something far too big is turned away here having sent nothing.
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && Number.parseInt(contentLength, 10) > cap) {
+    if (cap <= 0) {
         throw new UserImageError(
-            `Image too large: ${contentLength} bytes (max ${cap} bytes remaining). Please use a smaller image.`,
+            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
             "image_too_large",
         );
     }
 
     let bytes: Uint8Array;
     try {
-        bytes = await readImageBytes(response, cap);
+        bytes = await readResponseBytes(
+            response,
+            cap,
+            (total) =>
+                new UserImageError(
+                    `Image too large: ${total} bytes (max ${cap} bytes remaining). Please use a smaller image.`,
+                    "image_too_large",
+                ),
+        );
     } catch (thrown) {
         if (thrown instanceof UserImageError) throw thrown;
         const error =

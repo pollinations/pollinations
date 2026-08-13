@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
@@ -18,22 +19,35 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-async function fetchWorker(path: string, init: RequestInit = {}) {
+const scribeTestEnv = {
+    ...env,
+    ELEVENLABS_API_KEY: "test-eleven-key",
+};
+
+async function fetchWorker(
+    path: string,
+    init: RequestInit = {},
+    bindings = env,
+) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        bindings,
         ctx,
     );
     await waitOnExecutionContext(ctx);
     return response;
 }
 
-async function fetchWorkerWithContext(path: string, init: RequestInit = {}) {
+async function fetchWorkerWithContext(
+    path: string,
+    init: RequestInit = {},
+    bindings = env,
+) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        bindings,
         ctx,
     );
     return { response: response as WebSocketResponse, ctx };
@@ -55,9 +69,14 @@ function nextClose(socket: WebSocket): Promise<CloseEvent> {
     });
 }
 
-function mockOpenAIRealtime() {
+function zeroAudioBase64(byteLength: number): string {
+    return btoa("\0".repeat(byteLength));
+}
+
+function mockRealtimeProvider(initialMessage?: string) {
     let upstreamRequest: Request | undefined;
     let upstreamServer: WebSocket | undefined;
+    let upstreamServerAccepted = false;
     const tinybirdRequests: Request[] = [];
 
     const fetchMock = vi
@@ -80,6 +99,11 @@ function mockOpenAIRealtime() {
                 WebSocket,
             ];
             upstreamServer = server;
+            if (initialMessage) {
+                server.accept();
+                upstreamServerAccepted = true;
+                server.send(initialMessage);
+            }
             return new Response(null, {
                 status: 101,
                 webSocket: client,
@@ -100,6 +124,9 @@ function mockOpenAIRealtime() {
                 throw new Error("Expected upstream realtime WebSocket");
             }
             return upstreamServer;
+        },
+        get serverAccepted() {
+            return upstreamServerAccepted;
         },
     };
 }
@@ -128,7 +155,7 @@ async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
 }
 
 async function waitForTinybirdRequests(
-    upstream: ReturnType<typeof mockOpenAIRealtime>,
+    upstream: ReturnType<typeof mockRealtimeProvider>,
     count = 1,
 ) {
     for (let attempt = 0; attempt < 20; attempt++) {
@@ -151,7 +178,7 @@ async function openPaidRealtimeSession({
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockRealtimeProvider();
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -170,6 +197,44 @@ async function openPaidRealtimeSession({
     upstream.server.accept();
 
     return { client, ctx, upstream, userId };
+}
+
+async function openPaidScribeSession({
+    name,
+    query = "",
+    initialProviderMessage,
+}: {
+    name: string;
+    query?: string;
+    initialProviderMessage?: string;
+}) {
+    const { key, userId } = await createTestApiKey({
+        name,
+        pollenBudget: 1,
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const upstream = mockRealtimeProvider(initialProviderMessage);
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/v1/audio/transcriptions/realtime?${query}`,
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+        scribeTestEnv,
+    );
+
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    const initialClientMessage = initialProviderMessage
+        ? nextMessage(client)
+        : undefined;
+    client.accept();
+    if (!upstream.serverAccepted) upstream.server.accept();
+
+    return { client, ctx, upstream, userId, initialClientMessage };
 }
 
 type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
@@ -218,7 +283,7 @@ async function expectClientEventRejected(
     paidApiKey: string,
     event: unknown,
 ): Promise<void> {
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockRealtimeProvider();
 
     const { response, ctx } = await fetchWorkerWithContext(
         "/v1/realtime?model=gpt-realtime-2",
@@ -255,7 +320,7 @@ async function expectClientEventRejected(
 test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     paidApiKey,
 }) => {
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockRealtimeProvider();
 
     const { response, ctx } = await fetchWorkerWithContext("/v1/realtime", {
         headers: {
@@ -307,7 +372,7 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
 test("routes the mini model through the working East US 2 deployment", async ({
     paidApiKey,
 }) => {
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockRealtimeProvider();
 
     const { response, ctx } = await fetchWorkerWithContext(
         "/v1/realtime?model=gpt-realtime-2.1-mini",
@@ -339,7 +404,7 @@ test("accepts publishable keys through the query string for thin clients", async
         pollenBudget: 10,
         user: { packBalance: 10 },
     });
-    const upstream = mockOpenAIRealtime();
+    const upstream = mockRealtimeProvider();
 
     const { response, ctx } = await fetchWorkerWithContext(
         `/v1/realtime?model=gpt-realtime-2&key=${encodeURIComponent(key)}`,
@@ -354,6 +419,283 @@ test("accepts publishable keys through the query string for thin clients", async
     response.webSocket?.close();
     upstream.server.close();
     await waitOnExecutionContext(ctx);
+});
+
+test("proxies Scribe Realtime parameters without forwarding caller credentials", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-parameters-key",
+        query: [
+            "model=scribe-realtime",
+            "audio_format=pcm_16000",
+            "language_code=fr",
+            "commit_strategy=vad",
+            "vad_threshold=0.4",
+            "vad_silence_threshold_secs=1.5",
+            "min_speech_duration_ms=100",
+            "min_silence_duration_ms=100",
+            "include_timestamps=true",
+            "include_language_detection=true",
+            "no_verbatim=true",
+        ].join("&"),
+    });
+
+    const upstreamUrl = new URL(session.upstream.request.url);
+    expect(`${upstreamUrl.origin}${upstreamUrl.pathname}`).toBe(
+        "https://api.elevenlabs.io/v1/speech-to-text/realtime",
+    );
+    expect(Object.fromEntries(upstreamUrl.searchParams)).toEqual({
+        model_id: "scribe_v2_realtime",
+        audio_format: "pcm_16000",
+        commit_strategy: "vad",
+        language_code: "fr",
+        vad_threshold: "0.4",
+        vad_silence_threshold_secs: "1.5",
+        min_speech_duration_ms: "100",
+        min_silence_duration_ms: "100",
+        include_timestamps: "true",
+        include_language_detection: "true",
+        no_verbatim: "true",
+    });
+    expect(session.upstream.request.headers.get("xi-api-key")).toBeTruthy();
+    expect(session.upstream.request.headers.get("Authorization")).toBeNull();
+
+    const clientMessage = JSON.stringify({
+        message_type: "input_audio_chunk",
+        audio_base_64: zeroAudioBase64(3200),
+        sample_rate: 16_000,
+        commit: true,
+        previous_text: "contexte",
+    });
+    const upstreamMessage = nextMessage(session.upstream.server);
+    session.client.send(clientMessage);
+    await expect(upstreamMessage).resolves.toBe(clientMessage);
+
+    const providerMessage = JSON.stringify({
+        message_type: "committed_transcript",
+        text: "bonjour",
+    });
+    const downstreamMessage = nextMessage(session.client);
+    session.upstream.server.send(providerMessage);
+    await expect(downstreamMessage).resolves.toBe(providerMessage);
+
+    const telemetry = await closeAndReadTelemetry(session);
+    expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
+});
+
+test("forwards the initial Scribe session event after listeners are attached", async () => {
+    const initialProviderMessage = JSON.stringify({
+        message_type: "session_started",
+        session_id: "session-1",
+    });
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-initial-event-key",
+        initialProviderMessage,
+    });
+
+    await expect(session.initialClientMessage).resolves.toBe(
+        initialProviderMessage,
+    );
+    await closeRealtimeSession(session);
+});
+
+test.each([
+    ["pcm_8000", 16_000, 8000],
+    ["pcm_16000", 32_000, 16_000],
+    ["pcm_22050", 44_100, 22_050],
+    ["pcm_24000", 48_000, 24_000],
+    ["pcm_44100", 88_200, 44_100],
+    ["pcm_48000", 96_000, 48_000],
+    ["ulaw_8000", 8000, 8000],
+] as const)("bills one streamed second of %s at the exact Scribe Realtime rate", async (audioFormat, bytesPerSecond, sampleRate) => {
+    const session = await openPaidScribeSession({
+        name: `scribe-realtime-${audioFormat}-key`,
+        query: `audio_format=${audioFormat}`,
+    });
+    const upstreamMessage = nextMessage(session.upstream.server);
+    session.client.send(
+        JSON.stringify({
+            message_type: "input_audio_chunk",
+            audio_base_64: zeroAudioBase64(bytesPerSecond),
+            sample_rate: sampleRate,
+            commit: true,
+        }),
+    );
+    await upstreamMessage;
+
+    const telemetry = await closeAndReadTelemetry(session);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    const expectedCharge = 0.39 / 3600;
+    const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
+    expect(telemetry.eventType).toBe("generate.realtime");
+    expect(telemetry.resolvedModelRequested).toBe("scribe-realtime");
+    expect(telemetry.modelProviderUsed).toBe("elevenlabs");
+    expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCharge, 12);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedLedgerCharge, 12);
+});
+
+test("rejects malformed Scribe audio without forwarding or billing it", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-malformed-audio-key",
+    });
+    let upstreamReceived = false;
+    session.upstream.server.addEventListener("message", () => {
+        upstreamReceived = true;
+    });
+
+    const closeEvent = nextClose(session.client);
+    session.client.send(
+        JSON.stringify({
+            message_type: "input_audio_chunk",
+            audio_base_64: "not base64!",
+        }),
+    );
+    await expect(closeEvent).resolves.toMatchObject({
+        code: 1008,
+        reason: "input_audio_chunk audio_base_64 is invalid.",
+    });
+    await waitOnExecutionContext(session.ctx);
+
+    expect(upstreamReceived).toBe(false);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
+});
+
+test("sanitizes Scribe provider errors and settles accepted audio", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-provider-error-key",
+    });
+    const upstreamMessage = nextMessage(session.upstream.server);
+    session.client.send(
+        JSON.stringify({
+            message_type: "input_audio_chunk",
+            audio_base_64: zeroAudioBase64(32_000),
+            sample_rate: 16_000,
+        }),
+    );
+    await upstreamMessage;
+
+    const providerError = nextMessage(session.client);
+    const clientClose = nextClose(session.client);
+    session.upstream.server.send(
+        JSON.stringify({
+            message_type: "quota_exceeded",
+            error: "provider account details",
+        }),
+    );
+
+    await expect(providerError).resolves.toBe(
+        JSON.stringify({
+            message_type: "quota_exceeded",
+            error: "Realtime transcription failed.",
+        }),
+    );
+    await expect(clientClose).resolves.toMatchObject({ code: 1011 });
+    await waitOnExecutionContext(session.ctx);
+    await waitForTinybirdRequests(session.upstream);
+    const telemetry = JSON.parse(
+        await session.upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
+});
+
+test.each([
+    "/v1/audio/transcriptions/realtime?keyterms=Pollinations",
+    "/v1/audio/transcriptions/realtime?entity_detection=all",
+    "/v1/audio/transcriptions/realtime?model=scribe_v2_realtime",
+    "/v1/audio/transcriptions/realtime?filter_background_audio=true&include_timestamps=true",
+    "/v1/audio/transcriptions/realtime?vad_threshold=",
+    "/v1/audio/transcriptions/realtime?min_speech_duration_ms=",
+    "/v1/audio/transcriptions/realtime?include_timestamps",
+])("rejects unsupported Scribe Realtime query %s", async (path) => {
+    const { key } = await createTestApiKey({
+        name: "scribe-realtime-invalid-query-key",
+        user: { packBalance: 1 },
+    });
+    const upstream = mockRealtimeProvider();
+    const response = await fetchWorker(path, {
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Upgrade: "websocket",
+        },
+    });
+
+    expect(response.status).toBe(400);
+    expect(upstream.fetchMock).not.toHaveBeenCalled();
+});
+
+test("enforces paid-only and model permissions for Scribe Realtime", async () => {
+    mockRealtimeProvider();
+    const questOnly = await createTestApiKey({
+        name: "scribe-realtime-quest-only-key",
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const emptyPermissions = await createTestApiKey({
+        name: "scribe-realtime-empty-permissions-key",
+        allowedModels: [],
+        user: { packBalance: 1 },
+    });
+
+    const questResponse = await fetchWorker(
+        "/v1/audio/transcriptions/realtime",
+        {
+            headers: {
+                Authorization: `Bearer ${questOnly.key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+    const permissionResponse = await fetchWorker(
+        "/v1/audio/transcriptions/realtime",
+        {
+            headers: {
+                Authorization: `Bearer ${emptyPermissions.key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(questResponse.status).toBe(402);
+    expect(permissionResponse.status).toBe(403);
+});
+
+test("accepts a publishable key without forwarding it to ElevenLabs", async () => {
+    const { key } = await createTestApiKey({
+        name: "scribe-realtime-publishable-key",
+        type: "publishable",
+        user: { packBalance: 1 },
+    });
+    const upstream = mockRealtimeProvider();
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/v1/audio/transcriptions/realtime?key=${encodeURIComponent(key)}`,
+        { headers: { Upgrade: "websocket" } },
+        scribeTestEnv,
+    );
+
+    expect(response.status).toBe(101);
+    expect(upstream.request.url).not.toContain(key);
+    expect(upstream.request.headers.get("xi-api-key")).toBeTruthy();
+    response.webSocket?.accept();
+    upstream.server.accept();
+    response.webSocket?.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+});
+
+test("completes both sides of the Scribe close handshake", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-close-key",
+    });
+    const clientClose = nextClose(session.client);
+    const upstreamClose = nextClose(session.upstream.server);
+
+    session.client.close(1000, "done");
+
+    await expect(clientClose).resolves.toMatchObject({ code: 1000 });
+    await expect(upstreamClose).resolves.toMatchObject({ code: 1000 });
+    await waitOnExecutionContext(session.ctx);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
 });
 
 test("rejects non-WebSocket realtime requests before calling OpenAI", async ({
@@ -805,6 +1147,45 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
+    expect(
+        publicBody.data.find((model) => model.id === "scribe-realtime"),
+    ).toMatchObject({
+        supported_endpoints: ["/v1/audio/transcriptions/realtime"],
+    });
+
+    const richResponse = await fetchWorker("/models");
+    expect(richResponse.status).toBe(200);
+    const richModels = (await richResponse.json()) as {
+        name: string;
+        brand?: string;
+        title?: string;
+        description?: string;
+        input_modalities?: string[];
+        output_modalities?: string[];
+        supported_endpoints?: string[];
+        paid_only?: boolean;
+        aliases?: string[];
+        pricing?: Record<string, string>;
+    }[];
+    const scribeRealtime = richModels.find(
+        (model) => model.name === "scribe-realtime",
+    );
+    expect(scribeRealtime).toMatchObject({
+        aliases: [],
+        brand: "ElevenLabs",
+        title: "Scribe v2 Realtime",
+        input_modalities: ["audio"],
+        output_modalities: ["text"],
+        supported_endpoints: ["/v1/audio/transcriptions/realtime"],
+        paid_only: true,
+        pricing: {
+            currency: "pollen",
+            promptAudioSeconds: "0.000108333333",
+        },
+    });
+    expect(scribeRealtime?.description?.toLowerCase()).not.toContain(
+        scribeRealtime?.title?.toLowerCase(),
+    );
 
     const restrictedResponse = await fetchWorker("/v1/models", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
@@ -821,6 +1202,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
         "gpt-realtime-2.1-mini",
+    );
+    expect(restrictedBody.data.map((model) => model.id)).not.toContain(
+        "scribe-realtime",
     );
 });
 

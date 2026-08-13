@@ -104,6 +104,7 @@ cat > /root/onstart.sh <<'EOF'
 #!/bin/bash
 screen -S klein -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+screen -S cloudflared-watchdog -X quit 2>/dev/null || true
 screen -dmS klein bash -c 'while true; do /root/run-klein.sh >> /root/klein.log 2>&1; sleep 5; done'
 
 if [ ! -f /root/.cloudflared_tunnel_enabled ]; then
@@ -117,6 +118,7 @@ if [ ! -s /root/.cloudflared_token ]; then
 fi
 
 screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:8000/health >/dev/null; do echo "Waiting for Klein health before joining the production tunnel" >> /root/cloudflared.log; sleep 3; done; while true; do cloudflared tunnel --no-autoupdate --protocol quic --metrics 127.0.0.1:20241 run --token-file /root/.cloudflared_token >> /root/cloudflared.log 2>&1; sleep 5; done'
+screen -dmS cloudflared-watchdog bash -c 'low_checks=0; while true; do sleep 10; connections=$(curl -fsS --max-time 2 http://127.0.0.1:20241/metrics 2>/dev/null | grep "^cloudflared_tunnel_ha_connections " | cut -d" " -f2); if [ "${connections:-0}" -lt 2 ] 2>/dev/null; then low_checks=$((low_checks + 1)); else low_checks=0; fi; if [ "$low_checks" -ge 3 ]; then echo "$(date -u +%FT%TZ) Restarting cloudflared: fewer than two HA connections for 30 seconds" >> /root/cloudflared.log; pid=$(pgrep -x cloudflared | head -n 1); if [ -n "$pid" ]; then kill "$pid"; fi; low_checks=0; sleep 10; fi; done'
 EOF
 chmod 700 /root/run-klein.sh /root/onstart.sh
 

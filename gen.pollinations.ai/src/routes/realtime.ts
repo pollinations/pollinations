@@ -361,12 +361,16 @@ function inspectScribeInput(
         };
     }
 
-    let byteLength: number;
-    try {
-        byteLength = atob(event.audio_base_64).length;
-    } catch {
+    const base64 = event.audio_base_64;
+    if (
+        !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/.test(
+            base64,
+        )
+    ) {
         return { error: "input_audio_chunk audio_base_64 is invalid." };
     }
+    const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+    const byteLength = Math.floor((base64.length * 3) / 4) - padding;
     if (audioFormat !== "ulaw_8000" && byteLength % 2 !== 0) {
         return {
             error: "PCM audio chunks must contain complete 16-bit samples.",

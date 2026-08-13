@@ -626,6 +626,7 @@ test.each([
 });
 
 test("enforces paid-only and model permissions for Scribe Realtime", async () => {
+    mockRealtimeProvider();
     const questOnly = await createTestApiKey({
         name: "scribe-realtime-quest-only-key",
         user: { tierBalance: 1, packBalance: 0 },

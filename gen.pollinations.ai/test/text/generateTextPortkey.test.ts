@@ -21,6 +21,9 @@ describe("generateTextPortkey", () => {
                 expect(headers.get("x-portkey-strict-open-ai-compliance")).toBe(
                     "false",
                 );
+                expect(JSON.parse(String(init?.body))).not.toHaveProperty(
+                    "parallel_tool_calls",
+                );
 
                 return Response.json({
                     model: "provider-model",
@@ -43,6 +46,7 @@ describe("generateTextPortkey", () => {
                     provider: "openai",
                     model: "provider-model",
                 },
+                parallel_tool_calls: false,
                 portkeyGatewayUrl: "https://portkey.test",
             },
             fetcher,
@@ -128,6 +132,7 @@ describe("generateTextPortkey", () => {
                 const body = JSON.parse(String(init?.body));
                 expect(body).toMatchObject({
                     model: "gpt-5.6-luna",
+                    parallel_tool_calls: false,
                     reasoning: { effort: "max" },
                     tools: [{ type: "function", name: "weather" }],
                 });
@@ -145,6 +150,7 @@ describe("generateTextPortkey", () => {
                 model: "gpt-5.6-luna",
                 modelConfig: azureModelConfig,
                 seed: 42,
+                parallel_tool_calls: false,
                 reasoning_effort: "max",
                 tools: [
                     {

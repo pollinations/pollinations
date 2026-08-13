@@ -106,6 +106,10 @@ export async function generateTextPortkey(
         return callAzureResponses(state.messages, state.options);
     }
 
+    // Only the Responses adapter owns this parameter. Keep generic provider
+    // requests unchanged because some OpenAI-compatible backends reject it.
+    delete state.options.parallel_tool_calls;
+
     const completion = await genericOpenAIClient(
         state.messages,
         state.options,

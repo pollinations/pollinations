@@ -38,6 +38,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
+import { readResponseBytes } from "../utils/response-bytes.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import {
     buildTranscriptionResponse,
@@ -106,11 +107,6 @@ const CreateSpeechRequestSchema = z
                 "If true, stores the generated elevenmusic song and returns its song ID for later inpainting.",
             example: false,
         }),
-        extract_composition_plan: z.boolean().optional().meta({
-            description:
-                "If true with reference audio, asks ElevenLabs to derive a music_v2 composition plan.",
-            example: false,
-        }),
         reference_audio: z.url().optional().meta({
             description:
                 "URL returned by media.pollinations.ai for reference-audio conditioning or audio-to-audio generation.",
@@ -119,7 +115,7 @@ const CreateSpeechRequestSchema = z
         }),
         conditioning_ref: z.unknown().optional().meta({
             description:
-                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. reference_audio can create this automatically.",
+                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
         }),
         composition_plan: z.unknown().optional().meta({
             description:
@@ -211,7 +207,6 @@ type GenerateMusicOptions = {
     forceInstrumental?: boolean;
     seed?: number;
     storeForInpainting?: boolean;
-    extractCompositionPlan?: boolean;
     conditioningRef?: unknown;
     compositionPlan?: unknown;
     referenceAudio?: File;
@@ -219,7 +214,11 @@ type GenerateMusicOptions = {
     log: Logger;
 };
 
+// Reference URLs intentionally use the one canonical public media host in
+// every environment; staging and local generation read the same public blobs.
 const MEDIA_ORIGIN = "https://media.pollinations.ai";
+const MAX_REFERENCE_AUDIO_SIZE = 20 * 1024 * 1024;
+const REFERENCE_AUDIO_FETCH_TIMEOUT_MS = 30_000;
 
 const AUDIO_EXTENSION_BY_TYPE: Record<string, string> = {
     "audio/aac": "aac",
@@ -232,35 +231,71 @@ const AUDIO_EXTENSION_BY_TYPE: Record<string, string> = {
 };
 
 async function fetchReferenceAudio(referenceAudioUrl: string): Promise<File> {
-    let url: URL;
-    try {
-        url = new URL(referenceAudioUrl);
-    } catch {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "reference_audio must be a valid media.pollinations.ai URL",
-        });
-    }
-
+    const url = new URL(referenceAudioUrl);
     if (url.origin !== MEDIA_ORIGIN) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "reference_audio must use https://media.pollinations.ai",
         });
     }
 
-    const response = await ensureUpstreamOk(await fetch(url), url);
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            signal: AbortSignal.timeout(REFERENCE_AUDIO_FETCH_TIMEOUT_MS),
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Failed to fetch reference_audio from media.pollinations.ai: ${message}`,
+            requestUrl: url,
+        });
+    }
+
+    if (!response.ok) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Failed to fetch reference_audio: media.pollinations.ai returned ${response.status}`,
+            requestUrl: url,
+            upstreamStatus: response.status,
+        });
+    }
+
     const contentType =
-        response.headers.get("content-type")?.split(";", 1)[0] || "";
-    if (!contentType.startsWith("audio/")) {
+        response.headers
+            .get("content-type")
+            ?.split(";", 1)[0]
+            .trim()
+            .toLowerCase() || "application/octet-stream";
+    if (
+        !contentType.startsWith("audio/") &&
+        contentType !== "application/octet-stream"
+    ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "reference_audio must point to an audio file",
         });
     }
 
     const extension = AUDIO_EXTENSION_BY_TYPE[contentType] || "audio";
-    return new File([await response.arrayBuffer()], `reference.${extension}`, {
-        type: contentType,
-    });
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+        bytes = await readResponseBytes(
+            response,
+            MAX_REFERENCE_AUDIO_SIZE,
+            (total) =>
+                new UpstreamError(400 as ContentfulStatusCode, {
+                    message: `reference_audio is too large: ${total} bytes (max ${MAX_REFERENCE_AUDIO_SIZE})`,
+                    requestUrl: url,
+                }),
+        );
+    } catch (error) {
+        if (error instanceof UpstreamError) throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Failed to read reference_audio: ${message}`,
+            requestUrl: url,
+        });
+    }
+
+    return new File([bytes], `reference.${extension}`, { type: contentType });
 }
 
 function mapOutputFormat(format: string): string {
@@ -1099,13 +1134,9 @@ function createConditionedCompositionPlan(opts: {
 
 async function uploadMusicReference(opts: {
     file: File;
-    extractCompositionPlan?: boolean;
     apiKey: string;
     log: Logger;
-}): Promise<{
-    song_id?: string;
-    composition_plan?: unknown;
-}> {
+}): Promise<{ song_id?: string }> {
     const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
     const formData = new FormData();
     const filename =
@@ -1113,18 +1144,11 @@ async function uploadMusicReference(opts: {
             ? opts.file.name
             : "reference.mp3";
     formData.append("file", opts.file, filename);
-    if (opts.extractCompositionPlan) {
-        formData.append("extract_composition_plan", "music_v2");
-    }
 
-    opts.log.info(
-        "ElevenLabs music upload: filename={filename}, size={size}, extractPlan={extractPlan}",
-        {
-            filename,
-            size: opts.file.size,
-            extractPlan: opts.extractCompositionPlan || false,
-        },
-    );
+    opts.log.info("ElevenLabs music upload: filename={filename}, size={size}", {
+        filename,
+        size: opts.file.size,
+    });
 
     const rawResponse = await fetch(uploadUrl, {
         method: "POST",
@@ -1132,10 +1156,7 @@ async function uploadMusicReference(opts: {
         body: formData,
     });
     const response = await ensureUpstreamOk(rawResponse, uploadUrl);
-    return (await response.json()) as {
-        song_id?: string;
-        composition_plan?: unknown;
-    };
+    return (await response.json()) as { song_id?: string };
 }
 
 export async function generateMusic(
@@ -1170,7 +1191,6 @@ export async function generateMusic(
     if (referenceAudio) {
         const upload = await uploadMusicReference({
             file: referenceAudio,
-            extractCompositionPlan: opts.extractCompositionPlan,
             apiKey,
             log,
         });
@@ -1179,9 +1199,6 @@ export async function generateMusic(
             throw new UpstreamError(502 as ContentfulStatusCode, {
                 message: "ElevenLabs music upload response missing song_id",
             });
-        }
-        if (compositionPlan === undefined && opts.extractCompositionPlan) {
-            compositionPlan = upload.composition_plan;
         }
         if (conditioningRef === undefined) {
             conditioningRef = {
@@ -1537,7 +1554,6 @@ function requireElevenMusicOptions(
         compositionPlan?: unknown;
         conditioningRef?: unknown;
         storeForInpainting?: boolean;
-        extractCompositionPlan?: boolean;
     },
 ): void {
     // elevenmusic supports every conditioning option.
@@ -1547,8 +1563,7 @@ function requireElevenMusicOptions(
     const usesElevenOnlyOptions =
         opts.compositionPlan !== undefined ||
         opts.conditioningRef !== undefined ||
-        opts.storeForInpainting === true ||
-        opts.extractCompositionPlan === true;
+        opts.storeForInpainting === true;
 
     // stable-audio-3-medium (fal) and stable-audio-3-large (Stability direct)
     // accept reference_audio for audio-to-audio, but not the ElevenLabs
@@ -1557,7 +1572,7 @@ function requireElevenMusicOptions(
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
-                    "conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+                    "conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenmusic.",
             });
         }
         return;
@@ -1568,7 +1583,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenmusic (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
     });
 }
 
@@ -1635,7 +1650,8 @@ async function parseSpeechRequest(
         }
 
         const input = formData.get("input");
-        const referenceAudio = formData.get("reference_audio");
+        const referenceAudio =
+            formData.get("reference_audio") ?? formData.get("file");
         const rawCompositionPlan = formData.get("composition_plan");
         const rawConditioningRef = formData.get("conditioning_ref");
         if (referenceAudio instanceof File) {
@@ -1671,10 +1687,6 @@ async function parseSpeechRequest(
             store_for_inpainting: parseOptionalBoolean(
                 formData.get("store_for_inpainting"),
                 "store_for_inpainting",
-            ),
-            extract_composition_plan: parseOptionalBoolean(
-                formData.get("extract_composition_plan"),
-                "extract_composition_plan",
             ),
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             instruct: (formData.get("instruct") as string | null) || undefined,
@@ -2202,10 +2214,9 @@ async function dispatchAudioGeneration(
         negativePrompt?: string;
         instrumental?: boolean;
         storeForInpainting?: boolean;
-        extractCompositionPlan?: boolean;
         conditioningRef?: unknown;
         compositionPlan?: unknown;
-        referenceAudio?: string;
+        referenceAudio?: File;
         instruct?: string;
         loop?: boolean;
         promptInfluence?: number;
@@ -2228,10 +2239,9 @@ async function dispatchAudioGeneration(
         negativePrompt,
         instrumental,
         storeForInpainting,
-        extractCompositionPlan,
         conditioningRef,
         compositionPlan,
-        referenceAudio: referenceAudioUrl,
+        referenceAudio,
         instruct,
         loop,
         promptInfluence,
@@ -2243,10 +2253,6 @@ async function dispatchAudioGeneration(
         log,
     } = opts;
 
-    const referenceAudio = referenceAudioUrl
-        ? await fetchReferenceAudio(referenceAudioUrl)
-        : undefined;
-
     if (model === "elevenmusic") {
         return withSafetyHeaders(
             c,
@@ -2256,7 +2262,6 @@ async function dispatchAudioGeneration(
                 forceInstrumental: instrumental,
                 seed,
                 storeForInpainting,
-                extractCompositionPlan,
                 conditioningRef,
                 compositionPlan,
                 referenceAudio,
@@ -2810,9 +2815,6 @@ export const audioRoutes = new Hono<Env>()
                                 negative_prompt: { type: "string" },
                                 instrumental: { type: "boolean" },
                                 store_for_inpainting: { type: "boolean" },
-                                extract_composition_plan: {
-                                    type: "boolean",
-                                },
                                 reference_audio: {
                                     type: "string",
                                     format: "uri",
@@ -2884,7 +2886,6 @@ export const audioRoutes = new Hono<Env>()
                 negative_prompt,
                 instrumental,
                 store_for_inpainting,
-                extract_composition_plan,
                 conditioning_ref,
                 composition_plan,
                 reference_audio,
@@ -2898,9 +2899,11 @@ export const audioRoutes = new Hono<Env>()
                 compositionPlan: composition_plan,
                 conditioningRef: conditioning_ref,
                 storeForInpainting: store_for_inpainting,
-                extractCompositionPlan: extract_composition_plan,
             });
             const safeInput = await applySafety(c, input, safe);
+            const referenceAudio = reference_audio
+                ? await fetchReferenceAudio(reference_audio)
+                : undefined;
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
@@ -2918,10 +2921,9 @@ export const audioRoutes = new Hono<Env>()
                     negativePrompt: negative_prompt,
                     instrumental,
                     storeForInpainting: store_for_inpainting,
-                    extractCompositionPlan: extract_composition_plan,
                     conditioningRef: conditioning_ref,
                     compositionPlan: composition_plan,
-                    referenceAudio: reference_audio,
+                    referenceAudio,
                     instruct,
                     loop,
                     promptInfluence: prompt_influence,

@@ -1356,7 +1356,7 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
 });
 
 fixtureTest(
-    "loads elevenmusic reference_audio from the media service",
+    "loads an octet-stream elevenmusic reference from the media service",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
         const referenceAudioUrl =
@@ -1371,7 +1371,10 @@ fixtureTest(
 
                 if (request.url === referenceAudioUrl) {
                     return new Response(new Uint8Array([73, 68, 51, 4]), {
-                        headers: { "Content-Type": "audio/mpeg" },
+                        headers: {
+                            "Content-Type":
+                                "Application/Octet-Stream; charset=binary",
+                        },
                     });
                 }
 
@@ -1380,7 +1383,11 @@ fixtureTest(
                         "test-eleven-key",
                     );
                     const formData = await request.formData();
-                    expect(formData.get("file")).toBeInstanceOf(File);
+                    const file = formData.get("file");
+                    expect(file).toBeInstanceOf(File);
+                    expect((file as File).type).toBe(
+                        "application/octet-stream",
+                    );
                     return Response.json({ song_id: "reference-song" });
                 }
 
@@ -1488,6 +1495,179 @@ fixtureTest(
             },
         });
         await waitOnExecutionContext(ctx);
+    },
+);
+
+fixtureTest(
+    "returns 400 once for an expired media reference",
+    async ({ paidApiKey }) => {
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/expired-reference";
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (request.url === referenceAudioUrl) {
+                    return Response.json(
+                        { error: "Not found" },
+                        { status: 404 },
+                    );
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm indie disco",
+                    reference_audio: referenceAudioUrl,
+                }),
+            }),
+            env as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "Failed to fetch reference_audio: media.pollinations.ai returned 404",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(calls.filter((url) => url === referenceAudioUrl)).toHaveLength(
+            1,
+        );
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects non-audio and oversized media references",
+    async ({ paidApiKey }) => {
+        const nonAudioUrl =
+            "https://media.pollinations.ai/not-an-audio-reference";
+        const oversizedUrl =
+            "https://media.pollinations.ai/oversized-audio-reference";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === nonAudioUrl) {
+                    return new Response(new Uint8Array([1, 2, 3]), {
+                        headers: { "Content-Type": "image/png" },
+                    });
+                }
+                if (request.url === oversizedUrl) {
+                    return new Response(new Uint8Array(), {
+                        headers: {
+                            "Content-Type": "audio/wav",
+                            "Content-Length": String(20 * 1024 * 1024 + 1),
+                        },
+                    });
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        for (const [referenceAudio, message] of [
+            [nonAudioUrl, "reference_audio must point to an audio file"],
+            [oversizedUrl, "reference_audio is too large"],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "elevenmusic",
+                            input: "warm indie disco",
+                            reference_audio: referenceAudio,
+                        }),
+                    },
+                ),
+                env as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+    },
+);
+
+fixtureTest(
+    "rejects legacy multipart reference file fields explicitly",
+    async ({ paidApiKey }) => {
+        for (const fieldName of ["reference_audio", "file"]) {
+            const formData = new FormData();
+            formData.append("model", "elevenmusic");
+            formData.append("input", "warm indie disco");
+            formData.append(
+                fieldName,
+                new File([new Uint8Array([73, 68, 51, 4])], "reference.mp3", {
+                    type: "audio/mpeg",
+                }),
+            );
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${paidApiKey}` },
+                        body: formData,
+                    },
+                ),
+                env as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message:
+                        "reference_audio must be a media.pollinations.ai URL, not a file upload",
+                },
+            });
+            await waitOnExecutionContext(ctx);
+        }
     },
 );
 

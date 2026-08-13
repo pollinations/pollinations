@@ -38,7 +38,6 @@ export interface TransformOptions {
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
-    jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
     web_search_options?: {
@@ -126,7 +125,6 @@ export interface RequestData {
     seed?: number;
     stream?: boolean;
     voice?: string;
-    jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
     modalities?: string[];

@@ -75,7 +75,10 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
-import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import {
+    type GenerateTextRequestQueryParams,
+    GenerateTextRequestQueryParamsSchema,
+} from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
     handleSimpleTextLocal,
@@ -748,10 +751,9 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-                system?: string;
-            };
+            const query = c.req.valid(
+                "query" as never,
+            ) as GenerateTextRequestQueryParams;
             const textInputs =
                 typeof query.system === "string"
                     ? [c.req.param("prompt"), query.system]
@@ -764,12 +766,10 @@ export const proxyRoutes = new Hono<Env>()
 
             return withSafetyHeaders(
                 c,
-                await handleSimpleTextLocal(
-                    c,
-                    prompt,
-                    model,
-                    system ? { system } : undefined,
-                ),
+                await handleSimpleTextLocal(c, prompt, model, {
+                    ...query,
+                    system,
+                }),
             );
         },
     )

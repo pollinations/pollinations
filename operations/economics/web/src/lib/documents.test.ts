@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { driveDocumentLink } from "./documents";
+import { driveDocumentLink, externalEvidenceUrl } from "./documents";
 
 describe("driveDocumentLink", () => {
     it("recognizes Drive folders", () => {
@@ -57,5 +57,22 @@ describe("driveDocumentLink", () => {
                 "https://drive.google.com.example.com/file/d/file-id/view",
             ),
         ).toBeNull();
+    });
+});
+
+describe("externalEvidenceUrl", () => {
+    it("keeps ordinary http and https evidence links clickable", () => {
+        expect(externalEvidenceUrl("https://wise.com/evidence/statement")).toBe(
+            "https://wise.com/evidence/statement",
+        );
+        expect(externalEvidenceUrl("http://internal.example/evidence")).toBe(
+            "http://internal.example/evidence",
+        );
+    });
+
+    it("rejects blank evidence, free text, and unsafe protocols", () => {
+        expect(externalEvidenceUrl("")).toBeNull();
+        expect(externalEvidenceUrl("wise-statement.zip")).toBeNull();
+        expect(externalEvidenceUrl("javascript:alert(1)")).toBeNull();
     });
 });

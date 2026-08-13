@@ -80,3 +80,17 @@ export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
 
     return null;
 }
+
+export function externalEvidenceUrl(evidence: string): string | null {
+    const href = evidence.trim();
+    if (!href) return null;
+
+    try {
+        const url = new URL(href);
+        return url.protocol === "https:" || url.protocol === "http:"
+            ? href
+            : null;
+    } catch {
+        return null;
+    }
+}

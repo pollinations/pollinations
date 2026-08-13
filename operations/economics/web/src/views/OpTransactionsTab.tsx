@@ -7,7 +7,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
     DataTable,
@@ -18,7 +18,11 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
+import {
+    type DriveDocumentLink,
+    driveDocumentLink,
+    externalEvidenceUrl,
+} from "../lib/documents";
 import { fmtNumber } from "../lib/format";
 import {
     type MonthFilterValue,
@@ -35,13 +39,37 @@ function DocumentPreview({
     documentLink: DriveDocumentLink;
     onClose: () => void;
 }) {
+    const dialogRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") onClose();
+            if (event.key !== "Tab") return;
+
+            const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+            if (!focusable || focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         }
 
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener("keydown", handleKeyDown);
+        };
     }, [onClose]);
 
     if (!documentLink.previewHref) return null;
@@ -52,9 +80,11 @@ function DocumentPreview({
                 type="button"
                 className="absolute inset-0 bg-black/60"
                 aria-label="Close document preview"
+                tabIndex={-1}
                 onClick={onClose}
             />
             <div
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="document-preview-title"
@@ -105,11 +135,11 @@ function TransactionDocument({
     onPreview,
 }: {
     evidence: string;
-    onPreview: (document: DriveDocumentLink) => void;
+    onPreview: (link: DriveDocumentLink) => void;
 }) {
-    const document = driveDocumentLink(evidence);
+    const rawEvidence = evidence.trim();
 
-    if (!document) {
+    if (!rawEvidence) {
         return (
             <Chip intent="warning" size="sm">
                 Missing
@@ -117,11 +147,12 @@ function TransactionDocument({
         );
     }
 
-    if (document.previewHref) {
+    const link = driveDocumentLink(rawEvidence);
+    if (link?.previewHref) {
         return (
             <button
                 type="button"
-                onClick={() => onPreview(document)}
+                onClick={() => onPreview(link)}
                 className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
             >
                 Preview
@@ -129,14 +160,32 @@ function TransactionDocument({
         );
     }
 
+    if (link) {
+        return (
+            <a
+                href={link.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+            >
+                {link.label}
+            </a>
+        );
+    }
+
+    const externalHref = externalEvidenceUrl(rawEvidence);
+    if (!externalHref) {
+        return <span className="break-all">{rawEvidence}</span>;
+    }
+
     return (
         <a
-            href={document.href}
+            href={externalHref}
             target="_blank"
             rel="noreferrer noopener"
-            className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+            className="break-all font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
         >
-            {document.label}
+            {rawEvidence}
         </a>
     );
 }
@@ -172,7 +221,9 @@ export function OpTransactionsTab({
             { key: "description", value: (row) => row.description },
             {
                 key: "evidence",
-                value: (row) => driveDocumentLink(row.evidence)?.label ?? "",
+                value: (row) =>
+                    driveDocumentLink(row.evidence)?.label ??
+                    row.evidence.trim(),
             },
         ],
         [],

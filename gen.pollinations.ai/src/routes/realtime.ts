@@ -36,19 +36,24 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
-import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
+import {
+    RealtimeUsageSchema,
+    type ScribeRealtimeAudioFormat,
+    type ScribeRealtimeRequestQueryParams,
+} from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
     | "AZURE_MYCELI_PROD_SWEDEN_API_KEY";
+type AzureRealtimeModelName = Exclude<RealtimeModelName, "scribe-realtime">;
 
 // Deployment names are independent of the public model ids. Mini is in East
 // US 2 because Azure's Sweden Central control plane accepts the deployment but
 // its Realtime data plane currently rejects the exact model.
 const REALTIME_ROUTES: Record<
-    RealtimeModelName,
+    AzureRealtimeModelName,
     { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
 > = {
     "gpt-realtime-2.1": {
@@ -131,7 +136,7 @@ async function createSafetyIdentifier(
     return bytesToHex(await crypto.subtle.digest("SHA-256", data));
 }
 
-function buildUpstreamUrl(model: RealtimeModelName): string {
+function buildUpstreamUrl(model: AzureRealtimeModelName): string {
     const route = REALTIME_ROUTES[model];
     const upstreamUrl = new URL(route.endpoint);
     upstreamUrl.searchParams.set("model", route.deployment);
@@ -141,7 +146,7 @@ function buildUpstreamUrl(model: RealtimeModelName): string {
 async function connectAzureRealtime(
     c: Context<Env>,
     userId: string,
-    model: RealtimeModelName,
+    model: AzureRealtimeModelName,
 ): Promise<WebSocket | Response> {
     const route = REALTIME_ROUTES[model];
     const apiKey = c.env[route.apiKeyEnv];
@@ -162,6 +167,85 @@ async function connectAzureRealtime(
         },
     })) as WebSocketResponse;
 
+    const upstreamSocket = response.webSocket;
+    if (upstreamSocket) {
+        upstreamSocket.binaryType = "arraybuffer";
+        upstreamSocket.accept({ allowHalfOpen: true });
+        return upstreamSocket;
+    }
+
+    return new Response(await response.text(), {
+        status: response.status,
+        headers: {
+            "Content-Type":
+                response.headers.get("Content-Type") || "application/json",
+            "Cache-Control": "no-store",
+        },
+    });
+}
+
+const SCRIBE_REALTIME_ENDPOINT =
+    "https://api.elevenlabs.io/v1/speech-to-text/realtime";
+
+const SCRIBE_AUDIO_FORMAT = {
+    pcm_8000: { sampleRate: 8000, bytesPerSecond: 16_000 },
+    pcm_16000: { sampleRate: 16_000, bytesPerSecond: 32_000 },
+    pcm_22050: { sampleRate: 22_050, bytesPerSecond: 44_100 },
+    pcm_24000: { sampleRate: 24_000, bytesPerSecond: 48_000 },
+    pcm_44100: { sampleRate: 44_100, bytesPerSecond: 88_200 },
+    pcm_48000: { sampleRate: 48_000, bytesPerSecond: 96_000 },
+    ulaw_8000: { sampleRate: 8000, bytesPerSecond: 8000 },
+} satisfies Record<
+    ScribeRealtimeAudioFormat,
+    { sampleRate: number; bytesPerSecond: number }
+>;
+
+function buildScribeRealtimeUrl(
+    query: ScribeRealtimeRequestQueryParams,
+): string {
+    const url = new URL(SCRIBE_REALTIME_ENDPOINT);
+    url.searchParams.set("model_id", "scribe_v2_realtime");
+    url.searchParams.set("audio_format", query.audio_format);
+    url.searchParams.set("commit_strategy", query.commit_strategy);
+
+    for (const field of [
+        "language_code",
+        "vad_threshold",
+        "vad_silence_threshold_secs",
+        "min_speech_duration_ms",
+        "min_silence_duration_ms",
+    ] as const) {
+        const value = query[field];
+        if (value !== undefined) url.searchParams.set(field, String(value));
+    }
+    for (const field of [
+        "include_timestamps",
+        "include_language_detection",
+        "no_verbatim",
+        "filter_background_audio",
+    ] as const) {
+        if (query[field]) url.searchParams.set(field, "true");
+    }
+    return url.toString();
+}
+
+async function connectScribeRealtime(
+    c: Context<Env>,
+    query: ScribeRealtimeRequestQueryParams,
+): Promise<WebSocket | Response> {
+    const apiKey = c.env.ELEVENLABS_API_KEY;
+    if (!apiKey) {
+        throw new HTTPException(503, {
+            message: "ElevenLabs realtime provider is not configured.",
+        });
+    }
+
+    const response = (await fetch(buildScribeRealtimeUrl(query), {
+        headers: {
+            "xi-api-key": apiKey,
+            Upgrade: "websocket",
+        },
+    })) as WebSocketResponse;
     const upstreamSocket = response.webSocket;
     if (upstreamSocket) {
         upstreamSocket.binaryType = "arraybuffer";
@@ -223,6 +307,91 @@ function forwardMessage(
             return;
         }
         if (isOpen(target)) target.send(event.data);
+    });
+}
+
+function inspectScribeInput(
+    data: unknown,
+    audioFormat: ScribeRealtimeAudioFormat,
+): { audioSeconds: number } | { error: string } {
+    if (typeof data !== "string") {
+        return { error: "Scribe realtime expects JSON text messages." };
+    }
+
+    let event: Record<string, unknown>;
+    try {
+        const parsed = JSON.parse(data);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            return { error: "Scribe realtime expects a JSON object." };
+        }
+        event = parsed as Record<string, unknown>;
+    } catch {
+        return { error: "Scribe realtime received malformed JSON." };
+    }
+
+    if (event.message_type !== "input_audio_chunk") {
+        return {
+            error: "Scribe realtime accepts only input_audio_chunk messages.",
+        };
+    }
+    if (typeof event.audio_base_64 !== "string") {
+        return { error: "input_audio_chunk requires audio_base_64." };
+    }
+    if (event.commit !== undefined && typeof event.commit !== "boolean") {
+        return { error: "input_audio_chunk commit must be a boolean." };
+    }
+    if (
+        event.previous_text !== undefined &&
+        typeof event.previous_text !== "string"
+    ) {
+        return { error: "input_audio_chunk previous_text must be a string." };
+    }
+
+    const format = SCRIBE_AUDIO_FORMAT[audioFormat];
+    if (
+        event.sample_rate !== undefined &&
+        event.sample_rate !== format.sampleRate
+    ) {
+        return {
+            error: `input_audio_chunk sample_rate must be ${format.sampleRate} for ${audioFormat}.`,
+        };
+    }
+
+    let byteLength: number;
+    try {
+        byteLength = atob(event.audio_base_64).length;
+    } catch {
+        return { error: "input_audio_chunk audio_base_64 is invalid." };
+    }
+    if (audioFormat !== "ulaw_8000" && byteLength % 2 !== 0) {
+        return {
+            error: "PCM audio chunks must contain complete 16-bit samples.",
+        };
+    }
+
+    return { audioSeconds: byteLength / format.bytesPerSecond };
+}
+
+function forwardScribeInput(
+    c: Context<Env>,
+    source: WebSocket,
+    target: WebSocket,
+    audioFormat: ScribeRealtimeAudioFormat,
+    tracking: RealtimeBillingContext,
+): void {
+    source.addEventListener("message", (event) => {
+        const inspected = inspectScribeInput(event.data, audioFormat);
+        if ("error" in inspected) {
+            closeSocket(source, 1008, inspected.error);
+            closeSocket(target, 1008, inspected.error);
+            scheduleRealtimeSettlement(c, tracking);
+            return;
+        }
+        if (!isOpen(target)) return;
+        addUsage(tracking.usage, {
+            promptAudioSeconds: inspected.audioSeconds,
+        });
+        target.send(event.data);
     });
 }
 
@@ -642,6 +811,28 @@ function wireClose(
     });
 }
 
+function wireScribeClose(
+    c: Context<Env>,
+    source: WebSocket,
+    target: WebSocket,
+    tracking: RealtimeBillingContext,
+): void {
+    source.addEventListener("close", (event) => {
+        closeSocket(target, event.code, event.reason);
+        if (source.readyState !== WebSocket.CLOSED) {
+            const closeCode = normalizeCloseCode(event.code);
+            if (closeCode) source.close(closeCode, event.reason);
+            else source.close();
+        }
+        scheduleRealtimeSettlement(c, tracking);
+    });
+    source.addEventListener("error", () => {
+        closeSocket(target, 1011, "Realtime proxy error");
+        closeSocket(source, 1011, "Realtime proxy error");
+        scheduleRealtimeSettlement(c, tracking);
+    });
+}
+
 function proxyRealtimeWebSockets(
     c: Context<Env>,
     upstream: WebSocket,
@@ -662,6 +853,29 @@ function proxyRealtimeWebSockets(
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
+
+    return new Response(null, {
+        status: 101,
+        webSocket: client,
+    } as WebSocketResponseInit);
+}
+
+function proxyScribeRealtimeWebSockets(
+    c: Context<Env>,
+    upstream: WebSocket,
+    tracking: RealtimeBillingContext,
+    audioFormat: ScribeRealtimeAudioFormat,
+): Response {
+    const pair = new WebSocketPair();
+    const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
+
+    downstream.binaryType = "arraybuffer";
+    downstream.accept({ allowHalfOpen: true });
+
+    forwardScribeInput(c, downstream, upstream, audioFormat, tracking);
+    forwardMessage(upstream, downstream);
+    wireScribeClose(c, downstream, upstream, tracking);
+    wireScribeClose(c, upstream, downstream, tracking);
 
     return new Response(null, {
         status: 101,
@@ -725,13 +939,7 @@ async function createRealtimeBillingContext(
     };
 }
 
-export async function handleRealtimeWebSocket(
-    c: Context<Env>,
-): Promise<Response> {
-    if (c.req.header("Upgrade")?.toLowerCase() !== "websocket") {
-        return new Response("Expected Upgrade: websocket", { status: 426 });
-    }
-
+async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
     await c.var.auth.requireAuthorization({
         message:
             "Realtime WebSocket requires a Pollinations API key in the Authorization header or key query parameter.",
@@ -745,11 +953,21 @@ export async function handleRealtimeWebSocket(
     // generation route (tier or pack balance, paidOnly handled by the resolved
     // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
+    return user.id;
+}
+
+export async function handleRealtimeWebSocket(
+    c: Context<Env>,
+): Promise<Response> {
+    if (c.req.header("Upgrade")?.toLowerCase() !== "websocket") {
+        return new Response("Expected Upgrade: websocket", { status: 426 });
+    }
+    const userId = await authorizeRealtimeSession(c);
 
     const upstream = await connectAzureRealtime(
         c,
-        user.id,
-        c.var.model.resolved as RealtimeModelName,
+        userId,
+        c.var.model.resolved as AzureRealtimeModelName,
     );
     if (upstream instanceof Response) return upstream;
 
@@ -757,5 +975,26 @@ export async function handleRealtimeWebSocket(
         c,
         upstream,
         await createRealtimeBillingContext(c),
+    );
+}
+
+export async function handleScribeRealtimeWebSocket(
+    c: Context<Env>,
+): Promise<Response> {
+    if (c.req.header("Upgrade")?.toLowerCase() !== "websocket") {
+        return new Response("Expected Upgrade: websocket", { status: 426 });
+    }
+    await authorizeRealtimeSession(c);
+    const query = c.req.valid(
+        "query" as never,
+    ) as ScribeRealtimeRequestQueryParams;
+    const upstream = await connectScribeRealtime(c, query);
+    if (upstream instanceof Response) return upstream;
+
+    return proxyScribeRealtimeWebSockets(
+        c,
+        upstream,
+        await createRealtimeBillingContext(c),
+        query.audio_format,
     );
 }

@@ -742,7 +742,7 @@ function getElevenLabsScribeMeteredInputSeconds(
     if (
         rawCharacterCost !== null &&
         Number.isFinite(characterCost) &&
-        characterCost >= 0
+        characterCost > 0
     ) {
         return characterCost * ELEVENLABS_SCRIBE_SECONDS_PER_CREDIT;
     }

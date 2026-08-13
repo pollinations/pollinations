@@ -163,15 +163,21 @@ describe("transcribeWithElevenLabs", () => {
         await expect(response.json()).resolves.toEqual({ text: "" });
     });
 
-    it("fails closed when provider metering is missing", async () => {
+    it.each([
+        ["missing", undefined],
+        ["zero", { "character-cost": "0" }],
+    ])("fails closed when provider metering is %s", async (_, headers) => {
         vi.stubGlobal(
             "fetch",
             vi.fn().mockResolvedValueOnce(
-                jsonResponse({
-                    text: "hello",
-                    language_code: "en",
-                    words: [{ text: "hello", start: 0, end: 0.5 }],
-                }),
+                jsonResponse(
+                    {
+                        text: "hello",
+                        language_code: "en",
+                        words: [{ text: "hello", start: 0, end: 0.5 }],
+                    },
+                    headers,
+                ),
             ),
         );
 

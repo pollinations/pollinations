@@ -1,0 +1,35 @@
+{
+  "pr_number": 13314,
+  "title": "Add HQ IA to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13314",
+  "merged_at": "2026-08-13T08:25:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) to image\n- Create comic strips quickly with HQ IA, an AI-powered comic book creator.\n\nFixes #11729",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Panels in the flowerbed",
+    "blurb": "HQ IA joined the image garden. It helps turn a prompt into comic strips without making you manually negotiate with every speech bubble.",
+    "summary": "Added HQ IA to the Pollinations image app catalog, giving creators an AI-powered tool for quickly making comic strips.",
+    "impact": "Users can now discover HQ IA through Pollinations and turn story ideas into comic-style panels faster.",
+    "keywords": [
+      "HQ IA",
+      "comic strips",
+      "image apps",
+      "community",
+      "creative tools"
+    ],
+    "visual_concept": "Depict HQ IA as a cozy comic-making desk: a sequence of blank-to-finished pixel comic panels, speech bubbles, and a little storyboard growing like a code-plant. Polli, wearing a tiny artist beret and holding a pencil, helps arrange the panels while the Monitor Robot eagerly displays the finished strip.",
+    "image_prompt": "A cozy pixel art comic studio where Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, black antennae, and a tiny painter's beret, arranges a blooming storyboard of comic panels beside a friendly CRT Monitor Robot displaying a finished strip; flowers and code-plants surround the desk, with lime green (#ecf874) prominent in the panels and monitor glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with simple pixel-font text: \"HQ IA\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13314.jpg",
+    "prompt": "A cozy pixel art comic studio where Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, black antennae, and a tiny painter's beret, arranges a blooming storyboard of comic panels beside a friendly CRT Monitor Robot displaying a finished strip; flowers and code-plants surround the desk, with lime green (#ecf874) prominent in the panels and monitor glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with simple pixel-font text: \"HQ IA\"."
+  },
+  "generated_at": "2026-08-13T08:26:08.613885+00:00",
+  "app_name": "HQ IA",
+  "app_url": "https://editoraitacaiunas.com.br/app/quadrinhos-ia"
+}

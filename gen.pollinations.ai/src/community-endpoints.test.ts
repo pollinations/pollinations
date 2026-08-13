@@ -1882,12 +1882,8 @@ fixtureTest(
             SELF.fetch(
                 "https://gen.pollinations.ai/text/models?community=true",
             ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/v1/models?community=false",
-            ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/v1/models?community=true",
-            ),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?community=false"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?community=true"),
             SELF.fetch(
                 "https://gen.pollinations.ai/image/models?community=false",
             ),
@@ -1913,8 +1909,7 @@ fixtureTest(
         const defaultModels = (await allDefault.json()) as ListedModel[];
         const excludeModels = (await allExclude.json()) as ListedModel[];
         const onlyModels = (await allOnly.json()) as ListedModel[];
-        const textExcludeModels =
-            (await textExclude.json()) as ListedModel[];
+        const textExcludeModels = (await textExclude.json()) as ListedModel[];
         const textOnlyModels = (await textOnly.json()) as ListedModel[];
         const openaiExcludeData = (await openaiExclude.json()) as {
             data: { id: string }[];
@@ -1922,8 +1917,7 @@ fixtureTest(
         const openaiOnlyData = (await openaiOnly.json()) as {
             data: { id: string }[];
         };
-        const imageExcludeModels =
-            (await imageExclude.json()) as ListedModel[];
+        const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
         const excludeNumeric =
             (await allExcludeNumeric.json()) as ListedModel[];
         const onlyNumeric = (await allOnlyNumeric.json()) as ListedModel[];
@@ -1943,9 +1937,7 @@ fixtureTest(
         expect(
             openaiExcludeData.data.find((m) => m.id === modelId),
         ).toBeUndefined();
-        expect(
-            openaiOnlyData.data.find((m) => m.id === modelId),
-        ).toBeDefined();
+        expect(openaiOnlyData.data.find((m) => m.id === modelId)).toBeDefined();
 
         expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
 

@@ -246,8 +246,7 @@ function filterEntriesByCommunityParam(
     if (communityParam === undefined || communityParam === "") return entries;
     const wantCommunity = communityParam === "true" || communityParam === "1";
     return entries.filter(
-        (entry) =>
-            (entry.communityEndpoint !== undefined) === wantCommunity,
+        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
     );
 }
 

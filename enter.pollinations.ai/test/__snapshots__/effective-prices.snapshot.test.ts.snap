@@ -219,9 +219,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "elevenmusic": {
     "cost": {
       "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
     },
     "price": {
       "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
     },
   },
   "flux": {
@@ -1488,12 +1490,33 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000611111111111111,
     },
   },
+  "scribe-realtime": {
+    "cost": {
+      "promptAudioSeconds": 0.000108333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.000108333333333333,
+    },
+  },
   "seedance-2.0": {
     "cost": {
       "completionVideoSeconds": 0.18,
     },
     "price": {
       "completionVideoSeconds": 0.18,
+    },
+  },
+  "seedance-2.5": {
+    "cost": {
+      "completionVideoSeconds": 0.1028,
+    },
+    "costVariants": {
+      "720p": {
+        "completionVideoSeconds": 0.2312,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.1028,
     },
   },
   "seedance-pro": {

@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Article Illustrator",
+    "url": "https://article.240801.xyz",
+    "description": "An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai/). https://github.com/pollinations/pollinations/issues/1",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "zzerding",
+    "githubUserId": "37787458",
+    "repositoryUrl": "https://github.com/zzerding/article-illustrator",
+    "repositoryStars": null,
+    "discordUsername": "brusezeng",
+    "other": null,
+    "submittedDate": "2026-08-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13323",
+    "approvedDate": "2026-08-13",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "HQ IA",
     "url": "https://editoraitacaiunas.com.br/app/quadrinhos-ia",
     "description": "Create comic strips quickly with HQ IA, an AI-powered comic book creator.",

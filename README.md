@@ -81,11 +81,11 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<a href="https://star-history.com/#pollinations/pollinations&Date">
+<a href="https://star-history.dera.page/#pollinations/pollinations&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date&theme=dark" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=pollinations/pollinations&type=Date&theme=dark" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=pollinations/pollinations&type=Date" width="600" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
 

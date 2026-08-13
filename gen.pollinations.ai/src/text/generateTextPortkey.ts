@@ -87,7 +87,9 @@ export async function generateTextPortkey(
     // cannot translate a Responses API request). Note: `additionalHeaders`
     // (Portkey-specific, e.g. the request-timeout header) is intentionally not
     // forwarded to Azure — the Responses client sets its own headers/timeout.
-    if (modelDef?.useResponsesApi) {
+    // Azure Responses has no seed parameter; preserve seeded requests on the
+    // existing Chat Completions route instead of silently dropping it.
+    if (modelDef?.useResponsesApi && state.options.seed === undefined) {
         return callAzureResponses(state.messages, state.options);
     }
 

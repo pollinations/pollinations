@@ -40,4 +40,40 @@ describe("generateTextPortkey", () => {
         expect(fetcher).toHaveBeenCalledOnce();
         expect(completion.choices?.[0]?.message?.content).toBe("ok");
     });
+
+    it("preserves seeded GPT-5.6 requests on Chat Completions", async () => {
+        const fetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "gpt-5.6-luna",
+                    seed: 42,
+                });
+                return Response.json({
+                    choices: [
+                        {
+                            message: { role: "assistant", content: "ok" },
+                        },
+                    ],
+                });
+            },
+        );
+
+        await generateTextPortkey(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "gpt-5.6-luna",
+                seed: 42,
+                modelConfig: {
+                    provider: "azure-openai",
+                    "azure-api-key": "test-key",
+                    "azure-resource-name": "myceli-prod-eastus",
+                    "azure-deployment-id": "gpt-5.6-luna",
+                },
+                portkeyGatewayUrl: "https://portkey.test",
+            },
+            fetcher,
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
 });

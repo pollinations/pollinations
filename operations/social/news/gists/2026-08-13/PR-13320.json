@@ -1,0 +1,34 @@
+{
+  "pr_number": 13320,
+  "title": "fix: meter full Scribe input duration",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13320",
+  "merged_at": "2026-08-13T14:34:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Bills Scribe from ElevenLabs `audio_duration_secs` instead of the final recognized word timestamp.\n- Preserves successful empty transcripts by using the provider `character-cost` meter when silent audio omits duration.\n- Fails closed when neither provider meter is valid.\n- Leaves the public model, aliases, $0.22/hour price, paid-only access, formats, route, and transcript payloads unchanged.\n\nContract:\n- Canonical `scribe`; aliases `scribe_v2`, `scribe-v2`\n- ElevenLabs `POST /v1/speech-to-text`, model `scribe_v2`\n- Multiplier 1; paid-only; no Pollinations GPU; no fallback\n\nEvidence:\n- Direct 10s speech-with-trailing-silence: `audio_duration_secs=10`, final word 3.72s.\n- Direct 10s silence: no body duration, `character-cost=4`, matching the observed 0.4 credits/second meter.\n- Direct silence probes at 1/2/3/5/10/11 seconds verified meter rounding.\n- Full local Worker route billed 10 seconds, deducted 0.00061111 Pollen, and emitted no missing-conversion warning.\n- `npx vitest run test/scribe-transcription.test.ts` — 4/4.\n- `npm run typecheck` and Biome pass.\n\nNo `media.pollinations.ai` change: this endpoint intentionally remains an OpenAI-compatible multipart file upload.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Silence Counts Too",
+    "blurb": "Scribe now measures the whole recording, including the thoughtful pauses after the words stop. Even a perfectly silent file gets a proper meter reading instead of being mistaken for nothing.",
+    "summary": "Fixed Scribe transcription billing to use ElevenLabs' full `audio_duration_secs` rather than the last recognized word timestamp, with `character-cost` meter support for successful silent-audio transcripts.",
+    "impact": "A 10-second recording with speech ending at 3.72 seconds now bills for all 10 seconds of uploaded audio, while silent recordings retain valid provider-based billing instead of losing their successful transcript result.",
+    "keywords": [
+      "scribe",
+      "transcription",
+      "ElevenLabs",
+      "audio",
+      "metering",
+      "billing"
+    ],
+    "visual_concept": "Depict Polli carefully measuring a full audio waveform with a tiny ruler: spoken peaks fade into a calm stretch of silence, but the whole waveform is enclosed in one glowing duration bracket. A friendly CRT monitor robot can display a complete timer and a small receipt, surrounded by code-plants and quiet flowers, representing accurate provider metering even when no words appear.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she measures an entire audio waveform from speech peaks through a peaceful silent tail; a cute CRT monitor robot holds a glowing complete-duration receipt beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; simple pixel-font text reads “FULL DURATION”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13320.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she measures an entire audio waveform from speech peaks through a peaceful silent tail; a cute CRT monitor robot holds a glowing complete-duration receipt beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; simple pixel-font text reads “FULL DURATION”."
+  },
+  "generated_at": "2026-08-13T14:35:14.308485+00:00"
+}

@@ -10,6 +10,7 @@ import {
 } from "../../lib/output.js";
 import { playAudio, playerMissingHint } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
+import { requirePositiveInt } from "../../lib/validate.js";
 
 export function createAudioCommand() {
     return new Command("audio")
@@ -44,8 +45,29 @@ export function createAudioCommand() {
             if (opts.format !== "mp3")
                 params.set("response_format", opts.format);
             if (opts.model) params.set("model", opts.model);
-            if (opts.speed) params.set("speed", opts.speed);
-            if (opts.duration) params.set("duration", opts.duration);
+            // Fail fast on invalid numeric flags instead of forwarding them
+            // to the API (raw validation errors are confusing for CLI users).
+            if (opts.speed !== undefined) {
+                const speed = Number(opts.speed);
+                if (!Number.isFinite(speed) || speed < 0.25 || speed > 4) {
+                    printError(
+                        `--speed must be a number between 0.25 and 4, got "${opts.speed}"`,
+                    );
+                    process.exit(1);
+                }
+                params.set("speed", String(speed));
+            }
+            if (opts.duration !== undefined) {
+                const duration = requirePositiveInt(
+                    opts.duration,
+                    "--duration",
+                    {
+                        min: 1,
+                        max: 300,
+                    },
+                );
+                params.set("duration", String(duration));
+            }
             if (opts.instrumental) params.set("instrumental", "true");
             if (opts.seed) params.set("seed", opts.seed);
 

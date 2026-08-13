@@ -7,6 +7,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { requirePositiveInt } from "../../lib/validate.js";
 
 export function createVideoCommand() {
     return new Command("video")
@@ -27,9 +28,21 @@ export function createVideoCommand() {
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
+            // Validate dimensions before hitting the API (same rationale as
+            // `gen image`): fail fast with a clear message instead of a raw
+            // server-side validation error.
+            const width = requirePositiveInt(opts.width, "--width", {
+                min: 1,
+                max: 4096,
+            });
+            const height = requirePositiveInt(opts.height, "--height", {
+                min: 1,
+                max: 4096,
+            });
+
             const params = new URLSearchParams({
-                width: opts.width,
-                height: opts.height,
+                width: String(width),
+                height: String(height),
             });
             if (opts.model) params.set("model", opts.model);
             if (opts.duration) params.set("duration", opts.duration);

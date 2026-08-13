@@ -7,6 +7,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { requirePositiveInt } from "../../lib/validate.js";
 
 export function createImageCommand() {
     return new Command("image")
@@ -26,10 +27,23 @@ export function createImageCommand() {
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
+            // Validate dimensions before hitting the API. The server responds
+            // with a raw JSON validation error when given non-numeric values
+            // (e.g. `--width abc` -> "Invalid input: expected number"),
+            // which is confusing — fail fast with a clear message instead.
+            const width = requirePositiveInt(opts.width, "--width", {
+                min: 1,
+                max: 4096,
+            });
+            const height = requirePositiveInt(opts.height, "--height", {
+                min: 1,
+                max: 4096,
+            });
+
             const params = new URLSearchParams({
                 model: opts.model,
-                width: opts.width,
-                height: opts.height,
+                width: String(width),
+                height: String(height),
             });
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.safe) params.set("safe", "true");

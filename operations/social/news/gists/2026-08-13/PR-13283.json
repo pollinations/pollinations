@@ -1,0 +1,34 @@
+{
+  "pr_number": 13283,
+  "title": "feat: add model sorting controls",
+  "author": "guus6457",
+  "url": "https://github.com/pollinations/pollinations/pull/13283",
+  "merged_at": "2026-08-13T22:21:01Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Adds model sorting for Newest, Title, Brand, and Price in both directions.\n- Uses the shared UI package for a compact, right-aligned dropdown with background-only selection.\n- Keeps search persistently visible, capped at 448px on desktop and fluid on narrow screens.\n- Uses seven-day observed average generation cost for price ordering; free models sort at zero and unknown costs last.\n- Persists search and sorting in the URL, including browser back/forward synchronization.\n\n## Validation\n\n- `npx biome check --write frontend/src/components/models/models.tsx`\n- `npx tsc --noEmit`\n- `npx vitest run test/model-sort.test.ts test/model-categories.test.ts test/model-catalog.test.ts` (13 tests)\n- Browser-checked the 448px desktop cap and 375px responsive layout without overflow.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model shelf is sorted",
+    "blurb": "The model garden has acquired labels, a price tag, and the ability to put its newest blooms up front. Polli approves of finding things without excavating the whole compost heap.",
+    "summary": "The model catalog now supports URL-persisted ascending or descending sorting by Newest, Title, Brand, and seven-day observed average generation Price, alongside a persistently visible responsive search field.",
+    "impact": "Users can quickly find and compare models by name, provider, recency, or cost, with free models sorted at zero, unknown costs last, and search and sort choices preserved through links and browser back/forward navigation.",
+    "keywords": [
+      "model catalog",
+      "model sorting",
+      "search",
+      "pricing",
+      "frontend",
+      "URL state"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden shelf of labeled seed packets and tiny potted code-plants, organized by name, brand, newest bloom, and price tags. Polli acts as the observant librarian-gardener, using a small sorting clipboard beside a retro terminal, while the visible search bar becomes a friendly magnifying glass.",
+    "image_prompt": "A cozy pixel art model garden library, where labeled seed packets and potted code-plants are neatly sorted on shelves by tiny signs reading \"NEW\", \"TITLE\", \"BRAND\", and \"PRICE\", with a lime green (#ecf874) retro terminal and a magnifying glass search bar nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and happily files a code-plant card, small-to-medium sized in the scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13283.jpg",
+    "prompt": "A cozy pixel art model garden library, where labeled seed packets and potted code-plants are neatly sorted on shelves by tiny signs reading \"NEW\", \"TITLE\", \"BRAND\", and \"PRICE\", with a lime green (#ecf874) retro terminal and a magnifying glass search bar nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and happily files a code-plant card, small-to-medium sized in the scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-13T22:21:57.034178+00:00"
+}

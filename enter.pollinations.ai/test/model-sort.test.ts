@@ -15,33 +15,32 @@ function model(name: string, overrides: Partial<ModelPrice> = {}): ModelPrice {
 describe("model sorting", () => {
     const models = [
         model("unknown"),
-        model("free", { free: true, addedDate: 10, requestCount: 20 }),
+        model("free", { free: true, addedDate: 10, realAvgCost: 99 }),
         model("cheap", {
             realAvgCost: 0.1,
             addedDate: 30,
-            requestCount: 10,
         }),
         model("expensive", {
             realAvgCost: 0.8,
             addedDate: 20,
-            requestCount: 30,
         }),
     ];
 
-    it("preserves catalog order for the recommended option", () => {
-        expect(sortModels(models, "recommended")).toBe(models);
-    });
-
-    it("sorts by usage and newest first with missing values last", () => {
-        expect(sortModels(models, "most-used").map(({ name }) => name)).toEqual(
-            ["expensive", "free", "cheap", "unknown"],
-        );
+    it("sorts newest first with missing values last", () => {
         expect(sortModels(models, "newest").map(({ name }) => name)).toEqual([
             "cheap",
             "expensive",
             "free",
             "unknown",
         ]);
+
+        const tiedModels = [
+            model("first", { addedDate: 10 }),
+            model("second", { addedDate: 10 }),
+        ];
+        expect(
+            sortModels(tiedModels, "newest").map(({ name }) => name),
+        ).toEqual(["first", "second"]);
     });
 
     it("sorts free and observed average generation costs", () => {
@@ -51,5 +50,21 @@ describe("model sorting", () => {
         expect(
             sortModels(models, "price-high").map(({ name }) => name),
         ).toEqual(["expensive", "cheap", "free", "unknown"]);
+    });
+
+    it("sorts by display title or groups by brand and then title", () => {
+        const namedModels = [
+            model("zeta", { displayName: "Zulu", brand: "openai" }),
+            model("alpha", { displayName: "alpha", brand: "OpenAI" }),
+            model("beta", { displayName: "Beta", brand: "Anthropic" }),
+            model("orphan", { displayName: "Orphan" }),
+        ];
+
+        expect(
+            sortModels(namedModels, "title").map(({ name }) => name),
+        ).toEqual(["alpha", "beta", "orphan", "zeta"]);
+        expect(
+            sortModels(namedModels, "brand").map(({ name }) => name),
+        ).toEqual(["beta", "alpha", "zeta", "orphan"]);
     });
 });

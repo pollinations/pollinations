@@ -1,8 +1,11 @@
 import {
     Alert,
+    Button,
     ChevronIcon,
     Chip,
     ClockIcon,
+    Dropdown,
+    DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
     Input,
@@ -17,6 +20,7 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
+    type KeyboardEvent,
     useCallback,
     useEffect,
     useMemo,
@@ -70,12 +74,24 @@ const SCOPE_LABELS: Record<ModelScope, string> = {
     community: "Community",
 };
 
-const SORT_OPTIONS: Array<{ value: ModelSort; label: string }> = [
-    { value: "recommended", label: "Recommended" },
-    { value: "most-used", label: "Most used" },
-    { value: "newest", label: "Newest" },
-    { value: "price-low", label: "Price: Low to high" },
-    { value: "price-high", label: "Price: High to low" },
+const SORT_OPTIONS: Array<{
+    value: ModelSort;
+    label: string;
+    accessibleLabel: string;
+}> = [
+    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    {
+        value: "price-low",
+        label: "Price ↑",
+        accessibleLabel: "Price: Low to high",
+    },
+    {
+        value: "price-high",
+        label: "Price ↓",
+        accessibleLabel: "Price: High to low",
+    },
+    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
+    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -116,6 +132,37 @@ function categorizeModels(
     return categorized;
 }
 
+function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+    ) {
+        return;
+    }
+
+    const items = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>(
+            '[role="menuitemradio"]',
+        ),
+    );
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex =
+        event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? items.length - 1
+              : event.key === "ArrowDown"
+                ? (currentIndex + 1) % items.length
+                : (currentIndex - 1 + items.length) % items.length;
+
+    event.preventDefault();
+    items[nextIndex]?.focus();
+}
+
 export const Models: FC<ModelsProps> = ({
     showCommunityEndpoints = false,
     canPublish = false,
@@ -124,9 +171,12 @@ export const Models: FC<ModelsProps> = ({
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
-    const activeSort = modelSearch.sort ?? "recommended";
+    const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchExpanded, setSearchExpanded] = useState(Boolean(urlSearch));
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const shouldFocusSearchRef = useRef(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -188,13 +238,14 @@ export const Models: FC<ModelsProps> = ({
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
-            if (nextSearch === lastPushedSearchRef.current) return;
+            const normalizedSearch = nextSearch.trim();
+            if (normalizedSearch === lastPushedSearchRef.current) return;
 
-            lastPushedSearchRef.current = nextSearch;
+            lastPushedSearchRef.current = normalizedSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: nextSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
@@ -207,7 +258,14 @@ export const Models: FC<ModelsProps> = ({
 
         lastPushedSearchRef.current = urlSearch;
         setSearch(urlSearch);
+        setSearchExpanded(Boolean(urlSearch));
     }, [urlSearch]);
+
+    useEffect(() => {
+        if (!searchExpanded || !shouldFocusSearchRef.current) return;
+        shouldFocusSearchRef.current = false;
+        searchInputRef.current?.focus();
+    }, [searchExpanded]);
 
     useEffect(() => {
         if (search === lastPushedSearchRef.current) return;
@@ -247,10 +305,17 @@ export const Models: FC<ModelsProps> = ({
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: sort === "recommended" ? undefined : sort,
+                sort: sort === "newest" ? undefined : sort,
             }),
         });
     };
+
+    const activeSortLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
+        "Newest";
+    const activeSortAccessibleLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)
+            ?.accessibleLabel ?? "Newest";
 
     return (
         <div className="flex flex-col gap-6">
@@ -319,44 +384,101 @@ export const Models: FC<ModelsProps> = ({
                             ))}
                         </div>
                     </div>
-                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className="relative w-full sm:w-72">
-                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                            <Input
-                                type="search"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onBlur={() => pushSearch(search)}
-                                placeholder={`Search ${searchTarget}…`}
-                                aria-label={`Search ${searchTarget}`}
-                                className="w-full pl-9"
-                            />
-                        </div>
-                        <div className="relative w-full sm:w-52">
-                            <label htmlFor="model-sort" className="sr-only">
-                                Sort models by
-                            </label>
-                            <select
-                                id="model-sort"
-                                value={activeSort}
-                                onChange={(event) =>
-                                    setActiveSort(
-                                        event.target.value as ModelSort,
-                                    )
-                                }
-                                className="polli-input h-[42px] w-full cursor-pointer appearance-none rounded-lg border px-3 pr-9 text-sm text-theme-text-strong transition-colors"
-                            >
-                                {SORT_OPTIONS.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-theme-text-muted" />
-                        </div>
+                    <div className="flex w-full items-center justify-between gap-2">
+                        {searchExpanded ? (
+                            <div className="relative w-full">
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <Input
+                                    ref={searchInputRef}
+                                    type="search"
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    onBlur={() => {
+                                        const normalizedSearch = search.trim();
+                                        setSearch(normalizedSearch);
+                                        pushSearch(normalizedSearch);
+                                        if (!normalizedSearch) {
+                                            setSearchExpanded(false);
+                                        }
+                                    }}
+                                    placeholder={`Search ${searchTarget}…`}
+                                    aria-label={`Search ${searchTarget}`}
+                                    className="w-full pl-9"
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    aria-label={`Search ${searchTarget}`}
+                                    onClick={() => {
+                                        shouldFocusSearchRef.current = true;
+                                        setSearchExpanded(true);
+                                    }}
+                                    className="h-[42px] w-[42px] shrink-0 p-0"
+                                >
+                                    <SearchIcon className="h-4 w-4" />
+                                </Button>
+                                <Dropdown
+                                    align="end"
+                                    className="w-max p-2"
+                                    trigger={(open) => (
+                                        <Button
+                                            type="button"
+                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                            className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                        >
+                                            <span className="text-right">
+                                                {activeSortLabel}
+                                            </span>
+                                            <ChevronIcon expanded={open} />
+                                        </Button>
+                                    )}
+                                >
+                                    {(close) => (
+                                        <div
+                                            role="menu"
+                                            aria-label="Sort models"
+                                            onKeyDown={handleSortMenuKeyDown}
+                                            className="flex flex-col gap-1"
+                                        >
+                                            {SORT_OPTIONS.map((option) => (
+                                                <DropdownItem
+                                                    key={option.value}
+                                                    role="menuitemradio"
+                                                    aria-label={
+                                                        option.accessibleLabel
+                                                    }
+                                                    aria-checked={
+                                                        activeSort ===
+                                                        option.value
+                                                    }
+                                                    onClick={() => {
+                                                        setActiveSort(
+                                                            option.value,
+                                                        );
+                                                        close();
+                                                    }}
+                                                    className={
+                                                        activeSort ===
+                                                        option.value
+                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                            : "justify-end text-right"
+                                                    }
+                                                >
+                                                    <span className="flex-1 text-right">
+                                                        {option.label}
+                                                    </span>
+                                                </DropdownItem>
+                                            ))}
+                                        </div>
+                                    )}
+                                </Dropdown>
+                            </>
+                        )}
                     </div>
                 </div>
                 {catalogError && (

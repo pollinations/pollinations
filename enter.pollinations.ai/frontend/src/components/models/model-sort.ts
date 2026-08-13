@@ -18,20 +18,25 @@ const getAverageCost = (model: ModelPrice): number | undefined => {
         : undefined;
 };
 
+const getTitle = (model: ModelPrice): string => model.displayName ?? model.name;
+
+const compareText = (a: string, b: string): number =>
+    a.localeCompare(b, undefined, { sensitivity: "base" });
+
+const compareBrands = (a: ModelPrice, b: ModelPrice): number => {
+    if (!a.brand) return b.brand ? 1 : compareText(getTitle(a), getTitle(b));
+    if (!b.brand) return -1;
+    return (
+        compareText(a.brand, b.brand) || compareText(getTitle(a), getTitle(b))
+    );
+};
+
 export function sortModels(
     models: ModelPrice[],
     sort: ModelSort,
 ): ModelPrice[] {
-    if (sort === "recommended") return models;
-
     return [...models].sort((a, b) => {
         switch (sort) {
-            case "most-used":
-                return compareKnownValues(
-                    a.requestCount,
-                    b.requestCount,
-                    "desc",
-                );
             case "newest":
                 return compareKnownValues(a.addedDate, b.addedDate, "desc");
             case "price-low":
@@ -46,6 +51,10 @@ export function sortModels(
                     getAverageCost(b),
                     "desc",
                 );
+            case "title":
+                return compareText(getTitle(a), getTitle(b));
+            case "brand":
+                return compareBrands(a, b);
         }
 
         return 0;

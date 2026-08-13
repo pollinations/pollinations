@@ -85,6 +85,7 @@ describe("model categories", () => {
             scope: "community",
             category: undefined,
             q: undefined,
+            sort: undefined,
         });
         expect(
             validateModelSearch({ scope: "community", category: "image" }),
@@ -92,6 +93,7 @@ describe("model categories", () => {
             scope: "community",
             category: "image",
             q: undefined,
+            sort: undefined,
         });
         expect(
             validateModelSearch({ scope: "community", category: "video" }),
@@ -99,14 +101,33 @@ describe("model categories", () => {
             scope: "community",
             category: undefined,
             q: undefined,
+            sort: undefined,
         });
     });
 
-    it("ignores obsolete model sort parameters", () => {
-        expect(validateModelSearch({ sort: "name", dir: "asc" })).toEqual({
+    it("accepts model sort options and ignores obsolete values", () => {
+        expect(validateModelSearch({ sort: "brand" })).toEqual({
             scope: undefined,
             category: undefined,
             q: undefined,
+            sort: "brand",
         });
+        expect(validateModelSearch({ sort: "recommended" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+        expect(validateModelSearch({ sort: "newest" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+    });
+
+    it("trims model search queries and drops whitespace-only values", () => {
+        expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
+        expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
     });
 });

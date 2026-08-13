@@ -10,7 +10,6 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
-const SETTLEMENT_WAIT_MS = 30_000;
 
 type PersistedJob = Omit<GenerationJob, "request"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
@@ -113,7 +112,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             await this.finish(unavailable("Detached generation failed"));
         } finally {
             this.alarmRunning = false;
-            if (settlement) await this.waitForSettlement(settlement);
+            if (settlement) await settlement;
         }
     }
 
@@ -181,20 +180,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             request: { ...job.request, ...(body !== undefined && { body }) },
         };
-    }
-
-    private async waitForSettlement(settlement: Promise<void>): Promise<void> {
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const timedOut = await Promise.race([
-            settlement.then(() => false),
-            new Promise<true>((resolve) => {
-                timer = setTimeout(() => resolve(true), SETTLEMENT_WAIT_MS);
-            }),
-        ]);
-        if (timer !== undefined) clearTimeout(timer);
-        if (timedOut) {
-            console.warn("Detached generation settlement exceeded 30 seconds");
-        }
     }
 
     private async finish(outcome: GenerationOutcome): Promise<void> {

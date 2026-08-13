@@ -971,6 +971,7 @@ fixtureTest(
             ),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
             } as unknown as CloudflareBindings,
             ctx,
@@ -1130,6 +1131,7 @@ fixtureTest(
             }),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
             } as unknown as CloudflareBindings,
             postContext,
@@ -1154,6 +1156,7 @@ fixtureTest(
             ),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
             } as unknown as CloudflareBindings,
             getContext,
@@ -1485,6 +1488,7 @@ fixtureTest(
             ),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 FAL_KEY: "test-fal-key",
             } as unknown as CloudflareBindings,
             ctx,
@@ -1690,6 +1694,7 @@ fixtureTest(
             ),
             {
                 ...env,
+                GENERATION_COORDINATOR: undefined,
                 STABILITY_API_KEY: "test-stability-key",
             } as unknown as CloudflareBindings,
             ctx,

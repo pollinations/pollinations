@@ -77,28 +77,6 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function sleepWithSignal(ms: number, signal: AbortSignal): Promise<void> {
-    if (signal.aborted) {
-        return Promise.reject(new DOMException("Aborted", "AbortError"));
-    }
-    return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            signal.removeEventListener("abort", abort);
-            resolve();
-        }, ms);
-        const abort = () => {
-            clearTimeout(timeout);
-            reject(new DOMException("Aborted", "AbortError"));
-        };
-        signal.addEventListener("abort", abort, { once: true });
-    });
-}
-
-function pendingRetryDelayMs(response: Response): number {
-    const seconds = Number(response.headers.get("Retry-After"));
-    return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : 1000;
-}
-
 // Fetch with timeout using AbortController
 // Supports both internal timeout and external signal for cancellation
 async function fetchWithTimeout(
@@ -117,24 +95,11 @@ async function fetchWithTimeout(
     }
 
     try {
-        for (;;) {
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal,
-            });
-            if (
-                response.status !== 202 ||
-                response.headers.get("X-Cache-Type") !== "PENDING"
-            ) {
-                return response;
-            }
-
-            await response.body?.cancel();
-            await sleepWithSignal(
-                pendingRetryDelayMs(response),
-                controller.signal,
-            );
-        }
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+        });
+        return response;
     } catch (err) {
         // Check if it was cancelled by external signal
         if (externalSignal?.aborted) {

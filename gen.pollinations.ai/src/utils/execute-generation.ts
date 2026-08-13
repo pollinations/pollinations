@@ -13,15 +13,6 @@ async function drainResponse(response: Response): Promise<void> {
     }
 }
 
-async function settleWaitUntil(promises: Promise<unknown>[]): Promise<void> {
-    let settled = 0;
-    while (settled < promises.length) {
-        const batch = promises.slice(settled);
-        settled = promises.length;
-        await Promise.allSettled(batch);
-    }
-}
-
 const ERROR_BODY_BYTES = 64 * 1024;
 const ERROR_HEADERS = new Set(["content-type", "retry-after"]);
 const ERROR_HEADER_PREFIXES = ["x-moderation-", "x-safety-"];
@@ -65,17 +56,6 @@ async function captureError(
     };
 }
 
-function persistenceFailure(message: string): GenerationExecutionResult {
-    return {
-        status: "failed",
-        error: {
-            httpStatus: 503,
-            headers: [["content-type", "text/plain; charset=UTF-8"]],
-            body: new TextEncoder().encode(message),
-        },
-    };
-}
-
 export type DetachedGeneration = {
     result: GenerationExecutionResult;
     settlement: Promise<void>;
@@ -94,9 +74,6 @@ export async function executeGeneration(
         registerGenerationCacheWrite(promise: Promise<void>) {
             cacheWrite = promise;
         },
-        getGenerationCacheWrite() {
-            return cacheWrite;
-        },
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
         },
@@ -107,7 +84,7 @@ export async function executeGeneration(
     const failed = !response.ok;
     const error = failed ? await captureError(response) : undefined;
     if (!failed) await drainResponse(response);
-    const settlement = settleWaitUntil(promises);
+    const settlement = Promise.allSettled(promises).then(() => {});
 
     if (response.headers.get("x-cache") === "HIT") {
         return { result: { status: "cached" }, settlement };
@@ -116,21 +93,9 @@ export async function executeGeneration(
         return { result: { status: "failed", error }, settlement };
     }
     if (!cacheWrite) {
-        return {
-            result: persistenceFailure(
-                "Generation completed without a cacheable result",
-            ),
-            settlement,
-        };
+        throw new Error("Generation completed without a cacheable result");
     }
 
-    try {
-        await cacheWrite;
-    } catch {
-        return {
-            result: persistenceFailure("Generation result could not be stored"),
-            settlement,
-        };
-    }
+    await cacheWrite;
     return { result: { status: "cached" }, settlement };
 }

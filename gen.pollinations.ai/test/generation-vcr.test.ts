@@ -1143,6 +1143,7 @@ test("OpenAI image generation returns token usage", async ({
             model: "flux",
             prompt: "vcr red square",
             size: "1280x720",
+            seed: 42,
             response_format: "b64_json",
         }),
     });

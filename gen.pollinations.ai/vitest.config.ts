@@ -11,7 +11,6 @@ const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 
 const genAliases = [
-    "app.ts",
     "content-filter.ts",
     "cache",
     "durable-objects/PollenRateLimiter.ts",

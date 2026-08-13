@@ -38,7 +38,6 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
-    private alarmRunning = false;
 
     async startAndWait(job: GenerationJob): Promise<{
         role: "owner" | "joiner";
@@ -74,8 +73,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     async alarm(): Promise<void> {
-        if (this.alarmRunning) return;
-        this.alarmRunning = true;
         let settlement: Promise<void> | undefined;
         try {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
@@ -102,7 +99,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             console.error("Detached generation failed", error);
             await this.finish(unavailable("Detached generation failed"));
         } finally {
-            this.alarmRunning = false;
             if (settlement) await settlement;
         }
     }

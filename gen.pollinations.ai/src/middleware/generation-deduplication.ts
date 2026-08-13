@@ -51,13 +51,6 @@ export type GenerationOutcome =
     | { status: "cached" }
     | { status: "failed"; error: GenerationErrorSnapshot };
 
-type CoordinatorStub = {
-    startAndWait(job: GenerationJob): Promise<{
-        role: "owner" | "joiner";
-        outcome: GenerationOutcome;
-    }>;
-};
-
 type DeduplicationEnv = {
     Bindings: CloudflareBindings;
     Variables: GenerationCacheEnv["Variables"] &
@@ -145,12 +138,6 @@ function failedResponse(error: GenerationErrorSnapshot): Response {
     return new Response(body, { status, headers });
 }
 
-async function coordinatorName(
-    cache: GenerationCacheIdentity,
-): Promise<string> {
-    return hashGenerationCacheIdentity(cache.storage, cache.key);
-}
-
 /** Runs after generationAccess, so every caller is authorized before joining. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
@@ -168,15 +155,13 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             });
         }
 
-        const name = await coordinatorName({
-            storage: cache.adapter.storage,
-            key: cache.key,
-        });
-        const stub = c.env.GENERATION_COORDINATOR.getByName(
-            name,
-        ) as unknown as CoordinatorStub;
+        const name = await hashGenerationCacheIdentity(
+            cache.adapter.storage,
+            cache.key,
+        );
+        const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let result: Awaited<ReturnType<CoordinatorStub["startAndWait"]>>;
+        let result: Awaited<ReturnType<typeof stub.startAndWait>>;
         try {
             result = await stub.startAndWait(job);
         } catch (error) {

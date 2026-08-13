@@ -102,9 +102,15 @@ export async function executeGeneration(
         return { result: { status: "failed", error }, settlement };
     }
     if (!cacheWrite) {
+        await settlement;
         throw new Error("Generation completed without a cacheable result");
     }
 
-    await cacheWrite;
+    try {
+        await cacheWrite;
+    } catch (error) {
+        await settlement;
+        throw error;
+    }
     return { result: { status: "cached" }, settlement };
 }

@@ -6,6 +6,7 @@ import {
 } from "./cost-variants";
 import {
     GEMINI_25_GROUNDING_BILLING,
+    OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
@@ -554,22 +555,22 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
-        // Non-global regions add ~10%; we route through global.
+        // OpenRouter promotional rates through 2026-08-27 for the pinned
+        // google-vertex/global route.
         cost: {
-            promptTextTokens: perMillion(1.5),
-            promptCachedTokens: perMillion(0.15),
-            promptCacheWriteTokens: perMillion(1.5),
-            promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
-            promptImageTokens: perMillion(1.5),
-            promptVideoTokens: perMillion(1.5),
-            completionTextTokens: perMillion(7.5),
+            promptTextTokens: perMillion(0.375),
+            promptCachedTokens: perMillion(0.0375),
+            promptCacheWriteTokens: perMillion(0.375),
+            promptAudioTokens: perMillion(0.375),
+            promptImageTokens: perMillion(0.375),
+            promptVideoTokens: perMillion(0.375),
+            completionTextTokens: perMillion(1.875),
         },
         billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
+            OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
+            0.25,
         ),
-        title: "Gemini 3.6 Flash",
+        title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
         inputModalities: ["text", "image", "audio", "video"],

@@ -355,8 +355,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.5-flash-lite",
         "google-vertex/global",
     ),
-    "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
-        "gemini-3.6-flash",
+    "google/gemini-3.7-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.7-flash",
         "google-vertex/global",
     ),
 

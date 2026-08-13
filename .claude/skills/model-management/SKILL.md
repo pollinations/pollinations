@@ -82,6 +82,12 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
+- Expose each new public capability through two API surfaces backed by one implementation:
+  - a Pollinations-native route outside `/v1`; and
+  - a standard-compatible route under `/v1`.
+- Treat `/v1` as a compatibility namespace. Match the current OpenAI route, transport, request, response, streaming, and event contracts exactly when OpenAI defines the capability. If OpenAI has no equivalent, use a named, established external standard such as OpenRouter only when it actually defines that capability; otherwise stop for an explicit API-contract decision. Never invent a Pollinations-specific schema under `/v1`.
+- Keep provider-specific protocols behind the route adapters. Do not expose an upstream provider's schema under `/v1` unless it is the selected compatibility standard.
+- Do not collapse capabilities with materially different inputs, outputs, or transports into one endpoint merely by switching `model`. Keep distinct operations separate while reusing their shared internal handler, authorization, billing, and observability paths.
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
 - Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
 - When a migration canonicalizes stored model IDs, keep the mapping in the migration only. Do not add a runtime normalization layer; require the migration to complete before the new registry is deployed.

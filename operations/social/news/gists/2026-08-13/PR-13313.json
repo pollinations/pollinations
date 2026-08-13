@@ -1,0 +1,35 @@
+{
+  "pr_number": 13313,
+  "title": "docs: update README — 2026-08-13",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13313",
+  "merged_at": "2026-08-13T07:39:47Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The noticeboard blooms",
+    "blurb": "The README's Latest News patch has been refreshed for the day's hive activity. Fresh links, fewer stale petals.",
+    "summary": "Updated the root README's Latest News section in the daily refresh, with Recent Apps continuing to update whenever an app is published.",
+    "impact": "Visitors to the repository get a current snapshot of pollinations.ai news and newly published community apps.",
+    "keywords": [
+      "readme",
+      "news",
+      "community",
+      "apps",
+      "documentation"
+    ],
+    "visual_concept": "Depict Polli tending a cozy garden noticeboard labeled \"LATEST NEWS,\" pinning fresh pixel notes beside tiny blooming app-flowers; a small retro terminal and subtle code-vines connect the repository update to community projects.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny reporter cap, pinning fresh notes to a wooden garden noticeboard reading \"LATEST NEWS\" while small app-flowers bloom below. A retro terminal glows lime green (#ecf874) beside code-vines and warm cream, mint, lavender, and peach pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13313.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny reporter cap, pinning fresh notes to a wooden garden noticeboard reading \"LATEST NEWS\" while small app-flowers bloom below. A retro terminal glows lime green (#ecf874) beside code-vines and warm cream, mint, lavender, and peach pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-13T07:40:46.443968+00:00"
+}

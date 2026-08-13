@@ -1,0 +1,27 @@
+{
+  "date": "2026-08-12",
+  "period_start": "2026-08-12",
+  "period_end": "2026-08-12",
+  "title": "The SDK now tells you which models exist—and when an image request did not become an image",
+  "summary": "A practical day for builders: reliable SDK model lists, long-running MCP requests, and one more community image app in the garden.\n\nSDK model discovery now calls the documented `/models` endpoint and returns the expected array, while image URL downloads reject non-2xx responses through the existing error parser instead of quietly handing callers an error page shaped like an image.\n\nAuthenticated MCP requests no longer hit a generic 30-second abort timer. Long-running work can finish, and callers still retain explicit cancellation through native AbortSignal support.\n\nIMADreamer was added to the Pollinations app directory, giving people another free, API-powered route from a text prompt to generated images.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 13298,
+      "date": "2026-08-12"
+    },
+    {
+      "number": 13300,
+      "date": "2026-08-12"
+    },
+    {
+      "number": 13301,
+      "date": "2026-08-12"
+    },
+    {
+      "number": 13306,
+      "date": "2026-08-12"
+    }
+  ],
+  "generated_at": "2026-08-13T06:38:28.132923+00:00"
+}

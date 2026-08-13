@@ -1,0 +1,35 @@
+{
+  "pr_number": 13317,
+  "title": "fix: use media URLs for music references",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13317",
+  "merged_at": "2026-08-13T14:24:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Accepts `media.pollinations.ai` URLs as `reference_audio` and downloads them before provider dispatch.\n- Keeps the ElevenLabs `/v1/music/upload` call and `song_id` conditioning internal to music generation.\n- Meters newly uploaded reference duration at $0.0025/second in addition to generated output; reused `song_id` references do not incur ingestion again.\n- Migrates Stable Audio references to the same media URL contract and rejects arbitrary reference hosts.\n- Removes the public `POST /v1/audio/music/upload` route.\n\nEvidence:\n- ElevenLabs direct probes: 30 seconds uploaded cost $0.075; a 10-second upload with `extract_composition_plan=music_v2` cost $0.025 and returned exact duration.\n- Full Gen route suite: 58/58; verifies media URL fetch → ElevenLabs upload → generation and billed prompt-audio duration.\n- ElevenMusic unit tests: 3/3; OpenAPI: 2/2; effective-price snapshot: 1/1.\n- Gen and Enter typechecks pass; Biome clean.\n\nDraft gate:\n- Run one live staging media upload → ElevenMusic generation E2E before readiness.\n\nFixes #13316\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Music references found their path",
+    "blurb": "Music references can now travel through the hive on media.pollinations.ai URLs instead of wandering in from arbitrary hosts. Upload once, make songs, and let reused references rest between gigs.",
+    "summary": "Music generation now accepts and securely fetches media.pollinations.ai URLs as reference_audio for ElevenMusic and Stable Audio, uploads new references internally for conditioning, and meters new reference ingestion at $0.0025 per second while reused song_id references avoid another ingestion charge.",
+    "impact": "Developers can use one media URL reference contract across supported music providers, with reference-audio duration billed only when a new upload is needed and existing song_id references reused without being ingested again.",
+    "keywords": [
+      "music",
+      "reference_audio",
+      "media URLs",
+      "ElevenMusic",
+      "Stable Audio",
+      "audio billing",
+      "API"
+    ],
+    "visual_concept": "Depict a cozy music workshop where a media URL arrives as a little glowing cassette or sound-wave parcel and is fed into a retro music generator, producing notes and waveform flowers. Polli should actively guide the reference into the machine, wearing music-studio headphones; a small CRT robot can monitor the clean media URL route while code-plants and flowers reinforce the safe, unified pipeline.",
+    "image_prompt": "A cozy pixel art music workshop where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny studio headphones and guides a glowing media URL cassette into a retro music generator; a friendly CRT monitor robot watches waveform flowers bloom beside lime green (#ecf874) code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"REFERENCE READY\"; nostalgic but beautiful, emotionally warm, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-13/PR-13317.jpg",
+    "prompt": "A cozy pixel art music workshop where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny studio headphones and guides a glowing media URL cassette into a retro music generator; a friendly CRT monitor robot watches waveform flowers bloom beside lime green (#ecf874) code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"REFERENCE READY\"; nostalgic but beautiful, emotionally warm, retro gaming vibes."
+  },
+  "generated_at": "2026-08-13T14:26:23.322612+00:00"
+}

@@ -12,7 +12,6 @@ import {
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
-import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
@@ -47,15 +46,11 @@ import { checkBalance } from "@/utils/generation-access.ts";
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
     | "AZURE_MYCELI_PROD_SWEDEN_API_KEY";
-type AzureRealtimeModelName = Exclude<RealtimeModelName, "scribe-realtime">;
 
 // Deployment names are independent of the public model ids. Mini is in East
 // US 2 because Azure's Sweden Central control plane accepts the deployment but
 // its Realtime data plane currently rejects the exact model.
-const REALTIME_ROUTES: Record<
-    AzureRealtimeModelName,
-    { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
-> = {
+const REALTIME_ROUTES = {
     "gpt-realtime-2.1": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
@@ -74,7 +69,11 @@ const REALTIME_ROUTES: Record<
         deployment: "gpt-realtime-2",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
-};
+} satisfies Record<
+    string,
+    { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
+>;
+type AzureRealtimeModelName = keyof typeof REALTIME_ROUTES;
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
@@ -249,7 +248,6 @@ async function connectScribeRealtime(
     const upstreamSocket = response.webSocket;
     if (upstreamSocket) {
         upstreamSocket.binaryType = "arraybuffer";
-        upstreamSocket.accept({ allowHalfOpen: true });
         return upstreamSocket;
     }
 
@@ -275,7 +273,13 @@ function isClosable(socket: WebSocket): boolean {
 }
 
 function normalizeCloseCode(code?: number): number | undefined {
-    if (!code || code === 1005 || code === 1006 || code === 1015) {
+    if (
+        !code ||
+        code === 1004 ||
+        code === 1005 ||
+        code === 1006 ||
+        code === 1015
+    ) {
         return undefined;
     }
     if (code < 1000 || code > 4999) return undefined;
@@ -392,6 +396,54 @@ function forwardScribeInput(
             promptAudioSeconds: inspected.audioSeconds,
         });
         target.send(event.data);
+    });
+}
+
+const SCRIBE_ERROR_MESSAGE_TYPES = new Set([
+    "auth_error",
+    "chunk_size_exceeded",
+    "commit_throttled",
+    "insufficient_audio_activity",
+    "invalid_request",
+    "queue_overflow",
+    "quota_exceeded",
+    "rate_limited",
+    "transcriber_error",
+    "unaccepted_terms",
+]);
+
+function forwardScribeOutput(
+    c: Context<Env>,
+    source: WebSocket,
+    target: WebSocket,
+    tracking: RealtimeBillingContext,
+): void {
+    const log = c.get("log").getChild("realtime");
+    source.addEventListener("message", (event) => {
+        const providerEvent = asRecord(parseEventData(event.data));
+        const messageType = providerEvent.message_type;
+        if (
+            typeof messageType !== "string" ||
+            !SCRIBE_ERROR_MESSAGE_TYPES.has(messageType)
+        ) {
+            if (isOpen(target)) target.send(event.data);
+            return;
+        }
+
+        log.warn("Scribe realtime provider error: type={type}", {
+            type: messageType,
+        });
+        if (isOpen(target)) {
+            target.send(
+                JSON.stringify({
+                    message_type: messageType,
+                    error: "Realtime transcription failed.",
+                }),
+            );
+        }
+        closeSocket(source, 1011, "Realtime transcription failed");
+        closeSocket(target, 1011, "Realtime transcription failed");
+        scheduleRealtimeSettlement(c, tracking);
     });
 }
 
@@ -818,18 +870,24 @@ function wireScribeClose(
     tracking: RealtimeBillingContext,
 ): void {
     source.addEventListener("close", (event) => {
-        closeSocket(target, event.code, event.reason);
-        if (source.readyState !== WebSocket.CLOSED) {
-            const closeCode = normalizeCloseCode(event.code);
-            if (closeCode) source.close(closeCode, event.reason);
-            else source.close();
+        try {
+            closeSocket(target, event.code, event.reason);
+            if (source.readyState !== WebSocket.CLOSED) {
+                const closeCode = normalizeCloseCode(event.code);
+                if (closeCode) source.close(closeCode, event.reason);
+                else source.close();
+            }
+        } finally {
+            scheduleRealtimeSettlement(c, tracking);
         }
-        scheduleRealtimeSettlement(c, tracking);
     });
     source.addEventListener("error", () => {
-        closeSocket(target, 1011, "Realtime proxy error");
-        closeSocket(source, 1011, "Realtime proxy error");
-        scheduleRealtimeSettlement(c, tracking);
+        try {
+            closeSocket(target, 1011, "Realtime proxy error");
+            closeSocket(source, 1011, "Realtime proxy error");
+        } finally {
+            scheduleRealtimeSettlement(c, tracking);
+        }
     });
 }
 
@@ -870,12 +928,12 @@ function proxyScribeRealtimeWebSockets(
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
 
     downstream.binaryType = "arraybuffer";
-    downstream.accept({ allowHalfOpen: true });
-
     forwardScribeInput(c, downstream, upstream, audioFormat, tracking);
-    forwardMessage(upstream, downstream);
+    forwardScribeOutput(c, upstream, downstream, tracking);
     wireScribeClose(c, downstream, upstream, tracking);
     wireScribeClose(c, upstream, downstream, tracking);
+    downstream.accept({ allowHalfOpen: true });
+    upstream.accept({ allowHalfOpen: true });
 
     return new Response(null, {
         status: 101,
@@ -988,13 +1046,14 @@ export async function handleScribeRealtimeWebSocket(
     const query = c.req.valid(
         "query" as never,
     ) as ScribeRealtimeRequestQueryParams;
+    const tracking = await createRealtimeBillingContext(c);
     const upstream = await connectScribeRealtime(c, query);
     if (upstream instanceof Response) return upstream;
 
     return proxyScribeRealtimeWebSockets(
         c,
         upstream,
-        await createRealtimeBillingContext(c),
+        tracking,
         query.audio_format,
     );
 }

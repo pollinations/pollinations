@@ -103,6 +103,10 @@ export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,
 ) as RealtimeModelName[];
 
-export const OPENAI_REALTIME_MODEL_NAMES = REALTIME_MODEL_NAMES.filter(
-    (model) => model !== "scribe-realtime",
+export const REALTIME_VOICE_MODEL_NAMES = REALTIME_MODEL_NAMES.filter(
+    (model) => {
+        const endpoints = (REALTIME_SERVICES[model] as ModelDefinition)
+            .supportedEndpoints;
+        return endpoints === undefined || endpoints.includes("/v1/realtime");
+    },
 );

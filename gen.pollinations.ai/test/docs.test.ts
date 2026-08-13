@@ -369,6 +369,14 @@ describe("docs routes", () => {
         // Stable heading marker proves the realtime modality is composed into
         // the api section, without pinning volatile mid-prose wording.
         expect(apiBody).toContain("## Realtime Voice");
+        const realtimeSection = apiBody.slice(
+            apiBody.indexOf("## Realtime Voice"),
+            apiBody.indexOf("## 3D Generation"),
+        );
+        expect(realtimeSection).not.toContain("scribe-realtime");
+        expect(apiBody).toContain(
+            "`GET /v1/audio/transcriptions/realtime` | WebSocket realtime transcription",
+        );
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

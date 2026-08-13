@@ -73,9 +73,10 @@ function zeroAudioBase64(byteLength: number): string {
     return btoa("\0".repeat(byteLength));
 }
 
-function mockRealtimeProvider() {
+function mockRealtimeProvider(initialMessage?: string) {
     let upstreamRequest: Request | undefined;
     let upstreamServer: WebSocket | undefined;
+    let upstreamServerAccepted = false;
     const tinybirdRequests: Request[] = [];
 
     const fetchMock = vi
@@ -98,6 +99,11 @@ function mockRealtimeProvider() {
                 WebSocket,
             ];
             upstreamServer = server;
+            if (initialMessage) {
+                server.accept();
+                upstreamServerAccepted = true;
+                server.send(initialMessage);
+            }
             return new Response(null, {
                 status: 101,
                 webSocket: client,
@@ -118,6 +124,9 @@ function mockRealtimeProvider() {
                 throw new Error("Expected upstream realtime WebSocket");
             }
             return upstreamServer;
+        },
+        get serverAccepted() {
+            return upstreamServerAccepted;
         },
     };
 }
@@ -193,16 +202,18 @@ async function openPaidRealtimeSession({
 async function openPaidScribeSession({
     name,
     query = "",
+    initialProviderMessage,
 }: {
     name: string;
     query?: string;
+    initialProviderMessage?: string;
 }) {
     const { key, userId } = await createTestApiKey({
         name,
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockRealtimeProvider();
+    const upstream = mockRealtimeProvider(initialProviderMessage);
     const { response, ctx } = await fetchWorkerWithContext(
         `/v1/audio/transcriptions/realtime?${query}`,
         {
@@ -217,10 +228,13 @@ async function openPaidScribeSession({
     expect(response.status).toBe(101);
     const client = response.webSocket;
     if (!client) throw new Error("Expected downstream WebSocket");
+    const initialClientMessage = initialProviderMessage
+        ? nextMessage(client)
+        : undefined;
     client.accept();
-    upstream.server.accept();
+    if (!upstream.serverAccepted) upstream.server.accept();
 
-    return { client, ctx, upstream, userId };
+    return { client, ctx, upstream, userId, initialClientMessage };
 }
 
 type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
@@ -468,6 +482,22 @@ test("proxies Scribe Realtime parameters without forwarding caller credentials",
     expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
 });
 
+test("forwards the initial Scribe session event after listeners are attached", async () => {
+    const initialProviderMessage = JSON.stringify({
+        message_type: "session_started",
+        session_id: "session-1",
+    });
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-initial-event-key",
+        initialProviderMessage,
+    });
+
+    await expect(session.initialClientMessage).resolves.toBe(
+        initialProviderMessage,
+    );
+    await closeRealtimeSession(session);
+});
+
 test.each([
     ["pcm_8000", 16_000, 8000],
     ["pcm_16000", 32_000, 16_000],
@@ -532,11 +562,52 @@ test("rejects malformed Scribe audio without forwarding or billing it", async ()
     expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
 });
 
+test("sanitizes Scribe provider errors and settles accepted audio", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-provider-error-key",
+    });
+    const upstreamMessage = nextMessage(session.upstream.server);
+    session.client.send(
+        JSON.stringify({
+            message_type: "input_audio_chunk",
+            audio_base_64: zeroAudioBase64(32_000),
+            sample_rate: 16_000,
+        }),
+    );
+    await upstreamMessage;
+
+    const providerError = nextMessage(session.client);
+    const clientClose = nextClose(session.client);
+    session.upstream.server.send(
+        JSON.stringify({
+            message_type: "quota_exceeded",
+            error: "provider account details",
+        }),
+    );
+
+    await expect(providerError).resolves.toBe(
+        JSON.stringify({
+            message_type: "quota_exceeded",
+            error: "Realtime transcription failed.",
+        }),
+    );
+    await expect(clientClose).resolves.toMatchObject({ code: 1011 });
+    await waitOnExecutionContext(session.ctx);
+    await waitForTinybirdRequests(session.upstream);
+    const telemetry = JSON.parse(
+        await session.upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
+});
+
 test.each([
     "/v1/audio/transcriptions/realtime?keyterms=Pollinations",
     "/v1/audio/transcriptions/realtime?entity_detection=all",
     "/v1/audio/transcriptions/realtime?model=scribe_v2_realtime",
     "/v1/audio/transcriptions/realtime?filter_background_audio=true&include_timestamps=true",
+    "/v1/audio/transcriptions/realtime?vad_threshold=",
+    "/v1/audio/transcriptions/realtime?min_speech_duration_ms=",
+    "/v1/audio/transcriptions/realtime?include_timestamps",
 ])("rejects unsupported Scribe Realtime query %s", async (path) => {
     const { key } = await createTestApiKey({
         name: "scribe-realtime-invalid-query-key",

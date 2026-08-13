@@ -1,23 +1,35 @@
 import {
     DEFAULT_REALTIME_MODEL,
-    OPENAI_REALTIME_MODEL_NAMES,
+    REALTIME_VOICE_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import { z } from "zod";
 import { parseBooleanLike } from "@/util.ts";
 
-const BooleanQueryParamSchema = z.preprocess(
-    (value) => parseBooleanLike(value) ?? value,
+const StrictBooleanQueryParamSchema = z.preprocess(
+    (value) =>
+        typeof value === "string" && value.trim() === ""
+            ? value
+            : (parseBooleanLike(value) ?? value),
     z.boolean(),
 );
+
+const numberQueryParam = (schema: z.ZodType<number>) =>
+    z.preprocess(
+        (value) =>
+            typeof value === "string" && value.trim() === ""
+                ? Number.NaN
+                : value,
+        schema,
+    );
 
 export const RealtimeRequestQueryParamsSchema = z
     .object({
         model: z
-            .enum(OPENAI_REALTIME_MODEL_NAMES as [string, ...string[]])
+            .enum(REALTIME_VOICE_MODEL_NAMES as [string, ...string[]])
             .optional()
             .default(DEFAULT_REALTIME_MODEL)
             .meta({
-                description: `Realtime model to use. Supported models: ${OPENAI_REALTIME_MODEL_NAMES.join(", ")}.`,
+                description: `Realtime model to use. Supported models: ${REALTIME_VOICE_MODEL_NAMES.join(", ")}.`,
             }),
         key: z.string().optional().meta({
             description:
@@ -30,7 +42,7 @@ export type RealtimeRequestQueryParams = z.infer<
     typeof RealtimeRequestQueryParamsSchema
 >;
 
-export const SCRIBE_REALTIME_AUDIO_FORMATS = [
+const SCRIBE_REALTIME_AUDIO_FORMATS = [
     "pcm_8000",
     "pcm_16000",
     "pcm_22050",
@@ -59,24 +71,25 @@ export const ScribeRealtimeRequestQueryParamsSchema = z
             .default("pcm_16000"),
         language_code: z.string().min(2).max(3).optional(),
         commit_strategy: z.enum(["manual", "vad"]).optional().default("manual"),
-        vad_threshold: z.coerce.number().min(0).max(1).optional(),
-        vad_silence_threshold_secs: z.coerce.number().positive().optional(),
-        min_speech_duration_ms: z.coerce
-            .number()
-            .int()
-            .nonnegative()
-            .optional(),
-        min_silence_duration_ms: z.coerce
-            .number()
-            .int()
-            .nonnegative()
-            .optional(),
-        include_timestamps: BooleanQueryParamSchema.optional().default(false),
+        vad_threshold: numberQueryParam(
+            z.coerce.number().min(0).max(1),
+        ).optional(),
+        vad_silence_threshold_secs: numberQueryParam(
+            z.coerce.number().positive(),
+        ).optional(),
+        min_speech_duration_ms: numberQueryParam(
+            z.coerce.number().int().nonnegative(),
+        ).optional(),
+        min_silence_duration_ms: numberQueryParam(
+            z.coerce.number().int().nonnegative(),
+        ).optional(),
+        include_timestamps:
+            StrictBooleanQueryParamSchema.optional().default(false),
         include_language_detection:
-            BooleanQueryParamSchema.optional().default(false),
-        no_verbatim: BooleanQueryParamSchema.optional().default(false),
+            StrictBooleanQueryParamSchema.optional().default(false),
+        no_verbatim: StrictBooleanQueryParamSchema.optional().default(false),
         filter_background_audio:
-            BooleanQueryParamSchema.optional().default(false),
+            StrictBooleanQueryParamSchema.optional().default(false),
     })
     .strict()
     .refine(

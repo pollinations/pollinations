@@ -32,7 +32,7 @@ import {
 } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
-import { arrayBufferToBase64 } from "@/util.ts";
+import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import {
     type FallbackCandidate,
@@ -119,7 +119,7 @@ const CreateSpeechRequestSchema = z
             description:
                 "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
-        seed: z.number().int().min(-1).max(4294967295).optional().meta({
+        seed: z.number().int().min(0).max(4294967295).optional().meta({
             description:
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
@@ -148,7 +148,7 @@ const CreateDialogueRequestSchema = z
         response_format: z
             .enum(["mp3", "opus", "aac", "wav", "pcm"])
             .default("mp3"),
-        seed: z.number().int().min(-1).max(4294967295).optional(),
+        seed: z.number().int().min(0).max(4294967295).optional(),
         safe: SafeSchema,
     })
     .refine(
@@ -2359,7 +2359,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
             text,
             voice: query.voice,
             responseFormat: query.response_format,
-            seed: query.seed,
+            seed: normalizeSeed(query.seed),
             duration: query.duration,
             seconds: query.seconds,
             steps: query.steps,

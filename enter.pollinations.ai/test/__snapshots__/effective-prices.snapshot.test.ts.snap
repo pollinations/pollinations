@@ -1490,6 +1490,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000611111111111111,
     },
   },
+  "scribe-realtime": {
+    "cost": {
+      "promptAudioSeconds": 0.000108333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.000108333333333333,
+    },
+  },
   "seedance-2.0": {
     "cost": {
       "completionVideoSeconds": 0.18,

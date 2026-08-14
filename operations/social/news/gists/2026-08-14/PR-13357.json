@@ -1,0 +1,35 @@
+{
+  "pr_number": 13357,
+  "title": "feat: add Muse Glimmer 30B",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13357",
+  "merged_at": "2026-08-14T09:06:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `muse-glimmer` as a new Quest-Pollen-accessible model with no aliases or fallback.\n- Pins direct Fireworks route `accounts/fireworks/models/muse-glimmer-30b` with text/image input, tools, reasoning, 131,072 context, and exact `$0.35/$0.04/$1.50` per-million input/cached-input/output pricing.\n- Keeps the implementation to the registry, existing Fireworks configuration path, resolver coverage, reasoning wiring, and required pricing snapshot.\n\nValidation:\n- Direct Fireworks probes: text, image, tools, reasoning levels, streaming, prompt cache, errors, and 10/10 burst.\n- Local end-to-end: all model catalogs, canonical resolution, paid-balance-zero Quest path, text, vision, tools, reasoning, streaming, cache miss/hit, errors, wallet billing, and 10/10 burst (1.28–2.45 s).\n- Exact normal and streaming wallet deductions matched reported usage; the repeated output-cache hit returned in 13 ms without a second charge.\n- Focused gen/enter tests: 500 passed; both typechecks and frontend build passed.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A glimmer joins the garden",
+    "blurb": "Muse Glimmer 30B has landed in the Quest-Pollen patch. It reads text and images, uses tools, reasons out loud when asked, and remembers a good cache hit.",
+    "summary": "Added the Quest-Pollen-accessible Muse Glimmer 30B model through Fireworks with text and image input, tool calling, reasoning controls, a 131,072-token context window, streaming, prompt caching, and pricing of $0.35/$0.04/$1.50 per million input/cached-input/output tokens.",
+    "impact": "Developers can now call muse-glimmer directly for long-context chat, vision, tools, and reasoning workloads, with verified wallet billing and cached repeat responses returning in as little as 13 ms without a second charge.",
+    "keywords": [
+      "muse-glimmer",
+      "fireworks",
+      "text-models",
+      "vision",
+      "tool-calling",
+      "reasoning",
+      "quest-pollen"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian-wizard bee with round glasses, tending a glowing Muse Glimmer seedling beside a cozy Fireworks-powered CRT terminal. The terminal shows small text, image, tool, and reasoning icons flowing into a large garden scroll to represent the 131K context window, while code-plants and soft cache sparkles suggest fast repeat responses.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny wizard glasses, tending a glowing Muse Glimmer seedling beside a retro CRT terminal powered by gentle pixel fireworks; the screen shows simple text, image, tool, and reasoning icons flowing into a long garden scroll, with code-plants, flowers, and cache sparkles around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'MUSE GLIMMER 30B', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13357.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny wizard glasses, tending a glowing Muse Glimmer seedling beside a retro CRT terminal powered by gentle pixel fireworks; the screen shows simple text, image, tool, and reasoning icons flowing into a long garden scroll, with code-plants, flowers, and cache sparkles around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'MUSE GLIMMER 30B', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-14T09:07:56.172100+00:00"
+}

@@ -888,13 +888,15 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔊 Audio"],
             summary: "Generate Audio",
             description: [
-                "Generate speech or music from text via a simple GET request.",
+                "Generate speech, dialogue, music, or sound effects from text via a simple GET request.",
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
+                `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
+                "",
+                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
                 "",
                 "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
@@ -915,7 +917,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description for a music-generation model",
+                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),

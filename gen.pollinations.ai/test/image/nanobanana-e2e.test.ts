@@ -12,7 +12,6 @@ import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, expect } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
-import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
@@ -78,7 +77,7 @@ async function fetchWorker(path: string, init: RequestInit) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        env,
         ctx,
     );
     return { response, wait: () => waitOnExecutionContext(ctx) };

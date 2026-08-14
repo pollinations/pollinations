@@ -8,7 +8,6 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
-import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 
@@ -22,7 +21,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+    Variables: LoggerVariables & RequestIdVariables;
 };
 
 type MediaCache = typeof imageCache;
@@ -96,31 +95,6 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
-    it("coordinates audio cache misses like other finite media", async () => {
-        let coordinated = false;
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                await next();
-            })
-            .get("/audio/:text", audioCache, (c) => {
-                coordinated = c.var.generationCache !== undefined;
-                return new Response("audio", {
-                    headers: { "Content-Type": "audio/mpeg" },
-                });
-            });
-
-        const result = await dispatch(
-            app,
-            "/audio/hello",
-            undefined,
-            createMediaCacheEnv(),
-        );
-        expect(await consumeAndWait(result)).toBe("audio");
-        expect(coordinated).toBe(true);
-    });
-
     it.each([
         { label: "image", cache: imageCache, contentType: "image/png" },
         {
@@ -238,40 +212,6 @@ describe("media cache", () => {
             "fallback-model",
         );
         expect(originHits).toBe(1);
-    });
-
-    it("preserves generation metadata on media cache hits", async () => {
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                await next();
-            })
-            .get(
-                "/media/:prompt",
-                audioCache,
-                () =>
-                    new Response("audio", {
-                        headers: {
-                            "Content-Type": "audio/wav",
-                            "X-Model-Used": "qwen-tts",
-                            "X-TTS-Voice": "Serena",
-                            "X-Usage-Completion-Audio-Tokens": "10",
-                        },
-                    }),
-            );
-        const env = createMediaCacheEnv();
-
-        const warm = await dispatch(app, "/media/metadata", undefined, env);
-        await consumeAndWait(warm);
-        const hit = await dispatch(app, "/media/metadata", undefined, env);
-        await consumeAndWait(hit);
-
-        expect(hit.response.headers.get("X-Model-Used")).toBe("qwen-tts");
-        expect(hit.response.headers.get("X-TTS-Voice")).toBe("Serena");
-        expect(
-            hit.response.headers.get("X-Usage-Completion-Audio-Tokens"),
-        ).toBe("10");
     });
 
     it("refreshes cached media TTL on aged cache hits", async () => {

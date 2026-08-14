@@ -6,10 +6,8 @@ import {
 import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
-import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const TRANSCRIPTION_MODEL_IDS = [
     "whisper",
@@ -67,23 +65,6 @@ async function optionsWorker(
 }
 
 describe("gen worker routing", () => {
-    it("returns 401 for unauthenticated generation cache misses", async () => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request(
-                "https://staging.gen.pollinations.ai/image/unauthenticated-cache-miss?model=zimage",
-            ),
-            env,
-            ctx,
-        );
-
-        expect(response.status).toBe(401);
-        await expect(response.json()).resolves.toMatchObject({
-            error: { code: "UNAUTHORIZED" },
-        });
-        await waitOnExecutionContext(ctx);
-    });
-
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 
@@ -555,91 +536,6 @@ describe("gen worker routing", () => {
     });
 });
 
-fixtureTest(
-    "coordinates every finite POST generation endpoint",
-    async ({ paidApiKey }) => {
-        const coordinatedPaths: string[] = [];
-        const bindings = {
-            ...env,
-            GENERATION_COORDINATOR: {
-                getByName: () => ({
-                    startAndWait: async (job: GenerationJob) => {
-                        coordinatedPaths.push(
-                            new URL(job.request.url).pathname,
-                        );
-                        return {
-                            status: "failed" as const,
-                            error: {
-                                httpStatus: 418,
-                                headers: [["content-type", "text/plain"]],
-                                body: new TextEncoder().encode("coordinated"),
-                            },
-                        };
-                    },
-                }),
-            },
-        } as unknown as CloudflareBindings;
-        const json = (path: string, body: Record<string, unknown>) =>
-            new Request(`https://staging.gen.pollinations.ai${path}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${paidApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
-            });
-        const multipart = (
-            path: string,
-            fileField: string,
-            extra: Record<string, string> = {},
-        ) => {
-            const body = new FormData();
-            for (const [name, value] of Object.entries(extra)) {
-                body.append(name, value);
-            }
-            body.append(
-                fileField,
-                new File([new Uint8Array([1, 2, 3])], "input.wav", {
-                    type: "audio/wav",
-                }),
-            );
-            return new Request(`https://staging.gen.pollinations.ai${path}`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${paidApiKey}` },
-                body,
-            });
-        };
-        const requests = [
-            json("/v1/embeddings", { input: "hello" }),
-            json("/3d/object", {}),
-            json("/v1/images/edits", {
-                prompt: "make it blue",
-                image: "https://example.com/source.png",
-            }),
-            json("/v1/audio/dialogue", {
-                inputs: [{ text: "hello", voice: "alloy" }],
-            }),
-            multipart("/v1/audio/voice-changer", "audio"),
-            multipart("/v1/audio/voice-isolator", "audio"),
-            json("/v1/audio/speech", { input: "hello" }),
-            json("/v1/audio/speech/with-timestamps", { input: "hello" }),
-            multipart("/v1/audio/transcriptions", "file"),
-        ];
-
-        for (const request of requests) {
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(request, bindings, ctx);
-            expect(response.status).toBe(418);
-            expect(await response.text()).toBe("coordinated");
-            await waitOnExecutionContext(ctx);
-        }
-
-        expect(coordinatedPaths).toEqual(
-            requests.map((request) => new URL(request.url).pathname),
-        );
-    },
-);
-
 describe("model status", () => {
     it("reports the source timestamp and marks stale fallback data", async () => {
         let now = 1_000;
@@ -742,10 +638,10 @@ fixtureTest(
             },
         );
 
-        const bindings = withInlineGenerationCoordinator({
+        const bindings = {
             ...env,
             OPENROUTER_API_KEY: "test-openrouter-key",
-        } as unknown as CloudflareBindings);
+        } as unknown as CloudflareBindings;
 
         const getContext = createExecutionContext();
         const getResponse = await worker.fetch(
@@ -840,7 +736,7 @@ fixtureTest(
         );
         expect(urlResponse.status).toBe(200);
         expect(urlResponse.headers.get("x-cache")).toBe("HIT");
-        expect(urlResponse.headers.get("x-cache-type")).toBeNull();
+        expect(urlResponse.headers.get("x-cache-type")).toBe("EXACT");
         const urlGeneration = (await urlResponse.json()) as {
             data: Array<{ url: string; media_type?: string }>;
         };
@@ -855,7 +751,7 @@ fixtureTest(
         );
         expect(cachedResponse.status).toBe(200);
         expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(cachedResponse.headers.get("x-cache-type")).toBeNull();
+        expect(cachedResponse.headers.get("x-cache-type")).toBe("EXACT");
         expect(cachedResponse.headers.get("content-type")).toBe(
             "image/svg+xml",
         );
@@ -974,10 +870,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 DASHSCOPE_API_KEY: "test-dashscope-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -988,7 +884,6 @@ fixtureTest(
             "10",
         );
         expect(response.headers.get("x-tts-voice")).toBe("Serena");
-        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -1053,10 +948,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -1142,10 +1037,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                withInlineGenerationCoordinator({
+                {
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings),
+                } as unknown as CloudflareBindings,
                 ctx,
             );
 
@@ -1212,10 +1107,10 @@ fixtureTest(
                     response_format: "wav",
                 }),
             }),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             postContext,
         );
 
@@ -1226,7 +1121,6 @@ fixtureTest(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("4");
         expect(postResponse.headers.get("x-tts-voice")).toBe("bf_emma");
-        await postResponse.arrayBuffer();
         await waitOnExecutionContext(postContext);
 
         const getContext = createExecutionContext();
@@ -1237,17 +1131,16 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             getContext,
         );
 
         expect(getResponse.status).toBe(200);
         expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
-        await getResponse.arrayBuffer();
         await waitOnExecutionContext(getContext);
 
         expect(providerBodies).toEqual([
@@ -1311,10 +1204,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                withInlineGenerationCoordinator({
+                {
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings),
+                } as unknown as CloudflareBindings,
                 ctx,
             );
 
@@ -1389,10 +1282,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 GOOGLE_PROJECT_ID: "test-project",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -1470,10 +1363,10 @@ fixtureTest(
                         body: JSON.stringify(testCase.body),
                     },
                 ),
-                withInlineGenerationCoordinator({
+                {
                     ...env,
                     GOOGLE_PROJECT_ID: "test-project",
-                } as unknown as CloudflareBindings),
+                } as unknown as CloudflareBindings,
                 ctx,
             );
 
@@ -1600,16 +1493,15 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("30");
-        await response.arrayBuffer();
         await waitOnExecutionContext(ctx);
         expect(calls).toEqual(
             expect.arrayContaining([referenceAudioUrl, uploadUrl, composeUrl]),
@@ -1645,7 +1537,7 @@ fixtureTest("rejects private reference_audio URLs", async ({ paidApiKey }) => {
                 reference_audio: "https://localhost/reference.mp3",
             }),
         }),
-        withInlineGenerationCoordinator(env as unknown as CloudflareBindings),
+        env as unknown as CloudflareBindings,
         ctx,
     );
 
@@ -1700,9 +1592,7 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            withInlineGenerationCoordinator(
-                env as unknown as CloudflareBindings,
-            ),
+            env as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -1779,9 +1669,7 @@ fixtureTest(
                         }),
                     },
                 ),
-                withInlineGenerationCoordinator(
-                    env as unknown as CloudflareBindings,
-                ),
+                env as unknown as CloudflareBindings,
                 ctx,
             );
 
@@ -1818,9 +1706,7 @@ fixtureTest(
                         body: formData,
                     },
                 ),
-                withInlineGenerationCoordinator(
-                    env as unknown as CloudflareBindings,
-                ),
+                env as unknown as CloudflareBindings,
                 ctx,
             );
 
@@ -1927,10 +1813,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 FAL_KEY: "test-fal-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -1945,7 +1831,6 @@ fixtureTest(
         );
         // no reference clip → no input audio unit billed.
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBeNull();
-        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -2026,10 +1911,10 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 FAL_KEY: "test-fal-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -2045,7 +1930,6 @@ fixtureTest(
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("1");
         // reference clip is forwarded as a base64 data-URI audio_url.
         expect(String(sentAudioUrl)).toMatch(/^data:audio\/wav;base64,/);
-        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -2140,10 +2024,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 STABILITY_API_KEY: "test-stability-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -2155,7 +2039,6 @@ fixtureTest(
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
-        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -2246,10 +2129,10 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 STABILITY_API_KEY: "test-stability-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -2261,7 +2144,6 @@ fixtureTest(
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
-        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -2308,10 +2190,10 @@ fixtureTest(
                 "https://staging.gen.pollinations.ai/audio/tick?model=eleven-sfx&prompt_influence=abc",
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             ),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -2358,10 +2240,10 @@ fixtureTest(
                     input: "Hello",
                 }),
             }),
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 ELEVENLABS_API_KEY: "should-not-be-used",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             ctx,
         );
 
@@ -2389,12 +2271,12 @@ fixtureTest(
 
         const response = await fetchWorker(
             "/v1/audio/transcriptions",
-            withInlineGenerationCoordinator({
+            {
                 ...env,
                 // Blank the whisper key so a rejection regression fails here
                 // instead of reaching the live provider.
                 OVHCLOUD_API_KEY: "",
-            } as unknown as CloudflareBindings),
+            } as unknown as CloudflareBindings,
             {
                 method: "POST",
                 headers: { Authorization: `Bearer ${apiKey}` },

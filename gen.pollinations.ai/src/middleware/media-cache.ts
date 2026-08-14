@@ -12,16 +12,11 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import {
+    cacheMediaResponse,
     generateCacheKey,
-    putMediaResponse,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
-import {
-    createGenerationCache,
-    createGenerationExecutionCache,
-    type GenerationCacheAdapter,
-    hashGenerationCacheIdentity,
-} from "./generation-cache.ts";
+import { createGenerationCache } from "./generation-cache.ts";
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
@@ -32,21 +27,11 @@ type MediaCacheConfig = {
     label: string;
 };
 
-function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
-    return {
-        storage: "media",
+export function createMediaCache(config: MediaCacheConfig) {
+    return createGenerationCache({
         label: config.label,
-        async getKey(c) {
+        getKey(c) {
             const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
-            if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
-                cacheUrl.searchParams.set(
-                    "__request_body",
-                    await hashGenerationCacheIdentity(
-                        "media",
-                        c.var.generationCacheBody,
-                    ),
-                );
-            }
             return generateCacheKey(
                 cacheUrl,
                 c.var.generationCacheUrl
@@ -66,6 +51,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
             c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
             c.header("X-Cache", "HIT");
+            c.header("X-Cache-Type", "EXACT");
             return c.body(
                 refreshR2ObjectTtl(
                     c.env.IMAGE_BUCKET,
@@ -90,41 +76,32 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
-            return {
+            cacheMediaResponse(
+                c.env.IMAGE_BUCKET,
+                cacheKey,
+                c,
+                config.defaultContentType,
                 response,
-                write: putMediaResponse(
-                    c.env.IMAGE_BUCKET,
-                    cacheKey,
-                    c,
-                    config.defaultContentType,
-                    response,
-                ),
-            };
+            );
+            return response;
         },
-    };
+    });
 }
 
-const imageAdapter = mediaCacheAdapter({
+export const imageCache = createMediaCache({
     mediaTypes: ["image/", "video/"],
     defaultContentType: "image/jpeg",
     label: "image-cache",
 });
-export const imageCache = createGenerationCache(imageAdapter);
-export const imageExecutionCache = createGenerationExecutionCache(imageAdapter);
 
-const audioAdapter = mediaCacheAdapter({
+export const audioCache = createMediaCache({
     mediaTypes: ["audio/"],
     defaultContentType: "audio/mpeg",
     label: "audio-cache",
 });
-export const audioCache = createGenerationCache(audioAdapter);
-export const audioExecutionCache = createGenerationExecutionCache(audioAdapter);
 
-const model3dAdapter = mediaCacheAdapter({
+export const model3dCache = createMediaCache({
     mediaTypes: ["model/"],
     defaultContentType: "model/gltf-binary",
     label: "3d-cache",
 });
-export const model3dCache = createGenerationCache(model3dAdapter);
-export const model3dExecutionCache =
-    createGenerationExecutionCache(model3dAdapter);

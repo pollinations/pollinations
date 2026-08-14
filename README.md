@@ -81,8 +81,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<!-- Committed snapshot: the live star-history.com embed currently serves a placeholder
-     (GitHub stargazer API restriction). Regenerate with:
+<!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
+     Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">
  <picture>

@@ -68,7 +68,8 @@ function buildSvg(dates, theme) {
     const t = THEMES[theme];
     const total = dates.length;
     const t0 = dates[0].getTime();
-    const t1 = Date.now();
+    const latest = dates.at(-1);
+    const t1 = latest.getTime();
     const yMax = Math.ceil(total / 1000) * 1000;
     const plotW = W - M.left - M.right;
     const plotH = H - M.top - M.bottom;
@@ -116,12 +117,12 @@ function buildSvg(dates, theme) {
     }
 
     const [ex, ey] = pts[pts.length - 1];
-    const snapshot = new Date(t1).toISOString().slice(0, 10);
+    const snapshot = latest.toISOString().slice(0, 10);
 
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Star history of ${REPO}: ${total} stars">
   <g font-family="${FONT}">
     <text x="${M.left}" y="20" fill="${t.title}" font-size="13" font-weight="600">${REPO} · GitHub star history</text>
-    <text x="${W - M.right}" y="20" text-anchor="end" fill="${t.muted}" font-size="10">snapshot ${snapshot}</text>
+    <text x="${W - M.right}" y="20" text-anchor="end" fill="${t.muted}" font-size="10">through ${snapshot}</text>
     ${gridLines.join("\n    ")}
     <line x1="${M.left}" y1="${M.top + plotH}" x2="${W - M.right}" y2="${M.top + plotH}" stroke="${t.grid}" stroke-width="1"/>
     ${yLabels.join("\n    ")}

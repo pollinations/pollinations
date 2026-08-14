@@ -1,17 +1,21 @@
 /**
- * inferenceport.ai 3D generation client — sync mode only.
+ * InferencePort 3D generation client.
  *
- * POST /v1/3d/generations?sync=true → HTTP 200 with data[0].model_glb_b64_bytes inline.
- * Used by GET /3d/{prompt}.
+ * POST /v1/3d/generations submits an async job. The client polls
+ * GET /v1/3d/jobs/{job_id} until data[0].model_glb_b64_bytes is ready.
  *
  * Confirmed model value (per provider docs): "trellis2".
  * Confirmed output fields: data[0].model_glb_b64_bytes (live API test).
  * Confirmed pricing: $0.24/$0.29/$0.35 for resolution low/medium/high.
  */
 
+import { sleep } from "../../image/util.ts";
 import { getModel3dEnv } from "../env.ts";
 
 const API_BASE = "https://api.inferenceport.ai/v1";
+const POLL_INTERVAL_MS = 5_000;
+const JOB_TIMEOUT_MS = 5 * 60 * 1_000;
+const TIMEOUT_MESSAGE = "InferencePort generation timed out after 300 seconds";
 
 export class InferenceportError extends Error {
     constructor(
@@ -29,8 +33,14 @@ interface InferenceportJobData {
     model_ply_b64_bytes?: string;
 }
 
-interface InferenceportSyncResponse {
-    data: InferenceportJobData[];
+interface InferenceportSubmitResponse {
+    job_id?: string;
+}
+
+interface InferenceportJobResponse {
+    status?: "pending" | "processing" | "completed" | "failed";
+    data?: InferenceportJobData[];
+    error?: string;
 }
 
 interface RunOptions {
@@ -40,7 +50,7 @@ interface RunOptions {
     resolution?: "low" | "medium" | "high";
 }
 
-export interface InferenceportSyncResult {
+export interface InferenceportResult {
     glbBase64?: string;
     plyBase64?: string;
 }
@@ -65,49 +75,110 @@ function buildBody(opts: RunOptions): Record<string, unknown> {
     return body;
 }
 
-// Blocking call — waits for inferenceport to complete before responding.
-// Used by the GET /3d/{prompt} endpoint.
-export async function runInferenceportSync(
+// Pollinations keeps its synchronous public response while the provider job
+// runs asynchronously, avoiding InferencePort's synchronous transport timeout.
+export async function runInferenceport(
     opts: RunOptions,
-): Promise<InferenceportSyncResult> {
+): Promise<InferenceportResult> {
     const token = requireInferenceportToken();
-    const response = await inferenceportFetch<InferenceportSyncResponse>(
+    const deadline = Date.now() + JOB_TIMEOUT_MS;
+    const submission = await inferenceportFetch<InferenceportSubmitResponse>(
         token,
-        `${API_BASE}/3d/generations?sync=true`,
+        "POST",
+        "/3d/generations",
+        deadline,
         buildBody(opts),
     );
-    const output = response.data?.[0];
-    if (!output?.model_glb_b64_bytes && !output?.model_ply_b64_bytes) {
-        throw new InferenceportError("inferenceport sync returned no output");
+
+    if (!submission.job_id) {
+        throw new InferenceportError("InferencePort returned no job ID", 502);
     }
-    return {
-        glbBase64: output?.model_glb_b64_bytes,
-        plyBase64: output?.model_ply_b64_bytes,
-    };
+
+    while (true) {
+        const job = await inferenceportFetch<InferenceportJobResponse>(
+            token,
+            "GET",
+            `/3d/jobs/${submission.job_id}`,
+            deadline,
+        );
+
+        if (job.status === "completed") {
+            const output = job.data?.[0];
+            if (!output?.model_glb_b64_bytes && !output?.model_ply_b64_bytes) {
+                throw new InferenceportError(
+                    "InferencePort completed without output",
+                    502,
+                );
+            }
+            return {
+                glbBase64: output.model_glb_b64_bytes,
+                plyBase64: output.model_ply_b64_bytes,
+            };
+        }
+        if (job.status === "failed") {
+            throw new InferenceportError(
+                job.error || "InferencePort generation failed",
+                502,
+            );
+        }
+        if (job.status !== "pending" && job.status !== "processing") {
+            throw new InferenceportError(
+                "InferencePort returned an invalid job status",
+                502,
+            );
+        }
+
+        await sleep(Math.min(POLL_INTERVAL_MS, remainingTime(deadline)));
+    }
 }
 
 async function inferenceportFetch<T>(
     token: string,
-    url: string,
-    body: Record<string, unknown>,
+    method: "GET" | "POST",
+    path: string,
+    deadline: number,
+    body?: Record<string, unknown>,
 ): Promise<T> {
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-    });
+    const url = `${API_BASE}${path}`;
+    const signal = AbortSignal.timeout(remainingTime(deadline));
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                ...(body ? { "Content-Type": "application/json" } : {}),
+            },
+            body: body ? JSON.stringify(body) : undefined,
+            signal,
+        });
+    } catch (error) {
+        if (signal.aborted || Date.now() >= deadline) {
+            throw new InferenceportError(TIMEOUT_MESSAGE, 504);
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        throw new InferenceportError(
+            `InferencePort ${method} ${url} failed: ${message}`,
+            502,
+        );
+    }
 
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new InferenceportError(
-            `Inferenceport POST ${url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
             classifyInferenceportHttpStatus(response.status),
         );
     }
     return (await response.json()) as T;
+}
+
+function remainingTime(deadline: number): number {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+        throw new InferenceportError(TIMEOUT_MESSAGE, 504);
+    }
+    return remaining;
 }
 
 export function classifyInferenceportHttpStatus(httpStatus: number): number {

@@ -87,17 +87,17 @@ describe("long-context cost variants", () => {
 
     it("Grok uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -228,11 +228,12 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
+        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (input * 0.5) / 1e6,
-            promptCachedTokens: (cached * 0.5) / 1e6,
-            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-            completionTextTokens: (output * 0.5) / 1e6,
+            promptTextTokens: (input / 1e6) * multiplier,
+            promptCachedTokens: (cached / 1e6) * multiplier,
+            promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
+            completionTextTokens: (output / 1e6) * multiplier,
         });
         expect(billing.cost.totalCost).toBeCloseTo(
             272_001 * (input / 1e6) +
@@ -328,12 +329,12 @@ describe("long-context cost variants", () => {
             completionTextTokens: 3.84 / 1e6,
         });
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).priceDefinition,
         ).toMatchObject({
             promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 0.6 / 1e6,
+            promptCachedTokens: 1 / 1e6,
             completionTextTokens: 12 / 1e6,
         });
     });

@@ -22,6 +22,7 @@ import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
 } from "@/utils/text-cache.ts";
+import { prepareOpenAIImageGeneration } from "../src/routes/images.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -258,6 +259,65 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(await response.text()).toBe("email {EMAIL}");
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+    });
+
+    it("uses the redacted prompt for OpenAI image cache URLs", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "portrait of {EMAIL}" }],
+        );
+        const model: ModelVariables["model"] = {
+            requested: "flux",
+            resolved: "flux",
+            definition: {} as ModelVariables["model"]["definition"],
+        };
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                c.set("model", model);
+                const body = await c.req.json();
+                c.req.addValidatedData("json", body);
+                await next();
+            })
+            .post("/v1/images/generations", prepareOpenAIImageGeneration, (c) =>
+                c.json({
+                    prompt: (c.req.valid("json" as never) as { prompt: string })
+                        .prompt,
+                    url: c.var.generationCacheUrl?.toString(),
+                }),
+            );
+
+        const response = await app.request(
+            "/v1/images/generations",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "portrait of a@example.com",
+                    safe: "privacy",
+                }),
+            },
+            configuredEnv,
+        );
+        const result = await response.json<{
+            prompt: string;
+            url: string;
+        }>();
+
+        expect(result.prompt).toBe("portrait of {EMAIL}");
+        expect(result.url).toContain("portrait%20of%20%7BEMAIL%7D");
+        expect(result.url).not.toContain("a%40example.com");
     });
 
     it("accepts safety from the request header", async () => {

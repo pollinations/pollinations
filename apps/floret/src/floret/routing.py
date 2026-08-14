@@ -95,14 +95,10 @@ class RoutingPreferences:
         explicit = self.explicit()
         if not explicit:
             return ""
-        constraints = "\n".join(
-            f"- {_FIELD_LABELS[field]}: {model}" for field, model in explicit.items()
+        constraints = ", ".join(
+            f"{_FIELD_LABELS[field]}={model}" for field, model in explicit.items()
         )
-        return (
-            f"\nUser-selected model constraints:\n{constraints}"
-            "\nUse these fixed models for the matching tools. "
-            "Do not claim that another model was used."
-        )
+        return f"\nFixed models: {constraints}. Use them; do not claim otherwise."
 
 
 class RoutingInput(BaseModel):

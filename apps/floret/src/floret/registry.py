@@ -254,25 +254,26 @@ def _adapt_rich_catalog(raw: object) -> dict[str, dict[str, Any]]:
     return models
 
 
-async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
+async def _fetch_models(path: str) -> object:
     key = await _resolve_api_key()
     base = settings.openai_base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {key}"} if key else {}
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(f"{base}/models", headers=headers)
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(f"{base}{path}", headers=headers)
         response.raise_for_status()
-    return _adapt_rich_catalog(response.json())
+        return response.json()
+
+
+async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
+    return _adapt_rich_catalog(await _fetch_models("/models"))
 
 
 async def refresh_registry() -> dict[str, Any]:
     global _registry_cache
-    key = await _resolve_api_key()
-    base = settings.openai_base_url.rstrip("/")
-    headers = {"Authorization": f"Bearer {key}"} if key else {}
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(f"{base}/v1/models", headers=headers)
-        response.raise_for_status()
-    _registry_cache = _normalize(response.json())
+    raw = await _fetch_models("/v1/models")
+    if not isinstance(raw, dict):
+        raise ValueError("Model endpoint /v1/models returned a non-object response")
+    _registry_cache = _normalize(raw)
     return _registry_cache
 
 

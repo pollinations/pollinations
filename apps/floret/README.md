@@ -32,7 +32,7 @@ The container needs no baked-in secrets. Hosted calls pass a short-lived agent r
 ## API
 
 ```bash
-curl https://floret.pollinations.ai/v1/chat/completions \
+curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,6 +49,8 @@ curl https://floret.pollinations.ai/v1/chat/completions \
     }
   }'
 ```
+
+Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token; Floret's direct endpoint rejects user keys.
 
 - Every field is optional.
 - Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.

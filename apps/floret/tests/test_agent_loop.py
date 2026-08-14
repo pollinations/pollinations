@@ -412,8 +412,8 @@ async def test_routing_prompt_lists_only_explicit_preferences(monkeypatch):
     )
 
     system_prompt = brain.calls[0][0]["content"]
-    assert "image generation: flux" in system_prompt
-    assert "video generation:" not in system_prompt
+    assert "image generation=flux" in system_prompt
+    assert "video generation=" not in system_prompt
 
 
 async def test_text_routing_model_reaches_every_brain_call(monkeypatch):

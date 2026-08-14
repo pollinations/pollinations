@@ -162,7 +162,7 @@ async def test_fetch_model_catalog_uses_authenticated_rich_endpoint(monkeypatch)
 
     class Client:
         def __init__(self, *, timeout):
-            assert timeout == 30
+            assert timeout == 10
 
         async def __aenter__(self):
             return self
@@ -418,9 +418,7 @@ def test_prompt_block_has_exact_required_guidance_suffix():
     )
 
     assert preferences.prompt_block() == (
-        "\nUser-selected model constraints:"
-        "\n- text reasoning: glm"
-        "\n- image generation: opaque-image-model-7"
-        "\n- audio generation: openai-audio"
-        "\nUse these fixed models for the matching tools. Do not claim that another model was used."
+        "\nFixed models: text reasoning=glm, "
+        "image generation=opaque-image-model-7, audio generation=openai-audio. "
+        "Use them; do not claim otherwise."
     )

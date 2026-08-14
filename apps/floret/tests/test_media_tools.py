@@ -126,19 +126,17 @@ async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("tool_name", "field", "function_name", "args", "selected"),
+    ("tool_name", "field", "args", "selected"),
     [
         (
             "generate_image",
             "image_generation",
-            "generate_image",
             {"prompt": "x", "model": "brain-image"},
             "flux",
         ),
         (
             "edit_image",
             "image_editing",
-            "edit_image",
             {
                 "prompt": "x",
                 "image_url": "https://x/a.jpg",
@@ -149,19 +147,16 @@ async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
         (
             "generate_video",
             "video",
-            "generate_video",
             {"prompt": "x", "model": "brain-video"},
             "wan-fast",
         ),
         (
             "text_to_speech",
             "audio",
-            "text_to_speech",
             {"text": "x", "model": "brain-audio"},
             "openai-audio",
         ),
         (
-            "web_search",
             "web_search",
             "web_search",
             {"query": "x", "model": "brain-search"},
@@ -170,26 +165,26 @@ async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
     ],
 )
 async def test_dispatch_routing_override_wins_without_mutating_args(
-    monkeypatch, tool_name, field, function_name, args, selected
+    monkeypatch, tool_name, field, args, selected
 ):
     calls = []
 
     async def spy(**kwargs):
         calls.append(kwargs)
-        if function_name == "generate_image":
+        if tool_name == "generate_image":
             return ["https://x/image.jpg"]
-        if function_name == "text_to_speech":
+        if tool_name == "text_to_speech":
             return {
                 "data_uri": "data:audio/mp3;base64,eA==",
                 "b64": "eA==",
                 "format": "mp3",
                 "transcript": "x",
             }
-        if function_name == "web_search":
+        if tool_name == "web_search":
             return "result"
         return "https://x/media"
 
-    monkeypatch.setattr(toolset.gen, function_name, spy)
+    monkeypatch.setattr(toolset.gen, tool_name, spy)
     routing = RoutingPreferences(**{field: selected})
 
     await toolset.dispatch(tool_name, args, routing)

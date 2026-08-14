@@ -42,31 +42,12 @@ async def _fake_run_agent(messages, **kwargs):
     return {"text": "unused", "artifacts": [], "iterations": 1}
 
 
-def test_unknown_routing_key_is_rejected(monkeypatch):
-    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"image": "flux"}}
-
-    response = TestClient(api_mod.app).post(
-        "/v1/chat/completions", json=body, headers=_HEADERS
-    )
-
-    assert response.status_code == 422
-
-
-def test_empty_routing_value_is_rejected(monkeypatch):
-    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": " "}}
-
-    response = TestClient(api_mod.app).post(
-        "/v1/chat/completions", json=body, headers=_HEADERS
-    )
-
-    assert response.status_code == 422
-
-
-def test_explicit_null_routing_value_is_rejected(monkeypatch):
-    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"text": None}}
+@pytest.mark.parametrize(
+    "routing",
+    [{"image": "flux"}, {"video": " "}, {"text": None}],
+)
+def test_invalid_routing_shape_is_rejected(routing):
+    body = _request_body(stream=False) | {"routing": routing}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -365,25 +346,20 @@ def test_request_without_credential_is_rejected():
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 401
+    assert resp.json() == {"detail": "Missing agent run token."}
 
 
-def test_any_bearer_is_spendable(monkeypatch):
-    """The agent spends whatever key it was handed, whichever kind it is."""
-    from floret.config import _current_api_key
-
-    async def fake_run_agent(messages, **kwargs):
-        assert _current_api_key() == "sk_caller_key"
-        return {"text": "ok", "artifacts": [], "iterations": 1}
-
-    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
-
-    client = TestClient(api_mod.app)
-    resp = client.post(
+@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "invalid"])
+def test_direct_endpoint_rejects_non_agent_credentials(key):
+    """Users authenticate to gen; only its delegated token reaches Floret."""
+    response = TestClient(api_mod.app).post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
-        headers={"Authorization": "Bearer sk_caller_key"},
+        headers={"Authorization": f"Bearer {key}"},
     )
-    assert resp.status_code == 200
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Floret requires an agent run token."}
 
 
 def test_agent_run_token_reaches_brain_and_tools(monkeypatch):

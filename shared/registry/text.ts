@@ -6,9 +6,7 @@ import {
 } from "./cost-variants";
 import {
     GEMINI_25_GROUNDING_BILLING,
-    OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
-    OPENROUTER_GEMINI_SEARCH_BILLING,
-    withOpenRouterGeminiCacheStorage,
+    openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
@@ -531,10 +529,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.5),
             completionTextTokens: perMillion(3.0),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 3 Flash Preview",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -566,10 +564,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.375),
             completionTextTokens: perMillion(1.875),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_DISCOUNTED_SEARCH_BILLING,
-            0.25,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 7,
+            storageCostPerMillionTokenHours: 0.25,
+        }),
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -605,10 +603,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
@@ -638,10 +636,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -1472,10 +1470,10 @@ export const TEXT_SERVICES = {
             },
             "<200K context",
         ),
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            4.5,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 4.5,
+        }),
         title: "Gemini 3.1 Pro Preview",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",

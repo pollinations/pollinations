@@ -1,0 +1,34 @@
+{
+  "pr_number": 13269,
+  "title": "refactor: consolidate generation cache lifecycle",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13269",
+  "merged_at": "2026-08-14T00:20:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Centralizes cache keying, R2 lookup/replay, miss handling, and response capture in one shared lifecycle.\\n- Keeps media and text as separate adapters with their existing buckets, serialization, content checks, and streaming behavior.\\n- Adds /v1/images/generations to the shared media cache, resolves its seed once, and applies safety before constructing cache/public URLs.\\n- Preserves legacy OpenAI-image cache objects, fallback attribution, and only stores successful 200 text responses.\\n- Validated with TypeScript, Biome, and 39 focused cache, OpenAI-image, and safety tests.\\n\\nStorage-neutral prerequisite for #13299.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One cache to tend them",
+    "blurb": "The generation cache got a proper shared greenhouse instead of several adjacent sheds. Image, audio, video, and text requests now follow one well-watered lifecycle.",
+    "summary": "Centralized generation cache keying, R2 replay, miss handling, and response capture across media and text, while adding shared cache support for OpenAI-compatible /v1/images/generations requests.",
+    "impact": "Repeated image-generation requests, including /v1/images/generations, can now reuse safely validated cached results with consistent seed handling, legacy cache compatibility, and unchanged text streaming behavior.",
+    "keywords": [
+      "cache",
+      "R2",
+      "image generation",
+      "OpenAI compatibility",
+      "API reliability",
+      "text generation"
+    ],
+    "visual_concept": "Depict a cozy shared cache greenhouse: several labeled garden pipes for images, text, audio, and video feed into one large lime-green storage jar, with old jars kept safely on a shelf for legacy compatibility. Polli should be a careful garden keeper using a tiny tool belt to connect the pipes, while the eager CRT Monitor Robot watches cached image tiles replay on its screen; small code-plants and flowers show that the separate adapters still grow independently.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, bright pink rectangular cheek blushes, light-blue rounded wings, and a tiny tool belt, carefully connecting image, text, audio, and video garden pipes into one glowing lime green (#ecf874) cache jar; a cute CRT monitor robot displays a replayed pixel landscape while legacy jars rest safely on a shelf among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow and a small pixel-font label: 'SHARED CACHE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13269.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, bright pink rectangular cheek blushes, light-blue rounded wings, and a tiny tool belt, carefully connecting image, text, audio, and video garden pipes into one glowing lime green (#ecf874) cache jar; a cute CRT monitor robot displays a replayed pixel landscape while legacy jars rest safely on a shelf among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow and a small pixel-font label: 'SHARED CACHE'."
+  },
+  "generated_at": "2026-08-14T00:21:49.776547+00:00"
+}

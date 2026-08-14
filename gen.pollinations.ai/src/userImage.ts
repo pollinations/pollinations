@@ -2,6 +2,7 @@ import type { ImageInputErrorCode } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "./image/httpError.ts";
 import { readResponseBytes } from "./utils/response-bytes.ts";
+import { validateUserMediaUrl } from "./utils/user-media-url.ts";
 
 /**
  * A user-supplied image we could not use.
@@ -36,72 +37,29 @@ export class UserImageError extends HttpError {
 /** Max bytes we will read for a single user-supplied image: 20MB. */
 export const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 
-const BLOCKED_HOSTNAMES = /^localhost$/i;
-
-/**
- * Blocks the hosts a user-supplied URL must never reach: loopback, any literal
- * IP, and anything containing a colon (an IPv6 literal, which covers ::1 and
- * the unique-local range without enumerating them).
- *
- * Deliberately blunt. A bare IP is never a legitimate way to reference a public
- * image, and allowing one opens link-local metadata endpoints — so the whole
- * literal-address space is refused rather than filtered range by range.
- */
-function isBlockedImageHost(hostname: string): boolean {
-    const host = hostname.replace(/^\[|\]$/g, "");
-    const normalized = host.toLowerCase();
-    if (
-        BLOCKED_HOSTNAMES.test(normalized) ||
-        normalized.endsWith(".localhost")
-    ) {
-        return true;
-    }
-
-    if (normalized.includes(":")) {
-        return true;
-    }
-
-    const parts = normalized.split(".").map(Number);
-    if (
-        parts.length !== 4 ||
-        parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
-    ) {
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * The one gate every user-supplied image URL passes before we fetch it, so a
- * URL one path refuses can never be reachable through the other instead.
- */
+/** Maps the shared user-media URL policy to the image API's error contract. */
 function assertAllowedImageUrl(value: string): URL {
-    let url: URL;
-    try {
-        url = new URL(value);
-    } catch {
+    const validation = validateUserMediaUrl(value);
+    if (validation.ok) return validation.url;
+
+    if (validation.reason === "invalid") {
         throw new UserImageError(
             `Invalid image URL ${value}: expected a valid HTTP(S) URL.`,
             "invalid_image_url",
         );
     }
 
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    if (validation.reason === "protocol") {
         throw new UserImageError(
             `Invalid image URL ${value}: only HTTP(S) image URLs can be fetched.`,
             "invalid_image_url",
         );
     }
 
-    if (url.username || url.password || isBlockedImageHost(url.hostname)) {
-        throw new UserImageError(
-            `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
-            "invalid_image_url",
-        );
-    }
-
-    return url;
+    throw new UserImageError(
+        `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
+        "invalid_image_url",
+    );
 }
 
 /** The image host's own status, phrased as something the caller can act on. */

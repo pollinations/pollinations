@@ -92,21 +92,13 @@ export const REALTIME_SERVICES = {
         },
         title: "Scribe v2 Realtime",
         description:
-            "Live transcription in 90+ languages with partial results and word timestamps",
+            "Live transcription in 90+ languages with incremental and final results",
         inputModalities: ["audio"],
         outputModalities: ["text"],
-        supportedEndpoints: ["/v1/audio/transcriptions/realtime"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
 } satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,
 ) as RealtimeModelName[];
-
-export const REALTIME_VOICE_MODEL_NAMES = REALTIME_MODEL_NAMES.filter(
-    (model) => {
-        const endpoints = (REALTIME_SERVICES[model] as ModelDefinition)
-            .supportedEndpoints;
-        return endpoints === undefined || endpoints.includes("/v1/realtime");
-    },
-);

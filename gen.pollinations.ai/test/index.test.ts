@@ -6,8 +6,10 @@ import {
 import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const TRANSCRIPTION_MODEL_IDS = [
     "whisper",
@@ -65,6 +67,23 @@ async function optionsWorker(
 }
 
 describe("gen worker routing", () => {
+    it("returns 401 for unauthenticated generation cache misses", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/image/unauthenticated-cache-miss?model=zimage",
+            ),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code: "UNAUTHORIZED" },
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 
@@ -536,6 +555,91 @@ describe("gen worker routing", () => {
     });
 });
 
+fixtureTest(
+    "coordinates every finite POST generation endpoint",
+    async ({ paidApiKey }) => {
+        const coordinatedPaths: string[] = [];
+        const bindings = {
+            ...env,
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async (job: GenerationJob) => {
+                        coordinatedPaths.push(
+                            new URL(job.request.url).pathname,
+                        );
+                        return {
+                            status: "failed" as const,
+                            error: {
+                                httpStatus: 418,
+                                headers: [["content-type", "text/plain"]],
+                                body: new TextEncoder().encode("coordinated"),
+                            },
+                        };
+                    },
+                }),
+            },
+        } as unknown as CloudflareBindings;
+        const json = (path: string, body: Record<string, unknown>) =>
+            new Request(`https://staging.gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            });
+        const multipart = (
+            path: string,
+            fileField: string,
+            extra: Record<string, string> = {},
+        ) => {
+            const body = new FormData();
+            for (const [name, value] of Object.entries(extra)) {
+                body.append(name, value);
+            }
+            body.append(
+                fileField,
+                new File([new Uint8Array([1, 2, 3])], "input.wav", {
+                    type: "audio/wav",
+                }),
+            );
+            return new Request(`https://staging.gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body,
+            });
+        };
+        const requests = [
+            json("/v1/embeddings", { input: "hello" }),
+            json("/3d/object", {}),
+            json("/v1/images/edits", {
+                prompt: "make it blue",
+                image: "https://example.com/source.png",
+            }),
+            json("/v1/audio/dialogue", {
+                inputs: [{ text: "hello", voice: "alloy" }],
+            }),
+            multipart("/v1/audio/voice-changer", "audio"),
+            multipart("/v1/audio/voice-isolator", "audio"),
+            json("/v1/audio/speech", { input: "hello" }),
+            json("/v1/audio/speech/with-timestamps", { input: "hello" }),
+            multipart("/v1/audio/transcriptions", "file"),
+        ];
+
+        for (const request of requests) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request, bindings, ctx);
+            expect(response.status).toBe(418);
+            expect(await response.text()).toBe("coordinated");
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(coordinatedPaths).toEqual(
+            requests.map((request) => new URL(request.url).pathname),
+        );
+    },
+);
+
 describe("model status", () => {
     it("reports the source timestamp and marks stale fallback data", async () => {
         let now = 1_000;
@@ -638,10 +742,10 @@ fixtureTest(
             },
         );
 
-        const bindings = {
+        const bindings = withInlineGenerationCoordinator({
             ...env,
             OPENROUTER_API_KEY: "test-openrouter-key",
-        } as unknown as CloudflareBindings;
+        } as unknown as CloudflareBindings);
 
         const getContext = createExecutionContext();
         const getResponse = await worker.fetch(
@@ -711,6 +815,52 @@ fixtureTest(
         expect(generation.usage.output_tokens).toBe(1);
         expect(generation.usage.total_tokens).toBe(1);
         await waitOnExecutionContext(generationContext);
+
+        const urlContext = createExecutionContext();
+        const urlResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "recraft-vector",
+                        prompt: "vector flower",
+                        response_format: "url",
+                        size: "1024x1024",
+                        seed: 902,
+                    }),
+                },
+            ),
+            bindings,
+            urlContext,
+        );
+        expect(urlResponse.status).toBe(200);
+        expect(urlResponse.headers.get("x-cache")).toBe("HIT");
+        expect(urlResponse.headers.get("x-cache-type")).toBeNull();
+        const urlGeneration = (await urlResponse.json()) as {
+            data: Array<{ url: string; media_type?: string }>;
+        };
+        expect(urlGeneration.data[0]?.media_type).toBe("image/svg+xml");
+        await waitOnExecutionContext(urlContext);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            new Request(urlGeneration.data[0]?.url || ""),
+            bindings,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(cachedResponse.headers.get("x-cache-type")).toBeNull();
+        expect(cachedResponse.headers.get("content-type")).toBe(
+            "image/svg+xml",
+        );
+        expect(await cachedResponse.text()).toBe(svg);
+        await waitOnExecutionContext(cachedContext);
 
         const editContext = createExecutionContext();
         const editResponse = await worker.fetch(
@@ -824,10 +974,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 DASHSCOPE_API_KEY: "test-dashscope-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -838,6 +988,7 @@ fixtureTest(
             "10",
         );
         expect(response.headers.get("x-tts-voice")).toBe("Serena");
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -902,10 +1053,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -991,10 +1142,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1061,10 +1212,10 @@ fixtureTest(
                     response_format: "wav",
                 }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             postContext,
         );
 
@@ -1075,6 +1226,7 @@ fixtureTest(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("4");
         expect(postResponse.headers.get("x-tts-voice")).toBe("bf_emma");
+        await postResponse.arrayBuffer();
         await waitOnExecutionContext(postContext);
 
         const getContext = createExecutionContext();
@@ -1085,16 +1237,17 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 DEEPINFRA_API_KEY: "test-deepinfra-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             getContext,
         );
 
         expect(getResponse.status).toBe(200);
         expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
+        await getResponse.arrayBuffer();
         await waitOnExecutionContext(getContext);
 
         expect(providerBodies).toEqual([
@@ -1158,10 +1311,10 @@ fixtureTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1236,10 +1389,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 GOOGLE_PROJECT_ID: "test-project",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1317,10 +1470,10 @@ fixtureTest(
                         body: JSON.stringify(testCase.body),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     GOOGLE_PROJECT_ID: "test-project",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1354,6 +1507,364 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });
+
+fixtureTest(
+    "loads an octet-stream elevenmusic reference from any public URL",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const referenceAudioUrl =
+            "https://cdn.example.com/test-music-reference";
+        const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
+        const composeUrl = "https://api.elevenlabs.io/v1/music";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    expect(request.headers.get("User-Agent")).toBe(
+                        "Pollinations/1.0",
+                    );
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: {
+                            "Content-Type":
+                                "Application/Octet-Stream; charset=binary",
+                        },
+                    });
+                }
+
+                if (request.url === uploadUrl) {
+                    expect(request.headers.get("xi-api-key")).toBe(
+                        "test-eleven-key",
+                    );
+                    const formData = await request.formData();
+                    const file = formData.get("file");
+                    expect(file).toBeInstanceOf(File);
+                    expect((file as File).type).toBe(
+                        "application/octet-stream",
+                    );
+                    expect(formData.get("extract_composition_plan")).toBe(
+                        "music_v2",
+                    );
+                    return Response.json({
+                        song_id: "reference-song",
+                        composition_plan: {
+                            chunks: [{ duration_ms: 30_000 }],
+                        },
+                    });
+                }
+
+                if (request.url === composeUrl) {
+                    const body = (await request.json()) as {
+                        composition_plan: {
+                            chunks: Array<{
+                                conditioning_ref: { song_id: string };
+                            }>;
+                        };
+                    };
+                    expect(
+                        body.composition_plan.chunks[0].conditioning_ref
+                            .song_id,
+                    ).toBe("reference-song");
+                    return new Response(new Uint8Array([1, 2, 3, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm indie disco",
+                    duration: 30,
+                    reference_audio: referenceAudioUrl,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                ELEVENLABS_API_KEY: "test-eleven-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("30");
+        await response.arrayBuffer();
+        await waitOnExecutionContext(ctx);
+        expect(calls).toEqual(
+            expect.arrayContaining([referenceAudioUrl, uploadUrl, composeUrl]),
+        );
+    },
+);
+
+fixtureTest("rejects private reference_audio URLs", async ({ paidApiKey }) => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        if (
+            request.url.startsWith(
+                "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+            ) ||
+            request.url.startsWith("http://localhost:7181/")
+        ) {
+            return Response.json({ data: [] });
+        }
+        throw new Error(`Unexpected fetch: ${request.url}`);
+    });
+
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${paidApiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "elevenmusic",
+                input: "warm indie disco",
+                reference_audio: "https://localhost/reference.mp3",
+            }),
+        }),
+        withInlineGenerationCoordinator(env as unknown as CloudflareBindings),
+        ctx,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            message:
+                "reference_audio must be a public HTTP(S) URL without credentials",
+        },
+    });
+    await waitOnExecutionContext(ctx);
+});
+
+fixtureTest(
+    "returns 400 once for an unreachable public reference",
+    async ({ paidApiKey }) => {
+        const referenceAudioUrl = "https://cdn.example.com/expired-reference";
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (request.url === referenceAudioUrl) {
+                    return Response.json(
+                        { error: "Not found" },
+                        { status: 404 },
+                    );
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm indie disco",
+                    reference_audio: referenceAudioUrl,
+                }),
+            }),
+            withInlineGenerationCoordinator(
+                env as unknown as CloudflareBindings,
+            ),
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "Failed to fetch reference_audio: cdn.example.com returned 404",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(calls.filter((url) => url === referenceAudioUrl)).toHaveLength(
+            1,
+        );
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects non-audio and oversized media references",
+    async ({ paidApiKey }) => {
+        const nonAudioUrl = "https://cdn.example.com/not-an-audio-reference";
+        const oversizedUrl =
+            "https://cdn.example.com/oversized-audio-reference";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === nonAudioUrl) {
+                    return new Response(new Uint8Array([1, 2, 3]), {
+                        headers: { "Content-Type": "image/png" },
+                    });
+                }
+                if (request.url === oversizedUrl) {
+                    return new Response(new Uint8Array(), {
+                        headers: {
+                            "Content-Type": "audio/wav",
+                            "Content-Length": String(20 * 1024 * 1024 + 1),
+                        },
+                    });
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        for (const [referenceAudio, message] of [
+            [nonAudioUrl, "reference_audio must point to an audio file"],
+            [oversizedUrl, "reference_audio is too large"],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "elevenmusic",
+                            input: "warm indie disco",
+                            reference_audio: referenceAudio,
+                        }),
+                    },
+                ),
+                withInlineGenerationCoordinator(
+                    env as unknown as CloudflareBindings,
+                ),
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+    },
+);
+
+fixtureTest(
+    "rejects legacy multipart reference file fields explicitly",
+    async ({ paidApiKey }) => {
+        for (const fieldName of ["reference_audio", "file"]) {
+            const formData = new FormData();
+            formData.append("model", "elevenmusic");
+            formData.append("input", "warm indie disco");
+            formData.append(
+                fieldName,
+                new File([new Uint8Array([73, 68, 51, 4])], "reference.mp3", {
+                    type: "audio/mpeg",
+                }),
+            );
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${paidApiKey}` },
+                        body: formData,
+                    },
+                ),
+                withInlineGenerationCoordinator(
+                    env as unknown as CloudflareBindings,
+                ),
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message:
+                        "reference_audio must be a public HTTP(S) URL, not a file upload",
+                },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+    },
+);
+
+fixtureTest(
+    "does not expose the dedicated music upload endpoint",
+    async ({ paidApiKey }) => {
+        const formData = new FormData();
+        formData.append(
+            "file",
+            new File([new Uint8Array([73, 68, 51, 4])], "reference.mp3", {
+                type: "audio/mpeg",
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/audio/music/upload",
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                    body: formData,
+                },
+            ),
+            env as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(404);
+        await waitOnExecutionContext(ctx);
+    },
+);
 
 fixtureTest(
     "routes stable-audio-3-medium requests through fal",
@@ -1416,10 +1927,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 FAL_KEY: "test-fal-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1434,6 +1945,7 @@ fixtureTest(
         );
         // no reference clip → no input audio unit billed.
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBeNull();
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -1449,12 +1961,20 @@ fixtureTest(
         const a2aEndpoint =
             "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
         const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
         let sentAudioUrl: unknown;
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
                 calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
 
                 if (request.url === a2aEndpoint) {
                     expect(request.headers.get("authorization")).toBe(
@@ -1492,27 +2012,24 @@ fixtureTest(
             },
         );
 
-        const form = new FormData();
-        form.append("model", "stable-audio-3-medium");
-        form.append("input", "warm pads");
-        form.append(
-            "reference_audio",
-            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
-                type: "audio/wav",
-            }),
-        );
-
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${paidApiKey}` },
-                body: form,
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 FAL_KEY: "test-fal-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1528,9 +2045,11 @@ fixtureTest(
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("1");
         // reference clip is forwarded as a base64 data-URI audio_url.
         expect(String(sentAudioUrl)).toMatch(/^data:audio\/wav;base64,/);
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
+        expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(falFileUrl);
     },
@@ -1621,10 +2140,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 STABILITY_API_KEY: "test-stability-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1636,6 +2155,7 @@ fixtureTest(
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
@@ -1656,11 +2176,19 @@ fixtureTest(
         const generationId = "test-a2a-generation-id";
         const a2aEndpoint =
             "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
                 calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
 
                 // Submit goes to the audio-to-audio endpoint with the clip.
                 if (request.url === a2aEndpoint) {
@@ -1704,27 +2232,24 @@ fixtureTest(
             },
         );
 
-        const form = new FormData();
-        form.append("model", "stable-audio-3-large");
-        form.append("input", "warm pads");
-        form.append(
-            "reference_audio",
-            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
-                type: "audio/wav",
-            }),
-        );
-
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${paidApiKey}` },
-                body: form,
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-large",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 STABILITY_API_KEY: "test-stability-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1736,9 +2261,11 @@ fixtureTest(
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
+        await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
+        expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(
             `https://api.stability.ai/v2beta/results/${generationId}`,
@@ -1781,10 +2308,10 @@ fixtureTest(
                 "https://staging.gen.pollinations.ai/audio/tick?model=eleven-sfx&prompt_influence=abc",
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1831,10 +2358,10 @@ fixtureTest(
                     input: "Hello",
                 }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 ELEVENLABS_API_KEY: "should-not-be-used",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1862,12 +2389,12 @@ fixtureTest(
 
         const response = await fetchWorker(
             "/v1/audio/transcriptions",
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 // Blank the whisper key so a rejection regression fails here
                 // instead of reaching the live provider.
                 OVHCLOUD_API_KEY: "",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             {
                 method: "POST",
                 headers: { Authorization: `Bearer ${apiKey}` },

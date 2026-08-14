@@ -1,7 +1,9 @@
-import { env, SELF } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
 import { changeVoiceWithElevenLabs } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const errorLog = vi.fn();
 const log = {
@@ -9,6 +11,14 @@ const log = {
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        createExecutionContext(),
+    );
+}
 
 function createOneSecondWav(): File {
     const sampleRate = 16000;
@@ -126,7 +136,7 @@ workerTest(
         formData.append("model", "eleven-voice-changer");
         formData.append("input", "Not a voice-changing request.");
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech",
             {
                 method: "POST",
@@ -152,7 +162,7 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         formData.append("voice", "nova");
         formData.append("response_format", "mp3");
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/voice-changer",
             {
                 method: "POST",

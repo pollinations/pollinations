@@ -55,6 +55,11 @@ test("serves health and requires bearer auth", async () => {
         }),
     );
     assert.equal(unauthorized.status, 401);
+    assert.equal(
+        unauthorized.headers.get("www-authenticate"),
+        'Bearer realm="mcp.pollinations.ai"',
+    );
+    assert.equal(unauthorized.headers.get("cache-control"), "no-store");
 
     const publishableKey = await worker.fetch(
         new Request("https://mcp.pollinations.ai/mcp", {

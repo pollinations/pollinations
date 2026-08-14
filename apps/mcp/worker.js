@@ -28,7 +28,13 @@ function unauthorizedResponse() {
             error: "unauthorized",
             message: "Send a Pollinations secret key as Bearer sk_...",
         },
-        { status: 401 },
+        {
+            status: 401,
+            headers: {
+                "Cache-Control": "no-store",
+                "WWW-Authenticate": 'Bearer realm="mcp.pollinations.ai"',
+            },
+        },
     );
 }
 

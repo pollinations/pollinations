@@ -13,7 +13,7 @@ import {
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
-import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -156,7 +156,7 @@ async function withAudioFallback(
     return response;
 }
 type SimpleAudioQuery = {
-    safe?: SafeValue;
+    safe?: CreateSpeechRequest["safe"];
     duration?: number;
     seconds?: number;
     steps?: number;
@@ -164,7 +164,7 @@ type SimpleAudioQuery = {
     instrumental?: boolean;
     seed?: number;
     voice: string;
-    response_format: string;
+    response_format: CreateSpeechRequest["response_format"];
     instruct?: string;
     loop?: boolean;
     prompt_influence?: number;
@@ -2487,6 +2487,92 @@ async function dispatchAudioGeneration(
     }
 }
 
+async function generateAudioFromSpeechRequest(
+    c: AudioContext,
+    request: CreateSpeechRequest,
+    log: Logger,
+): Promise<Response> {
+    const {
+        input,
+        safe,
+        voice,
+        response_format,
+        duration,
+        seconds,
+        steps,
+        negative_prompt,
+        instrumental,
+        store_for_inpainting,
+        conditioning_ref,
+        composition_plan,
+        reference_audio,
+        seed,
+        instruct,
+        loop,
+        prompt_influence,
+    } = request;
+
+    requireElevenMusicOptions(c.var.model.resolved, {
+        referenceAudio: reference_audio,
+        compositionPlan: composition_plan,
+        conditioningRef: conditioning_ref,
+        storeForInpainting: store_for_inpainting,
+    });
+
+    if (c.var.model.resolved === "eleven-dialogue") {
+        const inputs = parseDialogueInput(input);
+        const safeTexts = await applySafetyToTexts(
+            c,
+            inputs.map((turn) => turn.text),
+            safe,
+        );
+        const safeInputs = inputs.map((turn, index) => ({
+            ...turn,
+            text: safeTexts[index],
+        }));
+        const response = await generateElevenLabsDialogue({
+            inputs: safeInputs,
+            responseFormat: response_format,
+            seed,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        });
+        return withSafetyHeaders(c, response);
+    }
+
+    const safeInput = await applySafety(c, input, safe);
+    const referenceAudio = reference_audio
+        ? await fetchReferenceAudio(reference_audio)
+        : undefined;
+
+    return withAudioFallback(c, (candidate) =>
+        dispatchAudioGeneration(c, candidate.id, {
+            text: safeInput,
+            voice,
+            responseFormat: response_format,
+            seed,
+            duration,
+            seconds,
+            steps,
+            negativePrompt: negative_prompt,
+            instrumental,
+            storeForInpainting: store_for_inpainting,
+            conditioningRef: conditioning_ref,
+            compositionPlan: composition_plan,
+            referenceAudio,
+            instruct,
+            loop,
+            promptInfluence: prompt_influence,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            falKey: c.env.FAL_KEY,
+            stabilityApiKey: c.env.STABILITY_API_KEY,
+            log,
+        }),
+    );
+}
+
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
@@ -2502,32 +2588,24 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    text = await applySafety(c, text, query.safe);
-
-    const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-        .ELEVENLABS_API_KEY;
-
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text,
+    return await generateAudioFromSpeechRequest(
+        c,
+        {
+            input: text,
+            safe: query.safe,
             voice: query.voice,
-            responseFormat: query.response_format,
+            response_format: query.response_format,
             seed: normalizeSeed(query.seed),
             duration: query.duration,
             seconds: query.seconds,
             steps: query.steps,
-            negativePrompt: query.negative_prompt,
+            negative_prompt: query.negative_prompt,
             instrumental: query.instrumental,
             instruct: query.instruct,
             loop: query.loop,
-            promptInfluence: query.prompt_influence,
-            apiKey,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
+            prompt_influence: query.prompt_influence,
+        },
+        log,
     );
 }
 
@@ -2590,83 +2668,10 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
 
 export async function handleSpeech(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("tts");
-    const {
-        input,
-        safe,
-        voice,
-        response_format,
-        duration,
-        seconds,
-        steps,
-        negative_prompt,
-        instrumental,
-        store_for_inpainting,
-        conditioning_ref,
-        composition_plan,
-        reference_audio,
-        seed,
-        instruct,
-        loop,
-        prompt_influence,
-    } = await parseSpeechRequest(c);
-    requireElevenMusicOptions(c.var.model.resolved, {
-        referenceAudio: reference_audio,
-        compositionPlan: composition_plan,
-        conditioningRef: conditioning_ref,
-        storeForInpainting: store_for_inpainting,
-    });
-
-    if (c.var.model.resolved === "eleven-dialogue") {
-        const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
-            c,
-            inputs.map((turn) => turn.text),
-            safe,
-        );
-        const safeInputs = inputs.map((turn, index) => ({
-            ...turn,
-            text: safeTexts[index],
-        }));
-        const response = await generateElevenLabsDialogue({
-            inputs: safeInputs,
-            responseFormat: response_format,
-            seed,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            log,
-        });
-        return withSafetyHeaders(c, response);
-    }
-
-    const safeInput = await applySafety(c, input, safe);
-    const referenceAudio = reference_audio
-        ? await fetchReferenceAudio(reference_audio)
-        : undefined;
-
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text: safeInput,
-            voice,
-            responseFormat: response_format,
-            seed,
-            duration,
-            seconds,
-            steps,
-            negativePrompt: negative_prompt,
-            instrumental,
-            storeForInpainting: store_for_inpainting,
-            conditioningRef: conditioning_ref,
-            compositionPlan: composition_plan,
-            referenceAudio,
-            instruct,
-            loop,
-            promptInfluence: prompt_influence,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
+    return await generateAudioFromSpeechRequest(
+        c,
+        await parseSpeechRequest(c),
+        log,
     );
 }
 

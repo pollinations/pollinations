@@ -39,7 +39,8 @@ export const simpleAudioQuerySchema = z.object({
         .enum(AUDIO_VOICES as unknown as [string, ...string[]])
         .default("alloy")
         .meta({
-            description: "Voice to use for speech generation (TTS only)",
+            description:
+                "Voice to use for speech generation. Dialogue voices come from labels in the text.",
             example: "nova",
         }),
     response_format: z
@@ -52,7 +53,7 @@ export const simpleAudioQuerySchema = z.object({
         }),
     model: z.string().optional().meta({
         description:
-            "Audio model: TTS (default) or a music-generation model such as lyria-3-clip",
+            "Audio model for speech, dialogue, music, or sound-effect generation",
         example: "tts-1",
     }),
     duration: z

@@ -27,4 +27,4 @@ If your client or proxy times out, send the exact same request again. Keep the e
 
 The generation continues after the connection closes. The retry waits for the generation already in progress or receives the completed cached result, instead of starting another generation. Only the generation is billed; retries and cache hits are not.
 
-This applies to non-streaming `/v1/chat/completions` and `/text`, `/v1/images/generations`, and the cache-backed `GET` text, image, video, audio, and 3D routes. Streaming text and uncached endpoints run independently.
+This applies to cache-backed, non-streaming text, embedding, image, video, 3D, audio, and transcription requests, including the OpenAI-compatible endpoints. Streaming text and uncached endpoints run independently.

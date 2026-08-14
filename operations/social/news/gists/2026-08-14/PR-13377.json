@@ -1,0 +1,34 @@
+{
+  "pr_number": 13377,
+  "title": "feat: expose speech models through simple audio route",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13377",
+  "merged_at": "2026-08-14T17:55:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Makes every `/v1/audio/speech` model available through `GET /audio/{text}`.\n- Routes GET and POST through one shared speech-generation function for safety, fallback, provider dispatch, usage, and billing.\n- Enables `eleven-dialogue` on GET using one `voice: text` turn per line while keeping its pricing and provider route unchanged.\n- Updates Scalar/OpenAPI descriptions and tests endpoint parity plus exact ElevenLabs translation.\n\nTests: gen audio route, dialogue, cache/coordinator, permissions, docs, safety, billing, usage, tracking, TypeScript, and Biome.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Speech takes the short route",
+    "blurb": "The simple audio URL learned some new voices. Every speech model, including dialogue, can now turn a bit of text into sound without taking the scenic POST route.",
+    "summary": "All `/v1/audio/speech` models are now available through `GET /audio/{text}`, with GET and POST sharing the same safety, fallback, provider dispatch, usage, and billing path; `eleven-dialogue` translates each line into a `voice: text` turn.",
+    "impact": "Builders can use the short `/audio/{text}` URL for the full speech-model catalog, including multi-voice ElevenLabs dialogue, while receiving the same generation behavior and accounting as the API route.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "speech-models",
+      "elevenlabs",
+      "api",
+      "simple-route"
+    ],
+    "visual_concept": "Depict Polli opening a small garden-path shortcut marked `/audio/{text}` that leads into a cozy retro speaker and microphone booth, with several friendly speech bubbles becoming warm sound-wave flowers. A CRT monitor robot can hold a dialogue script with neat `voice: text` lines, showing that multiple voices now travel through the same shared route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, tiny smile, light blue wings, and a tiny radio-host headset, guiding glowing speech bubbles down a lime green (#ecf874) garden shortcut sign labeled `/audio/{text}` toward a retro speaker booth; a chunky CRT monitor robot holds a dialogue page with pixel text `voice: text`, while sound waves bloom into flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13377.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, tiny smile, light blue wings, and a tiny radio-host headset, guiding glowing speech bubbles down a lime green (#ecf874) garden shortcut sign labeled `/audio/{text}` toward a retro speaker booth; a chunky CRT monitor robot holds a dialogue page with pixel text `voice: text`, while sound waves bloom into flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-14T17:57:12.718488+00:00"
+}

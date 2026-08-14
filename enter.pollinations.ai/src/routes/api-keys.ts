@@ -7,6 +7,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -41,7 +42,13 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(
+        updated,
+        "models",
+        Array.isArray(allowedModels)
+            ? canonicalizeModelPermissionIds(allowedModels)
+            : allowedModels,
+    );
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }

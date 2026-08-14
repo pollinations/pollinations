@@ -190,7 +190,6 @@ type ScribeRealtimeConfig = {
     secondaryLanguages?: string[];
     vadThreshold?: number;
     vadSilenceThresholdSecs?: number;
-    filterBackgroundAudio?: boolean;
     prompt?: string;
 };
 
@@ -223,9 +222,6 @@ function buildScribeRealtimeUrl(config: ScribeRealtimeConfig): string {
             "vad_silence_threshold_secs",
             String(config.vadSilenceThresholdSecs),
         );
-    }
-    if (config.filterBackgroundAudio) {
-        url.searchParams.set("filter_background_audio", "true");
     }
     return url.toString();
 }
@@ -379,9 +375,6 @@ function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
                     ...(languages.length && { languages }),
                 },
                 turn_detection: turnDetection,
-                ...(config.filterBackgroundAudio && {
-                    noise_reduction: { type: "near_field" },
-                }),
             },
         },
     };
@@ -409,13 +402,6 @@ function parseScribeSessionUpdate(
     current: ScribeRealtimeConfig,
 ): { config: ScribeRealtimeConfig } | { error: string; param?: string } {
     const session = asRecord(event.session);
-    if (session.type !== undefined && session.type !== "transcription") {
-        return {
-            error: 'session.type must be "transcription" for scribe-realtime.',
-            param: "session.type",
-        };
-    }
-
     const input = asRecord(asRecord(session.audio).input);
     const next = { ...current };
     if (input.format !== undefined) {
@@ -434,15 +420,6 @@ function parseScribeSessionUpdate(
 
     const transcription = asRecord(input.transcription);
     if (
-        transcription.model !== undefined &&
-        transcription.model !== "scribe-realtime"
-    ) {
-        return {
-            error: 'transcription.model must be "scribe-realtime".',
-            param: "session.audio.input.transcription.model",
-        };
-    }
-    if (
         transcription.prompt !== undefined &&
         typeof transcription.prompt !== "string"
     ) {
@@ -453,18 +430,6 @@ function parseScribeSessionUpdate(
     }
     if (typeof transcription.prompt === "string") {
         next.prompt = transcription.prompt || undefined;
-    }
-    if (transcription.keywords !== undefined) {
-        return {
-            error: "transcription.keywords is not supported for scribe-realtime.",
-            param: "session.audio.input.transcription.keywords",
-        };
-    }
-    if (transcription.delay !== undefined && transcription.delay !== "low") {
-        return {
-            error: 'transcription.delay must be "low".',
-            param: "session.audio.input.transcription.delay",
-        };
     }
     if (transcription.languages !== undefined) {
         if (
@@ -523,28 +488,6 @@ function parseScribeSessionUpdate(
             typeof turnDetection.silence_duration_ms === "number"
                 ? turnDetection.silence_duration_ms / 1000
                 : undefined;
-    }
-
-    if (input.noise_reduction === null) {
-        next.filterBackgroundAudio = false;
-    } else if (input.noise_reduction !== undefined) {
-        const noiseReduction = asRecord(input.noise_reduction);
-        if (
-            noiseReduction.type !== "near_field" &&
-            noiseReduction.type !== "far_field"
-        ) {
-            return {
-                error: 'noise_reduction.type must be "near_field" or "far_field".',
-                param: "session.audio.input.noise_reduction.type",
-            };
-        }
-        next.filterBackgroundAudio = true;
-    }
-    if (Array.isArray(session.include) && session.include.length > 0) {
-        return {
-            error: "session.include is not supported for scribe-realtime.",
-            param: "session.include",
-        };
     }
 
     return { config: next };
@@ -1034,7 +977,6 @@ function proxyScribeOpenAIRealtime(
     let upstream: WebSocket | undefined;
     let connecting: Promise<void> | undefined;
     let closed = false;
-    let audioStarted = false;
     let promptPending = false;
     let currentItemId = `item_${generateRandomId()}`;
     let previousItemId: string | null = null;
@@ -1243,21 +1185,26 @@ function proxyScribeOpenAIRealtime(
             return;
         }
         if (event.type === "session.update") {
-            if (audioStarted) {
-                sendRealtimeError(
-                    downstream,
-                    "The Scribe session cannot be reconfigured after audio starts.",
-                    "session",
-                );
-                return;
-            }
             const parsed = parseScribeSessionUpdate(event, config);
             if ("error" in parsed) {
                 sendRealtimeError(downstream, parsed.error, parsed.param);
                 return;
             }
+            if (
+                (upstream || connecting) &&
+                buildScribeRealtimeUrl(parsed.config) !==
+                    buildScribeRealtimeUrl(config)
+            ) {
+                sendRealtimeError(
+                    downstream,
+                    "Scribe audio format, languages, and turn detection cannot change after streaming starts.",
+                    "session.audio.input",
+                );
+                return;
+            }
+            const promptChanged = parsed.config.prompt !== config.prompt;
             config = parsed.config;
-            promptPending = Boolean(config.prompt);
+            if (promptChanged) promptPending = Boolean(config.prompt);
             sendRealtimeEvent(downstream, {
                 event_id: `event_${generateRandomId()}`,
                 type: "session.updated",
@@ -1266,12 +1213,10 @@ function proxyScribeOpenAIRealtime(
             return;
         }
         if (event.type === "input_audio_buffer.append") {
-            audioStarted = true;
             enqueueInput(event.audio as string, false);
             return;
         }
         if (event.type === "input_audio_buffer.commit") {
-            audioStarted = true;
             const itemId = currentItemId;
             pendingItemIds.push(itemId);
             currentItemId = `item_${generateRandomId()}`;

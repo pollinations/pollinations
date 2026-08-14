@@ -475,14 +475,12 @@ test.each([
                             model: "scribe-realtime",
                             prompt: "contexte",
                             languages: ["fr", "en"],
-                            delay: "low",
                         },
                         turn_detection: {
                             type: "server_vad",
                             threshold: 0.4,
                             silence_duration_ms: 1500,
                         },
-                        noise_reduction: { type: "near_field" },
                     },
                 },
             },
@@ -490,7 +488,23 @@ test.each([
     );
     await expect(updated).resolves.toMatchObject({
         type: "session.updated",
-        session: { type: "transcription" },
+        session: {
+            type: "transcription",
+            audio: {
+                input: {
+                    transcription: {
+                        model: "scribe-realtime",
+                        prompt: "contexte",
+                        languages: ["fr", "en"],
+                    },
+                    turn_detection: {
+                        type: "server_vad",
+                        threshold: 0.4,
+                        silence_duration_ms: 1500,
+                    },
+                },
+            },
+        },
     });
 
     session.client.send(
@@ -519,7 +533,6 @@ test.each([
         secondary_languages: "en",
         vad_threshold: "0.4",
         vad_silence_threshold_secs: "1.5",
-        filter_background_audio: "true",
     });
     expect(session.upstream.request.headers.get("xi-api-key")).toBeTruthy();
     expect(session.upstream.request.headers.get("Authorization")).toBeNull();
@@ -560,6 +573,93 @@ test.each([
     const telemetry = await closeAndReadTelemetry(session);
     expect(telemetry.requestPath).toBe(path);
     expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
+});
+
+test("accepts compatible Scribe session updates after streaming starts", async () => {
+    const session = await openPaidScribeSession({
+        name: "scribe-realtime-mid-session-update-key",
+    });
+    await session.initialClientMessage;
+
+    session.client.send(
+        JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: zeroAudioBase64(4800),
+        }),
+    );
+    const server = await waitForUpstreamServer(session.upstream);
+    server.accept();
+    await nextMessage(server);
+
+    const updated = nextJsonMessage(session.client);
+    session.client.send(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                type: "transcription",
+                audio: {
+                    input: {
+                        transcription: {
+                            model: "scribe-realtime",
+                            prompt: "new context",
+                        },
+                    },
+                },
+            },
+        }),
+    );
+    await expect(updated).resolves.toMatchObject({
+        type: "session.updated",
+        session: {
+            type: "transcription",
+            audio: {
+                input: {
+                    transcription: {
+                        model: "scribe-realtime",
+                        prompt: "new context",
+                    },
+                },
+            },
+        },
+    });
+
+    const contextualAudio = nextMessage(server);
+    session.client.send(
+        JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: zeroAudioBase64(4800),
+        }),
+    );
+    await expect(contextualAudio).resolves.toBe(
+        JSON.stringify({
+            message_type: "input_audio_chunk",
+            audio_base_64: zeroAudioBase64(4800),
+            previous_text: "new context",
+        }),
+    );
+
+    const incompatible = nextJsonMessage(session.client);
+    session.client.send(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                audio: {
+                    input: {
+                        transcription: { languages: ["fr"] },
+                    },
+                },
+            },
+        }),
+    );
+    await expect(incompatible).resolves.toMatchObject({
+        type: "error",
+        error: {
+            type: "invalid_request_error",
+            param: "session.audio.input",
+        },
+    });
+
+    await closeRealtimeSession(session);
 });
 
 test.each([

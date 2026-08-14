@@ -280,7 +280,7 @@ const REALTIME_DOCS = [
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
-    'The WebSocket settles one billing event when the session closes. Use `session.type: "transcription"` with `scribe-realtime`; other realtime models use `session.type: "realtime"`.',
+    "The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
     "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
     "",

@@ -46,37 +46,24 @@ Get your API key at: https://enter.pollinations.ai/keys
 ## Available Tools
 
 ### Image & Video Generation
-- **generateImageUrl** - Get a shareable URL for an image
-- **generateImage** - Generate an image and get base64 data
-- **generateImageBatch** - Generate multiple images in parallel
-- **generateVideo** - Generate videos
-- **generateVideoUrl** - Get a shareable URL for a video
-- **describeImage** - Analyze or describe an image
-- **analyzeVideo** - Analyze a video URL
+- **generateImage** - Generate an image as an MCP image or resource link
+- **generateVideo** - Generate a video as an embedded resource
 - **listImageModels** - List available image and video models
 
 ### Text Generation
-- **generateText** - Simple text generation from a prompt
-- **chatCompletion** - OpenAI-compatible chat completions with tool calling
-- **webSearch** - Search the web with a search-capable model
+- **chatCompletion** - OpenAI-compatible text, search, multimodal, and tool-calling API
 - **listTextModels** - List available text models
-- **getPricing** - Get model pricing
 
 ### Audio
-- **respondAudio** - Generate a spoken response
-- **sayText** - Convert text to speech verbatim
-- **transcribeAudio** - Transcribe audio
-- **listAudioVoices** - List available voices
+- **generateAudio** - Generate speech, music, or sound as MCP audio
 ${authenticationTools}
 ### Account
 - **getBalance** - Get the authenticated key's Pollen balance
-- **getUsage** - Get recent usage history
-- **listQuests** - List quests and earned rewards
 
 ## API Endpoint
 All requests go through: ${apiBaseUrl}
 
-Use the model and voice listing tools for the current registry.`;
+Model listing results include the current capabilities, voices, and pricing.`;
 }
 
 export function buildServer({

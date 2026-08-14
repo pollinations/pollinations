@@ -8,26 +8,13 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
-    "analyzeVideo",
     "chatCompletion",
-    "describeImage",
+    "generateAudio",
     "generateImage",
-    "generateImageBatch",
-    "generateImageUrl",
-    "generateText",
     "generateVideo",
-    "generateVideoUrl",
     "getBalance",
-    "getPricing",
-    "getUsage",
-    "listAudioVoices",
     "listImageModels",
-    "listQuests",
     "listTextModels",
-    "respondAudio",
-    "sayText",
-    "transcribeAudio",
-    "webSearch",
 ];
 
 function localFetch(input, init) {
@@ -138,4 +125,65 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     );
 
     await Promise.all([firstClient.close(), secondClient.close()]);
+});
+
+test("maps the image API response format to MCP media blocks", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const requestBodies = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init) => {
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/v1/images/generations",
+        );
+        assert.equal(
+            new Headers(init?.headers).get("authorization"),
+            `Bearer ${TOKEN}`,
+        );
+        const body = JSON.parse(init.body);
+        requestBodies.push(body);
+
+        if (body.response_format === "url") {
+            return Response.json({
+                created: 1,
+                data: [{ url: "https://pollinations.ai/generated/image.jpg" }],
+            });
+        }
+        return Response.json({
+            created: 2,
+            data: [{ b64_json: "iVBORw0KGgo=" }],
+        });
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const linked = await client.callTool({
+        name: "generateImage",
+        arguments: { prompt: "a bee", response_format: "url" },
+    });
+    assert.deepEqual(linked.content[0], {
+        type: "resource_link",
+        uri: "https://pollinations.ai/generated/image.jpg",
+        name: "Generated image",
+    });
+
+    const embedded = await client.callTool({
+        name: "generateImage",
+        arguments: { prompt: "a flower", response_format: "b64_json" },
+    });
+    assert.deepEqual(embedded.content[0], {
+        type: "image",
+        data: "iVBORw0KGgo=",
+        mimeType: "image/png",
+    });
+    assert.deepEqual(requestBodies, [
+        { prompt: "a bee", response_format: "url" },
+        { prompt: "a flower", response_format: "b64_json" },
+    ]);
+
+    await client.close();
 });

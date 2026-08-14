@@ -43,7 +43,6 @@
     "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/server": "^2.0.0",
-        "play-sound": "^1.1.6",
         "zod": "^4.2.0"
     },
     "devDependencies": {

@@ -43,29 +43,16 @@ if (!KEY) {
 }
 
 const EXPECTED_TOOLS = [
-    "analyzeVideo",
     "chatCompletion",
     "clearApiKey",
-    "describeImage",
+    "generateAudio",
     "generateImage",
-    "generateImageBatch",
-    "generateImageUrl",
-    "generateText",
     "generateVideo",
-    "generateVideoUrl",
     "getBalance",
     "getKeyInfo",
-    "getPricing",
-    "getUsage",
-    "listAudioVoices",
     "listImageModels",
-    "listQuests",
     "listTextModels",
-    "respondAudio",
-    "sayText",
     "setApiKey",
-    "transcribeAudio",
-    "webSearch",
 ];
 
 const createTransport = () =>
@@ -168,27 +155,26 @@ if (!KEY) {
 } else {
     await step("setApiKey", () => call("setApiKey", { key: KEY }));
     await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("generateText", async () => {
-        const out = await call("generateText", {
-            prompt: "Reply with exactly: pong",
+    await step("chatCompletion", async () => {
+        const out = await call("chatCompletion", {
+            messages: [{ role: "user", content: "Reply with exactly: pong" }],
             model: "openai-fast",
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
     });
-    await step("generateImageUrl", async () => {
-        const out = await call("generateImageUrl", {
+    await step("generateImage (url)", async () => {
+        const out = await call("generateImage", {
             prompt: "a small red apple",
             model: "flux",
-            width: 256,
-            height: 256,
+            size: "256x256",
+            response_format: "url",
         });
         if (!/pollinations\.ai/.test(out))
             throw new Error(`no URL: ${trim(out)}`);
         return out;
     });
     await step("getBalance", () => call("getBalance"));
-    await step("listQuests", () => call("listQuests"));
     await step("clearApiKey", () => call("clearApiKey"));
 }
 

@@ -1,4 +1,4 @@
-import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
+import { getAuthHeaders } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
 const configuredApiBaseUrl =
@@ -92,37 +92,16 @@ export function createAudioContent(data, mimeType) {
 /**
  * @param {string} path - URL path (will be appended to API_BASE_URL)
  * @param {Object} params - Query parameters
- * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
  * @returns {string} - Complete URL
  */
-export function buildUrl(path, params = {}, includeAuth = false, context) {
-    const url = createApiUrl(path);
-    const allParams = includeAuth
-        ? { ...params, ...getAuthQueryParam(context) }
-        : params;
-    Object.entries(allParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            url.searchParams.set(key, String(value));
-        }
-    });
-    return url.toString();
-}
-
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters (auth key will be excluded)
- * @returns {string} - Complete URL without auth
- */
-export function buildShareableUrl(path, params = {}) {
+export function buildUrl(path, params = {}) {
     const url = createApiUrl(path);
     Object.entries(params).forEach(([key, value]) => {
-        if (
-            value !== undefined &&
-            value !== null &&
-            key !== "key" &&
-            key !== "token"
-        ) {
-            url.searchParams.set(key, String(value));
+        if (value !== undefined && value !== null) {
+            url.searchParams.set(
+                key,
+                Array.isArray(value) ? value.join("|") : String(value),
+            );
         }
     });
     return url.toString();
@@ -153,44 +132,6 @@ export async function fetchJsonWithAuth(url, options = {}, context) {
         throw new Error(parseApiError(response.status, errorText));
     }
     return response.json();
-}
-
-/**
- * Run a vision/audio/video chat-completion prompt against /v1/chat/completions.
- * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
- *
- * @param {Object} args
- * @param {string} args.model - Model name (e.g. "openai", "gemini-large")
- * @param {string} args.prompt - Text prompt to pair with the media
- * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
- * @param {string} args.mediaUrl - URL of the media to analyze
- * @returns {Promise<{content: string, model: string}>}
- */
-export async function chatWithMedia(
-    { model, prompt, mediaType, mediaUrl },
-    context,
-) {
-    const mediaBlock =
-        mediaType === "input_audio"
-            ? { type: "input_audio", input_audio: { url: mediaUrl } }
-            : { type: mediaType, [mediaType]: { url: mediaUrl } };
-
-    const result = await postChatCompletion(
-        {
-            model,
-            messages: [
-                {
-                    role: "user",
-                    content: [{ type: "text", text: prompt }, mediaBlock],
-                },
-            ],
-        },
-        context,
-    );
-    return {
-        content: result.choices?.[0]?.message?.content || "",
-        model: result.model || model,
-    };
 }
 
 /**

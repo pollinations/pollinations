@@ -28,7 +28,8 @@ const FAVORITES_KEY = "model-monitor-favorites";
 function loadFavorites() {
     try {
         const raw = localStorage.getItem(FAVORITES_KEY);
-        return raw ? JSON.parse(raw) : [];
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
     } catch {
         return [];
     }
@@ -480,9 +481,13 @@ function App() {
     }, [scopeFilter, typeFilter]);
 
     const toggleFavorite = useCallback((key) => {
-        setFavorites((prev) =>
-            prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-        );
+        setFavorites((prev) => {
+            const next = prev.includes(key)
+                ? prev.filter((k) => k !== key)
+                : [...prev, key];
+            if (next.length === 0) setFavoritesOnly(false);
+            return next;
+        });
     }, []);
 
     const handleSort = (key) => {

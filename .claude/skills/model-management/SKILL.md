@@ -1,6 +1,6 @@
 ---
 name: model-management
-description: "Add, update, rename, reroute, price, or remove Pollinations text, image, video, audio, embeddings, realtime, OCR, SVG, and 3D models. Use for model research, provider changes, capability edits, and model PRs."
+description: "Add, update, rename, reroute, price, or remove Pollinations text, image, video, audio, embeddings, realtime, OCR, SVG, and 3D models. Use for model research, provider changes, capability or public-endpoint edits, and model PRs."
 ---
 
 # Model management
@@ -52,6 +52,20 @@ Ask:
 
 An answer approves only the values shown. If a value is unknown, inferred, conflicting, or route-dependent, label it `UNKNOWN`, explain the evidence, and wait for that exact decision. A batch approval is valid only when every row is complete.
 
+### Public API changes require separate confirmation
+
+Model approval does not authorize adding, renaming, removing, or changing a public endpoint, method, transport, request or response schema, streaming behavior, or event protocol. Do not propose an API-surface change without a concrete user or developer problem it solves.
+
+Before editing, present:
+
+- the user/developer problem and the current public contract;
+- the exact proposed routes, methods, transports, schemas, streaming behavior, and events;
+- the compatibility reference, resolved by the order in step 4;
+- whether the change is additive, behavioral, deprecating, or breaking, and the affected clients;
+- the migration, coexistence, and removal plan, or `none`.
+
+State plainly: `This adds/changes the public API: ...` Then ask for explicit confirmation of that exact API change. If the problem, standard, or compatibility impact is unclear, do not edit.
+
 ### Secrets are a separate approval
 
 Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, dedicated-PR requirement, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
@@ -82,6 +96,11 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
+- Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
+- Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.
+- Treat `/v1` as a compatibility namespace: match the selected standard's route, transport, request, response, streaming, and event contracts exactly, and keep provider-specific protocols behind the route adapters — never a Pollinations-specific or upstream-provider schema under `/v1`.
+- Prefer the selected standard's schema on the Pollinations-native route too; deliberate native divergence requires its own explicit API-change confirmation.
+- Do not collapse capabilities with materially different inputs, outputs, or transports into one endpoint merely by switching `model`. Keep distinct operations separate while reusing their shared internal handler, authorization, billing, and observability paths.
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
 - Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
 - When a migration canonicalizes stored model IDs, keep the mapping in the migration only. Do not add a runtime normalization layer; require the migration to complete before the new registry is deployed.
@@ -118,5 +137,6 @@ A model change is not complete until all applicable statements are true:
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
 - Capacity and media latency fit the expected production load.
 - The catalog description is developer-facing, does not repeat the title, and the brand logo resolves.
+- No public API surface was added or changed without its separate explicit confirmation.
 - No unapproved secret or deployment mutation occurred.
 - The PR contains only this model or tightly coupled family.

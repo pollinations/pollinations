@@ -3048,6 +3048,17 @@ export const audioRoutes = new Hono<Env>()
                                 },
                             },
                         },
+                        examples: {
+                            dialogue: {
+                                summary: "Multi-speaker dialogue",
+                                value: {
+                                    model: "eleven-dialogue",
+                                    input: "rachel: Hello!\nadam: Hi!",
+                                    voice: "alloy",
+                                    response_format: "mp3",
+                                },
+                            },
+                        },
                     },
                 },
             },

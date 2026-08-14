@@ -1,0 +1,33 @@
+{
+  "pr_number": 13346,
+  "title": "chore: update app metrics 2026-08-14",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13346",
+  "merged_at": "2026-08-14T04:38:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger gets pollenated",
+    "blurb": "The hive counted another day's worth of app requests and repository activity. Tiny numbers, carefully tended.",
+    "summary": "Updated operations/app-management/app.json with the automated daily snapshot of app request and repository metrics for 2026-08-14.",
+    "impact": "Maintainers have a current metrics record to help track the health and activity of the app ecosystem.",
+    "keywords": [
+      "metrics",
+      "app-management",
+      "automation",
+      "operations",
+      "repository"
+    ],
+    "visual_concept": "Polli acts as a careful garden keeper updating a glowing ledger beside a small dashboard of request counters, while code-plants and flowers represent the growing app ecosystem. The scene should make internal metrics feel like quietly tending a community garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully updating a glowing lime green (#ecf874) metrics ledger beside a retro CRT dashboard with gentle request counters. Code-plants, flowers, and small labeled garden plots surround her in a warm cream and pastel lavender room; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13346.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully updating a glowing lime green (#ecf874) metrics ledger beside a retro CRT dashboard with gentle request counters. Code-plants, flowers, and small labeled garden plots surround her in a warm cream and pastel lavender room; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-14T04:39:46.822759+00:00"
+}

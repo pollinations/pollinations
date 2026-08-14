@@ -525,6 +525,7 @@ const OpenAIModelSchema = z
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

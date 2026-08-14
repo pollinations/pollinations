@@ -67,6 +67,7 @@ export type ModelPrice = {
     name: string;
     type: ModelCategory;
     community?: boolean;
+    perUserRpm?: number | null;
     displayName?: string;
     description?: string;
     brand?: string;

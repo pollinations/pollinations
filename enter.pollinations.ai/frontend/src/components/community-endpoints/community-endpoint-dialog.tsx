@@ -24,6 +24,7 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { ManagedAgentListingPanel } from "./managed-agent-listing-panel.tsx";
 import {
     BASE_TEXT_PRICE_KEYS,
     formWithVisiblePrices,
@@ -693,38 +694,15 @@ export function CommunityEndpointDialog({
                     </FieldStack>
 
                     {isManagedAgent ? (
-                        <FieldStack
-                            label="Agent"
-                            helper={
-                                isEdit
-                                    ? "The linked agent cannot be replaced. Edit its behavior from the model card."
-                                    : initialAgent
-                                      ? "Complete this agent by adding its model listing details."
-                                      : "Only agents that still need listing details are available."
+                        <ManagedAgentListingPanel
+                            agents={agents}
+                            agentId={form.agentId}
+                            isEdit={isEdit}
+                            initialAgent={initialAgent}
+                            onChange={(agentId) =>
+                                updateForm("agentId", agentId)
                             }
-                            alignLabelRow
-                        >
-                            <select
-                                name="managed-agent"
-                                value={form.agentId}
-                                disabled={isEdit || !!initialAgent}
-                                required
-                                className="h-10 w-full rounded-md border border-divider bg-surface px-3 text-sm text-theme-text-strong disabled:opacity-60"
-                                onChange={(event) =>
-                                    updateForm("agentId", event.target.value)
-                                }
-                            >
-                                <option value="" disabled>
-                                    Choose an agent
-                                </option>
-                                {agents.map((agent) => (
-                                    <option key={agent.id} value={agent.id}>
-                                        {agent.baseModel} —{" "}
-                                        {agent.systemPrompt.slice(0, 80)}
-                                    </option>
-                                ))}
-                            </select>
-                        </FieldStack>
+                        />
                     ) : (
                         <>
                             <div className="grid gap-4 sm:grid-cols-2">

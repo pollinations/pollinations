@@ -914,7 +914,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes simple qwen audio requests through DashScope",
+    "routes OpenAI-compatible Qwen instructions through DashScope",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
 
@@ -927,13 +927,13 @@ fixtureTest(
                     request.url ===
                     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
                 ) {
-                    await expect(request.json()).resolves.toMatchObject({
-                        model: "qwen3-tts-flash",
+                    await expect(request.json()).resolves.toEqual({
+                        model: "qwen3-tts-instruct-flash",
                         input: {
                             text: "Hello Qwen",
                             voice: "Serena",
                         },
-                        parameters: {},
+                        parameters: { instructions: "speak softly" },
                     });
 
                     return Response.json({
@@ -965,12 +965,19 @@ fixtureTest(
 
         const ctx = createExecutionContext();
         const response = await worker.fetch(
-            new Request(
-                "https://staging.gen.pollinations.ai/audio/Hello%20Qwen?model=qwen-tts&voice=nova",
-                {
-                    headers: { Authorization: `Bearer ${paidApiKey}` },
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
                 },
-            ),
+                body: JSON.stringify({
+                    model: "qwen-tts-instruct",
+                    input: "Hello Qwen",
+                    voice: "nova",
+                    instructions: "speak softly",
+                }),
+            }),
             withInlineGenerationCoordinator({
                 ...env,
                 DASHSCOPE_API_KEY: "test-dashscope-key",
@@ -980,7 +987,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("qwen-tts");
+        expect(response.headers.get("x-model-used")).toBe("qwen-tts-instruct");
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );

@@ -1,0 +1,35 @@
+{
+  "pr_number": 13335,
+  "title": "feat: update Gemini to 3.7 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13335",
+  "merged_at": "2026-08-14T07:56:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates canonical `gemini` and its existing `gemini-3.6-flash` / `gemini-3.5-flash` aliases to `google/gemini-3.7-flash`.\n- Pins OpenRouter to `google-vertex/global` with provider fallback disabled; no Pollinations fallback or GPU route.\n- Applies the OpenRouter promotion: $0.375/M input, $0.0375/M cached input, $1.875/M output, $0.007/search, and exact five-minute cache-storage pricing.\n- Keeps `paidOnly: true` and `priceMultiplier: 1`.\n\nThe promotional rates expire after August 27, 2026; the follow-up pricing update is ready in #13352.\n\nVerified with direct OpenRouter probes and local Pollinations E2E for text, image, audio, video, tools, JSON, search, streaming, aliases, paid-only permissions, response/provider caching, errors, billing, and a five-request burst. Gen tests: 126 passed. Enter tests: 377 passed. Both typechecks pass.\n\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flash, freshly pollinated",
+    "blurb": "Gemini’s canonical route and its familiar Flash aliases now point to Gemini 3.7 Flash. Polli packed the fast new pollen into the same jars, so existing calls keep finding their way home.",
+    "summary": "Updated canonical `gemini` plus the `gemini-3.6-flash` and `gemini-3.5-flash` aliases to `google/gemini-3.7-flash` on OpenRouter’s `google-vertex/global` provider, with provider fallback disabled and promotional pricing of $0.375/M input and $1.875/M output.",
+    "impact": "Paid API users get Gemini 3.7 Flash through existing Gemini model names with consistent Vertex routing, five-minute cache pricing, search support, and unchanged `priceMultiplier: 1` billing.",
+    "keywords": [
+      "gemini",
+      "gemini-3.7-flash",
+      "openrouter",
+      "vertex",
+      "text-api",
+      "pricing",
+      "models"
+    ],
+    "visual_concept": "Depict Polli as a careful mail carrier or gardener replacing labels on three familiar glowing seed packets labeled `gemini`, `3.6 flash`, and `3.5 flash`, all feeding into one fresh Gemini 3.7 Flash plant in a cozy terminal garden. A small CRT monitor robot can display a neat provider route sign reading `google-vertex/global`, while five tiny clock-shaped cache jars suggest the five-minute cache window.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny postal cap, carefully relabeling three glowing seed packets that grow into one bright Gemini 3.7 Flash code-flower beside a retro terminal; a helpful CRT monitor robot points at a small sign reading `google-vertex/global`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13335.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny postal cap, carefully relabeling three glowing seed packets that grow into one bright Gemini 3.7 Flash code-flower beside a retro terminal; a helpful CRT monitor robot points at a small sign reading `google-vertex/global`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T07:57:35.886743+00:00"
+}

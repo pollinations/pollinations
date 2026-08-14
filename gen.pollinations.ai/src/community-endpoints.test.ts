@@ -1,4 +1,8 @@
-import { createExecutionContext, env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
@@ -57,11 +61,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
 import {
     communityImageSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
+import worker from "./index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -140,6 +146,21 @@ async function fetchEnterApi(
 ): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, env, ctx);
+}
+
+async function fetchGen(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+): Promise<Response> {
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        ctx,
+    );
+    const body = response.body ? await response.arrayBuffer() : null;
+    await waitOnExecutionContext(ctx);
+    return new Response(body, response);
 }
 
 async function signedSessionCookie(token: string): Promise<string> {
@@ -1119,7 +1140,7 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1148,7 +1169,7 @@ fixtureTest(
             usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 },
         });
 
-        const legacyResponse = await SELF.fetch(
+        const legacyResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1245,7 +1266,7 @@ fixtureTest(
 
         // A non-owner caller: the private model resolves to "invalid model",
         // indistinguishable from an unknown name so it isn't discoverable.
-        const otherResponse = await SELF.fetch(
+        const otherResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1261,7 +1282,7 @@ fixtureTest(
         expect(otherResponse.status).toBe(400);
 
         // The owner reaches their own private model.
-        const ownerResponse = await SELF.fetch(
+        const ownerResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1280,7 +1301,7 @@ fixtureTest(
         });
 
         const catalogIncludesModel = async (authorization?: string) => {
-            const modelsResponse = await SELF.fetch(
+            const modelsResponse = await fetchGen(
                 new Request("https://gen.pollinations.ai/text/models", {
                     headers: authorization
                         ? { Authorization: `Bearer ${authorization}` }
@@ -1308,7 +1329,7 @@ fixtureTest(
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });
-        const freePublicResponse = await SELF.fetch(
+        const freePublicResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1399,7 +1420,7 @@ fixtureTest(
             }),
         );
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1502,7 +1523,7 @@ fixtureTest(
             }),
         );
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/text/hello?model=${encodeURIComponent(
                     modelId,
@@ -1519,7 +1540,8 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("MISS");
+        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
     },
@@ -1553,13 +1575,13 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const textResponse = await SELF.fetch(
+        const textResponse = await fetchGen(
             "https://gen.pollinations.ai/text/models",
         );
-        const allResponse = await SELF.fetch(
+        const allResponse = await fetchGen(
             "https://gen.pollinations.ai/models",
         );
-        const openaiResponse = await SELF.fetch(
+        const openaiResponse = await fetchGen(
             "https://gen.pollinations.ai/v1/models",
         );
 
@@ -1657,10 +1679,10 @@ fixtureTest(
 
         const [allResponse, openaiResponse, textResponse, restrictedResponse] =
             await Promise.all([
-                SELF.fetch("https://gen.pollinations.ai/models"),
-                SELF.fetch("https://gen.pollinations.ai/v1/models"),
-                SELF.fetch("https://gen.pollinations.ai/text/models"),
-                SELF.fetch("https://gen.pollinations.ai/models", {
+                fetchGen("https://gen.pollinations.ai/models"),
+                fetchGen("https://gen.pollinations.ai/v1/models"),
+                fetchGen("https://gen.pollinations.ai/text/models"),
+                fetchGen("https://gen.pollinations.ai/models", {
                     headers: {
                         Authorization: `Bearer ${restrictedApiKey}`,
                     },
@@ -1804,13 +1826,13 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const textResponse = await SELF.fetch(
+        const textResponse = await fetchGen(
             "https://gen.pollinations.ai/text/models",
         );
-        const allResponse = await SELF.fetch(
+        const allResponse = await fetchGen(
             "https://gen.pollinations.ai/models",
         );
-        const openaiResponse = await SELF.fetch(
+        const openaiResponse = await fetchGen(
             "https://gen.pollinations.ai/v1/models",
         );
 
@@ -1867,7 +1889,7 @@ fixtureTest(
         });
 
         for (const requestedModel of [modelId, legacyModelId]) {
-            const response = await SELF.fetch(
+            const response = await fetchGen(
                 "https://gen.pollinations.ai/v1/chat/completions",
                 {
                     method: "POST",
@@ -2084,14 +2106,14 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const modelsResponse = await SELF.fetch(
+        const modelsResponse = await fetchGen(
             "https://gen.pollinations.ai/text/models",
         );
         expect(modelsResponse.status).toBe(200);
         const models = (await modelsResponse.json()) as { name: string }[];
         expect(models.some((model) => model.name === modelId)).toBe(true);
 
-        const generationResponse = await SELF.fetch(
+        const generationResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2294,7 +2316,7 @@ fixtureTest(
             error: "rate_limited",
         });
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2538,7 +2560,7 @@ fixtureTest(
             inputModalities: ["text", "image"],
         });
 
-        const simpleImageResponse = await SELF.fetch(
+        const simpleImageResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(
                     registered.modelId,
@@ -2567,7 +2589,7 @@ fixtureTest(
             Array.from(new Uint8Array(await simpleImageResponse.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
 
-        const openaiImageResponse = await SELF.fetch(
+        const openaiImageResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
                 headers: {
@@ -2607,7 +2629,7 @@ fixtureTest(
             new Blob([new Uint8Array(TEST_PNG_BYTES)], { type: "image/png" }),
             "source.png",
         );
-        const openaiEditResponse = await SELF.fetch(
+        const openaiEditResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/edits", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -2624,7 +2646,7 @@ fixtureTest(
             },
         });
 
-        const simpleEditResponse = await SELF.fetch(
+        const simpleEditResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/turn%20it%20red?model=${encodeURIComponent(
                     registered.modelId,
@@ -2643,7 +2665,7 @@ fixtureTest(
             Array.from(new Uint8Array(await simpleEditResponse.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
 
-        const urlImageResponse = await SELF.fetch(
+        const urlImageResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
                 headers: {
@@ -2665,7 +2687,7 @@ fixtureTest(
             },
         });
 
-        const invalidMediaResponse = await SELF.fetch(
+        const invalidMediaResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
                 headers: {
@@ -2680,16 +2702,16 @@ fixtureTest(
         );
         expect(invalidMediaResponse.status).toBe(502);
 
-        const imageModelsResponse = await SELF.fetch(
+        const imageModelsResponse = await fetchGen(
             "https://gen.pollinations.ai/image/models",
         );
-        const textModelsResponse = await SELF.fetch(
+        const textModelsResponse = await fetchGen(
             "https://gen.pollinations.ai/text/models",
         );
-        const allModelsResponse = await SELF.fetch(
+        const allModelsResponse = await fetchGen(
             "https://gen.pollinations.ai/models",
         );
-        const openaiModelsResponse = await SELF.fetch(
+        const openaiModelsResponse = await fetchGen(
             "https://gen.pollinations.ai/v1/models",
         );
 
@@ -3927,7 +3949,7 @@ fixtureTest(
                 }),
             );
 
-            const response = await SELF.fetch(
+            const response = await fetchGen(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
@@ -4020,7 +4042,7 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -4112,7 +4134,7 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -4195,7 +4217,7 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
                 { headers: { Authorization: `Bearer ${apiKey}` } },
@@ -4289,7 +4311,7 @@ fixtureTest(
             }),
         );
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(modelIds[0])}`,
                 { headers: { Authorization: `Bearer ${apiKey}` } },
@@ -4313,7 +4335,7 @@ fixtureTest(
         // The OpenAI-compatible route replaces the generated response with
         // JSON, so it has to carry the fallback marker across itself —
         // otherwise tracking reads the rescue as a plain first-try success.
-        const openaiResponse = await SELF.fetch(
+        const openaiResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
                 headers: {
@@ -4371,7 +4393,7 @@ fixtureTest(
         vi.stubGlobal("fetch", fetchMock);
 
         const generate = async () => {
-            const response = await SELF.fetch(
+            const response = await fetchGen(
                 new Request(
                     `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
                     { headers: { Authorization: `Bearer ${apiKey}` } },
@@ -4452,7 +4474,7 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -4475,7 +4497,7 @@ fixtureTest(
         expect(gatewayCalls[0].customHost).toBe(primaryHost);
 
         // The same key calling the fallback directly is refused.
-        const direct = await SELF.fetch(
+        const direct = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {

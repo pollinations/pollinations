@@ -1,0 +1,34 @@
+{
+  "pr_number": 13338,
+  "title": "fix: notify owners of leaked publishable keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13338",
+  "merged_at": "2026-08-14T02:25:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows a targeted dashboard notice only for keys marked `directUseDisabledDueToLeak`\n- Distinguishes disabled direct-only keys from app keys whose direct Pollen spending is blocked\n- Keeps Pollinations Auth (BYOP) available for protected app keys\n- Uses the existing key metadata JSON, with no schema or endpoint changes\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/frontend/src/components/keys/api-key-list.tsx`\n- `npm run typecheck --workspace enter.pollinations.ai`\n- `npm run build:frontend --workspace enter.pollinations.ai`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The keys get a heads-up",
+    "blurb": "Protected app keys now leave a small, useful note on the dashboard when direct use has been switched off. Polli believes mysterious key behavior belongs in the past, alongside unlabeled jars of honey.",
+    "summary": "The API key dashboard now shows a targeted notice for keys marked `directUseDisabledDueToLeak`, clearly distinguishing disabled direct-only keys from app keys that block direct Pollen spending while retaining Pollinations Auth (BYOP).",
+    "impact": "Key owners can now see why direct usage is unavailable and confirm that protected app keys can still use Pollinations Auth for their app flows.",
+    "keywords": [
+      "api-keys",
+      "dashboard",
+      "publishable-keys",
+      "byop",
+      "key-protection",
+      "billing"
+    ],
+    "visual_concept": "Depict Polli as a careful keykeeper in a cozy garden-workshop, placing a friendly notice card beside a protected golden API key on a retro terminal. The key has a small shield and a separate sign for direct use, while a blooming code-plant and an Auth pass indicate that protected app access still works.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny keykeeper hat, carefully attaching a friendly notice card to a golden pixel API key with a small shield beside a lime green (#ecf874) retro terminal; a separate glowing Auth pass and blooming code-plants show the app is still welcome. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'KEY NOTICE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13338.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny keykeeper hat, carefully attaching a friendly notice card to a golden pixel API key with a small shield beside a lime green (#ecf874) retro terminal; a separate glowing Auth pass and blooming code-plants show the app is still welcome. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'KEY NOTICE'."
+  },
+  "generated_at": "2026-08-14T02:26:45.591455+00:00"
+}

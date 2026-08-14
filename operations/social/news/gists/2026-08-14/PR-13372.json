@@ -1,0 +1,34 @@
+{
+  "pr_number": 13372,
+  "title": "feat: update DeepSeek Pro to 0813",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13372",
+  "merged_at": "2026-08-14T11:37:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the existing `deepseek-pro` checkpoint with Fireworks `accounts/fireworks/models/deepseek-v4-pro-0813`; canonical name and `deepseek-v4-pro` alias stay unchanged.\n- Updates provider-cost pricing to $1.32/M input, $0.044/M cached input, and $3.96/M output at multiplier 1.\n- Preserves Quest-Pollen access, 1M context, text-only input, tools, reasoning, direct Fireworks routing, and no Pollinations fallback.\n- Adds one focused resolver assertion and refreshes the required effective-price snapshot.\n\nTests:\n- Direct Fireworks: basic, streaming, reasoning, tools, structured output, cache, and five-request burst.\n- Local E2E: canonical and alias routes, all reasoning levels, tools, JSON, streaming, `/text`, `/text/{prompt}`, cache replay, errors, Quest billing, catalogs, and five-request burst.\n- `modelResolver.test.ts`; Enter aliases, cost variants, and price snapshot; Gen and Enter typechecks.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "DeepSeek Pro, fresh pollen",
+    "blurb": "DeepSeek Pro has quietly moved to the 0813 checkpoint. Same familiar routes, newer brain cells, and the hive did not have to repaint any signposts.",
+    "summary": "Updated the `deepseek-pro` canonical model and `deepseek-v4-pro` alias to Fireworks' `deepseek-v4-pro-0813` checkpoint, retaining 1M context, tools, reasoning, Quest-Pollen access, and direct Fireworks routing.",
+    "impact": "Developers using either DeepSeek Pro route receive the refreshed 0813 model without changing integrations, including for streaming, JSON, tool use, caching, and reasoning requests.",
+    "keywords": [
+      "deepseek",
+      "deepseek-pro",
+      "fireworks",
+      "text-api",
+      "reasoning",
+      "models"
+    ],
+    "visual_concept": "Polli is a careful garden mechanic replacing the glowing core inside a retro DeepSeek Pro terminal while keeping its old route sign in place. The terminal displays a small pixel label reading `0813`, with code-plants growing around it to represent preserved tools, reasoning, caching, and the 1M-context capability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, gently installing a glowing `0813` chip into a retro terminal labeled `DeepSeek Pro`; lime green (#ecf874) code-plants and small flowers grow around the machine, whose screen shows neat reasoning blocks and tool icons. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13372.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, gently installing a glowing `0813` chip into a retro terminal labeled `DeepSeek Pro`; lime green (#ecf874) code-plants and small flowers grow around the machine, whose screen shows neat reasoning blocks and tool icons. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-14T11:38:34.655268+00:00"
+}

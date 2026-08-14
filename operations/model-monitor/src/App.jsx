@@ -703,10 +703,12 @@ function App() {
 
                 {favorites.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <Chip
+                        <Button
+                            type="button"
                             size="sm"
-                            intent={favoritesOnly ? "info" : "neutral"}
-                            className="cursor-pointer select-none"
+                            intent={favoritesOnly ? "info" : undefined}
+                            aria-pressed={favoritesOnly}
+                            aria-label={`Show favorites only (${favorites.length})`}
                             onClick={() => setFavoritesOnly((prev) => !prev)}
                         >
                             <span className="inline-flex items-center gap-1">
@@ -716,7 +718,7 @@ function App() {
                                     {favorites.length}
                                 </span>
                             </span>
-                        </Chip>
+                        </Button>
                     </div>
                 )}
 

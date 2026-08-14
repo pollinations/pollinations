@@ -495,6 +495,16 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Scaleway](https://www.scaleway.com/): Europe's empowering cloud provider
 - [Modal](https://modal.com/): High-performance AI infrastructure
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
+- [OpenAI](https://openai.com/): Frontier AI models and APIs
+- [OpenRouter](https://openrouter.ai/): Unified API for LLMs
+- [Fireworks AI](https://fireworks.ai/): Fast inference platform for open models
+- [Replicate](https://replicate.com/): Run AI models with an API
+- [RunPod](https://www.runpod.io/): GPU cloud built for AI workloads
+- [OVHcloud](https://www.ovhcloud.com/): European cloud and GPU infrastructure
+- [Lambda Labs](https://lambda.ai/): GPU cloud for AI training and inference
+- [ElevenLabs](https://elevenlabs.io/): AI voice generation and text-to-speech
+- [AssemblyAI](https://www.assemblyai.com/): Speech-to-text and speech understanding models
+- [Alibaba Cloud](https://www.alibabacloud.com/): Cloud computing and AI services
 
 ## 💚 Support Us
 

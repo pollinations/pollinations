@@ -1,0 +1,34 @@
+{
+  "pr_number": 13358,
+  "title": "fix: use OpenAI-compatible instructions for Qwen TTS",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13358",
+  "merged_at": "2026-08-14T14:22:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames the Qwen TTS request field from `instruct` to OpenAI-compatible `instructions`.\n- Sends the same plural field to DashScope as `parameters.instructions`.\n- Updates JSON, multipart, simple-audio, and OpenAPI schemas.\n- Updates the existing Qwen integration test to verify the exact upstream payload.\n\nTests:\n- `npx vitest run test/index.test.ts -t Qwen --reporter=verbose`\n- `npm run typecheck`\n- `npx biome check gen.pollinations.ai/src/routes/audio.ts gen.pollinations.ai/src/routes/generation-handlers.ts gen.pollinations.ai/test/index.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Instructions, plural, delivered",
+    "blurb": "Qwen TTS now understands the OpenAI-compatible spelling of its directions. One small plural made it all the way to DashScope, as plurals occasionally must.",
+    "summary": "Renamed Qwen TTS's `instruct` request field to OpenAI-compatible `instructions` across JSON, multipart, simple-audio, and OpenAPI schemas, forwarding it upstream as `parameters.instructions` to DashScope.",
+    "impact": "Developers can send Qwen TTS voice directions using the documented `instructions` field, and those directions now reach DashScope in the exact expected payload shape.",
+    "keywords": [
+      "qwen",
+      "tts",
+      "audio",
+      "openai-compatible",
+      "dashscope",
+      "api"
+    ],
+    "visual_concept": "A cozy audio-routing scene: Polli carefully carries a labeled plural `instructions` note from an OpenAI-style microphone terminal to a Qwen TTS speaker garden, where DashScope receives it and the sound-wave flowers bloom. The key visual joke is a tiny missing-s turned into a clearly delivered, useful note.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and tiny headphones, delivering a note labeled \"instructions\" from a retro microphone terminal to a warm Qwen TTS speaker surrounded by blooming sound-wave flowers; a small CRT monitor robot happily watches the note arrive. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13358.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and tiny headphones, delivering a note labeled \"instructions\" from a retro microphone terminal to a warm Qwen TTS speaker surrounded by blooming sound-wave flowers; a small CRT monitor robot happily watches the note arrive. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-14T14:25:34.161845+00:00"
+}

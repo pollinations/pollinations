@@ -57,7 +57,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+                "Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`.",
         }),
     image: z
         .string()
@@ -92,9 +92,9 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 
     // Video-specific params
-    resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
+    resolution: z.enum(["1k", "2k", "480p", "720p", "1080p"]).optional().meta({
         description:
-            "Output resolution for video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
+            "Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
     }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:

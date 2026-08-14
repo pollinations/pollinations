@@ -86,7 +86,7 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        resolution: z.enum(["480p", "720p", "1080p"]).optional(),
+        resolution: z.enum(["1k", "2k", "480p", "720p", "1080p"]).optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -121,6 +121,17 @@ export const ImageParamsSchema = z
                 path: ["transparent"],
                 message:
                     "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
+        if (
+            data.model === "grok-imagine-image-2.0" &&
+            !["low", "medium"].includes(data.quality)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
             });
         }
     })

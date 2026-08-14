@@ -484,6 +484,7 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
+        quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });

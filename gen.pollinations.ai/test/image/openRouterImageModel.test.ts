@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamProAPI,
@@ -150,6 +151,84 @@ describe("OpenRouter Grok Imagine Pro", () => {
         ).rejects.toMatchObject({
             status: 502,
             upstreamUrl: OPENROUTER_IMAGE_URL,
+        });
+    });
+});
+
+describe("OpenRouter Grok Imagine Image 2.0", () => {
+    it.each([
+        ["low", undefined, "1K"],
+        ["low", "2k", "2K"],
+        ["medium", undefined, "1K"],
+        ["medium", "2k", "2K"],
+    ] as const)("forwards %s quality at %s resolution", async (quality, resolution, expectedResolution) => {
+        syncImageEnv(
+            {
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockOpenRouterFetch(requests);
+
+        const result = await callOpenRouterGrokImagineImage2API("test prompt", {
+            ...baseParams,
+            model: "grok-imagine-image-2.0",
+            quality,
+            resolution,
+            image: [
+                "https://example.com/one.png",
+                "https://example.com/two.png",
+                "https://example.com/three.png",
+            ],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "x-ai/grok-imagine-image-2.0",
+            prompt: "test prompt",
+            n: 1,
+            resolution: expectedResolution,
+            quality,
+            provider: {
+                only: ["xai"],
+                allow_fallbacks: false,
+            },
+            aspect_ratio: "1:1",
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/one.png" },
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/two.png" },
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/three.png" },
+                },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "grok-imagine-image-2.0",
+            usage: {
+                promptImageTokens: 3,
+                completionImageTokens: 1,
+            },
+        });
+    });
+
+    it("rejects more than three reference images", async () => {
+        await expect(
+            callOpenRouterGrokImagineImage2API("test prompt", {
+                ...baseParams,
+                model: "grok-imagine-image-2.0",
+                image: ["one", "two", "three", "four"],
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "grok-imagine-image-2.0 supports at most 3 reference images",
         });
     });
 });

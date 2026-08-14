@@ -1,0 +1,36 @@
+{
+  "pr_number": 13349,
+  "title": "Add Jornal Bitcoin to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13349",
+  "merged_at": "2026-08-14T06:58:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Jornal Bitcoin](https://jornalbitcoin.com.br) to business\n- A real-time Brazilian Portuguese cryptocurrency news aggregator that automatically curates, translates, and summarizes articles using Pollinations text models (Gemma & OpenAI) and generates custom cov\n\nFixes #11741",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Crypto news finds a hive",
+    "blurb": "Jornal Bitcoin joined the garden: a Brazilian Portuguese news desk where Pollinations models help turn the crypto firehose into readable updates.",
+    "summary": "Added Jornal Bitcoin to the business directory, highlighting its real-time Brazilian Portuguese cryptocurrency news aggregation, translation, and summarization with Pollinations Gemma and OpenAI text models.",
+    "impact": "People exploring Pollinations-powered projects can now find Jornal Bitcoin and see a practical use of text models for curating Portuguese crypto news.",
+    "keywords": [
+      "community",
+      "business",
+      "Jornal Bitcoin",
+      "cryptocurrency",
+      "Portuguese",
+      "text models"
+    ],
+    "visual_concept": "A cozy Brazilian crypto-news garden: Polli helps a small retro newsroom sort incoming article sheets into neatly translated, summarized bulletin cards, with subtle coin symbols and code-plants representing the live news feed.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny reporter hat while pinning Portuguese crypto-news cards to a glowing retro terminal; code-plants, small flowers, and gentle coin symbols grow around a lime green (#ecf874) newsroom garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'JORNAL BITCOIN'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13349.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny reporter hat while pinning Portuguese crypto-news cards to a glowing retro terminal; code-plants, small flowers, and gentle coin symbols grow around a lime green (#ecf874) newsroom garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'JORNAL BITCOIN'."
+  },
+  "generated_at": "2026-08-14T06:59:23.873683+00:00",
+  "app_name": "Jornal Bitcoin",
+  "app_url": "https://jornalbitcoin.com.br"
+}

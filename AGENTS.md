@@ -2,13 +2,13 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/catalog.json`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `apps/catalog.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/catalog.json`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
@@ -24,13 +24,15 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
 - `gen.pollinations.ai/` — Edge router + text generation Worker
-- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
+- `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `catalog.json`
-- `social/` — Discord/Reddit/GitHub automation
+- `apps/` — Applications maintained in this repository
+- `operations/app-management/` — Community app catalog and automation
+- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
@@ -41,7 +43,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
-  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
+  connector prompt (`operations/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
@@ -161,7 +163,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 Commands:
 - enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
 - gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
 
 Run individually — full suite is slow:
 ```bash
@@ -177,7 +178,7 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `operations/infrastructure/gpu/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.

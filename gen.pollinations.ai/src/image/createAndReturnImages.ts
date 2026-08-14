@@ -24,6 +24,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -32,6 +33,7 @@ import {
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
+import { callZImageFalAPI } from "./models/zImageFalModel.ts";
 import type { ImageParams } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
@@ -806,12 +808,18 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
+        case "qwen-image-3":
+            return await callQwenImage3API(prompt, safeParams);
+
         case "dreamshaper":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "zimage-fal":
+            return await callZImageFalAPI(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch

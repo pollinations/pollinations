@@ -18,6 +18,7 @@ import type {
 export type PricingInput = {
     resolution?: string;
     hasImage?: boolean;
+    megapixels?: number;
     searchContextSize?: "low" | "high";
 };
 

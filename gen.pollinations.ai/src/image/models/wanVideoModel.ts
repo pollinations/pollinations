@@ -96,7 +96,7 @@ function withSeed(
     input: Record<string, unknown>,
     safeParams: ImageParams,
 ): Record<string, unknown> {
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
     return input;

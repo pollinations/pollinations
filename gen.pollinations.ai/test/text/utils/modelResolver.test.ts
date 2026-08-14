@@ -148,6 +148,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Muse Glimmer directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "muse-glimmer" });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/muse-glimmer-30b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, { model: "deepseek" });
 

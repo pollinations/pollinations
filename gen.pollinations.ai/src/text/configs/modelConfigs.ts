@@ -355,8 +355,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.5-flash-lite",
         "google-vertex/global",
     ),
-    "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
-        "gemini-3.6-flash",
+    "google/gemini-3.7-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.7-flash",
         "google-vertex/global",
     ),
 
@@ -391,6 +391,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
+        }),
+    "accounts/fireworks/models/muse-glimmer-30b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-glimmer-30b",
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------

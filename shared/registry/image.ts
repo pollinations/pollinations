@@ -353,12 +353,55 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         provider: "vast",
+        fallbacks: ["zimage-fal"],
+        // Fal is capacity insurance only: do not move provider errors or bad
+        // requests away from the Pollinations-operated Vast pool.
+        fallbackOnStatusCodes: [503],
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.004, // per image
+        },
+        title: "Z-Image Turbo",
+        description:
+            "Instant, budget-friendly images with crisp upscaled output",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "zimage-fal": {
+        aliases: [],
+        provider: "fal",
+        brand: "Alibaba",
+        category: "image",
+        addedDate: new Date("2026-08-10").getTime(),
+        paidOnly: true,
+        hidden: true,
+        priceMultiplier: 1,
+        // Fal bills $0.005 per output megapixel. The token line stays at zero;
+        // the adjustment below records the exact provider cost while the
+        // caller keeps the public zimage flat price when this serves as fallback.
+        cost: {
+            completionImageTokens: 0,
+        },
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.zimage.output_megapixels.v1",
+                    description: "Fal output image megapixels",
+                    kind: "image",
+                    unit: "megapixel",
+                    unitCost: 0.005,
+                    publicPricing: {
+                        label: "Output megapixels",
+                        quantity: 1,
+                        unit: "megapixel",
+                    },
+                    countUnits: (_output, input) =>
+                        Math.max(0, input?.megapixels ?? 0),
+                },
+            ],
         },
         title: "Z-Image Turbo",
         description:
@@ -651,6 +694,45 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
+    "qwen-image-3": {
+        aliases: [],
+        provider: "fal",
+        brand: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptImageTokens: 0.003, // per reference image ingested by Fal
+            completionImageTokens: 0.04, // per image up to 1536x1536
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.003,
+                    completionImageTokens: 0.075,
+                },
+            },
+            ({ input }) =>
+                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
+                    ? "2k"
+                    : undefined,
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                },
+            },
+            "1K",
+        ),
+        title: "Qwen Image 3",
+        description:
+            "Creates and edits detailed images with crisp multilingual text and complex layouts",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
+    },
     "grok-imagine": {
         aliases: ["grok-imagine-image"],
         provider: "xai",
@@ -774,6 +856,42 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "seedance-2.5": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.1028, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.2312,
+                },
+            },
+            matchResolution("720p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5",
+        description:
+            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],

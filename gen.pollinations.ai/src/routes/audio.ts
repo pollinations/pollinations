@@ -39,6 +39,7 @@ import {
     withModelFallbackResponse,
 } from "../fallback.ts";
 import { readResponseBytes } from "../utils/response-bytes.ts";
+import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import {
     buildTranscriptionResponse,
@@ -109,7 +110,7 @@ const CreateSpeechRequestSchema = z
         }),
         reference_audio: z.url().optional().meta({
             description:
-                "URL returned by media.pollinations.ai for reference-audio conditioning or audio-to-audio generation.",
+                "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
         }),
@@ -121,7 +122,7 @@ const CreateSpeechRequestSchema = z
             description:
                 "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
-        seed: z.number().int().min(0).max(4294967295).optional().meta({
+        seed: z.number().int().min(-1).max(4294967295).optional().meta({
             description:
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
@@ -150,7 +151,7 @@ const CreateDialogueRequestSchema = z
         response_format: z
             .enum(["mp3", "opus", "aac", "wav", "pcm"])
             .default("mp3"),
-        seed: z.number().int().min(0).max(4294967295).optional(),
+        seed: z.number().int().min(-1).max(4294967295).optional(),
         safe: SafeSchema,
     })
     .refine(
@@ -214,9 +215,6 @@ type GenerateMusicOptions = {
     log: Logger;
 };
 
-// Reference URLs intentionally use the one canonical public media host in
-// every environment; staging and local generation read the same public blobs.
-const MEDIA_ORIGIN = "https://media.pollinations.ai";
 const MAX_REFERENCE_AUDIO_SIZE = 20 * 1024 * 1024;
 const REFERENCE_AUDIO_FETCH_TIMEOUT_MS = 30_000;
 
@@ -231,29 +229,32 @@ const AUDIO_EXTENSION_BY_TYPE: Record<string, string> = {
 };
 
 async function fetchReferenceAudio(referenceAudioUrl: string): Promise<File> {
-    const url = new URL(referenceAudioUrl);
-    if (url.origin !== MEDIA_ORIGIN) {
+    const validation = validateUserMediaUrl(referenceAudioUrl);
+    if (!validation.ok) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "reference_audio must use https://media.pollinations.ai",
+            message:
+                "reference_audio must be a public HTTP(S) URL without credentials",
         });
     }
+    const { url } = validation;
 
     let response: Response;
     try {
         response = await fetch(url, {
+            headers: { "User-Agent": "Pollinations/1.0" },
             signal: AbortSignal.timeout(REFERENCE_AUDIO_FETCH_TIMEOUT_MS),
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Failed to fetch reference_audio from media.pollinations.ai: ${message}`,
+            message: `Failed to fetch reference_audio from ${url.hostname}: ${message}`,
             requestUrl: url,
         });
     }
 
     if (!response.ok) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Failed to fetch reference_audio: media.pollinations.ai returned ${response.status}`,
+            message: `Failed to fetch reference_audio: ${url.hostname} returned ${response.status}`,
             requestUrl: url,
             upstreamStatus: response.status,
         });
@@ -1752,7 +1753,7 @@ async function parseSpeechRequest(
         if (referenceAudio instanceof File) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
-                    "reference_audio must be a media.pollinations.ai URL, not a file upload",
+                    "reference_audio must be a public HTTP(S) URL, not a file upload",
             });
         }
 
@@ -1991,8 +1992,6 @@ export async function generateDeepInfraSpeech(opts: {
 /**
  * Dispatches the resolved text-to-audio model and wraps the result in safety
  * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
- * Callers normalize their inputs first (GET maps seed=-1 -> undefined since
- * only its schema permits the sentinel).
  */
 // fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
 // so the blocking `fal.run` route returns inline without needing the queue/poll
@@ -2507,14 +2506,12 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
-    // Only the GET query schema permits the -1 "random seed" sentinel; map it to
-    // undefined here so the generators only ever see a real seed or none.
     return withAudioFallback(c, (candidate) =>
         dispatchAudioGeneration(c, candidate.id, {
             text,
             voice: query.voice,
             responseFormat: query.response_format,
-            seed: query.seed === -1 ? undefined : query.seed,
+            seed: query.seed,
             duration: query.duration,
             seconds: query.seconds,
             steps: query.steps,
@@ -2851,7 +2848,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Upload a reference file to `media.pollinations.ai`, then pass its URL as `reference_audio` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
@@ -2914,7 +2911,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     format: "uri",
                                     description:
-                                        "URL returned by media.pollinations.ai for reference-audio conditioning or audio-to-audio generation.",
+                                        "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
                                 },
                                 conditioning_ref: { type: "object" },
                                 composition_plan: { type: "object" },
@@ -3003,7 +3000,6 @@ export const audioRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
             return withAudioFallback(c, (candidate) =>
                 dispatchAudioGeneration(c, candidate.id, {
                     text: safeInput,

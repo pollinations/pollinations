@@ -712,6 +712,52 @@ fixtureTest(
         expect(generation.usage.total_tokens).toBe(1);
         await waitOnExecutionContext(generationContext);
 
+        const urlContext = createExecutionContext();
+        const urlResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "recraft-vector",
+                        prompt: "vector flower",
+                        response_format: "url",
+                        size: "1024x1024",
+                        seed: 902,
+                    }),
+                },
+            ),
+            bindings,
+            urlContext,
+        );
+        expect(urlResponse.status).toBe(200);
+        expect(urlResponse.headers.get("x-cache")).toBe("HIT");
+        expect(urlResponse.headers.get("x-cache-type")).toBe("EXACT");
+        const urlGeneration = (await urlResponse.json()) as {
+            data: Array<{ url: string; media_type?: string }>;
+        };
+        expect(urlGeneration.data[0]?.media_type).toBe("image/svg+xml");
+        await waitOnExecutionContext(urlContext);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            new Request(urlGeneration.data[0]?.url || ""),
+            bindings,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(cachedResponse.headers.get("x-cache-type")).toBe("EXACT");
+        expect(cachedResponse.headers.get("content-type")).toBe(
+            "image/svg+xml",
+        );
+        expect(await cachedResponse.text()).toBe(svg);
+        await waitOnExecutionContext(cachedContext);
+
         const editContext = createExecutionContext();
         const editResponse = await worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/images/edits", {
@@ -1356,11 +1402,11 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
 });
 
 fixtureTest(
-    "loads an octet-stream elevenmusic reference from the media service",
+    "loads an octet-stream elevenmusic reference from any public URL",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
         const referenceAudioUrl =
-            "https://media.pollinations.ai/test-music-reference";
+            "https://cdn.example.com/test-music-reference";
         const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
         const composeUrl = "https://api.elevenlabs.io/v1/music";
 
@@ -1370,6 +1416,9 @@ fixtureTest(
                 calls.push(request.url);
 
                 if (request.url === referenceAudioUrl) {
+                    expect(request.headers.get("User-Agent")).toBe(
+                        "Pollinations/1.0",
+                    );
                     return new Response(new Uint8Array([73, 68, 51, 4]), {
                         headers: {
                             "Content-Type":
@@ -1460,58 +1509,52 @@ fixtureTest(
     },
 );
 
-fixtureTest(
-    "rejects reference_audio URLs outside the media service",
-    async ({ paidApiKey }) => {
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
-                    return Response.json({ data: [] });
-                }
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            },
-        );
+fixtureTest("rejects private reference_audio URLs", async ({ paidApiKey }) => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        if (
+            request.url.startsWith(
+                "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+            ) ||
+            request.url.startsWith("http://localhost:7181/")
+        ) {
+            return Response.json({ data: [] });
+        }
+        throw new Error(`Unexpected fetch: ${request.url}`);
+    });
 
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${paidApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: "elevenmusic",
-                    input: "warm indie disco",
-                    reference_audio: "https://example.com/reference.mp3",
-                }),
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${paidApiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "elevenmusic",
+                input: "warm indie disco",
+                reference_audio: "https://localhost/reference.mp3",
             }),
-            env as unknown as CloudflareBindings,
-            ctx,
-        );
+        }),
+        env as unknown as CloudflareBindings,
+        ctx,
+    );
 
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: {
-                message:
-                    "reference_audio must use https://media.pollinations.ai",
-            },
-        });
-        await waitOnExecutionContext(ctx);
-    },
-);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            message:
+                "reference_audio must be a public HTTP(S) URL without credentials",
+        },
+    });
+    await waitOnExecutionContext(ctx);
+});
 
 fixtureTest(
-    "returns 400 once for an expired media reference",
+    "returns 400 once for an unreachable public reference",
     async ({ paidApiKey }) => {
-        const referenceAudioUrl =
-            "https://media.pollinations.ai/expired-reference";
+        const referenceAudioUrl = "https://cdn.example.com/expired-reference";
         const calls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1557,7 +1600,7 @@ fixtureTest(
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 message:
-                    "Failed to fetch reference_audio: media.pollinations.ai returned 404",
+                    "Failed to fetch reference_audio: cdn.example.com returned 404",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -1573,10 +1616,9 @@ fixtureTest(
 fixtureTest(
     "rejects non-audio and oversized media references",
     async ({ paidApiKey }) => {
-        const nonAudioUrl =
-            "https://media.pollinations.ai/not-an-audio-reference";
+        const nonAudioUrl = "https://cdn.example.com/not-an-audio-reference";
         const oversizedUrl =
-            "https://media.pollinations.ai/oversized-audio-reference";
+            "https://cdn.example.com/oversized-audio-reference";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1672,7 +1714,7 @@ fixtureTest(
             await expect(response.json()).resolves.toMatchObject({
                 error: {
                     message:
-                        "reference_audio must be a media.pollinations.ai URL, not a file upload",
+                        "reference_audio must be a public HTTP(S) URL, not a file upload",
                 },
             });
             await waitOnExecutionContext(ctx);

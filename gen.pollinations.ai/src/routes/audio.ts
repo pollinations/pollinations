@@ -125,7 +125,7 @@ const CreateSpeechRequestSchema = z
             description:
                 "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
-        seed: z.number().int().min(0).max(4294967295).optional().meta({
+        seed: z.number().int().min(-1).max(4294967295).optional().meta({
             description:
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
@@ -154,7 +154,7 @@ const CreateDialogueRequestSchema = z
         response_format: z
             .enum(["mp3", "opus", "aac", "wav", "pcm"])
             .default("mp3"),
-        seed: z.number().int().min(0).max(4294967295).optional(),
+        seed: z.number().int().min(-1).max(4294967295).optional(),
         safe: SafeSchema,
     })
     .refine(
@@ -1995,8 +1995,6 @@ export async function generateDeepInfraSpeech(opts: {
 /**
  * Dispatches the resolved text-to-audio model and wraps the result in safety
  * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
- * Callers normalize their inputs first (GET maps seed=-1 -> undefined since
- * only its schema permits the sentinel).
  */
 // fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
 // so the blocking `fal.run` route returns inline without needing the queue/poll
@@ -2511,14 +2509,12 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
-    // Only the GET query schema permits the -1 "random seed" sentinel; map it to
-    // undefined here so the generators only ever see a real seed or none.
     return withAudioFallback(c, (candidate) =>
         dispatchAudioGeneration(c, candidate.id, {
             text,
             voice: query.voice,
             responseFormat: query.response_format,
-            seed: query.seed === -1 ? undefined : query.seed,
+            seed: query.seed,
             duration: query.duration,
             seconds: query.seconds,
             steps: query.steps,
@@ -3007,7 +3003,6 @@ export const audioRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
             return withAudioFallback(c, (candidate) =>
                 dispatchAudioGeneration(c, candidate.id, {
                     text: safeInput,

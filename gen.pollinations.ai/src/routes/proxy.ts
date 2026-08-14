@@ -19,7 +19,12 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { handleImageEdit, handleImageGeneration } from "./images.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageEdit,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -1103,7 +1108,7 @@ export const proxyRoutes = new Hono<Env>()
                     .optional()
                     .meta({
                         description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
+                            "Seed passed to the model. Same seed + parameters return the same cached result while available.",
                         example: "42",
                     }),
                 key: z.string().optional().meta({
@@ -1148,6 +1153,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        generationAccess,
+        prepareOpenAIImageGeneration,
+        formatOpenAIImageGeneration,
+        imageCache,
         handleImageGeneration,
     )
     .post(

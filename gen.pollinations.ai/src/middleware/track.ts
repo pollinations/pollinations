@@ -283,7 +283,7 @@ export const track = (eventType: EventType) =>
                 // describes the body that usage extraction parses.
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
-                    : c.res.clone();
+                    : responseForTracking(c.res);
                 // What a rescue changes: the generation's cost, and which owner
                 // earns the reward. Not the price — the caller is charged the
                 // listing they asked for either way.
@@ -559,6 +559,15 @@ function withFinalResponseHeaders(
         status: override.status,
         headers,
     });
+}
+
+/** Avoid cloning binary streams that tracking never reads. */
+function responseForTracking(response: Response): Response {
+    const contentType = response.headers.get("content-type") || "";
+    const readsBody =
+        contentType.includes("text/event-stream") ||
+        contentType.includes("application/json");
+    return readsBody ? response.clone() : new Response(null, response);
 }
 
 export async function trackResponse(

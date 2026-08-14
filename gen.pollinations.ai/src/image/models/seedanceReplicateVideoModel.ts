@@ -140,7 +140,7 @@ async function generateSeedanceVideo(
         fps: 24,
         camera_fixed: false,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
 

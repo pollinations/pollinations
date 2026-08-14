@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 
 describe("ImageParamsSchema", () => {
+    it("preserves seed -1 as a literal seed", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            seed: -1,
+        });
+
+        expect(result.seed).toBe(-1);
+    });
+
     it("rejects transparent backgrounds for gpt-image-2", () => {
         const result = ImageParamsSchema.safeParse({
             model: "gpt-image-2",

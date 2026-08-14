@@ -240,6 +240,18 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     return {"models": models, "by_modality": by_modality}
 
 
+async def refresh_registry() -> dict[str, Any]:
+    global _registry_cache
+    key = await _resolve_api_key()
+    base = settings.openai_base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(f"{base}/v1/models", headers=headers)
+        response.raise_for_status()
+    _registry_cache = _normalize(response.json())
+    return _registry_cache
+
+
 async def get_registry() -> dict[str, Any]:
     global _registry_cache
     if _registry_cache is not None:
@@ -247,19 +259,12 @@ async def get_registry() -> dict[str, Any]:
     async with _lock:
         if _registry_cache is not None:
             return _registry_cache
-        key = await _resolve_api_key()
-        base = settings.openai_base_url.rstrip("/")
-        headers = {"Authorization": f"Bearer {key}"} if key else {}
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                r = await client.get(f"{base}/v1/models", headers=headers)
-                r.raise_for_status()
-                raw = r.json()
+            return await refresh_registry()
         except Exception as exc:
             logger.warning("Failed to fetch /v1/models: %s", exc)
-            raw = {"data": []}
-        _registry_cache = _normalize(raw)
-        return _registry_cache
+            _registry_cache = _normalize({"data": []})
+            return _registry_cache
 
 
 def get_model_catalog() -> dict[str, dict[str, Any]]:

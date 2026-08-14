@@ -84,6 +84,32 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("tells callers when a provided API key is not recognized", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/image/invalid-key-cache-miss?model=zimage",
+                {
+                    headers: {
+                        Authorization:
+                            "Bearer sk_notARealKey1234567890123456789",
+                    },
+                },
+            ),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "UNAUTHORIZED",
+                message: expect.stringContaining("Invalid API key"),
+            },
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 

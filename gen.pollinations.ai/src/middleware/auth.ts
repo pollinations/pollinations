@@ -4,6 +4,7 @@ import {
     type AuthUser,
     authenticateApiKeyRequest,
     BannedAccountError,
+    extractApiKey,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
@@ -42,6 +43,12 @@ export type AuthEnv = {
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
+// Shown when credentials were presented but did not authenticate. Without
+// this, an expired or deleted key gets the generic "please provide an API
+// key" 401, which reads as if the request had no credentials at all.
+const INVALID_KEY_MESSAGE =
+    "Invalid API key. The provided key was not recognized; it may be expired, revoked, or mistyped. Manage keys at https://enter.pollinations.ai/keys";
+
 function installAuth(
     c: Context<AuthEnv>,
     authResult: {
@@ -49,21 +56,28 @@ function installAuth(
         apiKey?: AuthenticatedApiKey;
         agentRun?: AgentRunClaims;
     },
+    options?: { invalidKeyProvided?: boolean },
 ): void {
     const { user, apiKey, agentRun } = authResult;
+    const invalidKeyProvided = options?.invalidKeyProvided ?? false;
+    const unauthorizedMessage = invalidKeyProvided
+        ? { message: INVALID_KEY_MESSAGE }
+        : undefined;
 
     const requireAuthorization = async (options?: {
         message?: string;
     }): Promise<void> => {
         if (!user) {
             throw new HTTPException(401, {
-                message: options?.message,
+                message: invalidKeyProvided
+                    ? INVALID_KEY_MESSAGE
+                    : options?.message,
             });
         }
     };
 
     const requireUser = (): AuthUser => {
-        if (!user) throw new HTTPException(401);
+        if (!user) throw new HTTPException(401, unauthorizedMessage);
         return user;
     };
 
@@ -116,7 +130,10 @@ export const auth = () =>
             }
             throw error;
         }
-        installAuth(c, authResult || {});
+        installAuth(c, authResult || {}, {
+            invalidKeyProvided:
+                !authResult?.user && extractApiKey(c.req.raw) !== null,
+        });
         await next();
     });
 

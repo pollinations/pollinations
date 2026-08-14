@@ -1027,6 +1027,45 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
     },
+    "minimax-h3": {
+        aliases: [],
+        provider: "fal",
+        brand: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.05, // fal, 480p per second, verified 2026-08-14.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.08 },
+                "2k": { completionVideoSeconds: 0.13 },
+            },
+            matchResolution("768p", "2k"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested video resolution is 2K.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p", "2k"],
+        title: "MiniMax H3",
+        description:
+            "Five-second text-to-video clips with synchronized stereo audio at 480p, 768p, or 2K",
+        inputModalities: ["text"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["audio_output"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         provider: "vast",

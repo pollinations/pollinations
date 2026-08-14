@@ -1003,6 +1003,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax-h3": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.13,
+      },
+      "768p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
+    },
+  },
   "minimax-m2.7": {
     "cost": {
       "completionTextTokens": 0.0000012,

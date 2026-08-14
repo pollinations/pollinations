@@ -88,7 +88,7 @@ export const simpleAudioQuerySchema = z.object({
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: "false",
         }),
-    instruct: z.string().optional().meta({
+    instructions: z.string().optional().meta({
         description: "Emotion/style instruction (qwen-tts-instruct only)",
         example: "speak softly and warmly",
     }),

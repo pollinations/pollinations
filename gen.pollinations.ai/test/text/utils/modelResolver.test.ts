@@ -174,6 +174,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Grok 4.6 to xAI ZDR on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "grok-4.6" });
+
+        expect(result.options.model).toBe("x-ai/grok-4.6");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["xai/zdr"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, { model: "deepseek" });
 

@@ -7,6 +7,7 @@ import base64
 import pytest
 
 from floret import toolset
+from floret.routing import RoutingPreferences
 from floret.tools import media
 
 
@@ -122,6 +123,125 @@ async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
     # Frame images are intermediates — do not spam the reply with them.
     img = await toolset.dispatch("upload_media", {"source": "last1.jpg"})
     assert img.artifacts == []
+
+
+@pytest.mark.parametrize(
+    ("tool_name", "field", "function_name", "args", "selected"),
+    [
+        (
+            "generate_image",
+            "image_generation",
+            "generate_image",
+            {"prompt": "x", "model": "brain-image"},
+            "flux",
+        ),
+        (
+            "edit_image",
+            "image_editing",
+            "edit_image",
+            {
+                "prompt": "x",
+                "image_url": "https://x/a.jpg",
+                "model": "brain-edit",
+            },
+            "nanobanana",
+        ),
+        (
+            "generate_video",
+            "video",
+            "generate_video",
+            {"prompt": "x", "model": "brain-video"},
+            "wan-fast",
+        ),
+        (
+            "text_to_speech",
+            "audio",
+            "text_to_speech",
+            {"text": "x", "model": "brain-audio"},
+            "openai-audio",
+        ),
+        (
+            "web_search",
+            "web_search",
+            "web_search",
+            {"query": "x", "model": "brain-search"},
+            "gemini-search",
+        ),
+    ],
+)
+async def test_dispatch_routing_override_wins_without_mutating_args(
+    monkeypatch, tool_name, field, function_name, args, selected
+):
+    calls = []
+
+    async def spy(**kwargs):
+        calls.append(kwargs)
+        if function_name == "generate_image":
+            return ["https://x/image.jpg"]
+        if function_name == "text_to_speech":
+            return {
+                "data_uri": "data:audio/mp3;base64,eA==",
+                "b64": "eA==",
+                "format": "mp3",
+                "transcript": "x",
+            }
+        if function_name == "web_search":
+            return "result"
+        return "https://x/media"
+
+    monkeypatch.setattr(toolset.gen, function_name, spy)
+    routing = RoutingPreferences(**{field: selected})
+
+    await toolset.dispatch(tool_name, args, routing)
+
+    assert calls[0]["model"] == selected
+    assert args["model"].startswith("brain-")
+
+
+async def test_dispatch_without_override_preserves_brain_model(monkeypatch):
+    calls = []
+
+    async def spy(**kwargs):
+        calls.append(kwargs)
+        return ["https://x/image.jpg"]
+
+    monkeypatch.setattr(toolset.gen, "generate_image", spy)
+
+    await toolset.dispatch(
+        "generate_image",
+        {"prompt": "x", "model": "brain-image"},
+        RoutingPreferences(),
+    )
+
+    assert calls[0]["model"] == "brain-image"
+
+
+async def test_pinned_video_model_rejects_unsupported_end_frame(monkeypatch):
+    called = False
+
+    async def spy(**kwargs):
+        nonlocal called
+        called = True
+        return "https://x/video.mp4"
+
+    monkeypatch.setattr(toolset.gen, "generate_video", spy)
+    routing = RoutingPreferences(video="wan")
+
+    result = await toolset.dispatch(
+        "generate_video",
+        {
+            "prompt": "morph",
+            "image": "https://x/a.jpg",
+            "end_image": "https://x/b.jpg",
+        },
+        routing,
+    )
+
+    assert result.artifacts == []
+    assert result.brain.startswith("ERROR")
+    assert "wan" in result.brain
+    assert "end frame" in result.brain.lower()
+    assert not called
 
 
 async def test_generate_video_rehosts_unfetchable_frames(monkeypatch):

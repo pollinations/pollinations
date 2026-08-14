@@ -1,0 +1,34 @@
+{
+  "pr_number": 13370,
+  "title": "feat: route dialogue through speech API",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13370",
+  "merged_at": "2026-08-14T13:38:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `eleven-dialogue` and its aliases through `POST /v1/audio/speech` with the OpenAI-compatible string `input` field.\n- Parses one `<voice>: <text>` turn per non-empty line and translates preset names or ElevenLabs voice IDs to the existing `eleven_v3` dialogue provider call.\n- Removes the custom `/v1/audio/dialogue` request schema and route.\n- Documents the dialogue input format and keeps the existing 10-voice, 2,000-character, usage, and billing behavior.\n- Tests exact upstream translation, invalid line formatting, input limits, and generation-route coordination.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dialogue finds its voice",
+    "blurb": "Dialogue generation has moved into the regular speech endpoint, where it can live among the other sounds without needing its own little API shed. Give each line a voice and some text; the hive handles the casting.",
+    "summary": "`eleven-dialogue` and its aliases now run through the OpenAI-compatible `POST /v1/audio/speech` endpoint using the string `input` field, with one `<voice>: <text>` turn per non-empty line translated to the existing `eleven_v3` dialogue provider.",
+    "impact": "Developers can generate up to 10-voice, 2,000-character ElevenLabs dialogue through the standard speech API while retaining existing usage and billing behavior.",
+    "keywords": [
+      "audio",
+      "speech-api",
+      "elevenlabs",
+      "dialogue",
+      "openai-compatible",
+      "eleven-v3"
+    ],
+    "visual_concept": "Depict a cozy recording garden where a single retro speech terminal turns neatly formatted dialogue lines into separate glowing voice flowers. Polli, wearing tiny studio headphones, acts as the observant sound engineer beside the terminal; the monitor robot can eagerly watch the dialogue lines become audio waveforms, while vines and code-plants tie the API routing change to the garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, light-blue rounded wings, black antennae and oval eyes, wearing tiny studio headphones as she adjusts a retro terminal labeled `POST /v1/audio/speech`; each line on its screen, `<voice>: <text>`, becomes a different soft waveform flower in a small code-garden, while a chunky CRT monitor robot watches delightedly. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13370.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, light-blue rounded wings, black antennae and oval eyes, wearing tiny studio headphones as she adjusts a retro terminal labeled `POST /v1/audio/speech`; each line on its screen, `<voice>: <text>`, becomes a different soft waveform flower in a small code-garden, while a chunky CRT monitor robot watches delightedly. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T13:40:04.430104+00:00"
+}

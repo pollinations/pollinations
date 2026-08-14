@@ -5,72 +5,7 @@ import {
     createTextContent,
     postChatCompletion,
 } from "../utils/coreUtils.js";
-import {
-    getImageModels,
-    getTextModels,
-    validateTextModel,
-} from "../utils/models.js";
-
-async function generateText(params, context) {
-    requireApiKey(context);
-
-    const {
-        prompt,
-        model = "openai",
-        seed,
-        system,
-        temperature,
-        max_tokens,
-        top_p,
-        frequency_penalty,
-        presence_penalty,
-        json: jsonMode,
-    } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const validation = await validateTextModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listTextModels to see all ${validation.availableCount} available models.`,
-        );
-    }
-
-    const messages = [];
-    if (system) {
-        messages.push({ role: "system", content: system });
-    }
-    messages.push({ role: "user", content: prompt });
-
-    const requestBody = {
-        messages,
-        model,
-        seed,
-        temperature,
-        max_tokens,
-        top_p,
-        frequency_penalty,
-        presence_penalty,
-        stream: false,
-    };
-
-    if (jsonMode) {
-        requestBody.response_format = { type: "json_object" };
-    }
-
-    try {
-        const result = await postChatCompletion(requestBody, context);
-        const content = result.choices?.[0]?.message?.content || "";
-
-        return createMCPResponse([createTextContent(content)]);
-    } catch (error) {
-        console.error("Error generating text:", error);
-        throw error;
-    }
-}
+import { getTextModels, validateTextModel } from "../utils/models.js";
 
 async function chatCompletion(params, context) {
     requireApiKey(context);
@@ -235,252 +170,10 @@ async function chatCompletion(params, context) {
     }
 }
 
-async function listTextModels(_params) {
-    try {
-        const models = await getTextModels();
-
-        const hasCapability = (model, capability) =>
-            model.capabilities?.includes(capability);
-        const generalModels = models.filter((m) => !m.is_specialized);
-        const specializedModels = models.filter((m) => m.is_specialized);
-        const reasoningModels = models.filter((m) =>
-            hasCapability(m, "reasoning"),
-        );
-        const searchModels = models.filter((m) =>
-            hasCapability(m, "web_search"),
-        );
-        const codeExecutionModels = models.filter((m) =>
-            hasCapability(m, "code_execution"),
-        );
-        const audioModels = models.filter(
-            (m) =>
-                m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
-        );
-        const visionModels = models.filter(
-            (m) => m.input_modalities?.includes("image") || m.vision,
-        );
-        const toolCapableModels = models.filter((m) =>
-            hasCapability(m, "tool_calling"),
-        );
-
-        const result = {
-            models: models.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                capabilities: m.capabilities || [],
-                tools: m.tools,
-                reasoning: m.reasoning,
-                voices: m.voices,
-                isSpecialized: m.is_specialized,
-            })),
-            categories: {
-                general: generalModels.map((m) => m.name),
-                specialized: specializedModels.map((m) => m.name),
-                reasoning: reasoningModels.map((m) => m.name),
-                search: searchModels.map((m) => m.name),
-                codeExecution: codeExecutionModels.map((m) => m.name),
-                audio: audioModels.map((m) => m.name),
-                vision: visionModels.map((m) => m.name),
-                toolCapable: toolCapableModels.map((m) => m.name),
-            },
-            summary: {
-                totalModels: models.length,
-                generalModels: generalModels.length,
-                reasoningModels: reasoningModels.length,
-                searchModels: searchModels.length,
-                codeExecutionModels: codeExecutionModels.length,
-                audioModels: audioModels.length,
-                visionModels: visionModels.length,
-                toolCapableModels: toolCapableModels.length,
-            },
-            usage: {
-                simple: "Use generateText for simple prompts",
-                advanced:
-                    "Use chatCompletion for multi-turn conversations, tool calling, audio output",
-                reasoning:
-                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
-                audio: "Use openai-audio with modalities=['text','audio'] for voice output",
-            },
-        };
-
-        return createMCPResponse([createTextContent(result, true)]);
-    } catch (error) {
-        console.error("Error listing text models:", error);
-        throw error;
-    }
+async function listTextModels() {
+    const models = await getTextModels();
+    return createMCPResponse([createTextContent(models, true)]);
 }
-
-async function webSearch(params, context) {
-    requireApiKey(context);
-
-    const { query, model = "perplexity-fast", detailed = false } = params;
-
-    if (!query || typeof query !== "string") {
-        throw new Error("Query is required and must be a string");
-    }
-
-    const validation = await validateTextModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listTextModels to see all ${validation.availableCount} available models.`,
-        );
-    }
-    if (!validation.model.capabilities?.includes("web_search")) {
-        throw new Error(
-            `Model "${model}" doesn't support web search. Use listTextModels to find models with the web_search capability.`,
-        );
-    }
-
-    const systemPrompt = detailed
-        ? "Search the web and provide a comprehensive answer with sources. Include relevant details and cite your sources."
-        : "Search the web and provide a concise, accurate answer. Include source URLs.";
-
-    const requestBody = {
-        model,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: query },
-        ],
-    };
-
-    try {
-        const result = await postChatCompletion(requestBody, context);
-        const answer = result.choices?.[0]?.message?.content || "";
-
-        const responseData = {
-            answer,
-            query,
-            model: result.model || model,
-        };
-
-        if (result.citations?.length > 0) {
-            responseData.sources = result.citations;
-        }
-
-        return createMCPResponse([createTextContent(responseData, true)]);
-    } catch (error) {
-        console.error("Error in web search:", error);
-        throw error;
-    }
-}
-
-async function getPricing(params) {
-    const { type = "all" } = params;
-
-    try {
-        const results = {};
-
-        if (type === "all" || type === "text") {
-            const textModels = await getTextModels();
-            results.textModels = textModels
-                .map((m) => ({
-                    name: m.name,
-                    description: m.description,
-                    pricing: m.pricing,
-                }))
-                .filter((m) => m.pricing);
-        }
-
-        if (type === "all" || type === "image") {
-            const imageModels = await getImageModels();
-            results.imageModels = imageModels
-                .map((m) => ({
-                    name: m.name,
-                    description: m.description,
-                    pricing: m.pricing,
-                }))
-                .filter((m) => m.pricing);
-        }
-
-        results.currency = "pollen";
-        results.note = "Prices are in pollen. 1 pollen = $0.001 USD";
-
-        return createMCPResponse([createTextContent(results, true)]);
-    } catch (error) {
-        console.error("Error getting pricing:", error);
-        throw error;
-    }
-}
-
-const textParamsSchema = {
-    prompt: z
-        .string()
-        .describe("Text prompt to generate a response for (required)"),
-    model: z
-        .string()
-        .optional()
-        .describe(
-            "Text model to use (default: 'openai'). Popular options:\n" +
-                "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
-                "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
-                "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
-                "- deepseek: Advanced reasoning model\n" +
-                "- grok: xAI's Grok model\n" +
-                "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
-                "Use listTextModels for complete list.",
-        ),
-    seed: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe("Random seed for reproducible results"),
-    system: z
-        .string()
-        .optional()
-        .describe(
-            "System prompt to set context/behavior. Example: 'You are a helpful coding assistant'",
-        ),
-    temperature: z
-        .number()
-        .min(0)
-        .max(2)
-        .optional()
-        .describe(
-            "Controls creativity (default: 1). 0 = deterministic, 2 = very creative",
-        ),
-    max_tokens: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .describe("Maximum tokens to generate. Leave empty for model default"),
-    top_p: z
-        .number()
-        .min(0)
-        .max(1)
-        .optional()
-        .describe(
-            "Nucleus sampling (default: 1). Alternative to temperature. Use one or the other",
-        ),
-    frequency_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .optional()
-        .describe("Reduce repetition of token sequences (-2 to 2, default: 0)"),
-    presence_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .optional()
-        .describe("Reduce repetition of topics (-2 to 2, default: 0)"),
-    json: z
-        .boolean()
-        .optional()
-        .describe(
-            "Return response in JSON format (default: false). Model will output valid JSON",
-        ),
-    private: z
-        .boolean()
-        .optional()
-        .describe("Hide from public feeds (default: false)"),
-};
 
 const messageSchema = z.object({
     role: z
@@ -544,7 +237,7 @@ const audioOptionsSchema = z.object({
     voice: z
         .string()
         .describe(
-            "Voice for audio output. The canonical list lives in the registry — use listAudioVoices to discover valid values; the server rejects unknown voices.",
+            "Voice for audio output. Use listTextModels to inspect live model voice metadata.",
         ),
     format: z
         .enum(["wav", "mp3", "flac", "opus", "pcm16"])
@@ -717,52 +410,15 @@ const chatParamsSchema = {
 
 export const textTools = [
     [
-        "generateText",
-        "Generate text from a simple prompt. Easy-to-use text generation with essential parameters. For advanced features (tool calling, multi-turn, audio), use chatCompletion instead.",
-        textParamsSchema,
-        generateText,
-    ],
-    [
         "chatCompletion",
-        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
+        "Call POST /v1/chat/completions for text, search, multimodal input, tool calling, structured output, reasoning, or audio output.",
         chatParamsSchema,
         chatCompletion,
     ],
     [
         "listTextModels",
-        "List all available text generation models with their capabilities. Shows which models support reasoning, tools, audio, vision, etc. Models are fetched dynamically from the API.",
+        "Return the live text model registry from GET /text/models, including capabilities, voices, and pricing.",
         {},
         listTextModels,
-    ],
-    [
-        "webSearch",
-        "Search the web for real-time information using search-enabled models. Returns answers with source citations. Great for current events, facts, research.",
-        {
-            query: z.string().describe("The search query or question"),
-            model: z
-                .string()
-                .optional()
-                .describe(
-                    "Search-capable text model (default: 'perplexity-fast'). Use listTextModels for the live list of models with the web_search capability.",
-                ),
-            detailed: z
-                .boolean()
-                .optional()
-                .describe(
-                    "Get comprehensive answer with more details (default: false)",
-                ),
-        },
-        webSearch,
-    ],
-    [
-        "getPricing",
-        "Get pricing information for all models. Shows cost per token/image in pollen.",
-        {
-            type: z
-                .enum(["all", "text", "image"])
-                .optional()
-                .describe("Which models to get pricing for (default: 'all')"),
-        },
-        getPricing,
     ],
 ];

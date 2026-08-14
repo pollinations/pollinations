@@ -53,15 +53,6 @@ export function getAuthHeaders(context) {
 }
 
 /**
- * @returns {Object} - Query params object with key if set
- */
-export function getAuthQueryParam(context) {
-    const key = resolveApiKey(context);
-    if (!key) return {};
-    return { key };
-}
-
-/**
  * @returns {string|null} - Masked key like "pk_...abc123" or null
  */
 export function getMaskedKey(context) {

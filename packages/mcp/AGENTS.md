@@ -13,16 +13,17 @@
 packages/mcp/
   pollinations-mcp.js            # bin wrapper → calls startMcpServer()
   src/
-    index.js                     # server bootstrap, tool registration, instructions
+    index.js                     # stdio bootstrap
+    server.js                    # shared server factory, tool registration, instructions
     services/
-      imageService.js            # generateImage(Url|Batch), generateVideo(Url), describeImage, analyzeVideo, listImageModels
-      textService.js             # generateText, chatCompletion, webSearch, listTextModels, getPricing
-      audioService.js            # respondAudio, sayText, transcribeAudio, listAudioVoices
+      imageService.js            # generateImage, generateVideo, listImageModels
+      textService.js             # chatCompletion, listTextModels
+      audioService.js            # generateAudio
       authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
-      accountService.js          # getBalance, getUsage                (via /account/*)
+      accountService.js          # getBalance, getUsage, listQuests    (via /account/*)
     utils/
-      authUtils.js               # in-memory key store, header/query builders
-      coreUtils.js               # fetch wrappers, URL builders, chatWithMedia helper, error mapping
+      authUtils.js               # in-memory key store and auth headers
+      coreUtils.js               # fetch wrappers, URL builders, error mapping
       models.js                  # registry fetchers + validators (cached 5 min)
 ```
 
@@ -38,7 +39,7 @@ The MCP server speaks JSON-RPC over stdio. `console.log` corrupts the protocol.
 
 1. Add the handler to the relevant service file (or create a new one for a new domain).
 2. Export a `[name, description, zodShape, handler]` entry in a tool array.
-3. Import the array into `src/index.js` and spread it into `allTools`.
+3. Import the array into `src/server.js` and spread it into `serviceTools`.
 4. Update the `SERVER_INSTRUCTIONS` blurb with a one-line entry.
 5. Update `README.md`'s tool table.
 
@@ -56,10 +57,6 @@ if (!result.valid) {
 ```
 
 Cache is shared across all tool calls within a process — don't roll your own fetcher for model lists.
-
-## Media-Chat Helper
-
-`describeImage`, `analyzeVideo`, `transcribeAudio` all call `/v1/chat/completions` with a single media block. Use `chatWithMedia({ model, prompt, mediaType, mediaUrl })` from `coreUtils.js` — do not re-inline the fetch+parse boilerplate.
 
 ## Testing
 

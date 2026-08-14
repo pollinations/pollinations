@@ -5,7 +5,6 @@
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import player from "play-sound";
 import { buildServer } from "./server.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
@@ -18,12 +17,6 @@ export { buildServer } from "./server.js";
 export async function startMcpServer() {
     try {
         const apiBaseUrl = validateApiBaseUrl();
-
-        try {
-            global.audioPlayer = player();
-        } catch (error) {
-            console.error("Audio player not available:", error.message);
-        }
 
         process.on("uncaughtException", (error) => {
             console.error(`Uncaught exception: ${error.message}`);

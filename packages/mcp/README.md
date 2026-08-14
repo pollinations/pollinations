@@ -45,41 +45,30 @@ npx @pollinations/mcp
 
 ### Image & Video Generation
 
-| Tool                 | Description                                                |
-| -------------------- | ---------------------------------------------------------- |
-| `generateImageUrl`   | Generate a shareable image URL from a text prompt          |
-| `generateImage`      | Generate an image and return base64 data                   |
-| `generateImageBatch` | Generate multiple images in parallel (best with `sk_` keys)|
-| `generateVideo`      | Generate a video and return base64 data                    |
-| `generateVideoUrl`   | Generate a shareable video URL from a text prompt          |
-| `describeImage`      | Vision analysis of an image URL                            |
-| `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
-| `listImageModels`    | List available image & video models (live)                 |
+| Tool              | API route                | MCP result                                    |
+| ----------------- | ------------------------ | --------------------------------------------- |
+| `generateImage`   | `/v1/images/generations` | Image data or a resource link                 |
+| `generateVideo`   | `/image/{prompt}`        | Embedded video resource                      |
+| `listImageModels` | `/image/models`          | Live image/video registry, including pricing |
 
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
+`generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 
-| Tool             | Description                                       |
-| ---------------- | ------------------------------------------------- |
-| `generateText`   | Simple text generation from a prompt              |
-| `chatCompletion` | OpenAI-compatible chat completions + tool calling |
-| `webSearch`      | Web-grounded answers (perplexity, gemini-search)  |
-| `listTextModels` | List available text models (live)                 |
-| `getPricing`     | Per-model pricing (text / image / audio)          |
+| Tool             | API route              | Description                                      |
+| ---------------- | ---------------------- | ------------------------------------------------ |
+| `chatCompletion` | `/v1/chat/completions` | Text, search, multimodal input, and tool calling |
+| `listTextModels` | `/text/models`         | Live model registry, including voices/pricing   |
 
-Call `listTextModels` for the current model set, aliases, and capabilities (reasoning, tools, audio output, etc.).
+Use `chatCompletion` with the appropriate model and message content for simple text, web search, image/video analysis, and audio transcription.
 
 ### Audio
 
-| Tool               | Description                              |
-| ------------------ | ---------------------------------------- |
-| `respondAudio`     | AI responds to a prompt with speech      |
-| `sayText`          | Text-to-speech (verbatim)                |
-| `transcribeAudio`  | Transcribe audio (gemini-large)          |
-| `listAudioVoices`  | List available voices (live)             |
+| Tool            | API route       | Description                     |
+| --------------- | --------------- | ------------------------------- |
+| `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, flac, opus, pcm16.
+`generateAudio` returns an MCP audio block. Call `listTextModels` for model voice metadata.
 
 ### Auth Tools
 
@@ -124,7 +113,7 @@ Create a 6-second video of waves crashing on a beach using veo.
 
 Have a chatCompletion conversation about the weather, with the ability to call a weather API.
 
-Say "Hello, welcome to pollinations.ai!" using the nova voice.
+Generate audio saying "Hello, welcome to pollinations.ai!" using the nova voice.
 ```
 
 ## Testing
@@ -133,7 +122,7 @@ Say "Hello, welcome to pollinations.ai!" using the nova voice.
 POLLINATIONS_API_KEY=sk_… npm run test
 ```
 
-Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, text, image URL, balance).
+Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, chat, image URL, balance).
 
 ## System Requirements
 

@@ -1,90 +1,103 @@
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
     arrayBufferToBase64,
-    buildShareableUrl,
     buildUrl,
-    chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
+    fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
 import {
     getImageModels,
-    getVideoModels,
     validateImageModel,
     validateVideoModel,
 } from "../utils/models.js";
 
-function buildQueryParams(params) {
-    const result = {};
-    for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null) {
-            result[key] = value;
-        }
+function imageMimeType(base64, declaredMimeType) {
+    if (declaredMimeType) return declaredMimeType;
+    if (base64.startsWith("iVBOR")) return "image/png";
+    if (base64.startsWith("UklGR")) return "image/webp";
+    if (base64.startsWith("R0lGOD")) return "image/gif";
+    if (base64.startsWith("PHN2Zy") || base64.startsWith("PD94bWw")) {
+        return "image/svg+xml";
     }
-    return result;
+    return "image/jpeg";
 }
 
-/**
- * Validate an image request and build its encoded prompt + query params.
- * Shared by generateImage and generateImageUrl.
- *
- * @param {Object} params - Raw tool params
- * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
- */
-async function prepareImageRequest(params) {
-    const {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        safe,
-    } = params;
+async function generateImage(params, context) {
+    requireApiKey(context);
 
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    if (model) {
-        const validation = await validateImageModel(model);
+    if (params.model) {
+        const validation = await validateImageModel(params.model);
         if (!validation.valid) {
             throw new Error(
                 `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    `Use listImageModels to see all ${validation.availableCount} available models.`,
+                    "Use listImageModels to see all available models.",
             );
         }
     }
 
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        width,
-        height,
-        seed,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        safe,
-    });
+    const body = {
+        prompt: params.prompt,
+        model: params.model,
+        n: params.n,
+        size: params.size,
+        quality: params.quality,
+        response_format: params.response_format,
+        user: params.user,
+        image: params.image,
+        safe: params.safe,
+        seed: params.seed,
+        transparent: params.transparent,
+        guidance_scale: params.guidance_scale,
+    };
+    const result = await fetchJsonWithAuth(
+        buildUrl("/v1/images/generations"),
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        },
+        context,
+    );
+    const image = result.data?.[0];
+    if (!image) throw new Error("Image API returned no image data");
 
-    return { encodedPrompt, queryParams };
+    const content = [];
+    if (image.url) {
+        content.push({
+            type: "resource_link",
+            uri: image.url,
+            name: "Generated image",
+            ...(image.media_type ? { mimeType: image.media_type } : {}),
+        });
+    } else if (image.b64_json) {
+        content.push(
+            createImageContent(
+                image.b64_json,
+                imageMimeType(image.b64_json, image.media_type),
+            ),
+        );
+    } else {
+        throw new Error("Image API returned neither a URL nor base64 data");
+    }
+
+    content.push(
+        createTextContent(
+            {
+                ...result,
+                data: result.data.map(({ b64_json, ...entry }) =>
+                    b64_json ? { ...entry, encoding: "base64" } : entry,
+                ),
+            },
+            true,
+        ),
+    );
+    return createMCPResponse(content);
 }
 
-/**
- * Validate a video request (incl. per-model duration rules) and build its
- * encoded prompt + query params. Shared by generateVideo and generateVideoUrl.
- *
- * @param {Object} params - Raw tool params
- * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
- */
 async function prepareVideoRequest(params) {
     const {
         prompt,
@@ -97,768 +110,149 @@ async function prepareVideoRequest(params) {
         safe,
     } = params;
 
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
     const validation = await validateVideoModel(model);
     if (!validation.valid) {
         throw new Error(
             `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listImageModels to see all ${validation.availableCount} available video models.`,
+                "Use listImageModels to see all available video models.",
         );
     }
 
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        safe,
-    });
-
-    return { encodedPrompt, queryParams };
-}
-
-async function generateImageUrl(params, context) {
-    requireApiKey(context);
-
-    const { prompt, model, width, height, seed, quality } = params;
-    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
-
-    const authUrl = buildUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-        true,
-        context,
-    );
-
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const preGenResponse = await fetch(authUrl, {
-            method: "GET",
-            headers: getAuthHeaders(context),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (!preGenResponse.ok) {
-            console.warn(
-                `Image generation may have failed (${preGenResponse.status}), but URL will still be returned`,
-            );
-        }
-    } catch (err) {
-        if (err.name === "AbortError") {
-            console.warn(
-                "Image generation request timed out, but URL will still be returned",
-            );
-        } else {
-            console.warn(
-                "Image generation request failed, URL will still be returned:",
-                err.message,
-            );
-        }
-    }
-
-    const shareableUrl = buildShareableUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-    );
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                imageUrl: shareableUrl,
-                prompt,
-                model: model || "flux",
-                width: width || 1024,
-                height: height || 1024,
-                seed,
-                quality: quality || "medium",
-            },
-            true,
-        ),
-    ]);
-}
-
-async function generateImage(params, context) {
-    requireApiKey(context);
-
-    const { prompt, model, width, height, seed, quality, transparent } = params;
-    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(
-            url,
-            {},
-            context,
-        );
-        const base64Data = arrayBufferToBase64(buffer);
-
-        const metadata = {
-            prompt,
-            model: model || "flux",
-            width: width || 1024,
-            height: height || 1024,
+    return {
+        encodedPrompt: encodeURIComponent(prompt),
+        queryParams: {
+            model,
+            duration,
+            aspectRatio,
+            audio,
+            image,
             seed,
-            quality: quality || "medium",
-            transparent: transparent || false,
-        };
-
-        return createMCPResponse([
-            createImageContent(base64Data, contentType),
-            createTextContent(
-                `Generated image from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating image:", error);
-        throw error;
-    }
-}
-
-async function generateImageBatch(params, context) {
-    requireApiKey(context);
-
-    const {
-        prompts,
-        model,
-        width,
-        height,
-        seed: baseSeed,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        safe,
-    } = params;
-
-    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
-        throw new Error("Prompts array is required and must not be empty");
-    }
-
-    if (prompts.length > 10) {
-        throw new Error(
-            "Maximum 10 images per batch. For more, call multiple times.",
-        );
-    }
-
-    const results = await Promise.allSettled(
-        prompts.map(async (prompt, index) => {
-            const encodedPrompt = encodeURIComponent(prompt);
-            const queryParams = buildQueryParams({
-                model,
-                width,
-                height,
-                seed: baseSeed !== undefined ? baseSeed + index : undefined,
-                guidance_scale,
-                quality,
-                image,
-                transparent,
-                safe,
-            });
-
-            const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-            const { buffer, contentType } = await fetchBinaryWithAuth(
-                url,
-                {},
-                context,
-            );
-            const base64Data = arrayBufferToBase64(buffer);
-
-            return {
-                index,
-                prompt,
-                base64: base64Data,
-                contentType,
-                seed: baseSeed !== undefined ? baseSeed + index : undefined,
-            };
-        }),
-    );
-
-    const responseContent = [];
-    const successful = [];
-    const failed = [];
-
-    results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-            const img = result.value;
-            responseContent.push(
-                createImageContent(img.base64, img.contentType),
-            );
-            successful.push({
-                index: img.index,
-                prompt: img.prompt,
-                seed: img.seed,
-            });
-        } else {
-            failed.push({
-                index,
-                prompt: prompts[index],
-                error: result.reason?.message || "Unknown error",
-            });
-        }
-    });
-
-    responseContent.push(
-        createTextContent(
-            {
-                batch: {
-                    total: prompts.length,
-                    successful: successful.length,
-                    failed: failed.length,
-                },
-                successful,
-                failed: failed.length > 0 ? failed : undefined,
-                model: model || "flux",
-                width: width || 1024,
-                height: height || 1024,
-            },
-            true,
-        ),
-    );
-
-    return createMCPResponse(responseContent);
+            safe,
+        },
+    };
 }
 
 async function generateVideo(params, context) {
     requireApiKey(context);
 
-    const {
-        prompt,
-        model = "veo",
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-    } = params;
     const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(
-            url,
-            {},
-            context,
-        );
-        const base64Data = arrayBufferToBase64(buffer);
-
-        const metadata = {
-            prompt,
-            model,
-            duration,
-            aspectRatio,
-            audio: model === "veo" ? audio || false : undefined,
-            hasReferenceImage: !!image,
-            seed,
-        };
-
-        return createMCPResponse([
-            {
-                type: "resource",
-                resource: {
-                    uri: `pollinations://video/${Date.now()}`,
-                    mimeType: contentType || "video/mp4",
-                    blob: base64Data,
-                },
-            },
-            createTextContent(
-                `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}\n\nVideo returned as base64-encoded resource (decode and save as .mp4)`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating video:", error);
-        throw error;
-    }
-}
-
-async function generateVideoUrl(params, context) {
-    requireApiKey(context);
-
-    const {
-        prompt,
-        model = "veo",
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-    } = params;
-    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
-
-    const authUrl = buildUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-        true,
+    const { buffer, contentType } = await fetchBinaryWithAuth(
+        buildUrl(`/image/${encodedPrompt}`, queryParams),
+        {},
         context,
     );
 
-    try {
-        const headResponse = await fetch(authUrl, {
-            method: "HEAD",
-            headers: getAuthHeaders(context),
-        });
-        if (!headResponse.ok) {
-            console.warn(
-                `Video generation may have failed (${headResponse.status}), but URL will still be returned`,
-            );
-        }
-    } catch (err) {
-        console.warn(
-            "HEAD request failed, video may not be pre-generated:",
-            err.message,
-        );
-    }
-
-    const shareableUrl = buildShareableUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-    );
-
     return createMCPResponse([
+        {
+            type: "resource",
+            resource: {
+                uri: `pollinations://video/${Date.now()}`,
+                mimeType: contentType || "video/mp4",
+                blob: arrayBufferToBase64(buffer),
+            },
+        },
         createTextContent(
             {
-                videoUrl: shareableUrl,
-                prompt,
-                model,
-                duration,
-                aspectRatio,
-                audio: model === "veo" ? audio || false : undefined,
-                hasReferenceImage: !!image,
-                seed,
+                prompt: params.prompt,
+                ...queryParams,
+                encoding: "base64",
             },
             true,
         ),
     ]);
 }
 
-async function describeImage(params, context) {
-    requireApiKey(context);
-
-    const {
-        imageUrl,
-        prompt = "Describe this image in detail.",
-        model = "openai",
-    } = params;
-
-    if (!imageUrl || typeof imageUrl !== "string") {
-        throw new Error("imageUrl is required and must be a string");
-    }
-
-    try {
-        const { content, model: respondedModel } = await chatWithMedia(
-            {
-                model,
-                prompt,
-                mediaType: "image_url",
-                mediaUrl: imageUrl,
-            },
-            context,
-        );
-
-        return createMCPResponse([
-            createTextContent(
-                {
-                    description: content,
-                    imageUrl,
-                    model: respondedModel,
-                    prompt,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error analyzing image:", error);
-        throw error;
-    }
-}
-
-async function analyzeVideo(params, context) {
-    requireApiKey(context);
-
-    const {
-        videoUrl,
-        prompt = "Describe what happens in this video in detail.",
-        model = "gemini-large",
-    } = params;
-
-    if (!videoUrl || typeof videoUrl !== "string") {
-        throw new Error("videoUrl is required and must be a string");
-    }
-
-    try {
-        const { content, model: respondedModel } = await chatWithMedia(
-            {
-                model,
-                prompt,
-                mediaType: "video_url",
-                mediaUrl: videoUrl,
-            },
-            context,
-        );
-
-        return createMCPResponse([
-            createTextContent(
-                {
-                    analysis: content,
-                    videoUrl,
-                    model: respondedModel,
-                    prompt,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error analyzing video:", error);
-        throw error;
-    }
-}
-
-async function listImageModels(_params) {
-    try {
-        const [models, videoModels] = await Promise.all([
-            getImageModels(),
-            getVideoModels(),
-        ]);
-
-        const imageOnlyModels = models.filter(
-            (m) =>
-                m.output_modalities?.includes("image") &&
-                !m.output_modalities?.includes("video"),
-        );
-        const imageToImageModels = models.filter((m) =>
-            m.input_modalities?.includes("image"),
-        );
-
-        const result = {
-            imageModels: imageOnlyModels.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                supportsImageToImage:
-                    m.input_modalities?.includes("image") || false,
-            })),
-            videoModels: videoModels.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                supportsImageToVideo:
-                    m.input_modalities?.includes("image") || false,
-                videoCapabilities: m.video_capabilities || [],
-            })),
-            imageToImageCapable: imageToImageModels.map((m) => m.name),
-            summary: {
-                totalModels: models.length,
-                imageModels: imageOnlyModels.length,
-                videoModels: videoModels.length,
-                imageToImageCapable: imageToImageModels.length,
-            },
-            usage: {
-                image: "Use generateImage or generateImageUrl with image models",
-                video: "Use generateVideo with veo, seedance, or seedance-pro",
-                imageToImage:
-                    "Pass 'image' parameter with a URL to transform existing images",
-            },
-        };
-
-        return createMCPResponse([createTextContent(result, true)]);
-    } catch (error) {
-        console.error("Error listing image models:", error);
-        throw error;
-    }
+async function listImageModels() {
+    const models = await getImageModels();
+    return createMCPResponse([createTextContent(models, true)]);
 }
 
 const imageParamsSchema = {
-    prompt: z
-        .string()
-        .describe("Text description of the image to generate (required)"),
+    prompt: z.string().min(1).max(32000).describe("Image prompt"),
     model: z
         .string()
         .optional()
-        .describe(
-            "Image model to use. Options: flux (default, fast), turbo (ultra-fast), gptimage (OpenAI), " +
-                "kontext (context-aware, supports i2i), seedream/seedream-pro (high quality, supports i2i), " +
-                "nanobanana/nanobanana-pro (Gemini-based), zimage (experimental). Use listImageModels for full list.",
-        ),
-    width: z
-        .number()
-        .int()
-        .min(64)
-        .max(4096)
+        .describe("Image model. Use listImageModels for the live list"),
+    n: z
+        .literal(1)
         .optional()
-        .describe(
-            "Image width in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048",
-        ),
-    height: z
-        .number()
-        .int()
-        .min(64)
-        .max(4096)
-        .optional()
-        .describe(
-            "Image height in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048",
-        ),
-    seed: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe(
-            "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images",
-        ),
-    guidance_scale: z
-        .number()
-        .min(1)
-        .max(20)
-        .optional()
-        .describe(
-            "How closely to follow the prompt (1-20). Higher = more literal, lower = more creative. Default varies by model",
-        ),
-    quality: z
-        .enum(["low", "medium", "high", "hd"])
-        .optional()
-        .describe(
-            "Image quality level (default: 'medium'). 'hd' for maximum quality, 'low' for faster generation",
-        ),
-    image: z
+        .describe("Number of images (the API currently supports 1)"),
+    size: z
         .string()
         .optional()
+        .describe("Image size as WIDTHxHEIGHT, for example 1024x1024"),
+    quality: z
+        .enum(["standard", "hd", "low", "medium", "high"])
+        .optional()
+        .describe("Image quality"),
+    response_format: z
+        .enum(["url", "b64_json"])
+        .optional()
         .describe(
-            "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
-                "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
-                "Put this parameter last in URL or URL-encode it.",
+            "API response format. url returns an MCP resource link; b64_json returns MCP image data (API default)",
         ),
+    user: z.string().optional().describe("End-user identifier"),
+    image: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe("Reference image URL or URLs for image-to-image generation"),
+    safe: z
+        .union([z.string(), z.boolean()])
+        .optional()
+        .describe("Pollinations safety options"),
+    seed: z.number().int().optional().describe("Random seed"),
     transparent: z
         .boolean()
         .optional()
-        .describe(
-            "Generate with transparent background (default: false). Useful for logos, stickers, overlays",
-        ),
-    safe: z
-        .boolean()
+        .describe("Request a transparent background where supported"),
+    guidance_scale: z
+        .number()
         .optional()
-        .describe(
-            "Enable safety content filters (default: false). Blocks NSFW content",
-        ),
+        .describe("Guidance scale where supported"),
 };
 
 const videoParamsSchema = {
-    prompt: z
-        .string()
-        .describe("Text description of the video to generate (required)"),
+    prompt: z.string().min(1).describe("Video prompt"),
     model: z
         .string()
         .optional()
-        .describe(
-            "Video model (default: 'veo'). Common options: veo, seedance, seedance-2.0, wan, wan-fast. " +
-                "Use listImageModels to see the full live list — models are validated against the registry.",
-        ),
-    duration: z
-        .number()
-        .int()
-        .min(2)
-        .max(120)
-        .optional()
-        .describe(
-            "Video duration in seconds:\n" +
-                "- veo: 4, 6, or 8 seconds only\n" +
-                "- seedance/seedance-pro: 2-10 seconds\n" +
-                "- seedance-2.0/wan: up to 15 seconds\n" +
-                "- nova-reel: up to 120 seconds",
-        ),
+        .describe("Video model (default: veo). Use listImageModels"),
+    duration: z.number().optional().describe("Video duration in seconds"),
     aspectRatio: z
         .string()
         .optional()
-        .describe(
-            "Video aspect ratio. Examples: '16:9' (landscape), '9:16' (portrait/vertical), '1:1' (square)",
-        ),
+        .describe("Aspect ratio, for example 16:9 or 9:16"),
     audio: z
         .boolean()
         .optional()
-        .describe(
-            "Enable audio generation where supported. Check videoCapabilities from listImageModels for per-model support.",
-        ),
+        .describe("Generate audio where the model supports it"),
     image: z
-        .string()
+        .union([z.string(), z.array(z.string())])
         .optional()
-        .describe(
-            "Reference image URL(s) for image-to-video generation. " +
-                "For video models, image[0] is the start frame and image[1] is the end frame when videoCapabilities includes end_frame.",
-        ),
-    seed: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe("Random seed for reproducible results"),
+        .describe("Reference image URL or URLs for image-to-video generation"),
+    seed: z.number().int().optional().describe("Random seed"),
     safe: z
-        .boolean()
+        .union([z.string(), z.boolean()])
         .optional()
-        .describe("Enable safety content filters (default: false)"),
+        .describe("Pollinations safety options"),
 };
 
 export const imageTools = [
     [
-        "generateImageUrl",
-        "Generate an image URL from a text prompt. Returns a shareable/embeddable URL without downloading the image. " +
-            "Supports all image models and parameters including image-to-image with the 'image' parameter.",
-        imageParamsSchema,
-        generateImageUrl,
-    ],
-    [
         "generateImage",
-        "Generate an image from a text prompt and return the base64-encoded image data. " +
-            "Full control over all generation parameters. Supports image-to-image with kontext, seedream, nanobanana models.",
+        "Generate one image through POST /v1/images/generations. Set response_format to url for a resource link or b64_json for MCP image data.",
         imageParamsSchema,
         generateImage,
     ],
     [
-        "generateImageBatch",
-        "Generate multiple images in parallel (up to 10). Best with sk_ keys (no rate limits). " +
-            "pk_ keys will be rate-limited. Each prompt generates one image with shared parameters.",
-        {
-            prompts: z
-                .array(z.string())
-                .min(1)
-                .max(10)
-                .describe(
-                    "Array of prompts to generate images for (1-10 prompts). Each prompt generates one image.",
-                ),
-            model: z.string().optional().describe("Image model for all images"),
-            width: z.number().int().optional().describe("Width for all images"),
-            height: z
-                .number()
-                .int()
-                .optional()
-                .describe("Height for all images"),
-            seed: z
-                .number()
-                .int()
-                .optional()
-                .describe("Base seed (incremented for each image)"),
-            guidance_scale: z
-                .number()
-                .optional()
-                .describe("Guidance scale for all images"),
-            quality: z
-                .enum(["low", "medium", "high", "hd"])
-                .optional()
-                .describe("Quality for all images"),
-            image: z
-                .string()
-                .optional()
-                .describe("Reference image for all (i2i)"),
-            transparent: z
-                .boolean()
-                .optional()
-                .describe("Transparent background for all"),
-            safe: z.boolean().optional().describe("Safety filters for all"),
-        },
-        generateImageBatch,
-    ],
-    [
         "generateVideo",
-        "Generate a video from a text prompt or image. " +
-            "Models: veo (text-to-video, 4-8s, audio), seedance (text/image-to-video, 2-10s), seedance-pro (best quality). " +
-            "Use 'image' parameter with seedance models for image-to-video generation.",
+        "Generate one video through GET /image/{prompt} and return it as an embedded MCP resource.",
         videoParamsSchema,
         generateVideo,
     ],
     [
-        "generateVideoUrl",
-        "Generate a video URL from a text prompt. Returns a shareable/embeddable URL without downloading the video. " +
-            "Models: veo (4-8s, audio), seedance (2-10s), seedance-pro (best quality).",
-        videoParamsSchema,
-        generateVideoUrl,
-    ],
-    [
-        "describeImage",
-        "Analyze and describe an image using vision-capable AI models. " +
-            "Pass an image URL and optionally a custom prompt. " +
-            "Great for image captioning, content analysis, OCR, and visual Q&A.",
-        {
-            imageUrl: z
-                .string()
-                .describe("URL of the image to analyze (required)"),
-            prompt: z
-                .string()
-                .optional()
-                .describe(
-                    "What to analyze about the image (default: 'Describe this image in detail.'). " +
-                        "Examples: 'What text is in this image?', 'What emotions are shown?', 'List all objects'",
-                ),
-            model: z
-                .string()
-                .optional()
-                .describe(
-                    "Vision-capable model to use (default: 'openai'). " +
-                        "Options: openai, gemini, claude, grok - all support vision",
-                ),
-        },
-        describeImage,
-    ],
-    [
-        "analyzeVideo",
-        "Analyze a video using AI. Supports YouTube URLs and direct video links. " +
-            "Uses gemini-large for native video understanding (frames + audio). " +
-            "Great for video summarization, content analysis, and Q&A about videos.",
-        {
-            videoUrl: z
-                .string()
-                .describe(
-                    "URL of the video to analyze. Supports YouTube URLs (youtube.com, youtu.be), " +
-                        "direct video URLs (https://...), and Google Cloud Storage (gs://...)",
-                ),
-            prompt: z
-                .string()
-                .optional()
-                .describe(
-                    "What to analyze about the video (default: 'Describe what happens in this video'). " +
-                        "Examples: 'Summarize the key points', 'What is being discussed?', 'List all people shown'",
-                ),
-            model: z
-                .string()
-                .optional()
-                .describe(
-                    "Model to use (default: 'gemini-large'). " +
-                        "gemini-large and gemini support native video input",
-                ),
-        },
-        analyzeVideo,
-    ],
-    [
         "listImageModels",
-        "List all available image and video generation models with their capabilities. " +
-            "Shows which models support image-to-image, video generation, and other features. " +
-            "Models are fetched dynamically from the API.",
+        "Return the live image and video model registry from GET /image/models.",
         {},
         listImageModels,
     ],

@@ -1,0 +1,35 @@
+{
+  "pr_number": 13389,
+  "title": "feat: add Qwen3.8 2.4T A95B",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13389",
+  "merged_at": "2026-08-14T19:28:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `qwen3.8-2.4t-a95b` as a distinct text-only model through Fireworks route `accounts/fireworks/models/qwen3p8-2p4t-a95b`.\n- Keeps `qwen3.8-max` unchanged; adds no aliases, provider fallback, or Pollinations GPU route.\n- Sets Quest-Pollen access (`paidOnly: false`), multiplier `1`, and Fireworks rates: $2/M input, $0.25/M cached input, $6/M output.\n- Supports tools, reasoning controls, streaming, and 262K context.\n\nVerification:\n- Direct Fireworks: basic, tools, reasoning off, streaming, cache read, and 5-request burst.\n- Local authenticated E2E: `/v1/models`, basic/tools/reasoning/streaming, output cache, auth, invalid model, malformed request, and 5-request burst.\n- Tinybird billing reconciled exact uncached, cached, and completion token rates with `total_cost == total_price`.\n- Focused resolver/reasoning/permissions/catalog/pricing tests and both service typechecks pass.\n\nPricing source: https://fireworks.ai/models/fireworks/qwen3p8-max\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A very large Qwen arrives",
+    "blurb": "A new Qwen has landed in the garden: 2.4 trillion parameters, but thankfully no 2.4 trillion-step setup ritual. It is ready for text, tools, reasoning, streams, and the occasional enormous context window.",
+    "summary": "Added the distinct Fireworks-backed `qwen3.8-2.4t-a95b` text model with tool calling, reasoning controls, streaming, a 262K context window, and Quest-Pollen access at multiplier 1.",
+    "impact": "Developers can select `qwen3.8-2.4t-a95b` for long-context and tool-using workloads, billed at $2/M input tokens, $0.25/M cached input tokens, and $6/M output tokens.",
+    "keywords": [
+      "qwen",
+      "fireworks",
+      "text-models",
+      "tool-calling",
+      "reasoning",
+      "streaming",
+      "long-context"
+    ],
+    "visual_concept": "Depict Polli welcoming a colossal but gentle Qwen-themed library server into a cozy code garden: long scrolls represent the 262K context window, while small tool icons and streaming data-fireflies show its capabilities. The monitor robot can eagerly inspect the model catalog beside blooming code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny librarian hat, welcoming a huge friendly Qwen library-server surrounded by 262K-length scrolls, tool-shaped garden markers, and streaming data-fireflies; a CRT monitor robot reads the new model card beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'QWEN 3.8'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13389.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny librarian hat, welcoming a huge friendly Qwen library-server surrounded by 262K-length scrolls, tool-shaped garden markers, and streaming data-fireflies; a CRT monitor robot reads the new model card beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'QWEN 3.8'."
+  },
+  "generated_at": "2026-08-14T19:29:37.550544+00:00"
+}

@@ -111,7 +111,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Pollen budget cap. Publishable keys treat null or omission as 0; secret keys use null for unlimited",
+            "Pollen budget cap. Ignored for publishable keys, which always use 0; secret keys use null for unlimited",
         ),
     accountPermissions: z
         .array(z.string())

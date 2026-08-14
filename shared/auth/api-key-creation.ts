@@ -225,9 +225,7 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
-    const effectivePollenBudget = isPublishable
-        ? (pollenBudget ?? 0)
-        : pollenBudget;
+    const effectivePollenBudget = isPublishable ? 0 : pollenBudget;
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {

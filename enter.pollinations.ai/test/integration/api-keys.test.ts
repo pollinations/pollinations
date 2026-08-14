@@ -22,10 +22,10 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
-        test("defaults publishable keys to zero direct-spend budget", async ({
+        test("forces publishable keys to zero direct-spend budget", async ({
             sessionToken,
         }) => {
-            for (const pollenBudget of [undefined, null]) {
+            for (const pollenBudget of [undefined, null, 5]) {
                 const response = await SELF.fetch(
                     "http://localhost:3000/api/api-keys",
                     {
@@ -35,7 +35,7 @@ describe("API Key Management", () => {
                             Cookie: `better-auth.session_token=${sessionToken}`,
                         },
                         body: JSON.stringify({
-                            name: `zero-budget-publishable-${String(pollenBudget)}`,
+                            name: `forced-zero-publishable-${String(pollenBudget)}`,
                             type: "publishable",
                             pollenBudget,
                             metadata: {
@@ -57,35 +57,6 @@ describe("API Key Management", () => {
                 });
                 expect(stored?.pollenBalance).toBe(0);
             }
-        });
-
-        test("preserves explicit publishable-key budgets", async ({
-            sessionToken,
-        }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        name: "owner-funded-publishable",
-                        type: "publishable",
-                        pollenBudget: 5,
-                        metadata: {
-                            redirectUris: [
-                                "https://owner-funded.example/callback",
-                            ],
-                        },
-                    }),
-                },
-            );
-
-            expect(response.status).toBe(200);
-            const created = await response.json();
-            expect(created.pollenBudget).toBe(5);
         });
 
         test("should create publishable key metadata in one step", async ({

@@ -1,0 +1,35 @@
+{
+  "pr_number": 13366,
+  "title": "feat: add Seedance 2.0 Mini and Fast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13366",
+  "merged_at": "2026-08-14T11:16:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `seedance-2.0-mini` and `seedance-2.0-fast` as distinct paid-only Replicate services with no aliases or fallback.\n- Exposes Mini at 480p/720p for 4–10 seconds ($0.04/$0.09 per second) and Fast at 480p for 4–5 seconds ($0.07 per second).\n- Reuses the existing Seedance 2.0 handler while preserving the existing full model unchanged.\n- Local Gen E2E verified authentication, resolution routing, keyframes through `media.pollinations.ai`, optional audio, MP4 tracks, billing, catalogs, exact cache replay, and burst behavior.\n- Fast 720p and longer durations are intentionally excluded after repeated local latency exceeded 120 seconds.\n\nTests: focused Replicate/Seedance suites, registry and pricing invariants, snapshots, Biome, and Gen/Enter typechecks.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two new seeds, faster films",
+    "blurb": "Seedance 2.0 grew two smaller branches: Mini for flexible 480p/720p clips and Fast for quick 480p renders. Polli checked the keyframes, audio, billing, and replay cache, because apparently a video seed needs paperwork.",
+    "summary": "Added paid-only Replicate video models `seedance-2.0-mini` and `seedance-2.0-fast`: Mini generates 4–10 second clips at 480p or 720p for $0.04/$0.09 per second, while Fast generates 4–5 second 480p clips for $0.07 per second.",
+    "impact": "Developers can now select Seedance 2.0 Mini for longer or 720p clips and Fast for short 480p videos, with authenticated generation, keyframes via `media.pollinations.ai`, optional audio, MP4 tracks, billing, and exact cache replay supported.",
+    "keywords": [
+      "video",
+      "seedance",
+      "replicate",
+      "models",
+      "keyframes",
+      "audio",
+      "billing"
+    ],
+    "visual_concept": "Depict Seedance 2.0 as two friendly film-seed plants growing from separate labeled pots: a compact Mini plant projecting 480p and 720p film strips, and a speedy Fast plant projecting a short 480p strip. Polli, wearing a tiny director beret and holding a clapperboard, tends the plants beside a cozy retro video workstation; small flowers and vines connect the keyframe frames, audio notes, and MP4 reel.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny director beret and tending two friendly video-seed plants labeled in simple pixel text “MINI” and “FAST”; one sprouts 480p and 720p film frames while the other projects a short 480p film strip, beside a warm retro monitor, keyframe pictures, audio notes, and flowering code vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13366.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny director beret and tending two friendly video-seed plants labeled in simple pixel text “MINI” and “FAST”; one sprouts 480p and 720p film frames while the other projects a short 480p film strip, beside a warm retro monitor, keyframe pictures, audio notes, and flowering code vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T11:18:11.630548+00:00"
+}

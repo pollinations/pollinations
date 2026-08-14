@@ -1,0 +1,34 @@
+{
+  "pr_number": 13354,
+  "title": "fix: restore README star history chart with committed snapshot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13354",
+  "merged_at": "2026-08-14T09:15:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- The star-history.com embed currently renders a \"GitHub restricted access to star data\" placeholder (GitHub stargazer API restriction), so the README chart has been broken.\n- Replaces the remote embed with committed light/dark SVG snapshots generated from the repo's own stargazer data (4,947 stars as of 2026-08-14).\n- Adds `.github/scripts/star-history-chart.mjs` to generate the snapshots; output is deterministic, so unchanged star data produces identical files.\n- The daily README workflow (`docs-update-readme-news.yml`) now regenerates the charts with the bot token and commits them alongside the news update; the chart step is `continue-on-error` so a stargazer API failure can't block the news refresh.\n- The chart still links to star-history.com; the live embed can be restored once the restriction lifts.\n- Supersedes #13315, which pointed the chart at a third-party mirror (closed — part of a cross-repo campaign).\n\nNote for after merge: trigger `Docs / Update README` via workflow_dispatch once to confirm the bot app token can read stargazer data (all local testing used a personal collaborator token).\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The stars return home",
+    "blurb": "The README's star chart was replaced by a rather unhelpful GitHub restriction notice. It now grows from a committed snapshot of the hive's own stargazer data instead.",
+    "summary": "Replaced the broken remote star-history.com README embed with deterministic committed light and dark SVG charts generated from Pollinations' stargazer data, currently showing 4,947 stars.",
+    "impact": "README visitors can once again see the project's star history, while the daily docs workflow refreshes the chart alongside news updates without letting a stargazer API hiccup block the refresh.",
+    "keywords": [
+      "README",
+      "GitHub",
+      "star history",
+      "documentation",
+      "workflow",
+      "SVG"
+    ],
+    "visual_concept": "Depict Polli as a careful night gardener tending a small chart-shaped constellation garden, with star flowers rising along a visible history graph. A cozy retro terminal displays the freshly restored chart while the stars are safely collected in a little glass frame, representing the committed SVG snapshot rather than a fragile remote embed.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, tending a constellation garden where glowing star flowers form an upward history chart; a retro CRT terminal beside her displays a small restored SVG graph. Soft lime green (#ecf874) and warm cream pastel gradient background, code-vines and tiny flowers, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13354.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, tending a constellation garden where glowing star flowers form an upward history chart; a retro CRT terminal beside her displays a small restored SVG graph. Soft lime green (#ecf874) and warm cream pastel gradient background, code-vines and tiny flowers, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-14T09:16:17.201929+00:00"
+}

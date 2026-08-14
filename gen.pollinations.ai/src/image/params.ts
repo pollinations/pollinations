@@ -86,7 +86,9 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        resolution: z.enum(["1k", "2k", "480p", "720p", "1080p"]).optional(),
+        resolution: z
+            .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+            .optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -122,6 +124,36 @@ export const ImageParamsSchema = z
                 message:
                     "Transparent backgrounds are not supported by gpt-image-2.",
             });
+        }
+        if (data.model === "minimax-h3") {
+            if (data.duration !== undefined && data.duration !== 5) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message: "minimax-h3 supports exactly 5 seconds.",
+                });
+            }
+            if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message: "minimax-h3 currently supports 16:9 only.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["image"],
+                    message: "minimax-h3 currently supports text input only.",
+                });
+            }
         }
         if (
             data.model === "grok-imagine-image-2.0" &&

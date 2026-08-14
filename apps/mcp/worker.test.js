@@ -55,6 +55,10 @@ test("serves health and requires bearer auth", async () => {
         }),
     );
     assert.equal(unauthorized.status, 401);
+    assert.equal(
+        unauthorized.headers.get("www-authenticate"),
+        'Bearer realm="mcp.pollinations.ai"',
+    );
 });
 
 test("serves modern and legacy clients without sessions", async () => {

@@ -28,7 +28,12 @@ function unauthorizedResponse() {
             error: "unauthorized",
             message: "Send a Pollinations API key as a bearer token.",
         },
-        { status: 401 },
+        {
+            status: 401,
+            headers: {
+                "WWW-Authenticate": 'Bearer realm="mcp.pollinations.ai"',
+            },
+        },
     );
 }
 

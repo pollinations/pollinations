@@ -1,18 +1,27 @@
 import {
     createExecutionContext,
     env,
-    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    const ctx = createExecutionContext();
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        ctx,
+    );
+}
 
 describe("ElevenLabs Text to Dialogue", () => {
     afterEach(() => {
@@ -95,7 +104,7 @@ describe("ElevenLabs Text to Dialogue", () => {
 workerTest(
     "restricts the model to its dialogue endpoint",
     async ({ paidApiKey }) => {
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech",
             {
                 method: "POST",
@@ -186,10 +195,10 @@ workerTest(
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 request,
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
             expect(response.status).toBe(200);
@@ -218,7 +227,7 @@ workerTest(
     "rejects oversized dialogue before safety or provider calls",
     async ({ paidApiKey }) => {
         const fetchMock = vi.spyOn(globalThis, "fetch");
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/dialogue",
             {
                 method: "POST",
@@ -249,7 +258,7 @@ workerTest(
 workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
     "generates multi-speaker audio through the full local route",
     async ({ paidApiKey }) => {
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/dialogue",
             {
                 method: "POST",
@@ -275,7 +284,7 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         );
         expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(1000);
 
-        const wavResponse = await SELF.fetch(
+        const wavResponse = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/dialogue",
             {
                 method: "POST",

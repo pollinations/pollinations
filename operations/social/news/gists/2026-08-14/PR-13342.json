@@ -1,0 +1,34 @@
+{
+  "pr_number": 13342,
+  "title": "revert: deduplicate generation requests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13342",
+  "merged_at": "2026-08-14T03:33:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reverts #13299 after recurring production Durable Object resets\n- Restores the pre-deduplication generation path\n- Preserves the realtime Scribe release",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The coordinator gets a nap",
+    "blurb": "Generation requests are back on the proven path after the new coordinator kept waking up in the wrong place. Realtime Scribe stays in the garden, while the Durable Object reset gremlins lose their clipboard.",
+    "summary": "Reverted the generation-request deduplication system, including its Durable Object GenerationCoordinator, to restore the pre-deduplication image, text, audio, and proxy generation path while preserving the realtime Scribe release.",
+    "impact": "Users regain the established, reliable generation flow without recurring Durable Object resets interrupting requests, and realtime Scribe remains available.",
+    "keywords": [
+      "generation",
+      "reliability",
+      "durable-objects",
+      "deduplication",
+      "scribe",
+      "api"
+    ],
+    "visual_concept": "Depict Polli gently guiding a chunky CRT monitor robot away from a tangled, over-engineered garden watering coordinator and back onto a sturdy, well-worn path leading to healthy code-plants. The abandoned coordinator can be a small sleepy box with a reset symbol, while a nearby terminal still displays a bright realtime Scribe waveform to show that release remains intact.",
+    "image_prompt": "Cozy pixel art garden-hackerspace where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded light-blue translucent wings, wears a tiny gardener scarf and guides a curious CRT monitor robot from a tangled sleepy reset-box back onto a sturdy path of blooming code-plants; a retro terminal glows with a realtime audio waveform. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"STEADY PATH\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13342.jpg",
+    "prompt": "Cozy pixel art garden-hackerspace where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded light-blue translucent wings, wears a tiny gardener scarf and guides a curious CRT monitor robot from a tangled sleepy reset-box back onto a sturdy path of blooming code-plants; a retro terminal glows with a realtime audio waveform. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"STEADY PATH\"."
+  },
+  "generated_at": "2026-08-14T03:34:09.608356+00:00"
+}

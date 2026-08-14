@@ -78,6 +78,7 @@ function zeroAudioBase64(byteLength: number): string {
 
 function mockRealtimeProvider(initialMessage?: string) {
     let upstreamRequest: Request | undefined;
+    let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
     let upstreamServerAccepted = false;
     const tinybirdRequests: Request[] = [];
@@ -101,6 +102,7 @@ function mockRealtimeProvider(initialMessage?: string) {
                 WebSocket,
                 WebSocket,
             ];
+            upstreamClient = client;
             upstreamServer = server;
             if (initialMessage) {
                 server.accept();
@@ -127,6 +129,12 @@ function mockRealtimeProvider(initialMessage?: string) {
                 throw new Error("Expected upstream realtime WebSocket");
             }
             return upstreamServer;
+        },
+        get client() {
+            if (!upstreamClient) {
+                throw new Error("Expected proxy-side upstream WebSocket");
+            }
+            return upstreamClient;
         },
         get serverAccepted() {
             return upstreamServerAccepted;
@@ -418,6 +426,20 @@ test("completes both sides of the Azure close handshake", async () => {
     await expect(upstreamClose).resolves.toMatchObject({ code: 1000 });
     await waitOnExecutionContext(session.ctx);
     expect(session.upstream.tinybirdRequests).toHaveLength(0);
+});
+
+test("does not reply to an abnormal Azure close", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "azure-realtime-abnormal-close-key",
+    });
+    const closeSpy = vi.spyOn(session.upstream.client, "close");
+
+    session.upstream.client.dispatchEvent(
+        new CloseEvent("close", { code: 1006, wasClean: false }),
+    );
+
+    await waitOnExecutionContext(session.ctx);
+    expect(closeSpy).not.toHaveBeenCalled();
 });
 
 test("routes the mini model through the working East US 2 deployment", async ({
@@ -987,7 +1009,8 @@ test("does not retry a partially completed realtime deduction", async () => {
 
     const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - 0.003553 * 0.75, 8);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    session.upstream.client.dispatchEvent(new Event("error"));
+    await waitOnExecutionContext(session.ctx);
     expect((await getUserBalances(session.userId))?.packBalance).toBeCloseTo(
         user?.packBalance ?? 0,
         8,

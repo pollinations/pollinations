@@ -734,6 +734,7 @@ async function settleRealtimeSession(
     >[0]["db"];
 
     if (!tracking.deduction) {
+        if (tracking.deductionAttempted) return;
         tracking.deductionAttempted = true;
         tracking.deduction = await handleBalanceDeduction({
             db,
@@ -867,7 +868,7 @@ function wireClose(
     source.addEventListener("close", (event) => {
         try {
             closeSocket(target, event.code, event.reason);
-            if (source.readyState !== WebSocket.CLOSED) {
+            if (event.wasClean && source.readyState !== WebSocket.CLOSED) {
                 const closeCode = normalizeCloseCode(event.code);
                 if (closeCode) source.close(closeCode, event.reason);
                 else source.close();

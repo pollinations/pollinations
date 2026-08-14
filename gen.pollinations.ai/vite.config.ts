@@ -8,7 +8,7 @@ export default defineConfig({
     },
     assetsInclude: ["**/*.md"],
     resolve: {
-        dedupe: ["hono", "hono-openapi", "zod"],
+        dedupe: ["zod"],
         alias: [
             // piexif-ts package.json points "module"/"browser" at non-existent files;
             // pin resolution to the published UMD bundle that actually ships.

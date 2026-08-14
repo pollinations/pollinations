@@ -1,7 +1,6 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
-import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -22,9 +21,9 @@ const sanitizedBoolean = z
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
     const parsedSeed = Number.parseInt(seed, 10);
-    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : SENTINEL_SEED;
-    return normalizeSeed(parsed);
-}, z.int().min(0).max(MAX_SEED).catch(SENTINEL_SEED));
+    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : 42;
+    return parsed;
+}, z.int().min(-1).max(MAX_SEED).catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);

@@ -12,7 +12,6 @@ import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, expect } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
-import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
@@ -113,7 +112,7 @@ async function generate(path: string, apiKey: string) {
         new Request(`https://gen.pollinations.ai${path}`, {
             headers: { authorization: `Bearer ${apiKey}` },
         }),
-        withInlineGenerationCoordinator(env),
+        env,
         ctx,
     );
     const failureBody =

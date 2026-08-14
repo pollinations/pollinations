@@ -10,11 +10,7 @@ import {
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
-import {
-    createGenerationCache,
-    createGenerationExecutionCache,
-    type GenerationCacheAdapter,
-} from "./generation-cache.ts";
+import { createGenerationCache } from "./generation-cache.ts";
 
 /**
  * Text cache middleware
@@ -26,15 +22,27 @@ import {
  * Note: Only apply this middleware to cacheable routes (e.g., /v1/chat/completions, /text/:prompt)
  * Non-cacheable routes like /v1/models should NOT use this middleware
  */
-const textCacheAdapter: GenerationCacheAdapter = {
-    storage: "text",
+export const textCache = createGenerationCache({
     label: "text-cache",
-    async getKey(c) {
+    async getKey(c, log) {
         // Hono caches body text across c.req.json()/text(), so this still works
         // after upstream validators have parsed JSON.
         let bodyText: string | undefined;
         if (c.req.method === "POST" || c.req.method === "PUT") {
-            bodyText = c.var.generationCacheBody ?? (await c.req.text());
+            try {
+                bodyText = await c.req.text();
+                if (!bodyText) {
+                    log.debug(
+                        "[TEXT-CACHE] Empty body for POST/PUT, skipping cache",
+                    );
+                    return null;
+                }
+            } catch {
+                log.warn(
+                    "[TEXT-CACHE] Could not read request body, skipping cache",
+                );
+                return null;
+            }
         }
 
         return generateCacheKey(c.req.raw, bodyText);
@@ -44,8 +52,8 @@ const textCacheAdapter: GenerationCacheAdapter = {
         return response.status === 200 && response.body !== null;
     },
     capture(c, cacheKey, response) {
-        const capture = createCaptureStream(c, cacheKey, response);
-        const transformedBody = response.body?.pipeThrough(capture.stream);
+        const captureStream = createCaptureStream(c, cacheKey, response);
+        const transformedBody = response.body?.pipeThrough(captureStream);
         const captured = new Response(transformedBody, {
             status: response.status,
             statusText: response.statusText,
@@ -54,10 +62,6 @@ const textCacheAdapter: GenerationCacheAdapter = {
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
         captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-        return { response: captured, write: capture.write };
+        return captured;
     },
-};
-
-export const textCache = createGenerationCache(textCacheAdapter);
-export const textExecutionCache =
-    createGenerationExecutionCache(textCacheAdapter);
+});

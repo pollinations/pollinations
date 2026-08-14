@@ -34,17 +34,9 @@ bucket_name = "pollinations-text-enter"
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
-[[durable_objects.bindings]]
-name = "GENERATION_COORDINATOR"
-class_name = "GenerationCoordinator"
-
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
-
-[[migrations]]
-tag = "v2"
-new_sqlite_classes = ["GenerationCoordinator"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -117,17 +109,9 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
-[[env.production.durable_objects.bindings]]
-name = "GENERATION_COORDINATOR"
-class_name = "GenerationCoordinator"
-
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
-
-[[env.production.migrations]]
-tag = "v2"
-new_sqlite_classes = ["GenerationCoordinator"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -185,17 +169,9 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
-[[env.staging.durable_objects.bindings]]
-name = "GENERATION_COORDINATOR"
-class_name = "GenerationCoordinator"
-
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
-
-[[env.staging.migrations]]
-tag = "v2"
-new_sqlite_classes = ["GenerationCoordinator"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -245,17 +221,9 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
-[[env.test.durable_objects.bindings]]
-name = "GENERATION_COORDINATOR"
-class_name = "GenerationCoordinator"
-
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
-
-[[env.test.migrations]]
-tag = "v2"
-new_sqlite_classes = ["GenerationCoordinator"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

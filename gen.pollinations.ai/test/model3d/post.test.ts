@@ -14,7 +14,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
-import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 type ProviderBody = Record<string, unknown>;
 
@@ -110,7 +109,7 @@ async function fetch3d(
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        env,
         ctx,
     );
     await response.clone().arrayBuffer();
@@ -118,7 +117,7 @@ async function fetch3d(
     return response;
 }
 
-test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
+test("POST /3d sends JSON Trellis parameters through billing without URL-only caching", async () => {
     syncModel3dEnvironment({
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
@@ -148,7 +147,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("X-Cache")).toBe("HIT");
+        expect(response.headers.get("X-Cache")).toBeNull();
         expect(await response.text()).toBe("glTF");
     }
 
@@ -308,7 +307,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("HIT");
+    expect(response.headers.get("X-Cache")).toBe("MISS");
     expect(mocks.inferenceport.state.bodies[0]).toMatchObject({
         resolution: "medium",
     });

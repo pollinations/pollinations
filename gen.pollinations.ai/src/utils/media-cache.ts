@@ -20,12 +20,8 @@ const CACHED_HEADER_NAMES = [
     "content-disposition",
     "content-security-policy",
     "x-content-type-options",
-    "x-elevenlabs-reference-song-id",
-    "x-elevenlabs-song-id",
     "x-fallback-target",
     "x-model-used",
-    "x-tts-voice",
-    "x-voice-changer-voice",
 ];
 
 function hasActiveSafety(value: string | null | undefined): boolean {
@@ -121,26 +117,39 @@ type MediaCacheEnv = {
     };
 };
 
-export async function putMediaResponse<TEnv extends MediaCacheEnv>(
+export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): Promise<void> {
-    const body = await response.clone().arrayBuffer();
-    if (body.byteLength === 0) {
-        c.get("log").warn("Skipping empty media cache write for {cacheKey}", {
-            cacheKey,
-        });
-        throw new Error("Refusing to cache an empty media response");
-    }
+): void {
+    c.executionCtx.waitUntil(
+        response
+            .clone()
+            .arrayBuffer()
+            .then((body) => {
+                if (body.byteLength === 0) {
+                    c.get("log").warn(
+                        "Skipping empty media cache write for {cacheKey}",
+                        { cacheKey },
+                    );
+                    return null;
+                }
 
-    await bucket.put(cacheKey, body, {
-        httpMetadata: removeUnset({
-            contentType:
-                response.headers.get("content-type") || defaultContentType,
-        } as R2HTTPMetadata),
-        customMetadata: prepareCustomMetadata(response),
-    });
+                return bucket.put(cacheKey, body, {
+                    httpMetadata: removeUnset({
+                        contentType:
+                            response.headers.get("content-type") ||
+                            defaultContentType,
+                    } as R2HTTPMetadata),
+                    customMetadata: prepareCustomMetadata(response),
+                });
+            })
+            .catch((error) => {
+                c.get("log").error("Error caching response: {error}", {
+                    error,
+                });
+            }),
+    );
 }

@@ -113,6 +113,10 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   one D1 migration PR. Replace old IDs, preserve unrelated permission fields
   and array order, deduplicate old/new pairs, prove idempotence, and verify all
   audited old-ID counts are zero after deployment.
+- Keep every migration statement within D1's per-query CPU limit: one statement
+  per alias, and prefilter with `instr()` inside `CASE` so JSON functions never
+  run on non-matching rows. A single whole-table JSON scan fails with error
+  7429 at production scale (~150k apikey rows).
 - API-key create and update paths must store recognized aliases as canonical
   IDs, while preserving unknown and community IDs, so migrations do not need to
   repair newly written aliases again.

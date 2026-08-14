@@ -1,0 +1,34 @@
+{
+  "pr_number": 13322,
+  "title": "feat(gen): add ?community query parameter to model discovery endpoints",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/13322",
+  "merged_at": "2026-08-14T17:28:52Z",
+  "labels": [],
+  "pr_body_excerpt": "adds optional `?community` query parameter to model discovery endpoints so client apps and bots can filter out community models when they only want core official models\r\n\r\nchanges\r\n\\- new `filterEntriesByCommunityParam` helper in `proxy.ts`, applied inside `modelsListHandler` and the inline `/v1/models` handler\r\n\\- `?community=false` (or `0`) excludes community models, `?community=true` (or `1`) returns only community models\r\n\\- omitting the parameter returns all models (fully backward compatible)\r\n\\- updated OpenAPI descriptions on `/v1/models`, `/models`, `/text/models`, `/image/models` to document the parameter\r\n\\- added query parameter docs section in `models.md`\r\n\\- integration test covering `/models`, `/text/models`, `/v1/models`, `/image/models` with `true`, `false`, `1`, `0`, and omitted variants",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model garden has gates",
+    "blurb": "Model discovery now comes with a tidy little filter. Ask for the official beds, the community greenhouse, or wander through the whole garden as before.",
+    "summary": "Added an optional `?community` filter to `/v1/models`, `/models`, `/text/models`, and `/image/models`, where `true` or `1` returns only community models, `false` or `0` returns official models, and omission preserves the full list.",
+    "impact": "Apps and bots can now discover the exact model catalog they need without client-side filtering, while existing model-list requests continue returning every model unchanged.",
+    "keywords": [
+      "model-discovery",
+      "community-models",
+      "api",
+      "query-parameters",
+      "openapi",
+      "gen"
+    ],
+    "visual_concept": "A cozy model garden split into two clearly labeled flower beds: official core models in one and community-grown models in the other, with a small query-filter valve choosing which blooms appear. Polli, wearing tiny librarian glasses, tends the labels beside a retro terminal, making the filtering feel precise but friendly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses while sorting a model garden into two flower beds labeled in simple pixel font “CORE” and “COMMUNITY”; a retro terminal has a little filter dial reading `?community=true/false`, with code-plants and vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13322.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses while sorting a model garden into two flower beds labeled in simple pixel font “CORE” and “COMMUNITY”; a retro terminal has a little filter dial reading `?community=true/false`, with code-plants and vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T17:29:57.612659+00:00"
+}

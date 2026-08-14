@@ -22,6 +22,72 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("defaults publishable keys to zero direct-spend budget", async ({
+            sessionToken,
+        }) => {
+            for (const pollenBudget of [undefined, null]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: `zero-budget-publishable-${String(pollenBudget)}`,
+                            type: "publishable",
+                            pollenBudget,
+                            metadata: {
+                                redirectUris: [
+                                    "https://zero-budget.example/callback",
+                                ],
+                            },
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(200);
+                const created = await response.json();
+                expect(created.pollenBudget).toBe(0);
+
+                const db = drizzle(env.DB, { schema });
+                const stored = await db.query.apikey.findFirst({
+                    where: (apikey, { eq }) => eq(apikey.id, created.id),
+                });
+                expect(stored?.pollenBalance).toBe(0);
+            }
+        });
+
+        test("preserves explicit publishable-key budgets", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "owner-funded-publishable",
+                        type: "publishable",
+                        pollenBudget: 5,
+                        metadata: {
+                            redirectUris: [
+                                "https://owner-funded.example/callback",
+                            ],
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.pollenBudget).toBe(5);
+        });
+
         test("should create publishable key metadata in one step", async ({
             sessionToken,
         }) => {

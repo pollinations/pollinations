@@ -1,6 +1,6 @@
-import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
+import { runInDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 
 function testJob(key: string, body?: string): GenerationJob {
@@ -27,13 +27,17 @@ function testJob(key: string, body?: string): GenerationJob {
     };
 }
 
-async function runScheduledAlarm(stub: DurableObjectStub): Promise<void> {
+async function waitForAlarm(state: DurableObjectState): Promise<void> {
     for (let attempt = 0; attempt < 100; attempt += 1) {
-        if (await runDurableObjectAlarm(stub)) return;
+        if ((await state.storage.getAlarm()) !== null) return;
         await new Promise((resolve) => setTimeout(resolve, 0));
     }
     throw new Error("Generation alarm was not scheduled");
 }
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 describe("GenerationCoordinator", () => {
     it("returns an existing cached generation without scheduling work", async () => {
@@ -51,28 +55,34 @@ describe("GenerationCoordinator", () => {
     });
 
     it("joins concurrent callers for the same cache identity", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,
         );
         const job = testJob(`missing-${crypto.randomUUID()}`);
 
-        const resultsPromise = runInDurableObject(stub, async (coordinator) => {
-            const owner = coordinator.startAndWait(job);
-            const joiner = coordinator.startAndWait(job);
-            return Promise.all([owner, joiner]);
-        });
-        await runScheduledAlarm(stub);
-        const results = await resultsPromise;
+        const results = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                const owner = coordinator.startAndWait(job);
+                const joiner = coordinator.startAndWait(job);
+                await waitForAlarm(state);
+                await coordinator.alarm();
+                await state.storage.deleteAlarm();
+                return Promise.all([owner, joiner]);
+            },
+        );
         expect(results.every((result) => result.status === "failed")).toBe(
             true,
         );
     });
 
     it("persists request bodies larger than one storage value", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,
         );
-        const statusPromise = runInDurableObject(
+        const status = await runInDurableObject(
             stub,
             async (coordinator, state) => {
                 await state.storage.put("sentinel", "keep");
@@ -82,11 +92,12 @@ describe("GenerationCoordinator", () => {
                         "x".repeat(2_100_000),
                     ),
                 );
+                await waitForAlarm(state);
+                await coordinator.alarm();
+                await state.storage.deleteAlarm();
                 return (await result).status;
             },
         );
-        await runScheduledAlarm(stub);
-        const status = await statusPromise;
 
         expect(status).toBe("failed");
         const remaining = await runInDurableObject(

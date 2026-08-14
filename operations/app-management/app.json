@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💼",
+    "name": "Jornal Bitcoin",
+    "url": "https://jornalbitcoin.com.br",
+    "description": "A real-time Brazilian Portuguese cryptocurrency news aggregator that automatically curates, translates, and summarizes articles using Pollinations text models (Gemma & OpenAI) and generates custom cov",
+    "language": "pt-BR",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "j0n777",
+    "githubUserId": "159093052",
+    "repositoryUrl": "https://github.com/j0n777/jornalbitcoin",
+    "repositoryStars": null,
+    "discordUsername": "jonataribas",
+    "other": null,
+    "submittedDate": "2026-06-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11741",
+    "approvedDate": "2026-08-14",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Article Illustrator",
     "url": "https://article.240801.xyz",

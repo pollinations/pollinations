@@ -392,6 +392,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/muse-glimmer-30b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-glimmer-30b",
+        }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
     "meta/muse-spark-1.1": () =>

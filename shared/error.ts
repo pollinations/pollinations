@@ -374,7 +374,7 @@ function createUpstreamErrorResponse(
  * (400/413/422) as-is since those can reflect user input we failed to validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    const remapTo502 = new Set([401, 403, 404, 409, 415, 429]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 415, 429]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }

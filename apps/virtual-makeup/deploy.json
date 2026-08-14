@@ -1,0 +1,8 @@
+{
+  "target": "pages",
+  "credentials": "apps",
+  "subdomain": "virtual-makeup",
+  "install": "npm install --silent",
+  "build": "npm run build",
+  "output": "dist"
+}

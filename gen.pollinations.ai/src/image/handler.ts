@@ -7,6 +7,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fallbackCandidates, withModelFallback } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
+import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -451,6 +452,8 @@ async function generateMediaWithFallback(
             };
         },
         c.var.track?.failedCalls,
+        (attempt) =>
+            enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
     );
     return {
         ...result,
@@ -481,7 +484,9 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
+        quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
     try {

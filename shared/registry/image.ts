@@ -338,7 +338,6 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         provider: "vast",
-        fallbacks: ["flux-replicate"],
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -351,31 +350,58 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "flux-replicate": {
-        aliases: [],
-        provider: "replicate",
-        brand: "Black Forest Labs",
-        category: "image",
-        addedDate: new Date("2026-08-01").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionImageTokens: 0.003, // per image
-        },
-        title: "Flux Schnell (Replicate)",
-        description: "Fast, high-quality images at a tiny cost",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-        hidden: true,
-    },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         provider: "vast",
+        fallbacks: ["zimage-fal"],
+        // Fal is capacity insurance only: do not move provider errors or bad
+        // requests away from the Pollinations-operated Vast pool.
+        fallbackOnStatusCodes: [503],
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.004, // per image
+        },
+        title: "Z-Image Turbo",
+        description:
+            "Instant, budget-friendly images with crisp upscaled output",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "zimage-fal": {
+        aliases: [],
+        provider: "fal",
+        brand: "Alibaba",
+        category: "image",
+        addedDate: new Date("2026-08-10").getTime(),
+        paidOnly: true,
+        hidden: true,
+        priceMultiplier: 1,
+        // Fal bills $0.005 per output megapixel. The token line stays at zero;
+        // the adjustment below records the exact provider cost while the
+        // caller keeps the public zimage flat price when this serves as fallback.
+        cost: {
+            completionImageTokens: 0,
+        },
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.zimage.output_megapixels.v1",
+                    description: "Fal output image megapixels",
+                    kind: "image",
+                    unit: "megapixel",
+                    unitCost: 0.005,
+                    publicPricing: {
+                        label: "Output megapixels",
+                        quantity: 1,
+                        unit: "megapixel",
+                    },
+                    countUnits: (_output, input) =>
+                        Math.max(0, input?.megapixels ?? 0),
+                },
+            ],
         },
         title: "Z-Image Turbo",
         description:
@@ -416,6 +442,7 @@ export const IMAGE_SERVICES = {
                         "Applies when the requested video resolution is 1080p.",
                 },
             },
+            "720p",
         ),
         resolutions: ["720p", "1080p"],
         title: "Veo 3.1 Fast",
@@ -460,6 +487,7 @@ export const IMAGE_SERVICES = {
                         "Applies when the requested video resolution is 1080p.",
                 },
             },
+            "720p",
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Seedance 1.0 Pro Fast",
@@ -484,6 +512,64 @@ export const IMAGE_SERVICES = {
         title: "Seedance 2.0",
         description:
             "720p video with natively synced sound, from text or images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "seedance-2.0-mini": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        cost: {
+            completionVideoSeconds: 0.09,
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.04,
+                },
+            },
+            matchResolution("480p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+            },
+            "720p",
+        ),
+        resolutions: ["720p", "480p"],
+        title: "Seedance 2.0 Mini",
+        description:
+            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "seedance-2.0-fast": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        cost: {
+            completionVideoSeconds: 0.07,
+        },
+        resolutions: ["480p"],
+        title: "Seedance 2.0 Fast",
+        description:
+            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -576,6 +662,7 @@ export const IMAGE_SERVICES = {
                         "Applies to 1080p requests with an input image.",
                 },
             },
+            "720p",
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
@@ -656,6 +743,7 @@ export const IMAGE_SERVICES = {
                         "Applies when the request includes one or more input images.",
                 },
             },
+            "Image generation",
         ),
         title: "Qwen Image",
         description:
@@ -663,6 +751,45 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
+    },
+    "qwen-image-3": {
+        aliases: [],
+        provider: "fal",
+        brand: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptImageTokens: 0.003, // per reference image ingested by Fal
+            completionImageTokens: 0.04, // per image up to 1536x1536
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.003,
+                    completionImageTokens: 0.075,
+                },
+            },
+            ({ input }) =>
+                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
+                    ? "2k"
+                    : undefined,
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                },
+            },
+            "1K",
+        ),
+        title: "Qwen Image 3",
+        description:
+            "Creates and edits detailed images with crisp multilingual text and complex layouts",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
     },
     "grok-imagine": {
         aliases: ["grok-imagine-image"],
@@ -705,6 +832,64 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+    },
+    "grok-imagine-image-2.0": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        cost: {
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
+        },
+        ...defineCostVariants(
+            {
+                low_1k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
+                },
+            },
+            ({ input }) => {
+                if (input?.quality === "low") {
+                    return input.resolution === "2k" ? "low_2k" : "low_1k";
+                }
+                return input?.resolution === "2k" ? "medium_2k" : undefined;
+            },
+            {
+                low_1k: {
+                    label: "Low · 1K",
+                    description: "Applies to low-quality 1K requests.",
+                },
+                low_2k: {
+                    label: "Low · 2K",
+                    description: "Applies to low-quality 2K requests.",
+                },
+                medium_2k: {
+                    label: "Medium · 2K",
+                    description: "Applies to medium-quality 2K requests.",
+                },
+            },
+            "Medium · 1K",
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Grok Imagine Image 2.0",
+        description:
+            "Creates and edits high-detail images at 1K or 2K with up to three references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
     },
     "recraft-v4.1-vector": {
         aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
@@ -777,6 +962,7 @@ export const IMAGE_SERVICES = {
                         "Applies when the requested video resolution is 1080p.",
                 },
             },
+            "720p",
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Grok Imagine Video 1.5",
@@ -786,6 +972,42 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "seedance-2.5": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.1028, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.2312,
+                },
+            },
+            matchResolution("720p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5",
+        description:
+            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
@@ -886,6 +1108,7 @@ export const IMAGE_SERVICES = {
                         "Applies when the requested video resolution is 1080p.",
                 },
             },
+            "720p",
         ),
         resolutions: ["720p", "1080p"],
         title: "Pruna p-video",

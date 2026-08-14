@@ -35,6 +35,7 @@ export interface TransformOptions {
     response_format?: { type: string; [key: string]: unknown };
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
@@ -129,6 +130,7 @@ export interface RequestData {
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
@@ -152,4 +154,5 @@ export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
     defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
+    fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

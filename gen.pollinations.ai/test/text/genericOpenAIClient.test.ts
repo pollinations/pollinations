@@ -6,6 +6,41 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("uses a configured service-binding fetcher", async () => {
+        const fetcher = vi.fn(async () =>
+            Response.json({
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        const globalFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("unexpected public fetch"));
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://portkey.myceli.ai/v1/chat/completions",
+                fetcher,
+            },
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(fetcher).toHaveBeenCalledWith(
+            "https://portkey.myceli.ai/v1/chat/completions",
+            expect.objectContaining({ method: "POST" }),
+        );
+        expect(globalFetch).not.toHaveBeenCalled();
+        expect(completion.choices?.[0]?.message?.content).toBe("ok");
+    });
+
     it("normalizes provider stop to length at the configured token limit", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 

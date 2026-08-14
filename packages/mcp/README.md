@@ -2,7 +2,7 @@
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
 
-All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing are read live from the registry — no hardcoded enums.
+All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS_BASE_URL` to use another compatible gateway. Models, voices, and pricing are read live from the registry — no hardcoded enums.
 
 ## Quick Start
 
@@ -31,6 +31,13 @@ Set your key via environment variable or the `setApiKey` tool:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here
+npx @pollinations/mcp
+```
+
+To use a local or self-hosted compatible gateway:
+
+```bash
+export POLLINATIONS_BASE_URL=http://localhost:8788
 npx @pollinations/mcp
 ```
 
@@ -126,7 +133,7 @@ Say "Hello, welcome to pollinations.ai!" using the nova voice.
 POLLINATIONS_API_KEY=sk_… npm run test
 ```
 
-Spawns the server over stdio, lists tools, and exercises a small live slice (auth, text, image URL, balance). Skips authenticated calls when the env var is unset.
+Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, text, image URL, balance).
 
 ## System Requirements
 
@@ -134,7 +141,7 @@ Spawns the server over stdio, lists tools, and exercises a small live slice (aut
 
 ## API Reference
 
-All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
+All requests go through `POLLINATIONS_BASE_URL`, which defaults to `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
 
 ## License
 

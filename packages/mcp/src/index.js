@@ -1,10 +1,11 @@
 /**
- * pollinations.ai MCP Server v2.0
+ * pollinations.ai MCP Server
  *
  * A Model Context Protocol server for pollinations.ai services.
- * Supports image, video, text, and audio generation via gen.pollinations.ai
+ * Supports image, video, text, and audio generation via the Pollinations API
  */
 
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -16,6 +17,11 @@ import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
+import { validateApiBaseUrl } from "./utils/coreUtils.js";
+
+const SERVER_VERSION = createRequire(import.meta.url)(
+    "../package.json",
+).version;
 
 // Combine all tools
 const allTools = [
@@ -29,7 +35,8 @@ const allTools = [
 /**
  * Server instructions shown to MCP clients
  */
-const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.1
+function createServerInstructions(apiBaseUrl) {
+    return `# Pollinations MCP Server v${SERVER_VERSION}
 
 ## Authentication
 Set your API key first using the setApiKey tool:
@@ -74,7 +81,7 @@ Get your API key at: https://enter.pollinations.ai/keys
 - **listQuests** - Quests and earned rewards for the authenticated account (requires account:usage)
 
 ## API Endpoint
-All requests go through: https://gen.pollinations.ai
+All requests go through: ${apiBaseUrl}
 
 ## Tips
 - Models are fetched dynamically from the API - always up to date!
@@ -84,13 +91,14 @@ All requests go through: https://gen.pollinations.ai
 - Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
 - Audio transcription: Use transcribeAudio with gemini-large
 - Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
+}
 
-export function buildServer() {
+export function buildServer(apiBaseUrl = validateApiBaseUrl()) {
     const server = new McpServer(
         {
             name: "pollinations-mcp",
-            version: "2.1.0",
-            instructions: SERVER_INSTRUCTIONS,
+            version: SERVER_VERSION,
+            instructions: createServerInstructions(apiBaseUrl),
         },
         {
             capabilities: {
@@ -132,6 +140,8 @@ export function buildServer() {
  */
 export async function startMcpServer() {
     try {
+        const apiBaseUrl = validateApiBaseUrl();
+
         // Initialize audio player (optional, for local playback)
         try {
             global.audioPlayer = player();
@@ -162,14 +172,16 @@ export async function startMcpServer() {
         // one-stop signal that the client is gone.
         process.stdin.on("close", () => process.exit(0));
 
-        serveStdio(() => buildServer(), {
+        serveStdio(() => buildServer(apiBaseUrl), {
             onerror: (error) => {
                 console.error(`Server error: ${error.message}`);
             },
         });
 
-        console.error("Pollinations MCP Server v2.1.0 running on stdio");
-        console.error("API: https://gen.pollinations.ai");
+        console.error(
+            `Pollinations MCP Server v${SERVER_VERSION} running on stdio`,
+        );
+        console.error(`API: ${apiBaseUrl}`);
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);
         process.exit(1);

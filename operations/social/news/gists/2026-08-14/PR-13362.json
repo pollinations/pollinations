@@ -1,0 +1,34 @@
+{
+  "pr_number": 13362,
+  "title": "fix: canonicalize model permissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13362",
+  "merged_at": "2026-08-14T10:29:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Canonicalizes 21 current model aliases plus the pending Muse Spark 1.2 and Grok 4.6 canonical renames in one D1 migration.\n- Updates 1,863 affected production keys while preserving unrelated fields/order and deduplicating canonical pairs; staging has zero matches.\n- Stores recognized aliases canonically on future API-key create/update, while preserving unknown and community IDs.\n- Adds the full registry/main-vs-production audit and deployment gate to model management.\n\nDeployment gate: merge this PR before #13359 and #13361, but promote a revision containing all three so D1 runs immediately before the model-ID changes. Do not deploy this migration alone.\n\nChecks:\n- Permission migration suites: 3/3\n- Enter API-key integration: 36/36\n- Gen model-permissions: 8/8\n- Enter + Gen typecheck\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Names change, keys remember",
+    "blurb": "The model garden got its labels straightened out. Existing API keys now follow canonical model names without losing their carefully arranged permissions.",
+    "summary": "Canonicalized permissions for 21 current model aliases plus pending Muse Spark 1.2 and Grok 4.6 renames, migrating 1,863 production API keys and normalizing recognized aliases on future key creation and updates.",
+    "impact": "API keys retain their intended model access as model IDs move to canonical names, while unknown and community model IDs stay untouched.",
+    "keywords": [
+      "api-keys",
+      "model-permissions",
+      "canonical-model-ids",
+      "D1-migration",
+      "Muse Spark 1.2",
+      "Grok 4.6"
+    ],
+    "visual_concept": "A cozy registry garden where model-name tags are being replaced with neat canonical labels while access-key flowers remain connected to the same plants. Polli should carefully organize a ring of API-key tags beside a glowing retro terminal, showing that aliases become canonical without disturbing unrelated permissions.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she tidies model-name tags in a code garden; glowing API-key flowers connect safely to neatly labeled canonical plants beside a CRT terminal, with lime green (#ecf874) prominent among warm cream, mint, lavender, and peach. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and subtle scanlines; pixel-font terminal text reads “CANONICAL”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13362.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she tidies model-name tags in a code garden; glowing API-key flowers connect safely to neatly labeled canonical plants beside a CRT terminal, with lime green (#ecf874) prominent among warm cream, mint, lavender, and peach. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and subtle scanlines; pixel-font terminal text reads “CANONICAL”."
+  },
+  "generated_at": "2026-08-14T10:31:39.660923+00:00"
+}

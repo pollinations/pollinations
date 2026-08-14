@@ -1,6 +1,5 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
-import { validator } from "@shared/middleware/validator.ts";
 import {
     AUDIO_VOICES,
     type AudioModelName,
@@ -36,7 +35,6 @@ import {
 } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { ScribeRealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
@@ -47,7 +45,6 @@ import {
 import { readResponseBytes } from "../utils/response-bytes.ts";
 import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
-import { handleScribeRealtimeWebSocket } from "./realtime.ts";
 import {
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
@@ -3309,41 +3306,6 @@ export const audioRoutes = new Hono<Env>()
         generationAccess,
         deduplicateGeneration,
         handleSpeechWithTimestamps,
-    )
-    .get(
-        "/transcriptions/realtime",
-        describeRoute({
-            tags: ["🔊 Audio"],
-            summary: "Realtime Audio Transcription",
-            description: [
-                "Stream mono audio to Scribe v2 Realtime over WebSocket and receive partial and committed transcripts.",
-                "",
-                "Send `input_audio_chunk` JSON messages using the ElevenLabs Realtime STT protocol. Supports manual or VAD commits, language selection and detection, background filtering, and optional word timestamps.",
-                "",
-                "Authenticate with `Authorization: Bearer <key>`, or use `?key=pk_...` in browser WebSocket clients. Billing uses the streamed audio duration and is settled when the socket closes.",
-            ].join("\n"),
-            responses: {
-                101: {
-                    description: "WebSocket connection established",
-                },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    403,
-                    426,
-                    429,
-                    500,
-                    503,
-                ),
-            },
-        }),
-        validator("query", ScribeRealtimeRequestQueryParamsSchema),
-        resolveModel("generate.realtime", {
-            defaultModel: "scribe-realtime",
-            supportedEndpoint: "/v1/audio/transcriptions/realtime",
-        }),
-        handleScribeRealtimeWebSocket,
     )
     .post(
         "/transcriptions",

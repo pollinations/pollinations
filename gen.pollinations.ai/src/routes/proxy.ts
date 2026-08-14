@@ -42,7 +42,7 @@ import {
 } from "@shared/registry/model3d.ts";
 import {
     DEFAULT_REALTIME_MODEL,
-    REALTIME_VOICE_MODEL_NAMES,
+    REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
     CreateChatCompletionRequestSchema,
@@ -99,6 +99,38 @@ const videoModelNames = getVideoModelIds()
 const model3dModelNames = getModel3dModelIds()
     .map((id) => `\`${id}\``)
     .join(", ");
+
+function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
+    return describeRoute({
+        tags: ["🎙️ Realtime"],
+        summary: "Realtime WebSocket",
+        description: [
+            "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
+            "",
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`scribe-realtime\` creates a transcription session automatically.`,
+            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+            "",
+            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+            "",
+            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+        ].join("\n"),
+        responses: {
+            101: {
+                description: "WebSocket connection established",
+            },
+            ...errorResponseDescriptions(
+                400,
+                401,
+                402,
+                403,
+                426,
+                429,
+                500,
+                503,
+            ),
+        },
+    });
+}
 
 const factory = createFactory<Env>();
 
@@ -471,38 +503,21 @@ export const proxyRoutes = new Hono<Env>()
     .use(frontendKeyRateLimit)
     .use(balance)
     .get(
-        "/v1/realtime",
-        describeRoute({
-            tags: ["🎙️ Realtime"],
-            summary: "Realtime WebSocket",
-            description: [
-                "OpenAI-compatible Realtime WebSocket proxy.",
-                "",
-                `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
-                "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
-                "",
-                `**Models:** ${REALTIME_VOICE_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
-                "",
-                "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
-            ].join("\n"),
-            responses: {
-                101: {
-                    description: "WebSocket connection established",
-                },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    403,
-                    426,
-                    429,
-                    500,
-                    503,
-                ),
-            },
-        }),
+        "/realtime",
+        describeRealtimeWebSocket("/realtime"),
         validator("query", RealtimeRequestQueryParamsSchema),
-        resolveModel("generate.realtime"),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/realtime",
+        }),
+        handleRealtimeWebSocket,
+    )
+    .get(
+        "/v1/realtime",
+        describeRealtimeWebSocket("/v1/realtime"),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/v1/realtime",
+        }),
         handleRealtimeWebSocket,
     )
     .post(

@@ -107,27 +107,27 @@ export async function executeGeneration(
             cacheWrite = promise;
         },
     ).fetch(request, env, executionCtx);
-    const failed = !response.ok;
-    const error = failed ? await captureError(response) : undefined;
-    if (!failed) await drainResponse(response);
     const settlement = Promise.allSettled(promises).then(() => {});
 
-    if (response.headers.get("x-cache") === "HIT") {
-        return { result: { status: "cached" }, settlement };
-    }
-    if (error) {
-        return { result: { status: "failed", error }, settlement };
-    }
-    if (!cacheWrite) {
-        await settlement;
-        throw new Error("Generation completed without a cacheable result");
-    }
-
     try {
+        const failed = !response.ok;
+        const error = failed ? await captureError(response) : undefined;
+        if (!failed) await drainResponse(response);
+
+        if (response.headers.get("x-cache") === "HIT") {
+            return { result: { status: "cached" }, settlement };
+        }
+        if (error) {
+            return { result: { status: "failed", error }, settlement };
+        }
+        if (!cacheWrite) {
+            throw new Error("Generation completed without a cacheable result");
+        }
+
         await cacheWrite;
+        return { result: { status: "cached" }, settlement };
     } catch (error) {
         await settlement;
         throw error;
     }
-    return { result: { status: "cached" }, settlement };
 }

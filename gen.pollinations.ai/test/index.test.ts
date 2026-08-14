@@ -1389,10 +1389,10 @@ fixtureTest(
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 GOOGLE_PROJECT_ID: "test-project",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -1470,10 +1470,10 @@ fixtureTest(
                         body: JSON.stringify(testCase.body),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     GOOGLE_PROJECT_ID: "test-project",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -1600,15 +1600,16 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("30");
+        await response.arrayBuffer();
         await waitOnExecutionContext(ctx);
         expect(calls).toEqual(
             expect.arrayContaining([referenceAudioUrl, uploadUrl, composeUrl]),
@@ -1644,7 +1645,7 @@ fixtureTest("rejects private reference_audio URLs", async ({ paidApiKey }) => {
                 reference_audio: "https://localhost/reference.mp3",
             }),
         }),
-        env as unknown as CloudflareBindings,
+        withInlineGenerationCoordinator(env as unknown as CloudflareBindings),
         ctx,
     );
 
@@ -1699,7 +1700,9 @@ fixtureTest(
                     reference_audio: referenceAudioUrl,
                 }),
             }),
-            env as unknown as CloudflareBindings,
+            withInlineGenerationCoordinator(
+                env as unknown as CloudflareBindings,
+            ),
             ctx,
         );
 
@@ -1776,7 +1779,9 @@ fixtureTest(
                         }),
                     },
                 ),
-                env as unknown as CloudflareBindings,
+                withInlineGenerationCoordinator(
+                    env as unknown as CloudflareBindings,
+                ),
                 ctx,
             );
 
@@ -1813,7 +1818,9 @@ fixtureTest(
                         body: formData,
                     },
                 ),
-                env as unknown as CloudflareBindings,
+                withInlineGenerationCoordinator(
+                    env as unknown as CloudflareBindings,
+                ),
                 ctx,
             );
 
@@ -2301,10 +2308,10 @@ fixtureTest(
                 "https://staging.gen.pollinations.ai/audio/tick?model=eleven-sfx&prompt_influence=abc",
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             ),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -2351,10 +2358,10 @@ fixtureTest(
                     input: "Hello",
                 }),
             }),
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 ELEVENLABS_API_KEY: "should-not-be-used",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             ctx,
         );
 
@@ -2382,12 +2389,12 @@ fixtureTest(
 
         const response = await fetchWorker(
             "/v1/audio/transcriptions",
-            {
+            withInlineGenerationCoordinator({
                 ...env,
                 // Blank the whisper key so a rejection regression fails here
                 // instead of reaching the live provider.
                 OVHCLOUD_API_KEY: "",
-            } as unknown as CloudflareBindings,
+            } as unknown as CloudflareBindings),
             {
                 method: "POST",
                 headers: { Authorization: `Bearer ${apiKey}` },

@@ -58,7 +58,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.literal(validQualities).catch("medium"),
+        quality: z.string().catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -86,7 +86,7 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        resolution: z.enum(["480p", "720p", "1080p"]).optional(),
+        resolution: z.enum(["1k", "2k", "480p", "720p", "1080p"]).optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -123,6 +123,17 @@ export const ImageParamsSchema = z
                     "Transparent backgrounds are not supported by gpt-image-2.",
             });
         }
+        if (
+            data.model === "grok-imagine-image-2.0" &&
+            !["low", "medium"].includes(data.quality)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
+            });
+        }
     })
     .transform((data) => {
         // Capture whether the caller actually specified dimensions BEFORE we
@@ -136,8 +147,13 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
+        const quality = validQualities.includes(
+            data.quality as (typeof validQualities)[number],
+        )
+            ? (data.quality as (typeof validQualities)[number])
+            : "medium";
 
-        return { ...data, width, height, dimensionsExplicit };
+        return { ...data, quality, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

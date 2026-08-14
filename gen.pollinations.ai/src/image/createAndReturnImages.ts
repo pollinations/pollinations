@@ -16,6 +16,7 @@ import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamProAPI,
@@ -789,6 +790,9 @@ const generateImage = async (
 
         case "grok-imagine-pro":
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+
+        case "grok-imagine-image-2.0":
+            return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);

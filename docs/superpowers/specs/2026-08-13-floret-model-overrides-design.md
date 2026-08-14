@@ -47,7 +47,7 @@ The request remains OpenAI-compatible and adds one optional top-level object:
 }
 ```
 
-All routing properties are optional strings. The only sentinel is the exact lowercase value `"auto"`. Omitted properties and `"auto"` normalize to no override. Empty strings are invalid. Unknown properties are invalid.
+All routing properties are optional strings. The only sentinel is the exact lowercase value `"auto"`. Omitted properties and `"auto"` normalize to no override. Explicit JSON `null`, empty strings, and unknown properties are invalid.
 
 The canonical normalized backend type is:
 
@@ -81,10 +81,10 @@ An explicit override has higher precedence than a model argument emitted by the 
 
 Validation happens once, before either a streaming or non-streaming run starts.
 
-1. Pydantic rejects unknown routing fields, non-string values, and empty strings with HTTP 422.
+1. Pydantic rejects unknown routing fields, explicit JSON `null`, non-string values, and empty strings with HTTP 422.
 2. `"auto"` is normalized to `None`.
-3. Every explicit model ID must exist in the live Pollinations model registry.
-4. Every explicit model must satisfy the selected capability using metadata that the public model catalog reliably exposes:
+3. Every explicit model ID must exist in the caller-visible response from the authenticated rich `/models` catalog.
+4. Every explicit model must satisfy the selected capability using the rich catalog's authoritative `category`, `input_modalities`, `output_modalities`, `capabilities`, and `supported_endpoints` metadata:
    - `text`: text-capable with text output.
    - `web_search`: text-capable and includes the `web_search` capability.
    - `image_generation`: image-capable, accepts text, and outputs images.
@@ -94,7 +94,7 @@ Validation happens once, before either a streaming or non-streaming run starts.
 5. `supported_endpoints` may be used as additional evidence when present, but its absence must not reject an otherwise compatible model because the public catalog does not populate it consistently for every provider.
 6. An invalid explicit override returns HTTP 422 with a stable detail object containing `field`, `model`, and `reason`.
 
-Registry lookup runs with the request's bearer credential in scope, so delegated requests use the same short-lived run token as the eventual brain and tools. If the registry cannot be fetched and no warm cache exists, the request returns HTTP 503 rather than accepting an override that cannot be validated. Requests with no explicit overrides do not require an additional registry fetch and preserve current availability behavior.
+Every request containing at least one explicit override fetches the authenticated rich `/models` catalog with that request's bearer credential, so delegated requests use the same short-lived run token as the eventual brain and tools. This caller-scoped catalog is never read from or written to the shared automatic-routing cache. Fetch failure returns HTTP 503 rather than accepting an override that cannot be validated. Requests with no explicit overrides do not require an additional catalog fetch and preserve current availability behavior.
 
 ## Runtime Propagation
 
@@ -154,8 +154,9 @@ The response schema does not change.
 Unit tests must cover:
 
 - Pydantic normalization of omitted and `"auto"` values.
-- Rejection of unknown fields and empty values.
-- Registry validation for each capability and stable 422 errors.
+- Rejection of unknown fields, explicit JSON `null`, and empty values.
+- Rich `/models` wire-shape adaptation, including `web_search` capability metadata and arbitrary model IDs classified by authoritative category/modality metadata.
+- Request-scoped registry validation for each capability, stable 422 errors, fresh catalog visibility, and caller/cache isolation.
 - Registry-unavailable behavior for explicit overrides.
 - Text override reaching every brain call.
 - Each tool override winning over a brain-supplied model.

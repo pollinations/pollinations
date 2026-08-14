@@ -64,6 +64,31 @@ def test_empty_routing_value_is_rejected(monkeypatch):
     assert response.status_code == 422
 
 
+def test_explicit_null_routing_value_is_rejected(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"text": None}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("routing", [None, {"text": "auto"}])
+def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False)
+    if routing is not None:
+        body["routing"] = routing
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 200
+
+
 def test_invalid_routing_preference_returns_stable_422(monkeypatch):
     async def fake_validate(value):
         raise RoutingValidationError(

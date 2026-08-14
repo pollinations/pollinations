@@ -240,6 +240,30 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     return {"models": models, "by_modality": by_modality}
 
 
+def _adapt_rich_catalog(raw: object) -> dict[str, dict[str, Any]]:
+    if not isinstance(raw, list):
+        raise ValueError("Model catalog endpoint /models returned a non-array response")
+
+    models: dict[str, dict[str, Any]] = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        model_id = item.get("id") or item.get("name")
+        if isinstance(model_id, str) and model_id:
+            models[model_id] = dict(item)
+    return models
+
+
+async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
+    key = await _resolve_api_key()
+    base = settings.openai_base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(f"{base}/models", headers=headers)
+        response.raise_for_status()
+    return _adapt_rich_catalog(response.json())
+
+
 async def refresh_registry() -> dict[str, Any]:
     global _registry_cache
     key = await _resolve_api_key()

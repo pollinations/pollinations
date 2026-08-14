@@ -51,7 +51,7 @@ curl https://floret.pollinations.ai/v1/chat/completions \
 ```
 
 - Every field is optional.
-- Omitted/`auto` lets Floret select.
+- Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.
 - Explicit selections override any tool model proposed by the brain.
 - `audio` is TTS/audio generation, not transcription.
 - Invalid/incompatible IDs return 422 before work begins.

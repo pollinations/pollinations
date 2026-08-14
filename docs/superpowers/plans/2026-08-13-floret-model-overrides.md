@@ -14,7 +14,7 @@
 
 - `model: "floret"` remains the public router model.
 - The optional routing keys are exactly `text`, `web_search`, `image_generation`, `image_editing`, `video`, and `audio`.
-- Omitted properties and exact lowercase `"auto"` mean no override; empty strings and unknown properties are invalid.
+- Omitted properties and exact lowercase `"auto"` mean no override; explicit JSON `null`, empty strings, and unknown properties are invalid.
 - Floret remains the sole orchestrator; clients never call selected generation models directly.
 - Explicit overrides beat model arguments emitted by the brain.
 - `audio` controls generated audio/TTS only; transcription selection remains automatic in v1.
@@ -31,7 +31,7 @@
 - Modify `apps/floret/src/floret/api.py` — adds `routing` to the request schema, validates it under the caller credential, and passes preferences into both execution paths.
 - Modify `apps/floret/src/floret/agent.py` — accepts preferences, selects the brain model, appends model-constraint guidance, and passes preferences to dispatch.
 - Modify `apps/floret/src/floret/toolset.py` — enforces selected tool models without mutating brain arguments and rejects incompatible pinned video interpolation.
-- Modify `apps/floret/src/floret/registry.py` — exposes an explicit registry refresh helper used when validation needs a catalog but warm-up did not populate it.
+- Modify `apps/floret/src/floret/registry.py` — adds a request-scoped adapter/fetcher for the authenticated rich `/models` catalog without touching the shared automatic-routing cache.
 - Modify `apps/floret/tests/test_api_stream.py` — proves streaming/non-streaming API propagation and stable HTTP errors.
 - Modify `apps/floret/tests/test_agent_loop.py` — proves brain selection, guidance, dispatch propagation, and request isolation.
 - Modify `apps/floret/tests/test_media_tools.py` — proves every tool preference wins over a brain-provided model and auto mode remains unchanged.
@@ -47,7 +47,7 @@
 - Modify: `apps/floret/src/floret/registry.py:243-284`
 
 **Interfaces:**
-- Consumes: `floret.registry.get_model_catalog()` and new `await floret.registry.refresh_registry()`.
+- Consumes: new request-scoped `await floret.registry.fetch_model_catalog()`, backed by the authenticated rich `/models` endpoint.
 - Produces:
   ```python
   class RoutingInput(BaseModel): ...
@@ -74,7 +74,7 @@
       value: RoutingInput | None,
   ) -> RoutingPreferences: ...
   ```
-- `refresh_registry()` fetches the live model registry even when no cache exists, updates the cache, and returns the normalized registry.
+- `fetch_model_catalog()` fetches and adapts the caller-visible rich `/models` array on every explicit-routing request. It neither reads nor writes `_registry_cache`.
 
 - [ ] **Step 1: Write failing normalization tests**
 
@@ -107,7 +107,7 @@ def test_explicit_values_are_preserved_and_frozen():
         preferences.text = "openai"
 
 
-@pytest.mark.parametrize("value", ["", " ", "AUTO", 123])
+@pytest.mark.parametrize("value", ["", " ", 123, None])
 def test_invalid_preference_values_are_rejected(value):
     with pytest.raises(ValidationError):
         RoutingInput(text=value)
@@ -176,7 +176,7 @@ class RoutingInput(BaseModel):
         return RoutingPreferences(**values)
 ```
 
-Use `dataclasses.fields()` instead of `__dict__` if mypy reports an issue, while preserving the exact public return type.
+Add a Pydantic `mode="before"` model validator that rejects keys explicitly supplied as JSON `null`; omitted optional fields still use their defaults. Use `dataclasses.fields()` instead of `__dict__` if mypy reports an issue, while preserving the exact public return type.
 
 - [ ] **Step 4: Run normalization tests to verify pass**
 
@@ -190,56 +190,38 @@ Expected: all normalization tests pass.
 
 - [ ] **Step 5: Write failing validation tests with an in-memory registry**
 
-Append tests that monkeypatch `routing.get_model_catalog` and `routing.refresh_registry`. Use this exact representative catalog:
+Append tests that monkeypatch `routing.fetch_model_catalog`. Use records matching the real rich `/models` array schema (`name`, `category`, `input_modalities`, `output_modalities`, `supported_endpoints`, and list-valued `capabilities`), including `gemini-search` with `web_search` and an arbitrary-ID image model:
 
 ```python
-_CATALOG = {
-    "glm": {
-        "modalities": ["text"],
-        "capabilities": {"web_search": False},
-        "supported_endpoints": ["/v1/chat/completions"],
-        "input_modalities": ["text"],
+_RICH_WIRE_CATALOG = [
+    {
+        "name": "gemini-search",
+        "aliases": ["gemini-search-fast"],
+        "category": "text",
+        "brand": "Google",
+        "pricing": {"currency": "pollen"},
+        "title": "Google Gemini Search",
+        "input_modalities": ["text", "image", "video"],
         "output_modalities": ["text"],
-    },
-    "gemini-search": {
-        "modalities": ["text"],
-        "capabilities": {"web_search": True},
         "supported_endpoints": ["/v1/chat/completions"],
-        "input_modalities": ["text"],
-        "output_modalities": ["text"],
+        "capabilities": ["web_search"],
     },
-    "flux": {
-        "modalities": ["image"],
-        "capabilities": {},
+    {
+        "name": "opaque-image-model-7",
+        "aliases": [],
+        "category": "image",
+        "brand": "Example",
+        "pricing": {"currency": "pollen"},
+        "title": "Opaque Image Model",
+        "input_modalities": ["text"],
+        "output_modalities": ["image"],
         "supported_endpoints": ["/image/{prompt}"],
-        "input_modalities": ["text"],
-        "output_modalities": ["image"],
+        "capabilities": [],
     },
-    "nanobanana": {
-        "modalities": ["image"],
-        "capabilities": {},
-        "supported_endpoints": ["/v1/images/edits"],
-        "input_modalities": ["text", "image"],
-        "output_modalities": ["image"],
-    },
-    "wan-fast": {
-        "modalities": ["video"],
-        "capabilities": {},
-        "supported_endpoints": ["/video/{prompt}"],
-        "input_modalities": ["text", "image"],
-        "output_modalities": ["video"],
-    },
-    "openai-audio": {
-        "modalities": ["audio"],
-        "capabilities": {},
-        "supported_endpoints": ["/v1/chat/completions"],
-        "input_modalities": ["text"],
-        "output_modalities": ["text", "audio"],
-    },
-}
+]
 ```
 
-Cover one success containing all six fields; unknown model; each capability mismatch via parametrization; empty cache calling `refresh_registry`; refresh failure raising `RoutingRegistryUnavailable`; and no explicit preferences skipping refresh.
+Cover one success containing all six fields; unknown model; each capability mismatch via parametrization; explicit fetch failure raising `RoutingRegistryUnavailable`; no explicit preferences skipping the fetch; an arbitrary-ID image model classified from metadata; a fresh fetch seeing catalog changes; two caller catalogs remaining isolated; and no read or mutation of `_registry_cache`.
 
 - [ ] **Step 6: Run validation tests to verify failure**
 
@@ -249,26 +231,36 @@ Run:
 python -m pytest apps/floret/tests/test_routing.py -q
 ```
 
-Expected: failures because validation and refresh interfaces are absent.
+Expected: failures because the request-scoped rich catalog adapter/fetcher and validation behavior are absent.
 
-- [ ] **Step 7: Add explicit registry refresh**
+- [ ] **Step 7: Add request-scoped rich catalog fetch**
 
-Refactor `apps/floret/src/floret/registry.py` so fetch/normalize logic is reusable:
+Add a separate adapter and fetcher in `apps/floret/src/floret/registry.py`:
 
 ```python
-async def refresh_registry() -> dict[str, Any]:
-    global _registry_cache
+def _adapt_rich_catalog(raw: object) -> dict[str, dict[str, Any]]:
+    if not isinstance(raw, list):
+        raise ValueError("Model catalog endpoint /models returned a non-array response")
+    return {
+        model_id: dict(item)
+        for item in raw
+        if isinstance(item, dict)
+        and isinstance(model_id := item.get("id") or item.get("name"), str)
+        and model_id
+    }
+
+
+async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
     key = await _resolve_api_key()
     base = settings.openai_base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {key}"} if key else {}
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(f"{base}/v1/models", headers=headers)
+        response = await client.get(f"{base}/models", headers=headers)
         response.raise_for_status()
-    _registry_cache = _normalize(response.json())
-    return _registry_cache
+    return _adapt_rich_catalog(response.json())
 ```
 
-Keep `get_registry()`'s current non-fatal behavior by catching refresh failures there, logging, and caching an empty normalized registry. `refresh_registry()` itself must propagate failures so explicit override validation can return HTTP 503.
+This function must fetch on every explicit-routing request and must not read or mutate `_registry_cache`. Keep the existing `/v1/models` refresh and shared cache unchanged for automatic model selection.
 
 - [ ] **Step 8: Implement capability validation and stable errors**
 
@@ -277,7 +269,7 @@ In `routing.py`, define frozen requirement data:
 ```python
 @dataclass(frozen=True)
 class CapabilityRequirement:
-    modality: str | None = None
+    category: str | None = None
     capability: str | None = None
     required_input: str | None = None
     required_output: str | None = None
@@ -286,28 +278,28 @@ class CapabilityRequirement:
 
 _REQUIREMENTS = {
     "text": CapabilityRequirement(
-        modality="text",
+        category="text",
         required_output="text",
         endpoint_when_present="/v1/chat/completions",
     ),
     "web_search": CapabilityRequirement(
-        modality="text",
+        category="text",
         capability="web_search",
         endpoint_when_present="/v1/chat/completions",
     ),
     "image_generation": CapabilityRequirement(
-        modality="image",
+        category="image",
         required_input="text",
         required_output="image",
         endpoint_when_present="/image/{prompt}",
     ),
     "image_editing": CapabilityRequirement(
-        modality="image",
+        category="image",
         required_input="image",
         required_output="image",
     ),
     "video": CapabilityRequirement(
-        modality="video",
+        category="video",
         required_output="video",
         endpoint_when_present="/video/{prompt}",
     ),
@@ -319,7 +311,7 @@ _REQUIREMENTS = {
 }
 ```
 
-Implement `RoutingValidationError` with public `field`, `model`, and `reason` attributes. Implement `RoutingRegistryUnavailable`. `validate_routing()` must return immediately for no explicit values; otherwise use the warm catalog or call `refresh_registry()`, then validate every explicit model against `_REQUIREMENTS`. Capability metadata can be either the current normalized dictionary or a future list; support both forms in one helper. Check modality and input/output requirements first. If `supported_endpoints` is non-empty, require `endpoint_when_present`; if it is absent or empty, do not reject solely on that basis because current public model metadata omits endpoint lists for many valid models.
+Implement `RoutingValidationError` with public `field`, `model`, and `reason` attributes. Implement `RoutingRegistryUnavailable`. `validate_routing()` must return immediately for no explicit values; otherwise call `fetch_model_catalog()` on every request and validate every explicit model against `_REQUIREMENTS`. Use authoritative rich metadata in this order: `category`, `input_modalities`, `output_modalities`, `capabilities`, then `supported_endpoints`. Only fall back to normalized `modalities` when `category` is absent. If `supported_endpoints` is non-empty, require `endpoint_when_present`; if it is absent or empty, do not reject solely on that basis.
 
 - [ ] **Step 9: Add tool lookup and prompt block helpers**
 
@@ -344,7 +336,7 @@ _FIELD_LABELS = {
 }
 ```
 
-`model_for_tool()` returns the matching override or `None`. `prompt_block()` returns `""` when nothing is explicit; otherwise it returns a deterministic newline-prefixed `User-selected model constraints:` block in dataclass field order.
+`model_for_tool()` returns the matching override or `None`. `prompt_block()` returns `""` when nothing is explicit; otherwise it returns a deterministic newline-prefixed `User-selected model constraints:` block in dataclass field order and ends exactly with `Use these fixed models for the matching tools. Do not claim that another model was used.`
 
 - [ ] **Step 10: Run routing tests, formatting, lint, and type checking**
 

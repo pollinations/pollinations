@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 
-from floret.registry import get_model_catalog, refresh_registry
+from floret.registry import fetch_model_catalog
 
 ModelPreference = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 @dataclass(frozen=True)
 class CapabilityRequirement:
-    modality: str | None = None
+    category: str | None = None
     capability: str | None = None
     required_input: str | None = None
     required_output: str | None = None
@@ -38,28 +38,28 @@ _FIELD_LABELS = {
 
 _REQUIREMENTS = {
     "text": CapabilityRequirement(
-        modality="text",
+        category="text",
         required_output="text",
         endpoint_when_present="/v1/chat/completions",
     ),
     "web_search": CapabilityRequirement(
-        modality="text",
+        category="text",
         capability="web_search",
         endpoint_when_present="/v1/chat/completions",
     ),
     "image_generation": CapabilityRequirement(
-        modality="image",
+        category="image",
         required_input="text",
         required_output="image",
         endpoint_when_present="/image/{prompt}",
     ),
     "image_editing": CapabilityRequirement(
-        modality="image",
+        category="image",
         required_input="image",
         required_output="image",
     ),
     "video": CapabilityRequirement(
-        modality="video",
+        category="video",
         required_output="video",
         endpoint_when_present="/video/{prompt}",
     ),
@@ -98,7 +98,11 @@ class RoutingPreferences:
         constraints = "\n".join(
             f"- {_FIELD_LABELS[field]}: {model}" for field, model in explicit.items()
         )
-        return f"\nUser-selected model constraints:\n{constraints}"
+        return (
+            f"\nUser-selected model constraints:\n{constraints}"
+            "\nUse these fixed models for the matching tools. "
+            "Do not claim that another model was used."
+        )
 
 
 class RoutingInput(BaseModel):
@@ -110,6 +114,17 @@ class RoutingInput(BaseModel):
     image_editing: ModelPreference | None = None
     video: ModelPreference | None = None
     audio: ModelPreference | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_explicit_nulls(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            null_fields = [field for field, item in value.items() if item is None]
+            if null_fields:
+                raise ValueError(
+                    f"routing fields cannot be null: {', '.join(null_fields)}"
+                )
+        return value
 
     def to_preferences(self) -> RoutingPreferences:
         return RoutingPreferences(
@@ -157,9 +172,12 @@ def _string_values(meta: dict[str, object], key: str) -> list[str]:
 def _validation_reason(
     meta: dict[str, object], requirement: CapabilityRequirement
 ) -> str | None:
-    modalities = _string_values(meta, "modalities")
-    if requirement.modality and requirement.modality not in modalities:
-        return f"requires modality '{requirement.modality}'"
+    category = meta.get("category")
+    categories = (
+        [category] if isinstance(category, str) else _string_values(meta, "modalities")
+    )
+    if requirement.category and requirement.category not in categories:
+        return f"requires category '{requirement.category}'"
 
     input_modalities = _string_values(meta, "input_modalities")
     if (
@@ -194,12 +212,10 @@ async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
     if not explicit:
         return preferences
 
-    catalog = get_model_catalog()
-    if not catalog:
-        try:
-            catalog = (await refresh_registry()).get("models", {})
-        except Exception as exc:
-            raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
+    try:
+        catalog = await fetch_model_catalog()
+    except Exception as exc:
+        raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
 
     for field, model in explicit.items():
         meta = catalog.get(model)

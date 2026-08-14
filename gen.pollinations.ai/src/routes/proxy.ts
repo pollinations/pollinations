@@ -67,7 +67,10 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
-import { ModelListQueryParamsSchema } from "@/schemas/models.ts";
+import {
+    type ModelListQueryParams,
+    ModelListQueryParamsSchema,
+} from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
@@ -203,18 +206,17 @@ function filterEntriesByCommunityParam(
 // Factory for model-list endpoints: validates the community query parameter,
 // filters by API key permissions, paid balance, and community flag,
 // then returns the model list as JSON.
-const modelsListHandler =
-    (
-        getEntries: (
-            c: Context<Env>,
-        ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
-    ) =>
+const modelsListHandler = (
+    getEntries: (
+        c: Context<Env>,
+    ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
+) =>
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid("query" as never) as {
-                community?: string;
-            };
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             return c.json(
@@ -301,9 +303,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid("query" as never) as {
-                community?: string;
-            };
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByCommunityParam(

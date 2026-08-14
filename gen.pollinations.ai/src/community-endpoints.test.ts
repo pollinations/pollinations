@@ -1,6 +1,7 @@
 import {
     createExecutionContext,
     env,
+    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
@@ -2046,7 +2047,6 @@ fixtureTest(
         }
     },
 );
-
 
 fixtureTest(
     "rejects a direct chat completion against a deactivated community model",

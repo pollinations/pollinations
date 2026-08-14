@@ -1,0 +1,36 @@
+{
+  "pr_number": 13365,
+  "title": "Add FSChart to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13365",
+  "merged_at": "2026-08-14T10:44:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [FSChart](https://fastnow.github.io/fschart_pollinations) to build\n- FSChart converts natural language into 3D models and 2D function plots in the browser. Enter “a rotating red cube” or “plot y=sin(x)” to call Pollinations and render.\n\nFixes #13311",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Words become wireframes",
+    "blurb": "FSChart joined the garden: type a thought like “a rotating red cube” or “plot y=sin(x),” and watch it grow into something you can inspect. Apparently plain language has geometry now.",
+    "summary": "Added FSChart to the app build, giving users a browser-based tool that calls Pollinations to turn natural-language prompts into 3D models and 2D function plots.",
+    "impact": "Users can now open FSChart and create scenes such as a rotating red cube or graphs such as y=sin(x) directly from a plain-language prompt.",
+    "keywords": [
+      "FSChart",
+      "community-app",
+      "3D-models",
+      "function-plots",
+      "natural-language",
+      "browser"
+    ],
+    "visual_concept": "Depict FSChart as a cozy browser-workshop where language becomes visible geometry: a glowing retro monitor shows a chunky rotating red cube beside a friendly sine-wave graph. Polli, wearing tiny round mathematician glasses, hovers beside the keyboard and points at a prompt card, while code-plants and small flowers grow around the desk to connect the app to the Pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny round mathematician glasses as she helps a retro CRT computer turn a prompt card reading “plot y=sin(x)” into a sine-wave graph and a small rotating red cube. Lime green (#ecf874) glows prominently from the screen and code-plants bloom in flower pots around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13365.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny round mathematician glasses as she helps a retro CRT computer turn a prompt card reading “plot y=sin(x)” into a sine-wave graph and a small rotating red cube. Lime green (#ecf874) glows prominently from the screen and code-plants bloom in flower pots around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-14T10:45:52.662717+00:00",
+  "app_name": "FSChart",
+  "app_url": "https://fastnow.github.io/fschart_pollinations"
+}

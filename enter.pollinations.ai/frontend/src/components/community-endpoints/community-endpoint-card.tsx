@@ -141,15 +141,13 @@ export function CommunityEndpointCard({
                     label="Upstream model"
                     value={endpoint.upstreamModel}
                 />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Per-user limit"
-                    value={
-                        endpoint.perUserRpm !== null
-                            ? `${endpoint.perUserRpm} RPM/user`
-                            : "No Pollinations cap"
-                    }
-                />
+                {endpoint.perUserRpm !== null && (
+                    <CommunityDetailRow
+                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                        label="Per-user limit"
+                        value={`${endpoint.perUserRpm} RPM/user`}
+                    />
+                )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
                         key={group.key}

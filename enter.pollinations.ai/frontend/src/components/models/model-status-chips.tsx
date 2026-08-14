@@ -22,24 +22,16 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     alphaTooltip = true,
     perUserRpm,
 }) => {
-    if (!showNew && !showAlpha && perUserRpm === undefined) {
+    if (!showNew && !showAlpha && perUserRpm == null) {
         return null;
     }
 
     const rate =
-        perUserRpm === undefined
+        perUserRpm == null
             ? undefined
             : {
-                  label:
-                      perUserRpm === null
-                          ? "No RPM cap"
-                          : `${perUserRpm} RPM/user`,
-                  tooltip:
-                      perUserRpm === null
-                          ? "This community model has no Pollinations-side per-user limit."
-                          : perUserRpm < 1
-                            ? `Each user can make one request about every ${Number((1 / perUserRpm).toFixed(2))} minutes.`
-                            : `Each user can make up to ${perUserRpm} requests per minute.`,
+                  label: `${perUserRpm} RPM/user`,
+                  tooltip: `Per-user rate limit: ${perUserRpm} RPM.`,
               };
 
     return (

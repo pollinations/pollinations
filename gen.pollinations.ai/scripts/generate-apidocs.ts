@@ -959,10 +959,18 @@ const CURATED_BODIES: Record<string, Json> = {
         input: "Hello world",
         voice: "nova",
     },
+    postV1AudioSpeechWithTimestamps: {
+        input: "Hello world",
+        voice: "nova",
+    },
     postAccountMyModels: {
         name: "my-community-model",
         baseUrl: "https://api.example.com/v1",
         bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsProvider: {
+        name: "My Provider",
+        url: "https://api.example.com",
     },
     postAccountMyModelsModels: {
         baseUrl: "https://api.example.com/v1",
@@ -975,6 +983,9 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
+    },
+    post3dByPrompt: {
+        model: "hyper3d-rodin",
     },
 };
 

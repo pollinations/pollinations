@@ -1,0 +1,34 @@
+{
+  "pr_number": 12644,
+  "title": "feat(model-monitor): add favorites/star toggle and persistent filters",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/12644",
+  "merged_at": "2026-08-14T16:34:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Star toggle on each model row with localStorage persistence (`model-monitor-favorites` key)\n- 'Favorites only' filter toggle with count badge, appears when ≥1 model is favorited\n- Favorites-first sorting regardless of active sort column\n- Filter composes with existing category tabs (e.g. Image + Favorites shows only favorited image models)\n- Empty state message updated for favorites filter\n- Scope and category tabs persisted across reloads (`model-monitor-filter` key), validated against known scopes/types\n- No regressions to existing sort/filter/window behavior\n\nCo-authored-by: CloudCompile <201248601+CloudCompile@users.noreply.github.com>\nFixes #12579",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Starred models stay starred",
+    "blurb": "The model monitor grew a little bookmark garden. Star the models worth returning to, and the view remembers where you left your pollen.",
+    "summary": "Model Monitor now supports persistent per-model favorites, a Favorites-only filter with a count badge, favorites-first sorting, and saved scope/category tabs via localStorage.",
+    "impact": "Users can star the models they use most, combine Favorites with category filters such as Image, and return after a reload to the same saved view.",
+    "keywords": [
+      "model-monitor",
+      "favorites",
+      "filters",
+      "localStorage",
+      "model-discovery",
+      "ui"
+    ],
+    "visual_concept": "Depict a cozy model-monitor terminal as a garden catalog, with a row of small model cards marked by glowing star pins. Polli, wearing tiny librarian glasses, carefully stars favorite cards while a few chosen code-plants bloom at the front of the shelf; the rest remain neatly organized behind category tabs.",
+    "image_prompt": "A cozy pixel art model-monitor garden terminal where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and places glowing star pins on favorite model cards; selected code-plants bloom in front beneath simple pixel tabs labeled “IMAGE” and “FAVORITES.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-12644.jpg",
+    "prompt": "A cozy pixel art model-monitor garden terminal where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and places glowing star pins on favorite model cards; selected code-plants bloom in front beneath simple pixel tabs labeled “IMAGE” and “FAVORITES.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T16:35:47.135742+00:00"
+}

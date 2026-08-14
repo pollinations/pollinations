@@ -340,7 +340,9 @@ test("catalog prices expose audio second rates from registry pricing", () => {
 
     for (const modelPrice of getCatalogModelPrices()) {
         const model = sourceByName.get(modelPrice.name);
-        if (model?.category !== "audio") continue;
+        if (model?.category !== "audio" && model?.category !== "realtime") {
+            continue;
+        }
 
         const promptAudioSeconds = Number(model.pricing.promptAudioSeconds);
         const completionAudioSeconds = Number(
@@ -421,6 +423,38 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     expect(getPriceDefinition("claude-fable-5")).toEqual(
         getCostDefinition("claude-fable-5"),
     );
+});
+
+test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
+    expect(
+        calculatePrice("qwen-image-3", {
+            completionImageTokens: 1,
+        }).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: (1536 * 1536) / 1_000_000 },
+        ).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: 2.4 },
+        ).totalPrice,
+    ).toBeCloseTo(0.075, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { promptImageTokens: 3, completionImageTokens: 1 },
+            undefined,
+            { megapixels: 4.194304 },
+        ).totalPrice,
+    ).toBeCloseTo(0.084, 8);
 });
 
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {

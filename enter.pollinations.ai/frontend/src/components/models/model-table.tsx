@@ -230,6 +230,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 showNew={showNew}
                                 showAlpha={showAlpha}
                                 alphaTooltip={false}
+                                perUserRpm={model.perUserRpm}
                             />
                             <span className="inline-flex shrink-0 items-center gap-1">
                                 <BalanceAccessChip

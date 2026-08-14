@@ -133,6 +133,7 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
+        perUserRpm: null,
         fallbackModelIds: [],
         disabledAt: null,
         disabledReason: null,

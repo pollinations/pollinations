@@ -25,7 +25,7 @@ describe("API Key Management", () => {
         test("forces publishable keys to zero direct-spend budget", async ({
             sessionToken,
         }) => {
-            for (const pollenBudget of [undefined, null, 5]) {
+            for (const pollenBudget of [undefined, null, 0]) {
                 const response = await SELF.fetch(
                     "http://localhost:3000/api/api-keys",
                     {
@@ -57,6 +57,33 @@ describe("API Key Management", () => {
                 });
                 expect(stored?.pollenBalance).toBe(0);
             }
+        });
+
+        test("rejects non-zero publishable-key budgets", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "invalid-budget-publishable",
+                        type: "publishable",
+                        pollenBudget: 5,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: "Publishable keys must have a pollen budget of 0",
+                },
+            });
         });
 
         test("should create publishable key metadata in one step", async ({

@@ -169,7 +169,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Pollen budget cap. Ignored for publishable keys, which always use 0; secret keys use null for unlimited",
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
     accountPermissions: z
         .array(z.string())

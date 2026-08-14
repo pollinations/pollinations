@@ -1702,12 +1702,12 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "muse-spark-1.1": {
-        aliases: ["muse-spark", "spark", "spark-1.1"],
+    "muse-spark-1.2": {
+        aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
         provider: "vercel",
         brand: "Meta",
         category: "text",
-        addedDate: new Date("2026-07-12").getTime(),
+        addedDate: new Date("2026-08-14").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
@@ -1715,7 +1715,7 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(4.25),
         },
-        title: "Muse Spark 1.1",
+        title: "Muse Spark 1.2",
         description: "Agentic coding and tool-use model with 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],

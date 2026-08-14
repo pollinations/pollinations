@@ -414,8 +414,8 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "muse-spark-1.1",
-        config: portkeyConfig["meta/muse-spark-1.1"],
+        name: "muse-spark-1.2",
+        config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
         name: "llama",

@@ -369,6 +369,18 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
         };
     }
 
+    if (price.type === "realtime" && promptAudioSeconds) {
+        return {
+            ...price,
+            prices: priceLines([
+                "input",
+                "audioIn",
+                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                "second",
+            ]),
+        };
+    }
+
     if (price.type === "audio") {
         // Flat per-generation models (e.g. Stable Audio): one fee per request,
         // independent of length. Show flat "/gen" In/Out audio prices instead of

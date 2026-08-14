@@ -55,4 +55,21 @@ describe("getRequestData", () => {
         expect("thinking" in requestData).toBe(false);
         expect("thinking_budget" in requestData).toBe(false);
     });
+
+    it("preserves the OpenAI parallel tool-call setting", () => {
+        const requestData = getRequestData({
+            query: {},
+            body: {
+                model: "gpt-5.6-luna",
+                messages: [{ role: "user", content: "hello" }],
+                parallel_tool_calls: false,
+            },
+            path: "/v1/chat/completions",
+            params: {},
+            method: "POST",
+            headers: {},
+        });
+
+        expect(requestData.parallel_tool_calls).toBe(false);
+    });
 });

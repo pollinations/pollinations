@@ -35,6 +35,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Route through the Azure Responses API instead of Chat Completions. */
+    useResponsesApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -77,14 +79,17 @@ const models: ModelDefinition[] = [
     {
         name: "gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
     },
     {
         name: "mercury",

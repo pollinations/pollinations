@@ -1,7 +1,11 @@
 import {
     Alert,
+    Button,
+    ChevronIcon,
     Chip,
     ClockIcon,
+    Dropdown,
+    DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
     Input,
@@ -16,6 +20,7 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
+    type KeyboardEvent,
     useCallback,
     useEffect,
     useMemo,
@@ -32,7 +37,8 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelScope } from "./model-search.ts";
+import type { ModelScope, ModelSort } from "./model-search.ts";
+import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -67,6 +73,26 @@ const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
     community: "Community",
 };
+
+const SORT_OPTIONS: Array<{
+    value: ModelSort;
+    label: string;
+    accessibleLabel: string;
+}> = [
+    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    {
+        value: "price-low",
+        label: "Price ↑",
+        accessibleLabel: "Price: Low to high",
+    },
+    {
+        value: "price-high",
+        label: "Price ↓",
+        accessibleLabel: "Price: High to low",
+    },
+    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
+    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -106,6 +132,37 @@ function categorizeModels(
     return categorized;
 }
 
+function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+    ) {
+        return;
+    }
+
+    const items = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>(
+            '[role="menuitemradio"]',
+        ),
+    );
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex =
+        event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? items.length - 1
+              : event.key === "ArrowDown"
+                ? (currentIndex + 1) % items.length
+                : (currentIndex - 1 + items.length) % items.length;
+
+    event.preventDefault();
+    items[nextIndex]?.focus();
+}
+
 export const Models: FC<ModelsProps> = ({
     showCommunityEndpoints = false,
     canPublish = false,
@@ -114,6 +171,7 @@ export const Models: FC<ModelsProps> = ({
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
+    const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const lastPushedSearchRef = useRef(urlSearch);
@@ -161,8 +219,8 @@ export const Models: FC<ModelsProps> = ({
     }, [loadModelCatalog]);
 
     const sectionModels = useMemo(
-        () => categorizeModels(filteredModels),
-        [filteredModels],
+        () => categorizeModels(sortModels(filteredModels, activeSort)),
+        [activeSort, filteredModels],
     );
     const sectionOrder =
         activeScope === "community"
@@ -177,13 +235,14 @@ export const Models: FC<ModelsProps> = ({
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
-            if (nextSearch === lastPushedSearchRef.current) return;
+            const normalizedSearch = nextSearch.trim();
+            if (normalizedSearch === lastPushedSearchRef.current) return;
 
-            lastPushedSearchRef.current = nextSearch;
+            lastPushedSearchRef.current = normalizedSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: nextSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
@@ -231,6 +290,22 @@ export const Models: FC<ModelsProps> = ({
             }),
         });
     };
+
+    const setActiveSort = (sort: ModelSort) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: sort === "newest" ? undefined : sort,
+            }),
+        });
+    };
+
+    const activeSortLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
+        "Newest";
+    const activeSortAccessibleLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)
+            ?.accessibleLabel ?? "Newest";
 
     return (
         <div className="flex flex-col gap-6">
@@ -299,17 +374,74 @@ export const Models: FC<ModelsProps> = ({
                             ))}
                         </div>
                     </div>
-                    <div className="relative w-full sm:w-72">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                        <Input
-                            type="search"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onBlur={() => pushSearch(search)}
-                            placeholder={`Search ${searchTarget}…`}
-                            aria-label={`Search ${searchTarget}`}
-                            className="w-full pl-9"
-                        />
+                    <div className="flex w-full items-center justify-between gap-2">
+                        <div className="relative min-w-0 max-w-md flex-1">
+                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <Input
+                                type="search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                onBlur={() => {
+                                    const normalizedSearch = search.trim();
+                                    setSearch(normalizedSearch);
+                                    pushSearch(normalizedSearch);
+                                }}
+                                placeholder={`Search ${searchTarget}…`}
+                                aria-label={`Search ${searchTarget}`}
+                                className="w-full pl-9"
+                            />
+                        </div>
+                        <Dropdown
+                            align="end"
+                            className="w-max p-2"
+                            trigger={(open) => (
+                                <Button
+                                    type="button"
+                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                >
+                                    <span className="text-right">
+                                        {activeSortLabel}
+                                    </span>
+                                    <ChevronIcon expanded={open} />
+                                </Button>
+                            )}
+                        >
+                            {(close) => (
+                                <div
+                                    role="menu"
+                                    aria-label="Sort models"
+                                    onKeyDown={handleSortMenuKeyDown}
+                                    className="flex flex-col gap-1"
+                                >
+                                    {SORT_OPTIONS.map((option) => (
+                                        <DropdownItem
+                                            key={option.value}
+                                            role="menuitemradio"
+                                            aria-label={option.accessibleLabel}
+                                            aria-checked={
+                                                activeSort === option.value
+                                            }
+                                            onClick={() => {
+                                                setActiveSort(option.value);
+                                                close();
+                                            }}
+                                            className={
+                                                activeSort === option.value
+                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                    : "justify-end text-right"
+                                            }
+                                        >
+                                            <span className="flex-1 text-right">
+                                                {option.label}
+                                            </span>
+                                        </DropdownItem>
+                                    ))}
+                                </div>
+                            )}
+                        </Dropdown>
                     </div>
                 </div>
                 {catalogError && (
@@ -324,7 +456,7 @@ export const Models: FC<ModelsProps> = ({
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
-                            listKey={`${activeScope}:${activeTab}:${query}`}
+                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}

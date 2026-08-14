@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { getRequestData } from "../../src/text/requestUtils.js";
 
 describe("getRequestData", () => {
+    it("preserves seed -1 as a literal seed", () => {
+        const requestData = getRequestData({
+            query: { seed: "-1" },
+            body: {},
+            path: "/text/prompt",
+            params: { 0: "hello" },
+            method: "GET",
+            headers: {},
+        });
+
+        expect(requestData.seed).toBe(-1);
+    });
+
     it("coerces token limits from query strings", () => {
         const requestData = getRequestData({
             query: {
@@ -41,5 +54,22 @@ describe("getRequestData", () => {
         expect(requestData.reasoning_effort).toBe("medium");
         expect("thinking" in requestData).toBe(false);
         expect("thinking_budget" in requestData).toBe(false);
+    });
+
+    it("preserves the OpenAI parallel tool-call setting", () => {
+        const requestData = getRequestData({
+            query: {},
+            body: {
+                model: "gpt-5.6-luna",
+                messages: [{ role: "user", content: "hello" }],
+                parallel_tool_calls: false,
+            },
+            path: "/v1/chat/completions",
+            params: {},
+            method: "POST",
+            headers: {},
+        });
+
+        expect(requestData.parallel_tool_calls).toBe(false);
     });
 });

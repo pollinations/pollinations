@@ -19,7 +19,12 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { handleImageEdit, handleImageGeneration } from "./images.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageEdit,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -40,7 +45,7 @@ import {
 } from "@shared/registry/model3d.ts";
 import {
     DEFAULT_REALTIME_MODEL,
-    REALTIME_MODEL_NAMES,
+    REALTIME_VOICE_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
     type CreateChatCompletionRequest,
@@ -562,7 +567,7 @@ export const proxyRoutes = new Hono<Env>()
                 `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
                 "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
                 "",
-                `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+                `**Models:** ${REALTIME_VOICE_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
                 "",
                 "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
             ].join("\n"),
@@ -988,7 +993,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -1103,7 +1108,7 @@ export const proxyRoutes = new Hono<Env>()
                     .optional()
                     .meta({
                         description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
+                            "Seed passed to the model. Same seed + parameters return the same cached result while available.",
                         example: "42",
                     }),
                 key: z.string().optional().meta({
@@ -1148,6 +1153,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        generationAccess,
+        prepareOpenAIImageGeneration,
+        formatOpenAIImageGeneration,
+        imageCache,
         handleImageGeneration,
     )
     .post(

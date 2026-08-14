@@ -1,6 +1,8 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "./image/httpError.ts";
+import { readResponseBytes } from "./utils/response-bytes.ts";
+import { validateUserMediaUrl } from "./utils/user-media-url.ts";
 
 /**
  * A user-supplied image we could not use.
@@ -35,127 +37,29 @@ export class UserImageError extends HttpError {
 /** Max bytes we will read for a single user-supplied image: 20MB. */
 export const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 
-const BLOCKED_HOSTNAMES = /^localhost$/i;
-
-/**
- * Blocks the hosts a user-supplied URL must never reach: loopback, any literal
- * IP, and anything containing a colon (an IPv6 literal, which covers ::1 and
- * the unique-local range without enumerating them).
- *
- * Deliberately blunt. A bare IP is never a legitimate way to reference a public
- * image, and allowing one opens link-local metadata endpoints — so the whole
- * literal-address space is refused rather than filtered range by range.
- */
-function isBlockedImageHost(hostname: string): boolean {
-    const host = hostname.replace(/^\[|\]$/g, "");
-    const normalized = host.toLowerCase();
-    if (
-        BLOCKED_HOSTNAMES.test(normalized) ||
-        normalized.endsWith(".localhost")
-    ) {
-        return true;
-    }
-
-    if (normalized.includes(":")) {
-        return true;
-    }
-
-    const parts = normalized.split(".").map(Number);
-    if (
-        parts.length !== 4 ||
-        parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
-    ) {
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * The one gate every user-supplied image URL passes before we fetch it, so a
- * URL one path refuses can never be reachable through the other instead.
- */
+/** Maps the shared user-media URL policy to the image API's error contract. */
 function assertAllowedImageUrl(value: string): URL {
-    let url: URL;
-    try {
-        url = new URL(value);
-    } catch {
+    const validation = validateUserMediaUrl(value);
+    if (validation.ok) return validation.url;
+
+    if (validation.reason === "invalid") {
         throw new UserImageError(
             `Invalid image URL ${value}: expected a valid HTTP(S) URL.`,
             "invalid_image_url",
         );
     }
 
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    if (validation.reason === "protocol") {
         throw new UserImageError(
             `Invalid image URL ${value}: only HTTP(S) image URLs can be fetched.`,
             "invalid_image_url",
         );
     }
 
-    if (url.username || url.password || isBlockedImageHost(url.hostname)) {
-        throw new UserImageError(
-            `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
-            "invalid_image_url",
-        );
-    }
-
-    return url;
-}
-
-/**
- * Reads a response body, refusing to buffer more than `maxBytes`.
- *
- * Streams and checks a running total so an oversized image is abandoned partway
- * rather than after it has already been held in memory — `Content-Length` is the
- * host's claim, not a limit, so it cannot be the only check.
- */
-async function readImageBytes(
-    response: Response,
-    maxBytes: number,
-): Promise<Uint8Array> {
-    if (maxBytes <= 0) {
-        throw new UserImageError(
-            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
-            "image_too_large",
-        );
-    }
-
-    const tooLarge = (total: number) =>
-        new UserImageError(
-            `Image too large: ${total} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
-            "image_too_large",
-        );
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-        const arrayBuffer = await response.arrayBuffer();
-        if (arrayBuffer.byteLength > maxBytes)
-            throw tooLarge(arrayBuffer.byteLength);
-        return new Uint8Array(arrayBuffer);
-    }
-
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.byteLength;
-            if (total > maxBytes) throw tooLarge(total);
-            chunks.push(value);
-        }
-    } finally {
-        reader.releaseLock();
-    }
-
-    const bytes = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-    }
-    return bytes;
+    throw new UserImageError(
+        `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
+        "invalid_image_url",
+    );
 }
 
 /** The image host's own status, phrased as something the caller can act on. */
@@ -333,20 +237,24 @@ export async function fetchUserImage(
     }
 
     const cap = Math.min(MAX_IMAGE_SIZE, maxBytes);
-    // Not redundant with the streaming cap below, which catches the same images
-    // only after transferring `cap` bytes of them. An honest host declaring
-    // something far too big is turned away here having sent nothing.
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && Number.parseInt(contentLength, 10) > cap) {
+    if (cap <= 0) {
         throw new UserImageError(
-            `Image too large: ${contentLength} bytes (max ${cap} bytes remaining). Please use a smaller image.`,
+            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
             "image_too_large",
         );
     }
 
     let bytes: Uint8Array;
     try {
-        bytes = await readImageBytes(response, cap);
+        bytes = await readResponseBytes(
+            response,
+            cap,
+            (total) =>
+                new UserImageError(
+                    `Image too large: ${total} bytes (max ${cap} bytes remaining). Please use a smaller image.`,
+                    "image_too_large",
+                ),
+        );
     } catch (thrown) {
         if (thrown instanceof UserImageError) throw thrown;
         const error =

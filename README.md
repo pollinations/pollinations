@@ -21,6 +21,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Article Illustrator](https://article.240801.xyz) | An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai/). https://github.com/pollinations/pollinations/issues/1 | [@zzerding](https://github.com/zzerding) |
+| [🖼️ HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) | Create comic strips quickly with HQ IA, an AI-powered comic book creator. | [@wljrodrigues](https://github.com/wljrodrigues) |
+| [🖼️ IMADreamer](https://fastnow.github.io/imadreamer) | IMADreamer is a free AI image generation tool built on the Pollinations API. | [@fastnow](https://github.com/fastnow) |
 | [📚 FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) | With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition) | [@rpbmultiongh](https://github.com/rpbmultiongh) |
 | [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |
 | [✍️ Tessera Lumen](https://app.963.co.za) | This app uses a backend proxy integration with Pollinations.ai. **Pollinations endpoint used** - https://gen.pollinations.ai/v1/chat/completions **Repository evidence** - POLLINATIONS.md : https://git | [@Jeraque007](https://github.com/Jeraque007) |
@@ -28,9 +31,6 @@
 | [🖼️ GimpToPolli](https://github.com/GermanIllan/pollinationsai) | ### 🌸 App Submission: GimpToPolli - **App Name:** GimpToPolli - **Author / Developer:** [@GermanIllan](https://github.com/GermanIllan) - **Repository URL:** https://github.com/GermanIllan/pollination | [@GermanIllan](https://github.com/GermanIllan) |
 | [🎮 NEON SHADOWS: CHRONICLES OF THE CORE](https://habitatai.biz/game) | Supports an AI-driven cyberpunk RPG experience for "NEON SHADOWS: CHRONICLES OF THE CORE". | [@KT-Society](https://github.com/KT-Society) |
 | [📚 studdy](https://bharkodat-ux.github.io/studdy) | studdy generates personalized study guides, interactive flashcards, and quizzes to help you study topics. It provides study companion content for faster learning. | [@bharkodat-ux](https://github.com/bharkodat-ux) |
-| [🛠️ AIOPE Headless](https://xnet.ngo) | Self-hosted AI assistant server with web UI, tool execution, and Pollinations.ai as primary LLM and image generation provider. Features include: web search, SSH management, file operations, SVG raster | [@xnet-admin-1](https://github.com/xnet-admin-1) |
-| [🤖 Lucia](https://t.me/MissLucia_bot) | Lucia is an empathetic virtual companion providing warmth, care, and emotional support. She is available on Telegram and has over 10,000 Monthly Active Users (MAU). | [@Ad101DP](https://github.com/Ad101DP) |
-| [📚 Pollination EduCard AI](https://satwata-bandopadhyay.github.io/pollination-educard-ai) | Pollination EduCard AI provides an “About the App” section describing the app. | [@Satwata-Bandopadhyay](https://github.com/Satwata-Bandopadhyay) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -51,6 +51,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-12** – **🎨 IMADreamer joins the garden** A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer) <!-- app -->
+- **2026-08-12** – **💡 Models, now in a proper row** `Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)
+- **2026-08-12** – **🔗 Let MCP requests breathe** Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
 - **2026-08-11** – **🌟 The app garden got portraits** The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai) <!-- app -->
 - **2026-08-10** – **🚀 Trellis 2 handles longer 3D jobs** Generate finished GLB files with `trellis-2` and its quality aliases through the usual API flow; some meshes simply needed more time to become meshes. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-10** – **✨ Tessera Lumen joins the writing garden** A chat-powered drafting app for turning the blank page into a slightly more negotiable problem. [Try it](https://app.963.co.za) <!-- app -->
@@ -58,9 +61,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-08-10** – **💡 FlashcardGeneratorAI turns study material into games** Generate digital flashcards and matching games for repetition with better graphics. [Try it](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) <!-- app -->
 - **2026-08-09** – **🎨 Stoicky joins the app garden** An AI video-automation tool for faceless creators, built with Pollinations image and text inference. [Try it](https://stoicky.vercel.app) <!-- app -->
 - **2026-08-09** – **🔗 Model Monitor gets two gardens** Inspect Official and Community models separately, with modality health, outage badges, and no-traffic models scoped to the view. [Check the monitor](https://model-monitor.pollinations.ai)
-- **2026-08-09** – **✨ Image queues found another door** FLUX and DreamShaper requests can retry another worker when one is full or unreachable—less waiting, fewer dead ends.
-- **2026-08-06** – **🌟 The app garden got roots** The community directory now runs on a validated, newest-first catalog, so [browse 859 community apps](https://pollinations.ai/apps) without relying on a heroic Markdown file.
-- **2026-08-06** – **✨ Two gardens, one search** The model catalog now separates Official and Community models, with shared search and cleaner modality filters for finding the thing you actually need. [Browse models](https://gen.pollinations.ai/v1/models)
 ---
 
 ## 🌱 Introduction

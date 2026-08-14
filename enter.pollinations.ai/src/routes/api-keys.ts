@@ -7,6 +7,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -41,7 +42,13 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(
+        updated,
+        "models",
+        Array.isArray(allowedModels)
+            ? canonicalizeModelPermissionIds(allowedModels)
+            : allowedModels,
+    );
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }
@@ -169,7 +176,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Pollen budget cap. Publishable keys treat null or omission as 0; secret keys use null for unlimited",
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
     accountPermissions: z
         .array(z.string())

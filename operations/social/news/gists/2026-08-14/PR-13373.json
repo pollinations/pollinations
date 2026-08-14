@@ -1,0 +1,35 @@
+{
+  "pr_number": 13373,
+  "title": "feat: add Grok Imagine Image 2.0",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13373",
+  "merged_at": "2026-08-14T13:04:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `grok-imagine-image-2.0` as a new paid-only model; no aliases and no changes to existing Grok image models.\n- Routes the exact `x-ai/grok-imagine-image-2.0` ID through OpenRouter, pinned to xAI with provider fallback disabled.\n- Supports low/medium quality, 1K/2K output, and up to three reference images across simple, OpenAI JSON, and multipart routes.\n- Bills OpenRouter's exact output tiers ($0.04/$0.06/$0.06/$0.08) plus $0.01 per input image using request-selected cost variants.\n- Widens the shared resolution schema for 1K/2K while retaining per-model validation; the adjacent Seedance edit is type-only.\n- Verified direct provider calls and full local E2E: every tier, editing via `media.pollinations.ai`, `b64_json`/URL formats, permissions, billing, caching, validation errors, and concurrent burst. All measured generations finished within 67 seconds. Gen: 111 focused/invariant tests + typecheck. Enter: 81 pricing/invariant tests + typecheck.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets a new canvas",
+    "blurb": "A new paid-only Grok image model has landed in the garden. Bring up to three reference images, choose 1K or 2K, and let the pixels do their mysterious little thing.",
+    "summary": "Added the paid-only `x-ai/grok-imagine-image-2.0` model through OpenRouter with xAI pinned as provider, low/medium quality, 1K/2K output, and support for up to three reference images across simple, OpenAI JSON, and multipart image routes.",
+    "impact": "Developers can now generate or edit images with Grok Imagine Image 2.0 using reference images and request-selected output tiers priced at $0.04/$0.06/$0.06/$0.08 plus $0.01 per input image.",
+    "keywords": [
+      "grok",
+      "image-generation",
+      "openrouter",
+      "reference-images",
+      "image-editing",
+      "1k",
+      "2k"
+    ],
+    "visual_concept": "Polli is an art director in a cozy garden studio, pinning three tiny reference pictures beside a retro CRT that renders a new image in selectable 1K and 2K frames. Glowing image seeds travel from the references into the monitor, while code-plants and flowers establish that this is a new API image model rather than a generic painting scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, arranging three small reference-image cards beside a warm CRT monitor generating a framed picture labeled \"GROK 2.0\" with tiny \"1K\" and \"2K\" buttons. Lime green (#ecf874) glows prominently from code-plants and garden flowers around the desk, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13373.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, arranging three small reference-image cards beside a warm CRT monitor generating a framed picture labeled \"GROK 2.0\" with tiny \"1K\" and \"2K\" buttons. Lime green (#ecf874) glows prominently from code-plants and garden flowers around the desk, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T13:06:09.406978+00:00"
+}

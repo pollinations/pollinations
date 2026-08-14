@@ -1,7 +1,10 @@
 import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
-const configuredApiBaseUrl = process.env.POLLINATIONS_BASE_URL?.trim();
+const configuredApiBaseUrl =
+    typeof process !== "undefined"
+        ? process.env?.POLLINATIONS_BASE_URL?.trim()
+        : undefined;
 
 const API_BASE_URL = (configuredApiBaseUrl || DEFAULT_API_BASE_URL).replace(
     /\/+$/,
@@ -92,10 +95,10 @@ export function createAudioContent(data, mimeType) {
  * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
  * @returns {string} - Complete URL
  */
-export function buildUrl(path, params = {}, includeAuth = false) {
+export function buildUrl(path, params = {}, includeAuth = false, context) {
     const url = createApiUrl(path);
     const allParams = includeAuth
-        ? { ...params, ...getAuthQueryParam() }
+        ? { ...params, ...getAuthQueryParam(context) }
         : params;
     Object.entries(allParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -130,10 +133,10 @@ export function buildShareableUrl(path, params = {}) {
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - Fetch response
  */
-export async function fetchWithAuth(url, options = {}) {
+export async function fetchWithAuth(url, options = {}, context) {
     const headers = {
         ...options.headers,
-        ...getAuthHeaders(),
+        ...getAuthHeaders(context),
     };
     return fetch(url, { ...options, headers });
 }
@@ -143,8 +146,8 @@ export async function fetchWithAuth(url, options = {}) {
  * @param {Object} options - Fetch options
  * @returns {Promise<Object>} - Parsed JSON response
  */
-export async function fetchJsonWithAuth(url, options = {}) {
-    const response = await fetchWithAuth(url, options);
+export async function fetchJsonWithAuth(url, options = {}, context) {
+    const response = await fetchWithAuth(url, options, context);
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
         throw new Error(parseApiError(response.status, errorText));
@@ -163,21 +166,27 @@ export async function fetchJsonWithAuth(url, options = {}) {
  * @param {string} args.mediaUrl - URL of the media to analyze
  * @returns {Promise<{content: string, model: string}>}
  */
-export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
+export async function chatWithMedia(
+    { model, prompt, mediaType, mediaUrl },
+    context,
+) {
     const mediaBlock =
         mediaType === "input_audio"
             ? { type: "input_audio", input_audio: { url: mediaUrl } }
             : { type: mediaType, [mediaType]: { url: mediaUrl } };
 
-    const result = await postChatCompletion({
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [{ type: "text", text: prompt }, mediaBlock],
-            },
-        ],
-    });
+    const result = await postChatCompletion(
+        {
+            model,
+            messages: [
+                {
+                    role: "user",
+                    content: [{ type: "text", text: prompt }, mediaBlock],
+                },
+            ],
+        },
+        context,
+    );
     return {
         content: result.choices?.[0]?.message?.content || "",
         model: result.model || model,
@@ -191,7 +200,7 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
  * @param {Object} body - Request body (null/undefined fields are stripped)
  * @returns {Promise<Object>} - Parsed chat-completion response
  */
-export async function postChatCompletion(body) {
+export async function postChatCompletion(body, context) {
     const cleanedBody = {};
     for (const [key, value] of Object.entries(body)) {
         if (value !== undefined && value !== null) {
@@ -199,11 +208,15 @@ export async function postChatCompletion(body) {
         }
     }
 
-    return fetchJsonWithAuth(buildUrl("/v1/chat/completions"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedBody),
-    });
+    return fetchJsonWithAuth(
+        buildUrl("/v1/chat/completions"),
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cleanedBody),
+        },
+        context,
+    );
 }
 
 /**
@@ -211,8 +224,8 @@ export async function postChatCompletion(body) {
  * @param {Object} options - Fetch options
  * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
  */
-export async function fetchBinaryWithAuth(url, options = {}) {
-    const response = await fetchWithAuth(url, options);
+export async function fetchBinaryWithAuth(url, options = {}, context) {
+    const response = await fetchWithAuth(url, options, context);
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
         throw new Error(parseApiError(response.status, errorText));

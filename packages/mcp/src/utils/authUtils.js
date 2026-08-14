@@ -1,4 +1,13 @@
-let apiKey = process.env.POLLINATIONS_API_KEY || null;
+let apiKey =
+    (typeof process !== "undefined" && process.env?.POLLINATIONS_API_KEY) ||
+    null;
+
+function resolveApiKey(context) {
+    if (context?.http) {
+        return context.http.authInfo?.token || null;
+    }
+    return apiKey;
+}
 
 /**
  * @param {string} key - The API key (pk_ or sk_ prefixed)
@@ -16,51 +25,56 @@ export function clearApiKey() {
 /**
  * @returns {boolean}
  */
-export function hasApiKey() {
-    return apiKey !== null && apiKey.length > 0;
+export function hasApiKey(context) {
+    const key = resolveApiKey(context);
+    return key !== null && key.length > 0;
 }
 
 /**
  * @returns {string|null} - 'publishable', 'secret', or null if no key
  */
-export function getKeyType() {
-    if (!apiKey) return null;
-    if (apiKey.startsWith("pk_")) return "publishable";
-    if (apiKey.startsWith("sk_")) return "secret";
+export function getKeyType(context) {
+    const key = resolveApiKey(context);
+    if (!key) return null;
+    if (key.startsWith("pk_")) return "publishable";
+    if (key.startsWith("sk_")) return "secret";
     return "unknown";
 }
 
 /**
  * @returns {Object} - Headers object with Authorization if key is set
  */
-export function getAuthHeaders() {
-    if (!apiKey) return {};
+export function getAuthHeaders(context) {
+    const key = resolveApiKey(context);
+    if (!key) return {};
     return {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${key}`,
     };
 }
 
 /**
  * @returns {Object} - Query params object with key if set
  */
-export function getAuthQueryParam() {
-    if (!apiKey) return {};
-    return { key: apiKey };
+export function getAuthQueryParam(context) {
+    const key = resolveApiKey(context);
+    if (!key) return {};
+    return { key };
 }
 
 /**
  * @returns {string|null} - Masked key like "pk_...abc123" or null
  */
-export function getMaskedKey() {
-    if (!apiKey) return null;
-    if (apiKey.length <= 8) return "***";
-    return `${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 6)}`;
+export function getMaskedKey(context) {
+    const key = resolveApiKey(context);
+    if (!key) return null;
+    if (key.length <= 8) return "***";
+    return `${key.substring(0, 3)}...${key.substring(key.length - 6)}`;
 }
 
-export function requireApiKey() {
-    if (!hasApiKey()) {
+export function requireApiKey(context) {
+    if (!hasApiKey(context)) {
         throw new Error(
-            "API key required. Use setApiKey tool first or set POLLINATIONS_API_KEY environment variable. " +
+            "API key required. Send it as an Authorization bearer token, use setApiKey, or set POLLINATIONS_API_KEY. " +
                 "Get your key at https://enter.pollinations.ai/keys",
         );
     }

@@ -2979,7 +2979,7 @@ export const audioRoutes = new Hono<Env>()
                                     minLength: 1,
                                     maxLength: 10000,
                                     description:
-                                        "Text or prompt to generate. For eleven-dialogue, use one `voice: text` turn per line.",
+                                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                                 },
                                 safe: {
                                     oneOf: [

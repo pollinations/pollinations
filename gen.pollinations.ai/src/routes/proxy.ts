@@ -864,7 +864,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Dialogue:** Set `model=eleven-dialogue` and put one `<voice>: <text>` turn per line in the path text. URL-encode the text, including newlines as `%0A`; for example, `/audio/rachel%3A%20Hello%21%0Aadam%3A%20Hi%21?model=eleven-dialogue`.",
+                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
                 "",
                 "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
@@ -885,7 +885,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text or prompt to generate. For eleven-dialogue, use one `voice: text` turn per line and URL-encode newlines as `%0A`.",
+                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),

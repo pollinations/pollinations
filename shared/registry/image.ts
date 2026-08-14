@@ -517,6 +517,64 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
+    "seedance-2.0-mini": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        cost: {
+            completionVideoSeconds: 0.09,
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.04,
+                },
+            },
+            matchResolution("480p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+            },
+            "720p",
+        ),
+        resolutions: ["720p", "480p"],
+        title: "Seedance 2.0 Mini",
+        description:
+            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "seedance-2.0-fast": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        cost: {
+            completionVideoSeconds: 0.07,
+        },
+        resolutions: ["480p"],
+        title: "Seedance 2.0 Fast",
+        description:
+            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         provider: "replicate",
@@ -774,6 +832,64 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+    },
+    "grok-imagine-image-2.0": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        cost: {
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
+        },
+        ...defineCostVariants(
+            {
+                low_1k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
+                },
+            },
+            ({ input }) => {
+                if (input?.quality === "low") {
+                    return input.resolution === "2k" ? "low_2k" : "low_1k";
+                }
+                return input?.resolution === "2k" ? "medium_2k" : undefined;
+            },
+            {
+                low_1k: {
+                    label: "Low · 1K",
+                    description: "Applies to low-quality 1K requests.",
+                },
+                low_2k: {
+                    label: "Low · 2K",
+                    description: "Applies to low-quality 2K requests.",
+                },
+                medium_2k: {
+                    label: "Medium · 2K",
+                    description: "Applies to medium-quality 2K requests.",
+                },
+            },
+            "Medium · 1K",
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Grok Imagine Image 2.0",
+        description:
+            "Creates and edits high-detail images at 1K or 2K with up to three references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
     },
     "recraft-v4.1-vector": {
         aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],

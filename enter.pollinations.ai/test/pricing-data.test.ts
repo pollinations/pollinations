@@ -492,6 +492,21 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.06, 8);
+    for (const [quality, resolution, expected] of [
+        ["low", "1k", 0.05],
+        ["low", "2k", 0.07],
+        ["medium", "1k", 0.07],
+        ["medium", "2k", 0.09],
+    ] as const) {
+        expect(
+            calculatePrice(
+                "grok-imagine-image-2.0",
+                { promptImageTokens: 1, completionImageTokens: 1 },
+                undefined,
+                { quality, resolution },
+            ).totalPrice,
+        ).toBeCloseTo(expected, 8);
+    }
     expect(
         calculateCost("grok-video-pro", {
             promptImageTokens: 1,

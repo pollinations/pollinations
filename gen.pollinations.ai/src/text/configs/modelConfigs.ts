@@ -259,9 +259,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
-    "accounts/fireworks/models/deepseek-v4-pro": () =>
+    "accounts/fireworks/models/deepseek-v4-pro-0813": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-pro",
+            model: "accounts/fireworks/models/deepseek-v4-pro-0813",
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------

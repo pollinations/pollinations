@@ -35,6 +35,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -45,6 +49,10 @@ new_classes = ["PollenRateLimiter"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -118,6 +126,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.production.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.production.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -128,6 +140,10 @@ new_classes = ["PollenRateLimiter"]
 [[env.production.migrations]]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.production.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -186,6 +202,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.staging.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.staging.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -196,6 +216,10 @@ new_classes = ["PollenRateLimiter"]
 [[env.staging.migrations]]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.staging.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -246,6 +270,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.test.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.test.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -256,6 +284,10 @@ new_classes = ["PollenRateLimiter"]
 [[env.test.migrations]]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.test.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

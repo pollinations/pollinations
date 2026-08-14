@@ -16,6 +16,7 @@ import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamProAPI,
@@ -24,6 +25,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -789,6 +791,9 @@ const generateImage = async (
         case "grok-imagine-pro":
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
+        case "grok-imagine-image-2.0":
+            return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
+
         case "recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
@@ -806,6 +811,9 @@ const generateImage = async (
 
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
+
+        case "qwen-image-3":
+            return await callQwenImage3API(prompt, safeParams);
 
         case "dreamshaper":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts

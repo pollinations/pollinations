@@ -1,0 +1,33 @@
+{
+  "pr_number": 12847,
+  "title": "Remove Driftpod.fm GitHub repo link from APPS.md",
+  "author": "alexander",
+  "url": "https://github.com/pollinations/pollinations/pull/12847",
+  "merged_at": "2026-08-14T17:33:29Z",
+  "labels": [],
+  "pr_body_excerpt": "This PR removes the GitHub repository URL from the Driftpod.fm entry in apps/APPS.md.\r\n\r\n**Reason**\r\n\r\nThe Driftpod.fm row currently contains a link to a GitHub repo (https://github.com/alexander/driftpod-pollinations). The repo is no longer live. This change removes that repository URL from the table entry so the cell is empty.\r\n\r\n**Change**\r\n\r\napps/APPS.md: removed the GitHub repository URL from the Driftpod.fm table row. No code or functional changes — content-only documentation update.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less dead branch",
+    "blurb": "The Driftpod.fm garden marker has been tidied up. Its retired GitHub trail is no longer pointing curious bees at an empty patch.",
+    "summary": "Removed the no-longer-live GitHub repository URL from the Driftpod.fm app listing metadata.",
+    "impact": "People browsing the Driftpod.fm entry will get a cleaner directory listing without a stale repository link.",
+    "keywords": [
+      "community",
+      "Driftpod.fm",
+      "app-directory",
+      "metadata",
+      "link-cleanup"
+    ],
+    "visual_concept": "Polli, wearing a tiny gardener hat, gently removes a faded signpost labeled \"repo\" from a cozy app-directory garden while healthy code-plants and flowers remain nearby; the scene represents clearing a retired link while preserving the Driftpod.fm listing.",
+    "image_prompt": "A cozy pixel art garden directory where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener hat and removes a faded pixel sign labeled \"repo\" beside a flourishing Driftpod.fm code-plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, flowers and vines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-12847.jpg",
+    "prompt": "A cozy pixel art garden directory where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener hat and removes a faded pixel sign labeled \"repo\" beside a flourishing Driftpod.fm code-plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, flowers and vines, emotionally warm."
+  },
+  "generated_at": "2026-08-14T17:34:35.307318+00:00"
+}

@@ -659,7 +659,7 @@ test("accepts compatible Scribe session updates after streaming starts", async (
         },
     });
 
-    await closeRealtimeSession(session);
+    await closeAndReadTelemetry(session);
 });
 
 test.each([

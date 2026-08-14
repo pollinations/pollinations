@@ -1,0 +1,35 @@
+{
+  "pr_number": 13334,
+  "title": "feat: expose Scribe through OpenAI realtime protocol",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13334",
+  "merged_at": "2026-08-14T02:34:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Exposes the shared OpenAI Realtime event protocol on both `/realtime` and `/v1/realtime`.\n- Translates `scribe-realtime` transcription sessions to ElevenLabs `scribe_v2_realtime`, including PCM/PCMU audio, manual/VAD commits, language/context controls, incremental transcript deltas, sanitized errors, permissions, and exact streamed-audio billing.\n- Removes the not-yet-production provider-specific `/v1/audio/transcriptions/realtime` route and query schema.\n- Keeps the confirmed model contract unchanged: no aliases, paid-only, multiplier 1, no Pollinations GPU, and no fallback.\n\nValidation:\n- `npx vitest run test/realtime.test.ts test/docs.test.ts` — 38 passed\n- `npm run typecheck`\n- Direct ElevenLabs probe — correct transcript, 3 partial events, 2.3s\n- Live local Gen E2E — auth, routing, transcript events, and exact billing passed\n\nRelated policy is intentionally separate in #13333. #13328 also edits the existing Azure realtime lifecycle; whichever PR merges second will need a narrow rebase.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Scribe joins the live hive",
+    "blurb": "Live transcription now speaks the OpenAI Realtime dialect. Send audio, receive transcript deltas, and let the bees handle the provider translation.",
+    "summary": "Exposed the paid-only `scribe-realtime` model through the shared OpenAI Realtime protocol at both `/realtime` and `/v1/realtime`, translating PCM or PCMU audio sessions to ElevenLabs `scribe_v2_realtime` with VAD/manual commits, language and context controls, incremental transcript events, and exact streamed-audio billing.",
+    "impact": "Developers can plug live Scribe transcription into OpenAI Realtime-compatible clients without learning a provider-specific route, while receiving partial transcripts and accurate usage billing as audio streams.",
+    "keywords": [
+      "scribe-realtime",
+      "elevenlabs",
+      "openai-realtime",
+      "transcription",
+      "streaming-audio",
+      "websocket",
+      "billing"
+    ],
+    "visual_concept": "A cozy live-transcription workstation: Polli acts as a sound engineer, guiding pixel audio waveforms from a retro microphone into a CRT terminal that turns them into scrolling transcript lines. Small code-plants and flowers frame the scene, while the monitor robot eagerly watches the real-time text arrive; the visual metaphor is one shared protocol translating spoken sound into live words.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones as she guides glowing audio waveforms from a retro microphone into a CRT terminal that prints live transcript lines; a cute chunky monitor robot watches beside code-plants and flowers, with lime green (#ecf874) prominently glowing across the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"LIVE TRANSCRIPT\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13334.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones as she guides glowing audio waveforms from a retro microphone into a CRT terminal that prints live transcript lines; a cute chunky monitor robot watches beside code-plants and flowers, with lime green (#ecf874) prominently glowing across the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"LIVE TRANSCRIPT\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-14T02:35:50.213908+00:00"
+}

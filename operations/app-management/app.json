@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "FSChart",
+    "url": "https://fastnow.github.io/fschart_pollinations",
+    "description": "FSChart converts natural language into 3D models and 2D function plots in the browser. Enter “a rotating red cube” or “plot y=sin(x)” to call Pollinations and render.",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "fastnow",
+    "githubUserId": "177708607",
+    "repositoryUrl": "https://github.com/fastnow/fastnow.github.io/blob/main/fschart_pollinations.html",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13311",
+    "approvedDate": "2026-08-14",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💼",
     "name": "Jornal Bitcoin",
     "url": "https://jornalbitcoin.com.br",

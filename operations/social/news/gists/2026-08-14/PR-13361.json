@@ -1,0 +1,34 @@
+{
+  "pr_number": 13361,
+  "title": "feat: update Grok 4.5 to 4.6",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13361",
+  "merged_at": "2026-08-14T10:41:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces canonical `grok-4.5` with `grok-4.6`; preserves `grok-4.5` and `grok-4-5` as compatibility aliases.\n- Routes OpenRouter `x-ai/grok-4.6` only through `xai/zdr` with provider fallback disabled; current upstream is `x-ai/grok-4.6-20260810`.\n- Updates cached-token pricing to $0.50/M below 200K and $1/M at 200K+, with multiplier 1 and paid-only access unchanged.\n- Keeps modalities, endpoints, capabilities, context, description, logo, and Pollinations fallback unchanged.\n\nVerified: direct and local text, vision, streaming, tools, JSON, four reasoning levels, aliases, permissions, cache, exact billing, errors, and a 5-request burst; focused tests and both typechecks pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets fresh pollen",
+    "blurb": "Grok 4.6 has moved into the garden, while the old 4.5 signposts still lead visitors home. Same toolkit, newer brain, fewer migration rituals.",
+    "summary": "Replaced the canonical Grok model with `grok-4.6`, routed OpenRouter requests exclusively through `xai/zdr`, and retained `grok-4.5` plus `grok-4-5` as compatibility aliases with updated cached-token pricing.",
+    "impact": "Text, vision, streaming, tools, JSON, and reasoning requests now use Grok 4.6 without changing existing 4.5 integrations, while cached tokens cost $0.50/M below 200K tokens and $1/M at 200K+.",
+    "keywords": [
+      "grok-4.6",
+      "xAI",
+      "OpenRouter",
+      "text models",
+      "compatibility",
+      "pricing"
+    ],
+    "visual_concept": "Depict a cozy model-upgrade greenhouse: Polli carefully replaces a flowerpot label reading “GROK 4.5” with “GROK 4.6,” while two small trail signs preserve the old alias names. A retro terminal glows with a simple model-routing diagram, surrounded by blooming code-plants to represent unchanged API capabilities and smooth compatibility.",
+    "image_prompt": "Cozy pixel art scene in a warm code greenhouse: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings wears tiny gardener overalls while swapping a flowerpot label from “GROK 4.5” to “GROK 4.6”; nearby, small pixel signs read “grok-4.5” and “grok-4-5,” and a retro CRT terminal glows beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text “GROK 4.6”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13361.jpg",
+    "prompt": "Cozy pixel art scene in a warm code greenhouse: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings wears tiny gardener overalls while swapping a flowerpot label from “GROK 4.5” to “GROK 4.6”; nearby, small pixel signs read “grok-4.5” and “grok-4-5,” and a retro CRT terminal glows beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text “GROK 4.6”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-14T10:42:40.069447+00:00"
+}

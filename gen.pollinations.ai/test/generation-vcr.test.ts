@@ -15,7 +15,6 @@ import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createMockVcr } from "@shared/test/mocks/vcr.ts";
 import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
-import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
@@ -420,7 +419,7 @@ async function fetchWorker(path: string, init: RequestInit) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        env,
         ctx,
     );
 
@@ -806,7 +805,6 @@ test("non-stream chat completions keep moderation telemetry in generation events
     expect(response.headers.get("x-moderation-prompt-hate-severity")).toBe(
         "safe",
     );
-    await response.arrayBuffer();
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -1151,8 +1149,6 @@ test("OpenAI image generation returns token usage", async ({
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-cache")).toBe("HIT");
-    expect(response.headers.get("x-cache-type")).toBeNull();
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],
         usage: {
@@ -1239,7 +1235,6 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-model-used")).toBe("dreamshaper");
-    await response.arrayBuffer();
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);

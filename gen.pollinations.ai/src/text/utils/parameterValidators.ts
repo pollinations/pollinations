@@ -1,5 +1,3 @@
-import { normalizeSeed } from "@/util.ts";
-
 function validateFloat(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
     const parsed = Number.parseFloat(String(value));
@@ -58,7 +56,7 @@ export function validateTextGenerationParams(
         presence_penalty: validateFloat(data.presence_penalty),
         frequency_penalty: validateFloat(data.frequency_penalty),
         repetition_penalty: validateFloat(data.repetition_penalty),
-        seed: normalizeSeed(validateInt(data.seed)),
+        seed: validateInt(data.seed),
         stream: validateBoolean(data.stream),
         model: validateString(data.model),
         voice: validateString(data.voice),

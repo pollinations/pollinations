@@ -71,10 +71,6 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
-import {
-    type GenerationCacheVariables,
-    hashGenerationCacheIdentity,
-} from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
@@ -133,7 +129,6 @@ export type TrackVariables = {
         modelRequested: string | null;
         resolvedModelRequested: string;
         streamRequested: boolean;
-        detachedExecutionTracked?: boolean;
         overrideResponseTracking: (response: Response) => void;
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
@@ -155,8 +150,7 @@ export type TrackEnv = {
         BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
-        ModelVariables &
-        GenerationCacheVariables;
+        ModelVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -211,19 +205,6 @@ export const track = (eventType: EventType) =>
                 c.var.balance.balanceCheckResult?.selectedMeterSlug,
             balances: c.var.balance.balanceCheckResult?.balances || {},
         });
-        let cacheKeyPromise: Promise<string | undefined> | undefined;
-        const cacheKeyForTracking = () => {
-            if (!cacheKeyPromise) {
-                const cache = c.var.generationCache;
-                cacheKeyPromise = cache
-                    ? hashGenerationCacheIdentity(
-                          cache.adapter.storage,
-                          cache.key,
-                      )
-                    : Promise.resolve(undefined);
-            }
-            return cacheKeyPromise;
-        };
 
         /**
          * The one place a generation row is built and sent.
@@ -256,7 +237,6 @@ export const track = (eventType: EventType) =>
                 endTime: row.endTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
-                cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
@@ -285,10 +265,6 @@ export const track = (eventType: EventType) =>
         });
 
         await next();
-
-        // Detached execution already tracked the provider failure. The outer
-        // caller only receives that captured result and must not emit it again.
-        if (c.var.track.detachedExecutionTracked) return;
 
         c.executionCtx.waitUntil(
             (async () => {
@@ -870,7 +846,6 @@ type TrackingEventInput = {
     eventType: EventType;
     ipSubnet?: string;
     ipHash?: string;
-    cacheKey?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -912,7 +887,6 @@ function createTrackingEvent({
     eventType,
     ipSubnet,
     ipHash,
-    cacheKey,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -934,12 +908,6 @@ function createTrackingEvent({
         eventType,
         ipSubnet,
         ipHash,
-
-        ...(cacheKey && {
-            cacheHit: responseTracking.cacheHit,
-            cacheType: responseTracking.cacheHit ? "EXACT" : "MISS",
-            cacheKey,
-        }),
 
         ...userTracking,
         ...requestTracking.referrerData,

@@ -17,9 +17,6 @@ interface CloudflareBindings {
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
-    GENERATION_COORDINATOR: DurableObjectNamespace<
-        import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
-    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"

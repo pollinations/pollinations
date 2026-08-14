@@ -220,7 +220,7 @@ describe("text cache", () => {
         await waitOnExecutionContext(secondCtx);
 
         expect(second.headers.get("X-Cache")).toBe("HIT");
-        expect(second.headers.get("X-Cache-Type")).toBeNull();
+        expect(second.headers.get("X-Cache-Type")).toBe("EXACT");
         expect(second.headers.get("Cache-Control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );

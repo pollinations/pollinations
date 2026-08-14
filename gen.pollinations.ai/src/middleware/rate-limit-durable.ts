@@ -1,5 +1,4 @@
 import { getRealClientIp } from "@shared/client-ip.ts";
-import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
@@ -17,54 +16,50 @@ type FrontendKeyRateLimitEnv = {
     Variables: AuthVariables & LoggerVariables & FrontendKeyRateLimitVariables;
 };
 
-function rateLimitStub(
-    c: Context<FrontendKeyRateLimitEnv>,
-): DurableObjectStub<PollenRateLimiter> | null {
-    const log = c.get("log").getChild("ratelimit");
-    const apiKey = c.var.auth.apiKey;
-    if (!apiKey) {
-        log.debug("Skipping rate limit, no API key");
-        return null;
-    }
-    const apiKeyMetadata = apiKey.metadata as
-        | Record<string, unknown>
-        | undefined;
-    if (apiKeyMetadata?.keyType !== "publishable") {
-        log.debug("Skipping rate limit, not a publishable key");
-        return null;
-    }
-
-    const ip = getRealClientIp(c);
-    const identifier = `pk_${apiKey.id}:ip:${ip}`;
-    const rateLimiter = c.env.POLLEN_RATE_LIMITER;
-    if (!rateLimiter) {
-        log.warn(
-            "Skipping rate limit for publishable key, POLLEN_RATE_LIMITER binding is missing",
-            { keyId: apiKey.id, ip, identifier },
-        );
-        return null;
-    }
-
-    return rateLimiter.get(
-        rateLimiter.idFromName(identifier),
-    ) as DurableObjectStub<PollenRateLimiter>;
-}
-
-function attachPollenConsumer(
-    c: Context<FrontendKeyRateLimitEnv>,
-    stub: DurableObjectStub<PollenRateLimiter>,
-): void {
-    c.set("frontendKeyRateLimit", {
-        consumePollen: (cost: number) => stub.consumePollen(cost),
-    });
-}
-
 export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
     async (c, next) => {
-        const stub = rateLimitStub(c);
-        if (!stub) return next();
+        const log = c.get("log").getChild("ratelimit");
 
+        const apiKey = c.var?.auth?.apiKey;
+        if (!apiKey) {
+            log.debug("Skipping rate limit, no API key");
+            return next();
+        }
+        const apiKeyMetadata = apiKey.metadata as
+            | Record<string, unknown>
+            | undefined;
+        if (apiKeyMetadata?.keyType !== "publishable") {
+            log.debug("Skipping rate limit, not a publishable key");
+            return next();
+        }
+
+        const ip = getRealClientIp(c);
+        const identifier = `pk_${apiKey.id}:ip:${ip}`;
+
+        log.debug(
+            "Applying rate limit for publishable key: id={keyId} ip={ip} identifier={identifier}",
+            {
+                keyId: apiKey.id,
+                ip,
+                identifier,
+            },
+        );
+
+        const rateLimiter = c.env.POLLEN_RATE_LIMITER;
+        if (!rateLimiter) {
+            log.warn(
+                "Skipping rate limit for publishable key, POLLEN_RATE_LIMITER binding is missing",
+                { keyId: apiKey.id, ip, identifier },
+            );
+            return next();
+        }
+
+        const id = rateLimiter.idFromName(identifier);
+        const stub = rateLimiter.get(
+            id,
+        ) as DurableObjectStub<PollenRateLimiter>;
         const result = await stub.checkRateLimit();
+
         if (!result.allowed) {
             const retryAfterSeconds = safeRound((result.waitMs || 0) / 1000, 2);
             c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
@@ -78,17 +73,10 @@ export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
             );
         }
 
-        attachPollenConsumer(c, stub);
+        c.set("frontendKeyRateLimit", {
+            consumePollen: (cost: number) => stub.consumePollen(cost),
+        });
 
-        await next();
-    },
-);
-
-/** Restores billing consumption without admitting the same caller twice. */
-export const frontendKeyBilling = createMiddleware<FrontendKeyRateLimitEnv>(
-    async (c, next) => {
-        const stub = rateLimitStub(c);
-        if (stub) attachPollenConsumer(c, stub);
         await next();
     },
 );

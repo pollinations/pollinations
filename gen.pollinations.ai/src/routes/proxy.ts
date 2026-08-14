@@ -860,7 +860,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
+                `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",

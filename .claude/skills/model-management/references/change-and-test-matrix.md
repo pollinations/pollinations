@@ -9,7 +9,7 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 | Add model | Full declared-modality matrix, aliases, permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
 | Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, provider-managed fallback |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
-| Canonical name or alias | Canonical and every alias resolve correctly; removed ID returns model-not-found when no compatibility alias was approved; search all consumers |
+| Canonical name or alias | Count stored old-canonical permissions in production and staging; when non-zero, deploy and verify a D1 canonicalization migration before the registry rename; canonical and every alias resolve correctly; restricted keys retain access; catalogs display the canonical permission; removed ID returns model-not-found when no compatibility alias was approved; search all consumers |
 | Description or brand | Catalog returns developer-facing copy without the title; brand mapping resolves to a real SVG; `addedDate` unchanged |
 | Input/output modality | Real sample proves the modality; unsupported inputs fail clearly; matching usage field is billed |
 | Image size/aspect/format | Every supported value returns the claimed dimensions/format; unsupported values are 4xx |

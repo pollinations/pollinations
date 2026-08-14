@@ -12,6 +12,7 @@ import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, expect } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
@@ -25,8 +26,32 @@ type ReplicateCall = {
 
 function createBillingVariantMocks() {
     const replicateState: { calls: ReplicateCall[] } = { calls: [] };
+    const openRouterState: { calls: Record<string, unknown>[] } = { calls: [] };
     return createFetchMock({
         tinybird: createMockTinybird(),
+        openrouter: {
+            state: openRouterState,
+            handlerMap: {
+                "openrouter.ai": async (request: Request) => {
+                    openRouterState.calls.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({
+                        data: [
+                            {
+                                b64_json:
+                                    Buffer.from(PNG_BYTES).toString("base64"),
+                                media_type: "image/png",
+                            },
+                        ],
+                        usage: { cost: 0.06 },
+                    });
+                },
+            },
+            reset: () => {
+                openRouterState.calls = [];
+            },
+        },
         replicate: {
             state: replicateState,
             handlerMap: {
@@ -106,13 +131,17 @@ afterEach(async () => {
     await teardownFetchMock();
 });
 
-async function generate(path: string, apiKey: string) {
+async function generate(path: string, apiKey: string, init?: RequestInit) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, {
-            headers: { authorization: `Bearer ${apiKey}` },
+            ...init,
+            headers: {
+                ...init?.headers,
+                authorization: `Bearer ${apiKey}`,
+            },
         }),
-        env,
+        withInlineGenerationCoordinator(env),
         ctx,
     );
     const failureBody =
@@ -188,5 +217,56 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
         tokenPriceCompletionVideoSeconds: 0.04,
         totalCost: 0.2,
         totalPrice: 0.2,
+    });
+});
+
+test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "openrouter");
+    syncImageEnv(
+        { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+        ["OPENROUTER_API_KEY"],
+    );
+
+    await generate("/v1/images/edits", paidApiKey, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            model: "grok-imagine-image-2.0",
+            prompt: "billing-grok-image-2",
+            image: INPUT_IMAGE_URL,
+            quality: "low",
+            resolution: "2k",
+            seed: 104,
+        }),
+    });
+
+    expect(mocks.openrouter.state.calls).toEqual([
+        expect.objectContaining({
+            model: "x-ai/grok-imagine-image-2.0",
+            quality: "low",
+            resolution: "2K",
+            provider: { only: ["xai"], allow_fallbacks: false },
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: INPUT_IMAGE_URL },
+                },
+            ],
+        }),
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "grok-imagine-image-2.0",
+        modelUsed: "x-ai/grok-imagine-image-2.0",
+        costVariant: "low_2k",
+        tokenCountPromptImage: 1,
+        tokenPricePromptImage: 0.01,
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.06,
+        totalCost: expect.closeTo(0.07, 8),
+        totalPrice: 0.07,
     });
 });

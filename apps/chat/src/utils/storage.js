@@ -61,7 +61,7 @@ export const saveTheme = (theme) => {
 };
 
 export const getSelectedModel = () => {
-    return localStorage.getItem(STORAGE_KEYS.MODEL) || "openai/gpt-5.4-nano";
+    return localStorage.getItem(STORAGE_KEYS.MODEL) || "openai";
 };
 
 export const saveSelectedModel = (model) => {

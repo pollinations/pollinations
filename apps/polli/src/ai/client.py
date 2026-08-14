@@ -892,7 +892,7 @@ async def web_search_handler(query: str, **kwargs) -> dict:
     Handle web_search tool calls via Perplexity (sonar-pro) through Pollinations.
 
     gemini-search, perplexity-fast, and perplexity-reasoning are all forbidden on
-    the current Pollinations API key (403). Plain "perplexity/sonar-pro" is the only search
+    the current Pollinations API key (403). Plain "perplexity" is the only search
     model confirmed working.
 
     Args:

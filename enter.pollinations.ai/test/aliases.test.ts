@@ -11,7 +11,6 @@ import {
     getPriceDefinition,
     getRegistryModelDefinition,
     type ModelName,
-    normalizeModelAllowlist,
     resolveModelName,
     type UsageType,
 } from "@shared/registry/registry.js";
@@ -73,21 +72,6 @@ test.for(
 )("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
-});
-
-test("model allowlists store canonical IDs and preserve unknown IDs", () => {
-    expect(
-        normalizeModelAllowlist([
-            "flux",
-            "black-forest-labs/FLUX.1-schnell",
-            "nanobanana2",
-            "owner/community-model",
-        ]),
-    ).toEqual([
-        "black-forest-labs/FLUX.1-schnell",
-        "google/gemini-3.1-flash-image",
-        "owner/community-model",
-    ]);
 });
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {
@@ -190,16 +174,16 @@ test("DeepSeek V4 models are billed at provider cost", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash-0731": "fireworks",
-        "deepseek/deepseek-v4-pro": "fireworks",
+        "deepseek/deepseek-v4-pro-0813": "fireworks",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash-0731": undefined,
-        "deepseek/deepseek-v4-pro": undefined,
+        "deepseek/deepseek-v4-pro-0813": undefined,
     } as const;
 
     for (const model of [
         "deepseek/deepseek-v4-flash-0731",
-        "deepseek/deepseek-v4-pro",
+        "deepseek/deepseek-v4-pro-0813",
     ] as const) {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);

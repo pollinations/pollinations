@@ -127,7 +127,7 @@ export function buildShareableUrl(path, params = {}) {
 
 /**
  * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options (can include timeoutMs)
+ * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - Fetch response
  */
 export async function fetchWithAuth(url, options = {}) {
@@ -135,18 +135,7 @@ export async function fetchWithAuth(url, options = {}) {
         ...options.headers,
         ...getAuthHeaders(),
     };
-    const timeoutMs = options.timeoutMs || 30000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        return await fetch(url, {
-            ...options,
-            headers,
-            signal: controller.signal,
-        });
-    } finally {
-        clearTimeout(timeoutId);
-    }
+    return fetch(url, { ...options, headers });
 }
 
 /**
@@ -168,7 +157,7 @@ export async function fetchJsonWithAuth(url, options = {}) {
  * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
  *
  * @param {Object} args
- * @param {string} args.model - Model name (e.g. "openai/gpt-5.4-nano", "google/gemini-3.1-pro-preview")
+ * @param {string} args.model - Model name (e.g. "openai", "gemini-large")
  * @param {string} args.prompt - Text prompt to pair with the media
  * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
  * @param {string} args.mediaUrl - URL of the media to analyze
@@ -197,8 +186,7 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
 
 /**
  * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, maps
- * errors, and parses the JSON response.
+ * Strips null/undefined keys, maps errors, and parses the JSON response.
  *
  * @param {Object} body - Request body (null/undefined fields are stripped)
  * @returns {Promise<Object>} - Parsed chat-completion response
@@ -215,7 +203,6 @@ export async function postChatCompletion(body) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedBody),
-        timeoutMs: 30000,
     });
 }
 

@@ -26,7 +26,7 @@ function parseArgs(): {
 Usage: ts-node src-functional/cli.ts <model> <token> [options]
 
 Arguments:
-  model       Bot model name (e.g., 'geminisearch', 'deepseek/deepseek-v4-flash-0731', 'chickytutor')
+  model       Bot model name (e.g., 'geminisearch', 'deepseek', 'chickytutor')
   token       Discord bot token
 
 Options:

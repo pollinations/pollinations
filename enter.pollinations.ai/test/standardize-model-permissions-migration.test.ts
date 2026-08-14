@@ -1,17 +1,16 @@
 import { env } from "cloudflare:test";
 import {
-    getModels,
     getRegistryModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0046_standardize-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0048_standardize-model-permissions.sql?raw";
 
-const modelMappings = getModels().flatMap((canonical) =>
-    getRegistryModelDefinition(canonical).aliases.map(
-        (alias) => [alias, canonical] as const,
+const modelMappings = [
+    ...migrationSql.matchAll(
+        /WHEN model\.type = 'text' AND model\.value = '([^']+)'\s+THEN '([^']+)'/g,
     ),
-);
+].map((match) => [match[1], match[2]] as const);
 
 const retiredIds = modelMappings.map(([retired]) => retired);
 const retiredSqlLiterals = retiredIds
@@ -41,30 +40,35 @@ async function insertInChunks(
 }
 
 async function runMigrationForTest(): Promise<void> {
-    for (const statement of migrationSql.split("--> statement-breakpoint")) {
+    for (const statement of migrationSql.split(";")) {
         const sql = statement
             .trim()
             .replace(/\bapikey\b/g, "canonical_rename_apikey");
-        if (sql) await env.DB.prepare(sql).run();
+        const hasSql = sql
+            .split("\n")
+            .map((line) => line.trim())
+            .some((line) => line !== "" && !line.startsWith("--"));
+        if (hasSql) await env.DB.prepare(sql).run();
     }
 }
 
 describe("standardize model permissions migration", () => {
-    it("bounds work and migrates every known model alias", async () => {
-        expect(modelMappings).toHaveLength(424);
-        expect(new Set(modelMappings.map(([alias]) => alias)).size).toBe(424);
-        expect(migrationSql).toContain("candidate_keys AS MATERIALIZED");
-        expect(migrationSql).toContain("FROM candidate_keys");
-        expect(migrationSql).toContain("UPDATE apikey");
-        expect(migrationSql).toContain("FROM migrated");
-        expect(migrationSql).not.toContain(
-            "SELECT models FROM migrated WHERE migrated.id = apikey.id",
+    it("migrates every promoted canonical ID with bounded statements", async () => {
+        expect(modelMappings).toHaveLength(128);
+        expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
+            128,
         );
+        expect(
+            new Set(modelMappings.map(([, canonical]) => canonical)).size,
+        ).toBe(128);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(128);
         for (const [retiredId, canonicalId] of modelMappings) {
             expect(resolveModelName(retiredId)).toBe(canonicalId);
-            expect(migrationSql).toContain(
-                `('${retiredId}', '${canonicalId}')`,
+            expect(getRegistryModelDefinition(canonicalId).aliases).toContain(
+                retiredId,
             );
+            expect(migrationSql).toContain(`model.value = '${retiredId}'`);
+            expect(migrationSql).toContain(`THEN '${canonicalId}'`);
             expect(migrationSql).toContain(
                 `instr(permissions, '"${retiredId}"')`,
             );

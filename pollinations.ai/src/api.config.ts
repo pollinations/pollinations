@@ -9,7 +9,6 @@ export const API_BASE = "https://gen.pollinations.ai";
 
 export const API = {
     TEXT_GENERATION: `${API_BASE}/v1/chat/completions`,
-    IMAGE_GENERATION: `${API_BASE}/image`,
 };
 
 // ==============================================
@@ -17,9 +16,5 @@ export const API = {
 // ==============================================
 
 export const DEFAULTS = {
-    IMAGE_MODEL: "black-forest-labs/FLUX.1-schnell",
-    TEXT_MODEL: "amazon/nova-micro-v1",
-    IMAGE_WIDTH: 400,
-    IMAGE_HEIGHT: 400,
-    SEED: 42,
+    TEXT_MODEL: "nova-fast",
 };

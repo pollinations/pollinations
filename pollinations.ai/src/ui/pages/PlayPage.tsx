@@ -14,9 +14,7 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState(
-        "black-forest-labs/FLUX.1-schnell",
-    );
+    const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {

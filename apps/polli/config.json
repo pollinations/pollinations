@@ -45,20 +45,20 @@
   },
   "ai": {
     "api_base": "https://gen.pollinations.ai",
-    "model": "z-ai/glm-5.2",
-    "fallback_model": "moonshotai/kimi-k2.7-code",
+    "model": "glm",
+    "fallback_model": "kimi-code",
     "request_timeout_seconds": 60,
     "max_tokens": 4096,
     "temperature": 0.7,
     "task_models": {
-      "web_search": "perplexity/sonar-pro",
-      "data_viz": "google/gemini-3.6-flash"
+      "web_search": "perplexity",
+      "data_viz": "gemini"
     }
   },
   "code_search": {
     "enabled": true,
     "vectorize_index": "polli-code-embeddings",
-    "embed_model": "qwen/qwen3-embedding-8b",
+    "embed_model": "qwen3-embedding-8b",
     "embed_dimensions": 1536,
     "cloudflare_api_base": "https://api.cloudflare.com/client/v4",
     "timeout_seconds": 30,

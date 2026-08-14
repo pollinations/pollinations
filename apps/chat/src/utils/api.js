@@ -294,7 +294,7 @@ export const sendMessage = async (
     modelId,
     generationConfig = {},
 ) => {
-    const selectedModelId = modelId || "openai/gpt-5.5";
+    const selectedModelId = modelId || "openai-large";
     const { maxTokens = 2000, temperature = 0.7, topP = 1 } = generationConfig;
     const isClaude = selectedModelId.includes("claude");
     const finalTemperature = isClaude ? 1 : temperature;
@@ -501,7 +501,7 @@ export const stopGeneration = () => {
 
 export const generateImage = async (prompt, options = {}) => {
     const {
-        model = "black-forest-labs/FLUX.1-schnell",
+        model = "flux",
         width = 1024,
         height = 1024,
         seed = Math.floor(Math.random() * 2147483647),
@@ -541,7 +541,7 @@ export const generateImage = async (prompt, options = {}) => {
 
 export const generateVideo = async (prompt, options = {}) => {
     const {
-        model = "google/veo-3.1-fast",
+        model = "veo",
         seed = Math.floor(Math.random() * 2147483647),
         nologo = false,
         nofeed = false,
@@ -567,7 +567,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
 // Generate speech/audio — GET /audio/{text}?voice=...
 export const generateAudio = async (text, options = {}) => {
-    const { voice = "nova", model = "openai/gpt-audio-mini" } = options;
+    const { voice = "nova", model = "openai-audio" } = options;
 
     const params = new URLSearchParams({ voice, model });
     const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;

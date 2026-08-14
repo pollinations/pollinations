@@ -6,8 +6,8 @@ import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { normalizeModelAllowlist } from "@shared/registry/registry.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -46,7 +46,7 @@ function buildUpdatedPermissions(
         updated,
         "models",
         Array.isArray(allowedModels)
-            ? normalizeModelAllowlist(allowedModels)
+            ? canonicalizeModelPermissionIds(allowedModels)
             : allowedModels,
     );
     applyPermissionField(updated, "account", accountPermissions);
@@ -121,7 +121,7 @@ async function updateKeyMetadata(
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
  * Permissions format: { models?: string[], account?: string[] }
- * - models: ["black-forest-labs/FLUX.1-schnell", "openai/gpt-5.4-nano"] = restrict to specific models
+ * - models: ["flux", "openai"] = restrict to specific models
  * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
@@ -175,7 +175,9 @@ const CreateApiKeySchema = z.object({
         .number()
         .nullable()
         .optional()
-        .describe("Pollen budget cap for this key. null = unlimited"),
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()

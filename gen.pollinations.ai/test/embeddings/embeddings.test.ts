@@ -18,6 +18,7 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const TEST_EMBEDDING_MODEL = "google/gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2";
@@ -314,7 +315,7 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        withInlineGenerationCoordinator(env),
         ctx,
     );
     return {
@@ -414,6 +415,7 @@ describe("POST /v1/embeddings", () => {
             expect(response.headers.get("x-model-used")).toBe(
                 TEST_OPENAI_LARGE_MODEL,
             );
+            await response.arrayBuffer();
             expect(mocks.azureOpenAI.state.requests).toMatchObject([
                 { model: TEST_OPENAI_SMALL_PROVIDER_MODEL },
                 { model: TEST_OPENAI_LARGE_PROVIDER_MODEL },
@@ -746,6 +748,7 @@ describe("POST /v1/embeddings", () => {
         });
 
         expect(response.status).toBe(200);
+        await response.arrayBuffer();
         expect(mocks.cohereAzure.state.requests).toEqual([
             {
                 model: TEST_COHERE_PROVIDER_MODEL,

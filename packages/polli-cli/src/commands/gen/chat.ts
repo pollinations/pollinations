@@ -24,7 +24,7 @@ export function createChatCommand() {
         .description("Interactive multi-turn chat session")
         .option(
             "--model <model>",
-            "Text model (default: from config or 'openai/gpt-5.4-nano')",
+            "Text model (default: from config or 'openai')",
         )
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")

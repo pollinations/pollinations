@@ -13,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { fetchWithAuth } from "./src/utils/coreUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
@@ -89,6 +90,21 @@ await step("listTools", async () => {
 await step("listTextModels (unauthenticated)", () => call("listTextModels"));
 
 if (!KEY) {
+    await step("fetchWithAuth respects caller cancellation", async () => {
+        const controller = new AbortController();
+        controller.abort();
+
+        try {
+            await fetchWithAuth(`${testBaseUrl}/text/models`, {
+                signal: controller.signal,
+            });
+        } catch (error) {
+            if (error.name === "AbortError") return "aborted";
+            throw error;
+        }
+        throw new Error("request ignored the caller's abort signal");
+    });
+
     console.log(
         "\nSkipping live calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
@@ -98,7 +114,7 @@ if (!KEY) {
     await step("generateText", async () => {
         const out = await call("generateText", {
             prompt: "Reply with exactly: pong",
-            model: "openai/gpt-5-nano",
+            model: "openai-fast",
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
@@ -106,7 +122,7 @@ if (!KEY) {
     await step("generateImageUrl", async () => {
         const out = await call("generateImageUrl", {
             prompt: "a small red apple",
-            model: "black-forest-labs/FLUX.1-schnell",
+            model: "flux",
             width: 256,
             height: 256,
         });

@@ -55,6 +55,22 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
+test("canonicalizes aliases in new model permissions", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["nanobanana2"],
+        user: { packBalance: 100 },
+    });
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { name: string }[];
+    expect(body.map((model) => model.name)).toEqual([
+        "google/gemini-3.1-flash-image",
+    ]);
+});
+
 test("empty model permissions deny access and return an empty catalog", async () => {
     const { key } = await createTestApiKey({
         allowedModels: [],

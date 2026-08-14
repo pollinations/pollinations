@@ -1,7 +1,6 @@
 import {
     createExecutionContext,
     env,
-    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
@@ -11,11 +10,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    const ctx = createExecutionContext();
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        ctx,
+    );
+}
 
 const providerResponse = {
     audio_base64: "SUQz",
@@ -115,7 +124,7 @@ describe("ElevenLabs timestamped TTS", () => {
 workerTest(
     "rejects unsupported FLAC instead of returning PCM under the wrong format",
     async ({ paidApiKey }) => {
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
             {
                 method: "POST",
@@ -189,10 +198,10 @@ workerTest(
                         }),
                     },
                 ),
-                {
+                withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
-                } as unknown as CloudflareBindings,
+                } as unknown as CloudflareBindings),
                 ctx,
             );
 
@@ -227,7 +236,7 @@ for (const testCase of [
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,
         async ({ paidApiKey }) => {
             const input = "Timed speech.";
-            const response = await SELF.fetch(
+            const response = await fetchGen(
                 "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
                 {
                     method: "POST",

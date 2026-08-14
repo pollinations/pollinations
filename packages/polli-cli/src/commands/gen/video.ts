@@ -14,7 +14,7 @@ export function createVideoCommand() {
         .argument("<prompt>", "Video description")
         .option(
             "--model <model>",
-            "Video model (default: from config or 'alibaba/wan-2.6')",
+            "Video model (default: from config or 'wan')",
         )
         .option("--width <n>", "Video width", "1024")
         .option("--height <n>", "Video height", "1024")

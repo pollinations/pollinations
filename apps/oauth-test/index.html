@@ -398,7 +398,7 @@
                     'Authorization': `Bearer ${tokens.access_token}`,
                 },
                 body: JSON.stringify({
-                    model: 'openai/gpt-5.4-nano',
+                    model: 'openai',
                     messages: [{ role: 'user', content: 'Say "Hello from OAuth!" in one sentence.' }],
                     max_tokens: 100,
                 }),

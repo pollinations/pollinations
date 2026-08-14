@@ -88,7 +88,7 @@ async function prepareImageRequest(params) {
 async function prepareVideoRequest(params) {
     const {
         prompt,
-        model = "google/veo-3.1-fast",
+        model = "veo",
         duration,
         aspectRatio,
         audio,
@@ -110,18 +110,13 @@ async function prepareVideoRequest(params) {
     }
 
     if (duration !== undefined) {
-        if (
-            (model === "veo" || model === "google/veo-3.1-fast") &&
-            ![4, 6, 8].includes(duration)
-        ) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
             throw new Error(
                 "veo model only supports duration of 4, 6, or 8 seconds",
             );
         }
         if (
-            (model === "seedance" ||
-                model === "seedance-pro" ||
-                model === "bytedance/seedance-1-pro-fast") &&
+            (model === "seedance" || model === "seedance-pro") &&
             (duration < 2 || duration > 10)
         ) {
             throw new Error(
@@ -190,7 +185,7 @@ async function generateImageUrl(params) {
             {
                 imageUrl: shareableUrl,
                 prompt,
-                model: model || "black-forest-labs/FLUX.1-schnell",
+                model: model || "flux",
                 width: width || 1024,
                 height: height || 1024,
                 seed,
@@ -215,7 +210,7 @@ async function generateImage(params) {
 
         const metadata = {
             prompt,
-            model: model || "black-forest-labs/FLUX.1-schnell",
+            model: model || "flux",
             width: width || 1024,
             height: height || 1024,
             seed,
@@ -324,7 +319,7 @@ async function generateImageBatch(params) {
                 },
                 successful,
                 failed: failed.length > 0 ? failed : undefined,
-                model: model || "black-forest-labs/FLUX.1-schnell",
+                model: model || "flux",
                 width: width || 1024,
                 height: height || 1024,
             },
@@ -340,7 +335,7 @@ async function generateVideo(params) {
 
     const {
         prompt,
-        model = "google/veo-3.1-fast",
+        model = "veo",
         duration,
         aspectRatio,
         audio,
@@ -360,10 +355,7 @@ async function generateVideo(params) {
             model,
             duration,
             aspectRatio,
-            audio:
-                model === "veo" || model === "google/veo-3.1-fast"
-                    ? audio || false
-                    : undefined,
+            audio: model === "veo" ? audio || false : undefined,
             hasReferenceImage: !!image,
             seed,
         };
@@ -392,7 +384,7 @@ async function generateVideoUrl(params) {
 
     const {
         prompt,
-        model = "google/veo-3.1-fast",
+        model = "veo",
         duration,
         aspectRatio,
         audio,
@@ -433,10 +425,7 @@ async function generateVideoUrl(params) {
                 model,
                 duration,
                 aspectRatio,
-                audio:
-                    model === "veo" || model === "google/veo-3.1-fast"
-                        ? audio || false
-                        : undefined,
+                audio: model === "veo" ? audio || false : undefined,
                 hasReferenceImage: !!image,
                 seed,
             },
@@ -451,7 +440,7 @@ async function describeImage(params) {
     const {
         imageUrl,
         prompt = "Describe this image in detail.",
-        model = "openai/gpt-5.4-nano",
+        model = "openai",
     } = params;
 
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -489,7 +478,7 @@ async function analyzeVideo(params) {
     const {
         videoUrl,
         prompt = "Describe what happens in this video in detail.",
-        model = "google/gemini-3.1-pro-preview",
+        model = "gemini-large",
     } = params;
 
     if (!videoUrl || typeof videoUrl !== "string") {
@@ -636,7 +625,7 @@ const imageParamsSchema = {
         .optional()
         .describe(
             "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
-                "I2I models: bytedance-seed/seedream-4.5, google/gemini-3-pro-image, google/gemini-2.5-flash-image, openai/gpt-image-1-mini, bytedance/seedream-4 (all multi-image), black-forest-labs/flux.1-kontext-pro (single image).\n" +
+                "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
                 "Put this parameter last in URL or URL-encode it.",
         ),
     transparent: z
@@ -661,7 +650,7 @@ const videoParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Video model (default: 'google/veo-3.1-fast'). See listImageModels for current video IDs. " +
+            "Video model (default: 'veo'). Common options: veo, seedance, seedance-2.0, wan, wan-fast. " +
                 "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
@@ -802,8 +791,8 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Vision-capable model to use (default: 'openai/gpt-5.4-nano'). " +
-                        "Options: openai/gpt-5.4-nano, google/gemini-3.6-flash, anthropic/claude-sonnet-4.6, x-ai/grok-4.1-fast - all support vision",
+                    "Vision-capable model to use (default: 'openai'). " +
+                        "Options: openai, gemini, claude, grok - all support vision",
                 ),
         },
         describeImage,
@@ -831,8 +820,8 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'google/gemini-3.1-pro-preview'). " +
-                        "google/gemini-3.1-pro-preview and google/gemini-3.6-flash support native video input",
+                    "Model to use (default: 'gemini-large'). " +
+                        "gemini-large and gemini support native video input",
                 ),
         },
         analyzeVideo,

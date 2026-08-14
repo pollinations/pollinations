@@ -24,6 +24,7 @@ const logError = debug("pollinations:openrouter-image:error");
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
+const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
@@ -460,6 +461,70 @@ export async function callOpenRouterGrokImagineProAPI(
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
                 ...(referenceImage ? { promptImageTokens: 1 } : {}),
+                completionImageTokens: 1,
+            },
+        },
+    };
+}
+
+export async function callOpenRouterGrokImagineImage2API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 3) {
+        throw new HttpError(
+            "grok-imagine-image-2.0 supports at most 3 reference images",
+            400,
+        );
+    }
+    const apiKey = requireOpenRouterImageApiKey();
+    const inputReferences = safeParams.image.map((url) => ({
+        type: "image_url",
+        image_url: { url },
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: GROK_IMAGINE_IMAGE_2_MODEL,
+        prompt,
+        n: 1,
+        resolution: safeParams.resolution === "2k" ? "2K" : "1K",
+        quality: safeParams.quality,
+        provider: {
+            only: ["xai"],
+            allow_fallbacks: false,
+        },
+    };
+
+    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Grok Imagine Image 2.0 request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    logOps("Grok Imagine Image 2.0 generation complete", {
+        referenceImages: inputReferences.length,
+        providerCost: data.usage?.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "x-ai/grok-imagine-image-2.0",
+            usage: {
+                ...(inputReferences.length > 0
+                    ? { promptImageTokens: inputReferences.length }
+                    : {}),
                 completionImageTokens: 1,
             },
         },

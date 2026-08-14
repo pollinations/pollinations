@@ -10,8 +10,8 @@ export function createTranscribeCommand() {
         .argument("<file>", "Audio file path (mp3, wav, etc.)")
         .option(
             "--model <model>",
-            "STT model (openai/whisper-large-v3, elevenlabs/scribe-v2, assemblyai/universal-2, assemblyai/universal-3.5-pro)",
-            "openai/whisper-large-v3",
+            "STT model (whisper, scribe, universal-2, universal-3.5-pro)",
+            "whisper",
         )
         .option("--language <lang>", "Language hint (ISO code)")
         .action(async (file, opts) => {

@@ -151,8 +151,7 @@ function setURLPrompt(prompt) {
 // ── Model ───────────────────────────────────────────────────────────────────
 
 const MODEL_STORAGE_KEY = "catgpt-model";
-let activeModel =
-    localStorage.getItem(MODEL_STORAGE_KEY) || "openai/gpt-image-1-mini";
+let activeModel = localStorage.getItem(MODEL_STORAGE_KEY) || "gptimage";
 
 function setActiveModel(model) {
     activeModel = model;

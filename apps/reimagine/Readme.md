@@ -36,8 +36,8 @@ ReImagine is built using:
 
 - **React Native & Expo**: For cross-platform mobile development
 - **Pollinations API**: For powerful AI image transformation
-  - Uses `black-forest-labs/flux.1-kontext-pro` model for single image transformations
-  - Uses `openai/gpt-image-1-mini` model for multi-image transformations (2-4 images)
+  - Uses `kontext` model for single image transformations
+  - Uses `gptimage` model for multi-image transformations (2-4 images)
 - **Civitai API**: For browsing trending AI-generated images
 - **Async Storage**: For local data persistence
 - **React Navigation**: For seamless app navigation

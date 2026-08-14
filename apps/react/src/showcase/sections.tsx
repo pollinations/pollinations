@@ -1006,7 +1006,7 @@ const scrollRows = Array.from({ length: 28 }, (_, index) =>
 
 const tableRows = [
     {
-        model: "amazon/nova-micro-v1",
+        model: "nova-fast",
         status: "Healthy",
         requests: "22,115",
         success: "99.9%",

@@ -35,6 +35,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Route through the Azure Responses API instead of Chat Completions. */
+    useResponsesApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -77,14 +79,17 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
+        useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
     },
     {
         name: "inception/mercury-2",
@@ -176,8 +181,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-31b-it"],
     },
     {
-        name: "deepseek/deepseek-v4-pro",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
+        name: "deepseek/deepseek-v4-pro-0813",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
         transform: fireworksThinking,
     },
     {
@@ -194,8 +199,8 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "x-ai/grok-4.5",
-        config: portkeyConfig["x-ai/grok-4.5"],
+        name: "x-ai/grok-4.6",
+        config: portkeyConfig["x-ai/grok-4.6"],
         transform: stripCacheControl,
     },
     {
@@ -256,13 +261,13 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-3.6-flash",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        name: "google/gemini-3.7-flash",
+        config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
-            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
+            // Gemini 3.7 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -404,8 +409,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "meta/muse-spark-1.1",
-        config: portkeyConfig["meta/muse-spark-1.1"],
+        name: "meta/muse-glimmer-30b",
+        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "meta/muse-spark-1.2",
+        config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
         name: "meta-llama/llama-3.3-70b-instruct",

@@ -7,6 +7,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fallbackCandidates, withModelFallback } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
+import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -63,6 +64,7 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENROUTER_API_KEY",
@@ -379,6 +381,7 @@ async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
+    metadataModel: ImageParams["model"] = safeParams.model as ImageParams["model"],
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
@@ -387,6 +390,7 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
+        metadataModel,
     );
 
     if (result.isChild && result.isMature) {
@@ -429,11 +433,27 @@ async function generateMediaWithFallback(
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
-            const generated = await generateImageResult(c, prompt, params);
+            const hiddenFallback = attempt.entry?.definition.hidden === true;
+            const generated = await generateImageResult(
+                c,
+                prompt,
+                params,
+                (hiddenFallback
+                    ? safeParams.model
+                    : params.model) as ImageParams["model"],
+            );
             assertNonEmptyMedia(generated.buffer, "Image provider");
-            return { result: generated, params };
+            // Hidden static fallbacks are internal routes for the same public
+            // service. Keep their id out of filenames and EXIF metadata while
+            // servedEntry still carries their provider and cost to tracking.
+            return {
+                result: generated,
+                params: hiddenFallback ? safeParams : params,
+            };
         },
         c.var.track?.failedCalls,
+        (attempt) =>
+            enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
     );
     return {
         ...result,
@@ -462,6 +482,12 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        quality: safeParams.quality,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
+    });
 
     try {
         const { result, params, servedEntry, servedIndex } =

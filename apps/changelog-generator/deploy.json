@@ -1,0 +1,8 @@
+{
+  "target": "pages",
+  "credentials": "apps",
+  "subdomain": "changelog-generator",
+  "install": "npm install --silent",
+  "build": "npm run build",
+  "output": "dist"
+}

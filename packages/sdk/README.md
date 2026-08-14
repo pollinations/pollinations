@@ -264,15 +264,13 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Generate multiple images
-const images = await generateImage('abstract art', { n: 4 });
-images.forEach((img, i) => img.saveToFile(`art-${i}.png`));
-
 // Just get the URL (no download)
 const url = await imageUrl('a sunset');
 ```
 
 ### Options
+
+Defaults are applied by the API; the SDK sends only options you provide.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -286,7 +284,6 @@ const url = await imageUrl('a sunset');
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
 | `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
-| `n` | number | `1` | Number of images |
 
 ## Image Editing
 
@@ -340,9 +337,6 @@ const story = await generateText('explain gravity', {
   systemPrompt: 'You are a physics teacher',
 });
 
-// Multiple responses
-const facts = await generateText('give me a random fact', { n: 3 });
-
 // Streaming
 for await (const chunk of generateTextStream('tell me a story')) {
   process.stdout.write(chunk);
@@ -368,7 +362,6 @@ console.log(result.actualModel); // actual model used
 | `seed` | number | random | Reproducible results |
 | `json` | boolean | `false` | JSON output mode |
 | `private` | boolean | `false` | Keep generation private |
-| `n` | number | `1` | Number of responses |
 | `raw` | boolean | `false` | Return full response |
 
 ## Chat
@@ -410,8 +403,6 @@ const video = await generateVideo('a timelapse of clouds', {
 });
 await video.saveToFile('clouds.mp4');
 
-// Multiple videos
-const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 ```
 
 ### Options
@@ -425,7 +416,6 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
 | `safe` | boolean | `false` | Safety filter |
-| `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech & Music)
 
@@ -460,7 +450,6 @@ audioEl.play();
 | `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
-| `n` | number | `1` | Number of outputs |
 
 ### Available Voices
 
@@ -559,7 +548,7 @@ import type {
 
 | Function | Description |
 |----------|-------------|
-| `generateImage(prompt, options?)` | Generate image(s) |
+| `generateImage(prompt, options?)` | Generate an image |
 | `editImage(prompt, options?)` | Edit image with prompt |
 | `imageUrl(prompt, options?)` | Get image URL |
 | `generateText(prompt, options?)` | Generate text |
@@ -567,7 +556,7 @@ import type {
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
 | `conversation(options?)` | Create conversation |
-| `generateVideo(prompt, options?)` | Generate video(s) |
+| `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |

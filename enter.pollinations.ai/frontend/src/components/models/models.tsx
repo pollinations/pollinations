@@ -1,7 +1,11 @@
 import {
     Alert,
+    Button,
+    ChevronIcon,
     Chip,
     ClockIcon,
+    Dropdown,
+    DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
     Input,
@@ -11,10 +15,12 @@ import {
     TabButton,
     TokensIcon,
     TrendUpIcon,
+    UsageIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
+    type KeyboardEvent,
     useCallback,
     useEffect,
     useMemo,
@@ -30,9 +36,9 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayCategory } from "./model-categories.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
+import type { ModelScope, ModelSort } from "./model-search.ts";
+import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -49,17 +55,43 @@ type ModelsProps = {
     canPublish?: boolean;
 };
 
-const SECTION_ORDER: SectionType[] = [
+const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
+    "text",
     "image",
     "video",
     "3d",
     "audio",
     "realtime",
-    "text",
-    "community-text",
-    "community-image",
     "embedding",
+];
+
+const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const SCOPE_LABELS: Record<ModelScope, string> = {
+    pollinations: "Official",
+    community: "Community",
+};
+
+const SORT_OPTIONS: Array<{
+    value: ModelSort;
+    label: string;
+    accessibleLabel: string;
+}> = [
+    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    {
+        value: "price-low",
+        label: "Price ↑",
+        accessibleLabel: "Price: Low to high",
+    },
+    {
+        value: "price-high",
+        label: "Price ↓",
+        accessibleLabel: "Price: High to low",
+    },
+    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
+    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -70,16 +102,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    "community-text": "community text",
-    "community-image": "community image",
     embedding: "embedding",
-};
-
-const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
@@ -100,17 +123,44 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
-        "community-text": [],
-        "community-image": [],
         embedding: [],
     };
 
     for (const model of models) {
-        categorized[getModelDisplayCategory(model.type, model.community)].push(
-            model,
-        );
+        categorized[model.type].push(model);
     }
     return categorized;
+}
+
+function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+    ) {
+        return;
+    }
+
+    const items = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>(
+            '[role="menuitemradio"]',
+        ),
+    );
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex =
+        event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? items.length - 1
+              : event.key === "ArrowDown"
+                ? (currentIndex + 1) % items.length
+                : (currentIndex - 1 + items.length) % items.length;
+
+    event.preventDefault();
+    items[nextIndex]?.focus();
 }
 
 export const Models: FC<ModelsProps> = ({
@@ -119,12 +169,12 @@ export const Models: FC<ModelsProps> = ({
 }) => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
+    const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const lastPushedSearchRef = useRef(urlSearch);
-    const sortKey = modelSearch.sort ?? "perPollen";
-    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -133,10 +183,20 @@ export const Models: FC<ModelsProps> = ({
         [catalogModels, stats],
     );
     const query = search.trim().toLowerCase();
+    const scopedModels = useMemo(
+        () =>
+            allModels.filter(
+                (model) =>
+                    Boolean(model.community) === (activeScope === "community"),
+            ),
+        [activeScope, allModels],
+    );
     const filteredModels = useMemo(
         () =>
-            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
-        [allModels, query],
+            query
+                ? scopedModels.filter((model) => matchesQuery(model, query))
+                : scopedModels,
+        [query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -146,7 +206,8 @@ export const Models: FC<ModelsProps> = ({
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),
@@ -158,20 +219,30 @@ export const Models: FC<ModelsProps> = ({
     }, [loadModelCatalog]);
 
     const sectionModels = useMemo(
-        () => categorizeModels(filteredModels),
-        [filteredModels],
+        () => categorizeModels(sortModels(filteredModels, activeSort)),
+        [activeSort, filteredModels],
     );
+    const sectionOrder =
+        activeScope === "community"
+            ? COMMUNITY_SECTION_ORDER
+            : POLLINATIONS_SECTION_ORDER;
+    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
+    const searchTarget =
+        activeTab === "all"
+            ? `${scopeLabel} models`
+            : `${scopeLabel} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
-            if (nextSearch === lastPushedSearchRef.current) return;
+            const normalizedSearch = nextSearch.trim();
+            if (normalizedSearch === lastPushedSearchRef.current) return;
 
-            lastPushedSearchRef.current = nextSearch;
+            lastPushedSearchRef.current = normalizedSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: nextSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
@@ -205,25 +276,36 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const onSort = (key: ModelSortKey) => {
-        const nextDirection =
-            key === sortKey
-                ? sortDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : DEFAULT_SORT_DIRECTIONS[key];
-
+    const setActiveScope = (scope: ModelScope) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: key === "perPollen" ? undefined : key,
-                dir:
-                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
+                scope: scope === "pollinations" ? undefined : scope,
+                category:
+                    scope === "community" &&
+                    previous.category !== "text" &&
+                    previous.category !== "image"
                         ? undefined
-                        : nextDirection,
+                        : previous.category,
             }),
         });
     };
+
+    const setActiveSort = (sort: ModelSort) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: sort === "newest" ? undefined : sort,
+            }),
+        });
+    };
+
+    const activeSortLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
+        "Newest";
+    const activeSortAccessibleLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)
+            ?.accessibleLabel ?? "Newest";
 
     return (
         <div className="flex flex-col gap-6">
@@ -255,42 +337,111 @@ export const Models: FC<ModelsProps> = ({
                 }
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-wrap gap-1.5">
-                        {SECTION_ORDER.map((section) => (
-                            <TabButton
-                                key={section}
-                                active={activeTab === section}
-                                onClick={() => setActiveTab(section)}
-                                ariaLabel={
-                                    section === "community-text" ||
-                                    section === "community-image"
-                                        ? `${sectionLabels[section]} alpha models`
-                                        : undefined
-                                }
-                            >
-                                <span className="inline-flex items-center gap-1.5">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {SCOPE_ORDER.map((scope) => (
+                                <TabButton
+                                    key={scope}
+                                    active={activeScope === scope}
+                                    onClick={() => setActiveScope(scope)}
+                                    size="lg"
+                                    ariaLabel={
+                                        scope === "community"
+                                            ? "Community alpha models"
+                                            : undefined
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {SCOPE_LABELS[scope]}
+                                        {scope === "community" && (
+                                            <Chip intent="alpha" size="sm">
+                                                Alpha
+                                            </Chip>
+                                        )}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {sectionOrder.map((section) => (
+                                <TabButton
+                                    key={section}
+                                    active={activeTab === section}
+                                    onClick={() => setActiveTab(section)}
+                                >
                                     {sectionLabels[section]}
-                                    {(section === "community-text" ||
-                                        section === "community-image") && (
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    )}
-                                </span>
-                            </TabButton>
-                        ))}
+                                </TabButton>
+                            ))}
+                        </div>
                     </div>
-                    <div className="relative w-full sm:w-72">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                        <Input
-                            type="search"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onBlur={() => pushSearch(search)}
-                            placeholder={`Search ${searchLabel} models…`}
-                            aria-label={`Search ${searchLabel} models`}
-                            className="w-full pl-9"
-                        />
+                    <div className="flex w-full items-center justify-between gap-2">
+                        <div className="relative min-w-0 max-w-md flex-1">
+                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <Input
+                                type="search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                onBlur={() => {
+                                    const normalizedSearch = search.trim();
+                                    setSearch(normalizedSearch);
+                                    pushSearch(normalizedSearch);
+                                }}
+                                placeholder={`Search ${searchTarget}…`}
+                                aria-label={`Search ${searchTarget}`}
+                                className="w-full pl-9"
+                            />
+                        </div>
+                        <Dropdown
+                            align="end"
+                            className="w-max p-2"
+                            trigger={(open) => (
+                                <Button
+                                    type="button"
+                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                >
+                                    <span className="text-right">
+                                        {activeSortLabel}
+                                    </span>
+                                    <ChevronIcon expanded={open} />
+                                </Button>
+                            )}
+                        >
+                            {(close) => (
+                                <div
+                                    role="menu"
+                                    aria-label="Sort models"
+                                    onKeyDown={handleSortMenuKeyDown}
+                                    className="flex flex-col gap-1"
+                                >
+                                    {SORT_OPTIONS.map((option) => (
+                                        <DropdownItem
+                                            key={option.value}
+                                            role="menuitemradio"
+                                            aria-label={option.accessibleLabel}
+                                            aria-checked={
+                                                activeSort === option.value
+                                            }
+                                            onClick={() => {
+                                                setActiveSort(option.value);
+                                                close();
+                                            }}
+                                            className={
+                                                activeSort === option.value
+                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                    : "justify-end text-right"
+                                            }
+                                        >
+                                            <span className="flex-1 text-right">
+                                                {option.label}
+                                            </span>
+                                        </DropdownItem>
+                                    ))}
+                                </div>
+                            )}
+                        </Dropdown>
                     </div>
                 </div>
                 {catalogError && (
@@ -300,12 +451,12 @@ export const Models: FC<ModelsProps> = ({
                 )}
                 {query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {sectionLabels[activeTab].toLowerCase()} models match
-                        “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
+                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}
@@ -313,17 +464,8 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityTextModels={
-                                sectionModels["community-text"]
-                            }
-                            communityImageModels={
-                                sectionModels["community-image"]
-                            }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
-                            sortKey={sortKey}
-                            sortDir={sortDir}
-                            onSort={onSort}
                         />
                     </div>
                 )}
@@ -338,7 +480,8 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/M</strong> — per million tokens.
+                            <strong>/K · /M</strong> — rates per thousand or
+                            million tokens.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -346,6 +489,14 @@ export const Models: FC<ModelsProps> = ({
                         <span>
                             <strong>/sec</strong> — per second of video/audio;
                             TTS is estimated from text length.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>gen /pollen</strong> — how many generations
+                            you can make with 1 Pollen, estimated from average
+                            usage over the last 7 days.
                         </span>
                     </p>
                 </div>

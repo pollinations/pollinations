@@ -16,6 +16,11 @@ import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
+
 export type CommunityEndpoint = {
     id: string;
     modelId: string;
@@ -31,6 +36,7 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
     disabled: boolean;
@@ -75,6 +81,7 @@ export type EndpointFormState = {
     // public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: string;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -92,6 +99,7 @@ export type EndpointPayload = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
     fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
@@ -125,6 +133,7 @@ export const emptyForm: EndpointFormState = {
     title: "",
     description: "",
     visibility: "private",
+    perUserRpm: "",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -212,6 +221,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
+        perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -300,6 +310,9 @@ export function observedUsageValue(
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+    if (!isValidPerUserRpm(form.perUserRpm)) {
+        throw new Error("Per-user RPM must be a positive number");
+    }
     const modelName = form.name.trim();
     const imagePricing =
         form.modality === "image" ? form.imagePricing : "request";
@@ -311,6 +324,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
+        perUserRpm: form.perUserRpm.trim() ? Number(form.perUserRpm) : null,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
         // A private model carries no pricing, so a priced fallback target can
@@ -319,6 +333,13 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             form.visibility === "public" ? form.fallbackModelIds : [],
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
+}
+
+export function isValidPerUserRpm(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed > 0;
 }
 
 /** Keep the public model id in sync with the provider model until edited. */

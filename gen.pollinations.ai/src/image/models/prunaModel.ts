@@ -2,9 +2,8 @@
  * Pruna image generation via DeepInfra and video generation via Replicate.
  *
  * DeepInfra hosts the exact PrunaAI/p-image and PrunaAI/p-image-Edit
- * checkpoints at the same prices as Replicate. Both p-video resolution
- * services remain together on Replicate until resolution-aware canonical
- * billing can represent them as one public model.
+ * checkpoints at the same prices as Replicate. p-video stays on Replicate and
+ * uses one canonical model with request-selected resolution pricing.
  */
 
 import debug from "debug";
@@ -261,12 +260,9 @@ export async function callPrunaImageEditAPI(
 // p-video: Text/Image-to-Video
 // =============================================================================
 
-// prunaai/p-video is one Replicate model priced per second by resolution
-// (720p $0.02/s, 1080p $0.04/s). The registry carries one flat rate per model,
-// so each tier is its own model (p-video-720p / p-video-1080p) and the
-// resolution is locked here rather than inferred from the requested height —
-// this keeps recorded cost exact and lets the user opt into the 1080p rate
-// explicitly by model name.
+// prunaai/p-video is priced per second by resolution (720p $0.02/s, 1080p
+// $0.04/s in standard mode). Resolution is explicit and never inferred from
+// width/height, so provider routing and registry billing use the same fact.
 async function generatePrunaVideo(
     resolution: "720p" | "1080p",
     prompt: string,
@@ -325,7 +321,7 @@ async function generatePrunaVideo(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: `p-video-${resolution}`,
+            actualModel: "p-video",
             usage: {
                 completionVideoSeconds: billedDuration,
             },
@@ -333,16 +329,13 @@ async function generatePrunaVideo(
     };
 }
 
-/** Pruna p-video at 720p ($0.02/s). */
-export const callPrunaVideo720API = (
+/** Pruna p-video; request resolution defaults to the 720p base tier. */
+export const callPrunaVideoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("720p", prompt, safeParams);
-
-/** Pruna p-video at 1080p ($0.04/s). */
-export const callPrunaVideo1080API = (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("1080p", prompt, safeParams);
+    generatePrunaVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );

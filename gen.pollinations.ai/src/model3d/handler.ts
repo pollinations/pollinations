@@ -23,6 +23,7 @@ export async function generate3dResponse(
     syncModel3dEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "");
     const safeParams = parseModel3dParams(c, body);
+    c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
         const { response, servedEntry } = await withModelFallbackResponse(
@@ -51,20 +52,11 @@ export async function handle3dPrompt(
     c: Model3dContext,
     prompt: string,
 ): Promise<Response> {
-    return generate3dResponse(c, prompt, await readJsonBody(c));
-}
-
-export async function readJsonBody(
-    c: Model3dContext,
-): Promise<Record<string, unknown>> {
-    if (c.req.method !== "POST") return {};
-    const contentType = c.req.header("content-type") || "";
-    if (!contentType.includes("application/json")) return {};
-    try {
-        return (await c.req.json()) as Record<string, unknown>;
-    } catch {
-        return {};
-    }
+    const body =
+        c.req.method === "POST"
+            ? (c.req.valid("json" as never) as Record<string, unknown>)
+            : {};
+    return generate3dResponse(c, prompt, body);
 }
 
 export function decodePrompt(rawPrompt: string): string {
@@ -81,6 +73,7 @@ export function parseModel3dParams(
 ): Model3dParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const mergedParams = {
+        resolution: "low",
         ...queryParams,
         ...body,
         model: c.var.model.resolved,

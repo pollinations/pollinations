@@ -16,6 +16,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Hexgrad: "hexgrad",
     Ideogram: "ideogram",
     Inception: "inception",
+    Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",
     Meta: "meta",
@@ -57,6 +58,7 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
+    if (model.community) return "/brand-logos/community.svg";
     const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

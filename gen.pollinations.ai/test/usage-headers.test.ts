@@ -7,7 +7,14 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("buildUsageHeaders", () => {
-    it("identifies the model when the provider omits usage", () => {
+    it("marks responses where the provider omitted usage", () => {
+        expect(buildUsageHeaders("google/gemini-3.1-pro-preview")).toEqual({
+            "x-model-used": "google/gemini-3.1-pro-preview",
+            "x-usage-missing": "true",
+        });
+    });
+
+    it("identifies the model when usage is present but all counters are zero", () => {
         expect(buildUsageHeaders("google/gemini-3.6-flash", {})).toEqual({
             "x-model-used": "google/gemini-3.6-flash",
         });

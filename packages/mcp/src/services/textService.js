@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     createMCPResponse,
     createTextContent,
-    parseApiError,
     postChatCompletion,
 } from "../utils/coreUtils.js";
 import {
@@ -64,8 +62,7 @@ async function generateText(params) {
     }
 
     try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
         const content = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([createTextContent(content)]);
@@ -147,8 +144,7 @@ async function chatCompletion(params) {
     };
 
     try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
 
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
@@ -327,14 +323,16 @@ async function webSearch(params) {
         throw new Error("Query is required and must be a string");
     }
 
-    const searchModels = [
-        "perplexity-fast",
-        "perplexity-reasoning",
-        "gemini-search",
-    ];
-    if (!searchModels.includes(model)) {
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Model "${model}" doesn't support web search. Use: ${searchModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listTextModels to see all ${validation.availableCount} available models.`,
+        );
+    }
+    if (!validation.model.capabilities?.includes("web_search")) {
+        throw new Error(
+            `Model "${model}" doesn't support web search. Use listTextModels to find models with the web_search capability.`,
         );
     }
 
@@ -351,23 +349,7 @@ async function webSearch(params) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
-        const result = await response.json();
+        const result = await postChatCompletion(requestBody);
         const answer = result.choices?.[0]?.message?.content || "";
 
         const responseData = {
@@ -758,14 +740,10 @@ export const textTools = [
         {
             query: z.string().describe("The search query or question"),
             model: z
-                .enum([
-                    "perplexity-fast",
-                    "perplexity-reasoning",
-                    "gemini-search",
-                ])
+                .string()
                 .optional()
                 .describe(
-                    "Search model (default: 'perplexity-fast'):\n- perplexity-fast: Quick answers with web search\n- perplexity-reasoning: Deeper analysis with web search\n- gemini-search: Google's Gemini with Google Search",
+                    "Search-capable text model (default: 'perplexity-fast'). Use listTextModels for the live list of models with the web_search capability.",
                 ),
             detailed: z
                 .boolean()

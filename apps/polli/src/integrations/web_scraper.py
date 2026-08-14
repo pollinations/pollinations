@@ -906,124 +906,96 @@ async def web_scrape_handler(
             return {"error": "file_url required for fetch_file action"}
         return await fetch_discord_attachment(attachment_url=file_url, file_type=file_type, instruction=extract)
 
-    if action == "scrape":
+    scrape_actions = {"scrape", "extract", "css_extract", "semantic", "regex"}
+    if action in scrape_actions:
         if not url:
-            return {"error": "url parameter required for scrape action"}
-        return await scrape_url(
-            url=url,
-            extraction_strategy=strategy,
-            schema=schema,
-            instruction=extract,
-            semantic_filter=semantic_filter,
-            regex_patterns=patterns,
-            content_filter=content_filter,
-            filter_query=filter_query,
-            include_links=include_links,
-            include_images=include_images,
-            include_tables=include_tables,
-            output_format=output_format,
-            js_code=js_code,
-            wait_for=wait_for,
-            screenshot=screenshot,
-            stealth_mode=stealth_mode,
-            simulate_user=simulate_user,
-            magic_mode=magic_mode,
-            scan_full_page=scan_full_page,
-            process_iframes=process_iframes,
-            session_id=session_id,
-        )
+            suffix = f" for {action} action" if action in {"scrape", "extract"} else ""
+            return {"error": f"url parameter required{suffix}"}
 
-    elif action == "extract":
-        if not url:
-            return {"error": "url parameter required for extract action"}
-        if not extract:
-            return {"error": "extract parameter required - describe what to extract"}
-        return await scrape_url(
-            url=url,
-            extraction_strategy="llm",
-            instruction=extract,
-            schema=schema,
-            content_filter=content_filter,
-            filter_query=filter_query,
-            include_links=include_links,
-            include_images=include_images,
-            include_tables=include_tables,
-            stealth_mode=stealth_mode,
-            simulate_user=simulate_user,
-            magic_mode=magic_mode,
-            scan_full_page=scan_full_page,
-            process_iframes=process_iframes,
-            session_id=session_id,
-        )
+        scrape_options: dict[str, Any] = {
+            "url": url,
+            "stealth_mode": stealth_mode,
+            "magic_mode": magic_mode,
+            "scan_full_page": scan_full_page,
+            "process_iframes": process_iframes,
+            "session_id": session_id,
+        }
 
-    elif action == "css_extract":
-        if not url:
-            return {"error": "url parameter required"}
-        if not schema:
-            return {"error": "schema required for CSS extraction"}
-        return await scrape_url(
-            url=url,
-            extraction_strategy="css",
-            schema=schema,
-            include_links=include_links,
-            include_images=include_images,
-            include_tables=include_tables,
-            stealth_mode=stealth_mode,
-            magic_mode=magic_mode,
-            scan_full_page=scan_full_page,
-            process_iframes=process_iframes,
-            session_id=session_id,
-        )
+        if action == "scrape":
+            scrape_options.update(
+                extraction_strategy=strategy,
+                schema=schema,
+                instruction=extract,
+                semantic_filter=semantic_filter,
+                regex_patterns=patterns,
+                content_filter=content_filter,
+                filter_query=filter_query,
+                include_links=include_links,
+                include_images=include_images,
+                include_tables=include_tables,
+                output_format=output_format,
+                js_code=js_code,
+                wait_for=wait_for,
+                screenshot=screenshot,
+                simulate_user=simulate_user,
+            )
+        elif action == "extract":
+            if not extract:
+                return {"error": "extract parameter required - describe what to extract"}
+            scrape_options.update(
+                extraction_strategy="llm",
+                instruction=extract,
+                schema=schema,
+                content_filter=content_filter,
+                filter_query=filter_query,
+                include_links=include_links,
+                include_images=include_images,
+                include_tables=include_tables,
+                simulate_user=simulate_user,
+            )
+        elif action == "css_extract":
+            if not schema:
+                return {"error": "schema required for CSS extraction"}
+            scrape_options.update(
+                extraction_strategy="css",
+                schema=schema,
+                include_links=include_links,
+                include_images=include_images,
+                include_tables=include_tables,
+            )
+        elif action == "semantic":
+            scrape_options.update(
+                extraction_strategy="cosine",
+                semantic_filter=semantic_filter or filter_query,
+                content_filter=content_filter,
+                filter_query=filter_query,
+            )
+        else:
+            scrape_options.update(
+                extraction_strategy="regex",
+                regex_patterns=patterns or ["email", "url", "phone"],
+            )
 
-    elif action == "semantic":
-        if not url:
-            return {"error": "url parameter required"}
-        return await scrape_url(
-            url=url,
-            extraction_strategy="cosine",
-            semantic_filter=semantic_filter or filter_query,
-            content_filter=content_filter,
-            filter_query=filter_query,
-            stealth_mode=stealth_mode,
-            magic_mode=magic_mode,
-            scan_full_page=scan_full_page,
-            process_iframes=process_iframes,
-            session_id=session_id,
-        )
+        return await scrape_url(**scrape_options)
 
-    elif action == "regex":
-        if not url:
-            return {"error": "url parameter required"}
-        return await scrape_url(
-            url=url,
-            extraction_strategy="regex",
-            regex_patterns=patterns or ["email", "url", "phone"],
-            stealth_mode=stealth_mode,
-            magic_mode=magic_mode,
-            scan_full_page=scan_full_page,
-            process_iframes=process_iframes,
-            session_id=session_id,
-        )
-
-    elif action == "multi":
+    if action == "multi":
         if not urls:
             return {"error": "urls parameter required for multi action (list of URLs)"}
         return await scrape_multiple(urls=urls, extraction_strategy=strategy, schema=schema, instruction=extract)
 
-    else:
-        return {
-            "error": f"Unknown action: {action}",
-            "available_actions": [
-                "scrape - Single URL to markdown (rnet → scrapling → Jina → crawl4ai). "
-                "x.com/twitter.com links are read through fxtwitter, so posts and profiles "
-                "come back as real content. Reddit blocks this server, so reddit.com links "
-                "return an error rather than a page.",
-                "extract - URL + LLM extraction",
-                "css_extract - URL + CSS schema (fast)",
-                "semantic - URL + cosine clustering",
-                "regex - URL + pattern extraction",
-                "multi - Multiple URLs",
-                "parse_file - Parse raw content",
-                "fetch_file - Fetch + parse URL",
-            ],
-        }
+    return {
+        "error": f"Unknown action: {action}",
+        "available_actions": [
+            "scrape - Single URL to markdown (rnet → scrapling → Jina → crawl4ai). "
+            "x.com/twitter.com links are read through fxtwitter, so posts and profiles "
+            "come back as real content. Reddit blocks this server, so reddit.com links "
+            "return an error rather than a page.",
+            "extract - URL + LLM extraction",
+            "css_extract - URL + CSS schema (fast)",
+            "semantic - URL + cosine clustering",
+            "regex - URL + pattern extraction",
+            "multi - Multiple URLs",
+            "parse_file - Parse raw content",
+            "fetch_file - Fetch + parse URL",
+        ],
+    }

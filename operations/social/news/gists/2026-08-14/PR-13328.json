@@ -1,0 +1,34 @@
+{
+  "pr_number": 13328,
+  "title": "fix: harden Azure realtime proxy settlement",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13328",
+  "merged_at": "2026-08-14T07:44:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Attaches Azure realtime listeners before accepting sockets, preserving initial provider events.\n- Completes clean WebSocket close handshakes without replying to abnormal disconnects.\n- Builds billing context before opening the Azure socket to avoid leaked connections.\n- Prevents later close/error events from retrying a deduction that may have partially changed balances.\n\nTests:\n- `npx vitest run test/realtime.test.ts` (37/37)\n- `npm run typecheck`\n- `npx biome check src/routes/realtime.ts test/realtime.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The socket closes politely",
+    "blurb": "Azure realtime connections now get their listeners seated before the show begins. Polli also taught the billing jar not to shake itself twice when a socket leaves through an unusual door.",
+    "summary": "Hardened the Azure realtime WebSocket proxy by attaching provider listeners before accepting clients, preparing billing context before opening Azure sockets, completing clean close handshakes, and preventing duplicate settlement retries after partial balance changes.",
+    "impact": "Realtime users gain more reliable initial Azure events and clean disconnects, while connection setup and teardown avoid leaked sockets or repeated billing deductions.",
+    "keywords": [
+      "azure",
+      "realtime",
+      "websocket",
+      "proxy",
+      "billing",
+      "reliability"
+    ],
+    "visual_concept": "A cozy realtime relay station: Polli carefully connects two glowing CRT terminals with a neatly routed cable while a tiny settlement jar records one checked coin exactly once. Gentle signal-fireflies and code-plants represent provider events arriving safely from the start; a closed socket-shaped gate signals a tidy WebSocket handshake.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap as she connects two retro CRT terminals through a glowing socket-shaped gate; one terminal receives gentle signal-fireflies while a small billing jar has one neatly checked coin. Code-plants and pixel flowers grow around the relay station, with prominent lime green (#ecf874), warm cream, mint, lavender, and peach soft pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13328.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap as she connects two retro CRT terminals through a glowing socket-shaped gate; one terminal receives gentle signal-fireflies while a small billing jar has one neatly checked coin. Code-plants and pixel flowers grow around the relay station, with prominent lime green (#ecf874), warm cream, mint, lavender, and peach soft pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-14T07:46:26.870621+00:00"
+}

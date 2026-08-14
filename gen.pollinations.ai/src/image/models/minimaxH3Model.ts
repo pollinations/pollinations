@@ -72,6 +72,7 @@ export async function callMinimaxH3API(
             duration: H3_DURATION_SECONDS,
             resolution: upstreamResolution,
             aspect_ratio: "16:9",
+            seed: safeParams.seed,
         }),
         signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "MiniMax H3 submission failed",

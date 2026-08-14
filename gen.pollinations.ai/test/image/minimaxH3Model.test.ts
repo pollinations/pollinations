@@ -105,6 +105,7 @@ describe("callMinimaxH3API", () => {
                 duration: 5,
                 resolution: expected,
                 aspect_ratio: "16:9",
+                seed: 42,
             },
         });
         expect(result.buffer).toEqual(Buffer.from(VIDEO_BYTES));

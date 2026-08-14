@@ -1,3 +1,4 @@
+import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
@@ -63,6 +64,16 @@ describe("ImageParamsSchema", () => {
                 }).success,
             ).toBe(true);
         }
+    });
+
+    it("accepts 768p on the OpenAI-compatible image route", () => {
+        expect(
+            CreateImageRequestSchema.safeParse({
+                model: "minimax-h3",
+                prompt: "a red wind-up robot",
+                resolution: "768p",
+            }).success,
+        ).toBe(true);
     });
 
     it("enforces the public minimax-h3 contract", () => {

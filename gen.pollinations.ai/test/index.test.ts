@@ -616,9 +616,6 @@ fixtureTest(
                 prompt: "make it blue",
                 image: "https://example.com/source.png",
             }),
-            json("/v1/audio/dialogue", {
-                inputs: [{ text: "hello", voice: "alloy" }],
-            }),
             multipart("/v1/audio/voice-changer", "audio"),
             multipart("/v1/audio/voice-isolator", "audio"),
             json("/v1/audio/speech", { input: "hello" }),

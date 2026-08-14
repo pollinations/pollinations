@@ -29,7 +29,6 @@ import {
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
-    handleDialogue,
     handleSimpleAudio,
     handleSpeech,
     handleSpeechWithTimestamps,
@@ -181,18 +180,6 @@ generationExecutorRoutes.post(
     prepareGenerationRequest,
     textExecutionCache,
     handleImageEdit,
-);
-
-generationExecutorRoutes.post(
-    "/v1/audio/dialogue",
-    resolveModel("generate.audio", {
-        defaultModel: "eleven-dialogue",
-        supportedEndpoint: "/v1/audio/dialogue",
-    }),
-    track("generate.audio"),
-    prepareGenerationRequest,
-    audioExecutionCache,
-    handleDialogue,
 );
 
 generationExecutorRoutes.post(

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13387,
+  "title": "fix: request reasoning summaries from Azure Responses API",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/13387",
+  "merged_at": "2026-08-14T19:33:08Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- body.reasoning previously set only effort, so Azure Responses did not generate reasoning-summary text even though the model produced billed reasoning tokens.\n- Adds summary: auto to the reasoning request field so the existing streaming and non-streaming relay can expose the summary as reasoning_content.\n- Current Microsoft Azure documentation supports auto for GPT-5 reasoning summaries. GPT-5 models do not support concise, so auto is intentional and no fallback is needed.\n- Enabling summaries can add output tokens and latency for callers that explicitly set reasoning_effort.\n\n## Validation\n\n- npx vitest run test/text/azureResponsesClient.test.ts — 12/12 passed\n- npm run typecheck — passed\n- npx biome check on both changed files — passed\n- GitHub checks — passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The thoughts come through",
+    "blurb": "Azure GPT-5 was doing the thinking but keeping its notes to itself. Now callers who ask for reasoning effort can receive the reasoning summary too.",
+    "summary": "Azure Responses requests now send `reasoning.summary: \"auto\"` alongside `reasoning.effort`, allowing GPT-5 reasoning summaries to reach Pollinations streaming and non-streaming clients as `reasoning_content`.",
+    "impact": "Callers that explicitly set `reasoning_effort` can now receive Azure GPT-5's generated reasoning summary instead of only being billed for unseen reasoning tokens.",
+    "keywords": [
+      "azure",
+      "responses-api",
+      "gpt-5",
+      "reasoning",
+      "reasoning_content",
+      "streaming"
+    ],
+    "visual_concept": "Depict Azure GPT-5 reasoning as a friendly pastel cloud-terminal producing a neatly unrolled thought-summary scroll, rather than hiding it inside the machine. Polli, wearing tiny librarian glasses, catches and reads the glowing scroll beside a retro terminal, with code-plants and flowers showing that the hidden reasoning has become useful visible output.",
+    "image_prompt": "A cozy pixel-art garden hackerspace where a pastel cloud-shaped Azure terminal gently prints a glowing scroll labeled \"REASONING SUMMARY\" into Polli's hands; Polli is a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and tiny librarian glasses, reading it beside code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13387.jpg",
+    "prompt": "A cozy pixel-art garden hackerspace where a pastel cloud-shaped Azure terminal gently prints a glowing scroll labeled \"REASONING SUMMARY\" into Polli's hands; Polli is a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and tiny librarian glasses, reading it beside code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T19:34:22.161103+00:00"
+}

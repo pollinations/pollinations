@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateElevenLabsSpeech } from "../src/routes/audio.ts";
+import { simpleAudioQuerySchema } from "../src/routes/generation-handlers.ts";
 
 const log = {
     info: vi.fn(),
@@ -38,6 +39,14 @@ describe("ElevenLabs TTS model routing", () => {
         await expect(request.json()).resolves.toMatchObject({
             model_id: expectedModelId,
         });
+    });
+
+    it("accepts custom voice IDs on the simple audio endpoint", () => {
+        const customVoiceId = "custom-elevenlabs-voice-id";
+
+        expect(
+            simpleAudioQuerySchema.parse({ voice: customVoiceId }).voice,
+        ).toBe(customVoiceId);
     });
 
     it("encodes custom voice IDs at the provider URL boundary", async () => {

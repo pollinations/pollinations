@@ -565,6 +565,13 @@ const imageQualityField = z
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
+const imageResolutionField = z
+    .enum(["1k", "2k", "480p", "720p", "1080p"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -593,10 +600,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
-        resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
-            description:
-                "Output resolution for resolution-priced video models (Pollinations extension)",
-        }),
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -658,6 +662,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough()

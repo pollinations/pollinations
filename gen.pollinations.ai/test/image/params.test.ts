@@ -48,6 +48,41 @@ describe("ImageParamsSchema", () => {
                 resolution: "480p",
             }).success,
         ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "grok-imagine-image-2.0",
+                resolution: "2k",
+                quality: "low",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "grok-imagine-image-2.0",
+            quality: "high",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
+            });
+        }
+    });
+
+    it("does not silently upgrade invalid Grok Imagine Image 2.0 quality", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "grok-imagine-image-2.0",
+                quality: "LOW",
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.parse({ model: "flux", quality: "LOW" }).quality,
+        ).toBe("medium");
     });
 
     it("rejects an unsupported resolution", () => {

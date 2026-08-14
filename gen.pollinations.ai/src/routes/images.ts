@@ -186,6 +186,9 @@ async function parseEditInput(c: Context): Promise<{
                 ...(formData.has("safe")
                     ? { safe: formData.get("safe") as string }
                     : {}),
+                ...(formData.has("resolution")
+                    ? { resolution: formData.get("resolution") as string }
+                    : {}),
             },
         };
     }
@@ -208,7 +211,7 @@ async function parseEditInput(c: Context): Promise<{
             message: "Missing required field: image",
         });
 
-    const extra = collectPassthrough(body, "seed");
+    const extra = collectPassthrough(body, "seed", "resolution");
     const { seed, ...passthrough } = extra as { seed?: number } & Record<
         string,
         unknown

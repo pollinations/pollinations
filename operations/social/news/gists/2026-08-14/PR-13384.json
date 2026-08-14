@@ -1,0 +1,35 @@
+{
+  "pr_number": 13384,
+  "title": "feat: add Floret model overrides",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/13384",
+  "merged_at": "2026-08-14T19:40:59Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds optional per-capability `routing` overrides to Floret’s OpenAI-compatible chat endpoint for text, web search, image generation, image editing, video, and audio. Omitted fields or `auto` preserve Floret’s automatic routing.\n- Validates explicit model IDs against the caller-visible Pollinations model catalog before agent execution, returning stable errors for unknown, incompatible, or temporarily unavailable selections.\n- Threads immutable routing preferences through the agent and tool loop. Explicit user choices override agent-selected models, while existing streaming, mixed-media responses, and automatic behavior remain intact.\n- Hardens the hosted authentication boundary: users call `gen.pollinations.ai` with their `pk_`/`sk_`; the gateway mints a short-lived internal `ag_` token for Floret. Hosted Floret rejects direct user keys, while the existing local-development operator-key fallback remains available.\n- Adds focused routing, API, agent, media-tool, and live regression coverage. The complete Floret suite passed locally (110 tests), and PR CI is green.\n\n## Release status\n\nBackend implementation only. This PR does **not** register Floret in the public model catalog or deploy it. Community-endpoint registration with delegated generation enabled and deployment are still required before Floret should be announced as publicly available.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Floret gets a routing dial",
+    "blurb": "Floret can now keep a caller’s model choices pinned while it works through text, search, images, video, and audio. The flower has more knobs; it is still waiting behind the garden gate.",
+    "summary": "Floret’s OpenAI-compatible chat endpoint now accepts optional per-capability routing overrides for text, web search, image generation and editing, video, and audio, validates selected models against the caller-visible catalog, and carries immutable preferences through its agent and tool loop.",
+    "impact": "When Floret is registered and deployed, callers will be able to choose compatible models per capability or leave fields as auto, while hosted requests use short-lived internal ag_ tokens instead of passing pk_/sk_ keys directly to Floret.",
+    "keywords": [
+      "floret",
+      "routing",
+      "model-overrides",
+      "openai-compatible",
+      "agent-tools",
+      "authentication",
+      "media"
+    ],
+    "visual_concept": "A cozy garden-workshop control panel represents Floret’s per-capability routing: separate labeled sprouts for text, search, images, video, and audio each connect to a small model-selection dial. Polli, wearing a tiny gardener-toolbelt, carefully sets the dials while a friendly flower-shaped terminal keeps the chosen paths neatly threaded through vines; a small locked gateway token symbolizes the hosted authentication boundary.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, adjusting five little routing dials beside code-plants labeled TEXT, SEARCH, IMAGE, VIDEO, and AUDIO; glowing vines carry each chosen path through a friendly flower-shaped retro terminal and a tiny locked gateway token. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, pixel-font text: \"ROUTE IT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13384.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, adjusting five little routing dials beside code-plants labeled TEXT, SEARCH, IMAGE, VIDEO, and AUDIO; glowing vines carry each chosen path through a friendly flower-shaped retro terminal and a tiny locked gateway token. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, pixel-font text: \"ROUTE IT\"."
+  },
+  "generated_at": "2026-08-14T19:42:07.706498+00:00"
+}

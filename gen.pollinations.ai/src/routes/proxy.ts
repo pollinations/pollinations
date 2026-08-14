@@ -74,6 +74,7 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
+import { ModelListQueryParamsSchema } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -236,43 +237,47 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Optionally filter entries by the `?community` query parameter.
-// `community=false` excludes community models, `community=true` returns only
-// community models, and omitting the parameter returns everything.
+// Optionally filter entries by the validated `?community` query parameter.
 function filterEntriesByCommunityParam(
     entries: GenerationModelEntry[],
     communityParam: string | undefined,
 ): GenerationModelEntry[] {
-    if (communityParam === undefined || communityParam === "") return entries;
+    if (communityParam === undefined) return entries;
     const wantCommunity = communityParam === "true" || communityParam === "1";
     return entries.filter(
         (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
     );
 }
 
-// Factory for model-list endpoints: filters the given models by API key
-// permissions, paid balance, and community query parameter, then returns
-// them as JSON.
+// Factory for model-list endpoints: validates the community query parameter,
+// filters by API key permissions, paid balance, and community flag,
+// then returns the model list as JSON.
 const modelsListHandler =
     (
         getEntries: (
             c: Context<Env>,
         ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
     ) =>
-    async (c: Context<Env>) => {
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        const paidBalance = hasPaidBalance(c);
-        return c.json(
-            filterEntriesByCommunityParam(
-                filterEntriesByPermissions(
-                    await getEntries(c),
-                    allowedModels,
-                    paidBalance,
-                ),
-                c.req.query("community"),
-            ).map((entry) => entry.info),
-        );
-    };
+    [
+        validator("query", ModelListQueryParamsSchema),
+        async (c: Context<Env>) => {
+            const { community } = c.req.valid("query" as never) as {
+                community?: string;
+            };
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            return c.json(
+                filterEntriesByCommunityParam(
+                    filterEntriesByPermissions(
+                        await getEntries(c),
+                        allowedModels,
+                        paidBalance,
+                    ),
+                    community,
+                ).map((entry) => entry.info),
+            );
+        },
+    ] as const;
 
 async function getVisibleModelEntries(c: Context<Env>) {
     return (await getGenerationModelRegistry(c.env)).visibleEntries(
@@ -340,10 +345,14 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
+        validator("query", ModelListQueryParamsSchema),
         async (c) => {
+            const { community } = c.req.valid("query" as never) as {
+                community?: string;
+            };
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByCommunityParam(
@@ -352,7 +361,7 @@ export const proxyRoutes = new Hono<Env>()
                     allowedModels,
                     paidBalance,
                 ),
-                c.req.query("community"),
+                community,
             );
             const now = Date.now();
 
@@ -399,10 +408,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModelEntries),
+        ...modelsListHandler(getVisibleModelEntries),
     )
     .get(
         "/3d/models",
@@ -410,7 +419,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List 3D Models",
             description:
-                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -425,10 +434,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModel3dEntries),
+        ...modelsListHandler(getVisibleModel3dEntries),
     )
     .get(
         "/image/models",
@@ -451,10 +460,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleImageAndVideoEntries),
+        ...modelsListHandler(getVisibleImageAndVideoEntries),
     )
     .get(
         "/video/models",
@@ -462,7 +471,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Video Models",
             description:
-                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -477,10 +486,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleVideoModelEntries),
+        ...modelsListHandler(getVisibleVideoModelEntries),
     )
     .get(
         "/text/models",
@@ -503,10 +512,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.text"),
         ),
     )
@@ -516,7 +525,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -531,10 +540,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.audio"),
         ),
     )
@@ -544,7 +553,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "List Embedding Models",
             description:
-                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -559,10 +568,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.embedding"),
         ),
     )

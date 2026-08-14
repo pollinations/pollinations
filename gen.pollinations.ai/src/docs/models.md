@@ -22,7 +22,10 @@ All model discovery endpoints accept an optional `community` query parameter:
 | `community=false` | `false`, `0` | Excludes community models — returns official models only |
 | `community=true` | `true`, `1` | Returns community models only |
 
+Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+
 Example: `GET /models?community=false`
+
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

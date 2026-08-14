@@ -409,6 +409,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "muse-glimmer",
+        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        transform: fireworksThinking,
+    },
+    {
         name: "muse-spark-1.1",
         config: portkeyConfig["meta/muse-spark-1.1"],
     },

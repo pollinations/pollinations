@@ -225,6 +225,9 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
+    const effectivePollenBudget = isPublishable
+        ? (pollenBudget ?? 0)
+        : pollenBudget;
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
@@ -277,7 +280,9 @@ export async function createApiKeyForUser({
     const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {
         metadata: JSON.stringify(finalMetadata),
     };
-    if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+    if (effectivePollenBudget != null) {
+        d1Updates.pollenBalance = effectivePollenBudget;
+    }
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -297,7 +302,7 @@ export async function createApiKeyForUser({
         expiresAt: created.expiresAt,
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
-        pollenBudget: pollenBudget ?? null,
+        pollenBudget: effectivePollenBudget ?? null,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

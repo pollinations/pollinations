@@ -90,6 +90,7 @@ describe("reasoning_effort model wiring", () => {
         "longcat",
         "nemotron",
         "minimax",
+        "muse-glimmer",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

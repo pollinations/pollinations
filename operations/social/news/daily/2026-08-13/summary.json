@@ -1,0 +1,55 @@
+{
+  "date": "2026-08-13",
+  "period_start": "2026-08-13",
+  "period_end": "2026-08-13",
+  "title": "New image and video models for more elaborate visual work",
+  "summary": "A busy day for creative tooling: new visual models, live transcription, better audio inputs, a navigable model catalog, and GPT-5.6 tools that behave like tools.\n\nQwen Image 3 joins the image API with high-resolution generation, editing, and up to three reference images. Seedance 2.5 adds short video generation with optional first and last frames plus audio, so image-to-video experiments have a little more room to misbehave productively.\n\nThe catalog now has persistent search and URL-backed sorting by recency, title, provider, or observed generation cost. Community additions include HQ IA for comic strips and Article Illustrator for turning writing into visuals; the README also received its daily news and app refresh.\n\nScribe realtime transcription is now available over WebSockets, with partial and final transcripts, VAD or manual commits, timestamps, language controls, and background filtering. Music and audio workflows can now use validated public reference URLs across providers, while reference handling and transcription accounting were tightened up for reliable full-recording processing.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 12665,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13215,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13254,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13283,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13313,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13314,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13317,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13320,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13321,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13327,
+      "date": "2026-08-13"
+    },
+    {
+      "number": 13330,
+      "date": "2026-08-13"
+    }
+  ],
+  "generated_at": "2026-08-14T06:37:16.537473+00:00"
+}

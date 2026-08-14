@@ -139,10 +139,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "x-ai/grok-4.5": () =>
+    "x-ai/grok-4.6": () =>
         createOpenRouterModelConfig({
-            model: "x-ai/grok-4.5",
-            defaultOptions: { provider: { sort: "price" } },
+            model: "x-ai/grok-4.6",
+            defaultOptions: {
+                provider: {
+                    only: ["xai/zdr"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     "xiaomi/mimo-v2.5": () =>
         createOpenRouterModelConfig({
@@ -392,11 +397,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/muse-glimmer-30b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-glimmer-30b",
+        }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
-    "meta/muse-spark-1.1": () =>
+    "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
-            model: "meta/muse-spark-1.1",
+            model: "meta/muse-spark-1.2",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

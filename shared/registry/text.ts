@@ -813,8 +813,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576, // xAI Grok 4.3 context window.
         isSpecialized: false,
     },
-    "grok-4.5": {
-        aliases: ["grok-4-5"],
+    "grok-4.6": {
+        aliases: ["grok-4.5", "grok-4-5"],
         provider: "openrouter",
         brand: "xAI",
         category: "text",
@@ -825,14 +825,14 @@ export const TEXT_SERVICES = {
         // prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(6),
         },
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(0.6),
+                    promptCachedTokens: perMillion(1),
                     completionTextTokens: perMillion(12),
                 },
             },
@@ -846,7 +846,7 @@ export const TEXT_SERVICES = {
             },
             "<200K context",
         ),
-        title: "Grok 4.5",
+        title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1678,12 +1678,36 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "muse-spark-1.1": {
-        aliases: ["muse-spark", "spark", "spark-1.1"],
+    "muse-glimmer": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "Meta",
+        category: "text",
+        addedDate: new Date("2026-08-14").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.35),
+            promptCachedTokens: perMillion(0.04),
+            completionTextTokens: perMillion(1.5),
+        },
+        title: "Muse Glimmer 30B",
+        description:
+            "Compact multimodal agent for reasoning, tool use and failure recovery",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
+    "muse-spark-1.2": {
+        aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
         provider: "vercel",
         brand: "Meta",
         category: "text",
-        addedDate: new Date("2026-07-12").getTime(),
+        addedDate: new Date("2026-08-14").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
@@ -1691,7 +1715,7 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(4.25),
         },
-        title: "Muse Spark 1.1",
+        title: "Muse Spark 1.2",
         description: "Agentic coding and tool-use model with 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],

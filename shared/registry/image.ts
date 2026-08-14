@@ -517,6 +517,64 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
+    "seedance-2.0-mini": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        cost: {
+            completionVideoSeconds: 0.09,
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.04,
+                },
+            },
+            matchResolution("480p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+            },
+            "720p",
+        ),
+        resolutions: ["720p", "480p"],
+        title: "Seedance 2.0 Mini",
+        description:
+            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "seedance-2.0-fast": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        cost: {
+            completionVideoSeconds: 0.07,
+        },
+        resolutions: ["480p"],
+        title: "Seedance 2.0 Fast",
+        description:
+            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         provider: "replicate",

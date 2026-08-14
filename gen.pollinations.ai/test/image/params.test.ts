@@ -1,3 +1,4 @@
+import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
@@ -55,6 +56,51 @@ describe("ImageParamsSchema", () => {
                 quality: "low",
             }).success,
         ).toBe(true);
+        for (const resolution of ["480p", "768p", "2k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax-h3",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
+    });
+
+    it("accepts 768p on the OpenAI-compatible image route", () => {
+        expect(
+            CreateImageRequestSchema.safeParse({
+                model: "minimax-h3",
+                prompt: "a red wind-up robot",
+                resolution: "768p",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("enforces the public minimax-h3 contract", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                duration: 6,
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                aspectRatio: "9:16",
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                fps: 30,
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                image: "https://example.com/frame.png",
+            }).success,
+        ).toBe(false);
     });
 
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {

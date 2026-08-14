@@ -10,10 +10,16 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
+
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
 
 export type CommunityEndpoint = {
     id: string;
@@ -24,23 +30,50 @@ export type CommunityEndpoint = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
+    // Public community models tried, in order, when this model's upstream fails.
+    fallbackModelIds: string[];
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
 } & CommunityEndpointPrices;
 
+export type FallbackModelOption = {
+    modelId: string;
+    modality: CommunityEndpointModality;
+};
+
+/**
+ * Public community models from the model catalog, in dialog option form. The
+ * catalog already excludes private and deactivated models, and the server
+ * re-validates modality and pricing on write.
+ */
+export function publicCommunityFallbackOptions(
+    models: { name: string; type: string; community?: boolean }[],
+): FallbackModelOption[] {
+    return models
+        .filter(
+            (model) =>
+                model.community &&
+                (model.type === "text" || model.type === "image"),
+        )
+        .map((model) => ({
+            modelId: model.name,
+            modality: model.type === "image" ? "image" : "text",
+        }));
+}
+
 export type EndpointFormState = {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
-    // Set only when the endpoint test receives a valid image edit response.
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
@@ -48,21 +81,26 @@ export type EndpointFormState = {
     // public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: string;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Public community model ids, tried in the order listed.
+    fallbackModelIds: string[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
+    fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -73,7 +111,7 @@ export type CommunityEndpointTestResponse = {
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[];
 };
 
 export type ActionState = {
@@ -90,14 +128,16 @@ const emptyPriceForm = Object.fromEntries(
 export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
-    supportsImageEdits: false,
+    inputModalities: ["text"],
     name: "",
     title: "",
     description: "",
     visibility: "private",
+    perUserRpm: "",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    fallbackModelIds: [],
     ...emptyPriceForm,
 };
 
@@ -176,14 +216,16 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
-        supportsImageEdits: endpoint.supportsImageEdits,
+        inputModalities: endpoint.inputModalities,
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
+        perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        fallbackModelIds: endpoint.fallbackModelIds ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -268,22 +310,36 @@ export function observedUsageValue(
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+    if (!isValidPerUserRpm(form.perUserRpm)) {
+        throw new Error("Per-user RPM must be a positive number");
+    }
     const modelName = form.name.trim();
     const imagePricing =
         form.modality === "image" ? form.imagePricing : "request";
     return {
         modality: form.modality,
         imagePricing,
-        supportsImageEdits:
-            form.modality === "image" && form.supportsImageEdits,
+        inputModalities: form.inputModalities,
         name: modelName,
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
+        perUserRpm: form.perUserRpm.trim() ? Number(form.perUserRpm) : null,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
+        // A private model carries no pricing, so a priced fallback target can
+        // never satisfy the same-or-lower rule — clear them alongside prices.
+        fallbackModelIds:
+            form.visibility === "public" ? form.fallbackModelIds : [],
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
+}
+
+export function isValidPerUserRpm(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed > 0;
 }
 
 /** Keep the public model id in sync with the provider model until edited. */
@@ -292,23 +348,20 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
-    if (key === "supportsImageEdits") return current;
     if (key === "modality") {
+        const modality = value === "image" ? "image" : "text";
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
-            supportsImageEdits: false,
+            modality,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                current.inputModalities,
+                modality,
+            ),
+            // Targets must match the modality; the old choices no longer can.
+            fallbackModelIds: [],
         };
     }
     const next = { ...current, [key]: value };
-    if (
-        key === "name" ||
-        key === "upstreamModel" ||
-        key === "baseUrl" ||
-        key === "bearerToken"
-    ) {
-        next.supportsImageEdits = false;
-    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

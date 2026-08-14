@@ -16,7 +16,7 @@ import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
-const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
+const CACHED_HEADER_NAMES = new Set(["x-fallback-target", "x-model-used"]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 
@@ -145,62 +145,51 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     key: string,
 ): Promise<Response | null> {
-    try {
-        const cachedObject = await c.env.TEXT_BUCKET.get(key);
+    const cachedObject = await c.env.TEXT_BUCKET.get(key);
 
-        if (!cachedObject) {
-            return null;
-        }
-
-        const metadata = cachedObject.customMetadata || {};
-
-        // Build headers from metadata
-        const headers = new Headers();
-        if (metadata.response_content_type) {
-            headers.set("content-type", metadata.response_content_type);
-        }
-        for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("header_")) {
-                headers.set(key.slice("header_".length), value);
-            }
-        }
-
-        // Add cache headers
-        headers.set("X-Cache", "HIT");
-        headers.set("X-Cache-Key", key.substring(0, 16));
-        headers.set(
-            "X-Cache-Date",
-            metadata.cachedAt || cachedObject.uploaded.toISOString(),
-        );
-        // Browser cache: immutable since same request = same response
-        headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-
-        const responseBody = refreshR2ObjectTtl(
-            c.env.TEXT_BUCKET,
-            key,
-            cachedObject,
-            (promise) => c.executionCtx.waitUntil(promise),
-            (error) => {
-                c.get("log")?.error(
-                    "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
-                    { error },
-                );
-            },
-        );
-
-        // Create response from cached object
-        return new Response(responseBody, {
-            status: parseInt(metadata.status || "200", 10),
-            statusText: metadata.statusText || "OK",
-            headers,
-        });
-    } catch (error) {
-        c.get("log")?.error(
-            "[TEXT-CACHE] Error getting cached response: {error}",
-            { error },
-        );
+    if (!cachedObject) {
         return null;
     }
+
+    const metadata = cachedObject.customMetadata || {};
+
+    // Build headers from metadata
+    const headers = new Headers();
+    if (metadata.response_content_type) {
+        headers.set("content-type", metadata.response_content_type);
+    }
+    for (const [key, value] of Object.entries(metadata)) {
+        if (key.startsWith("header_")) {
+            headers.set(key.slice("header_".length), value);
+        }
+    }
+
+    headers.set("X-Cache", "HIT");
+    headers.set("X-Cache-Key", key.substring(0, 16));
+    headers.set(
+        "X-Cache-Date",
+        metadata.cachedAt || cachedObject.uploaded.toISOString(),
+    );
+    headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+
+    const responseBody = refreshR2ObjectTtl(
+        c.env.TEXT_BUCKET,
+        key,
+        cachedObject,
+        (promise) => c.executionCtx.waitUntil(promise),
+        (error) => {
+            c.get("log")?.error(
+                "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
+                { error },
+            );
+        },
+    );
+
+    return new Response(responseBody, {
+        status: parseInt(metadata.status || "200", 10),
+        statusText: metadata.statusText || "OK",
+        headers,
+    });
 }
 
 /**
@@ -212,12 +201,21 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     cacheKey: string,
     response: Response,
-): TransformStream<Uint8Array, Uint8Array> {
+): {
+    stream: TransformStream<Uint8Array, Uint8Array>;
+    write: Promise<void>;
+} {
     const log = c.get("log");
     let chunks: Uint8Array[] = [];
     let totalSize = 0;
+    let resolveWrite!: () => void;
+    let rejectWrite!: (error: unknown) => void;
+    const write = new Promise<void>((resolve, reject) => {
+        resolveWrite = resolve;
+        rejectWrite = reject;
+    });
 
-    return new TransformStream({
+    const stream = new TransformStream({
         transform(chunk, controller) {
             // Save a copy of the chunk for caching later
             chunks.push(chunk.slice());
@@ -236,47 +234,31 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                 },
             );
 
-            // Cache the response in the background once streaming is done
-            c.executionCtx.waitUntil(
-                (async () => {
-                    try {
-                        // Combine all chunks into a single buffer
-                        const completeResponse = new Uint8Array(totalSize);
-                        let offset = 0;
-
-                        for (const chunk of chunks) {
-                            completeResponse.set(chunk, offset);
-                            offset += chunk.byteLength;
-                        }
-
-                        // Prepare metadata
-                        const metadata = prepareMetadata(response);
-
-                        // Store in R2
-                        await c.env.TEXT_BUCKET.put(
-                            cacheKey,
-                            completeResponse,
-                            {
-                                customMetadata: metadata,
-                            },
-                        );
-
-                        log?.info(
-                            "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
-                            {
-                                size: totalSize,
-                            },
-                        );
-
-                        // Free memory
-                        chunks = [];
-                    } catch (error) {
-                        log?.error("[TEXT-CACHE] Caching failed: {error}", {
-                            error,
-                        });
+            void (async () => {
+                try {
+                    const completeResponse = new Uint8Array(totalSize);
+                    let offset = 0;
+                    for (const chunk of chunks) {
+                        completeResponse.set(chunk, offset);
+                        offset += chunk.byteLength;
                     }
-                })(),
-            );
+
+                    await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
+                        customMetadata: prepareMetadata(response),
+                    });
+                    log?.info(
+                        "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
+                        { size: totalSize },
+                    );
+                    resolveWrite();
+                } catch (error) {
+                    rejectWrite(error);
+                } finally {
+                    chunks = [];
+                }
+            })();
         },
     });
+
+    return { stream, write };
 }

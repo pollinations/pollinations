@@ -18,11 +18,11 @@
  */
 
 import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
@@ -31,6 +31,8 @@ import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
+export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
+export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();

@@ -1,0 +1,1024 @@
+import {
+    Alert,
+    AppHeader,
+    AppIcon,
+    Button,
+    Chip,
+    ColorModeToggle,
+    DiscordIcon,
+    ExternalLinkButton,
+    GitHubIcon,
+    Heading,
+    IconButton,
+    Surface,
+    TabButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+} from "@pollinations/ui";
+import { ModalityChip } from "@pollinations/ui/gen";
+import { useCallback, useEffect, useState } from "react";
+import { useModelMonitor } from "./hooks/useModelMonitor";
+
+const FAVORITES_KEY = "model-monitor-favorites";
+
+function loadFavorites() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveFavorites(list) {
+    try {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+    } catch {
+        // storage full or blocked — silently ignore
+    }
+}
+
+function modelKey(model) {
+    return `${model.type}-${model.name}`;
+}
+
+function StarIcon({ filled }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            role="img"
+            aria-label={filled ? "Favorited" : "Not favorited"}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+    );
+}
+
+const WINDOW_OPTIONS = [
+    { key: "7d", label: "7d" },
+    { key: "24h", label: "24h" },
+    { key: "4h", label: "4h" },
+    { key: "60m", label: "1h" },
+    { key: "5m", label: "5m" },
+];
+
+const MODEL_TYPES = [
+    { key: "image", title: "Image" },
+    { key: "video", title: "Video" },
+    { key: "audio", title: "Audio" },
+    { key: "realtime", title: "Realtime" },
+    { key: "3d", title: "3D" },
+    { key: "text", title: "Text" },
+    { key: "embedding", title: "Embedding" },
+];
+
+const MODEL_SCOPES = [
+    { key: "official", title: "Official" },
+    { key: "community", title: "Community" },
+];
+
+const FILTER_KEY = "model-monitor-filter";
+
+function loadFilterState() {
+    try {
+        const raw = localStorage.getItem(FILTER_KEY);
+        if (!raw) return null;
+        const { scope, type } = JSON.parse(raw);
+        const validScope = MODEL_SCOPES.some((s) => s.key === scope)
+            ? scope
+            : null;
+        const validType = MODEL_TYPES.some((t) => t.key === type) ? type : null;
+        return { scope: validScope, type: validType };
+    } catch {
+        return null;
+    }
+}
+
+function saveFilterState(filter) {
+    try {
+        localStorage.setItem(FILTER_KEY, JSON.stringify(filter));
+    } catch {
+        // storage full or blocked — silently ignore
+    }
+}
+
+const LOW_SAMPLE_REQUESTS = 10;
+
+const EXTERNAL_LINKS = [
+    {
+        href: "https://enter.pollinations.ai",
+        label: "Dashboard",
+        icon: <AppIcon className="h-4 w-4 shrink-0" />,
+        showLabel: true,
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord",
+        icon: <DiscordIcon className="h-4 w-4" />,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "GitHub",
+        icon: <GitHubIcon className="h-4 w-4" />,
+    },
+];
+
+function isAdminPath() {
+    if (typeof window === "undefined") return false;
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path === "/debug" || path.endsWith("/debug");
+}
+
+function statusSeverity(model) {
+    const health = computeHealthStatus(model.stats);
+    if (health === "off") return 6;
+    if (health === "degraded") return 5;
+    if (model.catalogStatus === "unregistered") return 4;
+    if (model.catalogStatus === "anomaly") return 3;
+    if (model.catalogStatus === "catalog-unavailable") return 2;
+    return 0;
+}
+
+function formatPercent(count, total, showZero = false) {
+    if (!total || total === 0) return "-";
+    const pct = (count / total) * 100;
+    if (pct === 0) return showZero ? "0%" : "-";
+    return `${pct.toFixed(1)}%`;
+}
+
+function get2xxColor(ok2xx, total) {
+    if (!total || total <= 0) return "text-theme-text-muted";
+    if (ok2xx === 0) return "text-intent-danger-text font-semibold";
+    const pct = (ok2xx / total) * 100;
+    if (pct > 95) return "text-intent-success-text font-semibold";
+    if (pct > 80) return "text-intent-success-text";
+    if (pct > 50) return "text-theme-text-muted";
+    return "text-intent-danger-text font-semibold";
+}
+
+function getLatencyColor(latencySec) {
+    if (latencySec < 2) return "text-theme-text-soft font-semibold";
+    if (latencySec < 5) return "text-intent-success-text";
+    if (latencySec < 10) return "text-theme-text-muted";
+    return "text-intent-warning-text font-semibold";
+}
+
+function computeHealthStatus(stats) {
+    if (!stats?.total_requests) return "on";
+    const success = stats.status_2xx || 0;
+    const total5xx = stats.errors_5xx || 0;
+    // 4xx are client errors and don't count. Judge purely on the 5xx share of
+    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
+    // volume is not a reason to call a failing model healthy.
+    const modelRequests = success + total5xx;
+    if (modelRequests === 0) return "on";
+    const pct5xx = (total5xx / modelRequests) * 100;
+    if (pct5xx >= 50) return "off";
+    if (pct5xx >= 10) return "degraded";
+    return "on";
+}
+
+function healthIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "success";
+}
+
+function rowIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "default";
+}
+
+function calcGroupStats(group) {
+    let total2xx = 0;
+    let total5xx = 0;
+    let countOn = 0;
+    let countDegraded = 0;
+    let countOff = 0;
+
+    for (const model of group) {
+        const stats = model.stats;
+        if (!stats) continue;
+        total2xx += stats.status_2xx || 0;
+        total5xx += stats.errors_5xx || 0;
+        const status = computeHealthStatus(stats);
+        if (status === "on") countOn++;
+        else if (status === "degraded") countDegraded++;
+        else countOff++;
+    }
+
+    const modelRequests = total2xx + total5xx;
+    const successRate =
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : null;
+
+    return {
+        successRate,
+        countOn,
+        countDegraded,
+        countOff,
+        totalModels: group.length,
+    };
+}
+
+// A count badge for a tab: red = off, orange = degraded. Just the number;
+// the native title carries the detail on hover.
+function CountBadge({ intent, count, label }) {
+    return (
+        <Chip
+            intent={intent}
+            size="sm"
+            className="tabular-nums"
+            title={`${count} ${label}`}
+        >
+            {count}
+        </Chip>
+    );
+}
+
+// A tab's contents: category name + success rate, plus up to two count badges
+// (off, then degraded). Healthy categories show name + % only.
+function CategoryTab({ title, stats, showBadges = true }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            {stats.successRate !== null && (
+                <span className="text-xs tabular-nums opacity-70">
+                    {stats.successRate.toFixed(1)}%
+                </span>
+            )}
+            {showBadges && stats.countOff > 0 && (
+                <CountBadge
+                    intent="danger"
+                    count={stats.countOff}
+                    label="off"
+                />
+            )}
+            {showBadges && stats.countDegraded > 0 && (
+                <CountBadge
+                    intent="warning"
+                    count={stats.countDegraded}
+                    label="degraded"
+                />
+            )}
+        </span>
+    );
+}
+
+// Category filter — the shared soft TabButton, same selector as the Window
+// picker. "All" clears the filter and shows the aggregate rate; only
+// categories with models are shown, each carrying its own rate + badges.
+function CategoryTabs({ models, value, onChange }) {
+    const available = MODEL_TYPES.filter(({ key }) =>
+        models.some((model) => model.type === key),
+    );
+    if (available.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            <TabButton
+                active={value === null}
+                onClick={() => onChange(null)}
+                size="sm"
+            >
+                <CategoryTab title="All" stats={calcGroupStats(models)} />
+            </TabButton>
+            {available.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="sm"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => model.type === key),
+                        )}
+                    />
+                </TabButton>
+            ))}
+        </div>
+    );
+}
+
+function modelScope(model) {
+    return model.community ? "community" : "official";
+}
+
+function ScopeTabs({ models, value, onChange }) {
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {MODEL_SCOPES.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="lg"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => modelScope(model) === key),
+                        )}
+                    />
+                </TabButton>
+            ))}
+        </div>
+    );
+}
+
+function StatusBadge({ stats }) {
+    const status = computeHealthStatus(stats);
+    const modelRequests = (stats?.status_2xx || 0) + (stats?.errors_5xx || 0);
+    const lowSample = modelRequests > 0 && modelRequests < LOW_SAMPLE_REQUESTS;
+
+    if (status === "on" && !lowSample) return null;
+
+    return (
+        <>
+            {status !== "on" && (
+                <Chip
+                    intent={healthIntent(status)}
+                    size="sm"
+                    className={status === "off" ? "animate-pulse" : undefined}
+                >
+                    {status === "off" ? "Off" : "Degraded"}
+                </Chip>
+            )}
+            {lowSample && (
+                <Chip
+                    intent="neutral"
+                    size="sm"
+                    title={`Health is based on ${modelRequests} non-client request${modelRequests === 1 ? "" : "s"}`}
+                >
+                    Low sample
+                </Chip>
+            )}
+        </>
+    );
+}
+
+function CatalogStatusBadge({ status }) {
+    if (!status || status === "visible") {
+        return null;
+    }
+
+    const variants = {
+        anomaly: { label: "anomaly", intent: "warning" },
+        unregistered: { label: "unknown", intent: "warning" },
+        "catalog-unavailable": { label: "unverified", intent: "neutral" },
+    };
+
+    const variant = variants[status];
+    if (!variant) return null;
+
+    return (
+        <Chip intent={variant.intent} size="sm">
+            {variant.label}
+        </Chip>
+    );
+}
+
+function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
+    const isActive = currentSort.key === sortKey;
+
+    return (
+        <TableHeaderCell
+            align={align}
+            active={isActive}
+            sortDirection={
+                isActive ? (currentSort.asc ? "asc" : "desc") : undefined
+            }
+            onSort={() => onSort(sortKey)}
+        >
+            {label}
+        </TableHeaderCell>
+    );
+}
+
+function HeaderLink({ href, label, icon, showLabel = false }) {
+    if (showLabel) {
+        return (
+            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+                <span className="inline-flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                </span>
+            </ExternalLinkButton>
+        );
+    }
+
+    return (
+        <Button
+            as="a"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={label}
+            size="sm"
+            className="h-9 w-9 gap-2 px-0 py-0"
+            aria-label={label}
+        >
+            {icon}
+        </Button>
+    );
+}
+
+function WindowTabs({ value, onChange }) {
+    return (
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
+            <span>Window</span>
+            <span className="inline-flex flex-wrap gap-1">
+                {WINDOW_OPTIONS.map(({ key, label }) => (
+                    <TabButton
+                        key={key}
+                        active={value === key}
+                        onClick={() => onChange(key)}
+                        size="sm"
+                    >
+                        {label}
+                    </TabButton>
+                ))}
+            </span>
+        </div>
+    );
+}
+
+function App() {
+    const [aggregationWindow, setAggregationWindow] = useState("60m");
+    const [adminMode] = useState(isAdminPath);
+    const { models, lastUpdated, error, endpointStatus } =
+        useModelMonitor(aggregationWindow);
+
+    const [sort, setSort] = useState({ key: "requests", asc: false });
+    const [initialFilter] = useState(loadFilterState);
+    const [scopeFilter, setScopeFilter] = useState(
+        initialFilter?.scope ?? "official",
+    );
+    const [typeFilter, setTypeFilter] = useState(initialFilter?.type ?? null);
+    const [favorites, setFavorites] = useState(loadFavorites);
+    const [favoritesOnly, setFavoritesOnly] = useState(false);
+    const catalogUnavailable = endpointStatus.catalog === false;
+
+    useEffect(() => {
+        saveFavorites(favorites);
+    }, [favorites]);
+
+    useEffect(() => {
+        saveFilterState({ scope: scopeFilter, type: typeFilter });
+    }, [scopeFilter, typeFilter]);
+
+    const toggleFavorite = useCallback((key) => {
+        setFavorites((prev) => {
+            const next = prev.includes(key)
+                ? prev.filter((k) => k !== key)
+                : [...prev, key];
+            if (next.length === 0) setFavoritesOnly(false);
+            return next;
+        });
+    }, []);
+
+    const handleSort = (key) => {
+        setSort((prev) => ({
+            key,
+            asc:
+                prev.key === key ? !prev.asc : key === "name" || key === "type",
+        }));
+    };
+
+    const observedModels = models.filter(
+        (model) => (model.stats?.total_requests || 0) > 0,
+    );
+
+    const sortedModels = [...observedModels].sort((a, b) => {
+        const aFav = favorites.includes(modelKey(a));
+        const bFav = favorites.includes(modelKey(b));
+        if (aFav !== bFav) return aFav ? -1 : 1;
+
+        const dir = sort.asc ? 1 : -1;
+        switch (sort.key) {
+            case "type":
+                return dir * (a.type || "").localeCompare(b.type || "");
+            case "name":
+                return dir * (a.name || "").localeCompare(b.name || "");
+            case "requests":
+            case "share": {
+                const aReqs =
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
+                const bReqs =
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
+                if (aReqs === bReqs) {
+                    return (
+                        dir *
+                        ((a.stats?.total_requests || 0) -
+                            (b.stats?.total_requests || 0))
+                    );
+                }
+                return dir * (aReqs - bReqs);
+            }
+            case "ok2xx": {
+                const aTotal2 =
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
+                const bTotal2 =
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
+                const aHasModelHealth = aTotal2 > 0;
+                const bHasModelHealth = bTotal2 > 0;
+
+                if (aHasModelHealth !== bHasModelHealth) {
+                    return aHasModelHealth ? -1 : 1;
+                }
+
+                if (!aHasModelHealth && !bHasModelHealth) {
+                    return (
+                        (b.stats?.total_requests || 0) -
+                        (a.stats?.total_requests || 0)
+                    );
+                }
+
+                const aPct2 =
+                    aTotal2 > 0 ? (a.stats?.status_2xx || 0) / aTotal2 : 0;
+                const bPct2 =
+                    bTotal2 > 0 ? (b.stats?.status_2xx || 0) / bTotal2 : 0;
+                if (aPct2 === bPct2) {
+                    return bTotal2 - aTotal2;
+                }
+                return dir * (aPct2 - bPct2);
+            }
+            case "errors":
+                return (
+                    dir *
+                    ((a.stats?.errors_5xx || 0) - (b.stats?.errors_5xx || 0))
+                );
+            case "lastError": {
+                const aTime =
+                    a.stats?.last_error_at &&
+                    a.stats.last_error_at !== "1970-01-01 00:00:00"
+                        ? new Date(`${a.stats.last_error_at}Z`).getTime()
+                        : 0;
+                const bTime =
+                    b.stats?.last_error_at &&
+                    b.stats.last_error_at !== "1970-01-01 00:00:00"
+                        ? new Date(`${b.stats.last_error_at}Z`).getTime()
+                        : 0;
+                return dir * (aTime - bTime);
+            }
+            case "p50":
+                return (
+                    dir *
+                    ((a.stats?.latency_p50_ms || 0) -
+                        (b.stats?.latency_p50_ms || 0))
+                );
+            case "avg":
+                return (
+                    dir *
+                    ((a.stats?.avg_latency_ms || 0) -
+                        (b.stats?.avg_latency_ms || 0))
+                );
+            case "p95":
+                return (
+                    dir *
+                    ((a.stats?.latency_p95_ms || 0) -
+                        (b.stats?.latency_p95_ms || 0))
+                );
+            case "tps": {
+                const aTps = a.stats?.tokens_per_second;
+                const bTps = b.stats?.tokens_per_second;
+                if (aTps == null && bTps == null) return 0;
+                if (aTps == null) return 1;
+                if (bTps == null) return -1;
+                return dir * (aTps - bTps);
+            }
+            case "user4xx": {
+                const aTotal = a.stats?.total_requests || 1;
+                const bTotal = b.stats?.total_requests || 1;
+                const aPct = (a.stats?.errors_4xx || 0) / aTotal;
+                const bPct = (b.stats?.errors_4xx || 0) / bTotal;
+                return dir * (aPct - bPct);
+            }
+            case "status":
+                return dir * (statusSeverity(a) - statusSeverity(b));
+            case "provider":
+                return dir * (a.provider || "").localeCompare(b.provider || "");
+            default:
+                return 0;
+        }
+    });
+
+    const scopedModels = sortedModels.filter(
+        (model) => modelScope(model) === scopeFilter,
+    );
+    const filteredModels = scopedModels
+        .filter((model) => (typeFilter ? model.type === typeFilter : true))
+        .filter((model) =>
+            favoritesOnly ? favorites.includes(modelKey(model)) : true,
+        );
+
+    const handleScopeChange = (scope) => {
+        setScopeFilter(scope);
+        setTypeFilter(null);
+    };
+
+    return (
+        <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
+            <AppHeader
+                navLabel="Model Monitor links"
+                autoHide
+                innerClassName="polli:max-w-6xl polli:flex-row polli:items-center polli:justify-between"
+            >
+                {EXTERNAL_LINKS.map((link) => (
+                    <HeaderLink key={link.href} {...link} />
+                ))}
+                <ColorModeToggle />
+            </AppHeader>
+            <main className="mx-auto flex w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <section className="flex flex-row items-end justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
+                        >
+                            Model Monitor
+                        </Heading>
+                        <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                            Real-time health monitoring for Pollinations AI
+                            models.
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <WindowTabs
+                            value={aggregationWindow}
+                            onChange={setAggregationWindow}
+                        />
+                        <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                            Data as of:{" "}
+                            {lastUpdated?.toLocaleTimeString("en-GB", {
+                                timeZone: "UTC",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                            }) || "-"}{" "}
+                            UTC
+                        </p>
+                    </div>
+                </section>
+
+                {error && (
+                    <Alert intent="danger" title="Monitor error">
+                        {error}
+                    </Alert>
+                )}
+
+                {catalogUnavailable && (
+                    <Alert intent="warning" title="Model catalog unavailable">
+                        Showing observed Tinybird traffic only until the live
+                        model catalog responds.
+                    </Alert>
+                )}
+
+                <div className="flex flex-col gap-2">
+                    <ScopeTabs
+                        models={observedModels}
+                        value={scopeFilter}
+                        onChange={handleScopeChange}
+                    />
+                    <CategoryTabs
+                        models={scopedModels}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
+                    />
+                </div>
+
+                {favorites.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            intent={favoritesOnly ? "info" : undefined}
+                            aria-pressed={favoritesOnly}
+                            aria-label={`Show favorites only (${favorites.length})`}
+                            onClick={() => setFavoritesOnly((prev) => !prev)}
+                        >
+                            <span className="inline-flex items-center gap-1">
+                                <StarIcon filled={favoritesOnly} />
+                                Favorites
+                                <span className="ml-0.5 tabular-nums opacity-70">
+                                    {favorites.length}
+                                </span>
+                            </span>
+                        </Button>
+                    </div>
+                )}
+
+                <Surface variant="card" className="p-0">
+                    <Table>
+                        <TableHead>
+                            <tr>
+                                <TableHeaderCell className="w-8" />
+                                <SortableTh
+                                    label="Type"
+                                    sortKey="type"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Model"
+                                    sortKey="name"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Status"
+                                    sortKey="status"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                {adminMode && (
+                                    <SortableTh
+                                        label="Provider"
+                                        sortKey="provider"
+                                        currentSort={sort}
+                                        onSort={handleSort}
+                                    />
+                                )}
+                                <SortableTh
+                                    label={
+                                        <span title="Requests excluding client errors (4xx)">
+                                            Reqs
+                                        </span>
+                                    }
+                                    sortKey="requests"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Success"
+                                    sortKey="ok2xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="5xx"
+                                    sortKey="errors"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="4xx"
+                                    sortKey="user4xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Avg"
+                                    sortKey="avg"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="P95"
+                                    sortKey="p95"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label={
+                                        <span title="Completion tokens per second over the full request duration (not pure decode speed). Cache hits excluded.">
+                                            tok/s
+                                        </span>
+                                    }
+                                    sortKey="tps"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                            </tr>
+                        </TableHead>
+                        <TableBody>
+                            {filteredModels.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={adminMode ? 12 : 11}
+                                        align="center"
+                                        className="py-8 text-theme-text-muted"
+                                    >
+                                        {lastUpdated
+                                            ? favoritesOnly
+                                                ? "No favorited models match the current filter"
+                                                : "No traffic in this window"
+                                            : "Loading models..."}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredModels.map((model) => {
+                                    const stats = model.stats;
+                                    const total = stats?.total_requests || 0;
+                                    const total5xx = stats?.errors_5xx || 0;
+                                    const total4xx = stats?.errors_4xx || 0;
+                                    const nonUserErrorTotal = total - total4xx;
+                                    const pct4xx =
+                                        total > 0
+                                            ? (total4xx / total) * 100
+                                            : 0;
+                                    const avgSec = stats?.avg_latency_ms
+                                        ? stats.avg_latency_ms / 1000
+                                        : null;
+                                    const p95Sec = stats?.latency_p95_ms
+                                        ? stats.latency_p95_ms / 1000
+                                        : null;
+                                    const health = computeHealthStatus(stats);
+                                    const modelSlug =
+                                        model.name.split("/").pop() ||
+                                        model.name;
+                                    const modelLabel = model.title || modelSlug;
+                                    const showCanonicalId =
+                                        model.title ||
+                                        model.name !== modelLabel;
+
+                                    return (
+                                        <TableRow
+                                            key={modelKey(model)}
+                                            intent={rowIntent(health)}
+                                        >
+                                            <TableCell className="w-8">
+                                                <IconButton
+                                                    title={
+                                                        favorites.includes(
+                                                            modelKey(model),
+                                                        )
+                                                            ? "Remove from favorites"
+                                                            : "Add to favorites"
+                                                    }
+                                                    onClick={() =>
+                                                        toggleFavorite(
+                                                            modelKey(model),
+                                                        )
+                                                    }
+                                                >
+                                                    <StarIcon
+                                                        filled={favorites.includes(
+                                                            modelKey(model),
+                                                        )}
+                                                    />
+                                                </IconButton>
+                                            </TableCell>
+                                            <TableCell>
+                                                <ModalityChip
+                                                    modality={model.type}
+                                                    size="sm"
+                                                    className="text-micro font-bold uppercase tracking-wide"
+                                                >
+                                                    {model.type}
+                                                </ModalityChip>
+                                            </TableCell>
+                                            <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
+                                                <div className="min-w-0">
+                                                    <div className="truncate font-medium text-theme-text-strong">
+                                                        {modelLabel}
+                                                    </div>
+                                                    {showCanonicalId && (
+                                                        <div
+                                                            className="truncate text-micro text-theme-text-muted"
+                                                            title={model.name}
+                                                        >
+                                                            {model.name}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                    <StatusBadge
+                                                        stats={stats}
+                                                    />
+                                                    <CatalogStatusBadge
+                                                        status={
+                                                            model.catalogStatus
+                                                        }
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            {adminMode && (
+                                                <TableCell muted>
+                                                    {model.provider || "-"}
+                                                </TableCell>
+                                            )}
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                muted
+                                            >
+                                                {total > 0
+                                                    ? nonUserErrorTotal.toLocaleString()
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={get2xxColor(
+                                                    stats?.status_2xx || 0,
+                                                    nonUserErrorTotal,
+                                                )}
+                                            >
+                                                {formatPercent(
+                                                    stats?.status_2xx || 0,
+                                                    nonUserErrorTotal,
+                                                    true,
+                                                )}
+                                            </TableCell>
+                                            <TableCell align="right" numeric>
+                                                {total5xx > 0 ? (
+                                                    <span className="font-semibold text-intent-danger-text">
+                                                        {total5xx}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-theme-text-muted">
+                                                        -
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                muted
+                                            >
+                                                {pct4xx > 0
+                                                    ? pct4xx < 1
+                                                        ? `${pct4xx.toFixed(1)}%`
+                                                        : `${Math.round(pct4xx)}%`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={
+                                                    avgSec
+                                                        ? getLatencyColor(
+                                                              avgSec,
+                                                          )
+                                                        : "text-theme-text-muted"
+                                                }
+                                            >
+                                                {avgSec
+                                                    ? `${avgSec.toFixed(1)}s`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={
+                                                    p95Sec
+                                                        ? getLatencyColor(
+                                                              p95Sec,
+                                                          )
+                                                        : "text-theme-text-muted"
+                                                }
+                                            >
+                                                {p95Sec
+                                                    ? `${p95Sec.toFixed(1)}s`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                muted
+                                                className="whitespace-nowrap"
+                                            >
+                                                {stats?.tokens_per_second !=
+                                                null
+                                                    ? stats.tokens_per_second.toFixed(
+                                                          1,
+                                                      )
+                                                    : "-"}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </Surface>
+            </main>
+        </div>
+    );
+}
+
+export default App;

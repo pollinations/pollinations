@@ -87,6 +87,7 @@ describe("reasoning_effort model wiring", () => {
         "deepseek",
         "qwen-large",
         "qwen3.7-flash",
+        "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
         "minimax",

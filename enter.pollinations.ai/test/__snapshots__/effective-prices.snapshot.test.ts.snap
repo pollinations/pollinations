@@ -1524,6 +1524,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001475,
     },
   },
+  "qwen3.8-2.4t-a95b": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
+    },
+  },
   "qwen3.8-max": {
     "cost": {
       "completionTextTokens": 0.000006,

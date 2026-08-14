@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
+import { apiCommand } from "./commands/api.js";
 import { authCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
@@ -68,6 +69,7 @@ program.addCommand(myModelsCommand);
 // Generation
 program.addCommand(createGenCommand());
 program.addCommand(uploadCommand);
+program.addCommand(apiCommand);
 
 // Discovery
 program.addCommand(modelsCommand);

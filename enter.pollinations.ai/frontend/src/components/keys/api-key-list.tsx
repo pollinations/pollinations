@@ -1,4 +1,5 @@
 import {
+    Alert,
     AppIcon,
     Chip,
     GlobeIcon,
@@ -62,6 +63,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const now = Date.now();
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
+    );
+    const disabledPublishableKeys = visibleKeys.filter(
+        (key) => isPublishableKey(key) && key.enabled === false,
     );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>
@@ -246,6 +250,34 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
+                {disabledPublishableKeys.length > 0 && (
+                    <Alert intent="warning">
+                        <p className="font-medium">
+                            We disabled {disabledPublishableKeys.length}{" "}
+                            publishable{" "}
+                            {disabledPublishableKeys.length === 1
+                                ? "key"
+                                : "keys"}{" "}
+                            after detecting suspicious direct use:{" "}
+                            {disabledPublishableKeys
+                                .map((key) => key.name || "Unnamed key")
+                                .join(", ")}
+                            .
+                        </p>
+                        <p className="mt-1 text-sm">
+                            Publishable keys (<code>pk_</code>) are deprecated
+                            for direct API requests. Move public apps to
+                            Pollinations Auth (BYOP), where users sign in and
+                            spend their own Pollen.{" "}
+                            <InlineLink
+                                href={genDocsUrl("#tag/bring-your-own-pollen")}
+                            >
+                                Read the migration guide
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 <Section
                     title="API"
                     framed

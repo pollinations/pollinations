@@ -341,8 +341,9 @@ def test_stream_false_returns_plain_json(monkeypatch):
     assert resp.json()["choices"][0]["message"]["content"] == "plain"
 
 
-def test_request_without_credential_is_rejected():
+def test_request_without_credential_is_rejected(monkeypatch: pytest.MonkeyPatch):
     """No credential must fail up front, not part-way through a paid run."""
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", False)
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 401

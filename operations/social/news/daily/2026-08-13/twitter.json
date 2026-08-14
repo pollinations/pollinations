@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-13",
+  "period_start": "2026-08-13",
+  "period_end": "2026-08-13",
+  "generated_at": "2026-08-14T06:37:16.537473+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-13/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Qwen Image 3 + Seedance 2.5 for visual work, realtime Scribe transcription, GPT-5.6 via the Responses API, and sortable model catalogs. Public audio reference URLs work too. 11 PRs. The garden has more knobs now."
+}

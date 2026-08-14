@@ -67,6 +67,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const disabledPublishableKeys = visibleKeys.filter(
         (key) => isPublishableKey(key) && key.enabled === false,
     );
+    const protectedAppKeys = visibleKeys.filter(
+        (key) =>
+            isAppKey(key) &&
+            key.enabled !== false &&
+            key.metadata?.directUseDisabled === true,
+    );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -250,25 +256,40 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                {disabledPublishableKeys.length > 0 && (
+                {(disabledPublishableKeys.length > 0 ||
+                    protectedAppKeys.length > 0) && (
                     <Alert intent="warning">
-                        <p className="font-medium">
-                            We disabled {disabledPublishableKeys.length}{" "}
-                            publishable{" "}
-                            {disabledPublishableKeys.length === 1
-                                ? "key"
-                                : "keys"}{" "}
-                            after detecting suspicious direct use:{" "}
-                            {disabledPublishableKeys
-                                .map((key) => key.name || "Unnamed key")
-                                .join(", ")}
-                            .
-                        </p>
+                        {disabledPublishableKeys.length > 0 && (
+                            <p className="font-medium">
+                                We disabled {disabledPublishableKeys.length}{" "}
+                                publishable{" "}
+                                {disabledPublishableKeys.length === 1
+                                    ? "key"
+                                    : "keys"}{" "}
+                                after detecting suspicious direct use:{" "}
+                                {disabledPublishableKeys
+                                    .map((key) => key.name || "Unnamed key")
+                                    .join(", ")}
+                                .
+                            </p>
+                        )}
+                        {protectedAppKeys.length > 0 && (
+                            <p className="font-medium">
+                                We blocked direct Pollen spending on{" "}
+                                {protectedAppKeys.length} app{" "}
+                                {protectedAppKeys.length === 1 ? "key" : "keys"}{" "}
+                                after detecting suspicious direct use:{" "}
+                                {protectedAppKeys
+                                    .map((key) => key.name || "Unnamed key")
+                                    .join(", ")}
+                                . Pollinations Auth (BYOP) remains available.
+                            </p>
+                        )}
                         <p className="mt-1 text-sm">
                             Publishable keys (<code>pk_</code>) are deprecated
-                            for direct API requests. Move public apps to
-                            Pollinations Auth (BYOP), where users sign in and
-                            spend their own Pollen.{" "}
+                            for direct API requests. Use Pollinations Auth
+                            (BYOP), where users sign in and spend their own
+                            Pollen.{" "}
                             <InlineLink
                                 href={genDocsUrl("#tag/bring-your-own-pollen")}
                             >

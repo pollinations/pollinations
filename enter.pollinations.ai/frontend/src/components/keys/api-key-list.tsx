@@ -64,14 +64,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
     );
-    const disabledPublishableKeys = visibleKeys.filter(
-        (key) => isPublishableKey(key) && key.enabled === false,
-    );
-    const protectedAppKeys = visibleKeys.filter(
+    const leakedPublishableKeys = visibleKeys.filter(
         (key) =>
-            isAppKey(key) &&
-            key.enabled !== false &&
-            key.metadata?.directUseDisabled === true,
+            isPublishableKey(key) &&
+            key.metadata?.directUseDisabledDueToLeak === true,
+    );
+    const disabledPublishableKeys = leakedPublishableKeys.filter(
+        (key) => !isAppKey(key) && key.enabled === false,
+    );
+    const protectedAppKeys = leakedPublishableKeys.filter(
+        (key) => isAppKey(key) && key.enabled !== false,
     );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>

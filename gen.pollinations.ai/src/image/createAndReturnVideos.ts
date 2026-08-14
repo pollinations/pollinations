@@ -46,6 +46,8 @@ export async function createAndReturnVideo(
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
         case "seedance-2.0":
+        case "seedance-2.0-mini":
+        case "seedance-2.0-fast":
             result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "wan":

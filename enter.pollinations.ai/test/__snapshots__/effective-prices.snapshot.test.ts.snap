@@ -1534,6 +1534,27 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.18,
     },
   },
+  "seedance-2.0-fast": {
+    "cost": {
+      "completionVideoSeconds": 0.07,
+    },
+    "price": {
+      "completionVideoSeconds": 0.07,
+    },
+  },
+  "seedance-2.0-mini": {
+    "cost": {
+      "completionVideoSeconds": 0.09,
+    },
+    "costVariants": {
+      "480p": {
+        "completionVideoSeconds": 0.04,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.09,
+    },
+  },
   "seedance-2.5": {
     "cost": {
       "completionVideoSeconds": 0.1028,

@@ -1,10 +1,9 @@
 /**
- * ByteDance Seedance 2.0 video generation via Replicate.
+ * ByteDance Seedance 2.0 family video generation via Replicate.
  *
- * v1: 720p locked, T2V/I2V/reference modes via the existing safeParams.image
- * convention. Audio + image input are free; only resolution + reference_videos
- * are price multipliers, and we don't expose reference_videos (would trigger
- * "video_in" tier).
+ * The full model remains 720p locked. All three use the existing
+ * safeParams.image convention for T2V/I2V/reference modes. We don't expose
+ * reference_videos, which would trigger Replicate's "video_in" price tier.
  */
 
 import debug from "debug";
@@ -22,8 +21,30 @@ import {
 const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
-const MODEL = "bytedance/seedance-2.0";
-const TRACKING_LABEL = "seedance-2.0";
+const MODELS = {
+    "seedance-2.0": {
+        upstream: "bytedance/seedance-2.0",
+        title: "Seedance 2.0",
+        resolutions: ["720p"],
+        defaultResolution: "720p",
+        maxDuration: 15,
+    },
+    "seedance-2.0-mini": {
+        upstream: "bytedance/seedance-2.0-mini",
+        title: "Seedance 2.0 Mini",
+        resolutions: ["480p", "720p"],
+        defaultResolution: "720p",
+        maxDuration: 10,
+    },
+    "seedance-2.0-fast": {
+        upstream: "bytedance/seedance-2.0-fast",
+        title: "Seedance 2.0 Fast",
+        resolutions: ["480p"],
+        defaultResolution: "480p",
+        maxDuration: 5,
+    },
+} as const;
+type SeedanceV2ModelName = keyof typeof MODELS;
 
 // Replicate's Seedance 2.0 accepts a narrower set than our shared aspectRatio
 // enum (which also allows 9:21). Validate at the boundary so users get a clear
@@ -55,7 +76,7 @@ export function resolveSeedanceV2AspectRatio(
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
-    resolution: "720p";
+    resolution: "480p" | "720p";
     aspect_ratio: SeedanceV2AspectRatio;
     generate_audio: boolean;
     seed?: number;
@@ -67,11 +88,25 @@ export async function callSeedanceV2API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
+    const modelName = safeParams.model as SeedanceV2ModelName;
+    const config = MODELS[modelName];
+    const requestedResolution =
+        safeParams.resolution ?? config.defaultResolution;
+    if (
+        !(config.resolutions as readonly string[]).includes(requestedResolution)
+    ) {
+        throw new HttpError(
+            `${config.title} supports ${config.resolutions.join(" or ")} resolution`,
+            400,
+        );
+    }
+    const resolution = requestedResolution as SeedanceV2Input["resolution"];
+
     // Seedance 2.0 requires duration in [4, 15]. The schema enforces min=1
     // so we only need to clamp into the upstream's accepted range.
     const duration = Math.max(
         4,
-        Math.min(15, Math.floor(safeParams.duration ?? 5)),
+        Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
     );
 
     // Positional image[] contract:
@@ -80,7 +115,7 @@ export async function callSeedanceV2API(
     const images = safeParams.image ?? [];
     if (images.length > 2) {
         throw new HttpError(
-            "Seedance 2.0 supports at most two images: image[0] as first frame and image[1] as last frame.",
+            `${config.title} supports at most two images: image[0] as first frame and image[1] as last frame.`,
             400,
         );
     }
@@ -88,7 +123,7 @@ export async function callSeedanceV2API(
     const input: SeedanceV2Input = {
         prompt,
         duration,
-        resolution: "720p",
+        resolution,
         aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
         generate_audio: safeParams.audio,
     };
@@ -98,7 +133,7 @@ export async function callSeedanceV2API(
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
-    logOps("Seedance 2.0 input:", {
+    logOps(`${config.title} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
@@ -109,33 +144,33 @@ export async function callSeedanceV2API(
     let actualDurationSeconds: number | undefined;
     try {
         const result = await runReplicatePrediction<SeedanceV2Input, string>({
-            model: MODEL,
+            model: config.upstream,
             input,
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
-        logOps("Seedance 2.0 prediction succeeded:", {
+        logOps(`${config.title} prediction succeeded:`, {
             id: result.id,
             predict_time: result.predictTimeSeconds,
             video_output_duration: actualDurationSeconds,
         });
     } catch (err) {
-        logError("Seedance 2.0 prediction call failed:", err);
+        logError(`${config.title} prediction call failed:`, err);
         if (err instanceof ReplicateError) {
             logError("Replicate raw error details:", {
                 message: err.message,
                 status: err.status,
             });
         }
-        throw toReplicateHttpError(err, "Seedance 2.0 generation failed");
+        throw toReplicateHttpError(err, `${config.title} generation failed`);
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {
-        errorLabel: "Failed to download Seedance 2.0 output video",
+        errorLabel: `Failed to download ${config.title} output video`,
     });
     const buffer = Buffer.from(await videoResponse.arrayBuffer());
     logOps(
-        "Seedance 2.0 video downloaded:",
+        `${config.title} video downloaded:`,
         (buffer.length / 1024 / 1024).toFixed(2),
         "MB",
     );
@@ -149,7 +184,7 @@ export async function callSeedanceV2API(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: TRACKING_LABEL,
+            actualModel: modelName,
             usage: {
                 completionVideoSeconds: billedDuration,
             },

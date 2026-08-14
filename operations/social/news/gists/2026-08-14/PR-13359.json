@@ -1,0 +1,34 @@
+{
+  "pr_number": 13359,
+  "title": "feat: update Muse Spark to 1.2",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13359",
+  "merged_at": "2026-08-14T10:34:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the existing `muse-spark-1.1` service with canonical `muse-spark-1.2` through Vercel's exact `meta/muse-spark-1.2` route.\n- Keeps `muse-spark-1.1` and every existing shorthand as compatibility aliases.\n- Preserves paid-only access, multiplier 1, capabilities, 1M context, prices, and no-fallback behavior.\n- Adds one focused resolver test and updates the required effective-price snapshot.\n\nValidation:\n- Direct Vercel probes: text, streaming, vision, reasoning, tools, invalid media, exact usage cost, and 10 concurrent requests.\n- Local Gen E2E: canonical and all aliases, `/v1/chat/completions`, `/text`, `/text/{prompt}`, catalogs, permissions, billing, cache replay, errors, and 10 concurrent requests.\n- Gen focused suites: 69 tests; Enter focused suites: 378 tests; Gen and Enter typechecks pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Muse found its next spark",
+    "blurb": "Muse Spark now answers to its 1.2 name through Vercel’s exact route. The old 1.1 signposts are still up, because breaking everyone’s bookmarks is not an artistic medium.",
+    "summary": "Updated the canonical Muse Spark service to `muse-spark-1.2` via Vercel’s `meta/muse-spark-1.2` route while retaining `muse-spark-1.1` and all existing shorthands as compatibility aliases, with the same paid-only access, 1M context, pricing, multiplier, capabilities, and no-fallback behavior.",
+    "impact": "Developers can use `muse-spark-1.2` for the current model route while existing `muse-spark-1.1` and shorthand integrations continue to resolve exactly as before.",
+    "keywords": [
+      "muse-spark",
+      "models",
+      "vercel",
+      "text-api",
+      "compatibility",
+      "1m-context"
+    ],
+    "visual_concept": "Depict Polli as a tiny museum curator or inventor carefully replacing a glowing CRT terminal label from “Muse Spark 1.1” to “Muse Spark 1.2,” while a row of small old alias signposts still leads safely to the same bright model garden. The scene represents a canonical route upgrade that preserves compatibility; use code-plants and a long scroll-like context window as symbols for the 1M context.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny curator beret, carefully hanging a glowing pixel sign reading “Muse Spark 1.2” above a retro terminal; nearby, friendly little signposts labeled “1.1” and “aliases” all point toward the same flourishing code garden and a long scroll of context. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13359.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny curator beret, carefully hanging a glowing pixel sign reading “Muse Spark 1.2” above a retro terminal; nearby, friendly little signposts labeled “1.1” and “aliases” all point toward the same flourishing code garden and a long scroll of context. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T10:35:27.737466+00:00"
+}

@@ -19,6 +19,13 @@ from pydantic import BaseModel
 
 from floret.agent import run_agent, run_agent_events
 from floret.config import _api_key_override, settings
+from floret.routing import (
+    RoutingInput,
+    RoutingPreferences,
+    RoutingRegistryUnavailable,
+    RoutingValidationError,
+    validate_routing,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +63,7 @@ class ChatRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
     stream: bool = False
+    routing: RoutingInput | None = None
 
 
 def _files_dir() -> str:
@@ -185,7 +193,10 @@ _STREAM_DONE = object()
 
 
 async def _sse_events(
-    messages: list[dict[str, Any]], model: str, api_key: str | None
+    messages: list[dict[str, Any]],
+    model: str,
+    api_key: str | None,
+    routing: RoutingPreferences,
 ) -> AsyncIterator[str]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
@@ -203,7 +214,7 @@ async def _sse_events(
 
     async def _pump() -> None:
         try:
-            async for event in run_agent_events(messages):
+            async for event in run_agent_events(messages, routing=routing):
                 await queue.put(event)
         except Exception as exc:
             await queue.put(exc)
@@ -271,19 +282,34 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             status_code=401,
             detail="Missing API key. Pass it as Authorization: Bearer <key>.",
         )
+
+    token = _api_key_override.set(api_key or None)
+    try:
+        routing = await validate_routing(request.routing)
+    except RoutingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"field": exc.field, "model": exc.model, "reason": exc.reason},
+        ) from exc
+    except RoutingRegistryUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    finally:
+        _api_key_override.reset(token)
+
     if request.stream:
         return StreamingResponse(
             _sse_events(
                 _to_openai_messages(request.messages),
                 request.model,
                 api_key or None,
+                routing,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     token = _api_key_override.set(api_key or None)
     try:
-        result = await run_agent(_to_openai_messages(request.messages))
+        result = await run_agent(_to_openai_messages(request.messages), routing=routing)
         markdown, content_parts = await _build_content(
             result["text"], result["artifacts"]
         )
@@ -336,6 +362,14 @@ async def chat_completions_get() -> dict[str, Any]:
                 "model": "floret",
                 "messages": [{"role": "user", "content": "Hi!"}],
                 "stream": True,
+                "routing": {
+                    "text": "auto",
+                    "web_search": "auto",
+                    "image_generation": "auto",
+                    "image_editing": "auto",
+                    "video": "auto",
+                    "audio": "auto",
+                },
             },
         },
     }

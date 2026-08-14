@@ -9,6 +9,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from floret import api as api_mod
+from floret.config import _current_api_key
+from floret.routing import (
+    RoutingPreferences,
+    RoutingRegistryUnavailable,
+    RoutingValidationError,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -30,6 +36,132 @@ def _request_body(stream: bool) -> dict:
 # Every request must carry a credential to spend; the gateway supplies a
 # short-lived run token as the bearer.
 _HEADERS = {"Authorization": "Bearer ag_test-token"}
+
+
+async def _fake_run_agent(messages, **kwargs):
+    return {"text": "unused", "artifacts": [], "iterations": 1}
+
+
+def test_unknown_routing_key_is_rejected(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"image": "flux"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+
+
+def test_empty_routing_value_is_rejected(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"video": " "}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+
+
+def test_invalid_routing_preference_returns_stable_422(monkeypatch):
+    async def fake_validate(value):
+        raise RoutingValidationError(
+            field="video",
+            model="flux",
+            reason="model does not support video generation",
+        )
+
+    monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": {
+            "field": "video",
+            "model": "flux",
+            "reason": "model does not support video generation",
+        }
+    }
+
+
+def test_unavailable_routing_registry_returns_503(monkeypatch):
+    async def fake_validate(value):
+        raise RoutingRegistryUnavailable("model registry unavailable")
+
+    monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "model registry unavailable"}
+
+
+def test_non_stream_routing_is_validated_once_and_propagated(monkeypatch):
+    preferences = RoutingPreferences(image_generation="flux")
+    calls = []
+
+    async def fake_validate(value):
+        assert value is not None
+        assert value.image_generation == "flux"
+        assert _current_api_key() == "ag_test-token"
+        calls.append("validate")
+        return preferences
+
+    async def fake_run_agent(messages, **kwargs):
+        calls.append("run")
+        assert kwargs["routing"] is preferences
+        return {"text": "plain", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"image_generation": "flux"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 200
+    assert calls == ["validate", "run"]
+
+
+def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
+    preferences = RoutingPreferences(image_generation="flux")
+    calls = []
+
+    async def fake_validate(value):
+        assert value is not None
+        assert value.image_generation == "flux"
+        assert _current_api_key() == "ag_test-token"
+        calls.append("validate")
+        return preferences
+
+    async def fake_events(messages, **kwargs):
+        calls.append("run")
+        assert kwargs["routing"] is preferences
+        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    body = _request_body(stream=True) | {"routing": {"image_generation": "flux"}}
+
+    with TestClient(api_mod.app).stream(
+        "POST", "/v1/chat/completions", json=body, headers=_HEADERS
+    ) as response:
+        assert response.status_code == 200
+        response_body = "".join(response.iter_text())
+
+    assert calls == ["validate", "run"]
+    assert response_body.rstrip().endswith("data: [DONE]")
 
 
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13380,
+  "title": "fix: generate request bodies in API docs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13380",
+  "merged_at": "2026-08-14T16:06:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds curated JSON request examples for timestamped speech, community provider profiles, and 3D generation.\n- Fixes the API docs workflow failure where compact example synthesis emitted POST curls without request bodies.\n- Keeps generated `APIDOCS.md` out of the feature PR.\n\nChecks:\n- `npx biome check --write gen.pollinations.ai/scripts/generate-apidocs.ts`\n- `npx vitest run test/docs.test.ts`\n- Live-schema `docs:generate` followed by `docs:validate`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "POST bodies return home",
+    "blurb": "The docs gardener found a few POST examples trying to leave without their luggage. Curated JSON bodies now travel with timestamped speech, community profiles, and 3D generation requests.",
+    "summary": "Fixed API documentation generation so compact curl examples for timestamped speech, community provider profiles, and 3D generation include curated JSON POST request bodies.",
+    "impact": "Developers can now copy working request examples for these endpoints instead of reconstructing missing payloads by hand.",
+    "keywords": [
+      "api-docs",
+      "curl",
+      "request-bodies",
+      "speech",
+      "3d-generation",
+      "community-providers"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, repairs a cozy API-docs garden where three labeled JSON parcels are being placed into POST envelopes beside a glowing retro terminal. Code-plants, small flowers, and the visible curl command represent generated documentation that is finally complete.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully placing glowing JSON parcels into three POST envelopes beside a retro terminal showing a complete curl command; code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"POST + JSON\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13380.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully placing glowing JSON parcels into three POST envelopes beside a retro terminal showing a complete curl command; code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"POST + JSON\"."
+  },
+  "generated_at": "2026-08-14T16:07:27.794847+00:00"
+}

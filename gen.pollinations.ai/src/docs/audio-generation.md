@@ -7,7 +7,6 @@ Text-to-speech, music generation, and audio transcription.
 | `GET /audio/{text}` | Simple URL-based TTS or music generation |
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
-| `GET /v1/audio/transcriptions/realtime` | WebSocket realtime transcription |
 
 **Audio models:** {{AUDIO_MODELS}}
 

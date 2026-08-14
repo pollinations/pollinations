@@ -83,8 +83,6 @@ Use `chatCompletion` with the appropriate model and message content for simple t
 | Tool         | Description                                                                  |
 | ------------ | ---------------------------------------------------------------------------- |
 | `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)        |
-| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`) |
-| `listQuests` | Quests and earned rewards for the authenticated account (`account:usage`)   |
 
 ## Claude Desktop Integration
 

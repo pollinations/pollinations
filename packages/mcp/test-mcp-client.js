@@ -50,9 +50,7 @@ const EXPECTED_TOOLS = [
     "generateVideo",
     "getBalance",
     "getKeyInfo",
-    "getUsage",
     "listImageModels",
-    "listQuests",
     "listTextModels",
     "setApiKey",
 ];
@@ -177,7 +175,6 @@ if (!KEY) {
         return out;
     });
     await step("getBalance", () => call("getBalance"));
-    await step("listQuests", () => call("listQuests"));
     await step("clearApiKey", () => call("clearApiKey"));
 }
 

@@ -21,9 +21,9 @@ function createServerInstructions(apiBaseUrl, includeAuthTools, version) {
         ? `Set your API key first using the setApiKey tool:
 - **Publishable keys (pk_)**: Client-safe and rate-limited
 - **Secret keys (sk_)**: Server-side only and can spend Pollen`
-        : `Send a Pollinations API key with every MCP request:
+        : `Send a Pollinations secret API key with every MCP request:
 
-\`Authorization: Bearer YOUR_KEY\`
+\`Authorization: Bearer sk_...\`
 
 The credential is forwarded to the Pollinations API for that request only.`;
 
@@ -59,8 +59,6 @@ Get your API key at: https://enter.pollinations.ai/keys
 ${authenticationTools}
 ### Account
 - **getBalance** - Get the authenticated key's Pollen balance
-- **getUsage** - Get recent usage history
-- **listQuests** - List quests and earned rewards
 
 ## API Endpoint
 All requests go through: ${apiBaseUrl}

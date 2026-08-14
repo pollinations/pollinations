@@ -20,7 +20,7 @@ packages/mcp/
       textService.js             # chatCompletion, listTextModels
       audioService.js            # generateAudio
       authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
-      accountService.js          # getBalance, getUsage, listQuests    (via /account/*)
+      accountService.js          # getBalance                          (via /account/*)
     utils/
       authUtils.js               # in-memory key store and auth headers
       coreUtils.js               # fetch wrappers, URL builders, error mapping

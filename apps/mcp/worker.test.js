@@ -13,9 +13,7 @@ const EXPECTED_TOOLS = [
     "generateImage",
     "generateVideo",
     "getBalance",
-    "getUsage",
     "listImageModels",
-    "listQuests",
     "listTextModels",
 ];
 
@@ -57,6 +55,18 @@ test("serves health and requires bearer auth", async () => {
         }),
     );
     assert.equal(unauthorized.status, 401);
+
+    const publishableKey = await worker.fetch(
+        new Request("https://mcp.pollinations.ai/mcp", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer pk_test_not_allowed",
+                "Content-Type": "application/json",
+            },
+            body: "{}",
+        }),
+    );
+    assert.equal(publishableKey.status, 401);
 });
 
 test("serves modern and legacy clients without sessions", async () => {

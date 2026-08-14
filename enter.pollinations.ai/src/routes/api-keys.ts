@@ -2,10 +2,12 @@ import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -17,7 +19,6 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { parseMetadata } from "./metadata-utils.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -41,7 +42,13 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(
+        updated,
+        "models",
+        Array.isArray(allowedModels)
+            ? canonicalizeModelPermissionIds(allowedModels)
+            : allowedModels,
+    );
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }
@@ -168,7 +175,9 @@ const CreateApiKeySchema = z.object({
         .number()
         .nullable()
         .optional()
-        .describe("Pollen budget cap for this key. null = unlimited"),
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()

@@ -7,6 +7,19 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("buildUsageHeaders", () => {
+    it("marks responses where the provider omitted usage", () => {
+        expect(buildUsageHeaders("google/gemini-3.1-pro-preview")).toEqual({
+            "x-model-used": "google/gemini-3.1-pro-preview",
+            "x-usage-missing": "true",
+        });
+    });
+
+    it("identifies the model when usage is present but all counters are zero", () => {
+        expect(buildUsageHeaders("google/gemini-3.6-flash", {})).toEqual({
+            "x-model-used": "google/gemini-3.6-flash",
+        });
+    });
+
     // Raw-string consumers (track.ts, text-cache.ts) read these exact wire keys
     // and values, so pin the literal key→String(value) mapping for every
     // single-field passthrough. One fully-populated Usage covers all of them.

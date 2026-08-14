@@ -15,7 +15,18 @@ import type { Context } from "hono";
 // and "key" are request controls that must never affect the cache key.
 export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
-const CACHED_HEADER_PREFIXES = ["x-safety-"];
+const CACHED_HEADER_PREFIXES = ["x-safety-", "x-usage-"];
+const CACHED_HEADER_NAMES = [
+    "content-disposition",
+    "content-security-policy",
+    "x-content-type-options",
+    "x-elevenlabs-reference-song-id",
+    "x-elevenlabs-song-id",
+    "x-fallback-target",
+    "x-model-used",
+    "x-tts-voice",
+    "x-voice-changer-voice",
+];
 
 function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
@@ -32,7 +43,7 @@ export function generateCacheKey(url: URL, safeHeader?: string | null): string {
 
     normalizedUrl.search = "";
     for (const [key, value] of params) {
-        if (!EXCLUDED_PARAMS.includes(key)) {
+        if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
             normalizedUrl.searchParams.append(key, value);
         }
     }
@@ -91,6 +102,7 @@ function prepareCustomMetadata(response: Response): Record<string, string> {
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
         if (
+            CACHED_HEADER_NAMES.includes(lowerName) ||
             CACHED_HEADER_PREFIXES.some((prefix) =>
                 lowerName.startsWith(prefix),
             )
@@ -109,39 +121,26 @@ type MediaCacheEnv = {
     };
 };
 
-export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
+export async function putMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): void {
-    c.executionCtx.waitUntil(
-        response
-            .clone()
-            .arrayBuffer()
-            .then((body) => {
-                if (body.byteLength === 0) {
-                    c.get("log").warn(
-                        "Skipping empty media cache write for {cacheKey}",
-                        { cacheKey },
-                    );
-                    return null;
-                }
+): Promise<void> {
+    const body = await response.clone().arrayBuffer();
+    if (body.byteLength === 0) {
+        c.get("log").warn("Skipping empty media cache write for {cacheKey}", {
+            cacheKey,
+        });
+        throw new Error("Refusing to cache an empty media response");
+    }
 
-                return bucket.put(cacheKey, body, {
-                    httpMetadata: removeUnset({
-                        contentType:
-                            response.headers.get("content-type") ||
-                            defaultContentType,
-                    } as R2HTTPMetadata),
-                    customMetadata: prepareCustomMetadata(response),
-                });
-            })
-            .catch((error) => {
-                c.get("log").error("Error caching response: {error}", {
-                    error,
-                });
-            }),
-    );
+    await bucket.put(cacheKey, body, {
+        httpMetadata: removeUnset({
+            contentType:
+                response.headers.get("content-type") || defaultContentType,
+        } as R2HTTPMetadata),
+        customMetadata: prepareCustomMetadata(response),
+    });
 }

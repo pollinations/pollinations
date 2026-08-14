@@ -135,8 +135,38 @@ describe("docs routes", () => {
             { url: "https://gen.pollinations.ai" },
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(
+            schema.paths["/v1/audio/transcriptions/realtime"],
+        ).toBeUndefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        const model3dPost = (
+            schema.paths["/3d/{prompt}"] as Record<string, unknown>
+        )?.post as Record<string, unknown>;
+        expect(model3dPost).toBeDefined();
+        const model3dRequestBody = model3dPost.requestBody as {
+            content: {
+                "application/json": {
+                    schema: {
+                        additionalProperties?: boolean;
+                        properties: Record<string, unknown>;
+                    };
+                };
+            };
+        };
+        const model3dBodySchema =
+            model3dRequestBody.content["application/json"].schema;
+        expect(Object.keys(model3dBodySchema.properties)).toHaveLength(4);
+        expect(Object.keys(model3dBodySchema.properties)).toEqual(
+            expect.arrayContaining(["model", "image", "resolution", "seed"]),
+        );
+        expect(model3dBodySchema.properties.safe).toBeUndefined();
+        expect(
+            (model3dBodySchema.properties.resolution as { default?: string })
+                .default,
+        ).toBe("low");
+        expect(model3dBodySchema.additionalProperties).toBe(false);
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();
@@ -204,6 +234,15 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+
+        const nativeRealtimeGet = (
+            schema.paths["/realtime"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        const nativeRealtimeResponses = nativeRealtimeGet?.responses as
+            | Record<string, unknown>
+            | undefined;
+        expect(nativeRealtimeResponses?.["426"]).toBeDefined();
+        expect(nativeRealtimeResponses?.["503"]).toBeDefined();
 
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
@@ -329,7 +368,15 @@ describe("docs routes", () => {
         expect(apiBody).toContain("Base URL:");
         // Stable heading marker proves the realtime modality is composed into
         // the api section, without pinning volatile mid-prose wording.
-        expect(apiBody).toContain("## Realtime Voice");
+        expect(apiBody).toContain("## Realtime");
+        const realtimeSection = apiBody.slice(
+            apiBody.indexOf("## Realtime"),
+            apiBody.indexOf("## 3D Generation"),
+        );
+        expect(realtimeSection).toContain("scribe-realtime");
+        expect(realtimeSection).toContain("`GET /realtime`");
+        expect(realtimeSection).toContain("`GET /v1/realtime`");
+        expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

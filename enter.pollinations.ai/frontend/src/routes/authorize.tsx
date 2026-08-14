@@ -32,7 +32,6 @@ export const Route = createFileRoute("/authorize")({
             budget?: number | null;
             expiry?: number | null;
             scope?: string[] | null;
-            resource?: string;
         } = {
             // Canonical OAuth name is `redirect_uri`; keep `redirect_url`
             // as a legacy alias so existing apps keep working.
@@ -93,10 +92,6 @@ export const Route = createFileRoute("/authorize")({
         const scope =
             parseScopeList(search.scope) ?? parseList(search.permissions);
         if (scope !== null) result.scope = scope;
-
-        if (search.resource && typeof search.resource === "string") {
-            result.resource = search.resource;
-        }
 
         return result;
     },

@@ -4,6 +4,7 @@ import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../../src/image/utils/replicateClient.ts";
 
 beforeEach(() => {
@@ -57,6 +58,7 @@ describe("runReplicatePrediction", () => {
         const headers = new Headers(init.headers);
         expect(headers.get("Authorization")).toBe("Bearer r8_test_token");
         expect(headers.get("Prefer")).toBe("wait=60");
+        expect(headers.get("Cancel-After")).toBe("6m");
         const body = JSON.parse(init.body as string);
         expect(body.input).toEqual({ prompt: "test" });
         expect(body.version).toBeUndefined();
@@ -88,6 +90,56 @@ describe("runReplicatePrediction", () => {
         expect(body.input).toEqual({ prompt: "test" });
     });
 
+    it("uses one custom deadline for Cancel-After and local polling", async () => {
+        vi.useFakeTimers();
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_wan_27/cancel";
+        let cancelCalls = 0;
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                if (url === cancelUrl) {
+                    cancelCalls++;
+                    return new Response(
+                        JSON.stringify({
+                            id: "pred_wan_27",
+                            status: "canceled",
+                        }),
+                        { status: 200 },
+                    );
+                }
+                return new Response(
+                    JSON.stringify({
+                        id: "pred_wan_27",
+                        status: "processing",
+                        urls: {
+                            get: "https://api.replicate.com/v1/predictions/pred_wan_27",
+                            cancel: cancelUrl,
+                        },
+                    }),
+                    { status: 201 },
+                );
+            });
+
+        const promise = runReplicatePrediction({
+            model: "wan-video/wan-2.7-t2v",
+            input: { prompt: "test" },
+            predictionDeadlineMinutes: 15,
+        });
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        expect(new Headers(init.headers).get("Cancel-After")).toBe("15m");
+        await vi.advanceTimersByTimeAsync(15 * 60_000 - 1);
+        expect(cancelCalls).toBe(0);
+        await vi.advanceTimersByTimeAsync(1);
+        await assertion;
+        expect(cancelCalls).toBe(1);
+    });
+
     it("throws ReplicateError on prediction status: failed", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -112,7 +164,11 @@ describe("runReplicatePrediction", () => {
         ],
         [
             "input validation error (e.g. expired image URL)",
-            "Input validation error: 403 Client Error: Forbidden for url: https://example.com/img.jpg",
+            "Input validation error: timed out downloading https://example.com/img.jpg",
+        ],
+        [
+            "malformed image input",
+            "cannot identify image file '/tmp/tmpuv5xc__efile.jpg'",
         ],
     ])("classifies %s as 400 (user input error)", async (_, errorMessage) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -157,13 +213,39 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it("treats aborted predictions as terminal failures", async () => {
+    it.each([
+        "aborted",
+        "canceled",
+    ] as const)("classifies deadline terminal status %s as 504", async (status) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
-                    id: "pred_aborted",
-                    status: "aborted",
-                    error: "Prediction aborted before starting",
+                    id: `pred_${status}`,
+                    status,
+                    error: `Prediction ${status}`,
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({
+                model: MODEL,
+                input: { prompt: "x" },
+            }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+    });
+
+    it("classifies deadline failure messages as 504", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_deadline",
+                    status: "failed",
+                    error: "Prediction exceeded its deadline",
                 }),
                 { status: 201 },
             ),
@@ -173,25 +255,38 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: 500,
+            status: 504,
         });
     });
 
     it("times out with 504 when prediction stays processing past poll budget", async () => {
         vi.useFakeTimers();
-        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
-            async () =>
-                new Response(
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel-custom";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                if (url === cancelUrl) {
+                    return new Response(
+                        JSON.stringify({
+                            id: "pred_stuck",
+                            status: "canceled",
+                        }),
+                        { status: 200 },
+                    );
+                }
+                return new Response(
                     JSON.stringify({
                         id: "pred_stuck",
                         status: "processing",
                         urls: {
                             get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                            cancel: cancelUrl,
                         },
                     }),
                     { status: 201 },
-                ),
-        );
+                );
+            });
 
         const promise = runReplicatePrediction({
             model: MODEL,
@@ -203,11 +298,108 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
         await assertion;
-        // 1 POST + up to 60 GET polls
-        expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(61);
+
+        const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
+            string,
+            RequestInit,
+        ];
+        expect(requestUrl).toBe(cancelUrl);
+        expect(init.method).toBe("POST");
+        expect(
+            fetchSpy.mock.calls.some(
+                ([url, pollInit]) =>
+                    url !== cancelUrl && pollInit?.method === "GET",
+            ),
+        ).toBe(true);
+        expect(new Headers(init.headers).get("Authorization")).toBe(
+            "Bearer r8_test_token",
+        );
         vi.useRealTimers();
+    });
+
+    it("preserves the 504 when fallback cancellation fails", async () => {
+        vi.useFakeTimers();
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                if (url === cancelUrl) {
+                    return new Response("upstream cancellation failure", {
+                        status: 500,
+                    });
+                }
+                return new Response(
+                    JSON.stringify({
+                        id: "pred_stuck",
+                        status: "processing",
+                        urls: {
+                            get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                        },
+                    }),
+                    { status: 201 },
+                );
+            });
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        // Attach rejection handler before advancing timers so the rejection
+        // is observed (avoids Vitest "unhandled rejection" complaint).
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
+        await assertion;
+
+        const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
+            string,
+            RequestInit,
+        ];
+        expect(requestUrl).toBe(cancelUrl);
+        expect(init.method).toBe("POST");
+        vi.useRealTimers();
+    });
+
+    it("preserves the 504 when cancellation never settles", async () => {
+        vi.useFakeTimers();
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel";
+        const cancelSignals: AbortSignal[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url === cancelUrl) {
+                cancelSignals.push(init?.signal as AbortSignal);
+                return new Promise<Response>(() => {});
+            }
+            return new Response(
+                JSON.stringify({
+                    id: "pred_stuck",
+                    status: "processing",
+                    urls: {
+                        get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                    },
+                }),
+                { status: 201 },
+            );
+        });
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 5_001);
+        await assertion;
+
+        expect(cancelSignals).toHaveLength(1);
+        expect(cancelSignals[0].aborted).toBe(true);
     });
 
     it("classifies generic prediction failures as 500 (upstream error)", async () => {
@@ -339,5 +531,30 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 429,
         });
+    });
+});
+
+describe("toReplicateHttpError", () => {
+    it("preserves classified status, URL, and adapter context", () => {
+        expect(
+            toReplicateHttpError(
+                new ReplicateError(
+                    "rate limited",
+                    429,
+                    "https://api.replicate.com/v1/predictions/123",
+                ),
+                "Wan generation failed",
+            ),
+        ).toMatchObject({
+            name: "HttpError",
+            message: "Wan generation failed: rate limited",
+            status: 429,
+            upstreamUrl: "https://api.replicate.com/v1/predictions/123",
+        });
+    });
+
+    it("does not mask non-Replicate failures", () => {
+        const error = new TypeError("coding bug");
+        expect(toReplicateHttpError(error, "ignored")).toBe(error);
     });
 });

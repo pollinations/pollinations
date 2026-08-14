@@ -12,7 +12,11 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /_local/
 
 # Local treasury ingest source artifacts and generated data
-/apps/operation/economics/ingest/data/
+/operations/economics/ingest/data/
+
+# Keep private files stranded by the operations root move ignored. Git moves
+# tracked files but leaves local-only data at the legacy path.
+/apps/operation/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -310,7 +314,6 @@ text.pollinations.ai/v2/
 # Local Netlify folder
 .netlify
 .dev.vars
-image.pollinations.ai/temp_logs/
 .wrangler/
 
 # Crush Dev Agent
@@ -372,13 +375,13 @@ agent-communication.md
 .claude/MAIN.md
 .claude/SETUP.md
 .claude/settings.json
-apps/operation/finance/secrets/vendors.json
-apps/operation/finance/secrets/update-live.err
-apps/operation/finance/secrets/pool-history.json
-apps/operation/finance/secrets/input/2026-03.csv
-apps/operation/finance/secrets/input/2026-02.csv
-apps/operation/finance/secrets/input/2026-01.csv
-apps/operation/finance/config.local.json
+operations/finance/secrets/vendors.json
+operations/finance/secrets/update-live.err
+operations/finance/secrets/pool-history.json
+operations/finance/secrets/input/2026-03.csv
+operations/finance/secrets/input/2026-02.csv
+operations/finance/secrets/input/2026-01.csv
+operations/finance/config.local.json
 
 # Local-only demo / sandbox files — never committed.
 *.demo.tsx
@@ -387,11 +390,15 @@ apps/operation/finance/config.local.json
 # Playwright MCP scratch output (snapshots, screenshots, console logs)
 .playwright-mcp/
 
-# Community monitor — live-only artifacts, never committed (see apps/operation/community-monitor/README.md)
-apps/operation/community-monitor/.env
-apps/operation/community-monitor/state.json
-apps/operation/community-monitor/people_mapping.json
-apps/operation/community-monitor/probe-results.json
-apps/operation/community-monitor/*.log
-apps/operation/community-monitor/monitor.log
-apps/operation/community-monitor/results.json
+# Community monitor — live-only artifacts, never committed (see operations/community-monitor/README.md)
+operations/community-monitor/.env
+operations/community-monitor/state.json
+operations/community-monitor/people_mapping.json
+operations/community-monitor/probe-results.json
+operations/community-monitor/*.log
+operations/community-monitor/monitor.log
+operations/community-monitor/results.json
+
+# Open WebUI session-signing secret, written into the working directory of
+# whichever folder it is started from. Local to one instance, never ours.
+.webui_secret_key

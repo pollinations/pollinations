@@ -1,7 +1,7 @@
 import { useCachedFetch } from "./useCachedFetch";
 
 const HIGHLIGHTS_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 
 const MAX_ITEMS = 5;
 const CACHE_KEY = "pollinations:highlights";

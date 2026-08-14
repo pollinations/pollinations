@@ -6,10 +6,9 @@
  * bytedance/seedance-1-lite endpoint is reproducibly broken (E004 incident
  * 1cah9wlWR9 at all resolutions, May 2026) and BytePlus is being deprecated.
  *
- * v1: 720p locked, matching seedance-2.0. Replicate prices 480p / 720p / 1080p
- * differently ($0.015 / $0.025 / $0.06 per sec for pro-fast); the registry
- * only carries a single per-second rate, so we ship 720p and revisit tiered
- * pricing as a follow-up rather than under-bill 1080p or over-bill 480p.
+ * Replicate prices 480p / 720p / 1080p differently ($0.015 / $0.025 / $0.06
+ * per sec for pro-fast); the request resolution drives both upstream routing
+ * and the registry cost variant.
  */
 
 import debug from "debug";
@@ -22,6 +21,7 @@ import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance:ops");
@@ -68,7 +68,7 @@ function resolveSeedanceAspectRatio(
 interface SeedanceInput {
     prompt: string;
     duration: number;
-    resolution: "720p";
+    resolution: "480p" | "720p" | "1080p";
     aspect_ratio: SeedanceAspectRatio;
     fps: 24;
     camera_fixed: boolean;
@@ -95,7 +95,7 @@ interface SeedanceModelConfig {
 const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
     trackingLabel: "seedance-pro",
-    displayName: "Seedance Pro-Fast",
+    displayName: "Seedance 1.0 Pro Fast",
     supportsEndFrame: false,
     defaultDuration: 5,
     maxDuration: 10,
@@ -135,12 +135,16 @@ async function generateSeedanceVideo(
     const input: SeedanceInput = {
         prompt,
         duration,
-        resolution: "720p",
+        resolution:
+            safeParams.resolution === "480p" ||
+            safeParams.resolution === "1080p"
+                ? safeParams.resolution
+                : "720p",
         aspect_ratio: resolveSeedanceAspectRatio(safeParams),
         fps: 24,
         camera_fixed: false,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
 
@@ -175,14 +179,11 @@ async function generateSeedanceVideo(
                 message: err.message,
                 status: err.status,
             });
-            throw new HttpError(
-                `${config.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
         }
-        throw err;
+        throw toReplicateHttpError(
+            err,
+            `${config.displayName} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

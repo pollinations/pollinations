@@ -1,16 +1,12 @@
 import { type Context, Hono } from "hono";
-import { bodyLimit } from "hono/body-limit";
-import { HTTPException } from "hono/http-exception";
+import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import {
-    generateEmbeddings,
-    getEmbeddingProviderModelId,
-} from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
-import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
+import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
     imageCache,
@@ -21,16 +17,20 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { handleImageEdit, handleImageGeneration } from "./images.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageEdit,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
-import { UpstreamError } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
     DEFAULT_IMAGE_MODEL,
     getImageModelIds,
@@ -45,44 +45,46 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
-    type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
-    type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
-import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
 import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
-import { handle3dPrompt } from "@/model3d/handler.ts";
-import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
-import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
+import {
+    GenerateImageRequestQueryParamsSchema,
+    GenerateVideoRequestQueryParamsSchema,
+} from "@/schemas/image.ts";
+import {
+    Generate3dRequestBodySchema,
+    Generate3dRequestQueryParamsSchema,
+} from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import {
-    handleChatCompletionLocal,
-    handleSimpleTextLocal,
-    handleTextContentLocal,
-} from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
+import {
+    generateChatCompletion,
+    generateEmbeddingsResponse,
+    generateImageVideo,
+    generateModel3d,
+    generateSimpleText,
+    generateTextContent,
+    simpleAudioQuerySchema,
+    textBodyLimit,
+} from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -98,46 +100,59 @@ const model3dModelNames = getModel3dModelIds()
     .map((id) => `\`${id}\``)
     .join(", ");
 
+function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
+    return describeRoute({
+        tags: ["🎙️ Realtime"],
+        summary: "Realtime WebSocket",
+        description: [
+            "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
+            "",
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`scribe-realtime\` creates a transcription session automatically.`,
+            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+            "",
+            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+            "",
+            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+        ].join("\n"),
+        responses: {
+            101: {
+                description: "WebSocket connection established",
+            },
+            ...errorResponseDescriptions(
+                400,
+                401,
+                402,
+                403,
+                426,
+                429,
+                500,
+                503,
+            ),
+        },
+    });
+}
+
 const factory = createFactory<Env>();
-const textBodyLimit = bodyLimit({
-    maxSize: 20 * 1024 * 1024,
-});
+
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
-    resolveModel("generate.image"),
     track("generate.image"),
     imageCache,
     generationAccess,
-    async (c) => {
-        const query = c.req.valid("query" as never) as { safe?: SafeValue };
-        const prompt = await applySafety(
-            c,
-            c.req.param("prompt") || "",
-            query.safe,
-        );
-        return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
-    },
+    deduplicateGeneration,
+    generateImageVideo,
 );
 
-// Handler for 3D model generation (reuses the "generate.image" EventType,
-// same as video, to avoid touching Tinybird/EventType consumers).
+// 3D shares the image event type to avoid changing Tinybird consumers.
 const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
     track("generate.image"),
     model3dCache,
     generationAccess,
-    async (c) => {
-        const query = c.req.valid("query" as never) as { safe?: SafeValue };
-        const prompt = await applySafety(
-            c,
-            c.req.param("prompt") || "",
-            query.safe,
-        );
-        return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
-    },
+    deduplicateGeneration,
+    generateModel3d,
 );
 
-// Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
@@ -145,66 +160,9 @@ const chatCompletionHandlers = factory.createHandlers(
     track("generate.text"),
     textCache,
     generationAccess,
-    async (c) => {
-        // Use resolved model from middleware for the backend request
-        const requestBody = await applySafetyToChatRequest(c, {
-            ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
-            model: c.var.model.resolved,
-        });
-
-        const response = await handleChatCompletionLocal(c, requestBody);
-
-        assertStreamContentType(c, response);
-
-        // add content filter headers if not streaming
-        let contentFilterHeaders = {};
-        if (!c.var.track.streamRequested) {
-            const responseText = await response.clone().text();
-            try {
-                const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                    JSON.parse(responseText),
-                    { reportInput: true },
-                );
-                contentFilterHeaders =
-                    contentFilterResultsToHeaders(parsedResponse);
-            } catch (parseError) {
-                throw new UpstreamError(502, {
-                    message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: new URL(c.req.url),
-                    upstreamStatus: response.status,
-                    responseBody: responseText,
-                    cause: parseError,
-                });
-            }
-        }
-
-        return withSafetyHeaders(
-            c,
-            new Response(response.body, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...contentFilterHeaders,
-                },
-            }),
-        );
-    },
+    deduplicateGeneration,
+    generateChatCompletion,
 );
-
-// Validate streaming responses: if client requested stream but upstream
-// returned non-SSE, throw rather than forwarding broken data.
-function assertStreamContentType(c: Context<Env>, response: Response): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: new URL(c.req.url),
-                upstreamStatus: response.status,
-                responseBody: contentType,
-            });
-        }
-    }
-}
 
 // Helper to filter models by API key permissions and paid balance.
 function filterEntriesByPermissions(
@@ -259,9 +217,9 @@ async function getVisibleModelEntriesForEventType(
     c: Context<Env>,
     eventType: GenerationModelEntry["eventType"],
 ) {
-    return (await getGenerationModelRegistry(c.env))
-        .visibleEntries(c.var.auth?.user?.id)
-        .filter((entry) => entry.eventType === eventType);
+    return (await getVisibleModelEntries(c)).filter(
+        (entry) => entry.eventType === eventType,
+    );
 }
 
 // "3d" models share the "generate.image" EventType with image/video models
@@ -287,21 +245,6 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
     ).filter((entry) => entry.definition.category === "video");
 }
 
-async function getOrderedVisibleModelEntries(c: Context<Env>) {
-    const entries = await getVisibleModelEntries(c);
-    return [
-        ...entries.filter(
-            (entry) =>
-                entry.eventType === "generate.text" && !entry.communityEndpoint,
-        ),
-        ...entries.filter((entry) => entry.communityEndpoint),
-        ...entries.filter((entry) => entry.eventType === "generate.image"),
-        ...entries.filter((entry) => entry.eventType === "generate.realtime"),
-        ...entries.filter((entry) => entry.eventType === "generate.audio"),
-        ...entries.filter((entry) => entry.eventType === "generate.embedding"),
-    ];
-}
-
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -320,7 +263,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -337,7 +280,7 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByPermissions(
-                await getOrderedVisibleModelEntries(c),
+                await getVisibleModelEntries(c),
                 allowedModels,
                 paidBalance,
             );
@@ -357,6 +300,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...(entry.info.context_length && {
                     context_length: entry.info.context_length,
                 }),
+                ...(entry.info.community && {
+                    per_user_rpm: entry.info.per_user_rpm ?? null,
+                }),
             });
 
             return c.json({
@@ -371,7 +317,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -389,7 +335,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(getOrderedVisibleModelEntries),
+        modelsListHandler(getVisibleModelEntries),
     )
     .get(
         "/3d/models",
@@ -560,38 +506,21 @@ export const proxyRoutes = new Hono<Env>()
     .use(frontendKeyRateLimit)
     .use(balance)
     .get(
-        "/v1/realtime",
-        describeRoute({
-            tags: ["🎙️ Realtime"],
-            summary: "Realtime WebSocket",
-            description: [
-                "OpenAI-compatible Realtime WebSocket proxy.",
-                "",
-                `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
-                "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
-                "",
-                `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
-                "",
-                "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
-            ].join("\n"),
-            responses: {
-                101: {
-                    description: "WebSocket connection established",
-                },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    403,
-                    426,
-                    429,
-                    500,
-                    503,
-                ),
-            },
-        }),
+        "/realtime",
+        describeRealtimeWebSocket("/realtime"),
         validator("query", RealtimeRequestQueryParamsSchema),
-        resolveModel("generate.realtime"),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/realtime",
+        }),
+        handleRealtimeWebSocket,
+    )
+    .get(
+        "/v1/realtime",
+        describeRealtimeWebSocket("/v1/realtime"),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/v1/realtime",
+        }),
         handleRealtimeWebSocket,
     )
     .post(
@@ -656,22 +585,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateEmbeddingRequestSchema),
         resolveModel("generate.embedding"),
         track("generate.embedding"),
+        prepareGenerationRequest,
+        textCache,
         generationAccess,
-        async (c) => {
-            const requestBody = c.req.valid("json" as never) as z.infer<
-                typeof CreateEmbeddingRequestSchema
-            >;
-            const serviceDef = c.var.model.definition;
-            return generateEmbeddings(
-                c.env,
-                {
-                    ...requestBody,
-                    model: getEmbeddingProviderModelId(c.var.model.resolved),
-                },
-                serviceDef,
-                c.var.model.resolved,
-            );
-        },
+        deduplicateGeneration,
+        generateEmbeddingsResponse,
     )
     .post(
         "/text",
@@ -697,18 +615,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
-        async (c) => {
-            const requestBody = await applySafetyToChatRequest(c, {
-                ...(c.req.valid(
-                    "json" as never,
-                ) as CreateChatCompletionRequest),
-                model: c.var.model.resolved,
-            });
-
-            const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(c, response);
-            return withSafetyHeaders(c, response);
-        },
+        deduplicateGeneration,
+        generateTextContent,
     )
     .get(
         "/text/:prompt{[\\s\\S]+}",
@@ -746,34 +654,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
-        async (c) => {
-            // Use resolved model from middleware
-            const model = c.var.model.resolved;
-
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-                system?: string;
-            };
-            const textInputs =
-                typeof query.system === "string"
-                    ? [c.req.param("prompt"), query.system]
-                    : [c.req.param("prompt")];
-            const [prompt, system] = await applySafetyToTexts(
-                c,
-                textInputs,
-                query.safe,
-            );
-
-            return withSafetyHeaders(
-                c,
-                await handleSimpleTextLocal(
-                    c,
-                    prompt,
-                    model,
-                    system ? { system } : undefined,
-                ),
-            );
-        },
+        deduplicateGeneration,
+        generateSimpleText,
     )
     .get(
         // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines
@@ -784,7 +666,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
-                "Generate an image from a text prompt. Returns JPEG or PNG.",
+                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
@@ -806,6 +688,12 @@ export const proxyRoutes = new Hono<Env>()
                                 format: "binary",
                             },
                         },
+                        "image/svg+xml": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
                     },
                 },
                 ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
@@ -821,6 +709,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
         ...imageVideoHandlers,
     )
     .get(
@@ -863,7 +752,8 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", GenerateImageRequestQueryParamsSchema),
+        validator("query", GenerateVideoRequestQueryParamsSchema),
+        resolveModel("generate.image", { defaultModel: "veo" }),
         ...imageVideoHandlers,
     )
     .get(
@@ -876,10 +766,45 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator("query", Generate3dRequestQueryParamsSchema),
+        ...model3dHandlers,
+    )
+    .post(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model With JSON",
+            description:
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -905,8 +830,25 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
-        validator("query", Generate3dRequestQueryParamsSchema),
-        ...model3dHandlers,
+        validator(
+            "query",
+            z
+                .object({
+                    key: z.string().optional().meta({
+                        description:
+                            "API key (alternative to Authorization header)",
+                    }),
+                    safe: SafeSchema,
+                })
+                .strict(),
+        ),
+        validator("json", Generate3dRequestBodySchema),
+        resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+        track("generate.image"),
+        every(prepareGenerationRequest, model3dCache),
+        generationAccess,
+        deduplicateGeneration,
+        generateModel3d,
     )
     .get(
         "/audio/:text",
@@ -918,11 +860,11 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -941,116 +883,19 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description when model=elevenmusic",
+                        "Text to convert to speech, or a music description for a music-generation model",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
         ),
-        validator(
-            "query",
-            z.object({
-                voice: z
-                    .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
-                    .default("alloy")
-                    .meta({
-                        description:
-                            "Voice to use for speech generation (TTS only)",
-                        example: "nova",
-                    }),
-                response_format: z
-                    .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-                    .default("mp3")
-                    .meta({
-                        description:
-                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
-                        example: "mp3",
-                    }),
-                model: z.string().optional().meta({
-                    description:
-                        "Audio model: TTS (default) or elevenmusic for music generation",
-                    example: "tts-1",
-                }),
-                duration: z
-                    .string()
-                    .optional()
-                    .transform((v) => (v ? parseFloat(v) : undefined))
-                    .pipe(z.number().min(0.5).max(300).optional())
-                    .meta({
-                        description:
-                            "Music duration in seconds, 3-300 (elevenmusic only)",
-                        example: "30",
-                    }),
-                seconds: z.coerce.number().min(1).max(380).optional().meta({
-                    description:
-                        "Audio duration in seconds for stable-audio-3-medium/large, 1-380",
-                    example: "30",
-                }),
-                steps: z.coerce.number().int().min(1).max(100).optional().meta({
-                    description:
-                        "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8)",
-                    example: "8",
-                }),
-                negative_prompt: z.string().optional().meta({
-                    description: "Negative prompt for stable-audio-3-large",
-                    example: "distortion, vocals",
-                }),
-                instrumental: z
-                    .enum(["true", "false"])
-                    .default("false")
-                    .transform((v) => v === "true")
-                    .meta({
-                        description:
-                            "If true, guarantees instrumental output (elevenmusic only)",
-                        example: "false",
-                    }),
-                instruct: z.string().optional().meta({
-                    description:
-                        "Emotion/style instruction (qwen-tts-instruct only)",
-                    example: "speak softly and warmly",
-                }),
-                loop: z
-                    .enum(["true", "false"])
-                    .optional()
-                    .transform((v) =>
-                        v === undefined ? undefined : v === "true",
-                    )
-                    .meta({
-                        description:
-                            "Loop the generated sound effect (eleven-sfx only)",
-                        example: "false",
-                    }),
-                prompt_influence: z
-                    .string()
-                    .optional()
-                    .transform((v) => (v ? Number.parseFloat(v) : undefined))
-                    .pipe(z.number().min(0).max(1).optional())
-                    .meta({
-                        description:
-                            "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
-                        example: "0.3",
-                    }),
-                seed: z.coerce
-                    .number()
-                    .int()
-                    .min(-1)
-                    .max(4294967295)
-                    .optional()
-                    .meta({
-                        description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
-                        example: "42",
-                    }),
-                key: z.string().optional().meta({
-                    description:
-                        "API key (alternative to Authorization header)",
-                }),
-                safe: SafeSchema,
-            }),
-        ),
-        resolveModel("generate.audio"),
+        validator("query", simpleAudioQuerySchema),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/audio/{text}",
+        }),
         track("generate.audio"),
         audioCache,
         generationAccess,
+        deduplicateGeneration,
         handleSimpleAudio,
     )
     .post(
@@ -1061,7 +906,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).',
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models support `"b64_json"` only.',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1080,6 +925,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        generationAccess,
+        every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
+        prepareGenerationRequest,
+        imageCache,
+        deduplicateGeneration,
         handleImageGeneration,
     )
     .post(
@@ -1092,6 +942,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1107,119 +958,11 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image"),
+        resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
+        prepareGenerationRequest,
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
         handleImageEdit,
     );
-
-/**
- * Build an in-process subset of Gen's generation routes for the hosted MCP
- * gateway. The caller supplies the already-validated MCP auth context, so the
- * inbound OAuth token never becomes an upstream Gen bearer credential.
- */
-export function createMcpGenerationRoutes(
-    authContext: AuthVariables["auth"],
-    parent: Context<Env>,
-): Hono<Env> {
-    return new Hono<Env>()
-        .use("*", async (c, next) => {
-            c.set("auth", {
-                ...authContext,
-                requireModelAccess: () => {
-                    const allowed = authContext.apiKey?.permissions?.models;
-                    const model = c.var.model;
-                    if (allowed && model && !allowed.includes(model.resolved)) {
-                        throw new HTTPException(403, {
-                            message: `Model '${model.requested}' is not allowed for this API key`,
-                        });
-                    }
-                },
-            });
-            c.set("log", parent.var.log);
-            c.set("requestStartedAt", parent.var.requestStartedAt);
-            await next();
-        })
-        .use("*", balance)
-        .post("/v1/chat/completions", ...chatCompletionHandlers)
-        .get(
-            "/image/:prompt{[\\s\\S]+}",
-            validator("param", z.object({ prompt: z.string().min(1) })),
-            validator("query", GenerateImageRequestQueryParamsSchema),
-            ...imageVideoHandlers,
-        )
-        .get(
-            "/video/:prompt{[\\s\\S]+}",
-            validator("param", z.object({ prompt: z.string().min(1) })),
-            validator("query", GenerateImageRequestQueryParamsSchema),
-            ...imageVideoHandlers,
-        );
-}
-
-export function contentFilterResultsToHeaders(
-    response: CreateChatCompletionResponse,
-): Record<string, string> {
-    const promptFilters =
-        response.prompt_filter_results?.[0]?.content_filter_results;
-    const completionFilters = response.choices?.[0]?.content_filter_results;
-
-    const mapToString = (value: unknown): string | undefined =>
-        value ? String(value) : undefined;
-
-    // Build header mappings
-    const headerMappings: Array<[string, unknown]> = [
-        // Prompt filters
-        ["x-moderation-prompt-hate-severity", promptFilters?.hate?.severity],
-        [
-            "x-moderation-prompt-self-harm-severity",
-            promptFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-prompt-sexual-severity",
-            promptFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-prompt-violence-severity",
-            promptFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-prompt-jailbreak-detected",
-            promptFilters?.jailbreak?.detected,
-        ],
-        // Completion filters
-        [
-            "x-moderation-completion-hate-severity",
-            completionFilters?.hate?.severity,
-        ],
-        [
-            "x-moderation-completion-self-harm-severity",
-            completionFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-completion-sexual-severity",
-            completionFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-completion-violence-severity",
-            completionFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-completion-protected-material-text-detected",
-            completionFilters?.protected_material_text?.detected,
-        ],
-        [
-            "x-moderation-completion-protected-material-code-detected",
-            completionFilters?.protected_material_code?.detected,
-        ],
-    ];
-
-    // Convert to headers, filtering out undefined values
-    const headers: Record<string, string> = {};
-    for (const [key, value] of headerMappings) {
-        const stringValue = mapToString(value);
-        if (stringValue !== undefined) {
-            headers[key] = stringValue;
-        }
-    }
-
-    return headers;
-}

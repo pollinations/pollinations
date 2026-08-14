@@ -18,20 +18,21 @@
  */
 
 import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
-import { mcpRoutes } from "./routes/mcp.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
+export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
+export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();
@@ -59,14 +60,6 @@ function rewriteRequest(request: Request, url: URL): Request {
 
 function notFound(): Response {
     return noIndex(new Response("Not Found", { status: 404 }));
-}
-
-function isMcpGateway(c: Context<Env>): boolean {
-    const origin = getPublicOrigin(c);
-    return (
-        origin === "https://mcp.pollinations.ai" ||
-        origin === "https://staging.mcp.pollinations.ai"
-    );
 }
 
 function robotsTxt(): Response {
@@ -118,11 +111,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
     .get("/manifest.webmanifest", () => manifestResponse())
-    .get("/", (c) =>
-        isMcpGateway(c)
-            ? new Response(null, { status: 405, headers: { Allow: "POST" } })
-            : c.html(docsLandingHtml(c)),
-    )
+    .get("/", (c) => c.html(docsLandingHtml(c)))
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -156,7 +145,6 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
-    .route("/", mcpRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.

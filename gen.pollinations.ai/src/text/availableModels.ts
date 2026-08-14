@@ -4,16 +4,20 @@ import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import {
+    adaptGoogleSearchToolForOpenRouter,
+    adaptGoogleSearchToolForVertex,
+    createGeminiToolsTransform,
+    stripLogitBiasForNativeWebSearch,
+} from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
-import type { TransformFn } from "./types.js";
+import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
@@ -25,12 +29,27 @@ const stripReasoning = createReasoningEffortTransform("strip");
 // 4.6+ use adaptive + output_config.effort.
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
+const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
 
 interface ModelDefinition {
     name: string;
-    config: (typeof portkeyConfig)[string];
+    config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Route through the Azure Responses API instead of Chat Completions. */
+    useResponsesApi?: boolean;
 }
+
+function usesGrokReasoning(options: TransformOptions): boolean {
+    return (
+        options.reasoning_effort !== undefined &&
+        options.reasoning_effort !== "none"
+    );
+}
+
+const grokTransform: TransformFn = (messages, options) =>
+    usesGrokReasoning(options)
+        ? stripCacheControl(messages, options)
+        : pipe(stripCacheControl, stripReasoning)(messages, options);
 
 const models: ModelDefinition[] = [
     {
@@ -60,19 +79,26 @@ const models: ModelDefinition[] = [
     {
         name: "gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
     },
     {
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
+    },
+    {
+        name: "command-a-plus",
+        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },
     {
         name: "qwen-coder",
@@ -98,6 +124,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.8-max",
+        config: portkeyConfig["qwen/qwen3.8-max"],
+    },
+    {
+        name: "qwen3.7-flash",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -116,7 +151,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "step-flash",
-        config: portkeyConfig["stepfun/step-3.7-flash"],
+        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
         transform: mandatoryReasoning,
     },
     {
@@ -132,7 +167,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-0731"
+        ],
         transform: fireworksThinking,
     },
     {
@@ -145,19 +182,16 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek-pro",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
         transform: fireworksThinking,
     },
     {
         name: "grok",
-        config: portkeyConfig["grok-4-20-non-reasoning"],
-        // Non-reasoning deployment 500s if reasoning_effort is forwarded.
-        transform: pipe(stripCacheControl, stripReasoning),
-    },
-    {
-        name: "grok-4-20-reasoning",
-        config: portkeyConfig["grok-4-20-reasoning"],
-        transform: stripCacheControl,
+        config: (options = {}) =>
+            (usesGrokReasoning(options)
+                ? portkeyConfig["grok-4-20-reasoning"]
+                : portkeyConfig["grok-4-20-non-reasoning"])(),
+        transform: grokTransform,
     },
     {
         name: "grok-large",
@@ -165,8 +199,8 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "grok-4.5",
-        config: portkeyConfig["x-ai/grok-4.5"],
+        name: "grok-4.6",
+        config: portkeyConfig["x-ai/grok-4.6"],
         transform: stripCacheControl,
     },
     {
@@ -208,8 +242,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-8"],
-        transform: claudeAdaptiveThinking,
+        config: portkeyConfig["claude-opus-5"],
+        transform: claudeOpus5Thinking,
     },
     {
         name: "claude-fable-5",
@@ -218,65 +252,52 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-3-flash",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3.5-flash"],
+        config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-flash"),
+            // Gemini 3.7 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["gemini-3.1-flash-lite"],
+        name: "gemini-flash-lite-3.5",
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-fast",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            stripLogitBiasForNativeWebSearch,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
-        ),
-    },
-    {
-        name: "gemini-search-fast",
-        config: portkeyConfig["gemini-3.1-flash-lite"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v3-flash"),
-        ),
-    },
-    {
-        name: "gemini-search-large",
-        config: portkeyConfig["gemini-3.5-flash"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
@@ -292,22 +313,14 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
-        transform: createPerplexitySearchTransform("low"),
-    },
-    {
-        name: "perplexity-high",
-        config: portkeyConfig["sonar"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity",
         config: portkeyConfig["sonar-pro"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
-        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "kimi",
@@ -321,8 +334,33 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k3",
-        config: portkeyConfig["moonshotai/kimi-k3"],
-        transform: stripCacheControl,
+        config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
+        name: "laguna",
+        config: portkeyConfig["poolside/laguna-s-2.1"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "longcat",
+        config: portkeyConfig["meituan/longcat-2.0"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "inkling",
+        config: portkeyConfig["thinkingmachines/inkling-small"],
+    },
+    {
+        name: "nemotron",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "mimo-v2.5",
@@ -336,10 +374,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
-        config: portkeyConfig["gemini-3.1-pro-preview"],
+        config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -371,8 +409,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "muse-spark-1.1",
-        config: portkeyConfig["meta/muse-spark-1.1"],
+        name: "muse-glimmer",
+        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "muse-spark-1.2",
+        config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
         name: "llama",
@@ -396,10 +439,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
-    },
-    {
-        name: "polly",
-        config: portkeyConfig["polly"],
     },
     {
         name: "qwen-safety",

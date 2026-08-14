@@ -20,10 +20,6 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
-import {
-    MCP_TOOLS_SCOPE,
-    normalizeMcpResource,
-} from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -80,7 +76,6 @@ export function Authorize() {
         models,
         budget,
         expiry,
-        resource,
         scope: urlScope,
     } = useSearch({ from: "/authorize" });
     const navigate = useNavigate();
@@ -89,7 +84,6 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
-    const isMetadataClient = app_key?.startsWith("https://") === true;
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -136,19 +130,17 @@ export function Authorize() {
     const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
         requestedScopes.has(p),
     );
-    const isAttributionPending = !!app_key && !attribution && !isMetadataClient;
+    const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
-        (!isCodeFlow ||
-            isMetadataClient ||
-            redirectValidationState === "valid");
+        (!isCodeFlow || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
         (isCodeFlow
-            ? isMetadataClient || redirectValidationState === "valid"
+            ? redirectValidationState === "valid"
             : !app_key || redirectValidationState === "valid");
 
     const isMobile = window.innerWidth < 768;
@@ -276,21 +268,11 @@ export function Authorize() {
                     );
                     return;
                 }
-                if (resource && !normalizeMcpResource(resource)) {
-                    setError("Unsupported OAuth resource");
-                    return;
-                }
             }
 
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
             if (!app_key) {
-                setRedirectValidationState("valid");
-                return;
-            }
-            if (isMetadataClient) {
-                // POST /api/oauth/code fetches and validates the document
-                // immediately before it creates the authorization code.
                 setRedirectValidationState("valid");
                 return;
             }
@@ -347,7 +329,6 @@ export function Authorize() {
     }, [
         isDeviceMode,
         isCodeFlow,
-        isMetadataClient,
         user_code,
         urlScope,
         app_key,
@@ -355,7 +336,6 @@ export function Authorize() {
         response_type,
         code_challenge,
         code_challenge_method,
-        resource,
         setAccountPermissions,
     ]);
 
@@ -385,12 +365,6 @@ export function Authorize() {
                 keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
-            const mcpResource =
-                isCodeFlow && resource ? normalizeMcpResource(resource) : null;
-            const grantedScope = [
-                ...(mcpResource ? [MCP_TOOLS_SCOPE] : []),
-                ...grantedAccountPermissions,
-            ].join(" ");
             const { key, id, expiresIn } = await createKeyWithPermissions({
                 name: isDeviceMode
                     ? `Device ${user_code}`
@@ -399,7 +373,7 @@ export function Authorize() {
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
-                    ...(app_key?.startsWith("pk_") &&
+                    ...(app_key &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -408,10 +382,6 @@ export function Authorize() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
-                    ...(mcpResource && {
-                        oauthResource: mcpResource,
-                        oauthScopes: [MCP_TOOLS_SCOPE],
-                    }),
                 },
                 permissions: {
                     allowedModels,
@@ -464,8 +434,9 @@ export function Authorize() {
                                 // distinct from undefined (nothing requested)
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
-                                scope: grantedScope || undefined,
-                                ...(mcpResource && { resource: mcpResource }),
+                                scope: requestedScopes.size
+                                    ? grantedAccountPermissions.join(" ")
+                                    : undefined,
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",
                                 expiresIn,

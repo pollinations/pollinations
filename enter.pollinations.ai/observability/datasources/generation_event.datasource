@@ -1,8 +1,8 @@
-TOKEN tinybird_ingest APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-Generative AI events with usage, pricing, metadata, moderation, and cache info
+Historical generation events retained for audit after the v2 cutover.
+Read-only; current ingestion and analytics use generation_event_v2.
 
 SCHEMA >
 -- Event
@@ -22,6 +22,8 @@ SCHEMA >
 -- User
 `user_id`               String                  `json:$.userId` DEFAULT 'undefined',
 `user_tier`             LowCardinality(String)  `json:$.userTier` DEFAULT 'undefined',
+-- Legacy columns retained to avoid a destructive datasource migration. New
+-- events use user_id and leave these at their defaults.
 `user_github_id`        String                  `json:$.userGithubId` DEFAULT 'undefined',
 `user_github_username`  String                  `json:$.userGithubUsername` DEFAULT 'undefined',
 

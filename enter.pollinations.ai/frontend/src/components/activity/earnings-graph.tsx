@@ -1,18 +1,19 @@
 import {
-    Button,
     CardIcon,
     Chip,
-    DownloadIcon,
     EarningsIcon,
     InlineLink,
-    MultiSelect,
     SproutIcon,
     StatCard,
     Surface,
-    Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+import {
+    ActivityFilter,
+    CsvDownloadButton,
+    downloadFile,
+} from "./activity-helpers";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
@@ -78,37 +79,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             period: period.period,
         });
 
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/earnings?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
+        downloadFile(`/api/account/earnings?${params.toString()}`);
     }
-
-    const downloadButton = (
-        <Button
-            as="button"
-            onClick={downloadEarnings}
-            disabled={downloadDisabled}
-            className="flex items-center gap-1.5"
-        >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            CSV
-        </Button>
-    );
-    const downloadAction = downloadDisabled ? (
-        <Tooltip
-            triggerAs="span"
-            content={downloadDisabledReason}
-            align="center"
-            className="inline-flex"
-        >
-            {downloadButton}
-        </Tooltip>
-    ) : (
-        downloadButton
-    );
 
     return (
         <div className="flex flex-col gap-2">
@@ -117,51 +89,29 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     <EarningsIcon className="h-4 w-4 shrink-0" />
                     Earnings
                 </div>
-                {downloadAction}
+                <CsvDownloadButton
+                    disabled={downloadDisabled}
+                    disabledReason={downloadDisabledReason}
+                    onClick={downloadEarnings}
+                />
             </div>
             <Surface className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-col items-start gap-2">
-                        <div className="flex w-full items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                Apps
-                            </span>
-                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                {appSelectOptions.length === 0 ? (
-                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                                        No app earnings in this period
-                                    </span>
-                                ) : (
-                                    <MultiSelect
-                                        options={appSelectOptions}
-                                        selected={selectedAppKeyIds}
-                                        onChange={onSelectedAppKeyIdsChange}
-                                        placeholder="All"
-                                        align="start"
-                                    />
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex w-full items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                Models
-                            </span>
-                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                {modelSelectOptions.length === 0 ? (
-                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                                        No model earnings in this period
-                                    </span>
-                                ) : (
-                                    <MultiSelect
-                                        options={modelSelectOptions}
-                                        selected={selectedModelIds}
-                                        onChange={onSelectedModelIdsChange}
-                                        placeholder="All"
-                                        align="start"
-                                    />
-                                )}
-                            </div>
-                        </div>
+                        <ActivityFilter
+                            label="Apps"
+                            options={appSelectOptions}
+                            selected={selectedAppKeyIds}
+                            onChange={onSelectedAppKeyIdsChange}
+                            emptyMessage="No app earnings in this period"
+                        />
+                        <ActivityFilter
+                            label="Models"
+                            options={modelSelectOptions}
+                            selected={selectedModelIds}
+                            onChange={onSelectedModelIdsChange}
+                            emptyMessage="No model earnings in this period"
+                        />
                         <MetricTabs value={metric} onChange={onMetricChange} />
                     </div>
 

@@ -6,28 +6,28 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
-    "community",
     "embedding",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
-export const MODEL_SORT_KEYS = [
-    "name",
-    "perPollen",
-    "input",
-    "output",
-] as const;
-export type ModelSortKey = (typeof MODEL_SORT_KEYS)[number];
+export const MODEL_SCOPES = ["pollinations", "community"] as const;
+export type ModelScope = (typeof MODEL_SCOPES)[number];
 
-export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
-export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
+export const MODEL_SORTS = [
+    "newest",
+    "price-low",
+    "price-high",
+    "title",
+    "brand",
+] as const;
+export type ModelSort = (typeof MODEL_SORTS)[number];
 
 export type ModelSearch = {
+    scope?: ModelScope;
     category?: ModelCategory;
     q?: string;
-    sort?: ModelSortKey;
-    dir?: ModelSortDirection;
+    sort?: ModelSort;
 };
 
 function includes<T extends string>(
@@ -40,23 +40,25 @@ function includes<T extends string>(
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
+    const scope = includes(MODEL_SCOPES, search.scope)
+        ? search.scope
+        : "pollinations";
+    const category = includes(MODEL_CATEGORIES, search.category)
+        ? search.category
+        : "all";
+    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "newest";
+    const query = typeof search.q === "string" ? search.q.trim() : "";
+
     return {
+        scope: scope === "community" ? scope : undefined,
         category:
-            includes(MODEL_CATEGORIES, search.category) &&
-            search.category !== "all"
-                ? search.category
+            category !== "all" &&
+            (scope !== "community" ||
+                category === "text" ||
+                category === "image")
+                ? category
                 : undefined,
-        q:
-            typeof search.q === "string" && search.q.length > 0
-                ? search.q
-                : undefined,
-        sort:
-            includes(MODEL_SORT_KEYS, search.sort) &&
-            search.sort !== "perPollen"
-                ? search.sort
-                : undefined,
-        dir: includes(MODEL_SORT_DIRECTIONS, search.dir)
-            ? search.dir
-            : undefined,
+        q: query || undefined,
+        sort: sort === "newest" ? undefined : sort,
     };
 }

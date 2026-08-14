@@ -313,9 +313,17 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         reasoning_effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
+            .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
@@ -517,6 +525,7 @@ const OpenAIModelSchema = z
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -556,6 +565,13 @@ const imageQualityField = z
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
+const imageResolutionField = z
+    .enum(["1k", "2k", "480p", "720p", "1080p"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -584,6 +600,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -594,6 +611,9 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
 });
 
@@ -642,6 +662,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough()

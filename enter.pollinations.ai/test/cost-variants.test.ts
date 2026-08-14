@@ -87,17 +87,17 @@ describe("long-context cost variants", () => {
 
     it("Grok uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -329,12 +329,12 @@ describe("long-context cost variants", () => {
             completionTextTokens: 3.84 / 1e6,
         });
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).priceDefinition,
         ).toMatchObject({
             promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 0.6 / 1e6,
+            promptCachedTokens: 1 / 1e6,
             completionTextTokens: 12 / 1e6,
         });
     });

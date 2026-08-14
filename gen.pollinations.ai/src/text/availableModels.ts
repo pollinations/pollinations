@@ -199,8 +199,8 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "grok-4.5",
-        config: portkeyConfig["x-ai/grok-4.5"],
+        name: "grok-4.6",
+        config: portkeyConfig["x-ai/grok-4.6"],
         transform: stripCacheControl,
     },
     {
@@ -262,12 +262,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
-            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
+            // Gemini 3.7 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -409,8 +409,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "muse-spark-1.1",
-        config: portkeyConfig["meta/muse-spark-1.1"],
+        name: "muse-glimmer",
+        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "muse-spark-1.2",
+        config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
         name: "llama",

@@ -139,13 +139,18 @@ async function prepareVideoRequest(params) {
     return { encodedPrompt, queryParams };
 }
 
-async function generateImageUrl(params) {
-    requireApiKey();
+async function generateImageUrl(params, context) {
+    requireApiKey(context);
 
     const { prompt, model, width, height, seed, quality } = params;
     const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
-    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+    const authUrl = buildUrl(
+        `/image/${encodedPrompt}`,
+        queryParams,
+        true,
+        context,
+    );
 
     try {
         const controller = new AbortController();
@@ -153,7 +158,7 @@ async function generateImageUrl(params) {
 
         const preGenResponse = await fetch(authUrl, {
             method: "GET",
-            headers: getAuthHeaders(),
+            headers: getAuthHeaders(context),
             signal: controller.signal,
         }).finally(() => clearTimeout(timeoutId));
 
@@ -196,8 +201,8 @@ async function generateImageUrl(params) {
     ]);
 }
 
-async function generateImage(params) {
-    requireApiKey();
+async function generateImage(params, context) {
+    requireApiKey(context);
 
     const { prompt, model, width, height, seed, quality, transparent } = params;
     const { encodedPrompt, queryParams } = await prepareImageRequest(params);
@@ -205,7 +210,11 @@ async function generateImage(params) {
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const { buffer, contentType } = await fetchBinaryWithAuth(
+            url,
+            {},
+            context,
+        );
         const base64Data = arrayBufferToBase64(buffer);
 
         const metadata = {
@@ -230,8 +239,8 @@ async function generateImage(params) {
     }
 }
 
-async function generateImageBatch(params) {
-    requireApiKey();
+async function generateImageBatch(params, context) {
+    requireApiKey(context);
 
     const {
         prompts,
@@ -272,7 +281,11 @@ async function generateImageBatch(params) {
             });
 
             const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-            const { buffer, contentType } = await fetchBinaryWithAuth(url);
+            const { buffer, contentType } = await fetchBinaryWithAuth(
+                url,
+                {},
+                context,
+            );
             const base64Data = arrayBufferToBase64(buffer);
 
             return {
@@ -330,8 +343,8 @@ async function generateImageBatch(params) {
     return createMCPResponse(responseContent);
 }
 
-async function generateVideo(params) {
-    requireApiKey();
+async function generateVideo(params, context) {
+    requireApiKey(context);
 
     const {
         prompt,
@@ -347,7 +360,11 @@ async function generateVideo(params) {
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const { buffer, contentType } = await fetchBinaryWithAuth(
+            url,
+            {},
+            context,
+        );
         const base64Data = arrayBufferToBase64(buffer);
 
         const metadata = {
@@ -379,8 +396,8 @@ async function generateVideo(params) {
     }
 }
 
-async function generateVideoUrl(params) {
-    requireApiKey();
+async function generateVideoUrl(params, context) {
+    requireApiKey(context);
 
     const {
         prompt,
@@ -393,12 +410,17 @@ async function generateVideoUrl(params) {
     } = params;
     const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
-    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+    const authUrl = buildUrl(
+        `/image/${encodedPrompt}`,
+        queryParams,
+        true,
+        context,
+    );
 
     try {
         const headResponse = await fetch(authUrl, {
             method: "HEAD",
-            headers: getAuthHeaders(),
+            headers: getAuthHeaders(context),
         });
         if (!headResponse.ok) {
             console.warn(
@@ -434,8 +456,8 @@ async function generateVideoUrl(params) {
     ]);
 }
 
-async function describeImage(params) {
-    requireApiKey();
+async function describeImage(params, context) {
+    requireApiKey(context);
 
     const {
         imageUrl,
@@ -448,12 +470,15 @@ async function describeImage(params) {
     }
 
     try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "image_url",
-            mediaUrl: imageUrl,
-        });
+        const { content, model: respondedModel } = await chatWithMedia(
+            {
+                model,
+                prompt,
+                mediaType: "image_url",
+                mediaUrl: imageUrl,
+            },
+            context,
+        );
 
         return createMCPResponse([
             createTextContent(
@@ -472,8 +497,8 @@ async function describeImage(params) {
     }
 }
 
-async function analyzeVideo(params) {
-    requireApiKey();
+async function analyzeVideo(params, context) {
+    requireApiKey(context);
 
     const {
         videoUrl,
@@ -486,12 +511,15 @@ async function analyzeVideo(params) {
     }
 
     try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "video_url",
-            mediaUrl: videoUrl,
-        });
+        const { content, model: respondedModel } = await chatWithMedia(
+            {
+                model,
+                prompt,
+                mediaType: "video_url",
+                mediaUrl: videoUrl,
+            },
+            context,
+        );
 
         return createMCPResponse([
             createTextContent(

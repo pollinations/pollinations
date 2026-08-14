@@ -31,8 +31,8 @@ async function resolveAudioModel(requested) {
     }
 }
 
-async function respondAudio(params) {
-    requireApiKey();
+async function respondAudio(params, context) {
+    requireApiKey(context);
 
     const {
         prompt,
@@ -73,7 +73,11 @@ async function respondAudio(params) {
     );
 
     try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const { buffer, contentType } = await fetchBinaryWithAuth(
+            url,
+            {},
+            context,
+        );
         const base64Data = arrayBufferToBase64(buffer);
 
         const mimeType =
@@ -102,8 +106,8 @@ async function respondAudio(params) {
     }
 }
 
-async function sayText(params) {
-    requireApiKey();
+async function sayText(params, context) {
+    requireApiKey(context);
 
     const {
         text,
@@ -144,7 +148,11 @@ async function sayText(params) {
     );
 
     try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const { buffer, contentType } = await fetchBinaryWithAuth(
+            url,
+            {},
+            context,
+        );
         const base64Data = arrayBufferToBase64(buffer);
 
         const mimeType =
@@ -214,8 +222,8 @@ async function listAudioVoices(_params) {
     }
 }
 
-async function transcribeAudio(params) {
-    requireApiKey();
+async function transcribeAudio(params, context) {
+    requireApiKey(context);
 
     const {
         audioUrl,
@@ -228,12 +236,15 @@ async function transcribeAudio(params) {
     }
 
     try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "input_audio",
-            mediaUrl: audioUrl,
-        });
+        const { content, model: respondedModel } = await chatWithMedia(
+            {
+                model,
+                prompt,
+                mediaType: "input_audio",
+                mediaUrl: audioUrl,
+            },
+            context,
+        );
 
         return createMCPResponse([
             createTextContent(

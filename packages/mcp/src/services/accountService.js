@@ -7,9 +7,13 @@ import {
     fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
 
-async function getBalance(_params) {
-    requireApiKey();
-    const data = await fetchJsonWithAuth(buildUrl("/account/balance"));
+async function getBalance(_params, context) {
+    requireApiKey(context);
+    const data = await fetchJsonWithAuth(
+        buildUrl("/account/balance"),
+        {},
+        context,
+    );
     return createMCPResponse([
         createTextContent(
             {
@@ -21,8 +25,8 @@ async function getBalance(_params) {
     ]);
 }
 
-async function getUsage(params) {
-    requireApiKey();
+async function getUsage(params, context) {
+    requireApiKey(context);
 
     const { daily = false, days, limit } = params || {};
 
@@ -34,7 +38,7 @@ async function getUsage(params) {
         url.searchParams.set("limit", String(limit));
     }
 
-    const data = await fetchJsonWithAuth(url.toString());
+    const data = await fetchJsonWithAuth(url.toString(), {}, context);
     const records = data.usage || [];
 
     if (daily) {
@@ -77,9 +81,13 @@ async function getUsage(params) {
     ]);
 }
 
-async function listQuests(_params) {
-    requireApiKey();
-    const data = await fetchJsonWithAuth(buildUrl("/account/quests"));
+async function listQuests(_params, context) {
+    requireApiKey(context);
+    const data = await fetchJsonWithAuth(
+        buildUrl("/account/quests"),
+        {},
+        context,
+    );
     return createMCPResponse([createTextContent(data, true)]);
 }
 

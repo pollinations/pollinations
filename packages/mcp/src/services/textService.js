@@ -11,8 +11,8 @@ import {
     validateTextModel,
 } from "../utils/models.js";
 
-async function generateText(params) {
-    requireApiKey();
+async function generateText(params, context) {
+    requireApiKey(context);
 
     const {
         prompt,
@@ -62,7 +62,7 @@ async function generateText(params) {
     }
 
     try {
-        const result = await postChatCompletion(requestBody);
+        const result = await postChatCompletion(requestBody, context);
         const content = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([createTextContent(content)]);
@@ -72,8 +72,8 @@ async function generateText(params) {
     }
 }
 
-async function chatCompletion(params) {
-    requireApiKey();
+async function chatCompletion(params, context) {
+    requireApiKey(context);
 
     const {
         messages,
@@ -144,7 +144,7 @@ async function chatCompletion(params) {
     };
 
     try {
-        const result = await postChatCompletion(requestBody);
+        const result = await postChatCompletion(requestBody, context);
 
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
@@ -314,8 +314,8 @@ async function listTextModels(_params) {
     }
 }
 
-async function webSearch(params) {
-    requireApiKey();
+async function webSearch(params, context) {
+    requireApiKey(context);
 
     const { query, model = "perplexity-fast", detailed = false } = params;
 
@@ -349,7 +349,7 @@ async function webSearch(params) {
     };
 
     try {
-        const result = await postChatCompletion(requestBody);
+        const result = await postChatCompletion(requestBody, context);
         const answer = result.choices?.[0]?.message?.content || "";
 
         const responseData = {

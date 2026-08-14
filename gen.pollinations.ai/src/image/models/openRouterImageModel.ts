@@ -507,12 +507,7 @@ export async function callOpenRouterGrokImagineImage2API(
     );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
-        throw new HttpError(
-            "OpenRouter image API returned no image",
-            502,
-            data,
-            OPENROUTER_IMAGE_URL,
-        );
+        throw buildOpenRouterNoImageError(data);
     }
 
     logOps("Grok Imagine Image 2.0 generation complete", {

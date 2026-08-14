@@ -231,6 +231,32 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 "grok-imagine-image-2.0 supports at most 3 reference images",
         });
     });
+
+    it("returns content-policy refusals as client errors", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [],
+                error: {
+                    message: "Request refused by content policy",
+                    metadata: { error_type: "content_policy_violation" },
+                },
+            }),
+        );
+
+        await expect(
+            callOpenRouterGrokImagineImage2API("test prompt", {
+                ...baseParams,
+                model: "grok-imagine-image-2.0",
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "Request refused by content policy",
+        });
+    });
 });
 
 const geminiUsage = {

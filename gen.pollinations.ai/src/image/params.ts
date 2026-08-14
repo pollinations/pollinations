@@ -58,7 +58,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.literal(validQualities).catch("medium"),
+        quality: z.string().catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -147,8 +147,13 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
+        const quality = validQualities.includes(
+            data.quality as (typeof validQualities)[number],
+        )
+            ? (data.quality as (typeof validQualities)[number])
+            : "medium";
 
-        return { ...data, width, height, dimensionsExplicit };
+        return { ...data, quality, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

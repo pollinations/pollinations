@@ -73,6 +73,18 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("does not silently upgrade invalid Grok Imagine Image 2.0 quality", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "grok-imagine-image-2.0",
+                quality: "LOW",
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.parse({ model: "flux", quality: "LOW" }).quality,
+        ).toBe("medium");
+    });
+
     it("rejects an unsupported resolution", () => {
         const result = ImageParamsSchema.safeParse({
             model: "veo",

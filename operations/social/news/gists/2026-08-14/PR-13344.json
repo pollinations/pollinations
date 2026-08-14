@@ -1,0 +1,33 @@
+{
+  "pr_number": 13344,
+  "title": "fix: preserve generation coordinator migration",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13344",
+  "merged_at": "2026-08-14T03:47:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Retains the already-applied Durable Object v2 migration after the feature rollback\n- Keeps an inert coordinator export and binding without routing generation traffic through it\n- Prevents Wrangler from replaying the PollenRateLimiter v1 migration",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Migration memory restored",
+    "blurb": "The hive kept its migration map after a feature rollback. No traffic rerouted, no old Durable Object history accidentally replanted.",
+    "summary": "Preserved the applied Durable Object v2 migration by retaining an inert GenerationCoordinator export and binding, preventing Wrangler from replaying the PollenRateLimiter v1 migration.",
+    "impact": "Generation traffic continues using its existing route while future deployments retain the correct Durable Object migration history.",
+    "keywords": [
+      "durable-objects",
+      "wrangler",
+      "migration",
+      "generation",
+      "cloudflare"
+    ],
+    "visual_concept": "Polli is a careful gardener preserving labeled seed packets in a cozy server garden: one packet is marked GenerationCoordinator and an older PollenRateLimiter packet stays safely archived, representing migration history being retained without activating the coordinator. A small CRT monitor robot can inspect the garden ledger while vines and code-plants signal safe deployment continuity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny archivist hat, carefully shelving glowing seed packets labeled “GenerationCoordinator” and “v1” in a warm code-garden while a curious CRT monitor robot checks a migration ledger; lime green (#ecf874) code-plants and soft pastel flowers grow around a quiet retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13344.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny archivist hat, carefully shelving glowing seed packets labeled “GenerationCoordinator” and “v1” in a warm code-garden while a curious CRT monitor robot checks a migration ledger; lime green (#ecf874) code-plants and soft pastel flowers grow around a quiet retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-14T03:48:05.785815+00:00"
+}

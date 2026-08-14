@@ -139,10 +139,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "x-ai/grok-4.5": () =>
+    "x-ai/grok-4.6": () =>
         createOpenRouterModelConfig({
-            model: "x-ai/grok-4.5",
-            defaultOptions: { provider: { sort: "price" } },
+            model: "x-ai/grok-4.6",
+            defaultOptions: {
+                provider: {
+                    only: ["xai/zdr"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     "xiaomi/mimo-v2.5": () =>
         createOpenRouterModelConfig({

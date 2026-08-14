@@ -813,8 +813,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576, // xAI Grok 4.3 context window.
         isSpecialized: false,
     },
-    "grok-4.5": {
-        aliases: ["grok-4-5"],
+    "grok-4.6": {
+        aliases: ["grok-4.5", "grok-4-5"],
         provider: "openrouter",
         brand: "xAI",
         category: "text",
@@ -825,14 +825,14 @@ export const TEXT_SERVICES = {
         // prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(6),
         },
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(0.6),
+                    promptCachedTokens: perMillion(1),
                     completionTextTokens: perMillion(12),
                 },
             },
@@ -846,7 +846,7 @@ export const TEXT_SERVICES = {
             },
             "<200K context",
         ),
-        title: "Grok 4.5",
+        title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],

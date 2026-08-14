@@ -199,8 +199,8 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "grok-4.5",
-        config: portkeyConfig["x-ai/grok-4.5"],
+        name: "grok-4.6",
+        config: portkeyConfig["x-ai/grok-4.6"],
         transform: stripCacheControl,
     },
     {

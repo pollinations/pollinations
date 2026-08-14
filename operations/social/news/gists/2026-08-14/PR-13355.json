@@ -1,0 +1,33 @@
+{
+  "pr_number": 13355,
+  "title": "docs: add missing supporters to README",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13355",
+  "merged_at": "2026-08-14T09:13:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- The website's Community page lists 21 supporters; the README only had 11.\n- Adds the 10 missing ones (OpenAI, OpenRouter, Fireworks AI, Replicate, RunPod, OVHcloud, Lambda Labs, ElevenLabs, AssemblyAI, Alibaba Cloud) in the same order and style as `pollinations.ai/src/copy/content/community.ts`.\n- All 21 URLs verified reachable.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The thank-you garden grew",
+    "blurb": "Ten missing supporters have been added to the README's thank-you patch. The credits now match the Community page, because appreciation should not require a scavenger hunt.",
+    "summary": "Updated README.md with 10 supporters—OpenAI, OpenRouter, Fireworks AI, Replicate, RunPod, OVHcloud, Lambda Labs, ElevenLabs, AssemblyAI, and Alibaba Cloud—so its full 21-supporter list matches the Community page.",
+    "impact": "README visitors now see the same complete, verified supporter roster as the website's Community page.",
+    "keywords": [
+      "documentation",
+      "readme",
+      "community",
+      "supporters",
+      "credits"
+    ],
+    "visual_concept": "A cozy community garden of 21 labeled flower plaques representing supporters, with Polli carefully adding the final ten plaques to match a nearby Community-page noticeboard; vines and code-plants connect the garden and retro terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, adding the last flower plaques to a warm community thank-you garden beside a retro monitor showing a complete list of 21 supporters. Lime green (#ecf874) is prominent among pastel flowers, code-plants, and soft warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13355.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, adding the last flower plaques to a warm community thank-you garden beside a retro monitor showing a complete list of 21 supporters. Lime green (#ecf874) is prominent among pastel flowers, code-plants, and soft warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-14T09:14:03.646723+00:00"
+}

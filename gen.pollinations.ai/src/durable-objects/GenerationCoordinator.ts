@@ -16,6 +16,13 @@ type PersistedJob = Omit<GenerationJob, "request"> & {
     bodyChunks: number;
 };
 
+function bodyChunkKeys(count: number): string[] {
+    return Array.from(
+        { length: count },
+        (_, index) => `${BODY_KEY_PREFIX}${index}`,
+    );
+}
+
 async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
@@ -48,7 +55,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
             if (cachePresent) {
-                if (stored) await this.clear();
+                if (stored) {
+                    await this.clear(stored.bodyChunks, true);
+                }
                 immediate = { status: "cached" };
                 return;
             }
@@ -68,13 +77,13 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     async alarm(): Promise<void> {
+        const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+        if (!stored) return;
+
         let settlement: Promise<void> | undefined;
         try {
-            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-            if (!stored) return;
-
             if (await cacheExists(this.env, stored.cache)) {
-                await this.finish({ status: "cached" });
+                await this.finish({ status: "cached" }, stored.bodyChunks);
                 return;
             }
 
@@ -91,10 +100,13 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 this.env,
             );
             settlement = execution.settlement;
-            await this.finish(execution.result);
+            await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
             console.error("Detached generation failed", error);
-            await this.finish(unavailable("Detached generation failed"));
+            await this.finish(
+                unavailable("Detached generation failed"),
+                stored.bodyChunks,
+            );
         } finally {
             if (settlement) await settlement;
         }
@@ -135,10 +147,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private async restore(job: PersistedJob): Promise<GenerationJob> {
         let body: Uint8Array | undefined;
         if (job.bodyChunks > 0) {
-            const keys = Array.from(
-                { length: job.bodyChunks },
-                (_, index) => `${BODY_KEY_PREFIX}${index}`,
-            );
+            const keys = bodyChunkKeys(job.bodyChunks);
             const storedChunks = await this.ctx.storage.get<Uint8Array>(keys);
             const chunks = keys.map((key) => storedChunks.get(key));
             if (chunks.some((chunk) => chunk === undefined)) {
@@ -170,16 +179,22 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         };
     }
 
-    private async finish(outcome: GenerationOutcome): Promise<void> {
+    private async finish(
+        outcome: GenerationOutcome,
+        bodyChunks: number,
+    ): Promise<void> {
         await this.ctx.blockConcurrencyWhile(async () => {
-            await this.clear();
+            await this.clear(bodyChunks);
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });
     }
 
-    private async clear(): Promise<void> {
-        await this.ctx.storage.deleteAlarm();
-        await this.ctx.storage.deleteAll();
+    private async clear(
+        bodyChunks: number,
+        cancelAlarm = false,
+    ): Promise<void> {
+        if (cancelAlarm) await this.ctx.storage.deleteAlarm();
+        await this.ctx.storage.delete([JOB_KEY, ...bodyChunkKeys(bodyChunks)]);
     }
 }

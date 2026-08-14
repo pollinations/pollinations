@@ -192,9 +192,19 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         try {
             outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
+            const rpcError = error as Error & {
+                durableObjectReset?: boolean;
+                overloaded?: boolean;
+                retryable?: boolean;
+            };
             c.get("log").error(
-                "Generation coordination failed before completion: {error}",
-                { error },
+                "Generation coordination failed before completion: {errorMessage}",
+                {
+                    errorMessage: rpcError.message ?? String(error),
+                    durableObjectReset: rpcError.durableObjectReset,
+                    overloaded: rpcError.overloaded,
+                    retryable: rpcError.retryable,
+                },
             );
             return new Response("Generation coordination is unavailable", {
                 status: 503,

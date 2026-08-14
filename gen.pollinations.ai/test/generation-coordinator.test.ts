@@ -1,4 +1,4 @@
-import { runInDurableObject } from "cloudflare:test";
+import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
@@ -27,9 +27,9 @@ function testJob(key: string, body?: string): GenerationJob {
     };
 }
 
-async function waitForAlarm(state: DurableObjectState): Promise<void> {
+async function runScheduledAlarm(stub: DurableObjectStub): Promise<void> {
     for (let attempt = 0; attempt < 100; attempt += 1) {
-        if ((await state.storage.getAlarm()) !== null) return;
+        if (await runDurableObjectAlarm(stub)) return;
         await new Promise((resolve) => setTimeout(resolve, 0));
     }
     throw new Error("Generation alarm was not scheduled");
@@ -56,16 +56,13 @@ describe("GenerationCoordinator", () => {
         );
         const job = testJob(`missing-${crypto.randomUUID()}`);
 
-        const results = await runInDurableObject(
-            stub,
-            async (coordinator, state) => {
-                const owner = coordinator.startAndWait(job);
-                const joiner = coordinator.startAndWait(job);
-                await waitForAlarm(state);
-                await coordinator.alarm();
-                return Promise.all([owner, joiner]);
-            },
-        );
+        const resultsPromise = runInDurableObject(stub, async (coordinator) => {
+            const owner = coordinator.startAndWait(job);
+            const joiner = coordinator.startAndWait(job);
+            return Promise.all([owner, joiner]);
+        });
+        await runScheduledAlarm(stub);
+        const results = await resultsPromise;
         expect(results.every((result) => result.status === "failed")).toBe(
             true,
         );
@@ -75,21 +72,37 @@ describe("GenerationCoordinator", () => {
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,
         );
-        const status = await runInDurableObject(
+        const statusPromise = runInDurableObject(
             stub,
             async (coordinator, state) => {
+                await state.storage.put("sentinel", "keep");
                 const result = coordinator.startAndWait(
                     testJob(
                         `large-${crypto.randomUUID()}`,
                         "x".repeat(2_100_000),
                     ),
                 );
-                await waitForAlarm(state);
-                await coordinator.alarm();
                 return (await result).status;
             },
         );
+        await runScheduledAlarm(stub);
+        const status = await statusPromise;
 
         expect(status).toBe("failed");
+        const remaining = await runInDurableObject(
+            stub,
+            async (_coordinator, state) => ({
+                sentinel: await state.storage.get("sentinel"),
+                job: await state.storage.get("job"),
+                body: await state.storage.get("body:0"),
+                alarm: await state.storage.getAlarm(),
+            }),
+        );
+        expect(remaining).toEqual({
+            sentinel: "keep",
+            job: undefined,
+            body: undefined,
+            alarm: null,
+        });
     });
 });

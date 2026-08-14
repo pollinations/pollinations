@@ -23,6 +23,7 @@ The skill also ships inside the package: `node_modules/@pollinations/cli/SKILL.m
 Every command is agent-friendly:
 
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
+- `polli api <path>` — access new HTTP endpoints immediately without waiting for a dedicated command.
 - Exit code `0` on success, non-zero on error.
 - When a call runs out of pollen, the first line of the error is the top-up link.
 - `polli auth status --json` exposes everything about the current session.
@@ -70,6 +71,21 @@ polli quests                 # public quest catalog
 polli quests mine            # your completed and earned quest status
 ```
 
+## Call any HTTP API
+
+Use `polli api` for endpoints that do not have a dedicated command yet. It uses the same stored key, `POLLINATIONS_API_KEY`, or global `--key` override as the rest of the CLI.
+
+```bash
+polli api /models --no-auth --json
+polli api /v1/embeddings --data '{"model":"embedding","input":"hello"}' --json
+cat request.json | polli api /v1/chat/completions --json
+polli api /v1/audio/voice-isolator --form file=@speech.mp3 --output clean.mp3
+```
+
+JSON bodies can be passed inline, as `--data @request.json`, or through stdin. Repeat `--form field=value` for multipart requests and use `field=@file` for uploads. Binary responses require `--output`.
+
+For safety, the path must be relative to `gen.pollinations.ai`; absolute URLs are rejected so a stored key cannot be forwarded to another host. Realtime WebSocket sessions remain SDK-native.
+
 ## Account
 
 Two kinds of keys:
@@ -93,7 +109,7 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli quests mine --completed # completed and earned quests
-polli my-models list         # invite-only community text models
+polli my-models list         # invite-only community text and image models
 ```
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.

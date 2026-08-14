@@ -1,12 +1,12 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
+description: Generate images, text, audio, video, transcribe speech, and call Pollinations HTTP API paths using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; calls any HTTP API path; and manages API keys, usage, quests, and invite-only my-models.
 
 Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
@@ -34,6 +34,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
+| Call any HTTP endpoint | `polli api /relative/path [--data <json\|@file\|->] [--form field=value]` |
 | List all models | `polli models` |
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
@@ -154,11 +155,24 @@ polli quests --claimable # only rewards ready to claim
 ```bash
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
+polli my-models test --modality image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --model image-model
 polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models create --name image-model --title "Image Model" --modality image --image-pricing request --input-modalities text,image --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model image-v1
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text and image models for invite-only accounts. Test an image endpoint before creating it; the API detects image-edit support, and `--input-modalities text,image` advertises that capability. Image models can bill per generated image with `--image-pricing request --completion-image-price <price>`, or from returned image-token usage with `--image-pricing tokens` and token price flags. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+
+### Call any HTTP API path
+```bash
+polli api /models --no-auth --json
+polli api /v1/embeddings --data '{"model":"embedding","input":"hello"}' --json
+cat request.json | polli api /v1/chat/completions --json
+polli api /v1/audio/voice-isolator --form file=@speech.mp3 --output clean.mp3
+```
+Use this for HTTP capabilities without a dedicated command, including embeddings, 3D, advanced audio, and account endpoints. JSON comes from `--data '<json>'`, `--data @file`, or stdin. Repeat `--form field=value`; use `field=@file` for multipart uploads. Body-bearing requests default to POST, and `-X` selects PUT, PATCH, or DELETE. Binary responses require `--output`.
+
+Only relative `gen.pollinations.ai` paths are accepted. Never try to pass an absolute provider URL: the CLI rejects it to prevent forwarding the stored bearer key to another host. Use `--no-auth` for public endpoints. Realtime WebSocket sessions remain SDK-native.
 
 ### Manage API keys
 ```bash
@@ -193,6 +207,7 @@ polli docs --open                   # open in browser
 6. **For stdin-as-context** on `gen text`, pipe the context and pass the question as the positional argument: `cat file | polli gen text "question about the file"`.
 7. **For exact flag lists, run `polli <cmd> --help` or `polli gen <cmd> --help`.** This skill's recipes cover the common path; the CLI's own help is always the source of truth.
 8. **Use `polli docs [endpoint]` over guessing API shapes.** It prints the canonical `llm.txt` reference from the live API.
+9. **Use `polli api <path>` for uncovered HTTP endpoints.** Keep typed generation commands for common work; use the raw bridge for less common or newly shipped API capabilities.
 
 ## Common pitfalls
 

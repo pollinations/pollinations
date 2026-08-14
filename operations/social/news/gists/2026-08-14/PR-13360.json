@@ -1,0 +1,34 @@
+{
+  "pr_number": 13360,
+  "title": "fix: require zero budgets for publishable keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13360",
+  "merged_at": "2026-08-14T09:52:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stores a zero Pollen budget for every newly created publishable (`pk_`) key.\n- Rejects non-zero publishable-key budgets with HTTP 400 instead of silently ignoring them.\n- Accepts omitted, `null`, or explicit `0`; secret-key budget behavior is unchanged.\n- Keeps funded publishable-key behavior available only in test fixtures for billing regression coverage.\n\nChecks:\n- Biome on changed files\n- API-key integration suite: 36 passed\n- Focused realtime publishable-key test: passed\n- Enter typecheck: passed\n- Frontend production build: passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Publishable keys start at zero",
+    "blurb": "The key garden now labels its public keys properly: every new pk_ key gets a zero Pollen budget. If a non-zero budget slips into the form, the API sends it back to the shed with a clear 400.",
+    "summary": "Publishable (pk_) API keys now always store a zero Pollen budget, and creation requests with a non-zero budget return HTTP 400 while omitted, null, and explicit 0 budgets remain valid; secret-key behavior is unchanged.",
+    "impact": "Developers get explicit validation instead of silently ignored publishable-key budgets, making pk_ key setup predictable while preserving existing secret-key budget controls.",
+    "keywords": [
+      "api-keys",
+      "publishable-keys",
+      "billing",
+      "pollen",
+      "validation",
+      "http-400"
+    ],
+    "visual_concept": "Depict publishable API keys as small public garden keys being checked at a cozy key-making bench beside a clearly marked zero-budget gauge. Polli, wearing a tiny locksmith apron, carefully places a pk_ key into a lime-green zero slot while a retro terminal politely displays “BUDGET: 0”; nearby code-plants and flowers make the validation feel orderly rather than restrictive.",
+    "image_prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith apron and placing a small “pk_” key into a glowing zero-budget gauge beside a retro terminal reading “BUDGET: 0”; code-plants and flowers grow around the key-making bench. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13360.jpg",
+    "prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith apron and placing a small “pk_” key into a glowing zero-budget gauge beside a retro terminal reading “BUDGET: 0”; code-plants and flowers grow around the key-making bench. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-14T09:53:33.342766+00:00"
+}

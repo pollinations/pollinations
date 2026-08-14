@@ -55,18 +55,6 @@ test("serves health and requires bearer auth", async () => {
         }),
     );
     assert.equal(unauthorized.status, 401);
-
-    const publishableKey = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/mcp", {
-            method: "POST",
-            headers: {
-                Authorization: "Bearer pk_test_not_allowed",
-                "Content-Type": "application/json",
-            },
-            body: "{}",
-        }),
-    );
-    assert.equal(publishableKey.status, 401);
 });
 
 test("serves modern and legacy clients without sessions", async () => {
@@ -105,12 +93,12 @@ test("keeps bearer tokens scoped to each request", async (t) => {
         const authorization = new Headers(init?.headers).get("authorization");
         seenAuthorizations.add(authorization);
         return Response.json({
-            balance: authorization === "Bearer sk_first" ? 1 : 2,
+            balance: authorization === "Bearer pk_first" ? 1 : 2,
         });
     };
 
     const options = { versionNegotiation: { mode: "auto" } };
-    const firstClient = await connectClient(options, "sk_first");
+    const firstClient = await connectClient(options, "pk_first");
     const secondClient = await connectClient(options, "sk_second");
 
     const [first, second] = await Promise.all([
@@ -121,7 +109,7 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     assert.match(second.content[0].text, /"pollen": 2/);
     assert.deepEqual(
         seenAuthorizations,
-        new Set(["Bearer sk_first", "Bearer sk_second"]),
+        new Set(["Bearer pk_first", "Bearer sk_second"]),
     );
 
     await Promise.all([firstClient.close(), secondClient.close()]);

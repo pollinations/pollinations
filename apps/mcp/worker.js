@@ -16,7 +16,7 @@ function readBearerToken(request) {
     if (!authorization) return null;
 
     const [scheme, token] = authorization.trim().split(/\s+/, 2);
-    if (scheme?.toLowerCase() !== "bearer" || !token?.startsWith("sk_")) {
+    if (scheme?.toLowerCase() !== "bearer" || !token) {
         return null;
     }
     return token;
@@ -26,7 +26,7 @@ function unauthorizedResponse() {
     return Response.json(
         {
             error: "unauthorized",
-            message: "Send a Pollinations secret key as Bearer sk_...",
+            message: "Send a Pollinations API key as a bearer token.",
         },
         { status: 401 },
     );

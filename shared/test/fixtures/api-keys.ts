@@ -64,7 +64,10 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         type,
         expiresIn: opts.expiresIn,
         allowedModels: opts.allowedModels,
-        pollenBudget: opts.pollenBudget,
+        pollenBudget:
+            opts.pollenBudget === undefined && type === "publishable"
+                ? 100
+                : opts.pollenBudget,
         accountPermissions: opts.accountPermissions,
         metadata: opts.metadata,
         allowAccountKeysPermission: true,

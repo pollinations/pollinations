@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-13",
+  "period_start": "2026-08-13",
+  "period_end": "2026-08-13",
+  "generated_at": "2026-08-14T06:37:16.537473+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-13/images/reddit.jpg"
+    }
+  ],
+  "title": "11 merged PRs: models, transcription, routing",
+  "text": "11 PRs landed today. The useful headline is that image, video, and audio paths all got less constrained.\n\nQwen Image 3 and Seedance 2.5 are now available, alongside HQ IA and Article Illustrator additions on the image side. That gives visual workflows a few more options before someone inevitably asks a model to illustrate a README about another model.\n\nThe catalog also gained sorting controls. Small change, but increasingly necessary as the model list grows and “scroll until the name looks familiar” stops being a viable selection strategy.\n\nFor audio, Scribe now supports realtime transcription, input duration is metered correctly, music references use media URLs, and public audio reference URLs are accepted. The reference handling changes should remove some avoidable friction for people passing assets between tools.\n\nGPT-5.6 models now route through the Azure Responses API rather than the previous path. This is mostly plumbing, which is usually where the interesting breakage lives.\n\nThe README was updated as well: https://github.com/pollinations/pollinations/blob/main/README.md\n\nMerged PRs and implementation details are in the repo: https://github.com/pollinations/pollinations/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-08-14\n\nIf you hit a regression in routing, transcription, or reference URLs, an issue with the request shape and response is more useful than a screenshot of an error toast."
+}

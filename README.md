@@ -81,11 +81,14 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
+<!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
+     Regenerate locally with:
+     GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date&theme=dark" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
+   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" width="600" />
+   <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="600" />
  </picture>
 </a>
 

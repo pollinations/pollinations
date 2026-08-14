@@ -1,0 +1,35 @@
+{
+  "pr_number": 13299,
+  "title": "feat: deduplicate generation requests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13299",
+  "merged_at": "2026-08-14T03:06:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Coordinates identical finite-generation cache misses through one Durable Object per shared cache identity; callers wait for and read the same completed R2 object.\n- Covers non-streaming text/chat, embeddings, image, video, 3D, OpenAI images, image edits, and finite audio endpoints without provider-specific job IDs or generation deadlines.\n- Authorizes every caller independently; only the detached generation performs billing and community rewards, independently of cache-write success.\n- Keeps failure handling simple: no 202, unknown state, tombstones, deployment reconciliation, or direct-generation fallback.\n- Preserves request IDs, balance attribution, fallback telemetry, multipart replay, and provider error responses across detached execution.\n- Verified with Biome, TypeScript, the full gen suite (90 files; 910 passed, 6 skipped), and a live staging matrix including disconnect/rejoin, cache replay, and exactly-once billing.\n\nStacked on #13269.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One bloom, many visitors",
+    "blurb": "When several people ask for the same finite generation at once, the hive now grows it once and shares the finished fruit. Less duplicate buzzing, one tidy result.",
+    "summary": "Added Durable Object coordination for identical finite-generation cache misses, so non-streaming text/chat, embeddings, images, video, 3D, OpenAI image routes, image edits, and finite audio requests can wait for one completed shared R2 result with exactly-once billing.",
+    "impact": "Users making the same request concurrently receive the same completed generation while preserving independent authorization, request IDs, provider errors, fallback telemetry, and balance attribution.",
+    "keywords": [
+      "generation",
+      "deduplication",
+      "cache",
+      "durable-objects",
+      "r2",
+      "billing",
+      "api"
+    ],
+    "visual_concept": "A cozy shared-generation garden: several small request seedlings with identical labels lead into one flowering code-plant, whose ripe pixel-fruit is distributed through neat paths to waiting terminals. Polli, wearing a tiny gardener tool belt, observes the orderly sharing while a cheerful CRT robot helps pass identical finished result boxes; the single bloom represents one detached generation and the paths represent callers reading the shared R2 cache object.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny gardener tool belt as she tends one glowing code-flower that sends identical pixel-fruit boxes to several retro terminals; a chunky CRT monitor robot helps distribute them beside vines and small flowers. Cozy 8-bit pixel art aesthetic, prominently lime green (#ecf874) with mint, lavender, peach, and warm cream gradients, dark purple (#110518) outlines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; pixel text: \"ONE BLOOM\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13299.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny gardener tool belt as she tends one glowing code-flower that sends identical pixel-fruit boxes to several retro terminals; a chunky CRT monitor robot helps distribute them beside vines and small flowers. Cozy 8-bit pixel art aesthetic, prominently lime green (#ecf874) with mint, lavender, peach, and warm cream gradients, dark purple (#110518) outlines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; pixel text: \"ONE BLOOM\"."
+  },
+  "generated_at": "2026-08-14T03:07:58.393124+00:00"
+}

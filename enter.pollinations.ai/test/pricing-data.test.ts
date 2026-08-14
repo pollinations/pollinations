@@ -425,6 +425,38 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
+test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
+    expect(
+        calculatePrice("qwen-image-3", {
+            completionImageTokens: 1,
+        }).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: (1536 * 1536) / 1_000_000 },
+        ).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: 2.4 },
+        ).totalPrice,
+    ).toBeCloseTo(0.075, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { promptImageTokens: 3, completionImageTokens: 1 },
+            undefined,
+            { megapixels: 4.194304 },
+        ).totalPrice,
+    ).toBeCloseTo(0.084, 8);
+});
+
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
     expect(getCostDefinition("llama-scout").promptTextTokens).toBeCloseTo(
         0.0000001,
@@ -460,6 +492,21 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.06, 8);
+    for (const [quality, resolution, expected] of [
+        ["low", "1k", 0.05],
+        ["low", "2k", 0.07],
+        ["medium", "1k", 0.07],
+        ["medium", "2k", 0.09],
+    ] as const) {
+        expect(
+            calculatePrice(
+                "grok-imagine-image-2.0",
+                { promptImageTokens: 1, completionImageTokens: 1 },
+                undefined,
+                { quality, resolution },
+            ).totalPrice,
+        ).toBeCloseTo(expected, 8);
+    }
     expect(
         calculateCost("grok-video-pro", {
             promptImageTokens: 1,
@@ -531,7 +578,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.264, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -945,9 +992,21 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
 
+    const discountedCacheWrite = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini"),
+        {
+            usage: {
+                prompt_tokens_details: { cache_write_tokens: 1_000_000 },
+            },
+        },
+        "gemini",
+    );
+    expect(discountedCacheWrite).toHaveLength(1);
+    expect(discountedCacheWrite[0].unitCost).toBeCloseTo(0.25 / 12_000_000, 15);
+    expect(discountedCacheWrite[0].cost).toBeCloseTo(0.25 / 12, 15);
+
     for (const model of [
         "gemini-3-flash",
-        "gemini",
         "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
@@ -983,6 +1042,26 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             `${model} unused web search fee`,
         ).toEqual([]);
     }
+
+    expect(
+        calculateBillingAdjustments(
+            getRegistryModelDefinition("gemini"),
+            {
+                usage: {
+                    server_tool_use_details: { web_search_requests: 1 },
+                },
+            },
+            "gemini",
+        ),
+    ).toContainEqual({
+        ruleId: "openrouter.google.web_search.v1",
+        kind: "search_request",
+        unit: "request",
+        units: 1,
+        unitCost: 0.007,
+        cost: 0.007,
+        price: 0.007,
+    });
 
     const streamedSearch = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-3-flash"),

@@ -517,6 +517,64 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
+    "seedance-2.0-mini": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        cost: {
+            completionVideoSeconds: 0.09,
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.04,
+                },
+            },
+            matchResolution("480p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+            },
+            "720p",
+        ),
+        resolutions: ["720p", "480p"],
+        title: "Seedance 2.0 Mini",
+        description:
+            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "seedance-2.0-fast": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        cost: {
+            completionVideoSeconds: 0.07,
+        },
+        resolutions: ["480p"],
+        title: "Seedance 2.0 Fast",
+        description:
+            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         provider: "replicate",
@@ -694,6 +752,45 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
+    "qwen-image-3": {
+        aliases: [],
+        provider: "fal",
+        brand: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptImageTokens: 0.003, // per reference image ingested by Fal
+            completionImageTokens: 0.04, // per image up to 1536x1536
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.003,
+                    completionImageTokens: 0.075,
+                },
+            },
+            ({ input }) =>
+                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
+                    ? "2k"
+                    : undefined,
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                },
+            },
+            "1K",
+        ),
+        title: "Qwen Image 3",
+        description:
+            "Creates and edits detailed images with crisp multilingual text and complex layouts",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
+    },
     "grok-imagine": {
         aliases: ["grok-imagine-image"],
         provider: "xai",
@@ -735,6 +832,64 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+    },
+    "grok-imagine-image-2.0": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        cost: {
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
+        },
+        ...defineCostVariants(
+            {
+                low_1k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
+                },
+            },
+            ({ input }) => {
+                if (input?.quality === "low") {
+                    return input.resolution === "2k" ? "low_2k" : "low_1k";
+                }
+                return input?.resolution === "2k" ? "medium_2k" : undefined;
+            },
+            {
+                low_1k: {
+                    label: "Low · 1K",
+                    description: "Applies to low-quality 1K requests.",
+                },
+                low_2k: {
+                    label: "Low · 2K",
+                    description: "Applies to low-quality 2K requests.",
+                },
+                medium_2k: {
+                    label: "Medium · 2K",
+                    description: "Applies to medium-quality 2K requests.",
+                },
+            },
+            "Medium · 1K",
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Grok Imagine Image 2.0",
+        description:
+            "Creates and edits high-detail images at 1K or 2K with up to three references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
     },
     "recraft-v4.1-vector": {
         aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
@@ -818,6 +973,42 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
+    "seedance-2.5": {
+        aliases: [],
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-08-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.1028, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.2312,
+                },
+            },
+            matchResolution("720p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5",
+        description:
+            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
         provider: "openrouter",
@@ -835,6 +1026,45 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+    },
+    "minimax-h3": {
+        aliases: [],
+        provider: "fal",
+        brand: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.05, // fal, 480p per second, verified 2026-08-14.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.08 },
+                "2k": { completionVideoSeconds: 0.13 },
+            },
+            matchResolution("768p", "2k"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested video resolution is 2K.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p", "2k"],
+        title: "MiniMax H3",
+        description:
+            "Five-second text-to-video clips with synchronized stereo audio at 480p, 768p, or 2K",
+        inputModalities: ["text"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["audio_output"],
     },
     "klein": {
         aliases: ["flux-klein"],

@@ -26,6 +26,10 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type {
+    GenerationCacheAdapter,
+    GenerationCacheVariables,
+} from "@/middleware/generation-cache.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import {
@@ -51,6 +55,7 @@ function createTestApp(
     },
     servedModelEntry?: ModelVariables["servedModelEntry"],
     responseHeaders: Record<string, string> = {},
+    generationCache?: GenerationCacheVariables["generationCache"],
 ) {
     const app = new Hono<Env>();
 
@@ -75,6 +80,7 @@ function createTestApp(
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
         if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
+        if (generationCache) c.set("generationCache", generationCache);
         await next();
     });
     app.post(
@@ -127,6 +133,7 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
+        perUserRpm: null,
         fallbackModelIds: [],
         disabledAt: null,
         disabledReason: null,
@@ -466,6 +473,81 @@ describe("tracking observability", () => {
         expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("tracks provider work but not coalesced cache hits", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const providerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const joinerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const generationCache = {
+            adapter: { storage: "text" } as GenerationCacheAdapter,
+            key: "same-request",
+        };
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+        const request = () =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            });
+
+        const providerCtx = createExecutionContext();
+        await createTestApp(
+            providerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "MISS" },
+            generationCache,
+        ).fetch(request(), bindings, providerCtx);
+        await waitOnExecutionContext(providerCtx);
+
+        const joinerCtx = createExecutionContext();
+        await createTestApp(
+            joinerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "HIT" },
+            generationCache,
+        ).fetch(request(), bindings, joinerCtx);
+        await waitOnExecutionContext(joinerCtx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const providerEvent =
+            (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(providerEvent).toMatchObject({
+            cacheHit: false,
+            cacheType: "MISS",
+            isBilledUsage: true,
+        });
+        expect(providerEvent.cacheKey).toMatch(/^[a-f0-9]{64}$/);
+        expect(providerEvent.cacheKey).not.toContain("same-request");
+        expect(providerConsume.mock.calls[0]?.[0]).toBeGreaterThan(0);
+        expect(joinerConsume).toHaveBeenCalledWith(0);
     });
 
     it("does not bill a successful text response when upstream usage is missing", async () => {

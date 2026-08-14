@@ -1,0 +1,34 @@
+{
+  "pr_number": 13356,
+  "title": "fix: default app keys to zero budget",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13356",
+  "merged_at": "2026-08-14T08:48:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Defaults omitted or `null` publishable-key budgets to `0` in the shared server creation path\n- Keeps explicitly positive owner-funded budgets and secret-key behavior unchanged\n- Updates API schema descriptions and adds regression coverage\n\nRoot cause: the dashboard supplied a zero budget, but API callers could omit it and receive an unlimited publishable key.\n\nChecks:\n- `npx biome check --write ...`\n- `npm run typecheck --workspace enter.pollinations.ai`\n- `npm run build:frontend --workspace enter.pollinations.ai`\n- `npx vitest run test/integration/api-keys.test.ts` (36 passed)\n\nRelated: #13340",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Budgets now mean budgets",
+    "blurb": "A missing number used to grow into an infinite field. Publishable app keys now start with a tidy zero-budget plot unless their owner explicitly funds them.",
+    "summary": "Publishable API keys created without a budget, or with a null budget, now default to 0 instead of unlimited usage, while explicitly positive owner-funded budgets and secret-key behavior remain unchanged.",
+    "impact": "API callers now get the same safe zero-budget default as dashboard users, with Pollen spending enabled only when an owner deliberately assigns a positive budget.",
+    "keywords": [
+      "api-keys",
+      "publishable-keys",
+      "budgets",
+      "pollen",
+      "auth",
+      "billing"
+    ],
+    "visual_concept": "Depict key budgets as small garden plots: Polli carefully labels a newly planted publishable key with a clear “0” seed packet, while a separate healthy plot has an owner-funded watering can and a positive budget marker. A cozy terminal and code-plants show that the creation path is now consistent for dashboard and API callers.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, placing a pixel seed packet labeled “0” beside a publishable key growing from a lime green (#ecf874) flower pot; nearby, a warmly watered code-plant has a small “OWNER FUNDED” sign, with a retro terminal glowing softly behind them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle flowers and vines, dark purple (#110518) pixel outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13356.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, placing a pixel seed packet labeled “0” beside a publishable key growing from a lime green (#ecf874) flower pot; nearby, a warmly watered code-plant has a small “OWNER FUNDED” sign, with a retro terminal glowing softly behind them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle flowers and vines, dark purple (#110518) pixel outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-14T08:49:47.479302+00:00"
+}

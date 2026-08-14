@@ -1,0 +1,33 @@
+{
+  "pr_number": 13379,
+  "title": "Improve Tessera Lumen catalogue title and description",
+  "author": "Jeraque007",
+  "url": "https://github.com/pollinations/pollinations/pull/13379",
+  "merged_at": "2026-08-14T15:52:33Z",
+  "labels": [],
+  "pr_body_excerpt": "Updated Tessera Lumen catalogue listing to improve discovery and click-through.\r\n\r\nChanges:\r\n\r\n* Added clearer AI oracle positioning\r\n* Replaced generic description with concise value-focused copy\r\n* Updated category for better relevance",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The oracle gets a signpost",
+    "blurb": "Tessera Lumen has traded its generic catalogue label for a clearer one. The little AI oracle is now easier to find when someone comes looking for answers in the garden.",
+    "summary": "Updated the Tessera Lumen catalogue listing with clearer AI-oracle positioning, concise value-focused copy, and a more relevant category to improve discovery.",
+    "impact": "People browsing the app catalogue can more readily understand what Tessera Lumen does and find it in the right place.",
+    "keywords": [
+      "tessera-lumen",
+      "app-catalogue",
+      "discovery",
+      "ai-oracle",
+      "community"
+    ],
+    "visual_concept": "Depict Tessera Lumen as a cozy glowing pixel oracle card or crystal display receiving a freshly painted garden signpost. Polli, wearing tiny librarian glasses and holding a paintbrush, updates the sign while flowers and code-plants surround the catalogue shelf; the scene represents clearer naming, description, and categorization.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, painting a clear signpost beside a glowing AI oracle card on a retro catalogue shelf; little flowers and code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: 'AI ORACLE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13379.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, painting a clear signpost beside a glowing AI oracle card on a retro catalogue shelf; little flowers and code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: 'AI ORACLE'."
+  },
+  "generated_at": "2026-08-14T15:53:45.722036+00:00"
+}

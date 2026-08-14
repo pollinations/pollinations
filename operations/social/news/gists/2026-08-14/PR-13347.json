@@ -1,0 +1,34 @@
+{
+  "pr_number": 13347,
+  "title": "fix: restore generation deduplication without storage timeouts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13347",
+  "merged_at": "2026-08-14T06:34:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores generation request deduplication after the production rollback\n- Replaces Durable Object `deleteAll()` cleanup with targeted job/body deletion\n- Uses realistic alarm consumption in coordinator tests and verifies unrelated storage survives cleanup\n- Keeps the existing append-only Durable Object migration\n\nTests: gen typecheck; focused deduplication tests; full gen suite (965 passed, 6 skipped).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One job, one buzz",
+    "blurb": "The generation coordinator is deduplicating matching requests again, without sweeping unrelated Durable Object storage into the compost bin. A smaller cleanup rake, considerably fewer timeout-shaped problems.",
+    "summary": "Restored generation-request deduplication in gen.pollinations.ai and replaced Durable Object deleteAll() cleanup with targeted job and request-body deletion that preserves unrelated stored data.",
+    "impact": "Identical in-flight generation requests can share their work again, while coordinator cleanup avoids storage timeouts and leaves other Durable Object state intact.",
+    "keywords": [
+      "generation",
+      "deduplication",
+      "durable-objects",
+      "storage",
+      "reliability",
+      "api"
+    ],
+    "visual_concept": "Polli acts as a careful garden keeper at a cozy generation coordinator greenhouse: several identical request seedlings feed into one healthy code-plant, while separate flowers remain safely rooted in their own pots. A small CRT monitor robot can watch the shared job queue, and targeted pruning shears represent deleting only completed job and body records rather than clearing the entire garden.",
+    "image_prompt": "A cozy pixel art greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, light-blue rounded wings, black oval eyes, antennae, and a tiny gardener hat, carefully uses small pruning shears on one completed code-plant while several identical request seedlings merge into a single flourishing lime green (#ecf874) generation flower; nearby unrelated flower pots remain safely blooming, and a friendly CRT monitor robot watches the shared queue. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, with pixel-font text: \"ONE JOB\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13347.jpg",
+    "prompt": "A cozy pixel art greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, light-blue rounded wings, black oval eyes, antennae, and a tiny gardener hat, carefully uses small pruning shears on one completed code-plant while several identical request seedlings merge into a single flourishing lime green (#ecf874) generation flower; nearby unrelated flower pots remain safely blooming, and a friendly CRT monitor robot watches the shared queue. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, with pixel-font text: \"ONE JOB\"."
+  },
+  "generated_at": "2026-08-14T06:35:49.796363+00:00"
+}

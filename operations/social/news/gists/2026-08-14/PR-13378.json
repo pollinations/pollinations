@@ -1,0 +1,35 @@
+{
+  "pr_number": 13378,
+  "title": "feat: add MiniMax H3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13378",
+  "merged_at": "2026-08-14T15:57:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `minimax-h3` through fal route `minimax/h3/text-to-video`, with no aliases, fallback, or Pollinations GPU.\n- Exposes five-second 16:9 text-to-video with synchronized audio at 480p, 768p, and 2K.\n- Bills exact fal rates through resolution variants: $0.05/s, $0.08/s, and $0.13/s (multiplier 1).\n- Uses the generic durable generation coordinator and R2 cache; no model-specific retry storage.\n\nValidation:\n- Direct-provider and authenticated local E2E passed every resolution and default behavior.\n- 2K survived a deliberate client disconnect; the identical retry joined the same job, returned the cached result, and billed exactly once at $0.65.\n- Verified H.264/24 FPS video, stereo AAC, visual quality, permission and error paths, cache hits, and a 2/2 concurrent burst.\n- Focused Gen tests, registry pricing invariants/snapshot, brand-logo check, Biome, and typecheck pass.\n\n4K is intentionally excluded.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Five Seconds, Full Sound",
+    "blurb": "A new video flower has opened in the paid garden: MiniMax H3 makes short 16:9 clips with synchronized audio. Polli checked the cache, the retry path, and the stereo soundtrack; the bees remain suspiciously thorough.",
+    "summary": "Added paid-only `minimax-h3` video generation through fal's `minimax/h3/text-to-video` route, producing five-second 16:9 clips with synchronized audio at 480p, 768p, or 2K and exact per-second resolution pricing.",
+    "impact": "Developers can request MiniMax H3 videos at $0.05/s for 480p, $0.08/s for 768p, or $0.13/s for 2K; durable jobs and R2 caching let identical retries reuse the same completed result and bill once.",
+    "keywords": [
+      "minimax-h3",
+      "text-to-video",
+      "fal",
+      "audio",
+      "video-generation",
+      "pricing",
+      "cache"
+    ],
+    "visual_concept": "Depict MiniMax H3 as a cozy retro film-and-sound workstation: a five-second film strip emerges from a CRT video terminal while musical waveform sprites travel alongside it. Polli, wearing tiny director headphones, guides the clip toward three labeled resolution canisters—480p, 768p, and 2K—while code-plants and flowers grow around a warm R2-style storage chest, representing durable cached generations and retry-safe reuse.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny director headphones as she oversees a retro CRT video terminal producing a five-second film strip with musical sound-wave pixels; three friendly pastel resolution jars read “480p”, “768p”, and “2K”, beside a glowing cache chest and sprouting code-plant flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text “MINIMAX H3”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-14/PR-13378.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny director headphones as she oversees a retro CRT video terminal producing a five-second film strip with musical sound-wave pixels; three friendly pastel resolution jars read “480p”, “768p”, and “2K”, beside a glowing cache chest and sprouting code-plant flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text “MINIMAX H3”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-14T15:58:50.314373+00:00"
+}

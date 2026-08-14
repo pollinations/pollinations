@@ -901,11 +901,11 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should omit retired models without rewriting stored permissions", async ({
+        test("should canonicalize model aliases while preserving unknown permissions", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-retired-model",
+                name: "key-with-alias-and-unknown-model",
                 allowedModels: ["flux", "nanobanana2", "retired-model"],
             });
 
@@ -921,7 +921,10 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
-            expect(listed?.permissions?.models).toEqual(["flux"]);
+            expect(listed?.permissions?.models).toEqual([
+                "flux",
+                "nanobanana-2",
+            ]);
 
             const db = drizzle(env.DB, { schema });
             const stored = await db.query.apikey.findFirst({
@@ -929,7 +932,7 @@ describe("API Key Management", () => {
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
-                "nanobanana2",
+                "nanobanana-2",
                 "retired-model",
             ]);
         });
@@ -1083,7 +1086,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: ["flux", "nanobanana2", "nanobanana-2"],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -1105,7 +1108,7 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: ["flux", "nanobanana-2"],
                 account: ["profile", "usage"],
             });
         });

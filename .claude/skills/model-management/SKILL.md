@@ -79,6 +79,8 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
   `permissions.models` contains the old canonical ID. Registry aliases do not
   preserve restricted-key access because authorization compares the resolved
   canonical ID.
+- Audit every modality registry and every model change merged to `main` since
+  the current production revision; production can lag behind `main`.
 - Trace every reachable runtime route and any configured fallback.
 - Distinguish the configured provider from the provider that served an observed request.
 - Compare the intended change with open PRs and active plan entries.
@@ -107,12 +109,18 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Do not collapse capabilities with materially different inputs, outputs, or transports into one endpoint merely by switching `model`. Keep distinct operations separate while reusing their shared internal handler, authorization, billing, and observability paths.
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
 - Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
-- A canonical rename with stored permission matches requires a focused D1
-  migration PR to merge and deploy before the registry rename. Replace the old
-  canonical ID, preserve unrelated permission fields and array order,
-  deduplicate old/new pairs, prove idempotence, and verify the old-ID count is
-  zero after deployment. Keep the mapping in the migration only; do not add a
-  runtime normalization layer.
+- Canonicalize all stale stored aliases found by the same registry-wide audit in
+  one D1 migration PR. Replace old IDs, preserve unrelated permission fields
+  and array order, deduplicate old/new pairs, prove idempotence, and verify all
+  audited old-ID counts are zero after deployment.
+- API-key create and update paths must store recognized aliases as canonical
+  IDs, while preserving unknown and community IDs, so migrations do not need to
+  repair newly written aliases again.
+- For a pending canonical rename, merge the migration before the model PR but
+  do not promote the replacement-only migration while production still
+  resolves the old ID. Promote a revision containing both changes so D1 runs
+  immediately before the Worker deploy. Keep mappings in migrations only; do
+  not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.

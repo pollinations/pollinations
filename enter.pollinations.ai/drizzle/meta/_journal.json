@@ -328,7 +328,7 @@
       "idx": 46,
       "version": "6",
       "when": 1786708800000,
-      "tag": "0046_canonicalize-gemini-flash-lite-permissions",
+      "tag": "0046_canonicalize-model-permission-aliases",
       "breakpoints": true
     }
   ]

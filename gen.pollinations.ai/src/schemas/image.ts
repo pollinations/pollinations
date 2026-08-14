@@ -94,7 +94,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Video-specific params
     resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
         description:
-            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier.",
+            "Output resolution for video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
     }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:

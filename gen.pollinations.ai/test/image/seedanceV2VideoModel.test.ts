@@ -107,19 +107,12 @@ describe("Seedance 2.0 Mini and Fast via Replicate", () => {
         });
     });
 
-    it.each([
-        ["seedance-2.0-mini", "1080p"],
-        ["seedance-2.0-fast", "720p"],
-    ] as const)("rejects unsupported %s resolution %s before submitting", async (model, resolution) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
+    it("names the selected variant in aspect-ratio errors", async () => {
         await expect(
             callSeedanceV2API("a paper boat", {
                 ...baseParams,
-                model,
-                resolution,
+                aspectRatio: "9:21",
             }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
+        ).rejects.toThrow("not supported by Seedance 2.0 Mini");
     });
 });

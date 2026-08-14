@@ -6,6 +6,8 @@
  * reference_videos, which would trigger Replicate's "video_in" price tier.
  */
 
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
@@ -24,31 +26,21 @@ const logError = debug("pollinations:seedance2:error");
 const MODELS = {
     "seedance-2.0": {
         upstream: "bytedance/seedance-2.0",
-        title: "Seedance 2.0",
-        resolutions: ["720p"],
-        defaultResolution: "720p",
         maxDuration: 15,
     },
     "seedance-2.0-mini": {
         upstream: "bytedance/seedance-2.0-mini",
-        title: "Seedance 2.0 Mini",
-        resolutions: ["480p", "720p"],
-        defaultResolution: "720p",
         maxDuration: 10,
     },
     "seedance-2.0-fast": {
         upstream: "bytedance/seedance-2.0-fast",
-        title: "Seedance 2.0 Fast",
-        resolutions: ["480p"],
-        defaultResolution: "480p",
         maxDuration: 5,
     },
 } as const;
 type SeedanceV2ModelName = keyof typeof MODELS;
 
-// Replicate's Seedance 2.0 accepts a narrower set than our shared aspectRatio
-// enum (which also allows 9:21). Validate at the boundary so users get a clear
-// 400 instead of a Replicate 422 round-trip.
+// Pollinations currently exposes this validated subset. Adding 9:21 requires
+// a separate live probe before expanding the public contract.
 const SEEDANCE_V2_ASPECT_RATIOS = [
     "16:9",
     "4:3",
@@ -62,13 +54,14 @@ type SeedanceV2AspectRatio = (typeof SEEDANCE_V2_ASPECT_RATIOS)[number];
 
 export function resolveSeedanceV2AspectRatio(
     requested: ImageParams["aspectRatio"] | undefined,
+    modelTitle = "Seedance 2.0",
 ): SeedanceV2AspectRatio {
     if (!requested) return "16:9";
     if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
         return requested as SeedanceV2AspectRatio;
     }
     throw new HttpError(
-        `aspectRatio "${requested}" is not supported by Seedance 2.0. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
+        `aspectRatio "${requested}" is not supported by ${modelTitle}. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
         400,
     );
 }
@@ -90,20 +83,13 @@ export async function callSeedanceV2API(
 ): Promise<VideoGenerationResult> {
     const modelName = safeParams.model as SeedanceV2ModelName;
     const config = MODELS[modelName];
-    const requestedResolution =
-        safeParams.resolution ?? config.defaultResolution;
-    if (
-        !(config.resolutions as readonly string[]).includes(requestedResolution)
-    ) {
-        throw new HttpError(
-            `${config.title} supports ${config.resolutions.join(" or ")} resolution`,
-            400,
-        );
-    }
-    const resolution = requestedResolution as SeedanceV2Input["resolution"];
+    const definition = IMAGE_SERVICES[modelName] as ModelDefinition;
+    const resolution = (safeParams.resolution ??
+        definition.resolutions?.[0] ??
+        "720p") as SeedanceV2Input["resolution"];
 
-    // Seedance 2.0 requires duration in [4, 15]. The schema enforces min=1
-    // so we only need to clamp into the upstream's accepted range.
+    // Replicate accepts 4–15 seconds. Pollinations caps Mini and Fast at their
+    // empirically verified synchronous latency limits.
     const duration = Math.max(
         4,
         Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
@@ -115,7 +101,7 @@ export async function callSeedanceV2API(
     const images = safeParams.image ?? [];
     if (images.length > 2) {
         throw new HttpError(
-            `${config.title} supports at most two images: image[0] as first frame and image[1] as last frame.`,
+            `${definition.title} supports at most two images: image[0] as first frame and image[1] as last frame.`,
             400,
         );
     }
@@ -124,7 +110,10 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
+        aspect_ratio: resolveSeedanceV2AspectRatio(
+            safeParams.aspectRatio,
+            definition.title,
+        ),
         generate_audio: safeParams.audio,
     };
     if (safeParams.seed !== undefined) {
@@ -133,7 +122,7 @@ export async function callSeedanceV2API(
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
-    logOps(`${config.title} input:`, {
+    logOps(`${definition.title} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
@@ -149,28 +138,31 @@ export async function callSeedanceV2API(
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
-        logOps(`${config.title} prediction succeeded:`, {
+        logOps(`${definition.title} prediction succeeded:`, {
             id: result.id,
             predict_time: result.predictTimeSeconds,
             video_output_duration: actualDurationSeconds,
         });
     } catch (err) {
-        logError(`${config.title} prediction call failed:`, err);
+        logError(`${definition.title} prediction call failed:`, err);
         if (err instanceof ReplicateError) {
             logError("Replicate raw error details:", {
                 message: err.message,
                 status: err.status,
             });
         }
-        throw toReplicateHttpError(err, `${config.title} generation failed`);
+        throw toReplicateHttpError(
+            err,
+            `${definition.title} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {
-        errorLabel: `Failed to download ${config.title} output video`,
+        errorLabel: `Failed to download ${definition.title} output video`,
     });
     const buffer = Buffer.from(await videoResponse.arrayBuffer());
     logOps(
-        `${config.title} video downloaded:`,
+        `${definition.title} video downloaded:`,
         (buffer.length / 1024 / 1024).toFixed(2),
         "MB",
     );

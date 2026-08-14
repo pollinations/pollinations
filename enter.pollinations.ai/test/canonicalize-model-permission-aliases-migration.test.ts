@@ -47,7 +47,6 @@ const countAliasesSql = `
 
 describe("canonicalize model permission aliases migration", () => {
     it("migrates every audited alias and preserves permission data", async () => {
-        expect(migrationSql).toContain("candidate_keys AS MATERIALIZED");
         for (const alias of aliases) {
             expect(migrationSql).toContain(`instr(permissions, '"${alias}"')`);
         }
@@ -124,11 +123,23 @@ describe("canonicalize model permission aliases migration", () => {
             .first<{ count: number }>();
         expect(aliasesBefore?.count).toBe(aliasMappings.length + 3);
 
-        const migrationForTest = migrationSql.replace(
-            /\bapikey\b/g,
-            "model_alias_migration_apikey",
-        );
-        await env.DB.prepare(migrationForTest).run();
+        const migrationStatements = migrationSql
+            .replace(/\bapikey\b/g, "model_alias_migration_apikey")
+            .split(";")
+            .map((statement) => statement.trim())
+            .filter((statement) =>
+                statement
+                    .split("\n")
+                    .map((line) => line.trim())
+                    .some((line) => line !== "" && !line.startsWith("--")),
+            );
+        expect(migrationStatements).toHaveLength(aliasMappings.length);
+        const runMigration = async () => {
+            for (const statement of migrationStatements) {
+                await env.DB.prepare(statement).run();
+            }
+        };
+        await runMigration();
 
         const migratedRows = await env.DB.prepare(`
             SELECT id, permissions
@@ -193,7 +204,7 @@ describe("canonicalize model permission aliases migration", () => {
             CREATE TABLE model_alias_migration_snapshot AS
             SELECT id, permissions FROM model_alias_migration_apikey
         `).run();
-        await env.DB.prepare(migrationForTest).run();
+        await runMigration();
         const changedOnSecondRun = await env.DB.prepare(`
             SELECT count(*) AS count
             FROM model_alias_migration_apikey AS current

@@ -92,7 +92,7 @@ export async function callSeedanceV2API(
         aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
         generate_audio: safeParams.audio,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
     if (images.length >= 1) input.image = await toDataUri(images[0]);

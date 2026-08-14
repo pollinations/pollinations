@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { getRequestData } from "../../src/text/requestUtils.js";
+import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("getRequestData", () => {
+    it("normalizes seed -1 to the sentinel seed", () => {
+        const requestData = getRequestData({
+            query: { seed: "-1" },
+            body: {},
+            path: "/text/prompt",
+            params: { 0: "hello" },
+            method: "GET",
+            headers: {},
+        });
+
+        expect(requestData.seed).toBe(SENTINEL_SEED);
+    });
+
     it("coerces token limits from query strings", () => {
         const requestData = getRequestData({
             query: {

@@ -191,6 +191,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                            perUserRpm={model.perUserRpm}
                         />
                         <BalanceAccessChip
                             access={balanceAccess}

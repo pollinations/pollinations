@@ -142,14 +142,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek-pro": {
     "cost": {
-      "completionTextTokens": 0.00000348,
-      "promptCachedTokens": 0.000000145,
-      "promptTextTokens": 0.00000174,
+      "completionTextTokens": 0.00000396,
+      "promptCachedTokens": 0.000000044,
+      "promptTextTokens": 0.00000132,
     },
     "price": {
-      "completionTextTokens": 0.00000348,
-      "promptCachedTokens": 0.000000145,
-      "promptTextTokens": 0.00000174,
+      "completionTextTokens": 0.00000396,
+      "promptCachedTokens": 0.000000044,
+      "promptTextTokens": 0.00000132,
     },
   },
   "dreamshaper": {

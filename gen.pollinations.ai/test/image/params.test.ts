@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
+import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
-    it("preserves seed -1 as a literal seed", () => {
+    it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "flux",
             seed: -1,
         });
 
-        expect(result.seed).toBe(-1);
+        expect(result.seed).toBe(SENTINEL_SEED);
     });
 
     it("rejects transparent backgrounds for gpt-image-2", () => {

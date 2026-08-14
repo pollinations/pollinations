@@ -135,8 +135,11 @@ describe("docs routes", () => {
             { url: "https://gen.pollinations.ai" },
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
-        expect(schema.paths["/v1/audio/transcriptions/realtime"]).toBeDefined();
+        expect(
+            schema.paths["/v1/audio/transcriptions/realtime"],
+        ).toBeUndefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         const model3dPost = (
             schema.paths["/3d/{prompt}"] as Record<string, unknown>
@@ -232,17 +235,14 @@ describe("docs routes", () => {
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
 
-        const scribeRealtimeGet = (
-            schema.paths["/v1/audio/transcriptions/realtime"] as Record<
-                string,
-                unknown
-            >
+        const nativeRealtimeGet = (
+            schema.paths["/realtime"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
-        const scribeRealtimeResponses = scribeRealtimeGet?.responses as
+        const nativeRealtimeResponses = nativeRealtimeGet?.responses as
             | Record<string, unknown>
             | undefined;
-        expect(scribeRealtimeResponses?.["426"]).toBeDefined();
-        expect(scribeRealtimeResponses?.["503"]).toBeDefined();
+        expect(nativeRealtimeResponses?.["426"]).toBeDefined();
+        expect(nativeRealtimeResponses?.["503"]).toBeDefined();
 
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
@@ -368,15 +368,15 @@ describe("docs routes", () => {
         expect(apiBody).toContain("Base URL:");
         // Stable heading marker proves the realtime modality is composed into
         // the api section, without pinning volatile mid-prose wording.
-        expect(apiBody).toContain("## Realtime Voice");
+        expect(apiBody).toContain("## Realtime");
         const realtimeSection = apiBody.slice(
-            apiBody.indexOf("## Realtime Voice"),
+            apiBody.indexOf("## Realtime"),
             apiBody.indexOf("## 3D Generation"),
         );
-        expect(realtimeSection).not.toContain("scribe-realtime");
-        expect(apiBody).toContain(
-            "`GET /v1/audio/transcriptions/realtime` | WebSocket realtime transcription",
-        );
+        expect(realtimeSection).toContain("scribe-realtime");
+        expect(realtimeSection).toContain("`GET /realtime`");
+        expect(realtimeSection).toContain("`GET /v1/realtime`");
+        expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

@@ -1037,7 +1037,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000035,
     },
   },
-  "muse-spark-1.1": {
+  "muse-spark-1.2": {
     "cost": {
       "completionTextTokens": 0.00000425,
       "promptCachedTokens": 0.00000015,

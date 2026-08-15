@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
@@ -298,7 +298,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         balanceBucket: "tier",
     });
     expect(byId.get("early_adopter")?.title).toBe(
-        "Six-month Pollinations member",
+        "One-year Pollinations member",
     );
     expectStableCatalogFields("github_established", {
         state: "available",
@@ -896,7 +896,7 @@ test("D1 quest check only records the requested user", async ({
     );
 });
 
-test("six-month account quest records once after the threshold", async ({
+test("one-year account quest records once after the threshold", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -933,7 +933,7 @@ test("six-month account quest records once after the threshold", async ({
     ]);
 });
 
-test("six-month account quest waits until the threshold", async ({
+test("one-year account quest waits until the exact threshold", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -941,13 +941,44 @@ test("six-month account quest waits until the threshold", async ({
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
+    // Read the cutoff from the same expression the quest SQL uses, so the
+    // boundary is tested against SQLite's calendar arithmetic rather than a
+    // hardcoded 365/366-day guess.
+    const [cutoffRow] = await db.all<{ cutoff: number }>(
+        sql`SELECT CAST(strftime('%s', 'now', '-1 year') AS integer) AS cutoff`,
+    );
+    const cutoff = cutoffRow?.cutoff;
+    if (typeof cutoff !== "number") throw new Error("Expected a cutoff");
+
+    const oneDay = 24 * 60 * 60;
+    const justUnder = new Date((cutoff + oneDay) * 1000);
+    await db
+        .update(schema.user)
+        .set({ createdAt: justUnder, updatedAt: justUnder })
+        .where(eq(schema.user.id, user.id));
+
     await checkQuestsForUser(env, user.id);
 
-    const rewards = await db
+    let rewards = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "early_adopter"));
     expect(rewards).toHaveLength(0);
+
+    // Exactly at the threshold qualifies: the comparison is inclusive.
+    const atThreshold = new Date(cutoff * 1000);
+    await db
+        .update(schema.user)
+        .set({ createdAt: atThreshold, updatedAt: atThreshold })
+        .where(eq(schema.user.id, user.id));
+
+    await checkQuestsForUser(env, user.id);
+
+    rewards = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "early_adopter"));
+    expect(rewards).toHaveLength(1);
 });
 
 test("app-listed, app-active, and use-app quests record while app_paid_request stays coming_soon", async ({

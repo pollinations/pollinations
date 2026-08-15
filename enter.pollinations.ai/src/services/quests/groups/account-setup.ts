@@ -12,7 +12,7 @@ import {
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
- *   - early_adopter  -> user.created_at           (registered 6+ months ago)
+ *   - early_adopter  -> user.created_at           (registered 1+ year ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
  *
@@ -56,10 +56,10 @@ const byopLoginQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const sixMonthAccountQuest: QuestDefinition = {
+const oneYearAccountQuest: QuestDefinition = {
     id: "early_adopter",
-    title: "Six-month Pollinations member",
-    description: "Your Pollinations account is older than six months.",
+    title: "One-year Pollinations member",
+    description: "Your Pollinations account is older than one year.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 2,
@@ -112,7 +112,7 @@ const overHundredPollenSinceLaunchQuest: QuestDefinition = {
 const QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
-    sixMonthAccountQuest,
+    oneYearAccountQuest,
     legacyFirstTopUpQuest,
     legacyOverHundredPollenQuest,
     topUpSinceLaunchQuest,
@@ -122,7 +122,7 @@ const QUESTS = [
 const EVALUATED_QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
-    sixMonthAccountQuest,
+    oneYearAccountQuest,
     topUpSinceLaunchQuest,
     overHundredPollenSinceLaunchQuest,
 ];
@@ -140,7 +140,7 @@ export async function findRewardProposalsForUser(
     const rewardableQuestIds = new Set(
         rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
-    const [apiKeyRows, topUpSummaryRows, byopLoginRows, sixMonthAccountRows] =
+    const [apiKeyRows, topUpSummaryRows, byopLoginRows, oneYearAccountRows] =
         await Promise.all([
             rewardableQuestIds.has(firstApiKeyQuest.id)
                 ? db.all<SetupQuestRow>(sql`
@@ -177,12 +177,12 @@ export async function findRewardProposalsForUser(
           AND apikey.byop_client_key_id IS NOT NULL
         LIMIT 1`)
                 : [],
-            rewardableQuestIds.has(sixMonthAccountQuest.id)
+            rewardableQuestIds.has(oneYearAccountQuest.id)
                 ? db.all<SetupQuestRow>(sql`
         SELECT "user".id AS userId
         FROM "user"
         WHERE "user".id = ${user.id}
-          AND "user".created_at <= CAST(strftime('%s', 'now', '-6 months') AS integer)
+          AND "user".created_at <= CAST(strftime('%s', 'now', '-1 year') AS integer)
         LIMIT 1`)
                 : [],
         ]);
@@ -196,8 +196,8 @@ export async function findRewardProposalsForUser(
             quest: byopLoginQuest,
             userId: row.userId,
         })),
-        ...sixMonthAccountRows.map((row) => ({
-            quest: sixMonthAccountQuest,
+        ...oneYearAccountRows.map((row) => ({
+            quest: oneYearAccountQuest,
             userId: row.userId,
         })),
         ...(rewardableQuestIds.has(topUpSinceLaunchQuest.id) &&

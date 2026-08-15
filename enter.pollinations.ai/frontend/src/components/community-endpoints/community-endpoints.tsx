@@ -336,7 +336,7 @@ export function CommunityEndpoints({
     return (
         <>
             <Section
-                title="My Deployments"
+                title="My Agents"
                 framed
                 action={
                     <div className="flex flex-wrap justify-end gap-2">

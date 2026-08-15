@@ -298,7 +298,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         balanceBucket: "tier",
     });
     expect(byId.get("early_adopter")?.title).toBe(
-        "One-year Pollinations member",
+        "Seven-month Pollinations member",
     );
     expectStableCatalogFields("github_established", {
         state: "coming_soon",
@@ -896,7 +896,7 @@ test("D1 quest check only records the requested user", async ({
     );
 });
 
-test("one-year account quest records once after the threshold", async ({
+test("seven-month account quest records once after the threshold", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -933,7 +933,7 @@ test("one-year account quest records once after the threshold", async ({
     ]);
 });
 
-test("one-year account quest waits until the exact threshold", async ({
+test("seven-month account quest waits until the exact threshold", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -945,7 +945,7 @@ test("one-year account quest waits until the exact threshold", async ({
     // boundary is tested against SQLite's calendar arithmetic rather than a
     // hardcoded 365/366-day guess.
     const [cutoffRow] = await db.all<{ cutoff: number }>(
-        sql`SELECT CAST(strftime('%s', 'now', '-1 year') AS integer) AS cutoff`,
+        sql`SELECT CAST(strftime('%s', 'now', '-7 months') AS integer) AS cutoff`,
     );
     const cutoff = cutoffRow?.cutoff;
     if (typeof cutoff !== "number") throw new Error("Expected a cutoff");

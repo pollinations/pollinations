@@ -5,8 +5,14 @@ import {
     DialogTitle,
     ScrollArea,
 } from "@pollinations/ui";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import {
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "../models/model-catalog.ts";
+import { getModelInputModalities } from "../models/model-info.ts";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
@@ -208,9 +214,14 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
+            const inputModalities = listingStarted
+                ? await inheritedInputModalities(form.baseModel)
+                : null;
             await onSubmit(
                 toAgentPayload(form),
-                listingStarted ? toAgentListingPayload(form) : null,
+                inputModalities
+                    ? toAgentListingPayload(form, inputModalities)
+                    : null,
             );
             onOpenChange(false);
         } catch (thrown) {
@@ -325,4 +336,18 @@ export function AgentDialog({
             </form>
         </Dialog>
     );
+}
+
+async function inheritedInputModalities(
+    baseModelId: string,
+): Promise<ModelInputModality[]> {
+    try {
+        const models = getModelPricesFromCatalog(await fetchModelCatalog());
+        const baseModel = models.find(
+            (model) => model.name === baseModelId.trim(),
+        );
+        return baseModel ? getModelInputModalities(baseModel) : ["text"];
+    } catch {
+        return ["text"];
+    }
 }

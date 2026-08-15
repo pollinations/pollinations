@@ -371,6 +371,10 @@ const CreateEndpointSchema = z
         (input) =>
             input.agentId === undefined || !input.fallbackModelIds?.length,
         { message: "Managed agent listings do not support fallback models" },
+    )
+    .refine(
+        (input) => input.agentId === undefined || input.perUserRpm == null,
+        { message: "Managed agent listings do not support per-user RPM" },
     );
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
@@ -984,7 +988,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           ),
                     visibility: input.visibility,
-                    perUserRpm: input.perUserRpm ?? null,
+                    perUserRpm: agent ? null : (input.perUserRpm ?? null),
                     fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
@@ -1159,6 +1163,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         "Managed agent listings do not support fallback models",
                 });
             }
+            if (
+                endpoint.agentId !== null &&
+                input.perUserRpm !== undefined &&
+                input.perUserRpm !== null
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed agent listings do not support per-user RPM",
+                });
+            }
             if (input.inputModalities !== undefined) {
                 enforceCommunityEndpointInputModalities(
                     modality,
@@ -1197,7 +1211,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            if (input.perUserRpm !== undefined) {
+            if (endpoint.agentId !== null) {
+                update.perUserRpm = null;
+            } else if (input.perUserRpm !== undefined) {
                 update.perUserRpm = input.perUserRpm;
             }
             if (input.inputModalities !== undefined) {

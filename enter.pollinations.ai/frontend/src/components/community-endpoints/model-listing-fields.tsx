@@ -90,8 +90,12 @@ export function ModelListingFields({
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <FieldStack
-                    label="Model ID"
-                    helper="Public id: {username}/{model-id}."
+                    label={isAgent ? "ID" : "Model ID"}
+                    helper={
+                        isAgent
+                            ? "Public ID: {username}/{id}."
+                            : "Public ID: {username}/{model-id}."
+                    }
                     alignLabelRow
                 >
                     <Input

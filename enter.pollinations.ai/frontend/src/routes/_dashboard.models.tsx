@@ -4,9 +4,5 @@ import { validateModelSearch } from "../components/models/model-search.ts";
 
 export const Route = createFileRoute("/_dashboard/models")({
     validateSearch: validateModelSearch,
-    component: ModelsPage,
+    component: Models,
 });
-
-function ModelsPage() {
-    return <Models />;
-}

@@ -21,8 +21,8 @@ export const DASHBOARD_NAV_ITEMS = [
     },
     { id: "models", to: "/models", label: "Models", icon: BeakerIcon },
     {
-        id: "deployments",
-        to: "/deployments",
+        id: "my-models",
+        to: "/my-models",
         label: "My Models",
         icon: CloudUploadIcon,
     },

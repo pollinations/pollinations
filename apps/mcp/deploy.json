@@ -4,6 +4,6 @@
   "subdomain": "mcp",
   "install": "npm ci && npm ci --prefix ../../packages/mcp",
   "build": "npm run test",
-  "deploy": "npm run deploy -- --env staging && npm run deploy",
+  "deploy": "npm run deploy",
   "watch": ["packages/mcp/"]
 }

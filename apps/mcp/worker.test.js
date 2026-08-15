@@ -30,7 +30,7 @@ async function connectClient(options = {}, token = TOKEN) {
         { capabilities: {}, ...options },
     );
     const transport = new StreamableHTTPClientTransport(
-        new URL("https://mcp.pollinations.ai/mcp"),
+        new URL("https://mcp.pollinations.ai"),
         {
             fetch: localFetch,
             requestInit: {
@@ -44,13 +44,13 @@ async function connectClient(options = {}, token = TOKEN) {
 
 test("serves health and requires bearer auth", async () => {
     const health = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/"),
+        new Request("https://mcp.pollinations.ai/health"),
     );
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).endpoint, "/mcp");
+    assert.equal((await health.json()).endpoint, "/");
 
     const unauthorized = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/mcp", {
+        new Request("https://mcp.pollinations.ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: "{}",
@@ -61,6 +61,11 @@ test("serves health and requires bearer auth", async () => {
         unauthorized.headers.get("www-authenticate"),
         'Bearer realm="mcp.pollinations.ai"',
     );
+
+    const oldEndpoint = await worker.fetch(
+        new Request("https://mcp.pollinations.ai/mcp"),
+    );
+    assert.equal(oldEndpoint.status, 404);
 });
 
 test("serves modern and legacy clients without sessions", async () => {

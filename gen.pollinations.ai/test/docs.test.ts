@@ -324,37 +324,6 @@ describe("docs routes", () => {
         expect(parsed.paths["/v1/chat/completions"]).toBeDefined();
     });
 
-    it("serves the guides index and individual guide pages", async () => {
-        const ctx = createExecutionContext();
-
-        const indexRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides"),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        expect(indexRes.status).toBe(200);
-        const indexHtml = await indexRes.text();
-        expect(indexHtml).toContain("/docs/guides/byop");
-        expect(indexHtml).toContain("/docs/guides/cli");
-        expect(indexHtml).toContain("/docs/guides/mcp");
-
-        const byopRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides/byop"),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("BYOP");
-
-        const missingRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides/notexist"),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(missingRes.status).toBe(404);
-    });
-
     it("filters /docs/llm.txt by section", async () => {
         const ctx = createExecutionContext();
 

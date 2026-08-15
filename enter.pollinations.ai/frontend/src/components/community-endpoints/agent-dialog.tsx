@@ -227,10 +227,14 @@ export function AgentDialog({
                     />
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
-                    <Button type="button" onClick={() => onOpenChange(false)}>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Cancel
                     </Button>
-                    <Button type="submit" intent="info" disabled={!canSubmit}>
+                    <Button type="submit" disabled={!canSubmit}>
                         {isSubmitting ? "Saving…" : submitLabel}
                     </Button>
                 </div>

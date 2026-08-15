@@ -2,7 +2,11 @@ import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
+import {
+    base64ToBuffer,
+    downloadUserImage,
+    readImageDimensions,
+} from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:nova-canvas:ops");
 const logError = debug("pollinations:nova-canvas:error");
@@ -67,11 +71,6 @@ export async function callNovaCanvasAPI(
         throw new HttpError("AWS credentials not configured", 500);
     }
 
-    const { width, height } = clampDimensions(
-        safeParams.width || 1024,
-        safeParams.height || 1024,
-    );
-
     // Check if image input is provided for editing mode
     const rawImageUrl = safeParams.image
         ? Array.isArray(safeParams.image)
@@ -79,6 +78,60 @@ export async function callNovaCanvasAPI(
             : safeParams.image
         : undefined;
     const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
+
+    let width: number;
+    let height: number;
+    let requestBody: Record<string, unknown>;
+
+    if (rawImageUrl) {
+        const { buffer: rawBuffer, mimeType: rawMime } =
+            await downloadUserImage(rawImageUrl);
+
+        if (!safeParams.dimensionsExplicit) {
+            const dims = readImageDimensions(rawBuffer, rawMime);
+            ({ width, height } = clampDimensions(
+                dims?.width ?? safeParams.width ?? 1024,
+                dims?.height ?? safeParams.height ?? 1024,
+            ));
+        } else {
+            ({ width, height } = clampDimensions(
+                safeParams.width ?? 1024,
+                safeParams.height ?? 1024,
+            ));
+        }
+
+        requestBody = {
+            taskType: "IMAGE_VARIATION",
+            imageVariationParams: {
+                text: prompt,
+                images: [rawBuffer.toString("base64")],
+                similarityStrength: 0.7,
+            },
+            imageGenerationConfig: {
+                numberOfImages: 1,
+                height,
+                width,
+                cfgScale: 8.0,
+                ...(safeParams.seed != null ? { seed: safeParams.seed } : {}),
+            },
+        };
+    } else {
+        ({ width, height } = clampDimensions(
+            safeParams.width ?? 1024,
+            safeParams.height ?? 1024,
+        ));
+        requestBody = {
+            taskType: "TEXT_IMAGE",
+            textToImageParams: { text: prompt },
+            imageGenerationConfig: {
+                numberOfImages: 1,
+                height,
+                width,
+                cfgScale: 8.0,
+                ...(safeParams.seed != null ? { seed: safeParams.seed } : {}),
+            },
+        };
+    }
 
     logOps(`Calling Nova Canvas API (${mode}):`, {
         prompt: prompt.substring(0, 100),
@@ -102,38 +155,6 @@ export async function callNovaCanvasAPI(
         },
         requestHandler: new FetchHttpHandler(),
     });
-
-    const imageGenerationConfig = {
-        numberOfImages: 1,
-        height,
-        width,
-        cfgScale: 8.0,
-        ...(safeParams.seed != null ? { seed: safeParams.seed } : {}),
-    };
-
-    let requestBody: Record<string, unknown>;
-
-    if (rawImageUrl) {
-        // Image variation mode - download and convert to base64
-        const { buffer } = await downloadUserImage(rawImageUrl);
-        requestBody = {
-            taskType: "IMAGE_VARIATION",
-            imageVariationParams: {
-                text: prompt,
-                images: [buffer.toString("base64")],
-                similarityStrength: 0.7,
-            },
-            imageGenerationConfig,
-        };
-    } else {
-        requestBody = {
-            taskType: "TEXT_IMAGE",
-            textToImageParams: {
-                text: prompt,
-            },
-            imageGenerationConfig,
-        };
-    }
 
     const command = new InvokeModelCommand({
         modelId: "amazon.nova-canvas-v1:0",

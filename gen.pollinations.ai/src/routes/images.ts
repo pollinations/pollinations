@@ -22,41 +22,13 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
-import { readImageDimensions } from "@/image/utils/imageDownload.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
-import { fetchUserImage } from "@/userImage.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-
-const EDIT_TARGET_AREA = 1024 * 1024;
-
-/**
- * Scale source dimensions to ~1 MP while preserving aspect ratio, snapping
- * each side to the nearest 16-pixel multiple. Returns an OpenAI-style size
- * string ("WxH") suitable for resolveParams.
- */
-export function scaleToEditSize(srcWidth: number, srcHeight: number): string {
-    const scale = Math.sqrt(EDIT_TARGET_AREA / (srcWidth * srcHeight));
-    const snap = (n: number) => Math.max(16, Math.round((n * scale) / 16) * 16);
-    return `${snap(srcWidth)}x${snap(srcHeight)}`;
-}
-
-async function deriveSourceImageSize(
-    imageUrl: string,
-): Promise<string | undefined> {
-    try {
-        const { bytes, mimeType } = await fetchUserImage(imageUrl);
-        const dims = readImageDimensions(bytes, mimeType);
-        if (dims) return scaleToEditSize(dims.width, dims.height);
-    } catch {
-        // Fall through to model defaults when the image cannot be read.
-    }
-    return undefined;
-}
 
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
 
@@ -89,7 +61,7 @@ function responseImageUsage(
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
-function resolveParams(opts: {
+export function resolveParams(opts: {
     size?: string;
     quality?: string;
     seed?: number;
@@ -298,17 +270,9 @@ export async function handleImageGeneration(c: Context<Env>) {
 export async function handleImageEdit(c: Context<Env>) {
     await requireGenerationAccess(c.var, c.env);
 
-    const {
-        prompt,
-        imageUrls,
-        size: requestedSize,
-        quality,
-        seed,
-        safe,
-        extra,
-    } = await parseEditInput(c);
+    const { prompt, imageUrls, size, quality, seed, safe, extra } =
+        await parseEditInput(c);
     const safePrompt = await applySafety(c, prompt, safe);
-    const size = requestedSize ?? (await deriveSourceImageSize(imageUrls[0]));
     const resolved = resolveParams({ size, quality, seed });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {

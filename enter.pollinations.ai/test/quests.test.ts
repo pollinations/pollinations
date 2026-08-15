@@ -973,7 +973,7 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
         {
             userId: user.id,
             pollenUsed: 11,
-            paidRequests: 2,
+            paidRequests: 1,
         },
     ];
     mocks.tinybird.state.appDirectoryResponse = [

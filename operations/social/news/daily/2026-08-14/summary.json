@@ -1,0 +1,159 @@
+{
+  "date": "2026-08-14",
+  "period_start": "2026-08-14",
+  "period_end": "2026-08-14",
+  "title": "The model shelf got considerably larger",
+  "summary": "A loud day for the API: a broader model catalog, fuller audio and realtime support, sturdier shared generation, and a better-tended community garden.\n\nNew options landed across text, vision, image, and video: Muse Glimmer 30B, Qwen3.8 2.4T A95B, Grok Imagine Image 2.0, Seedance 2.0 Mini and Fast, and MiniMax H3. Gemini moved to 3.7 Flash, Muse Spark to 1.2, Grok to 4.6, and DeepSeek Pro to its 0813 checkpoint, with compatibility aliases kept in place so existing integrations do not get to discover model renames the hard way.\n\nScribe realtime transcription is now available through the OpenAI Realtime protocol, while Azure realtime sessions got sturdier connection setup, shutdown handling, and settlement behavior. ElevenLabs dialogue now works through the standard speech API, every speech model is available through the short /audio/{text} route, Qwen TTS accepts the documented instructions field, and Azure GPT-5 callers can receive reasoning summaries when they request reasoning effort.\n\nGeneration caching was consolidated across media and text, including OpenAI-compatible image generation. Identical in-flight requests can again coordinate around one completed result across text, images, video, audio, embeddings, and 3D; the first implementation briefly found an unpleasant Durable Object cleanup edge case, then returned with targeted cleanup instead of deleting unrelated state. Software remains a garden, except some of the plants are distributed locks.",
+  "pr_count": 37,
+  "prs": [
+    {
+      "number": 12644,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13014,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13257,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13269,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13299,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13322,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13328,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13334,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13335,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13338,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13342,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13347,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13349,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13350,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13354,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13355,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13356,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13357,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13358,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13359,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13360,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13361,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13362,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13365,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13366,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13368,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13370,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13372,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13373,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13377,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13378,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13379,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13380,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13383,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13387,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13389,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 13393,
+      "date": "2026-08-14"
+    }
+  ],
+  "generated_at": "2026-08-15T06:12:59.108969+00:00"
+}

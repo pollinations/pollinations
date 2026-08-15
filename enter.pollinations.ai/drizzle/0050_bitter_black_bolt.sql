@@ -1,1 +1,0 @@
-ALTER TABLE `agent` ADD `mcp_headers_ciphertext` text;

@@ -5,6 +5,7 @@ import {
     Button,
     CloudUploadIcon,
     FieldStack,
+    InlineLink,
     Input,
     Section,
     Surface,
@@ -302,24 +303,20 @@ export function CommunityEndpoints({
             the upstream model ID manually, then test the saved model by calling
             its model ID. Public publishing is allowlist-only. To request
             publishing access for your account, submit a{" "}
-            <a
+            <InlineLink
                 href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-theme-text-strong"
+                showIcon={false}
             >
                 community model publisher allowlist request
-            </a>{" "}
+            </InlineLink>{" "}
             form. You can register and test private models without approval. For
             questions, ask in{" "}
-            <a
+            <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-theme-text-strong"
+                showIcon={false}
             >
                 Discord
-            </a>
+            </InlineLink>
             .
         </>
     );

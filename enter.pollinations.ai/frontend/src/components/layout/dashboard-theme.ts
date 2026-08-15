@@ -6,6 +6,7 @@ import {
     LockIcon,
     NewspaperIcon,
     SparkleIcon,
+    SparklesIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
@@ -19,6 +20,12 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: NewspaperIcon,
     },
     { id: "models", to: "/models", label: "Models", icon: BeakerIcon },
+    {
+        id: "my-models",
+        to: "/my-models",
+        label: "My Agents & Models",
+        icon: SparklesIcon,
+    },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
     { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
     {

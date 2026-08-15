@@ -93,14 +93,20 @@ describe("community endpoint per-user RPM input", () => {
     });
 
     it("serializes agent listings without prices or fallbacks", () => {
-        const payload = toAgentListingPayload({
-            ...agentListingToForm(),
-            name: "researcher",
-            title: "Researcher",
-            visibility: "public",
-        });
+        const payload = toAgentListingPayload(
+            {
+                ...agentListingToForm(),
+                name: "researcher",
+                title: "Researcher",
+                visibility: "public",
+                perUserRpm: "12",
+            },
+            ["text", "image"],
+        );
         expect(payload).toMatchObject({
             modality: "text",
+            inputModalities: ["text", "image"],
+            perUserRpm: null,
         });
         expect(payload).not.toHaveProperty("agentId");
         expect(payload).not.toHaveProperty("baseUrl");

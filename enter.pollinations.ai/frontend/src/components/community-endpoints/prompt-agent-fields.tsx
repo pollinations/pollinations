@@ -52,7 +52,7 @@ export function PromptAgentFields({
 
             <FieldStack
                 label="Base model"
-                helper="Pick a Pollinations text model or type any model ID."
+                helper="Pick a Pollinations text model or type any model ID. Accepted inputs are inherited from this model."
                 alignLabelRow
             >
                 <BaseModelInput

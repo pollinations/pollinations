@@ -150,7 +150,7 @@ export function CommunityEndpointCard({
                         value={endpoint.upstreamModel}
                     />
                 )}
-                {endpoint.perUserRpm !== null && (
+                {!endpoint.agentId && endpoint.perUserRpm !== null && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Per-user limit"

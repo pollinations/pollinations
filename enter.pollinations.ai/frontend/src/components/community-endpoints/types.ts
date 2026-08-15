@@ -485,9 +485,15 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
 
 export function toAgentListingPayload(
     form: ModelListingFormState,
+    inputModalities: ModelInputModality[],
 ): AgentListingDetailsPayload {
     return {
-        ...listingFieldsToPayload(form),
+        inputModalities,
+        name: form.name.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
+        visibility: form.visibility,
+        perUserRpm: null,
         modality: "text",
     };
 }

@@ -80,7 +80,9 @@ function resolveMcpServers(
     const mcpHeaders: PromptAgentMcpHeaders = {};
     const mcpServers = servers.map((server, index) => {
         const currentServer =
-            currentServers.find((candidate) => candidate.name === server.name) ??
+            currentServers.find(
+                (candidate) => candidate.name === server.name,
+            ) ??
             currentServers.find((candidate) => candidate.url === server.url) ??
             currentServers[index];
         const headers: Record<string, string> = {};

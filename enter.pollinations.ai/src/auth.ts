@@ -6,6 +6,10 @@ import {
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    getInstallationToken,
+    githubAppCredentialsFromEnv,
+} from "@shared/github/app-auth.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import {
     type BetterAuthOptions,
@@ -150,14 +154,21 @@ function onAfterSessionCreate(
                     const githubId = user?.githubId;
                     if (!githubId) return;
 
+                    // OAuth client_id/secret Basic auth is rejected by GitHub
+                    // (401); the App installation token is the authenticated path.
                     const headers: Record<string, string> = {
                         Accept: "application/vnd.github+json",
                         "User-Agent": "pollinations-enter",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        Authorization: `token ${
+                            env.ENVIRONMENT === "test"
+                                ? "mock_github_auth_token"
+                                : await getInstallationToken(
+                                      githubAppCredentialsFromEnv(env),
+                                      "pollinations",
+                                  )
+                        }`,
                     };
-                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
-                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-                    }
                     const res = await fetch(
                         `https://api.github.com/user/${githubId}`,
                         { headers },

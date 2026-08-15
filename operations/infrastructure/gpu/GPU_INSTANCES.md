@@ -28,7 +28,7 @@ instance is the production Z-Image worker, not a spare canary. Vast labels do
 not control routing; instance IDs, registered hostnames, and the Klein VPC
 tunnel are authoritative.
 
-## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
+## Provider: Vast.ai — DreamShaper 8 LCM
 
 Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
 `sana` kept as an alias; the **registry pool key is still `sana`** because
@@ -38,12 +38,12 @@ exists after the routing change deploys.
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
 | dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | RTX 3090 | $0.150000/hr | ACTIVE — named tunnel `dreamshaper-canary-46600159.myceli.ai` |
-| dreamshaper-vast-02 | 46387155 | 123712 / California, US | RTX 3090 | $0.153333/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+| dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | ACTIVE — named tunnel `dreamshaper-canary-47789794.myceli.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
-`dreamshaper/`; Vast runs `/root/onstart.sh` after container start to
-restore the worker and named tunnel.
+`operations/infrastructure/gpu/dreamshaper/`; Vast runs `/root/onstart.sh`
+after container start to restore the worker and named tunnel.
 
 Each Uvicorn process admits one running and one waiting request
 (`QUEUE_LIMIT=2`). Once that bounded queue is full, the worker returns 503 and

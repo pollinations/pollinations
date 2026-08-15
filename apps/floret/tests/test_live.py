@@ -102,10 +102,9 @@ async def test_chained_video_via_frame_extraction(tmp_path, monkeypatch):
     )
     clip1 = await media.fetch_media(clip1_url, "clip1.mp4")
 
-    out = await bash(
-        f"ffmpeg -y -sseof -0.5 -i {clip1} -update 1 -q:v 1 last.jpg && ls last.jpg"
-    )
+    out = await bash(f"ffmpeg -y -sseof -0.5 -i {clip1} -update 1 -q:v 1 last.jpg")
     assert "exit_code: 0" in out
+    assert (tmp_path / "workspace" / "last.jpg").is_file()
 
     frame_url = await media.upload_media("last.jpg")
     assert frame_url.startswith("https://media.pollinations.ai/")

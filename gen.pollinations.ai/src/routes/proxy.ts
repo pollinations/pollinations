@@ -1,14 +1,12 @@
 import { type Context, Hono } from "hono";
-import { bodyLimit } from "hono/body-limit";
+import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import {
-    generateEmbeddings,
-    getEmbeddingProviderModelId,
-} from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
-import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
+import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
     imageCache,
@@ -19,14 +17,18 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { handleImageEdit, handleImageGeneration } from "./images.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageEdit,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
-import { UpstreamError } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
@@ -43,25 +45,16 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
-    type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
-    type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
-import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
-import { handle3dPrompt } from "@/model3d/handler.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -74,20 +67,28 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
+import {
+    type ModelListQueryParams,
+    ModelListQueryParamsSchema,
+} from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import {
-    handleChatCompletionLocal,
-    handleSimpleTextLocal,
-    handleTextContentLocal,
-} from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
-import { withModelFallbackResponse } from "../fallback.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
+import {
+    generateChatCompletion,
+    generateEmbeddingsResponse,
+    generateImageVideo,
+    generateModel3d,
+    generateSimpleText,
+    generateTextContent,
+    simpleAudioQuerySchema,
+    textBodyLimit,
+} from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -103,45 +104,59 @@ const model3dModelNames = getModel3dModelIds()
     .map((id) => `\`${id}\``)
     .join(", ");
 
+function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
+    return describeRoute({
+        tags: ["🎙️ Realtime"],
+        summary: "Realtime WebSocket",
+        description: [
+            "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
+            "",
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`scribe-realtime\` creates a transcription session automatically.`,
+            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+            "",
+            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+            "",
+            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+        ].join("\n"),
+        responses: {
+            101: {
+                description: "WebSocket connection established",
+            },
+            ...errorResponseDescriptions(
+                400,
+                401,
+                402,
+                403,
+                426,
+                429,
+                500,
+                503,
+            ),
+        },
+    });
+}
+
 const factory = createFactory<Env>();
-const textBodyLimit = bodyLimit({
-    maxSize: 20 * 1024 * 1024,
-});
+
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageCache,
     generationAccess,
-    async (c) => {
-        const query = c.req.valid("query" as never) as { safe?: SafeValue };
-        const prompt = await applySafety(
-            c,
-            c.req.param("prompt") || "",
-            query.safe,
-        );
-        return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
-    },
+    deduplicateGeneration,
+    generateImageVideo,
 );
 
-// Handler for 3D model generation (reuses the "generate.image" EventType,
-// same as video, to avoid touching Tinybird/EventType consumers).
+// 3D shares the image event type to avoid changing Tinybird consumers.
 const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
     track("generate.image"),
     model3dCache,
     generationAccess,
-    async (c) => {
-        const query = c.req.valid("query" as never) as { safe?: SafeValue };
-        const prompt = await applySafety(
-            c,
-            c.req.param("prompt") || "",
-            query.safe,
-        );
-        return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
-    },
+    deduplicateGeneration,
+    generateModel3d,
 );
 
-// Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
@@ -149,69 +164,9 @@ const chatCompletionHandlers = factory.createHandlers(
     track("generate.text"),
     textCache,
     generationAccess,
-    async (c) => {
-        // Use resolved model from middleware for the backend request
-        const requestBody = await applySafetyToChatRequest(c, {
-            ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
-            model: c.var.model.resolved,
-        });
-
-        const response = await handleChatCompletionLocal(c, requestBody);
-        if (!response.ok) return response;
-
-        assertStreamContentType(c, response, c.var.upstreamRequestUrl);
-
-        // add content filter headers if not streaming
-        let contentFilterHeaders = {};
-        if (!c.var.track.streamRequested) {
-            const responseText = await response.clone().text();
-            try {
-                const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                    JSON.parse(responseText),
-                    { reportInput: true },
-                );
-                contentFilterHeaders =
-                    contentFilterResultsToHeaders(parsedResponse);
-            } catch (parseError) {
-                throw new UpstreamError(502, {
-                    message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: c.var.upstreamRequestUrl,
-                    responseBody: responseText,
-                    cause: parseError,
-                });
-            }
-        }
-
-        return withSafetyHeaders(
-            c,
-            new Response(response.body, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...contentFilterHeaders,
-                },
-            }),
-        );
-    },
+    deduplicateGeneration,
+    generateChatCompletion,
 );
-
-// Validate streaming responses: if client requested stream but upstream
-// returned non-SSE, throw rather than forwarding broken data.
-function assertStreamContentType(
-    c: Context<Env>,
-    response: Response,
-    upstreamRequestUrl: URL | undefined,
-): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: upstreamRequestUrl,
-                responseBody: contentType,
-            });
-        }
-    }
-}
 
 // Helper to filter models by API key permissions and paid balance.
 function filterEntriesByPermissions(
@@ -236,25 +191,46 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Factory for model-list endpoints: filters the given models by API key
-// permissions and paid balance, then returns them as JSON.
-const modelsListHandler =
-    (
-        getEntries: (
-            c: Context<Env>,
-        ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
-    ) =>
-    async (c: Context<Env>) => {
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        const paidBalance = hasPaidBalance(c);
-        return c.json(
-            filterEntriesByPermissions(
-                await getEntries(c),
-                allowedModels,
-                paidBalance,
-            ).map((entry) => entry.info),
-        );
-    };
+// Optionally filter entries by the validated `?community` query parameter.
+function filterEntriesByCommunityParam(
+    entries: GenerationModelEntry[],
+    communityParam: string | undefined,
+): GenerationModelEntry[] {
+    if (communityParam === undefined) return entries;
+    const wantCommunity = communityParam === "true" || communityParam === "1";
+    return entries.filter(
+        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
+    );
+}
+
+// Factory for model-list endpoints: validates the community query parameter,
+// filters by API key permissions, paid balance, and community flag,
+// then returns the model list as JSON.
+const modelsListHandler = (
+    getEntries: (
+        c: Context<Env>,
+    ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
+) =>
+    [
+        validator("query", ModelListQueryParamsSchema),
+        async (c: Context<Env>) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            return c.json(
+                filterEntriesByCommunityParam(
+                    filterEntriesByPermissions(
+                        await getEntries(c),
+                        allowedModels,
+                        paidBalance,
+                    ),
+                    community,
+                ).map((entry) => entry.info),
+            );
+        },
+    ] as const;
 
 async function getVisibleModelEntries(c: Context<Env>) {
     return (await getGenerationModelRegistry(c.env)).visibleEntries(
@@ -312,7 +288,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -322,16 +298,23 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
+        validator("query", ModelListQueryParamsSchema),
         async (c) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByPermissions(
-                await getVisibleModelEntries(c),
-                allowedModels,
-                paidBalance,
+            const modelEntries = filterEntriesByCommunityParam(
+                filterEntriesByPermissions(
+                    await getVisibleModelEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                community,
             );
             const now = Date.now();
 
@@ -349,6 +332,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...(entry.info.context_length && {
                     context_length: entry.info.context_length,
                 }),
+                ...(entry.info.community && {
+                    per_user_rpm: entry.info.per_user_rpm ?? null,
+                }),
             });
 
             return c.json({
@@ -363,7 +349,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -378,10 +364,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModelEntries),
+        ...modelsListHandler(getVisibleModelEntries),
     )
     .get(
         "/3d/models",
@@ -389,7 +375,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List 3D Models",
             description:
-                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -404,10 +390,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModel3dEntries),
+        ...modelsListHandler(getVisibleModel3dEntries),
     )
     .get(
         "/image/models",
@@ -415,7 +401,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -430,10 +416,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleImageAndVideoEntries),
+        ...modelsListHandler(getVisibleImageAndVideoEntries),
     )
     .get(
         "/video/models",
@@ -441,7 +427,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Video Models",
             description:
-                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -456,10 +442,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleVideoModelEntries),
+        ...modelsListHandler(getVisibleVideoModelEntries),
     )
     .get(
         "/text/models",
@@ -467,7 +453,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -482,10 +468,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.text"),
         ),
     )
@@ -495,7 +481,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -510,10 +496,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.audio"),
         ),
     )
@@ -523,7 +509,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "List Embedding Models",
             description:
-                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -538,10 +524,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.embedding"),
         ),
     )
@@ -552,38 +538,21 @@ export const proxyRoutes = new Hono<Env>()
     .use(frontendKeyRateLimit)
     .use(balance)
     .get(
-        "/v1/realtime",
-        describeRoute({
-            tags: ["🎙️ Realtime"],
-            summary: "Realtime WebSocket",
-            description: [
-                "OpenAI-compatible Realtime WebSocket proxy.",
-                "",
-                `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
-                "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
-                "",
-                `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
-                "",
-                "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
-            ].join("\n"),
-            responses: {
-                101: {
-                    description: "WebSocket connection established",
-                },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    403,
-                    426,
-                    429,
-                    500,
-                    503,
-                ),
-            },
-        }),
+        "/realtime",
+        describeRealtimeWebSocket("/realtime"),
         validator("query", RealtimeRequestQueryParamsSchema),
-        resolveModel("generate.realtime"),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/realtime",
+        }),
+        handleRealtimeWebSocket,
+    )
+    .get(
+        "/v1/realtime",
+        describeRealtimeWebSocket("/v1/realtime"),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/v1/realtime",
+        }),
         handleRealtimeWebSocket,
     )
     .post(
@@ -648,28 +617,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateEmbeddingRequestSchema),
         resolveModel("generate.embedding"),
         track("generate.embedding"),
+        prepareGenerationRequest,
+        textCache,
         generationAccess,
-        async (c) => {
-            const requestBody = c.req.valid("json" as never) as z.infer<
-                typeof CreateEmbeddingRequestSchema
-            >;
-            const { response, servedEntry } = await withModelFallbackResponse(
-                c.var.model,
-                (candidate) =>
-                    generateEmbeddings(
-                        c.env,
-                        {
-                            ...requestBody,
-                            model: getEmbeddingProviderModelId(candidate.id),
-                        },
-                        candidate.definition ?? c.var.model.definition,
-                        candidate.id,
-                    ),
-                c.var.track?.failedCalls,
-            );
-            if (servedEntry) c.set("servedModelEntry", servedEntry);
-            return response;
-        },
+        deduplicateGeneration,
+        generateEmbeddingsResponse,
     )
     .post(
         "/text",
@@ -695,18 +647,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
-        async (c) => {
-            const requestBody = await applySafetyToChatRequest(c, {
-                ...(c.req.valid(
-                    "json" as never,
-                ) as CreateChatCompletionRequest),
-                model: c.var.model.resolved,
-            });
-
-            const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(c, response, c.var.upstreamRequestUrl);
-            return withSafetyHeaders(c, response);
-        },
+        deduplicateGeneration,
+        generateTextContent,
     )
     .get(
         "/text/:prompt{[\\s\\S]+}",
@@ -744,34 +686,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
-        async (c) => {
-            // Use resolved model from middleware
-            const model = c.var.model.resolved;
-
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-                system?: string;
-            };
-            const textInputs =
-                typeof query.system === "string"
-                    ? [c.req.param("prompt"), query.system]
-                    : [c.req.param("prompt")];
-            const [prompt, system] = await applySafetyToTexts(
-                c,
-                textInputs,
-                query.safe,
-            );
-
-            return withSafetyHeaders(
-                c,
-                await handleSimpleTextLocal(
-                    c,
-                    prompt,
-                    model,
-                    system ? { system } : undefined,
-                ),
-            );
-        },
+        deduplicateGeneration,
+        generateSimpleText,
     )
     .get(
         // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines
@@ -920,7 +836,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model With JSON",
             description:
-                "Generate a 3D model from a text prompt or reference image using JSON parameters. POST requests bypass the server-side media cache, so repeated requests regenerate and are billed. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -961,18 +877,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),
+        every(prepareGenerationRequest, model3dCache),
         generationAccess,
-        async (c) => {
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-            };
-            const prompt = await applySafety(
-                c,
-                c.req.param("prompt") || "",
-                query.safe,
-            );
-            return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
-        },
+        deduplicateGeneration,
+        generateModel3d,
     )
     .get(
         "/audio/:text",
@@ -980,15 +888,17 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔊 Audio"],
             summary: "Generate Audio",
             description: [
-                "Generate speech or music from text via a simple GET request.",
+                "Generate speech, dialogue, music, or sound effects from text via a simple GET request.",
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
+                `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
+                "",
+                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -1007,118 +917,19 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description for a music-generation model",
+                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
         ),
-        validator(
-            "query",
-            z.object({
-                voice: z
-                    .enum(AUDIO_VOICES as unknown as [string, ...string[]])
-                    .default("alloy")
-                    .meta({
-                        description:
-                            "Voice to use for speech generation (TTS only)",
-                        example: "nova",
-                    }),
-                response_format: z
-                    .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-                    .default("mp3")
-                    .meta({
-                        description:
-                            "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
-                        example: "mp3",
-                    }),
-                model: z.string().optional().meta({
-                    description:
-                        "Audio model: TTS (default) or a music-generation model such as lyria-3-clip",
-                    example: "tts-1",
-                }),
-                duration: z
-                    .string()
-                    .optional()
-                    .transform((v) => (v ? parseFloat(v) : undefined))
-                    .pipe(z.number().min(0.5).max(300).optional())
-                    .meta({
-                        description:
-                            "Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30)",
-                        example: "30",
-                    }),
-                seconds: z.coerce.number().min(1).max(380).optional().meta({
-                    description:
-                        "Audio duration in seconds for stable-audio-3-medium/large, 1-380",
-                    example: "30",
-                }),
-                steps: z.coerce.number().int().min(1).max(100).optional().meta({
-                    description:
-                        "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8)",
-                    example: "8",
-                }),
-                negative_prompt: z.string().optional().meta({
-                    description: "Negative prompt for stable-audio-3-large",
-                    example: "distortion, vocals",
-                }),
-                instrumental: z
-                    .enum(["true", "false"])
-                    .default("false")
-                    .transform((v) => v === "true")
-                    .meta({
-                        description:
-                            "If true, guarantees instrumental output (elevenmusic only)",
-                        example: "false",
-                    }),
-                instruct: z.string().optional().meta({
-                    description:
-                        "Emotion/style instruction (qwen-tts-instruct only)",
-                    example: "speak softly and warmly",
-                }),
-                loop: z
-                    .enum(["true", "false"])
-                    .optional()
-                    .transform((v) =>
-                        v === undefined ? undefined : v === "true",
-                    )
-                    .meta({
-                        description:
-                            "Loop the generated sound effect (eleven-sfx only)",
-                        example: "false",
-                    }),
-                prompt_influence: z
-                    .string()
-                    .optional()
-                    .transform((v) => (v ? Number.parseFloat(v) : undefined))
-                    .pipe(z.number().min(0).max(1).optional())
-                    .meta({
-                        description:
-                            "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
-                        example: "0.3",
-                    }),
-                seed: z.coerce
-                    .number()
-                    .int()
-                    .min(-1)
-                    .max(4294967295)
-                    .optional()
-                    .meta({
-                        description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
-                        example: "42",
-                    }),
-                key: z.string().optional().meta({
-                    description:
-                        "API key (alternative to Authorization header)",
-                }),
-                safe: SafeSchema,
-            }),
-        ),
+        validator("query", simpleAudioQuerySchema),
         resolveModel("generate.audio", {
             supportedEndpoint: "/audio/{text}",
         }),
         track("generate.audio"),
         audioCache,
         generationAccess,
+        deduplicateGeneration,
         handleSimpleAudio,
     )
     .post(
@@ -1148,6 +959,11 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        generationAccess,
+        every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
+        prepareGenerationRequest,
+        imageCache,
+        deduplicateGeneration,
         handleImageGeneration,
     )
     .post(
@@ -1178,74 +994,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image", { defaultModel: "flux" }),
         track("generate.image"),
+        prepareGenerationRequest,
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
         handleImageEdit,
     );
-
-export function contentFilterResultsToHeaders(
-    response: CreateChatCompletionResponse,
-): Record<string, string> {
-    const promptFilters =
-        response.prompt_filter_results?.[0]?.content_filter_results;
-    const completionFilters = response.choices?.[0]?.content_filter_results;
-
-    const mapToString = (value: unknown): string | undefined =>
-        value ? String(value) : undefined;
-
-    // Build header mappings
-    const headerMappings: Array<[string, unknown]> = [
-        // Prompt filters
-        ["x-moderation-prompt-hate-severity", promptFilters?.hate?.severity],
-        [
-            "x-moderation-prompt-self-harm-severity",
-            promptFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-prompt-sexual-severity",
-            promptFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-prompt-violence-severity",
-            promptFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-prompt-jailbreak-detected",
-            promptFilters?.jailbreak?.detected,
-        ],
-        // Completion filters
-        [
-            "x-moderation-completion-hate-severity",
-            completionFilters?.hate?.severity,
-        ],
-        [
-            "x-moderation-completion-self-harm-severity",
-            completionFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-completion-sexual-severity",
-            completionFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-completion-violence-severity",
-            completionFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-completion-protected-material-text-detected",
-            completionFilters?.protected_material_text?.detected,
-        ],
-        [
-            "x-moderation-completion-protected-material-code-detected",
-            completionFilters?.protected_material_code?.detected,
-        ],
-    ];
-
-    // Convert to headers, filtering out undefined values
-    const headers: Record<string, string> = {};
-    for (const [key, value] of headerMappings) {
-        const stringValue = mapToString(value);
-        if (stringValue !== undefined) {
-            headers[key] = stringValue;
-        }
-    }
-
-    return headers;
-}

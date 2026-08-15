@@ -1,0 +1,33 @@
+{
+  "pr_number": 13420,
+  "title": "Add novastar dev to allowlist",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13420",
+  "merged_at": "2026-08-15T17:39:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13388\r\nCloses #13417",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One more bee at the gate",
+    "blurb": "The contributor garden has a new keyholder. novastar dev can now get through the GitHub gate and into the workbench.",
+    "summary": "Added novastar dev to the GitHub ID allowlist used by the shared authentication layer, enabling their approved contributor access.",
+    "impact": "This gives novastar dev access to the authenticated contributor workflow without changing the public API or product experience.",
+    "keywords": [
+      "github",
+      "authentication",
+      "allowlist",
+      "contributors",
+      "access"
+    ],
+    "visual_concept": "Depict Polli as a friendly gatekeeper at a cozy garden workshop entrance, welcoming a new small developer bee through a lime-green access gate; a retro terminal and flowering code-plants represent the shared GitHub authentication system.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gatekeeper cap, opening a lime green (#ecf874) garden-workshop gate for a small friendly developer bee carrying a code notebook. A glowing retro terminal, flowering code-plants, and warm cream, mint, and lavender scenery make the access gate feel welcoming; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13420.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gatekeeper cap, opening a lime green (#ecf874) garden-workshop gate for a small friendly developer bee carrying a code notebook. A glowing retro terminal, flowering code-plants, and warm cream, mint, and lavender scenery make the access gate feel welcoming; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-15T17:40:46.032181+00:00"
+}

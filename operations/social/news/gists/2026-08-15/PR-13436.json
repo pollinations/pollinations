@@ -1,0 +1,34 @@
+{
+  "pr_number": 13436,
+  "title": "fix: keep agents serving when an MCP server fails",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13436",
+  "merged_at": "2026-08-15T23:32:23Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-ups from the agent MCP outage.\n\n**One bad MCP server 502s the whole agent.** `loadMcpTools` threw and `createAgent()` sits outside any try/catch, so a 404/405 from any server failed every request. This is live: published agent `19e9460d` points at `https://victor-websearch.hf.space/gradio_api/mcp/sse` — POST returns 405 (it is an SSE endpoint; the runtime speaks Streamable HTTP), so that agent returns 502 on every call.\n\n- Isolates each server: a failing one loses its tools, the agent still answers.\n- Adds `MCP_SERVER_LOADED` / `MCP_SERVER_FAILED` logs. `handlePromptAgentRequest` returns a Response instead of throwing, so Hono's `onError` never fires and nothing reaches `error_event` — this route emits no telemetry at all, and these logs are the only signal a server dropped out.\n- Makes the built-in MCP url env-overridable (`POLLINATIONS_MCP_URL`), matching the existing `genBaseUrl`/`GEN_BASE_URL` pattern, so the endpoint can move without a code change.\n\n**Note on the redirect test:** it keeps its security assertion — credentials never reach the redirect target, which `redirect: \"manual\"` guarantees independently of failure handling — and now also asserts the agent keeps serving instead of returning 502. Failure semantics are what this PR intentionally changes.\n\nNot included: real telemetry for this route needs the Hono context plumbed into the service, which is bigger than this change.\n\nChecks: `npx vitest run test/prompt-agent-runtime.test.ts` — 21 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One bad server, ignored",
+    "blurb": "An agent no longer falls into the compost heap because one MCP server has a bad URL. The flaky server drops its tool basket; the rest of the agent keeps working.",
+    "summary": "Agent runtime now isolates MCP server loading failures, so a 404, 405, or 502 from one configured server no longer makes createAgent() fail and return 502 for the whole agent; the built-in MCP endpoint is also configurable through POLLINATIONS_MCP_URL.",
+    "impact": "Published agents with a broken or incompatible MCP endpoint, such as an SSE URL contacted as Streamable HTTP, will keep answering with their remaining tools instead of failing every request.",
+    "keywords": [
+      "agents",
+      "MCP",
+      "reliability",
+      "error handling",
+      "POLLINATIONS_MCP_URL",
+      "agent runtime"
+    ],
+    "visual_concept": "Depict an agent tool garden where one little MCP tool shed is closed with a harmless 405 sign while the other healthy code-plants continue feeding a cozy retro terminal. Polli, wearing a tiny mechanic tool belt, calmly reroutes a watering hose around the closed shed; a cheerful CRT monitor robot keeps the agent terminal online, showing that one failed connection no longer stops the whole system.",
+    "image_prompt": "A cozy pixel art agent garden where Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny mechanic tool belt, calmly redirects a glowing lime green (#ecf874) cable around one small MCP tool shed marked \"405\" while healthy code-plants keep growing into a retro terminal; a chunky CRT monitor robot with eager square pixel eyes tends the remaining tools. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13436.jpg",
+    "prompt": "A cozy pixel art agent garden where Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny mechanic tool belt, calmly redirects a glowing lime green (#ecf874) cable around one small MCP tool shed marked \"405\" while healthy code-plants keep growing into a retro terminal; a chunky CRT monitor robot with eager square pixel eyes tends the remaining tools. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-15T23:33:25.543606+00:00"
+}

@@ -174,7 +174,6 @@ if (!KEY) {
                 prompt: "a small red apple",
                 model: "flux",
                 size: "256x256",
-                response_format: "url",
             },
         });
         const link = result.content?.find(

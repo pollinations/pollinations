@@ -15,7 +15,6 @@ import type { Context } from "hono";
 // and "key" are request controls that must never affect the cache key.
 export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
-const MAX_MEDIA_CACHE_KEY_LENGTH = 1_000;
 const CACHED_HEADER_PREFIXES = ["x-safety-", "x-usage-"];
 const CACHED_HEADER_NAMES = [
     "content-disposition",
@@ -71,41 +70,6 @@ function createHash(str: string): string {
         hash = hash & hash;
     }
     return Math.abs(hash).toString(16).substring(0, 8);
-}
-
-/** Encode an internal media-cache key as a bounded, URL-safe public id. */
-export function encodeMediaCacheId(cacheKey: string): string {
-    let binary = "";
-    for (const byte of new TextEncoder().encode(cacheKey)) {
-        binary += String.fromCharCode(byte);
-    }
-    return btoa(binary)
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-}
-
-/** Decode a public media id without allowing access outside cache-key bounds. */
-export function decodeMediaCacheId(id: string): string | null {
-    if (!/^[A-Za-z0-9_-]+$/.test(id)) return null;
-
-    try {
-        const base64 = id.replace(/-/g, "+").replace(/_/g, "/");
-        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-        const binary = atob(padded);
-        const bytes = Uint8Array.from(binary, (character) =>
-            character.charCodeAt(0),
-        );
-        const cacheKey = new TextDecoder("utf-8", { fatal: true }).decode(
-            bytes,
-        );
-        return cacheKey.length > 0 &&
-            cacheKey.length <= MAX_MEDIA_CACHE_KEY_LENGTH
-            ? cacheKey
-            : null;
-    } catch {
-        return null;
-    }
 }
 
 export function setHttpMetadataHeaders(

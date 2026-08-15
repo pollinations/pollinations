@@ -4,7 +4,7 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchMediaWithAuth,
+    fetchAndUploadMedia,
 } from "../utils/coreUtils.js";
 import { validateModel3d } from "../utils/models.js";
 
@@ -22,13 +22,11 @@ async function generate3D(params, context) {
     }
 
     const { prompt, ...options } = params;
-    const { contentType, mediaUrl } = await fetchMediaWithAuth(
+    const { contentType, mediaUrl } = await fetchAndUploadMedia(
         buildUrl(`/3d/${encodeURIComponent(prompt)}`, options),
         {},
         context,
     );
-    if (!mediaUrl) throw new Error("3D API returned no media URL");
-
     return createMCPResponse([
         {
             type: "resource_link",
@@ -43,7 +41,7 @@ async function generate3D(params, context) {
 export const model3dTools = [
     [
         "generate3D",
-        "Generate a GLB 3D model and return a public MCP resource link.",
+        "Generate a GLB 3D model and return an unlisted media.pollinations.ai resource link.",
         {
             prompt: z
                 .string()

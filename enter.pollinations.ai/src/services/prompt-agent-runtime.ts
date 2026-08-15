@@ -175,12 +175,6 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
         });
     }
     const { tools, close } = await loadMcpTools(servers, signal);
-    if (runtime.config.pollinationsTools) {
-        const imageTool = tools.mcp__pollinations__generateImage;
-        if (imageTool) {
-            tools.mcp__pollinations__generateImage = forceImageUrl(imageTool);
-        }
-    }
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -258,20 +252,6 @@ function contentChunk(
                 finish_reason: null,
             },
         ],
-    };
-}
-
-function forceImageUrl(tool: McpTool): McpTool {
-    const execute = tool.execute;
-    return {
-        ...tool,
-        execute(input, options) {
-            const params =
-                input && typeof input === "object" && !Array.isArray(input)
-                    ? input
-                    : {};
-            return execute({ ...params, response_format: "url" }, options);
-        },
     };
 }
 

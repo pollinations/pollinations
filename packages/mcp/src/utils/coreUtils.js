@@ -1,6 +1,7 @@
 import { getAuthHeaders } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
+const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
 const configuredApiBaseUrl =
     typeof process !== "undefined"
         ? process.env?.POLLINATIONS_BASE_URL?.trim()
@@ -60,19 +61,6 @@ export function createTextContent(text, stringify = false) {
     return {
         type: "text",
         text: stringify ? JSON.stringify(text, null, 2) : text,
-    };
-}
-
-/**
- * @param {string} data - Base64-encoded image data
- * @param {string} mimeType - MIME type of the image
- * @returns {Object} - Image content object
- */
-export function createImageContent(data, mimeType) {
-    return {
-        type: "image",
-        data,
-        mimeType,
     };
 }
 
@@ -155,17 +143,26 @@ export async function postChatCompletion(body, context) {
 /**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
- * @returns {Promise<{contentType: string, mediaUrl: string|null}>} - Content type and public cache URL
+ * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and uploaded public URL
  */
-export async function fetchMediaWithAuth(url, options = {}, context) {
+export async function fetchAndUploadMedia(url, options = {}, context) {
     const response = await fetchResponseWithAuth(url, options, context);
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
-    await response.body?.cancel();
-    return {
-        contentType,
-        mediaUrl: response.headers.get("content-location"),
-    };
+    const form = new FormData();
+    form.append(
+        "file",
+        new Blob([await response.arrayBuffer()], { type: contentType }),
+        "generation",
+    );
+    const upload = await fetchResponseWithAuth(
+        MEDIA_UPLOAD_URL,
+        { method: "POST", body: form },
+        context,
+    );
+    const result = await upload.json();
+    if (!result?.url) throw new Error("Media upload returned no URL");
+    return { contentType, mediaUrl: result.url };
 }
 
 /**

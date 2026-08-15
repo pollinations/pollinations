@@ -11,7 +11,6 @@ import {
     audioCache,
     imageCache,
     model3dCache,
-    serveCachedMedia,
 } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
@@ -274,7 +273,6 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
-    .get("/media/:id", serveCachedMedia)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
     .use("/image/models", auth())

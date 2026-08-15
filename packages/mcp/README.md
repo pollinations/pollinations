@@ -45,13 +45,13 @@ npx @pollinations/mcp
 
 ### Media Generation
 
-| Tool            | API route                | MCP result                    |
-| --------------- | ------------------------ | ----------------------------- |
-| `generateImage` | `/v1/images/generations` | Image data or a resource link |
-| `generateVideo` | `/video/{prompt}`        | Public video resource link    |
-| `generate3D`    | `/3d/{prompt}`           | Public GLB resource link      |
+| Tool            | API route                | MCP result         |
+| --------------- | ------------------------ | ------------------ |
+| `generateImage` | `/v1/images/generations` | Image resource link |
+| `generateVideo` | `/video/{prompt}`        | Video resource link |
+| `generate3D`    | `/3d/{prompt}`           | GLB resource link   |
 
-`generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. To edit an image, pass its HTTP(S) URL in `image`; use `url` output when the result will be passed into another edit. Generate multiple images with multiple tool calls rather than a separate batch contract.
+Generated media is uploaded unlisted to `media.pollinations.ai` and returned as an MCP resource link, so binary data does not consume model context. Anyone with the unguessable URL can access it; uploads use the media service's 30-day lifecycle. To edit an image, pass its HTTP(S) URL in `image`. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 
@@ -68,7 +68,7 @@ Use `generateText` with the appropriate model and message content for simple tex
 | --------------- | -------------- | -------------------------------- |
 | `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-`generateAudio` returns a public MCP resource link. Call `listModels` with `type=audio` for model and voice metadata.
+`generateAudio` returns an unlisted media resource link. Call `listModels` with `type=audio` for model and voice metadata.
 
 ### Discovery
 

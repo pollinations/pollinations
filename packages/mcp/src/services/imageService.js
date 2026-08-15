@@ -2,24 +2,12 @@ import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
     buildUrl,
-    createImageContent,
     createMCPResponse,
     createTextContent,
-    fetchMediaWithAuth,
-    fetchResponseWithAuth,
+    fetchAndUploadMedia,
+    fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
 import { validateImageModel, validateVideoModel } from "../utils/models.js";
-
-function imageMimeType(base64, declaredMimeType) {
-    if (declaredMimeType) return declaredMimeType;
-    if (base64.startsWith("iVBOR")) return "image/png";
-    if (base64.startsWith("UklGR")) return "image/webp";
-    if (base64.startsWith("R0lGOD")) return "image/gif";
-    if (base64.startsWith("PHN2Zy") || base64.startsWith("PD94bWw")) {
-        return "image/svg+xml";
-    }
-    return "image/jpeg";
-}
 
 async function generateImage(params, context) {
     requireApiKey(context);
@@ -40,7 +28,7 @@ async function generateImage(params, context) {
         n: params.n,
         size: params.size,
         quality: params.quality,
-        response_format: params.response_format,
+        response_format: "url",
         user: params.user,
         image: params.image,
         safe: params.safe,
@@ -48,7 +36,7 @@ async function generateImage(params, context) {
         transparent: params.transparent,
         guidance_scale: params.guidance_scale,
     };
-    const response = await fetchResponseWithAuth(
+    const result = await fetchJsonWithAuth(
         buildUrl("/v1/images/generations"),
         {
             method: "POST",
@@ -57,44 +45,32 @@ async function generateImage(params, context) {
         },
         context,
     );
-    const mediaUrl = response.headers.get("content-location");
-    const result = await response.json();
     const image = result.data?.[0];
-    if (!image) throw new Error("Image API returned no image data");
+    if (!image?.url) throw new Error("Image API returned no image URL");
+    const { contentType, mediaUrl } = await fetchAndUploadMedia(
+        image.url,
+        {},
+        context,
+    );
 
-    const content = [];
-    if (image.url) {
-        if (!mediaUrl) throw new Error("Image API returned no media URL");
-        content.push({
+    return createMCPResponse([
+        {
             type: "resource_link",
             uri: mediaUrl,
             name: "Generated image",
-            ...(image.media_type ? { mimeType: image.media_type } : {}),
-        });
-    } else if (image.b64_json) {
-        content.push(
-            createImageContent(
-                image.b64_json,
-                imageMimeType(image.b64_json, image.media_type),
-            ),
-        );
-    } else {
-        throw new Error("Image API returned neither a URL nor base64 data");
-    }
-
-    content.push(
+            mimeType: image.media_type || contentType,
+        },
         createTextContent(
             {
                 ...result,
-                data: result.data.map(({ b64_json, ...entry }) => {
-                    if (b64_json) return { ...entry, encoding: "base64" };
-                    return mediaUrl ? { ...entry, url: mediaUrl } : entry;
-                }),
+                data: result.data.map(({ url: _url, ...entry }) => ({
+                    ...entry,
+                    url: mediaUrl,
+                })),
             },
             true,
         ),
-    );
-    return createMCPResponse(content);
+    ]);
 }
 
 async function prepareVideoRequest(params, context) {
@@ -138,13 +114,11 @@ async function generateVideo(params, context) {
         params,
         context,
     );
-    const { contentType, mediaUrl } = await fetchMediaWithAuth(
+    const { contentType, mediaUrl } = await fetchAndUploadMedia(
         buildUrl(`/video/${encodedPrompt}`, queryParams),
         {},
         context,
     );
-    if (!mediaUrl) throw new Error("Video API returned no media URL");
-
     return createMCPResponse([
         {
             type: "resource_link",
@@ -181,12 +155,6 @@ const imageParamsSchema = {
         .enum(["standard", "hd", "low", "medium", "high"])
         .optional()
         .describe("Image quality"),
-    response_format: z
-        .enum(["url", "b64_json"])
-        .optional()
-        .describe(
-            "API response format. url returns an MCP resource link; b64_json returns MCP image data (API default)",
-        ),
     user: z.string().optional().describe("End-user identifier"),
     image: z
         .union([z.string(), z.array(z.string())])
@@ -236,13 +204,13 @@ const videoParamsSchema = {
 export const imageTools = [
     [
         "generateImage",
-        "Generate or edit one image through POST /v1/images/generations. To edit, provide an HTTP(S) reference in image. Set response_format to url for a resource link or b64_json for MCP image data.",
+        "Generate or edit one image and return an unlisted media.pollinations.ai resource link. To edit, provide an HTTP(S) reference in image.",
         imageParamsSchema,
         generateImage,
     ],
     [
         "generateVideo",
-        "Generate one video and return a public MCP resource link.",
+        "Generate one video and return an unlisted media.pollinations.ai resource link.",
         videoParamsSchema,
         generateVideo,
     ],

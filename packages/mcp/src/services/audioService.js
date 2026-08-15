@@ -4,20 +4,18 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchMediaWithAuth,
+    fetchAndUploadMedia,
 } from "../utils/coreUtils.js";
 
 async function generateAudio(params, context) {
     requireApiKey(context);
 
     const { text, ...options } = params;
-    const { contentType, mediaUrl } = await fetchMediaWithAuth(
+    const { contentType, mediaUrl } = await fetchAndUploadMedia(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
         {},
         context,
     );
-    if (!mediaUrl) throw new Error("Audio API returned no media URL");
-
     return createMCPResponse([
         {
             type: "resource_link",
@@ -35,7 +33,7 @@ async function generateAudio(params, context) {
 export const audioTools = [
     [
         "generateAudio",
-        "Generate speech, music, or sound and return a public MCP resource link.",
+        "Generate speech, music, or sound and return an unlisted media.pollinations.ai resource link.",
         {
             text: z
                 .string()

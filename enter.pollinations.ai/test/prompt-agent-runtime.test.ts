@@ -800,7 +800,6 @@ describe("prompt-agent runtime", () => {
                     }
                     expect(body.params?.arguments).toMatchObject({
                         prompt: "a pirate",
-                        response_format: "url",
                     });
                     return Response.json({
                         jsonrpc: "2.0",
@@ -853,8 +852,7 @@ describe("prompt-agent runtime", () => {
                                     type: "function",
                                     function: {
                                         name: "mcp__pollinations__generateImage",
-                                        arguments:
-                                            '{"prompt":"a pirate","response_format":"b64_json"}',
+                                        arguments: '{"prompt":"a pirate"}',
                                     },
                                 },
                             ],

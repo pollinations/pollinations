@@ -10,12 +10,7 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import {
-    audioCache,
-    imageCache,
-    serveCachedMedia,
-} from "@/middleware/media-cache.ts";
-import { decodeMediaCacheId, encodeMediaCacheId } from "@/utils/media-cache.ts";
+import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -101,51 +96,6 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
-    it("round-trips bounded cache keys through public media ids", () => {
-        const cacheKey = `_image_${"pirate 🏴‍☠️".repeat(50)}-abc123`;
-        const id = encodeMediaCacheId(cacheKey);
-
-        expect(id).toMatch(/^[A-Za-z0-9_-]+$/);
-        expect(decodeMediaCacheId(id)).toBe(cacheKey);
-        expect(decodeMediaCacheId("not+url-safe")).toBeNull();
-    });
-
-    it("serves a cached response through its Content-Location", async () => {
-        const env = createMediaCacheEnv();
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                await next();
-            })
-            .get("/source/:prompt", imageCache, () =>
-                Response.json("cached-media", {
-                    headers: { "Content-Type": "image/png" },
-                }),
-            )
-            .get("/media/:id", serveCachedMedia);
-
-        const generated = await dispatch(app, "/source/long-prompt", {}, env);
-        expect(await consumeAndWait(generated)).toBe('"cached-media"');
-        const contentLocation =
-            generated.response.headers.get("Content-Location");
-        expect(contentLocation).toMatch(
-            /^https:\/\/gen\.pollinations\.ai\/media\/[A-Za-z0-9_-]+$/,
-        );
-
-        const cached = await dispatch(
-            app,
-            new URL(contentLocation as string).pathname,
-            undefined,
-            env,
-        );
-        expect(await consumeAndWait(cached)).toBe('"cached-media"');
-        expect(cached.response.headers.get("Content-Type")).toContain(
-            "image/png",
-        );
-        expect(cached.response.headers.get("X-Cache")).toBe("HIT");
-    });
-
     it("coordinates audio cache misses like other finite media", async () => {
         let coordinated = false;
         const app = new Hono<TestEnv>()

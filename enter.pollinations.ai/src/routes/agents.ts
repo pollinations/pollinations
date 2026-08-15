@@ -20,8 +20,9 @@ const UpdateAgentSchema = z
     .object({
         systemPrompt: PromptAgentSchema.shape.systemPrompt.optional(),
         baseModel: PromptAgentSchema.shape.baseModel.optional(),
-        pollinationsTools: PromptAgentSchema.shape.pollinationsTools.optional(),
-        mcpServers: PromptAgentSchema.shape.mcpServers.optional(),
+        pollinationsTools:
+            PromptAgentSchema.shape.pollinationsTools.removeDefault(),
+        mcpServers: PromptAgentSchema.shape.mcpServers.removeDefault(),
     })
     .refine(
         (input) => Object.values(input).some((value) => value !== undefined),

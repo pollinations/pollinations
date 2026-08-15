@@ -3787,6 +3787,8 @@ fixtureTest(
         await expect(updateAgentResponse.json()).resolves.toMatchObject({
             id: agent.id,
             systemPrompt: "You are an editable SQL tutor.",
+            pollinationsTools: true,
+            mcpServers: promptAgent.mcpServers,
         });
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -3918,6 +3920,14 @@ fixtureTest(
             bearerTokenCiphertext: null,
         });
         if (!registryEntry) throw new Error("Agent listing was not registered");
+        expect(registryEntry.agentConfig).toEqual({
+            baseModel: promptAgent.baseModel,
+            pollinationsTools: true,
+        });
+        expect(registryEntry.definition.cost).toMatchObject({
+            promptTextTokens: 0,
+            completionTextTokens: 0,
+        });
         const gatewayContext = await communityEndpointGatewayContext(
             registryEntry.communityEndpoint,
             registryEntry.definition,
@@ -3948,21 +3958,63 @@ fixtureTest(
             name: string;
             community?: boolean;
             agent?: boolean;
+            base_model?: string;
+            pricing?: Record<string, string>;
+            capabilities?: string[];
+            input_modalities?: string[];
+            output_modalities?: string[];
         }[];
         const openaiModels = (await openaiModelsResponse.json()) as {
-            data: { id: string; agent?: boolean }[];
+            data: {
+                id: string;
+                agent?: boolean;
+                base_model?: string;
+                pricing?: Record<string, string>;
+                capabilities?: string[];
+                input_modalities?: string[];
+                output_modalities?: string[];
+                tools?: boolean;
+                reasoning?: boolean;
+                context_length?: number;
+            }[];
         };
-        expect(
-            models.find((model) => model.name === registration.modelId),
-        ).toMatchObject({
+        const baseModelInfo = models.find(
+            (model) => model.name === promptAgent.baseModel,
+        );
+        const agentModelInfo = models.find(
+            (model) => model.name === registration.modelId,
+        );
+        expect(baseModelInfo).toBeDefined();
+        const agentCapabilities = [
+            ...(baseModelInfo?.capabilities ?? []),
+            "pollinations_models",
+        ];
+        expect(agentModelInfo).toMatchObject({
             community: true,
             agent: true,
+            base_model: promptAgent.baseModel,
+            pricing: baseModelInfo?.pricing,
+            capabilities: agentCapabilities,
+            input_modalities: baseModelInfo?.input_modalities,
+            output_modalities: baseModelInfo?.output_modalities,
         });
-        expect(
-            openaiModels.data.find(
-                (model) => model.id === registration.modelId,
-            ),
-        ).toMatchObject({ agent: true });
+        const openaiBaseModel = openaiModels.data.find(
+            (model) => model.id === promptAgent.baseModel,
+        );
+        const openaiAgentModel = openaiModels.data.find(
+            (model) => model.id === registration.modelId,
+        );
+        expect(openaiBaseModel).toBeDefined();
+        expect(openaiAgentModel).toMatchObject({
+            agent: true,
+            base_model: promptAgent.baseModel,
+            pricing: baseModelInfo?.pricing,
+            capabilities: agentCapabilities,
+            input_modalities: openaiBaseModel?.input_modalities,
+            output_modalities: openaiBaseModel?.output_modalities,
+            tools: openaiBaseModel?.tools,
+            context_length: openaiBaseModel?.context_length,
+        });
 
         const duplicateRegistrationResponse = await fetchEnterApi(
             enterApi,

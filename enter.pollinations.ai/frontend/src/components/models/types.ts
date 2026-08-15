@@ -17,7 +17,8 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export type PriceKind =
     | "text"
@@ -69,6 +70,7 @@ export type ModelPrice = {
     type: ModelCategory;
     community?: boolean;
     agent?: boolean;
+    baseModel?: string;
     perUserRpm?: number | null;
     displayName?: string;
     description?: string;

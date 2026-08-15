@@ -3860,9 +3860,17 @@ fixtureTest(
             .select()
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
-        expect(agentAfterPromptUpdate.mcpHeadersCiphertext).toBe(
-            storedAgent.mcpHeadersCiphertext,
-        );
+        await expect(
+            decryptSecret(
+                agentAfterPromptUpdate.mcpHeadersCiphertext ?? "",
+                env.BETTER_AUTH_SECRET,
+            ).then(JSON.parse),
+        ).resolves.toEqual({
+            docs: {
+                Authorization: "Bearer mcp-secret",
+                "X-Team": "pollinations",
+            },
+        });
 
         const reuseHeadersAtNewUrlResponse = await fetchEnterApi(
             enterApi,

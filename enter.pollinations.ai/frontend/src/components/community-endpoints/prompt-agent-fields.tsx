@@ -88,7 +88,7 @@ export function PromptAgentFields({
                 }
             >
                 <div className="grid gap-2">
-                    <div className="rounded-md border border-divider p-2">
+                    <div className="space-y-1 p-2">
                         <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium">
@@ -99,25 +99,9 @@ export function PromptAgentFields({
                                 </Chip>
                             </div>
                             <div className="flex min-w-0 items-center gap-2">
-                                <div className="min-w-0 flex-1 space-y-1">
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-text-muted">
-                                        <span className="break-all font-mono">
-                                            https://mcp.pollinations.ai
-                                        </span>
-                                        <a
-                                            href="https://gen.pollinations.ai/docs#tag/mcp-server"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                                        >
-                                            Documentation
-                                        </a>
-                                    </div>
-                                    <p className="text-xs text-theme-text-muted">
-                                        Uses the caller's Pollinations API
-                                        access.
-                                    </p>
-                                </div>
+                                <span className="min-w-0 flex-1 break-all font-mono text-xs text-theme-text-muted">
+                                    https://mcp.pollinations.ai
+                                </span>
                                 <Switch
                                     checked={form.pollinationsTools}
                                     disabled={disabled}
@@ -128,6 +112,26 @@ export function PromptAgentFields({
                                 />
                             </div>
                         </div>
+                        <p className="text-xs text-theme-text-muted">
+                            Uses the caller's Pollinations API access.{" "}
+                            <a
+                                href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            >
+                                API docs
+                            </a>
+                            {" · "}
+                            <a
+                                href="https://github.com/pollinations/pollinations/tree/main/packages/mcp"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            >
+                                GitHub
+                            </a>
+                        </p>
                     </div>
                     {form.mcpServers.length > 0 &&
                         form.mcpServers.map((row, index) => (

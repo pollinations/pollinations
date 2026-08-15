@@ -109,23 +109,6 @@ function resolveMcpServers(
     return { mcpServers, mcpHeaders };
 }
 
-async function rejectCredentialsOnPublicListing(
-    db: Db,
-    agentId: string,
-    headers: PromptAgentMcpHeaders,
-): Promise<void> {
-    if (Object.keys(headers).length === 0) return;
-    const listing = await db.query.communityEndpoint.findFirst({
-        columns: { visibility: true },
-        where: eq(schema.communityEndpoint.agentId, agentId),
-    });
-    if (listing?.visibility === "public") {
-        throw new HTTPException(400, {
-            message: "Public managed agents cannot use private MCP headers",
-        });
-    }
-}
-
 async function encryptedMcpHeaders(
     headers: PromptAgentMcpHeaders,
     secret: string,
@@ -320,11 +303,6 @@ export const agentsRoutes = new Hono<Env>()
                 ...input,
                 mcpServers: resolvedMcp.mcpServers,
             });
-            await rejectCredentialsOnPublicListing(
-                db,
-                id,
-                resolvedMcp.mcpHeaders,
-            );
             const serializedConfig = serializePromptAgentConfig(config);
             const update: Partial<typeof schema.agent.$inferInsert> = {
                 config: serializedConfig,

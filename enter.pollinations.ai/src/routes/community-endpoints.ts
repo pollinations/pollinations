@@ -933,12 +933,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     message: "Managed agent listings must be free",
                 });
             }
-            if (agent?.mcpHeadersCiphertext && input.visibility === "public") {
-                throw new HTTPException(400, {
-                    message:
-                        "Public managed agents cannot use private MCP headers",
-                });
-            }
             const modality = agent ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
@@ -1254,18 +1248,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            if (endpoint.agentId && effectiveVisibility === "public") {
-                const agent = await db.query.agent.findFirst({
-                    columns: { mcpHeadersCiphertext: true },
-                    where: eq(schema.agent.id, endpoint.agentId),
-                });
-                if (agent?.mcpHeadersCiphertext) {
-                    throw new HTTPException(400, {
-                        message:
-                            "Public managed agents cannot use private MCP headers",
-                    });
-                }
-            }
             // A private model is owner-only, so owner-declared public pricing
             // does not apply; making a published model private clears prices.
             const effectivePrices =

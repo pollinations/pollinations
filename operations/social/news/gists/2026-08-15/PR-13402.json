@@ -1,0 +1,36 @@
+{
+  "pr_number": 13402,
+  "title": "Add Vyrsa Academy to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13402",
+  "merged_at": "2026-08-15T06:50:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Vyrsa Academy](https://vyrsa.xyz) to business\n- [Vyrsa.xyz](https://vyrsa.xyz/) is a premium digital transformation academy designed to help you break free from imposter syndrome and build unshakable confidence. Through a proven \"Grow, Reflect, Tra\n\nFixes #13331",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Confidence, now in bloom",
+    "blurb": "Vyrsa Academy has joined the business garden. A new place for digital builders to grow skills, reflect, and ship with a little less imposter-syndrome fog.",
+    "summary": "Added Vyrsa Academy, a digital transformation academy focused on confidence-building and practical growth, to the Pollinations business directory.",
+    "impact": "People browsing the business directory can now discover Vyrsa Academy and its learning resources alongside other projects in the ecosystem.",
+    "keywords": [
+      "community",
+      "business-directory",
+      "academy",
+      "digital-transformation",
+      "learning",
+      "Vyrsa"
+    ],
+    "visual_concept": "Depict Vyrsa Academy as a cozy pixel learning garden: an open book and retro computer beside a flourishing code-plant, representing growth, reflection, and digital confidence. Polli wears a tiny graduation cap and warmly tends the plant, with gentle academy-like study details and no assumed external mascot.",
+    "image_prompt": "A cozy pixel art academy garden where Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny graduation cap, waters a code-plant growing from an open book beside a small retro computer; soft flowers and study notes suggest confidence blooming through learning. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"VYRSA ACADEMY\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13402.jpg",
+    "prompt": "A cozy pixel art academy garden where Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny graduation cap, waters a code-plant growing from an open book beside a small retro computer; soft flowers and study notes suggest confidence blooming through learning. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"VYRSA ACADEMY\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-15T06:51:50.768068+00:00",
+  "app_name": "Vyrsa Academy",
+  "app_url": "https://vyrsa.xyz"
+}

@@ -18,9 +18,29 @@ const PromptAgentMessageSchema = z.union([
     z.object({ role: z.literal("assistant"), content: z.string() }).strict(),
 ]);
 
+const IgnoredCallerInstructionSchema = z
+    .object({ role: z.enum(["system", "developer"]) })
+    .passthrough();
+
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(PromptAgentMessageSchema).optional().default([]),
+        messages: z
+            .array(
+                z.union([
+                    PromptAgentMessageSchema,
+                    IgnoredCallerInstructionSchema,
+                ]),
+            )
+            .optional()
+            .default([])
+            .transform((messages) =>
+                messages.filter(
+                    (
+                        message,
+                    ): message is z.infer<typeof PromptAgentMessageSchema> =>
+                        message.role === "user" || message.role === "assistant",
+                ),
+            ),
         stream: z.boolean().optional().default(false),
     })
     .strict();
@@ -36,7 +56,7 @@ export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
     jsonMode: z.literal(false).optional(),
 }).strict();
 
-export type PromptAgentRequest = z.input<typeof PromptAgentRequestSchema>;
+export type PromptAgentRequest = z.output<typeof PromptAgentRequestSchema>;
 
 type PromptAgentRuntime = {
     config: PromptAgentConfig;

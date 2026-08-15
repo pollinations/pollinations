@@ -53,15 +53,15 @@ Get your API key at: https://enter.pollinations.ai/keys
 
 ### Image & Video Generation
 - **generateImage** - Generate or edit an image; edits accept reference image URLs
-- **generateVideo** - Generate a video as an embedded resource
-- **generate3D** - Generate a GLB model as an embedded resource
+- **generateVideo** - Generate a video as a public resource link
+- **generate3D** - Generate a GLB model as a public resource link
 
 ### Text Generation
 - **generateText** - OpenAI-compatible text, search, multimodal, and tool-calling API
 - **createEmbeddings** - Create text or multimodal embeddings
 
 ### Audio
-- **generateAudio** - Generate speech, music, or sound as MCP audio
+- **generateAudio** - Generate speech, music, or sound as a public resource link
 
 ### Discovery
 - **listModels** - List models by modality

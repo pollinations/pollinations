@@ -48,8 +48,8 @@ npx @pollinations/mcp
 | Tool            | API route                | MCP result                    |
 | --------------- | ------------------------ | ----------------------------- |
 | `generateImage` | `/v1/images/generations` | Image data or a resource link |
-| `generateVideo` | `/video/{prompt}`        | Embedded video resource       |
-| `generate3D`    | `/3d/{prompt}`           | Embedded GLB resource         |
+| `generateVideo` | `/video/{prompt}`        | Public video resource link    |
+| `generate3D`    | `/3d/{prompt}`           | Public GLB resource link      |
 
 `generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. To edit an image, pass its HTTP(S) URL in `image`; use `url` output when the result will be passed into another edit. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
@@ -68,7 +68,7 @@ Use `generateText` with the appropriate model and message content for simple tex
 | --------------- | -------------- | -------------------------------- |
 | `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-`generateAudio` returns an MCP audio block. Call `listModels` with `type=audio` for model and voice metadata.
+`generateAudio` returns a public MCP resource link. Call `listModels` with `type=audio` for model and voice metadata.
 
 ### Discovery
 

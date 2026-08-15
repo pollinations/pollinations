@@ -187,6 +187,7 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
         const execute = tool.execute;
         tools[name] = {
             ...tool,
+            toModelOutput: safeMcpModelOutput,
             execute(input, options) {
                 toolCalls += 1;
                 toolCallCounts.mcp_call = toolCalls;
@@ -274,7 +275,53 @@ function forceImageUrl(tool: McpTool): McpTool {
     };
 }
 
-function imageResultContent(
+function safeMcpModelOutput({ output }: { output: unknown }) {
+    const result = output as CallToolResult;
+    if (!result?.content || !Array.isArray(result.content)) {
+        return {
+            type: "text" as const,
+            value: "Tool completed without text or linked output.",
+        };
+    }
+
+    const value: Array<{ type: "text"; text: string }> = [];
+    for (const part of result.content) {
+        if (part.type === "text") {
+            value.push({ type: "text", text: part.text });
+            continue;
+        }
+        if (part.type === "resource_link") {
+            value.push({
+                type: "text",
+                text: JSON.stringify({
+                    type: part.type,
+                    uri: part.uri,
+                    name: part.name,
+                    description: part.description,
+                    mimeType: part.mimeType,
+                }),
+            });
+            continue;
+        }
+        if (part.type === "resource" && "text" in part.resource) {
+            value.push({ type: "text", text: part.resource.text });
+            continue;
+        }
+        value.push({
+            type: "text",
+            text: `[${part.type} output omitted; use an HTTPS resource link]`,
+        });
+    }
+
+    return value.length > 0
+        ? { type: "content" as const, value }
+        : {
+              type: "text" as const,
+              value: "Tool completed without text or linked output.",
+          };
+}
+
+function mediaResultContent(
     toolName: string,
     output: unknown,
     seenUrls: Set<string>,
@@ -297,17 +344,35 @@ function imageResultContent(
         mimeType?: string;
     }>) {
         if (part.type !== "resource_link") continue;
-        const isImage =
+        const knownTool = toolName.startsWith("mcp__pollinations__generate");
+        const isMedia =
             part.mimeType?.startsWith("image/") ||
-            toolName === "mcp__pollinations__generateImage";
-        if (!isImage) continue;
+            part.mimeType?.startsWith("audio/") ||
+            part.mimeType?.startsWith("video/") ||
+            part.mimeType?.startsWith("model/") ||
+            knownTool;
+        if (!isMedia) continue;
 
         try {
             if (!part.uri) continue;
             const url = new URL(part.uri);
             if (url.protocol !== "https:" || seenUrls.has(url.href)) continue;
             seenUrls.add(url.href);
-            links.push(`![Generated image](<${url.href}>)`);
+            if (
+                part.mimeType?.startsWith("image/") ||
+                toolName === "mcp__pollinations__generateImage"
+            ) {
+                links.push(`![Generated image](<${url.href}>)`);
+            } else {
+                const label = part.mimeType?.startsWith("audio/")
+                    ? "Generated audio"
+                    : part.mimeType?.startsWith("video/")
+                      ? "Generated video"
+                      : part.mimeType?.startsWith("model/")
+                        ? "Generated 3D model"
+                        : "Generated media";
+                links.push(`[${label}](<${url.href}>)`);
+            }
         } catch {
             // Ignore resource links that cannot be displayed safely.
         }
@@ -334,7 +399,7 @@ async function runAgent(
             for (const part of step.content) {
                 if (part.type === "text") content += part.text;
                 if (part.type === "tool-result") {
-                    content += imageResultContent(
+                    content += mediaResultContent(
                         part.toolName,
                         part.output,
                         seenUrls,
@@ -396,7 +461,7 @@ async function streamAgent(
                         );
                     }
                     if (part.type === "tool-result") {
-                        const content = imageResultContent(
+                        const content = mediaResultContent(
                             part.toolName,
                             part.output,
                             seenUrls,

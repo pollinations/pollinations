@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
-    arrayBufferToBase64,
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchBinaryWithAuth,
+    fetchMediaWithAuth,
 } from "../utils/coreUtils.js";
 import { validateModel3d } from "../utils/models.js";
 
@@ -23,29 +22,28 @@ async function generate3D(params, context) {
     }
 
     const { prompt, ...options } = params;
-    const { buffer, contentType } = await fetchBinaryWithAuth(
+    const { contentType, mediaUrl } = await fetchMediaWithAuth(
         buildUrl(`/3d/${encodeURIComponent(prompt)}`, options),
         {},
         context,
     );
+    if (!mediaUrl) throw new Error("3D API returned no media URL");
 
     return createMCPResponse([
         {
-            type: "resource",
-            resource: {
-                uri: `pollinations://3d/${Date.now()}`,
-                mimeType: contentType || "model/gltf-binary",
-                blob: arrayBufferToBase64(buffer),
-            },
+            type: "resource_link",
+            uri: mediaUrl,
+            name: "Generated 3D model",
+            mimeType: contentType || "model/gltf-binary",
         },
-        createTextContent({ prompt, ...options, encoding: "base64" }, true),
+        createTextContent({ url: mediaUrl, prompt, ...options }, true),
     ]);
 }
 
 export const model3dTools = [
     [
         "generate3D",
-        "Generate a GLB 3D model through GET /3d/{prompt} and return it as an embedded MCP resource.",
+        "Generate a GLB 3D model and return a public MCP resource link.",
         {
             prompt: z
                 .string()

@@ -77,19 +77,6 @@ export function createImageContent(data, mimeType) {
 }
 
 /**
- * @param {string} data - Base64-encoded audio data
- * @param {string} mimeType - MIME type of the audio
- * @returns {Object} - Audio content object
- */
-export function createAudioContent(data, mimeType) {
-    return {
-        type: "audio",
-        data,
-        mimeType,
-    };
-}
-
-/**
  * @param {string} path - URL path (will be appended to API_BASE_URL)
  * @param {Object} params - Query parameters
  * @returns {string} - Complete URL
@@ -168,22 +155,17 @@ export async function postChatCompletion(body, context) {
 /**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
- * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
+ * @returns {Promise<{contentType: string, mediaUrl: string|null}>} - Content type and public cache URL
  */
-export async function fetchBinaryWithAuth(url, options = {}, context) {
+export async function fetchMediaWithAuth(url, options = {}, context) {
     const response = await fetchResponseWithAuth(url, options, context);
-    const buffer = await response.arrayBuffer();
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
-    return { buffer, contentType };
-}
-
-/**
- * @param {ArrayBuffer} buffer - Array buffer to convert
- * @returns {string} - Base64 encoded string
- */
-export function arrayBufferToBase64(buffer) {
-    return Buffer.from(buffer).toString("base64");
+    await response.body?.cancel();
+    return {
+        contentType,
+        mediaUrl: response.headers.get("content-location"),
+    };
 }
 
 /**

@@ -1,13 +1,12 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
-    arrayBufferToBase64,
     buildUrl,
     createImageContent,
     createMCPResponse,
     createTextContent,
-    fetchBinaryWithAuth,
     fetchJsonWithAuth,
+    fetchMediaWithAuth,
 } from "../utils/coreUtils.js";
 import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
@@ -135,26 +134,25 @@ async function generateVideo(params, context) {
         params,
         context,
     );
-    const { buffer, contentType } = await fetchBinaryWithAuth(
+    const { contentType, mediaUrl } = await fetchMediaWithAuth(
         buildUrl(`/video/${encodedPrompt}`, queryParams),
         {},
         context,
     );
+    if (!mediaUrl) throw new Error("Video API returned no media URL");
 
     return createMCPResponse([
         {
-            type: "resource",
-            resource: {
-                uri: `pollinations://video/${Date.now()}`,
-                mimeType: contentType || "video/mp4",
-                blob: arrayBufferToBase64(buffer),
-            },
+            type: "resource_link",
+            uri: mediaUrl,
+            name: "Generated video",
+            mimeType: contentType || "video/mp4",
         },
         createTextContent(
             {
                 prompt: params.prompt,
                 ...queryParams,
-                encoding: "base64",
+                url: mediaUrl,
             },
             true,
         ),
@@ -240,7 +238,7 @@ export const imageTools = [
     ],
     [
         "generateVideo",
-        "Generate one video through GET /video/{prompt} and return it as an embedded MCP resource.",
+        "Generate one video and return a public MCP resource link.",
         videoParamsSchema,
         generateVideo,
     ],

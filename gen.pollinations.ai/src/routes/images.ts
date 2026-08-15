@@ -288,12 +288,16 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
 
         if (body.response_format === "url") {
             await response.arrayBuffer();
+            const mediaUrl = response.headers.get("content-location");
+            if (!mediaUrl) {
+                throw new Error("Generated media URL is missing");
+            }
             c.res = withSafetyHeaders(
                 c,
                 c.json(
                     imageResponse(
                         {
-                            url: c.var.generationCacheUrl?.toString(),
+                            url: mediaUrl,
                             ...mediaData,
                         },
                         body.prompt,

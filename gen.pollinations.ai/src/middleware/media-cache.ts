@@ -9,9 +9,12 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import {
+    decodeMediaCacheId,
+    encodeMediaCacheId,
     generateCacheKey,
     putMediaResponse,
     setHttpMetadataHeaders,
@@ -32,6 +35,16 @@ type MediaCacheConfig = {
     label: string;
 };
 
+function mediaUrl(
+    c: Parameters<GenerationCacheAdapter["getKey"]>[0],
+    key: string,
+) {
+    return new URL(
+        `/media/${encodeMediaCacheId(key)}`,
+        getPublicOrigin(c),
+    ).toString();
+}
+
 function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
     return {
         storage: "media",
@@ -47,12 +60,13 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     ),
                 );
             }
-            return generateCacheKey(
+            const cacheKey = generateCacheKey(
                 cacheUrl,
                 c.var.generationCacheUrl
                     ? undefined
                     : c.req.header(SAFETY_HEADER_NAME),
             );
+            return cacheKey;
         },
         async get(c, cacheKey) {
             const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
@@ -66,7 +80,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
             c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
             c.header("X-Cache", "HIT");
-            return c.body(
+            const response = c.body(
                 refreshR2ObjectTtl(
                     c.env.IMAGE_BUCKET,
                     cacheKey,
@@ -80,6 +94,8 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     },
                 ),
             );
+            response.headers.set("Content-Location", mediaUrl(c, cacheKey));
+            return response;
         },
         shouldCache(response) {
             const contentType = response.headers.get("content-type");
@@ -90,6 +106,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
+            response.headers.set("Content-Location", mediaUrl(c, cacheKey));
             return {
                 response,
                 write: putMediaResponse(
@@ -102,6 +119,41 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             };
         },
     };
+}
+
+/** Serve an already-generated media-cache object through a bounded public URL. */
+export async function serveCachedMedia(
+    c: Parameters<GenerationCacheAdapter["getKey"]>[0],
+) {
+    const cacheKey = decodeMediaCacheId(c.req.param("id"));
+    if (!cacheKey) return c.json({ error: "Invalid media id" }, 400);
+
+    const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
+    if (!cached) return c.json({ error: "Media not found" }, 404);
+
+    setHttpMetadataHeaders(
+        c,
+        cached.httpMetadata,
+        "application/octet-stream",
+        cached.customMetadata,
+    );
+    c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+    c.header("Content-Location", mediaUrl(c, cacheKey));
+    c.header("X-Cache", "HIT");
+    return c.body(
+        refreshR2ObjectTtl(
+            c.env.IMAGE_BUCKET,
+            cacheKey,
+            cached,
+            (promise) => c.executionCtx.waitUntil(promise),
+            (error) => {
+                c.get("log").error(
+                    "Error refreshing public media TTL: {error}",
+                    { error },
+                );
+            },
+        ),
+    );
 }
 
 const imageAdapter = mediaCacheAdapter({

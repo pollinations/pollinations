@@ -70,6 +70,15 @@ const TABLES = [
                 ORDER BY id
                 LIMIT ?`,
     },
+    {
+        datasource: "d1_apikey_revocation_audit",
+        query: `SELECT id, apikey_id, key_hash, owner_user_id, owner_email,
+                       triggered_by, source, reference, created_at
+                FROM apikey_revocation_audit
+                WHERE id > ?
+                ORDER BY id
+                LIMIT ?`,
+    },
 ] as const satisfies readonly TableConfig[];
 
 export type D1TinybirdDatasource = (typeof TABLES)[number]["datasource"];

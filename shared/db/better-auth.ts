@@ -155,6 +155,33 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
+// Forced key revocations (leaked sk_/pk_ found by GitHub Secret Scanning or an
+// admin/bot). One row per revocation; only ever written by the admin-revocation
+// endpoint or the secret-scanning webhook. Paper trail for disputes.
+export const apikeyRevocationAudit = sqliteTable("apikey_revocation_audit", {
+  id: text("id").primaryKey(),
+  // Plain id, no FK: the apikey row is deleted at revocation time, and a
+  // cascade would wipe the audit trail. Id is preserved as a cross-reference.
+  apikeyId: text("apikey_id").notNull(),
+  keyHash: text("key_hash").notNull(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "no action" }),
+  // Snapshotted so the audit row survives if the user later changes email.
+  ownerEmail: text("owner_email"),
+  triggeredBy: text("triggered_by").notNull(),
+  source: text("source").notNull(),
+  // Link to the offending repo/commit (GitHub alert URL) or app-submission issue.
+  reference: text("reference"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_apikey_revocation_audit_key_hash").on(table.keyHash),
+  index("idx_apikey_revocation_audit_owner_user_id").on(table.ownerUserId),
+  index("idx_apikey_revocation_audit_created_at").on(table.createdAt),
+]);
+
 export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
   id: text("id").primaryKey(),
   userId: text("user_id")
@@ -280,7 +307,22 @@ export const userRelations = relations(user, ({ many }) => ({
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
   communityEndpoints: many(communityEndpoint),
+  apikeyRevocationAudits: many(apikeyRevocationAudit),
 }));
+
+export const apikeyRevocationAuditRelations = relations(
+  apikeyRevocationAudit,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [apikeyRevocationAudit.ownerUserId],
+      references: [user.id],
+    }),
+    apikey: one(apikey, {
+      fields: [apikeyRevocationAudit.apikeyId],
+      references: [apikey.id],
+    }),
+  }),
+);
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
   user: one(user, {

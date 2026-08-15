@@ -1,0 +1,21 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 apikey_revocation_audit (forced key revocations:
+    GitHub Secret Scanning, admin, bot)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `apikey_id` String `json:$.apikey_id`,
+    `key_hash` String `json:$.key_hash`,
+    `owner_user_id` String `json:$.owner_user_id`,
+    `owner_email` Nullable(String) `json:$.owner_email`,
+    `triggered_by` String `json:$.triggered_by`,
+    `source` String `json:$.source`,
+    `reference` Nullable(String) `json:$.reference`,
+    `created_at` Int64 `json:$.created_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "created_at"

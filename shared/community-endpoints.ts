@@ -301,6 +301,9 @@ export type CommunityEndpointRuntime = {
     upstreamModel: string;
     bearerTokenCiphertext: string | null;
     visibility: CommunityEndpointVisibility;
+    // Exact gateway-side cap per Pollinations user. Null delegates capacity
+    // limits to the upstream, whose 429 then remains a model failure.
+    perUserRpm: number | null;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
     // Community model ids tried in order when this endpoint's upstream fails.

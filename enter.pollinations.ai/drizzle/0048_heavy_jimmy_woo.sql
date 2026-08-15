@@ -27,6 +27,7 @@ CREATE TABLE `__new_community_endpoint` (
 	`upstream_model` text NOT NULL,
 	`bearer_token_ciphertext` text,
 	`visibility` text DEFAULT 'private' NOT NULL,
+	`per_user_rpm` real,
 	`prompt_text_price` real NOT NULL,
 	`prompt_cached_price` real DEFAULT 0 NOT NULL,
 	`prompt_cache_write_price` real DEFAULT 0 NOT NULL,
@@ -47,7 +48,7 @@ CREATE TABLE `__new_community_endpoint` (
 	FOREIGN KEY (`agent_id`) REFERENCES `agent`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
-INSERT INTO `__new_community_endpoint`("id", "owner_user_id", "name", "title", "description", "modality", "image_pricing", "supports_image_edits", "input_modalities", "base_url", "agent_id", "upstream_model", "bearer_token_ciphertext", "visibility", "prompt_text_price", "prompt_cached_price", "prompt_cache_write_price", "prompt_audio_price", "prompt_image_price", "completion_text_price", "completion_reasoning_price", "completion_audio_price", "completion_image_price", "delegates_generation", "fallback_model_ids", "disabled_at", "disabled_reason", "disabled_by", "created_at", "updated_at") SELECT "id", "owner_user_id", "name", "title", "description", "modality", "image_pricing", "supports_image_edits", "input_modalities", "base_url", NULL, "upstream_model", "bearer_token_ciphertext", "visibility", "prompt_text_price", "prompt_cached_price", "prompt_cache_write_price", "prompt_audio_price", "prompt_image_price", "completion_text_price", "completion_reasoning_price", "completion_audio_price", "completion_image_price", "delegates_generation", "fallback_model_ids", "disabled_at", "disabled_reason", "disabled_by", "created_at", "updated_at" FROM `community_endpoint`;--> statement-breakpoint
+INSERT INTO `__new_community_endpoint`("id", "owner_user_id", "name", "title", "description", "modality", "image_pricing", "supports_image_edits", "input_modalities", "base_url", "agent_id", "upstream_model", "bearer_token_ciphertext", "visibility", "per_user_rpm", "prompt_text_price", "prompt_cached_price", "prompt_cache_write_price", "prompt_audio_price", "prompt_image_price", "completion_text_price", "completion_reasoning_price", "completion_audio_price", "completion_image_price", "delegates_generation", "fallback_model_ids", "disabled_at", "disabled_reason", "disabled_by", "created_at", "updated_at") SELECT "id", "owner_user_id", "name", "title", "description", "modality", "image_pricing", "supports_image_edits", "input_modalities", "base_url", NULL, "upstream_model", "bearer_token_ciphertext", "visibility", "per_user_rpm", "prompt_text_price", "prompt_cached_price", "prompt_cache_write_price", "prompt_audio_price", "prompt_image_price", "completion_text_price", "completion_reasoning_price", "completion_audio_price", "completion_image_price", "delegates_generation", "fallback_model_ids", "disabled_at", "disabled_reason", "disabled_by", "created_at", "updated_at" FROM `community_endpoint`;--> statement-breakpoint
 DROP TABLE `community_endpoint`;--> statement-breakpoint
 ALTER TABLE `__new_community_endpoint` RENAME TO `community_endpoint`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint

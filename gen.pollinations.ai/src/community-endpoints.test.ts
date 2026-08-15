@@ -1,6 +1,7 @@
 import {
     createExecutionContext,
     env,
+    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
@@ -255,11 +256,15 @@ async function createCommunityFallbackPair({
     modality = "text",
     primaryName = "primary",
     fallbackName = "cheap",
+    primaryPerUserRpm,
+    fallbackPerUserRpm,
 }: {
     prefix: string;
     modality?: CommunityEndpointModality;
     primaryName?: string;
     fallbackName?: string;
+    primaryPerUserRpm?: number;
+    fallbackPerUserRpm?: number;
 }) {
     const primaryToken = "sk_primary_token";
     const fallbackToken = "sk_fallback_token";
@@ -300,6 +305,7 @@ async function createCommunityFallbackPair({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: primaryUserId,
             visibility: "public",
+            perUserRpm: primaryPerUserRpm,
             name: primaryName,
             modality,
             baseUrl: primaryHost,
@@ -317,6 +323,7 @@ async function createCommunityFallbackPair({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: fallbackUserId,
             visibility: "public",
+            perUserRpm: fallbackPerUserRpm,
             name: fallbackName,
             modality,
             baseUrl: fallbackHost,
@@ -754,6 +761,7 @@ describe("community endpoint helpers", () => {
                 agentId: null,
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                perUserRpm: null,
                 fallbackModelIds: [],
                 disabledAt: null,
                 disabledReason: null,
@@ -941,6 +949,7 @@ describe("community endpoint helpers", () => {
             agentId: null,
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            perUserRpm: null,
             delegatesGeneration: false,
             fallbackModelIds: [],
             disabledAt: null,
@@ -1005,6 +1014,7 @@ describe("community endpoint helpers", () => {
                 agentId: null,
                 upstreamModel: "agent",
                 visibility: "public",
+                perUserRpm: null,
                 delegatesGeneration: true,
                 disabledAt: null,
                 disabledReason: null,
@@ -1571,6 +1581,7 @@ fixtureTest(
             visibility: "public",
             name: modelName,
             description: "Public community model",
+            perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -1602,6 +1613,7 @@ fixtureTest(
             aliases?: string[];
             category?: string;
             community?: boolean;
+            per_user_rpm?: number | null;
             alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
@@ -1613,6 +1625,7 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
+                per_user_rpm?: number | null;
             }[];
         };
 
@@ -1625,6 +1638,7 @@ fixtureTest(
                 ],
                 category: "text",
                 community: true,
+                per_user_rpm: 0.5,
                 alpha: true,
                 title: "Public community model",
                 description: "Public community model",
@@ -1642,6 +1656,7 @@ fixtureTest(
             expect.arrayContaining([
                 expect.objectContaining({
                     id: modelId,
+                    per_user_rpm: 0.5,
                     supported_endpoints: expect.arrayContaining([
                         "/v1/chat/completions",
                     ]),
@@ -1858,6 +1873,186 @@ fixtureTest(
         expect(
             openaiModels.data.find((model) => model.id === modelId),
         ).toBeUndefined();
+    },
+);
+
+fixtureTest(
+    "filters model catalogs with ?community query parameter",
+    async () => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const textOwner = `filter-text-${suffix}`;
+        const imageOwner = `filter-img-${suffix}`;
+        const textName = `qp-text-${suffix}`;
+        const imageName = `qp-img-${suffix}`;
+        const textModelId = communityModelId(textOwner, textName);
+        const imageModelId = communityModelId(imageOwner, imageName);
+
+        const textUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: textOwner,
+        });
+        const imageUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: imageOwner,
+        });
+
+        await db.insert(communityEndpointTable).values([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: textUserId,
+                visibility: "public",
+                name: textName,
+                description: "Community text filter test model",
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-4.1-mini",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: imageUserId,
+                visibility: "public",
+                name: imageName,
+                description: "Community image filter test model",
+                modality: "image",
+                baseUrl: "https://img.example.com/v1",
+                upstreamModel: "flux-1",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        type ListedModel = { name: string; community?: boolean };
+
+        const [
+            allDefault,
+            allExclude,
+            allOnly,
+            textExclude,
+            textOnly,
+            openaiExclude,
+            openaiOnly,
+            imageExclude,
+            imageOnly,
+            allExcludeNumeric,
+            allOnlyNumeric,
+        ] = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/models"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=false"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=true"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?community=false",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?community=true",
+            ),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?community=false"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?community=true"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?community=false",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?community=true",
+            ),
+            SELF.fetch("https://gen.pollinations.ai/models?community=0"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=1"),
+        ]);
+
+        for (const r of [
+            allDefault,
+            allExclude,
+            allOnly,
+            textExclude,
+            textOnly,
+            openaiExclude,
+            openaiOnly,
+            imageExclude,
+            imageOnly,
+            allExcludeNumeric,
+            allOnlyNumeric,
+        ]) {
+            expect(r.status).toBe(200);
+        }
+
+        const defaultModels = (await allDefault.json()) as ListedModel[];
+        const excludeModels = (await allExclude.json()) as ListedModel[];
+        const onlyModels = (await allOnly.json()) as ListedModel[];
+        const textExcludeModels = (await textExclude.json()) as ListedModel[];
+        const textOnlyModels = (await textOnly.json()) as ListedModel[];
+        const openaiExcludeData = (await openaiExclude.json()) as {
+            data: { id: string }[];
+        };
+        const openaiOnlyData = (await openaiOnly.json()) as {
+            data: { id: string }[];
+        };
+        const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
+        const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
+        const excludeNumeric =
+            (await allExcludeNumeric.json()) as ListedModel[];
+        const onlyNumeric = (await allOnlyNumeric.json()) as ListedModel[];
+
+        expect(defaultModels.some((m) => m.community)).toBe(true);
+        expect(defaultModels.some((m) => !m.community)).toBe(true);
+
+        expect(excludeModels.every((m) => !m.community)).toBe(true);
+        expect(
+            excludeModels.find((m) => m.name === textModelId),
+        ).toBeUndefined();
+
+        expect(onlyModels.every((m) => m.community === true)).toBe(true);
+        expect(onlyModels.find((m) => m.name === textModelId)).toBeDefined();
+
+        expect(textExcludeModels.every((m) => !m.community)).toBe(true);
+        expect(textOnlyModels.every((m) => m.community === true)).toBe(true);
+
+        expect(
+            openaiExcludeData.data.find((m) => m.id === textModelId),
+        ).toBeUndefined();
+        expect(
+            openaiOnlyData.data.find((m) => m.id === textModelId),
+        ).toBeDefined();
+
+        expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
+        expect(
+            imageExcludeModels.find((m) => m.name === imageModelId),
+        ).toBeUndefined();
+
+        expect(imageOnlyModels.every((m) => m.community === true)).toBe(true);
+        expect(
+            imageOnlyModels.find((m) => m.name === imageModelId),
+        ).toBeDefined();
+
+        expect(excludeNumeric.map((m) => m.name)).toEqual(
+            excludeModels.map((m) => m.name),
+        );
+        expect(onlyNumeric.map((m) => m.name)).toEqual(
+            onlyModels.map((m) => m.name),
+        );
+
+        const invalidResponses = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
+            SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?community=2"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?community=nope",
+            ),
+        ]);
+        for (const r of invalidResponses) {
+            expect(r.status).toBe(400);
+        }
     },
 );
 
@@ -2964,6 +3159,7 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
+                    perUserRpm: 0.5,
                 }),
             }),
         );
@@ -2978,6 +3174,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
+            perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
             disabled: false,
@@ -3194,6 +3391,7 @@ fixtureTest(
         });
         expect(secondList.data[0]).toMatchObject({
             title: "Updated Model Title",
+            perUserRpm: 0.5,
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
@@ -3204,6 +3402,26 @@ fixtureTest(
         expect(registryEntry?.info).toMatchObject({
             brand: "Example AI",
             brand_url: "https://example.com/",
+        });
+        expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
+
+        const clearLimitResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ perUserRpm: null }),
+                },
+            ),
+        );
+        expect(clearLimitResponse.status).toBe(200);
+        await expect(clearLimitResponse.json()).resolves.toMatchObject({
+            perUserRpm: null,
         });
     },
 );
@@ -4243,6 +4461,7 @@ fixtureTest(
             fallbackToken,
         } = await createCommunityFallbackPair({
             prefix: "text-success",
+            fallbackPerUserRpm: 1,
         });
 
         // Read inside the mock: request bodies cannot cross isolates.
@@ -4298,19 +4517,22 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
+        const request = (content: string) =>
+            fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: primaryModelId,
+                        messages: [{ role: "user", content }],
+                    }),
                 }),
-            }),
-        );
+            );
+
+        const response = await request("hello-first");
 
         expect(response.status).toBe(200);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
@@ -4357,6 +4579,16 @@ fixtureTest(
         expect(
             new Set(ingestedEvents.map((event) => event.requestId)).size,
         ).toBe(1);
+
+        const limitedResponse = await request("hello-second");
+        expect(limitedResponse.status).toBe(429);
+        expect(limitedResponse.headers.get("Retry-After")).toBeTruthy();
+        await expect(limitedResponse.json()).resolves.toMatchObject({
+            error: { code: "community_model_rate_limit" },
+        });
+        // The primary was attempted again, but its limited fallback was not.
+        expect(gatewayCalls).toHaveLength(3);
+        expect(gatewayCalls[2]?.customHost).toBe(primaryHost);
     },
 );
 

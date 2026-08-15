@@ -70,6 +70,7 @@ export async function getCommunityModelRegistryEntries(
             endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            perUserRpm: schema.communityEndpoint.perUserRpm,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
@@ -127,6 +128,7 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: row.agentId ?? row.upstreamModel,
             bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
             visibility: row.visibility,
+            perUserRpm: row.perUserRpm,
             delegatesGeneration: row.delegatesGeneration,
             fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
@@ -143,6 +145,7 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
+                    perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,

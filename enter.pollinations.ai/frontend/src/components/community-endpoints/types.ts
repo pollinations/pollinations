@@ -60,6 +60,7 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
     disabled: boolean;
@@ -105,6 +106,7 @@ export type EndpointFormState = {
     // public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
+    perUserRpm: string;
     baseUrl: string;
     agentId: string;
     upstreamModel: string;
@@ -125,6 +127,7 @@ export type EndpointPayload = {
     agentId?: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    perUserRpm: number | null;
     fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
@@ -159,6 +162,7 @@ export const emptyForm: EndpointFormState = {
     title: "",
     description: "",
     visibility: "private",
+    perUserRpm: "",
     baseUrl: "",
     agentId: "",
     upstreamModel: "",
@@ -254,6 +258,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
+        perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
         agentId: endpoint.agentId ?? "",
         upstreamModel: endpoint.upstreamModel,
@@ -396,6 +401,9 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+    if (!isValidPerUserRpm(form.perUserRpm)) {
+        throw new Error("Per-user RPM must be a positive number");
+    }
     const modelName = form.name.trim();
     const modality = form.mode === "agent" ? "text" : form.modality;
     const imagePricing = modality === "image" ? form.imagePricing : "request";
@@ -407,6 +415,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
+        perUserRpm: form.perUserRpm.trim() ? Number(form.perUserRpm) : null,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbackModelIds:
@@ -426,6 +435,13 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
     };
+}
+
+export function isValidPerUserRpm(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed > 0;
 }
 
 /** Keep the public model id in sync with the provider model until edited. */

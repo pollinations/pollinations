@@ -142,14 +142,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek-pro": {
     "cost": {
-      "completionTextTokens": 0.00000348,
-      "promptCachedTokens": 0.000000145,
-      "promptTextTokens": 0.00000174,
+      "completionTextTokens": 0.00000396,
+      "promptCachedTokens": 0.000000044,
+      "promptTextTokens": 0.00000132,
     },
     "price": {
-      "completionTextTokens": 0.00000348,
-      "promptCachedTokens": 0.000000145,
-      "promptTextTokens": 0.00000174,
+      "completionTextTokens": 0.00000396,
+      "promptCachedTokens": 0.000000044,
+      "promptTextTokens": 0.00000132,
     },
   },
   "dreamshaper": {
@@ -629,22 +629,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "grok-4.5": {
+  "grok-4.6": {
     "cost": {
       "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000003,
+      "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000002,
     },
     "costVariants": {
       "long_context": {
         "completionTextTokens": 0.000012,
-        "promptCachedTokens": 0.0000006,
+        "promptCachedTokens": 0.000001,
         "promptTextTokens": 0.000004,
       },
     },
     "price": {
       "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000003,
+      "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000002,
     },
   },
@@ -656,6 +656,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionImageTokens": 0.02,
       "promptImageTokens": 0.002,
+    },
+  },
+  "grok-imagine-image-2.0": {
+    "cost": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "low_1k": {
+        "completionImageTokens": 0.04,
+        "promptImageTokens": 0.01,
+      },
+      "low_2k": {
+        "completionImageTokens": 0.06,
+        "promptImageTokens": 0.01,
+      },
+      "medium_2k": {
+        "completionImageTokens": 0.08,
+        "promptImageTokens": 0.01,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
     },
   },
   "grok-imagine-pro": {
@@ -979,6 +1003,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax-h3": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.13,
+      },
+      "768p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
+    },
+  },
   "minimax-m2.7": {
     "cost": {
       "completionTextTokens": 0.0000012,
@@ -1037,7 +1077,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000035,
     },
   },
-  "muse-spark-1.1": {
+  "muse-spark-1.2": {
     "cost": {
       "completionTextTokens": 0.00000425,
       "promptCachedTokens": 0.00000015,
@@ -1532,6 +1572,27 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.18,
+    },
+  },
+  "seedance-2.0-fast": {
+    "cost": {
+      "completionVideoSeconds": 0.07,
+    },
+    "price": {
+      "completionVideoSeconds": 0.07,
+    },
+  },
+  "seedance-2.0-mini": {
+    "cost": {
+      "completionVideoSeconds": 0.09,
+    },
+    "costVariants": {
+      "480p": {
+        "completionVideoSeconds": 0.04,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.09,
     },
   },
   "seedance-2.5": {

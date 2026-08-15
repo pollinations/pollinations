@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "65081f50-8b73-48a3-90c4-a9c6dce838c8",
-  "prevId": "30283276-c8a1-49aa-a5f0-74e068689e2a",
+  "prevId": "042a6398-9671-424c-a76a-0b00789e4c1c",
   "tables": {
     "account": {
       "name": "account",
@@ -541,6 +541,13 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'private'"
+        },
+        "per_user_rpm": {
+          "name": "per_user_rpm",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "prompt_text_price": {
           "name": "prompt_text_price",

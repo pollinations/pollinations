@@ -21,6 +21,7 @@ import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
+import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
     type AgentPayload,
     type CommunityEndpoint,
@@ -60,6 +61,7 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
     const [registeringAgent, setRegisteringAgent] =
@@ -449,9 +451,7 @@ export function CommunityEndpoints({
                                         key={endpoint.id}
                                         endpoint={endpoint}
                                         isToggling={togglingId === endpoint.id}
-                                        onToggle={() =>
-                                            void handleToggle(endpoint)
-                                        }
+                                        onToggle={() => setToggling(endpoint)}
                                         onEditAgent={
                                             agent
                                                 ? () => setEditingAgent(agent)
@@ -501,7 +501,6 @@ export function CommunityEndpoints({
                 onConfirm={() => void handleDelete()}
                 onCancel={() => setDeleting(null)}
             />
-
             <AgentDialog
                 key={editingAgent?.id ?? "agent-edit-closed"}
                 agent={editingAgent ?? undefined}
@@ -514,6 +513,16 @@ export function CommunityEndpoints({
                 agent={deletingAgent}
                 onConfirm={() => void handleDeleteAgent()}
                 onCancel={() => setDeletingAgent(null)}
+            />
+
+            <CommunityEndpointToggleConfirmation
+                endpoint={toggling}
+                onConfirm={() => {
+                    if (!toggling) return;
+                    void handleToggle(toggling);
+                    setToggling(null);
+                }}
+                onCancel={() => setToggling(null)}
             />
         </>
     );

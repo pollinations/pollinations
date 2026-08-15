@@ -67,6 +67,10 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
+import {
+    type ModelListQueryParams,
+    ModelListQueryParamsSchema,
+} from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
@@ -187,25 +191,46 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Factory for model-list endpoints: filters the given models by API key
-// permissions and paid balance, then returns them as JSON.
-const modelsListHandler =
-    (
-        getEntries: (
-            c: Context<Env>,
-        ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
-    ) =>
-    async (c: Context<Env>) => {
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        const paidBalance = hasPaidBalance(c);
-        return c.json(
-            filterEntriesByPermissions(
-                await getEntries(c),
-                allowedModels,
-                paidBalance,
-            ).map((entry) => entry.info),
-        );
-    };
+// Optionally filter entries by the validated `?community` query parameter.
+function filterEntriesByCommunityParam(
+    entries: GenerationModelEntry[],
+    communityParam: string | undefined,
+): GenerationModelEntry[] {
+    if (communityParam === undefined) return entries;
+    const wantCommunity = communityParam === "true" || communityParam === "1";
+    return entries.filter(
+        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
+    );
+}
+
+// Factory for model-list endpoints: validates the community query parameter,
+// filters by API key permissions, paid balance, and community flag,
+// then returns the model list as JSON.
+const modelsListHandler = (
+    getEntries: (
+        c: Context<Env>,
+    ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
+) =>
+    [
+        validator("query", ModelListQueryParamsSchema),
+        async (c: Context<Env>) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            return c.json(
+                filterEntriesByCommunityParam(
+                    filterEntriesByPermissions(
+                        await getEntries(c),
+                        allowedModels,
+                        paidBalance,
+                    ),
+                    community,
+                ).map((entry) => entry.info),
+            );
+        },
+    ] as const;
 
 async function getVisibleModelEntries(c: Context<Env>) {
     return (await getGenerationModelRegistry(c.env)).visibleEntries(
@@ -263,7 +288,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -273,16 +298,23 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
+        validator("query", ModelListQueryParamsSchema),
         async (c) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByPermissions(
-                await getVisibleModelEntries(c),
-                allowedModels,
-                paidBalance,
+            const modelEntries = filterEntriesByCommunityParam(
+                filterEntriesByPermissions(
+                    await getVisibleModelEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                community,
             );
             const now = Date.now();
 
@@ -300,6 +332,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...(entry.info.context_length && {
                     context_length: entry.info.context_length,
                 }),
+                ...(entry.info.community && {
+                    per_user_rpm: entry.info.per_user_rpm ?? null,
+                }),
             });
 
             return c.json({
@@ -314,7 +349,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -329,10 +364,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModelEntries),
+        ...modelsListHandler(getVisibleModelEntries),
     )
     .get(
         "/3d/models",
@@ -340,7 +375,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List 3D Models",
             description:
-                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -355,10 +390,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleModel3dEntries),
+        ...modelsListHandler(getVisibleModel3dEntries),
     )
     .get(
         "/image/models",
@@ -366,7 +401,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -381,10 +416,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleImageAndVideoEntries),
+        ...modelsListHandler(getVisibleImageAndVideoEntries),
     )
     .get(
         "/video/models",
@@ -392,7 +427,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Video Models",
             description:
-                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -407,10 +442,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler(getVisibleVideoModelEntries),
+        ...modelsListHandler(getVisibleVideoModelEntries),
     )
     .get(
         "/text/models",
@@ -418,7 +453,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -433,10 +468,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.text"),
         ),
     )
@@ -446,7 +481,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -461,10 +496,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.audio"),
         ),
     )
@@ -474,7 +509,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "List Embedding Models",
             description:
-                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -489,10 +524,10 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponseDescriptions(400, 500),
             },
         }),
-        modelsListHandler((c) =>
+        ...modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.embedding"),
         ),
     )
@@ -853,13 +888,15 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔊 Audio"],
             summary: "Generate Audio",
             description: [
-                "Generate speech or music from text via a simple GET request.",
+                "Generate speech, dialogue, music, or sound effects from text via a simple GET request.",
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
+                `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
+                "",
+                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
                 "",
                 "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
@@ -880,7 +917,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description for a music-generation model",
+                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),

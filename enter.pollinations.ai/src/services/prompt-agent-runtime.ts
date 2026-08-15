@@ -47,8 +47,14 @@ export const PromptAgentRequestSchema = z
 
 export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
     model: z.string().uuid(),
-    // Gen's OpenAI normalization forwards these defaults even when the caller
-    // omitted them. Accept only their inert values; other controls stay errors.
+    // Gen and OpenAI-compatible clients add these fields. The agent definition
+    // owns its tools and model controls, so accept but ignore them here.
+    max_tokens: z.number().int().nonnegative().optional(),
+    tools: z.array(z.unknown()).optional(),
+    stream_options: z
+        .object({ include_usage: z.boolean().optional() })
+        .strict()
+        .optional(),
     presence_penalty: z.literal(0).optional(),
     frequency_penalty: z.literal(0).optional(),
     logprobs: z.literal(false).optional(),

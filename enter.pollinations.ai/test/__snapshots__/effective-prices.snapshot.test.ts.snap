@@ -1003,6 +1003,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax-h3": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.13,
+      },
+      "768p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
+    },
+  },
   "minimax-m2.7": {
     "cost": {
       "completionTextTokens": 0.0000012,
@@ -1506,6 +1522,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000184375,
       "promptCachedTokens": 0.000000295,
       "promptTextTokens": 0.000001475,
+    },
+  },
+  "qwen3.8-2.4t-a95b": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
     },
   },
   "qwen3.8-max": {

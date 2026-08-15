@@ -13,7 +13,7 @@ import {
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
-import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -45,6 +45,7 @@ import {
 import { readResponseBytes } from "../utils/response-bytes.ts";
 import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
+import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
@@ -131,7 +132,7 @@ const CreateSpeechRequestSchema = z
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
         }),
-        instruct: z.string().optional().meta({
+        instructions: z.string().optional().meta({
             description:
                 "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
@@ -155,21 +156,6 @@ async function withAudioFallback(
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;
 }
-type SimpleAudioQuery = {
-    safe?: SafeValue;
-    duration?: number;
-    seconds?: number;
-    steps?: number;
-    negative_prompt?: string;
-    instrumental?: boolean;
-    seed?: number;
-    voice: string;
-    response_format: string;
-    instruct?: string;
-    loop?: boolean;
-    prompt_influence?: number;
-};
-
 type AudioRefChunk = {
     song_id: string;
     range: {
@@ -1786,7 +1772,8 @@ async function parseSpeechRequest(
                 "store_for_inpainting",
             ),
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
-            instruct: (formData.get("instruct") as string | null) || undefined,
+            instructions:
+                (formData.get("instructions") as string | null) || undefined,
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
                 formData.get("prompt_influence"),
@@ -1821,11 +1808,11 @@ export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
     text: string;
     voice: string;
-    instruct?: string;
+    instructions?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instructions, apiKey, log } = opts;
     const modelId = QWEN_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
@@ -1834,10 +1821,10 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instruct && modelName !== "qwen-tts-instruct") {
+    if (instructions && modelName !== "qwen-tts-instruct") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
-                "The instruct parameter is only supported by qwen-tts-instruct",
+                "The instructions parameter is only supported by qwen-tts-instruct",
         });
     }
 
@@ -1853,7 +1840,9 @@ export async function generateQwenTts(opts: {
         model: modelId,
         input: { text, voice: qwenVoice },
         parameters:
-            modelName === "qwen-tts-instruct" && instruct ? { instruct } : {},
+            modelName === "qwen-tts-instruct" && instructions
+                ? { instructions }
+                : {},
     };
 
     const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
@@ -2312,7 +2301,7 @@ async function dispatchAudioGeneration(
         conditioningRef?: unknown;
         compositionPlan?: unknown;
         referenceAudio?: File;
-        instruct?: string;
+        instructions?: string;
         loop?: boolean;
         promptInfluence?: number;
         apiKey: string;
@@ -2337,7 +2326,7 @@ async function dispatchAudioGeneration(
         conditioningRef,
         compositionPlan,
         referenceAudio,
-        instruct,
+        instructions,
         loop,
         promptInfluence,
         apiKey,
@@ -2462,7 +2451,7 @@ async function dispatchAudioGeneration(
                     modelName: model,
                     text,
                     voice,
-                    instruct,
+                    instructions,
                     apiKey: dashScopeApiKey,
                     log,
                 }),
@@ -2487,6 +2476,92 @@ async function dispatchAudioGeneration(
     }
 }
 
+async function generateAudioFromSpeechRequest(
+    c: AudioContext,
+    request: CreateSpeechRequest,
+    log: Logger,
+): Promise<Response> {
+    const {
+        input,
+        safe,
+        voice,
+        response_format,
+        duration,
+        seconds,
+        steps,
+        negative_prompt,
+        instrumental,
+        store_for_inpainting,
+        conditioning_ref,
+        composition_plan,
+        reference_audio,
+        seed,
+        instructions,
+        loop,
+        prompt_influence,
+    } = request;
+
+    requireElevenMusicOptions(c.var.model.resolved, {
+        referenceAudio: reference_audio,
+        compositionPlan: composition_plan,
+        conditioningRef: conditioning_ref,
+        storeForInpainting: store_for_inpainting,
+    });
+
+    if (c.var.model.resolved === "eleven-dialogue") {
+        const inputs = parseDialogueInput(input);
+        const safeTexts = await applySafetyToTexts(
+            c,
+            inputs.map((turn) => turn.text),
+            safe,
+        );
+        const safeInputs = inputs.map((turn, index) => ({
+            ...turn,
+            text: safeTexts[index],
+        }));
+        const response = await generateElevenLabsDialogue({
+            inputs: safeInputs,
+            responseFormat: response_format,
+            seed,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        });
+        return withSafetyHeaders(c, response);
+    }
+
+    const safeInput = await applySafety(c, input, safe);
+    const referenceAudio = reference_audio
+        ? await fetchReferenceAudio(reference_audio)
+        : undefined;
+
+    return withAudioFallback(c, (candidate) =>
+        dispatchAudioGeneration(c, candidate.id, {
+            text: safeInput,
+            voice,
+            responseFormat: response_format,
+            seed,
+            duration,
+            seconds,
+            steps,
+            negativePrompt: negative_prompt,
+            instrumental,
+            storeForInpainting: store_for_inpainting,
+            conditioningRef: conditioning_ref,
+            compositionPlan: composition_plan,
+            referenceAudio,
+            instructions,
+            loop,
+            promptInfluence: prompt_influence,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            falKey: c.env.FAL_KEY,
+            stabilityApiKey: c.env.STABILITY_API_KEY,
+            log,
+        }),
+    );
+}
+
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
@@ -2502,32 +2577,24 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    text = await applySafety(c, text, query.safe);
-
-    const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-        .ELEVENLABS_API_KEY;
-
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text,
+    return await generateAudioFromSpeechRequest(
+        c,
+        {
+            input: text,
+            safe: query.safe,
             voice: query.voice,
-            responseFormat: query.response_format,
+            response_format: query.response_format,
             seed: normalizeSeed(query.seed),
             duration: query.duration,
             seconds: query.seconds,
             steps: query.steps,
-            negativePrompt: query.negative_prompt,
+            negative_prompt: query.negative_prompt,
             instrumental: query.instrumental,
-            instruct: query.instruct,
+            instructions: query.instructions,
             loop: query.loop,
-            promptInfluence: query.prompt_influence,
-            apiKey,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
+            prompt_influence: query.prompt_influence,
+        },
+        log,
     );
 }
 
@@ -2590,83 +2657,10 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
 
 export async function handleSpeech(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("tts");
-    const {
-        input,
-        safe,
-        voice,
-        response_format,
-        duration,
-        seconds,
-        steps,
-        negative_prompt,
-        instrumental,
-        store_for_inpainting,
-        conditioning_ref,
-        composition_plan,
-        reference_audio,
-        seed,
-        instruct,
-        loop,
-        prompt_influence,
-    } = await parseSpeechRequest(c);
-    requireElevenMusicOptions(c.var.model.resolved, {
-        referenceAudio: reference_audio,
-        compositionPlan: composition_plan,
-        conditioningRef: conditioning_ref,
-        storeForInpainting: store_for_inpainting,
-    });
-
-    if (c.var.model.resolved === "eleven-dialogue") {
-        const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
-            c,
-            inputs.map((turn) => turn.text),
-            safe,
-        );
-        const safeInputs = inputs.map((turn, index) => ({
-            ...turn,
-            text: safeTexts[index],
-        }));
-        const response = await generateElevenLabsDialogue({
-            inputs: safeInputs,
-            responseFormat: response_format,
-            seed,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            log,
-        });
-        return withSafetyHeaders(c, response);
-    }
-
-    const safeInput = await applySafety(c, input, safe);
-    const referenceAudio = reference_audio
-        ? await fetchReferenceAudio(reference_audio)
-        : undefined;
-
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text: safeInput,
-            voice,
-            responseFormat: response_format,
-            seed,
-            duration,
-            seconds,
-            steps,
-            negativePrompt: negative_prompt,
-            instrumental,
-            storeForInpainting: store_for_inpainting,
-            conditioningRef: conditioning_ref,
-            compositionPlan: composition_plan,
-            referenceAudio,
-            instruct,
-            loop,
-            promptInfluence: prompt_influence,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
+    return await generateAudioFromSpeechRequest(
+        c,
+        await parseSpeechRequest(c),
+        log,
     );
 }
 
@@ -2985,7 +2979,7 @@ export const audioRoutes = new Hono<Env>()
                                     minLength: 1,
                                     maxLength: 10000,
                                     description:
-                                        "Text or prompt to generate. For eleven-dialogue, use one `voice: text` turn per line.",
+                                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
                                 },
                                 safe: {
                                     oneOf: [
@@ -3039,7 +3033,7 @@ export const audioRoutes = new Hono<Env>()
                                     minimum: 0,
                                     maximum: 4294967295,
                                 },
-                                instruct: { type: "string" },
+                                instructions: { type: "string" },
                                 loop: { type: "boolean" },
                                 prompt_influence: {
                                     type: "number",

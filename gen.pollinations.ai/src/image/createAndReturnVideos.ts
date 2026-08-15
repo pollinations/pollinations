@@ -5,6 +5,7 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
+import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
@@ -74,6 +75,9 @@ export async function createAndReturnVideo(
             break;
         case "happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
+            break;
+        case "minimax-h3":
+            result = await callMinimaxH3API(prompt, safeParams);
             break;
         default:
             throw new Error(

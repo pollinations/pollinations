@@ -17,14 +17,30 @@ import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type McpServerRow = { id: string; name: string; url: string };
+export type McpHeaderRow = {
+    id: string;
+    name: string;
+    value: string;
+    saved: boolean;
+};
+
+export type McpServerRow = {
+    id: string;
+    name: string;
+    url: string;
+    headers: McpHeaderRow[];
+};
 
 export type ManagedAgent = {
     id: string;
     systemPrompt: string;
     baseModel: string;
     pollinationsTools: boolean;
-    mcpServers: { name: string; url: string }[];
+    mcpServers: {
+        name: string;
+        url: string;
+        headers: Record<string, null>;
+    }[];
     createdAt: string;
     updatedAt: string;
 };
@@ -37,7 +53,11 @@ type AgentFields = Pick<
 export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
 
 export type AgentPayload = AgentFields & {
-    mcpServers: ManagedAgent["mcpServers"];
+    mcpServers: {
+        name: string;
+        url: string;
+        headers: Record<string, string | null>;
+    }[];
 };
 
 export type CommunityProviderProfile = {
@@ -382,23 +402,44 @@ export function observedUsageValue(
 // Mirrors the backend McpServerSchema name pattern (lowercase alphanumeric with
 // _ or -, max 40 chars) so client and server reject the same names.
 export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+export const MCP_HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,128}$/;
 
 export function isValidMcpRow(row: McpServerRow): boolean {
     const name = row.name.trim();
     const url = row.url.trim();
-    if (!name && !url) return true;
+    const nonEmptyHeaders = row.headers.filter(
+        (header) => header.name.trim() || header.value,
+    );
+    if (!name && !url && nonEmptyHeaders.length === 0) return true;
     try {
         normalizeCommunityEndpointBaseUrl(url);
     } catch {
         return false;
     }
-    return MCP_SERVER_NAME_PATTERN.test(name);
+    if (!MCP_SERVER_NAME_PATTERN.test(name)) return false;
+
+    const headerNames = new Set<string>();
+    for (const header of nonEmptyHeaders) {
+        const headerName = header.name.trim();
+        if (
+            !MCP_HEADER_NAME_PATTERN.test(headerName) ||
+            (!header.saved && !header.value) ||
+            header.value.includes("\r") ||
+            header.value.includes("\n")
+        ) {
+            return false;
+        }
+        const normalized = headerName.toLowerCase();
+        if (headerNames.has(normalized)) return false;
+        headerNames.add(normalized);
+    }
+    return nonEmptyHeaders.length <= 16;
 }
 
 // Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
 // the backend McpServerSchema so the API rejects the same inputs.
-function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
-    const servers: ManagedAgent["mcpServers"] = [];
+function mcpServersToPayload(rows: McpServerRow[]): AgentPayload["mcpServers"] {
+    const servers: AgentPayload["mcpServers"] = [];
     for (const row of rows) {
         const name = row.name.trim();
         const url = row.url.trim();
@@ -411,10 +452,27 @@ function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
         if (!url) {
             throw new Error(`MCP server "${name}" needs a URL`);
         }
+        const headers: Record<string, string | null> = {};
+        for (const header of row.headers) {
+            const headerName = header.name.trim();
+            if (!headerName && !header.value) continue;
+            if (!MCP_HEADER_NAME_PATTERN.test(headerName)) {
+                throw new Error(
+                    `MCP server "${name}" has an invalid header name`,
+                );
+            }
+            if (!header.saved && !header.value) {
+                throw new Error(
+                    `MCP header "${headerName}" for server "${name}" needs a value`,
+                );
+            }
+            headers[headerName] = header.value || null;
+        }
         try {
             servers.push({
                 name,
                 url: normalizeCommunityEndpointBaseUrl(url),
+                headers,
             });
         } catch {
             throw new Error(

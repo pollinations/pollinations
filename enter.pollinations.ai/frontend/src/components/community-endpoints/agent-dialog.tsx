@@ -19,7 +19,6 @@ import {
     isValidMcpRow,
     isValidPerUserRpm,
     type ManagedAgent,
-    type McpServerRow,
     type ModelListingFormState,
     toAgentListingPayload,
     toAgentPayload,
@@ -65,8 +64,15 @@ export function AgentDialog({
                       baseModel: agent.baseModel,
                       pollinationsTools: agent.pollinationsTools,
                       mcpServers: agent.mcpServers.map((server) => ({
-                          ...server,
                           id: crypto.randomUUID(),
+                          name: server.name,
+                          url: server.url,
+                          headers: Object.keys(server.headers).map((name) => ({
+                              id: crypto.randomUUID(),
+                              name,
+                              value: "",
+                              saved: true,
+                          })),
                       })),
                   }
                 : emptyAgentForm),
@@ -84,13 +90,25 @@ export function AgentDialog({
 
     function updateMcpServer(
         index: number,
-        key: keyof Omit<McpServerRow, "id">,
+        key: "name" | "url",
         value: string,
     ): void {
         setForm((current) => ({
             ...current,
             mcpServers: current.mcpServers.map((row, rowIndex) =>
-                rowIndex === index ? { ...row, [key]: value } : row,
+                rowIndex === index
+                    ? {
+                          ...row,
+                          [key]: value,
+                          headers:
+                              key === "name" && value !== row.name
+                                  ? row.headers.map((header) => ({
+                                        ...header,
+                                        saved: false,
+                                    }))
+                                  : row.headers,
+                      }
+                    : row,
             ),
         }));
     }
@@ -100,8 +118,82 @@ export function AgentDialog({
             ...current,
             mcpServers: [
                 ...current.mcpServers,
-                { id: crypto.randomUUID(), name: "", url: "" },
+                {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    url: "",
+                    headers: [],
+                },
             ],
+        }));
+    }
+
+    function addMcpHeader(serverIndex: number): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: current.mcpServers.map((server, index) =>
+                index === serverIndex
+                    ? {
+                          ...server,
+                          headers: [
+                              ...server.headers,
+                              {
+                                  id: crypto.randomUUID(),
+                                  name: "",
+                                  value: "",
+                                  saved: false,
+                              },
+                          ],
+                      }
+                    : server,
+            ),
+        }));
+    }
+
+    function updateMcpHeader(
+        serverIndex: number,
+        headerIndex: number,
+        key: "name" | "value",
+        value: string,
+    ): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: current.mcpServers.map((server, index) =>
+                index === serverIndex
+                    ? {
+                          ...server,
+                          headers: server.headers.map((header, index) =>
+                              index === headerIndex
+                                  ? {
+                                        ...header,
+                                        [key]: value,
+                                        saved:
+                                            key === "name" &&
+                                            value !== header.name
+                                                ? false
+                                                : header.saved,
+                                    }
+                                  : header,
+                          ),
+                      }
+                    : server,
+            ),
+        }));
+    }
+
+    function removeMcpHeader(serverIndex: number, headerIndex: number): void {
+        setForm((current) => ({
+            ...current,
+            mcpServers: current.mcpServers.map((server, index) =>
+                index === serverIndex
+                    ? {
+                          ...server,
+                          headers: server.headers.filter(
+                              (_, index) => index !== headerIndex,
+                          ),
+                      }
+                    : server,
+            ),
         }));
     }
 
@@ -224,6 +316,9 @@ export function AgentDialog({
                         onAddMcp={addMcpServer}
                         onUpdateMcp={updateMcpServer}
                         onRemoveMcp={removeMcpServer}
+                        onAddMcpHeader={addMcpHeader}
+                        onUpdateMcpHeader={updateMcpHeader}
+                        onRemoveMcpHeader={removeMcpHeader}
                     />
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">

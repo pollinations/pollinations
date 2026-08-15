@@ -7,7 +7,10 @@ import {
     stepCountIs,
     ToolLoopAgent,
 } from "ai";
-import type { PromptAgentConfig } from "./prompt-agent.ts";
+import type {
+    PromptAgentConfig,
+    PromptAgentMcpHeaders,
+} from "./prompt-agent.ts";
 
 export type PromptAgentRequest = {
     messages?: ModelMessage[];
@@ -16,6 +19,7 @@ export type PromptAgentRequest = {
 
 type PromptAgentRuntime = {
     config: PromptAgentConfig;
+    mcpHeaders: PromptAgentMcpHeaders;
     apiKey: string;
     genBaseUrl: string;
     pollinationsMcpUrl: string;
@@ -119,7 +123,20 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
 }
 
 async function createAgent(runtime: PromptAgentRuntime) {
-    const servers: McpServer[] = [...runtime.config.mcpServers];
+    const servers: McpServer[] = runtime.config.mcpServers.map((server) => {
+        const storedHeaders = runtime.mcpHeaders[server.name] ?? {};
+        return {
+            name: server.name,
+            url: server.url,
+            headers: Object.fromEntries(
+                server.headers.flatMap((name) =>
+                    storedHeaders[name] === undefined
+                        ? []
+                        : [[name, storedHeaders[name]]],
+                ),
+            ),
+        };
+    });
     if (runtime.config.pollinationsTools) {
         servers.push({
             name: "pollinations",

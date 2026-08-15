@@ -31,6 +31,7 @@ describe("community endpoint per-user RPM input", () => {
                 id: "1",
                 name: "docs",
                 url: "https://mcp.example.com/rpc/",
+                headers: [],
             }),
         ).toBe(true);
         expect(
@@ -38,6 +39,7 @@ describe("community endpoint per-user RPM input", () => {
                 id: "2",
                 name: "docs",
                 url: "ftp://mcp.example.com/rpc",
+                headers: [],
             }),
         ).toBe(false);
         expect(
@@ -50,10 +52,33 @@ describe("community endpoint per-user RPM input", () => {
                         id: "3",
                         name: "docs",
                         url: "https://mcp.example.com/rpc/",
+                        headers: [
+                            {
+                                id: "header-1",
+                                name: "Authorization",
+                                value: "Bearer secret",
+                                saved: false,
+                            },
+                            {
+                                id: "header-2",
+                                name: "X-Saved",
+                                value: "",
+                                saved: true,
+                            },
+                        ],
                     },
                 ],
             }).mcpServers,
-        ).toEqual([{ name: "docs", url: "https://mcp.example.com/rpc" }]);
+        ).toEqual([
+            {
+                name: "docs",
+                url: "https://mcp.example.com/rpc",
+                headers: {
+                    Authorization: "Bearer secret",
+                    "X-Saved": null,
+                },
+            },
+        ]);
     });
 
     it("rejects duplicate agent MCP names", () => {
@@ -67,11 +92,13 @@ describe("community endpoint per-user RPM input", () => {
                         id: "1",
                         name: "docs",
                         url: "https://one.example.com/mcp",
+                        headers: [],
                     },
                     {
                         id: "2",
                         name: "docs",
                         url: "https://two.example.com/mcp",
+                        headers: [],
                     },
                 ],
             }),

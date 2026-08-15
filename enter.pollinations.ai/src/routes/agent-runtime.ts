@@ -1,11 +1,15 @@
 import * as schema from "@shared/db/better-auth.ts";
+import { decryptSecret } from "@shared/secret-encryption.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { parsePromptAgentConfig } from "../services/prompt-agent.ts";
+import {
+    parsePromptAgentConfig,
+    parsePromptAgentMcpHeaders,
+} from "../services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
     type PromptAgentRequest,
@@ -61,8 +65,20 @@ export const agentRuntimeRoutes = new Hono<Env>()
         if (!config) {
             throw new Error(`Agent ${row.id} has invalid configuration`);
         }
+        const mcpHeaders = row.mcpHeadersCiphertext
+            ? parsePromptAgentMcpHeaders(
+                  await decryptSecret(
+                      row.mcpHeadersCiphertext,
+                      c.env.BETTER_AUTH_SECRET,
+                  ),
+              )
+            : {};
+        if (!mcpHeaders) {
+            throw new Error(`Agent ${row.id} has invalid MCP credentials`);
+        }
         return await handlePromptAgentRequest(body, c.req.raw.signal, {
             config,
+            mcpHeaders,
             apiKey,
             genBaseUrl: genBaseUrl(c.env),
             pollinationsMcpUrl: pollinationsMcpUrl(c.env),

@@ -43,15 +43,17 @@ if (!KEY) {
 }
 
 const EXPECTED_TOOLS = [
-    "chatCompletion",
     "clearApiKey",
+    "createEmbeddings",
+    "generate3D",
     "generateAudio",
     "generateImage",
+    "generateText",
     "generateVideo",
     "getBalance",
     "getKeyInfo",
-    "listImageModels",
-    "listTextModels",
+    "getModelStatus",
+    "listModels",
     "setApiKey",
 ];
 
@@ -117,7 +119,9 @@ await step("modern listTools", async () => {
     return `${tools.length} tools`;
 });
 
-await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+await step("listModels (unauthenticated)", () =>
+    call("listModels", { type: "text" }),
+);
 
 const legacyClient = await connectClient();
 await step("legacy protocol fallback", async () => {
@@ -155,8 +159,8 @@ if (!KEY) {
 } else {
     await step("setApiKey", () => call("setApiKey", { key: KEY }));
     await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("chatCompletion", async () => {
-        const out = await call("chatCompletion", {
+    await step("generateText", async () => {
+        const out = await call("generateText", {
             messages: [{ role: "user", content: "Reply with exactly: pong" }],
             model: "openai-fast",
         });

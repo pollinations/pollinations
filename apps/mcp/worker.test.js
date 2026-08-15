@@ -8,13 +8,15 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
-    "chatCompletion",
+    "createEmbeddings",
+    "generate3D",
     "generateAudio",
     "generateImage",
+    "generateText",
     "generateVideo",
     "getBalance",
-    "listImageModels",
-    "listTextModels",
+    "getModelStatus",
+    "listModels",
 ];
 
 function localFetch(input, init) {
@@ -177,5 +179,90 @@ test("maps the image API response format to MCP media blocks", async (t) => {
         { prompt: "a flower", response_format: "b64_json" },
     ]);
 
+    await client.close();
+});
+
+test("proxies discovery, embeddings, 3D, and video", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const seen = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        seen.push({
+            url,
+            authorization: new Headers(init.headers).get("authorization"),
+        });
+
+        if (url.endsWith("/audio/models?community=false")) {
+            return Response.json([{ name: "speech-test" }]);
+        }
+        if (url.endsWith("/video/models")) {
+            return Response.json([{ name: "veo" }]);
+        }
+        if (url.endsWith("/v1/models/status?minutes=15")) {
+            return Response.json({ data: [{ model: "speech-test" }] });
+        }
+        if (url.endsWith("/v1/embeddings")) {
+            assert.deepEqual(JSON.parse(init.body), { input: "hello" });
+            return Response.json({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.5], index: 0 }],
+                model: "embedding-test",
+                usage: { prompt_tokens: 1, total_tokens: 1 },
+            });
+        }
+        if (url.endsWith("/3d/a%20bee")) {
+            return new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": "model/gltf-binary" },
+            });
+        }
+        if (url.endsWith("/video/a%20bee?model=veo")) {
+            return new Response(new Uint8Array([4, 5, 6]), {
+                headers: { "Content-Type": "video/mp4" },
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const models = await client.callTool({
+        name: "listModels",
+        arguments: { type: "audio", community: false },
+    });
+    assert.match(models.content[0].text, /speech-test/);
+
+    const status = await client.callTool({
+        name: "getModelStatus",
+        arguments: { minutes: 15 },
+    });
+    assert.match(status.content[0].text, /speech-test/);
+
+    const embeddings = await client.callTool({
+        name: "createEmbeddings",
+        arguments: { input: "hello" },
+    });
+    assert.match(embeddings.content[0].text, /embedding-test/);
+
+    const model3d = await client.callTool({
+        name: "generate3D",
+        arguments: { prompt: "a bee" },
+    });
+    assert.equal(model3d.content[0].resource.mimeType, "model/gltf-binary");
+    assert.equal(model3d.content[0].resource.blob, "AQID");
+
+    const video = await client.callTool({
+        name: "generateVideo",
+        arguments: { prompt: "a bee" },
+    });
+    assert.equal(video.content[0].resource.mimeType, "video/mp4");
+
+    assert.ok(
+        seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),
+    );
     await client.close();
 });

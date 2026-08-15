@@ -16,15 +16,18 @@ packages/mcp/
     index.js                     # stdio bootstrap
     server.js                    # shared server factory, tool registration, instructions
     services/
-      imageService.js            # generateImage, generateVideo, listImageModels
-      textService.js             # chatCompletion, listTextModels
+      imageService.js            # generateImage, generateVideo
+      textService.js             # generateText
       audioService.js            # generateAudio
+      embeddingService.js        # createEmbeddings
+      model3dService.js           # generate3D
+      discoveryService.js        # listModels, getModelStatus
       authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
       accountService.js          # getBalance                          (via /account/*)
     utils/
       authUtils.js               # in-memory key store and auth headers
       coreUtils.js               # fetch wrappers, URL builders, error mapping
-      models.js                  # registry fetchers + validators (cached 5 min)
+      models.js                  # registry fetchers + validators
 ```
 
 ## Stdio Discipline
@@ -50,9 +53,7 @@ import { validateImageModel } from "../utils/models.js";
 
 const result = await validateImageModel(model);
 if (!result.valid) {
-    throw new Error(
-        `${result.error} Did you mean: ${result.suggestions.join(", ")}?`,
-    );
+    throw new Error(`${result.error} Use listModels for the live registry.`);
 }
 ```
 

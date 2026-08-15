@@ -41,7 +41,7 @@ export const audioTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Voice for speech generation. Use listTextModels for model voice metadata",
+                    "Voice for speech generation. Use listModels with type=audio for voice metadata",
                 ),
             response_format: z
                 .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
@@ -50,7 +50,7 @@ export const audioTools = [
             model: z
                 .string()
                 .optional()
-                .describe("Audio model. Use listTextModels for the live list"),
+                .describe("Audio model. Use listModels with type=audio"),
             duration: z
                 .number()
                 .optional()

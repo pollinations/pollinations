@@ -5,9 +5,9 @@ import {
     createTextContent,
     postChatCompletion,
 } from "../utils/coreUtils.js";
-import { getTextModels, validateTextModel } from "../utils/models.js";
+import { validateTextModel } from "../utils/models.js";
 
-async function chatCompletion(params, context) {
+async function generateText(params, context) {
     requireApiKey(context);
 
     const {
@@ -42,11 +42,11 @@ async function chatCompletion(params, context) {
         throw new Error("Messages array is required and must not be empty");
     }
 
-    const validation = await validateTextModel(model);
+    const validation = await validateTextModel(model, context);
     if (!validation.valid) {
         throw new Error(
             `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listTextModels to see all ${validation.availableCount} available models.`,
+                `Use listModels with type=text to see all ${validation.availableCount} available models.`,
         );
     }
 
@@ -170,11 +170,6 @@ async function chatCompletion(params, context) {
     }
 }
 
-async function listTextModels() {
-    const models = await getTextModels();
-    return createMCPResponse([createTextContent(models, true)]);
-}
-
 const messageSchema = z.object({
     role: z
         .enum(["system", "user", "assistant", "tool", "function", "developer"])
@@ -237,7 +232,7 @@ const audioOptionsSchema = z.object({
     voice: z
         .string()
         .describe(
-            "Voice for audio output. Use listTextModels to inspect live model voice metadata.",
+            "Voice for audio output. Use listModels with type=audio to inspect live voice metadata.",
         ),
     format: z
         .enum(["wav", "mp3", "flac", "opus", "pcm16"])
@@ -271,7 +266,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). See listTextModels for all options",
+            "Text model (default: 'openai'). Use listModels with type=text",
         ),
     temperature: z
         .number()
@@ -410,15 +405,9 @@ const chatParamsSchema = {
 
 export const textTools = [
     [
-        "chatCompletion",
+        "generateText",
         "Call POST /v1/chat/completions for text, search, multimodal input, tool calling, structured output, reasoning, or audio output.",
         chatParamsSchema,
-        chatCompletion,
-    ],
-    [
-        "listTextModels",
-        "Return the live text model registry from GET /text/models, including capabilities, voices, and pricing.",
-        {},
-        listTextModels,
+        generateText,
     ],
 ];

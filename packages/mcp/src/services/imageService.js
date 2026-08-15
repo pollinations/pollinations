@@ -9,11 +9,7 @@ import {
     fetchBinaryWithAuth,
     fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
-import {
-    getImageModels,
-    validateImageModel,
-    validateVideoModel,
-} from "../utils/models.js";
+import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
 function imageMimeType(base64, declaredMimeType) {
     if (declaredMimeType) return declaredMimeType;
@@ -30,11 +26,11 @@ async function generateImage(params, context) {
     requireApiKey(context);
 
     if (params.model) {
-        const validation = await validateImageModel(params.model);
+        const validation = await validateImageModel(params.model, context);
         if (!validation.valid) {
             throw new Error(
                 `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    "Use listImageModels to see all available models.",
+                    "Use listModels with type=image to see all available models.",
             );
         }
     }
@@ -98,7 +94,7 @@ async function generateImage(params, context) {
     return createMCPResponse(content);
 }
 
-async function prepareVideoRequest(params) {
+async function prepareVideoRequest(params, context) {
     const {
         prompt,
         model = "veo",
@@ -110,11 +106,11 @@ async function prepareVideoRequest(params) {
         safe,
     } = params;
 
-    const validation = await validateVideoModel(model);
+    const validation = await validateVideoModel(model, context);
     if (!validation.valid) {
         throw new Error(
             `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                "Use listImageModels to see all available video models.",
+                "Use listModels with type=video to see all available models.",
         );
     }
 
@@ -135,9 +131,12 @@ async function prepareVideoRequest(params) {
 async function generateVideo(params, context) {
     requireApiKey(context);
 
-    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(
+        params,
+        context,
+    );
     const { buffer, contentType } = await fetchBinaryWithAuth(
-        buildUrl(`/image/${encodedPrompt}`, queryParams),
+        buildUrl(`/video/${encodedPrompt}`, queryParams),
         {},
         context,
     );
@@ -162,17 +161,12 @@ async function generateVideo(params, context) {
     ]);
 }
 
-async function listImageModels() {
-    const models = await getImageModels();
-    return createMCPResponse([createTextContent(models, true)]);
-}
-
 const imageParamsSchema = {
     prompt: z.string().min(1).max(32000).describe("Image prompt"),
     model: z
         .string()
         .optional()
-        .describe("Image model. Use listImageModels for the live list"),
+        .describe("Image model. Use listModels with type=image"),
     n: z
         .literal(1)
         .optional()
@@ -195,7 +189,7 @@ const imageParamsSchema = {
     image: z
         .union([z.string(), z.array(z.string())])
         .optional()
-        .describe("Reference image URL or URLs for image-to-image generation"),
+        .describe("HTTP(S) image URL or URLs to edit or use as references"),
     safe: z
         .union([z.string(), z.boolean()])
         .optional()
@@ -216,7 +210,7 @@ const videoParamsSchema = {
     model: z
         .string()
         .optional()
-        .describe("Video model (default: veo). Use listImageModels"),
+        .describe("Video model (default: veo). Use listModels with type=video"),
     duration: z.number().optional().describe("Video duration in seconds"),
     aspectRatio: z
         .string()
@@ -240,20 +234,14 @@ const videoParamsSchema = {
 export const imageTools = [
     [
         "generateImage",
-        "Generate one image through POST /v1/images/generations. Set response_format to url for a resource link or b64_json for MCP image data.",
+        "Generate or edit one image through POST /v1/images/generations. To edit, provide an HTTP(S) reference in image. Set response_format to url for a resource link or b64_json for MCP image data.",
         imageParamsSchema,
         generateImage,
     ],
     [
         "generateVideo",
-        "Generate one video through GET /image/{prompt} and return it as an embedded MCP resource.",
+        "Generate one video through GET /video/{prompt} and return it as an embedded MCP resource.",
         videoParamsSchema,
         generateVideo,
-    ],
-    [
-        "listImageModels",
-        "Return the live image and video model registry from GET /image/models.",
-        {},
-        listImageModels,
     ],
 ];

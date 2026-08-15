@@ -1,6 +1,6 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate text, images, video, audio, embeddings, and 3D models; inspect model health; and check Pollen balance.
 
 All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS_BASE_URL` to use another compatible gateway. Models, voices, and pricing are read live from the registry — no hardcoded enums.
 
@@ -43,32 +43,39 @@ npx @pollinations/mcp
 
 ## Available Tools
 
-### Image & Video Generation
+### Media Generation
 
-| Tool              | API route                | MCP result                                    |
-| ----------------- | ------------------------ | --------------------------------------------- |
-| `generateImage`   | `/v1/images/generations` | Image data or a resource link                 |
-| `generateVideo`   | `/image/{prompt}`        | Embedded video resource                      |
-| `listImageModels` | `/image/models`          | Live image/video registry, including pricing |
+| Tool            | API route                | MCP result                    |
+| --------------- | ------------------------ | ----------------------------- |
+| `generateImage` | `/v1/images/generations` | Image data or a resource link |
+| `generateVideo` | `/video/{prompt}`        | Embedded video resource       |
+| `generate3D`    | `/3d/{prompt}`           | Embedded GLB resource         |
 
-`generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. Generate multiple images with multiple tool calls rather than a separate batch contract.
+`generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. To edit an image, pass its HTTP(S) URL in `image`; use `url` output when the result will be passed into another edit. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 
-| Tool             | API route              | Description                                      |
-| ---------------- | ---------------------- | ------------------------------------------------ |
-| `chatCompletion` | `/v1/chat/completions` | Text, search, multimodal input, and tool calling |
-| `listTextModels` | `/text/models`         | Live model registry, including voices/pricing   |
+| Tool               | API route              | Description                                      |
+| ------------------ | ---------------------- | ------------------------------------------------ |
+| `generateText`     | `/v1/chat/completions` | Text, search, multimodal input, and tool calling |
+| `createEmbeddings` | `/v1/embeddings`       | Text or multimodal vector embeddings             |
 
-Use `chatCompletion` with the appropriate model and message content for simple text, web search, image/video analysis, and audio transcription.
+Use `generateText` with the appropriate model and message content for simple text, web search, image/video analysis, and tool calling.
 
 ### Audio
 
-| Tool            | API route       | Description                     |
-| --------------- | --------------- | ------------------------------- |
+| Tool            | API route      | Description                      |
+| --------------- | -------------- | -------------------------------- |
 | `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-`generateAudio` returns an MCP audio block. Call `listTextModels` for model voice metadata.
+`generateAudio` returns an MCP audio block. Call `listModels` with `type=audio` for model and voice metadata.
+
+### Discovery
+
+| Tool             | API route              | Description                                  |
+| ---------------- | ---------------------- | -------------------------------------------- |
+| `listModels`     | Modality model routes  | Live models, capabilities, voices and pricing |
+| `getModelStatus` | `/v1/models/status`    | Recent request counts, errors and latency    |
 
 ### Auth Tools
 
@@ -109,7 +116,7 @@ Generate an image of a sunset over mountains using the flux model.
 
 Create a 6-second video of waves crashing on a beach using veo.
 
-Have a chatCompletion conversation about the weather, with the ability to call a weather API.
+Have a conversation about the weather with `generateText`, with the ability to call a weather API.
 
 Generate audio saying "Hello, welcome to pollinations.ai!" using the nova voice.
 ```

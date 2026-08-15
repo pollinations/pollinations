@@ -3,7 +3,10 @@ import { z } from "zod";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
+import { discoveryTools } from "./services/discoveryService.js";
+import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
+import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
@@ -11,6 +14,9 @@ const serviceTools = [
     ...imageTools,
     ...textTools,
     ...audioTools,
+    ...embeddingTools,
+    ...model3dTools,
+    ...discoveryTools,
     ...accountTools,
 ];
 
@@ -46,16 +52,20 @@ Get your API key at: https://enter.pollinations.ai/keys
 ## Available Tools
 
 ### Image & Video Generation
-- **generateImage** - Generate an image as an MCP image or resource link
+- **generateImage** - Generate or edit an image; edits accept reference image URLs
 - **generateVideo** - Generate a video as an embedded resource
-- **listImageModels** - List available image and video models
+- **generate3D** - Generate a GLB model as an embedded resource
 
 ### Text Generation
-- **chatCompletion** - OpenAI-compatible text, search, multimodal, and tool-calling API
-- **listTextModels** - List available text models
+- **generateText** - OpenAI-compatible text, search, multimodal, and tool-calling API
+- **createEmbeddings** - Create text or multimodal embeddings
 
 ### Audio
 - **generateAudio** - Generate speech, music, or sound as MCP audio
+
+### Discovery
+- **listModels** - List models by modality
+- **getModelStatus** - Get recent model health and latency
 ${authenticationTools}
 ### Account
 - **getBalance** - Get the authenticated key's Pollen balance

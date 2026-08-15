@@ -120,17 +120,22 @@ export async function fetchWithAuth(url, options = {}, context) {
     return fetch(url, { ...options, headers });
 }
 
+export async function fetchResponseWithAuth(url, options = {}, context) {
+    const response = await fetchWithAuth(url, options, context);
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(parseApiError(response.status, errorText));
+    }
+    return response;
+}
+
 /**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @returns {Promise<Object>} - Parsed JSON response
  */
 export async function fetchJsonWithAuth(url, options = {}, context) {
-    const response = await fetchWithAuth(url, options, context);
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
+    const response = await fetchResponseWithAuth(url, options, context);
     return response.json();
 }
 
@@ -166,11 +171,7 @@ export async function postChatCompletion(body, context) {
  * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
  */
 export async function fetchBinaryWithAuth(url, options = {}, context) {
-    const response = await fetchWithAuth(url, options, context);
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
+    const response = await fetchResponseWithAuth(url, options, context);
     const buffer = await response.arrayBuffer();
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
@@ -207,7 +208,7 @@ export function parseApiError(status, errorText) {
                 return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
             }
             if (errorMessage.toLowerCase().includes("invalid model")) {
-                return `Invalid model specified. Use listImageModels or listTextModels to see available options.`;
+                return `Invalid model specified. Use listModels to see available options.`;
             }
             return `Bad request: ${errorMessage}`;
         case 401:

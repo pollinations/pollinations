@@ -786,7 +786,8 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
@@ -802,6 +803,7 @@ export interface ModelInfo {
     aliases?: string[];
     community?: boolean;
     agent?: boolean;
+    base_model?: string;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];

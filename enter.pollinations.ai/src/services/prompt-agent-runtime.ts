@@ -1,4 +1,4 @@
-import { createMCPClient } from "@ai-sdk/mcp";
+import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
     APICallError,
@@ -129,6 +129,12 @@ async function createAgent(runtime: PromptAgentRuntime) {
         });
     }
     const { tools, close } = await loadMcpTools(servers);
+    if (runtime.config.pollinationsTools) {
+        const imageTool = tools.mcp__pollinations__generateImage;
+        if (imageTool) {
+            tools.mcp__pollinations__generateImage = forceImageUrl(imageTool);
+        }
+    }
     const toolCallCounts: ToolCallCounts = {};
     const pollinations = createOpenAICompatible({
         name: "pollinations",
@@ -195,6 +201,62 @@ function contentChunk(
     };
 }
 
+function forceImageUrl(tool: McpTool): McpTool {
+    const execute = tool.execute;
+    return {
+        ...tool,
+        execute(input, options) {
+            const params =
+                input && typeof input === "object" && !Array.isArray(input)
+                    ? input
+                    : {};
+            return execute({ ...params, response_format: "url" }, options);
+        },
+    };
+}
+
+function imageResultContent(
+    toolName: string,
+    output: unknown,
+    seenUrls: Set<string>,
+    hasContent: boolean,
+): string {
+    const result = output as CallToolResult;
+    if (
+        !result ||
+        typeof result !== "object" ||
+        !("content" in result) ||
+        !Array.isArray(result.content)
+    ) {
+        return "";
+    }
+
+    const links: string[] = [];
+    for (const part of result.content as Array<{
+        type: string;
+        uri?: string;
+        mimeType?: string;
+    }>) {
+        if (part.type !== "resource_link") continue;
+        const isImage =
+            part.mimeType?.startsWith("image/") ||
+            toolName === "mcp__pollinations__generateImage";
+        if (!isImage) continue;
+
+        try {
+            if (!part.uri) continue;
+            const url = new URL(part.uri);
+            if (url.protocol !== "https:" || seenUrls.has(url.href)) continue;
+            seenUrls.add(url.href);
+            links.push(`![Generated image](<${url.href}>)`);
+        } catch {
+            // Ignore resource links that cannot be displayed safely.
+        }
+    }
+    if (links.length === 0) return "";
+    return `${hasContent ? "\n\n" : ""}${links.join("\n\n")}\n\n`;
+}
+
 async function runAgent(
     runtime: PromptAgentRuntime,
     messages: ModelMessage[],
@@ -207,7 +269,21 @@ async function runAgent(
             abortSignal: signal,
         });
         const limited = hitStepLimit(result.finishReason, result.steps.length);
-        const content = result.steps.map((step) => step.text).join("");
+        const seenUrls = new Set<string>();
+        let content = "";
+        for (const step of result.steps) {
+            for (const part of step.content) {
+                if (part.type === "text") content += part.text;
+                if (part.type === "tool-result") {
+                    content += imageResultContent(
+                        part.toolName,
+                        part.output,
+                        seenUrls,
+                        content.length > 0,
+                    );
+                }
+            }
+        }
         return {
             content: limited ? `${content}\n\n${STEP_LIMIT_MESSAGE}` : content,
             finishReason: limited
@@ -244,10 +320,13 @@ async function streamAgent(
                 controller.enqueue(
                     encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
                 );
+            const seenUrls = new Set<string>();
+            let hasContent = false;
             try {
                 for await (const part of result.fullStream) {
                     if (part.type === "error") throw part.error;
                     if (part.type === "text-delta") {
+                        hasContent ||= part.text.length > 0;
                         send(
                             contentChunk(
                                 id,
@@ -256,6 +335,25 @@ async function streamAgent(
                                 part.text,
                             ),
                         );
+                    }
+                    if (part.type === "tool-result") {
+                        const content = imageResultContent(
+                            part.toolName,
+                            part.output,
+                            seenUrls,
+                            hasContent,
+                        );
+                        if (content) {
+                            hasContent = true;
+                            send(
+                                contentChunk(
+                                    id,
+                                    created,
+                                    runtime.config.baseModel,
+                                    content,
+                                ),
+                            );
+                        }
                     }
                 }
                 const [reason, usage, steps] = await Promise.all([

@@ -2891,16 +2891,20 @@ fixtureTest(
                 body: JSON.stringify({
                     model: registered.modelId,
                     prompt: "blue flower",
+                    quality: "hd",
                     response_format: "url",
                 }),
             }),
         );
-        expect(urlImageResponse.status).toBe(400);
+        expect(urlImageResponse.status).toBe(200);
         await expect(urlImageResponse.json()).resolves.toMatchObject({
-            error: {
-                message:
-                    'Community image models support response_format "b64_json" only',
-            },
+            data: [
+                {
+                    url: expect.stringContaining(
+                        `/image/blue%20flower?model=${encodeURIComponent(registered.modelId)}`,
+                    ),
+                },
+            ],
         });
 
         const invalidMediaResponse = await fetchGen(
@@ -2993,7 +2997,7 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(4);
+        ).toHaveLength(5);
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageEditsRequest(new Request(input, init)),
@@ -3004,7 +3008,7 @@ fixtureTest(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
-        ).toHaveLength(3);
+        ).toHaveLength(4);
 
         const maximumImagePriceResponse = await fetchEnterApi(
             enterApi,

@@ -1,18 +1,18 @@
 # Sana compatibility route
 
-Last updated: 2026-08-09
+Last updated: 2026-08-15
 
 ## Current deployment
 
 SANA Sprint is no longer in the production image route. The public `sana`
 model name is retained as an alias of `dreamshaper`, which serves DreamShaper 8
-LCM from two Vast RTX 3090 workers. The internal registry pool key also remains
-`sana` for compatibility.
+LCM from two Vast workers. The internal registry pool key also remains `sana`
+for compatibility.
 
-| Worker | Vast instance | Machine / region | All-in rate | Registered hostname |
-|--------|---------------|------------------|-------------|---------------------|
-| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | $0.150000/hr | `dreamshaper-canary-46600159.myceli.ai` |
-| dreamshaper-vast-02 | 46387155 | 123712 / California, US | $0.153333/hr | `dreamshaper-vast-02.pollinations.ai` |
+| Worker | Vast instance | Machine / region | GPU | All-in rate | Registered hostname |
+|--------|---------------|------------------|-----|-------------|---------------------|
+| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | RTX 3090 | $0.150000/hr | `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | `dreamshaper-canary-47789794.myceli.ai` |
 
 The route is:
 

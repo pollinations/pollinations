@@ -303,12 +303,12 @@ export function agentListingToForm(
 ): ModelListingFormState {
     return endpoint
         ? {
-              inputModalities: endpoint.inputModalities,
+              inputModalities: ["text"],
               name: endpoint.name,
               title: endpoint.title,
               description: endpoint.description ?? "",
               visibility: endpoint.visibility,
-              perUserRpm: endpoint.perUserRpm?.toString() ?? "",
+              perUserRpm: "",
           }
         : { ...emptyListingForm };
 }
@@ -487,7 +487,11 @@ export function toAgentListingPayload(
     form: ModelListingFormState,
 ): AgentListingDetailsPayload {
     return {
-        ...listingFieldsToPayload(form),
+        ...listingFieldsToPayload({
+            ...form,
+            inputModalities: ["text"],
+            perUserRpm: "",
+        }),
         modality: "text",
     };
 }

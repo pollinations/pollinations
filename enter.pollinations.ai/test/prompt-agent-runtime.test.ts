@@ -341,9 +341,14 @@ describe("prompt-agent runtime", () => {
         const mcpRequests: Request[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+            vi.fn(async function (
+                this: unknown,
+                input: RequestInfo | URL,
+                init?: RequestInit,
+            ) {
                 const request = new Request(input, init);
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                    expect(this).toBe(globalThis);
                     mcpRequests.push(request.clone());
                     const body = (await request.json()) as {
                         id?: string;

@@ -86,6 +86,7 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
                     type: "http",
                     url: server.url,
                     headers: server.headers,
+                    fetch: globalThis.fetch.bind(globalThis),
                     // Cloudflare Workers supports follow/manual, not error.
                     redirect: "follow",
                 },

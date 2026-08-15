@@ -1,0 +1,34 @@
+{
+  "pr_number": 13407,
+  "title": "fix(mcp): use the root endpoint and improve model discovery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13407",
+  "merged_at": "2026-08-15T23:13:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Serves Streamable HTTP directly at `https://mcp.pollinations.ai`; health moves to `/health` and `/mcp` returns 404.\n- Switches the managed-agent runtime and dashboard to the same root endpoint.\n- Improves server instructions and tool descriptions so agents consult the live model registry.\n- Documents hosted bearer authentication and validates image resource links.\n- Ensures MCP source changes trigger the relevant deployment/docs workflow.\n\nValidation:\n- Hosted Worker tests: 5/5\n- Authenticated MCP smoke suite: 11/11\n- Managed-agent runtime tests: 20/20\n- Enter typecheck and staging build\n- Wrangler production dry-run\n- Biome and diff checks",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MCP finds the front door",
+    "blurb": "The MCP server now answers at its root URL, where sensible protocols tend to look first. Agents also get clearer directions to the live model registry, because guessing which models exist is a surprisingly expensive hobby.",
+    "summary": "MCP Streamable HTTP is now served directly at https://mcp.pollinations.ai, with health checks at /health, while managed agents and the dashboard use the same root endpoint and server guidance points agents to the live model registry.",
+    "impact": "Agents and hosted MCP clients can connect through one canonical endpoint, discover current models from the registry, authenticate with documented bearer auth, and receive validated image resource links.",
+    "keywords": [
+      "mcp",
+      "streamable-http",
+      "model-discovery",
+      "agents",
+      "authentication",
+      "api"
+    ],
+    "visual_concept": "Depict MCP as a cozy garden gateway: Polli guides a small CRT monitor robot through a clearly marked root entrance toward a living model registry, represented by labeled code-plants growing from pots. A /health sign sits on a side path, while the main gate reads mcp.pollinations.ai, making the canonical route visually obvious.",
+    "image_prompt": "Cozy pixel art scene of a friendly garden gateway labeled \"mcp.pollinations.ai\" leading to a glowing living model registry of labeled code-plants, while a small /health sign points down a side path; Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and warmly guides an eager chunky CRT-monitor robot through the main gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"LIVE MODELS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13407.jpg",
+    "prompt": "Cozy pixel art scene of a friendly garden gateway labeled \"mcp.pollinations.ai\" leading to a glowing living model registry of labeled code-plants, while a small /health sign points down a side path; Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and warmly guides an eager chunky CRT-monitor robot through the main gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"LIVE MODELS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-15T23:14:12.482308+00:00"
+}

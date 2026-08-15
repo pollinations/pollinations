@@ -649,7 +649,7 @@ For multi-speaker audio, set `model` to `eleven-dialogue` and put one turn per l
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | — |
-| `input` * | `string` | Text or prompt to generate. For eleven-dialogue, use one `voice: text` turn per line. · length: `1…10000` |
+| `input` * | `string` | Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line. · length: `1…10000` |
 | `safe` | `string` \| `boolean` | Optional safety features; accepts a comma-separated string or boolean shorthand. |
 | `voice` | `string` | default: `"alloy"` |
 | `response_format` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | default: `"mp3"` |
@@ -781,13 +781,15 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
 
 #### `GET` `/audio/{text}` — Generate Audio
 
-Generate speech or music from text via a simple GET request.
+Generate speech, dialogue, music, or sound effects from text via a simple GET request.
 
 **Text-to-speech (default):** Returns spoken audio in the selected voice and format.
 
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang
+**Known voice presets:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang. ElevenLabs models also accept a custom voice ID.
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
+
+**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.
 
 **Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
 
@@ -795,10 +797,10 @@ Generate speech or music from text via a simple GET request.
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `text` * | `path` | `string` | Text to convert to speech, or a music description for a music-generation model |
-| `voice` | `query` | `string` | Voice to use for speech generation (TTS only) · default: `"alloy"` |
+| `text` * | `path` | `string` | Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line. |
+| `voice` | `query` | `string` | Voice preset or custom provider voice ID. Dialogue voices come from labels in the text. · default: `"alloy"` |
 | `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only. · default: `"mp3"` |
-| `model` | `query` | `string` | Audio model: TTS (default) or a music-generation model such as lyria-3-clip |
+| `model` | `query` | `string` | Audio model for speech, dialogue, music, or sound-effect generation |
 | `duration` | `query` | `string` | Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30) |
 | `seconds` | `query` | `number` | Audio duration in seconds for stable-audio-3-medium/large, 1-380 · range: `1…380` |
 | `steps` | `query` | `integer` | Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8) · range: `1…100` |
@@ -884,14 +886,22 @@ curl "https://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=:key" \
 
 #### `GET` `/embeddings/models` — List Embedding Models
 
-Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models" \
+curl "https://gen.pollinations.ai/embeddings/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -943,7 +953,15 @@ curl -X POST "https://gen.pollinations.ai/v1/embeddings" \
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -967,7 +985,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models" \
+curl "https://gen.pollinations.ai/v1/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1001,14 +1019,22 @@ curl "https://gen.pollinations.ai/v1/models" \
 
 #### `GET` `/models` — List Models
 
-Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models" \
+curl "https://gen.pollinations.ai/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1016,14 +1042,22 @@ curl "https://gen.pollinations.ai/models" \
 
 #### `GET` `/3d/models` — List 3D Models
 
-Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/models" \
+curl "https://gen.pollinations.ai/3d/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1031,14 +1065,22 @@ curl "https://gen.pollinations.ai/3d/models" \
 
 #### `GET` `/image/models` — List Image & Video Models
 
-Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/models" \
+curl "https://gen.pollinations.ai/image/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1046,14 +1088,22 @@ curl "https://gen.pollinations.ai/image/models" \
 
 #### `GET` `/video/models` — List Video Models
 
-Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/models" \
+curl "https://gen.pollinations.ai/video/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1061,14 +1111,22 @@ curl "https://gen.pollinations.ai/video/models" \
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/models" \
+curl "https://gen.pollinations.ai/text/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1076,14 +1134,22 @@ curl "https://gen.pollinations.ai/text/models" \
 
 #### `GET` `/audio/models` — List Audio Models
 
-Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+
+<sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/models" \
+curl "https://gen.pollinations.ai/audio/models?community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 

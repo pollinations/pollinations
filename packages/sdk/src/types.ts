@@ -801,6 +801,7 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    agent?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];

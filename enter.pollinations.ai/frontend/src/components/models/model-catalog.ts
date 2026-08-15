@@ -227,6 +227,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         name,
         type: getCatalogCategory(model),
         community: model.community,
+        agent: model.agent,
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),

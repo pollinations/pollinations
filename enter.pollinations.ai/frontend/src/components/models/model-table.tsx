@@ -39,6 +39,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
+    agentModels: ModelPrice[];
     activeTab: SectionType;
 };
 
@@ -51,6 +52,7 @@ export const sectionLabels: Record<SectionType, string> = {
     realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
+    agent: "Agents",
 };
 
 // --- Tab content ---
@@ -339,6 +341,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     realtimeModels,
     embeddingModels,
+    agentModels,
     activeTab,
 }) => {
     const { containerRef, isDesktop } = useDesktopModelTable();
@@ -351,6 +354,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
         { type: "embedding", models: embeddingModels },
+        { type: "agent", models: agentModels },
     ];
 
     const activeSection = sections.find((s) => s.type === activeTab);

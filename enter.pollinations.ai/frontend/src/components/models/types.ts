@@ -10,7 +10,8 @@ export type ModelCategory =
 export type ModelDisplayCategory =
     | ModelCategory
     | "community-text"
-    | "community-image";
+    | "community-image"
+    | "community-agent";
 
 export type ModelCapability =
     | "tool_calling"
@@ -67,6 +68,7 @@ export type ModelPrice = {
     name: string;
     type: ModelCategory;
     community?: boolean;
+    agent?: boolean;
     perUserRpm?: number | null;
     displayName?: string;
     description?: string;

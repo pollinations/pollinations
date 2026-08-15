@@ -66,7 +66,12 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const COMMUNITY_SECTION_ORDER: SectionType[] = [
+    "all",
+    "text",
+    "image",
+    "agent",
+];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
@@ -103,6 +108,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    agent: "agent",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
@@ -124,10 +130,11 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        agent: [],
     };
 
     for (const model of models) {
-        categorized[model.type].push(model);
+        categorized[model.agent ? "agent" : model.type].push(model);
     }
     return categorized;
 }
@@ -282,11 +289,15 @@ export const Models: FC<ModelsProps> = ({
                 ...previous,
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
-                    scope === "community" &&
-                    previous.category !== "text" &&
-                    previous.category !== "image"
-                        ? undefined
-                        : previous.category,
+                    scope === "community"
+                        ? previous.category === "text" ||
+                          previous.category === "image" ||
+                          previous.category === "agent"
+                            ? previous.category
+                            : undefined
+                        : previous.category === "agent"
+                          ? undefined
+                          : previous.category,
             }),
         });
     };
@@ -465,6 +476,7 @@ export const Models: FC<ModelsProps> = ({
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
                             embeddingModels={sectionModels.embedding}
+                            agentModels={sectionModels.agent}
                             activeTab={activeTab}
                         />
                     </div>

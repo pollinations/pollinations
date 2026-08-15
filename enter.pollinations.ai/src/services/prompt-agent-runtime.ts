@@ -89,6 +89,30 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
+async function mcpTransportFetch(
+    input: string | URL | Request,
+    init?: RequestInit,
+): Promise<Response> {
+    const response = await globalThis.fetch.call(globalThis, input, {
+        ...init,
+        redirect: "manual",
+    });
+    if (response.status >= 300 && response.status < 400) {
+        await response.body?.cancel();
+        throw new Error("MCP server redirects are not allowed");
+    }
+    return response;
+}
+
+// A 404/405 on the initialize POST means the URL is a legacy HTTP+SSE
+// endpoint that only accepts GET (e.g. Gradio's /gradio_api/mcp/sse), per
+// the MCP back-compat flow.
+function isMissingHttpTransport(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
+    return statusCode === 404 || statusCode === 405;
+}
+
 async function loadMcpTools(
     servers: McpServer[],
     signal: AbortSignal,
@@ -106,34 +130,30 @@ async function loadMcpTools(
         await Promise.all(clients.map((client) => client.close()));
     };
 
+    const connect = (server: McpServer, type: "http" | "sse") =>
+        createMCPClient({
+            clientName: "pollinations-prompt-agent",
+            initializationOptions: {
+                signal,
+                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+            },
+            transport: {
+                type,
+                url: server.url,
+                headers: server.headers,
+                fetch: mcpTransportFetch,
+            },
+        });
+
     try {
         for (const server of servers) {
-            const client = await createMCPClient({
-                clientName: "pollinations-prompt-agent",
-                initializationOptions: {
-                    signal,
-                    timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-                },
-                transport: {
-                    type: "http",
-                    url: server.url,
-                    headers: server.headers,
-                    fetch: async (input, init) => {
-                        const response = await globalThis.fetch.call(
-                            globalThis,
-                            input,
-                            { ...init, redirect: "manual" },
-                        );
-                        if (response.status >= 300 && response.status < 400) {
-                            await response.body?.cancel();
-                            throw new Error(
-                                "MCP server redirects are not allowed",
-                            );
-                        }
-                        return response;
-                    },
-                },
-            });
+            let client: McpClient;
+            try {
+                client = await connect(server, "http");
+            } catch (error) {
+                if (!isMissingHttpTransport(error)) throw error;
+                client = await connect(server, "sse");
+            }
             clients.push(client);
             for (const [name, definition] of Object.entries(
                 await client.tools(),

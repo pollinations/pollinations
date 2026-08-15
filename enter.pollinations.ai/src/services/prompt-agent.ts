@@ -14,7 +14,15 @@ const McpServerUrlSchema = z
             return false;
         }
     }, "MCP server URL must use https and target a public host")
-    .transform(normalizeCommunityEndpointBaseUrl);
+    .transform((value) => {
+        // The transport POSTs to this URL verbatim and redirects are blocked,
+        // so a trailing slash must survive normalization (e.g. Gradio's
+        // /gradio_api/mcp/http/ answers 307 without it).
+        const normalized = normalizeCommunityEndpointBaseUrl(value);
+        return new URL(value).pathname.endsWith("/")
+            ? `${normalized}/`
+            : normalized;
+    });
 
 const McpHeaderNameSchema = z
     .string()

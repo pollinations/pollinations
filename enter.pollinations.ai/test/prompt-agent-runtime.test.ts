@@ -57,15 +57,23 @@ describe("prompt-agent config", () => {
         pollinationsTools: false,
     };
 
-    it("accepts public HTTPS MCP servers", () => {
+    it("accepts public HTTPS MCP servers and keeps trailing slashes", () => {
         expect(
             PromptAgentSchema.parse({
                 ...config,
                 mcpServers: [
-                    { name: "docs", url: "https://mcp.example.com/rpc/" },
+                    // Gradio-style streamable HTTP endpoints 307-redirect
+                    // without the trailing slash, so it must survive.
+                    { name: "gradio", url: "https://a.example/mcp/http/" },
+                    { name: "docs", url: "https://mcp.example.com/rpc?x=1#y" },
                 ],
             }).mcpServers,
         ).toEqual([
+            {
+                name: "gradio",
+                url: "https://a.example/mcp/http/",
+                headers: [],
+            },
             {
                 name: "docs",
                 url: "https://mcp.example.com/rpc",
@@ -328,6 +336,197 @@ describe("prompt-agent runtime", () => {
                 authorization: "Bearer mcp-secret",
             })),
         );
+    });
+
+    it("falls back to the legacy SSE transport when POST is rejected", async () => {
+        const requests: { method: string; url: string; auth: string | null }[] =
+            [];
+        let sse: ReadableStreamDefaultController<Uint8Array>;
+        const encoder = new TextEncoder();
+        const emit = (event: string, data: unknown) =>
+            sse.enqueue(
+                encoder.encode(
+                    `event: ${event}\ndata: ${
+                        typeof data === "string" ? data : JSON.stringify(data)
+                    }\n\n`,
+                ),
+            );
+        let modelCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (url.hostname !== "mcp.example.com") {
+                    modelCalls++;
+                    if (modelCalls === 1) {
+                        return Response.json({
+                            choices: [
+                                {
+                                    message: {
+                                        role: "assistant",
+                                        content: "",
+                                        tool_calls: [
+                                            {
+                                                id: "c1",
+                                                function: {
+                                                    name: "mcp__docs__lookup",
+                                                    arguments: "{}",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            usage: { prompt_tokens: 1, completion_tokens: 1 },
+                        });
+                    }
+                    return Response.json({
+                        choices: [
+                            { message: { role: "assistant", content: "done" } },
+                        ],
+                        usage: { prompt_tokens: 1, completion_tokens: 1 },
+                    });
+                }
+
+                requests.push({
+                    method: request.method,
+                    url: request.url,
+                    auth: request.headers.get("Authorization"),
+                });
+                if (url.pathname === "/gradio/sse") {
+                    // Legacy HTTP+SSE endpoint: GET only.
+                    if (request.method !== "GET") {
+                        return new Response("Method Not Allowed", {
+                            status: 405,
+                        });
+                    }
+                    return new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                sse = controller;
+                                emit("endpoint", "/gradio/messages?session=1");
+                            },
+                        }),
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }
+                // JSON-RPC responses arrive as events on the SSE stream.
+                const body = (await request.json()) as {
+                    id?: number;
+                    method: string;
+                };
+                if (body.method === "initialize") {
+                    emit("message", {
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            protocolVersion: "2024-11-05",
+                            capabilities: { tools: {} },
+                            serverInfo: { name: "sse-mcp", version: "1.0.0" },
+                        },
+                    });
+                }
+                if (body.method === "tools/list") {
+                    emit("message", {
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            tools: [
+                                {
+                                    name: "lookup",
+                                    inputSchema: { type: "object" },
+                                },
+                            ],
+                        },
+                    });
+                }
+                if (body.method === "tools/call") {
+                    emit("message", {
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: { content: [{ type: "text", text: "found" }] },
+                    });
+                }
+                return new Response(null, { status: 202 });
+            }),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "look up cats" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/gradio/sse",
+                            headers: ["Authorization"],
+                        },
+                    ],
+                },
+                mcpHeaders: { docs: { Authorization: "Bearer mcp-secret" } },
+            },
+        );
+
+        const responseText = await response.text();
+        expect(response.status, responseText).toBe(200);
+        const json = JSON.parse(responseText) as {
+            choices: { message: { content: string } }[];
+            usage: { tool_call_counts: Record<string, number> };
+        };
+        expect(json.choices[0].message.content).toBe("done");
+        expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+        // Streamable HTTP is tried first (rejected POST), then SSE works.
+        expect(
+            requests.some(
+                (request) =>
+                    request.method === "POST" &&
+                    request.url === "https://mcp.example.com/gradio/sse",
+            ),
+        ).toBe(true);
+        expect(requests.find((request) => request.method === "GET")?.url).toBe(
+            "https://mcp.example.com/gradio/sse",
+        );
+        for (const request of requests) {
+            expect(request.auth).toBe("Bearer mcp-secret");
+        }
+        const messagePosts = requests.filter((request) =>
+            request.url.includes("/gradio/messages"),
+        );
+        expect(messagePosts.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("does not fall back to SSE on MCP auth errors", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("Unauthorized", { status: 401 })),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "hello" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/rpc",
+                            headers: [],
+                        },
+                    ],
+                },
+            },
+        );
+
+        expect(response.status).toBe(502);
+        // The Streamable HTTP error propagates instead of an SSE retry error.
+        const body = (await response.json()) as {
+            error: { message: string };
+        };
+        expect(body.error.message).toContain("POSTing to endpoint (HTTP 401)");
     });
 
     it("runs the MCP tool loop and reuses the negotiated session", async () => {

@@ -209,19 +209,18 @@ if (!KEY) {
                 prompt: "a small red apple",
                 model: "flux",
                 size: "256x256",
-                response_format: "url",
             },
         });
         if (result.isError) {
             throw new Error(result.content?.[0]?.text || "tool error");
         }
-        const resource = result.content?.find(
-            (content) => content.type === "resource_link",
+        const link = result.content?.find(
+            (part) => part.type === "resource_link",
         );
-        if (!resource || !/pollinations\.ai/.test(resource.uri)) {
-            throw new Error(`no URL resource: ${trim(result.content)}`);
+        if (!link || !/pollinations\.ai/.test(link.uri)) {
+            throw new Error(`no resource link: ${trim(result.content)}`);
         }
-        return resource.uri;
+        return link.uri;
     });
     await step("getBalance", () => call("getBalance"));
     await step("clearApiKey", () => call("clearApiKey"));

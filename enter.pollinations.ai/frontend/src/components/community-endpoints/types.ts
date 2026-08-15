@@ -10,11 +10,55 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
+
+export type McpHeaderRow = {
+    id: string;
+    name: string;
+    value: string;
+    saved: boolean;
+};
+
+export type McpServerRow = {
+    id: string;
+    name: string;
+    url: string;
+    headers: McpHeaderRow[];
+};
+
+export type ManagedAgent = {
+    id: string;
+    systemPrompt: string;
+    baseModel: string;
+    pollinationsTools: boolean;
+    mcpServers: {
+        name: string;
+        url: string;
+        headers: Record<string, null>;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+};
+
+type AgentFields = Pick<
+    ManagedAgent,
+    "systemPrompt" | "baseModel" | "pollinationsTools"
+>;
+
+export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
+
+export type AgentPayload = AgentFields & {
+    mcpServers: {
+        name: string;
+        url: string;
+        headers: Record<string, string | null>;
+    }[];
+};
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -33,6 +77,7 @@ export type CommunityEndpoint = {
     inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
+    agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -55,12 +100,18 @@ export type FallbackModelOption = {
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(
-    models: { name: string; type: string; community?: boolean }[],
+    models: {
+        name: string;
+        type: string;
+        community?: boolean;
+        agent?: boolean;
+    }[],
 ): FallbackModelOption[] {
     return models
         .filter(
             (model) =>
                 model.community &&
+                !model.agent &&
                 (model.type === "text" || model.type === "image"),
         )
         .map((model) => ({
@@ -69,10 +120,7 @@ export function publicCommunityFallbackOptions(
         }));
 }
 
-export type EndpointFormState = {
-    modality: CommunityEndpointModality;
-    // Detected by the endpoint test for image models; "request" until tested.
-    imagePricing: CommunityEndpointImagePricing;
+export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
     name: string;
     title: string;
@@ -82,6 +130,12 @@ export type EndpointFormState = {
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     perUserRpm: string;
+};
+
+export type EndpointFormState = ModelListingFormState & {
+    modality: CommunityEndpointModality;
+    // Detected by the endpoint test for image models; "request" until tested.
+    imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -89,19 +143,29 @@ export type EndpointFormState = {
     fallbackModelIds: string[];
 } & EndpointFormPrices;
 
-export type EndpointPayload = {
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
+type ModelListingPayload = {
     inputModalities: ModelInputModality[];
     name: string;
     title: string;
     description: string;
-    baseUrl: string;
-    upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     perUserRpm: number | null;
+};
+
+export type EndpointPayload = ModelListingPayload & {
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    baseUrl: string;
+    upstreamModel: string;
     fallbackModelIds: string[];
 } & CommunityEndpointPrices;
+
+export type AgentListingPayload = ModelListingPayload & {
+    agentId: string;
+    modality: "text";
+};
+
+export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -125,20 +189,31 @@ const emptyPriceForm = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, ""]),
 ) as EndpointFormPrices;
 
-export const emptyForm: EndpointFormState = {
-    modality: "text",
-    imagePricing: "request",
+const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
     name: "",
     title: "",
     description: "",
     visibility: "private",
     perUserRpm: "",
+};
+
+export const emptyForm: EndpointFormState = {
+    ...emptyListingForm,
+    modality: "text",
+    imagePricing: "request",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
     fallbackModelIds: [],
     ...emptyPriceForm,
+};
+
+export const emptyAgentForm: AgentFormState = {
+    systemPrompt: "",
+    baseModel: "",
+    pollinationsTools: false,
+    mcpServers: [],
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -243,6 +318,21 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     };
 }
 
+export function agentListingToForm(
+    endpoint?: CommunityEndpoint,
+): ModelListingFormState {
+    return endpoint
+        ? {
+              inputModalities: ["text"],
+              name: endpoint.name,
+              title: endpoint.title,
+              description: endpoint.description ?? "",
+              visibility: endpoint.visibility,
+              perUserRpm: "",
+          }
+        : { ...emptyListingForm };
+}
+
 function formPricesToPayload(
     form: EndpointFormState,
     modality: CommunityEndpointModality,
@@ -309,29 +399,160 @@ export function observedUsageValue(
         : null;
 }
 
-export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+// Mirrors the backend McpServerSchema name pattern (lowercase alphanumeric with
+// _ or -, max 40 chars) so client and server reject the same names.
+export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+export const MCP_HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,128}$/;
+
+export function isValidMcpRow(row: McpServerRow): boolean {
+    const name = row.name.trim();
+    const url = row.url.trim();
+    const nonEmptyHeaders = row.headers.filter(
+        (header) => header.name.trim() || header.value,
+    );
+    if (!name && !url && nonEmptyHeaders.length === 0) return true;
+    try {
+        normalizeCommunityEndpointBaseUrl(url);
+    } catch {
+        return false;
+    }
+    if (!MCP_SERVER_NAME_PATTERN.test(name)) return false;
+
+    const headerNames = new Set<string>();
+    for (const header of nonEmptyHeaders) {
+        const headerName = header.name.trim();
+        if (
+            !MCP_HEADER_NAME_PATTERN.test(headerName) ||
+            (!header.saved && !header.value) ||
+            header.value.includes("\r") ||
+            header.value.includes("\n")
+        ) {
+            return false;
+        }
+        const normalized = headerName.toLowerCase();
+        if (headerNames.has(normalized)) return false;
+        headerNames.add(normalized);
+    }
+    return nonEmptyHeaders.length <= 16;
+}
+
+// Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
+// the backend McpServerSchema so the API rejects the same inputs.
+function mcpServersToPayload(rows: McpServerRow[]): AgentPayload["mcpServers"] {
+    const servers: AgentPayload["mcpServers"] = [];
+    for (const row of rows) {
+        const name = row.name.trim();
+        const url = row.url.trim();
+        if (!name && !url) continue;
+        if (!MCP_SERVER_NAME_PATTERN.test(name)) {
+            throw new Error(
+                `MCP server name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
+            );
+        }
+        if (!url) {
+            throw new Error(`MCP server "${name}" needs a URL`);
+        }
+        const headers: Record<string, string | null> = {};
+        for (const header of row.headers) {
+            const headerName = header.name.trim();
+            if (!headerName && !header.value) continue;
+            if (!MCP_HEADER_NAME_PATTERN.test(headerName)) {
+                throw new Error(
+                    `MCP server "${name}" has an invalid header name`,
+                );
+            }
+            if (!header.saved && !header.value) {
+                throw new Error(
+                    `MCP header "${headerName}" for server "${name}" needs a value`,
+                );
+            }
+            headers[headerName] = header.value || null;
+        }
+        try {
+            servers.push({
+                name,
+                url: normalizeCommunityEndpointBaseUrl(url),
+                headers,
+            });
+        } catch {
+            throw new Error(
+                `MCP server "${name}" must use HTTPS and target a public host`,
+            );
+        }
+    }
+    return servers;
+}
+
+export function toAgentPayload(form: AgentFormState): AgentPayload {
+    const systemPrompt = form.systemPrompt.trim();
+    if (!systemPrompt) {
+        throw new Error("System prompt is required for a prompt agent");
+    }
+    const baseModel = form.baseModel.trim();
+    if (!baseModel) {
+        throw new Error("Base model is required for a prompt agent");
+    }
+    const mcpServers = mcpServersToPayload(form.mcpServers);
+    const names = new Set(form.pollinationsTools ? ["pollinations"] : []);
+    for (const server of mcpServers) {
+        if (names.has(server.name)) {
+            throw new Error(
+                `MCP server name "${server.name}" is already in use`,
+            );
+        }
+        names.add(server.name);
+    }
+    return {
+        systemPrompt,
+        baseModel,
+        pollinationsTools: form.pollinationsTools,
+        mcpServers,
+    };
+}
+
+function listingFieldsToPayload(form: ModelListingFormState) {
     if (!isValidPerUserRpm(form.perUserRpm)) {
         throw new Error("Per-user RPM must be a positive number");
     }
-    const modelName = form.name.trim();
-    const imagePricing =
-        form.modality === "image" ? form.imagePricing : "request";
     return {
-        modality: form.modality,
-        imagePricing,
         inputModalities: form.inputModalities,
-        name: modelName,
+        name: form.name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
         perUserRpm: form.perUserRpm.trim() ? Number(form.perUserRpm) : null,
+    };
+}
+
+export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+    const modality = form.modality;
+    const imagePricing = modality === "image" ? form.imagePricing : "request";
+    return {
+        ...listingFieldsToPayload(form),
+        modality,
+        imagePricing,
         baseUrl: form.baseUrl.trim(),
-        upstreamModel: form.upstreamModel.trim() || modelName,
-        // A private model carries no pricing, so a priced fallback target can
-        // never satisfy the same-or-lower rule — clear them alongside prices.
+        upstreamModel: form.upstreamModel.trim() || form.name.trim(),
+        // Private models carry no public pricing, so their fallbacks cannot be
+        // validated against a quoted price.
         fallbackModelIds:
             form.visibility === "public" ? form.fallbackModelIds : [],
-        ...formPricesToPayload(form, form.modality, imagePricing),
+        ...formPricesToPayload(form, modality, imagePricing),
+    };
+}
+
+export function toAgentListingPayload(
+    form: ModelListingFormState,
+    inputModalities: ModelInputModality[],
+): AgentListingDetailsPayload {
+    return {
+        inputModalities,
+        name: form.name.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
+        visibility: form.visibility,
+        perUserRpm: null,
+        modality: "text",
     };
 }
 

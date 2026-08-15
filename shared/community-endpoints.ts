@@ -13,7 +13,11 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_MODALITIES = [
+    "text",
+    "image",
+    "transcription",
+] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -47,6 +51,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
@@ -150,24 +155,45 @@ const COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS = [
     },
 ] as const;
 
+// Transcription endpoints bill audio input duration in seconds against the
+// same prompt audio price column, mirroring the first-party whisper/scribe
+// models (cost keyed on promptAudioSeconds at a per-second rate).
+const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
+    key: "promptAudioPrice",
+    usageType: "promptAudioSeconds",
+    label: "Prompt audio",
+    priceUnit: "million",
+    rawUsagePaths: ["usage.duration", "usage.seconds"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
+    COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
     COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-        (field) => field.usageType !== "completionImageTokens",
+        (field) =>
+            field.usageType !== "completionImageTokens" &&
+            field.usageType !== "promptAudioSeconds",
     );
 
 const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
+    if (modality === "transcription") {
+        return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
+    }
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
         ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
@@ -176,7 +202,8 @@ export function communityEndpointPriceFieldsForModality(
 
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
@@ -252,6 +279,7 @@ export function isCommunityFallbackPricingAllowed(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
+    if (value === "transcription") return "transcription";
     return value === "image" ? "image" : "text";
 }
 
@@ -265,7 +293,16 @@ export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
     endpointModality: CommunityEndpointModality,
 ): ModelInputModality[] {
-    if (!value?.length) return ["text"];
+    // Text prompts drive every community modality today: text models take
+    // text, image models take a text prompt. Transcription endpoints take
+    // audio, so an un-declared set must default there — not to text.
+    if (!value?.length) {
+        return [
+            ...(endpointModality === "transcription"
+                ? COMMUNITY_ENDPOINT_INPUT_MODALITIES.transcription
+                : (["text"] as const)),
+        ];
+    }
     const declared = new Set(value);
     const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
         endpointModality
@@ -458,12 +495,17 @@ export function communityImageEditsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
 }
 
+export function communityAudioTranscriptionsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
         "/chat/completions",
         "/images/generations",
         "/images/edits",
+        "/audio/transcriptions",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -526,6 +568,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
@@ -540,7 +583,7 @@ export function communityModelDefinition(
         provider: "community",
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : "text",
+        category: isImage ? "image" : isTranscription ? "audio" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
@@ -548,6 +591,9 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
+        ...(isTranscription
+            ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
+            : {}),
         paidOnly: false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the

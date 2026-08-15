@@ -61,11 +61,18 @@ export function publicCommunityFallbackOptions(
         .filter(
             (model) =>
                 model.community &&
-                (model.type === "text" || model.type === "image"),
+                (model.type === "text" ||
+                    model.type === "image" ||
+                    model.type === "audio"),
         )
         .map((model) => ({
             modelId: model.name,
-            modality: model.type === "image" ? "image" : "text",
+            modality:
+                model.type === "image"
+                    ? "image"
+                    : model.type === "audio"
+                      ? "transcription"
+                      : "text",
         }));
 }
 
@@ -349,7 +356,12 @@ export function nextFormState(
     value: string,
 ): EndpointFormState {
     if (key === "modality") {
-        const modality = value === "image" ? "image" : "text";
+        const modality =
+            value === "image"
+                ? "image"
+                : value === "transcription"
+                  ? "transcription"
+                  : "text";
         return {
             ...current,
             modality,

@@ -20,6 +20,7 @@ import {
     type CommunityModelRegistryEntry,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
+    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -129,7 +130,9 @@ function communityEntryToGenerationEntry(
                 ? communityImageSupportedEndpoints(
                       entry.definition.inputModalities,
                   )
-                : communityTextSupportedEndpoints(),
+                : eventType === "generate.audio"
+                  ? communityTranscriptionSupportedEndpoints()
+                  : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

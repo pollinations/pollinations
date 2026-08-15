@@ -317,6 +317,12 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "completionTextPrice",
 ];
 
+// Transcription models bill per audio second, so their single price field is
+// revealed alongside the text fields once the model is public.
+export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
+    "promptAudioPrice",
+];
+
 export function returnedPriceFields(
     testState: ActionState,
     modality: CommunityEndpointModality,

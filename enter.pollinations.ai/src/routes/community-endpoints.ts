@@ -51,13 +51,14 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -977,7 +978,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : await testCommunityEndpoint(input);
+                        : input.modality === "transcription"
+                          ? await testCommunityTranscriptionEndpoint(input)
+                          : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -985,7 +988,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : "Endpoint responded with usage",
+                            : input.modality === "transcription"
+                              ? "Endpoint responded with transcription text"
+                              : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

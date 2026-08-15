@@ -3,6 +3,7 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
@@ -299,5 +300,96 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow(
             "Endpoint responded 401 after we sent Authorization: Authentication required",
         );
+    });
+
+    it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/audio/transcriptions",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            const formData = await request.formData();
+            expect(formData.get("model")).toBe("whisper-1");
+            expect(formData.get("response_format")).toBe("json");
+            const file = formData.get("file");
+            expect(file).toBeInstanceOf(File);
+            expect((file as File).type).toBe("audio/wav");
+            return Response.json({
+                text: "Hello",
+                usage: { duration: 0.5 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 0.5 },
+            billableUsage: { promptAudioSeconds: 0.5 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("accepts whisper-style usage.seconds from transcription upstreams", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    text: "Hello",
+                    usage: { seconds: 3 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toEqual({
+            usage: { seconds: 3 },
+            billableUsage: { promptAudioSeconds: 3 },
+        });
+    });
+
+    it("bills zero audio seconds when transcription upstreams omit duration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "Hello" })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toEqual({
+            usage: {},
+            billableUsage: { promptAudioSeconds: 0 },
+        });
+    });
+
+    it("rejects transcription responses without text", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({})),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
     });
 });

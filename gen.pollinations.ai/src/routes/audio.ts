@@ -38,6 +38,7 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -2732,6 +2733,19 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     }
 
     const result = await withAudioFallback(c, async (candidate) => {
+        if (candidate.communityEndpoint) {
+            return callCommunityTranscriptionEndpoint(
+                candidate.communityEndpoint,
+                {
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                },
+                c.env.BETTER_AUTH_SECRET,
+            );
+        }
         if (candidate.id === "grok-transcribe") {
             return transcribeWithXai({
                 file,

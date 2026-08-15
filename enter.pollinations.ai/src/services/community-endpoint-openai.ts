@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointImagePricing,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
@@ -15,6 +16,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -208,6 +210,67 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+    };
+}
+
+// Transcription endpoints are billed against prompt audio seconds, mirroring
+// the first-party whisper/scribe models. The probe uploads a real audio file
+// and validates the OpenAI transcription response shape.
+export async function testCommunityTranscriptionEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const sampleBytes = decodeBase64(SAMPLE_AUDIO_BASE64);
+    if (!sampleBytes) {
+        throw new Error("Failed to decode sample audio");
+    }
+    const formData = new FormData();
+    formData.append("model", model);
+    formData.append("response_format", "json");
+    formData.append(
+        "file",
+        new Blob([new Uint8Array(sampleBytes)], { type: "audio/wav" }),
+        "sample.wav",
+    );
+
+    const body = await fetchJson(communityAudioTranscriptionsUrl(baseUrl), {
+        method: "POST",
+        headers: authorizationHeaders(bearerToken),
+        body: formData,
+    });
+
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("text" in body) ||
+        typeof body.text !== "string" ||
+        body.text.length === 0
+    ) {
+        throw new Error("Endpoint did not return OpenAI transcription text");
+    }
+
+    // Duration is optional; when absent the endpoint is still usable, it just
+    // bills zero audio seconds (callers are never charged more than reported).
+    const usage: CommunityEndpointUsage | undefined =
+        body && typeof body === "object" && "usage" in body
+            ? (body as { usage?: CommunityEndpointUsage }).usage
+            : undefined;
+    const duration =
+        usage &&
+        (("duration" in usage &&
+            typeof usage.duration === "number" &&
+            usage.duration > 0 &&
+            usage.duration) ||
+            ("seconds" in usage &&
+                typeof usage.seconds === "number" &&
+                usage.seconds > 0 &&
+                usage.seconds));
+    const promptAudioSeconds = typeof duration === "number" ? duration : 0;
+
+    return {
+        usage: { ...usage } as CommunityEndpointUsage,
+        billableUsage: { promptAudioSeconds },
     };
 }
 

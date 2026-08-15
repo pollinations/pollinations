@@ -26,6 +26,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
     BASE_TEXT_PRICE_KEYS,
+    BASE_TRANSCRIPTION_PRICE_KEYS,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -234,7 +235,9 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : "Endpoint responded, but did not return billable usage",
+                        : form.modality === "transcription"
+                          ? "Endpoint responded, but did not return transcription text or usage"
+                          : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -308,7 +311,9 @@ export function CommunityEndpointDialog({
     const basePriceKeys =
         form.modality === "image"
             ? (["completionImagePrice"] as const)
-            : BASE_TEXT_PRICE_KEYS;
+            : form.modality === "transcription"
+              ? BASE_TRANSCRIPTION_PRICE_KEYS
+              : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -426,23 +431,25 @@ export function CommunityEndpointDialog({
                         alignLabelRow
                     >
                         <ButtonGroup aria-label="Modality">
-                            {(["text", "image"] as const).map((modality) => (
-                                <TabButton
-                                    key={modality}
-                                    active={form.modality === modality}
-                                    disabled={isEdit}
-                                    onClick={() =>
-                                        updateForm("modality", modality)
-                                    }
-                                    size="sm"
-                                    className="min-w-20 gap-1.5 capitalize"
-                                >
-                                    {form.modality === modality && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    {modality}
-                                </TabButton>
-                            ))}
+                            {(["text", "image", "transcription"] as const).map(
+                                (modality) => (
+                                    <TabButton
+                                        key={modality}
+                                        active={form.modality === modality}
+                                        disabled={isEdit}
+                                        onClick={() =>
+                                            updateForm("modality", modality)
+                                        }
+                                        size="sm"
+                                        className="min-w-20 gap-1.5 capitalize"
+                                    >
+                                        {form.modality === modality && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {modality}
+                                    </TabButton>
+                                ),
+                            )}
                         </ButtonGroup>
                     </FieldStack>
 
@@ -575,7 +582,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation/edit URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
                             alignLabelRow
                         >
                             <Input
@@ -639,7 +646,10 @@ export function CommunityEndpointDialog({
                                                 placeholder={
                                                     form.modality === "image"
                                                         ? "gpt-image-2"
-                                                        : "gpt-4o-mini"
+                                                        : form.modality ===
+                                                            "transcription"
+                                                          ? "whisper-1"
+                                                          : "gpt-4o-mini"
                                                 }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
@@ -706,7 +716,9 @@ export function CommunityEndpointDialog({
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : "gpt-4o-mini"
+                                            : form.modality === "transcription"
+                                              ? "whisper-1"
+                                              : "gpt-4o-mini"
                                     }
                                     autoComplete="off"
                                     autoCapitalize="none"

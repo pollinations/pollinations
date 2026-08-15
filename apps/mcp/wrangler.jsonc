@@ -15,5 +15,24 @@
       "custom_domain": true
     }
   ],
+  "env": {
+    "staging": {
+      "routes": [
+        {
+          "pattern": "staging.mcp.myceli.ai",
+          "zone_name": "myceli.ai",
+          "custom_domain": true
+        },
+        {
+          "pattern": "staging.mcp.pollinations.ai",
+          "zone_name": "pollinations.ai",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai"
+      }
+    }
+  },
   "observability": { "enabled": true }
 }

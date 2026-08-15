@@ -695,8 +695,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Manage API keys and My Deployments
-                                            when enabled.
+                                            Manage API keys and My Models when
+                                            enabled.
                                         </span>
                                     </li>
                                 )}

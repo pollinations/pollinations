@@ -345,37 +345,63 @@ const CreateEndpointSchema = z
         fallbackModelIds: FallbackModelIdsSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
-    .refine(
-        (input) =>
-            [input.baseUrl, input.agentId].filter(
-                (value) => value !== undefined,
-            ).length === 1,
-        { message: "Provide exactly one of baseUrl or agentId" },
-    )
-    .refine(
-        (input) => input.baseUrl === undefined || Boolean(input.bearerToken),
-        {
-            message: "bearerToken is required when registering with baseUrl",
-        },
-    )
-    .refine(
-        (input) => input.agentId === undefined || input.modality === "text",
-        { message: "Managed agents must use text modality" },
-    )
-    .refine(
-        (input) =>
-            input.agentId === undefined || input.bearerToken === undefined,
-        { message: "Managed agent credentials are configured on the agent" },
-    )
-    .refine(
-        (input) =>
-            input.agentId === undefined || !input.fallbackModelIds?.length,
-        { message: "Managed agent listings do not support fallback models" },
-    )
-    .refine(
-        (input) => input.agentId === undefined || input.perUserRpm == null,
-        { message: "Managed agent listings do not support per-user RPM" },
-    );
+    // A registration is one of two shapes: a managed agent, which resolves its
+    // target and credentials from the agent row, or an external endpoint, which
+    // brings its own. Validating each shape once keeps the two sets of rules
+    // readable and stops them being restated per field.
+    .superRefine((input, context) => {
+        const isAgent = input.agentId !== undefined;
+        if (isAgent === (input.baseUrl !== undefined)) {
+            context.addIssue({
+                code: "custom",
+                message: "Provide exactly one of baseUrl or agentId",
+            });
+            return;
+        }
+        if (!isAgent) {
+            if (!input.bearerToken) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["bearerToken"],
+                    message:
+                        "bearerToken is required when registering with baseUrl",
+                });
+            }
+            return;
+        }
+        const agentRejections = [
+            {
+                invalid: input.modality !== "text",
+                path: "modality",
+                message: "Managed agents must use text modality",
+            },
+            {
+                invalid: input.bearerToken !== undefined,
+                path: "bearerToken",
+                message:
+                    "Managed agent credentials are configured on the agent",
+            },
+            {
+                invalid: Boolean(input.fallbackModelIds?.length),
+                path: "fallbackModelIds",
+                message:
+                    "Managed agent listings do not support fallback models",
+            },
+            {
+                invalid: input.perUserRpm != null,
+                path: "perUserRpm",
+                message: "Managed agent listings do not support per-user RPM",
+            },
+        ];
+        for (const rejection of agentRejections) {
+            if (!rejection.invalid) continue;
+            context.addIssue({
+                code: "custom",
+                path: [rejection.path],
+                message: rejection.message,
+            });
+        }
+    });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
     title: EndpointFieldsSchema.title.optional(),
@@ -551,13 +577,11 @@ async function requireOwnerGithubUsername(
 function toResponse(
     row: CommunityEndpointRow,
     ownerGithubUsername: string,
-    managedAgentBaseUrl: string,
+    env: { AGENT_RUNTIME_BASE_URL: string },
 ) {
     const modality = normalizeCommunityEndpointModality(row.modality);
-    const baseUrl = row.baseUrl ?? managedAgentBaseUrl;
-    if (!baseUrl) {
-        throw new Error(`Community endpoint ${row.id} has no runtime target`);
-    }
+    // Agent listings have no target of their own; they resolve to the runtime.
+    const baseUrl = row.baseUrl ?? agentRuntimeBaseUrl(env);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
@@ -744,11 +768,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             });
             return c.json({
                 data: rows.map((endpoint) =>
-                    toResponse(
-                        endpoint,
-                        ownerGithubUsername,
-                        agentRuntimeBaseUrl(c.env),
-                    ),
+                    toResponse(endpoint, ownerGithubUsername, c.env),
                 ),
                 provider: {
                     name: owner?.communityProviderName ?? null,
@@ -995,13 +1015,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(
-                toResponse(
-                    row,
-                    ownerGithubUsername,
-                    agentRuntimeBaseUrl(c.env),
-                ),
-            );
+            return c.json(toResponse(row, ownerGithubUsername, c.env));
         },
     )
     .post(
@@ -1299,13 +1313,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(
-                toResponse(
-                    row,
-                    ownerGithubUsername,
-                    agentRuntimeBaseUrl(c.env),
-                ),
-            );
+            return c.json(toResponse(row, ownerGithubUsername, c.env));
         },
     )
     .delete(

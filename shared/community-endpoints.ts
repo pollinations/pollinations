@@ -282,7 +282,7 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
-export type CommunityEndpointRuntime = {
+type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
     modelId: string;
@@ -296,22 +296,53 @@ export type CommunityEndpointRuntime = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
+    // Where the gateway sends the request, and the model name it asks for.
+    // Both variants resolve these when the row is read, so routing never has
+    // to know which kind it is holding.
     baseUrl: string;
-    agentId: string | null;
     upstreamModel: string;
-    bearerTokenCiphertext: string | null;
     visibility: CommunityEndpointVisibility;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbackModelIds: string[];
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;
+
+/** A third-party OpenAI-compatible server the owner registered. */
+export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "external";
+    bearerTokenCiphertext: string;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
+};
+
+/** A managed prompt agent, run by Enter's own agent runtime. */
+export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "agent";
+    agentId: string;
+};
+
+export type CommunityEndpointRuntime =
+    | ExternalCommunityEndpointRuntime
+    | AgentCommunityEndpointRuntime;
+
+/**
+ * Whether calls to this endpoint spend the caller's balance downstream.
+ *
+ * Managed agents always do: they call their base model and tools on the
+ * caller's behalf. External endpoints only do so when an admin granted it.
+ * Both are barred from the same places — fallback targets, and being called
+ * by another run token — so the two cases share one name.
+ */
+export function isDelegatingEndpoint(
+    endpoint: CommunityEndpointRuntime,
+): boolean {
+    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+}
 
 export type CommunityModelDefinitionInput = {
     modelId: string;

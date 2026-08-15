@@ -43,11 +43,13 @@ function communityProbe({
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
-                communityEndpoint: {
-                    modelId: "Itachi-1824/polli",
-                    agentId,
-                    delegatesGeneration,
-                } as CommunityEndpointRuntime,
+                communityEndpoint: (agentId
+                    ? { modelId: "Itachi-1824/polli", kind: "agent", agentId }
+                    : {
+                          modelId: "Itachi-1824/polli",
+                          kind: "external",
+                          delegatesGeneration,
+                      }) as unknown as CommunityEndpointRuntime,
             });
             await next();
         })

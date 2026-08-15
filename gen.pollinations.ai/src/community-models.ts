@@ -3,6 +3,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    isDelegatingEndpoint,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
@@ -17,6 +18,12 @@ import type {
 } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import {
+    type AgentCatalogConfig,
+    type AgentCatalogEnv,
+    agentRuntimeBaseUrl,
+    parseAgentCatalogConfig,
+} from "./agent-catalog.ts";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
     "/v1/chat/completions",
@@ -46,33 +53,13 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type AgentCatalogConfig = {
-    baseModel: string;
-    pollinationsTools: boolean;
-};
-
-function parseAgentCatalogConfig(
-    raw: string | null,
-): AgentCatalogConfig | null {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        if (typeof parsed.baseModel !== "string" || !parsed.baseModel.trim()) {
-            return null;
-        }
-        return {
-            baseModel: parsed.baseModel,
-            pollinationsTools: parsed.pollinationsTools === true,
-        };
-    } catch {
-        return null;
-    }
-}
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB"> &
+    AgentCatalogEnv;
 
 export async function getCommunityModelRegistryEntries(
-    dbBinding: CloudflareBindings["DB"] | undefined,
-    agentRuntimeBaseUrl: string,
+    env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
+    const dbBinding = env.DB;
     if (!dbBinding) return [];
     const db = drizzle(dbBinding, { schema });
     const rows = await db
@@ -126,17 +113,8 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.endpointBaseUrl ??
-            (row.agentId === null ? null : agentRuntimeBaseUrl);
-        if (
-            !baseUrl ||
-            (row.agentId === null && !row.endpointBearerTokenCiphertext)
-        ) {
-            return [];
-        }
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        const communityEndpoint: CommunityEndpointRuntime = {
+        const shared = {
             id: row.id,
             ownerUserId: row.ownerUserId,
             modelId,
@@ -150,18 +128,40 @@ export async function getCommunityModelRegistryEntries(
                 row.imagePricing,
             ),
             inputModalities: row.inputModalities,
-            baseUrl,
-            agentId: row.agentId,
-            upstreamModel: row.agentId ?? row.upstreamModel,
-            bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
             visibility: row.visibility,
             perUserRpm: row.perUserRpm,
-            delegatesGeneration: row.delegatesGeneration,
             fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
+        // A row is one kind or the other: an agent resolves its target from the
+        // agent runtime, an external endpoint from its own stored target and
+        // credential. Anything missing the fields its kind requires is not
+        // routable, so it is dropped from the catalog rather than carried as a
+        // half-populated entry.
+        let communityEndpoint: CommunityEndpointRuntime;
+        if (row.agentId !== null) {
+            communityEndpoint = {
+                ...shared,
+                kind: "agent",
+                baseUrl: agentRuntimeBaseUrl(env),
+                upstreamModel: row.agentId,
+                agentId: row.agentId,
+            };
+        } else {
+            if (!row.endpointBaseUrl || !row.endpointBearerTokenCiphertext) {
+                return [];
+            }
+            communityEndpoint = {
+                ...shared,
+                kind: "external",
+                baseUrl: row.endpointBaseUrl,
+                upstreamModel: row.upstreamModel,
+                bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
+                delegatesGeneration: row.delegatesGeneration,
+            };
+        }
         const definition = communityModelDefinition({
             ...communityEndpoint,
             addedDate: row.createdAt.getTime(),
@@ -172,18 +172,16 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
-                    agent:
-                        communityEndpoint.agentId !== null ||
-                        communityEndpoint.delegatesGeneration,
+                    agent: isDelegatingEndpoint(communityEndpoint),
                     perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,
                 agentConfig:
-                    row.agentId === null
-                        ? undefined
-                        : (parseAgentCatalogConfig(row.agentConfig) ??
-                          undefined),
+                    communityEndpoint.kind === "agent"
+                        ? (parseAgentCatalogConfig(row.agentConfig) ??
+                          undefined)
+                        : undefined,
             },
         ];
     });

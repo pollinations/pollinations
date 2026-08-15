@@ -20,6 +20,7 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
+    type ExternalCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
@@ -746,6 +747,7 @@ describe("community endpoint helpers", () => {
             imagePricing: CommunityEndpointRuntime["imagePricing"],
         ): Promise<CommunityEndpointRuntime> {
             return {
+                kind: "external",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
@@ -757,7 +759,6 @@ describe("community endpoint helpers", () => {
                 imagePricing,
                 inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
-                agentId: null,
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 perUserRpm: null,
@@ -935,6 +936,7 @@ describe("community endpoint helpers", () => {
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
+            kind: "external",
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
@@ -945,7 +947,6 @@ describe("community endpoint helpers", () => {
             imagePricing: "request",
             inputModalities: null,
             baseUrl: "https://api.example.com/v1",
-            agentId: null,
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             perUserRpm: null,
@@ -996,9 +997,10 @@ describe("community endpoint helpers", () => {
         const secret = "test-secret";
 
         async function agentEndpoint(
-            overrides: Partial<CommunityEndpointRuntime> = {},
-        ): Promise<CommunityEndpointRuntime> {
+            overrides: Partial<ExternalCommunityEndpointRuntime> = {},
+        ): Promise<ExternalCommunityEndpointRuntime> {
             return {
+                kind: "external",
                 id: "agent-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/agent",
@@ -1009,7 +1011,6 @@ describe("community endpoint helpers", () => {
                 imagePricing: "request",
                 inputModalities: null,
                 baseUrl: "https://agent.example.com/v1",
-                agentId: null,
                 upstreamModel: "agent",
                 visibility: "public",
                 perUserRpm: null,
@@ -1065,11 +1066,19 @@ describe("community endpoint helpers", () => {
         });
 
         it("always scopes managed agents to their agent id", async () => {
-            const endpoint = await agentEndpoint({
+            const external = await agentEndpoint();
+            const {
+                bearerTokenCiphertext: _token,
+                delegatesGeneration: _delegates,
+                kind: _kind,
+                ...base
+            } = external;
+            const endpoint: CommunityEndpointRuntime = {
+                ...base,
+                kind: "agent",
                 agentId: "managed-agent-id",
-                delegatesGeneration: false,
-                bearerTokenCiphertext: null,
-            });
+                upstreamModel: "managed-agent-id",
+            };
             const context = await contextFor(endpoint, "parent-key-id");
             const token = String(context.modelConfig?.authKey);
             const claims = await verifyAgentRunToken(token, secret);
@@ -3414,10 +3423,7 @@ fixtureTest(
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
 
         const registryEntry = (
-            await getCommunityModelRegistryEntries(
-                env.DB,
-                env.AGENT_RUNTIME_BASE_URL,
-            )
+            await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
             brand: "Example AI",
@@ -4076,17 +4082,18 @@ fixtureTest(
             data: [],
         });
         const registryEntry = (
-            await getCommunityModelRegistryEntries(
-                env.DB,
-                env.AGENT_RUNTIME_BASE_URL,
-            )
+            await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === registration.modelId);
         expect(registryEntry?.communityEndpoint).toMatchObject({
+            kind: "agent",
             baseUrl: env.AGENT_RUNTIME_BASE_URL,
             agentId: agent.id,
             upstreamModel: agent.id,
-            bearerTokenCiphertext: null,
         });
+        // An agent listing carries no upstream credential of its own.
+        expect(registryEntry?.communityEndpoint).not.toHaveProperty(
+            "bearerTokenCiphertext",
+        );
         if (!registryEntry) throw new Error("Agent listing was not registered");
         expect(registryEntry.agentConfig).toEqual({
             baseModel: promptAgent.baseModel,

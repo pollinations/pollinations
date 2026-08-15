@@ -18,6 +18,10 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type AgentCatalogConfig,
+    applyAgentMetadata,
+} from "./agent-catalog.ts";
+import {
+    type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
@@ -144,46 +148,6 @@ function communityEntryToGenerationEntry(
     };
 }
 
-function applyAgentBaseModelMetadata(
-    entry: GenerationModelEntry,
-    baseEntry: GenerationModelEntry | undefined,
-): void {
-    const config = entry.agentConfig;
-    if (!config) return;
-    const agentCapabilities = config.pollinationsTools
-        ? (["pollinations_models"] as const)
-        : [];
-
-    entry.info = {
-        ...entry.info,
-        base_model: config.baseModel,
-        capabilities: [...entry.info.capabilities, ...agentCapabilities],
-    };
-    if (
-        !baseEntry ||
-        baseEntry.info.agent ||
-        baseEntry.eventType !== "generate.text"
-    ) {
-        return;
-    }
-
-    const base = baseEntry.info;
-    entry.info = {
-        ...entry.info,
-        pricing: base.pricing,
-        pricing_variants: base.pricing_variants,
-        pricing_default_label: base.pricing_default_label,
-        pricing_adjustments: base.pricing_adjustments,
-        input_modalities: base.input_modalities,
-        output_modalities: base.output_modalities,
-        capabilities: [...base.capabilities, ...agentCapabilities],
-        tools: base.tools,
-        reasoning: base.reasoning,
-        context_length: base.context_length,
-        paid_only: base.paid_only,
-    };
-}
-
 function compareModelEntries(
     left: GenerationModelEntry,
     right: GenerationModelEntry,
@@ -238,12 +202,7 @@ function buildRegistry(
             }
         }
     }
-    for (const entry of entries) {
-        const baseModel = entry.agentConfig?.baseModel;
-        if (baseModel) {
-            applyAgentBaseModelMetadata(entry, byIdOrAlias.get(baseModel));
-        }
-    }
+    applyAgentMetadata(entries, byIdOrAlias);
     linkFallbackEntries(entries, byIdOrAlias);
     entries.sort(compareModelEntries);
 
@@ -271,19 +230,16 @@ function buildRegistry(
 }
 
 async function loadGenerationModelRegistry(
-    env: Pick<CloudflareBindings, "DB" | "AGENT_RUNTIME_BASE_URL">,
+    env: CommunityModelEnv,
 ): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(
-            env.DB,
-            env.AGENT_RUNTIME_BASE_URL,
-        )
-    ).map(communityEntryToGenerationEntry);
+    const communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+        communityEntryToGenerationEntry,
+    );
     return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
 }
 
 export async function getGenerationModelRegistry(
-    env: Pick<CloudflareBindings, "DB" | "AGENT_RUNTIME_BASE_URL">,
+    env: CommunityModelEnv,
 ): Promise<GenerationModelRegistry> {
     if (
         cachedRegistry &&

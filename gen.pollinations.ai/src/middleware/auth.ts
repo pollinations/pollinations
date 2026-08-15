@@ -6,7 +6,10 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    isDelegatingEndpoint,
+} from "@shared/community-endpoints.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -73,8 +76,8 @@ function installAuth(
 
         if (
             agentRun &&
-            (model.communityEndpoint?.agentId ||
-                model.communityEndpoint?.delegatesGeneration)
+            model.communityEndpoint &&
+            isDelegatingEndpoint(model.communityEndpoint)
         ) {
             throw new HTTPException(403, {
                 message: "Agent run tokens cannot call agent models",

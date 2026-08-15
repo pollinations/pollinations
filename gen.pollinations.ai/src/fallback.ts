@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointRuntime,
     isCommunityFallbackPricingAllowed,
+    isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -227,13 +228,9 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
-    if (
-        primary.agentId ||
-        primary.delegatesGeneration ||
-        candidate.agentId ||
-        candidate.delegatesGeneration
-    )
+    if (isDelegatingEndpoint(primary) || isDelegatingEndpoint(candidate)) {
         return false;
+    }
     if (primary.imagePricing !== candidate.imagePricing) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }

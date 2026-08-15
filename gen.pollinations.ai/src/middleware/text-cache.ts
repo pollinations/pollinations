@@ -41,9 +41,10 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        const agentId = variables.model?.communityEndpoint?.agentId;
-        const partition = agentId
-            ? `agent:${agentId}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
+        // Caller-scoped models carry a scope; everything else stays shared.
+        const cacheScope = variables.model?.cacheScope;
+        const partition = cacheScope
+            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
             : undefined;
         return generateCacheKey(c.req.raw, bodyText, partition);
     },

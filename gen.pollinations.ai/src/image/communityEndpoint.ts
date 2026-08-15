@@ -34,8 +34,11 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
-    if (!endpoint.bearerTokenCiphertext) {
-        throw new Error("Community image endpoint has no bearer token");
+    // Managed agents are text-only, so an image endpoint is always external.
+    if (endpoint.kind !== "external") {
+        throw new Error(
+            `Community image endpoint '${endpoint.modelId}' is a managed agent`,
+        );
     }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,

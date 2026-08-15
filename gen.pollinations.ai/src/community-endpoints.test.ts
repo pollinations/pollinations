@@ -11,6 +11,7 @@ import {
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointTitle,
@@ -623,6 +624,71 @@ describe("community endpoint helpers", () => {
                 servedBy: definition,
             }).price.totalPrice,
         ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
+    });
+
+    it("builds token-priced community embedding models", () => {
+        const modelId = "voodoohop/bge";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Community embedding model",
+            modality: "embedding",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0,
+            }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            inputModalities: ["text"],
+            outputModalities: ["embedding"],
+            cost: { promptTextTokens: 0.00001 },
+        });
+        expect(definition).not.toHaveProperty("flatRate");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { promptTextTokens: 1000 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.00001 * 1000, 10);
+    });
+
+    it("builds fixed per-request community embedding models as flat rate", () => {
+        const modelId = "voodoohop/bge-fixed";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Flat-rate community embedding model",
+            modality: "embedding",
+            ...communityEndpointPrices({
+                promptTextPrice: 0,
+                completionTextPrice: 0.01,
+            }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            inputModalities: ["text"],
+            outputModalities: ["embedding"],
+            flatRate: true,
+            cost: { completionTextTokens: 0.01 },
+        });
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { completionTextTokens: 1 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBe(0.01);
+    });
+
+    it("builds the community embeddings upstream URL from the endpoint base URL", () => {
+        expect(communityEmbeddingsUrl("https://example.com/v1")).toBe(
+            "https://example.com/v1/embeddings",
+        );
+        expect(
+            communityEmbeddingsUrl("https://example.com/v1/embeddings"),
+        ).toBe("https://example.com/v1/embeddings");
     });
 
     it("keeps zero prices as explicit zero rates in the price definition", () => {

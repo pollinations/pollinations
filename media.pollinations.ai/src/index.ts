@@ -21,6 +21,7 @@ import {
     normalizeTags,
     TagError,
     tagsForItems,
+    userIdForGithubUsername,
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
@@ -201,6 +202,12 @@ const MediaItemResponseSchema = z.object({
 
 const MediaPageResponseSchema = z.object({
     items: z.array(MediaItemResponseSchema),
+    user: z
+        .string()
+        .optional()
+        .describe(
+            "When user was requested, echoes the GitHub username used to filter the gallery.",
+        ),
     nextCursor: z
         .string()
         .nullable()
@@ -242,6 +249,15 @@ const MediaListQuerySchema = z.object({
         .optional()
         .describe(
             "Opaque pagination cursor from a previous response's nextCursor.",
+        ),
+    user: z
+        .string()
+        .trim()
+        .min(1)
+        .max(39)
+        .optional()
+        .describe(
+            "Only include uploads owned by this Pollinations user's GitHub username.",
         ),
 });
 
@@ -510,7 +526,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List a public tag gallery",
         description:
-            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
+            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Pass `user` to restrict results to uploads owned by the Pollinations account with that GitHub username. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -523,6 +539,12 @@ api.get(
             },
             400: {
                 description: "Missing/empty tag, or invalid cursor or limit",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "User was not found",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -570,8 +592,23 @@ api.get(
         }
 
         const db = getDb(c.env.DB);
-        const page = await listMedia(db, { tag, limit, cursor });
-        return c.json(await toPageResponse(db, page));
+        let ownerUserId: string | undefined;
+        if (query.user) {
+            ownerUserId = await userIdForGithubUsername(db, query.user);
+            if (!ownerUserId) {
+                return c.json({ error: "User not found" }, 404);
+            }
+        }
+        const page = await listMedia(db, {
+            tag,
+            limit,
+            cursor,
+            ownerUserId,
+        });
+        return c.json({
+            ...(await toPageResponse(db, page)),
+            ...(query.user ? { user: query.user } : {}),
+        });
     },
 );
 

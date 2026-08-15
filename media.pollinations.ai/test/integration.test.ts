@@ -44,6 +44,7 @@ interface MediaPageResponse {
     items: MediaItemResponse[];
     nextCursor: string | null;
     hasMore: boolean;
+    user?: string;
 }
 
 // Kept for the pre-existing tests that don't care about identity.
@@ -147,13 +148,17 @@ function mockAuth() {
 async function seedUsers() {
     const db = drizzle(env.DB);
     const now = new Date();
-    for (const id of ["user_alice", "user_bob"]) {
+    for (const [id, githubUsername] of [
+        ["user_alice", "alice"],
+        ["user_bob", "bob"],
+    ]) {
         await db
             .insert(userTable)
             .values({
                 id,
                 name: id,
                 email: `${id}@test.com`,
+                githubUsername,
                 createdAt: now,
                 updatedAt: now,
             })
@@ -883,6 +888,36 @@ describe("media.pollinations.ai", () => {
         expect(page2.items[0].url).toBe(uploads[0].url);
         expect(page2.nextCursor).toBeNull();
         expect(page2.hasMore).toBe(false);
+    });
+
+    it("filters a tag gallery by GitHub username", async () => {
+        const tag = "owner-filter-tag";
+        const alice = await uploadViaForm("pk_alice", {
+            fileName: "alice.png",
+            bytes: variant(70),
+            tags: [tag],
+        });
+        const bob = await uploadViaForm("pk_bob", {
+            fileName: "bob.png",
+            bytes: variant(71),
+            tags: [tag],
+        });
+        expect(alice.status).toBe(200);
+        expect(bob.status).toBe(200);
+
+        const aliceUpload = alice.body as UploadResponse;
+        const response = await SELF.fetch(
+            `https://media.pollinations.ai/media?tag=${tag}&user=ALICE`,
+        );
+        expect(response.status).toBe(200);
+        const gallery = (await response.json()) as MediaPageResponse;
+        expect(gallery.user).toBe("ALICE");
+        expect(gallery.items.map((item) => item.id)).toEqual([aliceUpload.id]);
+
+        const missing = await SELF.fetch(
+            `https://media.pollinations.ai/media?tag=${tag}&user=missing`,
+        );
+        expect(missing.status).toBe(404);
     });
 
     it("validates the limit query param: valid passes, malformed 400s", async () => {

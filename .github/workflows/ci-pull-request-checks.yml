@@ -68,6 +68,7 @@ jobs:
           enter.pollinations.ai/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
+          operations/community-monitor/*.test.mjs
           operations/deployment/*.test.cjs
 
       - name: Get changed TypeScript files in enter.pollinations.ai

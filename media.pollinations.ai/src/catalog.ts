@@ -4,6 +4,7 @@
 // path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
 // dropping catalog data.
 
+import { user } from "@shared/db/better-auth.ts";
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
@@ -119,6 +120,20 @@ export async function catalogItemOwner(
     return row ? row.ownerUserId : undefined;
 }
 
+export async function userIdForGithubUsername(
+    db: CatalogDb,
+    githubUsername: string,
+): Promise<string | undefined> {
+    const [row] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(
+            sql`lower(${user.githubUsername}) = lower(${githubUsername.trim()})`,
+        )
+        .limit(1);
+    return row?.id;
+}
+
 /**
  * Delete a catalog item and its tags. Deleting the R2 blob is the caller's
  * responsibility.
@@ -203,9 +218,13 @@ export async function listMedia(
         tag: string;
         limit: number;
         cursor?: { createdAt: Date; id: string };
+        ownerUserId?: string;
     },
 ): Promise<CatalogPage> {
     const conditions: SQL[] = [eq(mediaTag.tag, params.tag)];
+    if (params.ownerUserId) {
+        conditions.push(eq(mediaItem.ownerUserId, params.ownerUserId));
+    }
     if (params.cursor) {
         conditions.push(beforeCursor(params.cursor));
     }

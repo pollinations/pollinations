@@ -32,3 +32,5 @@ curl -X POST "https://media.pollinations.ai/upload" \
 ```
 
 **Tags publish (alpha).** An optional `tags` field (comma-separated string, or a JSON array in the JSON format) publishes the upload into each tag's public gallery, where anyone can list it via `GET /media?tag={tag}`. Untagged uploads stay unlisted — reachable only by their unguessable id URL. Full endpoint reference: https://media.pollinations.ai/openapi.json
+
+Filter a tag gallery to one Pollinations account with its GitHub username: `GET /media?tag={tag}&user={github_username}`.

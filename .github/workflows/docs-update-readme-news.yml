@@ -49,6 +49,9 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: node .github/scripts/star-history-chart.mjs
 
+      - name: Update community showcase
+        run: node operations/community-monitor/update-readme.mjs
+
       - name: Check for changes
         id: changes
         run: |
@@ -78,7 +81,7 @@ jobs:
           # Create PR with auto-merge
           PR_URL=$(gh pr create \
             --title "docs: update README — ${DATE}" \
-            --body "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published." \
+            --body "Daily README update: Latest News, star history, community providers, and community leaderboards. Recent Apps is refreshed when an app is published." \
             --label "NEWS" \
             --base main)
           echo "Created PR: $PR_URL"

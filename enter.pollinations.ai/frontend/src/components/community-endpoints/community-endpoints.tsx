@@ -416,7 +416,61 @@ export function CommunityEndpoints({
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}
                 <Section
-                    title="Model"
+                    title="Agents"
+                    framed
+                    action={
+                        <AgentDialog
+                            open={agentCreateOpen}
+                            onOpenChange={setAgentCreateOpen}
+                            onSubmit={handleCreateAgent}
+                            canPublish={canPublish}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <BotIcon className="h-4 w-4" />
+                                    Add Agent
+                                </Button>
+                            }
+                        />
+                    }
+                >
+                    <div className="flex flex-col gap-3">
+                        {isLoading ? (
+                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
+                                Loading…
+                            </Surface>
+                        ) : unregisteredAgents.length === 0 &&
+                          agentEndpoints.length === 0 ? (
+                            <Surface className="p-6 text-center">
+                                <BotIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="mb-2 text-lg font-semibold">
+                                    Create your first agent
+                                </p>
+                                <p className="text-sm text-theme-text-muted">
+                                    Build a managed agent with a system prompt,
+                                    model, and tools.
+                                </p>
+                            </Surface>
+                        ) : (
+                            <>
+                                {unregisteredAgents.map((agent) => (
+                                    <AgentCard
+                                        key={agent.id}
+                                        agent={agent}
+                                        onEdit={() => setEditingAgent(agent)}
+                                        onDelete={() => setDeletingAgent(agent)}
+                                    />
+                                ))}
+                                {agentEndpoints.map(renderEndpointCard)}
+                            </>
+                        )}
+                    </div>
+                </Section>
+
+                <Section
+                    title="Models"
                     framed
                     action={
                         <CommunityEndpointDialog
@@ -476,60 +530,6 @@ export function CommunityEndpoints({
                             </span>
                         </p>
                     )}
-                </Section>
-
-                <Section
-                    title="Agent"
-                    framed
-                    action={
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
-                    }
-                >
-                    <div className="flex flex-col gap-3">
-                        {isLoading ? (
-                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
-                                Loading…
-                            </Surface>
-                        ) : unregisteredAgents.length === 0 &&
-                          agentEndpoints.length === 0 ? (
-                            <Surface className="p-6 text-center">
-                                <BotIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="mb-2 text-lg font-semibold">
-                                    Create your first agent
-                                </p>
-                                <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
-                                </p>
-                            </Surface>
-                        ) : (
-                            <>
-                                {unregisteredAgents.map((agent) => (
-                                    <AgentCard
-                                        key={agent.id}
-                                        agent={agent}
-                                        onEdit={() => setEditingAgent(agent)}
-                                        onDelete={() => setDeletingAgent(agent)}
-                                    />
-                                ))}
-                                {agentEndpoints.map(renderEndpointCard)}
-                            </>
-                        )}
-                    </div>
                 </Section>
             </div>
 

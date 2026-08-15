@@ -28,7 +28,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "List live models with capabilities, pricing, and metadata. Filter by modality or community ownership.",
+        "Call before claiming that a named model is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, and pricing in Pollen. Filter by modality or community ownership.",
         {
             type: z
                 .enum([

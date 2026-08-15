@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💼",
+    "name": "Indish Marketer's Voice Agent",
+    "url": "https://voice.prototools.in",
+    "description": "An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "indishmarketer",
+    "githubUserId": "142255913",
+    "repositoryUrl": "https://github.com/indishmarketer/voice-agent",
+    "repositoryStars": null,
+    "discordUsername": "indishmarketer",
+    "other": null,
+    "submittedDate": "2026-08-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13390",
+    "approvedDate": "2026-08-15",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "FSChart",
     "url": "https://fastnow.github.io/fschart_pollinations",

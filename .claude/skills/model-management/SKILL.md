@@ -31,6 +31,11 @@ Read [operating-policy.md](references/operating-policy.md) before recommending a
 
 ## Mandatory confirmation gate
 
+Apply this gate only to a proposed tracked model mutation. Do not turn a
+read-only status confirmation, an approval of an already-documented planning
+decision, or a correction of an operational fact into a different mutation.
+Treat a generic “confirm” as approval only for the exact contract just shown.
+
 Do not edit any model until the user confirms its complete business and inference contract. Inspect the code and provider first; do not ask the user to discover values for you.
 
 Show one complete row per model:
@@ -134,7 +139,7 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Run the relevant rows in [change-and-test-matrix.md](references/change-and-test-matrix.md).
 - For new models and provider/model-ID changes, run the full declared-modality matrix and [billing-verification.md](references/billing-verification.md).
 - Test aliases, permissions, errors, caching, capacity, and `/models` metadata.
-- Verify all media is fully returned within the supported synchronous time budget.
+- Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
 - Record exact evidence and uncertainty in the PR.
 
 ### 6. Open the PR

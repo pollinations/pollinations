@@ -13,11 +13,7 @@ import {
 } from "../services/d1-tinybird-sync.ts";
 import { statusNoticeAdminRoutes } from "./status-notice.ts";
 
-const REVOKE_SOURCES: RevokeKeySource[] = [
-    "github_secret_scanning",
-    "admin",
-    "discord_bot",
-];
+const REVOKE_SOURCES: RevokeKeySource[] = ["github_secret_scanning", "admin"];
 
 function isRevokeSource(value: unknown): value is RevokeKeySource {
     return (

@@ -24,10 +24,7 @@ export async function hashApiKey(value: string): Promise<string> {
         .replace(/=+$/, "");
 }
 
-export type RevokeKeySource =
-    | "github_secret_scanning"
-    | "admin"
-    | "discord_bot";
+export type RevokeKeySource = "github_secret_scanning" | "admin";
 
 export interface RevokeApiKeyInput {
     keyHash: string;

@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     FieldStack,
     IconButton,
     Input,
@@ -70,21 +71,8 @@ export function PromptAgentFields({
             </FieldStack>
 
             <FieldStack
-                label="Allow Pollinations tools"
-                helper="Lets the agent call Pollinations text, image, audio, and video tools using the caller's API access."
-                alignLabelRow
-            >
-                <Switch
-                    checked={form.pollinationsTools}
-                    disabled={disabled}
-                    ariaLabel="Allow Pollinations tools"
-                    onChange={(value) => onChange("pollinationsTools", value)}
-                />
-            </FieldStack>
-
-            <FieldStack
                 label="MCP servers"
-                helper="Public Streamable-HTTP MCP servers whose tools the agent can call. Optional request headers are stored encrypted."
+                helper="Streamable-HTTP MCP servers whose tools the agent can call. Optional request headers are stored encrypted."
                 alignLabelRow
                 action={
                     <Button
@@ -99,8 +87,46 @@ export function PromptAgentFields({
                     </Button>
                 }
             >
+                <div className="rounded-md border border-divider p-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-medium">
+                                    Pollinations MCP
+                                </span>
+                                <Chip size="sm" intent="neutral">
+                                    Built-in
+                                </Chip>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-text-muted">
+                                <span className="break-all font-mono">
+                                    https://mcp.pollinations.ai
+                                </span>
+                                <a
+                                    href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                                >
+                                    Documentation
+                                </a>
+                            </div>
+                            <p className="text-xs text-theme-text-muted">
+                                Uses the caller's Pollinations API access.
+                            </p>
+                        </div>
+                        <Switch
+                            checked={form.pollinationsTools}
+                            disabled={disabled}
+                            ariaLabel="Allow Pollinations tools"
+                            onChange={(value) =>
+                                onChange("pollinationsTools", value)
+                            }
+                        />
+                    </div>
+                </div>
                 {form.mcpServers.length > 0 && (
-                    <div className="grid gap-2">
+                    <div className="mt-2 grid gap-2">
                         {form.mcpServers.map((row, index) => (
                             <div
                                 key={row.id}

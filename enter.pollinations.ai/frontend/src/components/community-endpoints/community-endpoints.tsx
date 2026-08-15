@@ -17,7 +17,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { AgentCard } from "./agent-card.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -109,59 +108,53 @@ export function CommunityEndpoints({
 
     async function handleCreateAgent(
         payload: AgentPayload,
-        listing: AgentListingDetailsPayload | null,
+        listing: AgentListingDetailsPayload,
     ): Promise<void> {
         const response = await apiClient.account.agents.$post({
             json: payload,
         });
         if (!response.ok) throw new Error(await readError(response));
         const createdAgent = (await response.json()) as ManagedAgent;
-        let listingError: string | null = null;
-        if (listing) {
-            const listingResponse = await apiClient.account["my-models"].$post({
-                json: { ...listing, agentId: createdAgent.id },
-            });
-            if (!listingResponse.ok) {
-                listingError = await readError(listingResponse);
-            }
+        const listingResponse = await apiClient.account["my-models"].$post({
+            json: { ...listing, agentId: createdAgent.id },
+        });
+        if (!listingResponse.ok) {
+            const listingError = await readError(listingResponse);
+            await apiClient.account.agents[":id"]
+                .$delete({ param: { id: createdAgent.id } })
+                .catch(() => undefined);
+            throw new Error(listingError);
         }
         await loadEndpoints();
-        if (listingError) {
-            setError(`Agent saved as a draft. ${listingError}`);
-            return;
-        }
-        if (listing) await onChange?.();
+        await onChange?.();
     }
 
     async function handleUpdateAgent(
         payload: AgentPayload,
-        listing: AgentListingDetailsPayload | null,
+        listing: AgentListingDetailsPayload,
     ): Promise<void> {
         if (!editingAgent) return;
         const endpoint = endpoints.find(
             (candidate) => candidate.agentId === editingAgent.id,
         );
+        if (!endpoint) throw new Error("Agent listing not found");
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
             json: payload,
         });
         if (!response.ok) throw new Error(await readError(response));
-        if (listing) {
-            const listingPayload: AgentListingPayload = {
-                ...listing,
-                agentId: editingAgent.id,
-            };
-            const listingResponse = endpoint
-                ? await apiClient.account["my-models"][":id"].update.$post({
-                      param: { id: endpoint.id },
-                      json: listingPayload,
-                  })
-                : await apiClient.account["my-models"].$post({
-                      json: listingPayload,
-                  });
-            if (!listingResponse.ok) {
-                throw new Error(await readError(listingResponse));
-            }
+        const listingPayload: AgentListingPayload = {
+            ...listing,
+            agentId: editingAgent.id,
+        };
+        const listingResponse = await apiClient.account["my-models"][
+            ":id"
+        ].update.$post({
+            param: { id: endpoint.id },
+            json: listingPayload,
+        });
+        if (!listingResponse.ok) {
+            throw new Error(await readError(listingResponse));
         }
         await loadEndpoints();
         await onChange?.();
@@ -178,6 +171,7 @@ export function CommunityEndpoints({
             });
             if (!response.ok) throw new Error(await readError(response));
             await loadEndpoints();
+            await onChange?.();
         } catch (thrown) {
             setError(
                 thrown instanceof Error
@@ -188,12 +182,10 @@ export function CommunityEndpoints({
     }
 
     async function handleCreate(
-        payload: EndpointPayload | AgentListingPayload,
+        payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            // A prompt agent mints its own worker token; only self-hosted
-            // endpoints carry a caller-supplied bearer token.
             json: bearerToken ? { ...payload, bearerToken } : payload,
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -202,7 +194,7 @@ export function CommunityEndpoints({
     }
 
     async function handleUpdate(
-        payload: EndpointPayload | AgentListingPayload,
+        payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
         if (!editing) return;
@@ -333,9 +325,6 @@ export function CommunityEndpoints({
         }
     }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
-    const unregisteredAgents = agents.filter(
-        (agent) => !endpointByAgentId.has(agent.id),
-    );
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
         const agent = endpoint.agentId
@@ -350,7 +339,9 @@ export function CommunityEndpoints({
                 onEdit={() =>
                     agent ? setEditingAgent(agent) : setEditing(endpoint)
                 }
-                onDelete={() => setDeleting(endpoint)}
+                onDelete={() =>
+                    agent ? setDeletingAgent(agent) : setDeleting(endpoint)
+                }
             />
         );
     }
@@ -441,8 +432,7 @@ export function CommunityEndpoints({
                             <Surface className="p-6 text-center text-sm text-theme-text-muted">
                                 Loading…
                             </Surface>
-                        ) : unregisteredAgents.length === 0 &&
-                          agentEndpoints.length === 0 ? (
+                        ) : agentEndpoints.length === 0 ? (
                             <Surface className="p-6 text-center">
                                 <BotIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                                 <p className="mb-2 text-lg font-semibold">
@@ -454,17 +444,7 @@ export function CommunityEndpoints({
                                 </p>
                             </Surface>
                         ) : (
-                            <>
-                                {unregisteredAgents.map((agent) => (
-                                    <AgentCard
-                                        key={agent.id}
-                                        agent={agent}
-                                        onEdit={() => setEditingAgent(agent)}
-                                        onDelete={() => setDeletingAgent(agent)}
-                                    />
-                                ))}
-                                {agentEndpoints.map(renderEndpointCard)}
-                            </>
+                            agentEndpoints.map(renderEndpointCard)
                         )}
                     </div>
                 </Section>

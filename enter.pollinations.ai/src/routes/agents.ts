@@ -346,7 +346,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Delete Agent",
             description:
-                "Delete an unregistered agent. Delete its community model registration first if it is currently registered. API keys require `account:keys`.",
+                "Delete an agent and its community model registration. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Deleted agent",
@@ -359,7 +359,6 @@ export const agentsRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: { description: "Permission denied" },
                 404: { description: "Agent not found" },
-                409: { description: "Agent is still registered" },
             },
         }),
         async (c) => {
@@ -368,24 +367,24 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             await requireOwnedAgent(db, id, user.id);
-            const registration = await db.query.communityEndpoint.findFirst({
-                columns: { id: true },
-                where: eq(schema.communityEndpoint.agentId, id),
-            });
-            if (registration) {
-                throw new HTTPException(409, {
-                    message:
-                        "Delete the agent's community model registration first",
-                });
-            }
-            await db
-                .delete(schema.agent)
-                .where(
-                    and(
-                        eq(schema.agent.id, id),
-                        eq(schema.agent.ownerUserId, user.id),
+            await db.batch([
+                db
+                    .delete(schema.communityEndpoint)
+                    .where(
+                        and(
+                            eq(schema.communityEndpoint.agentId, id),
+                            eq(schema.communityEndpoint.ownerUserId, user.id),
+                        ),
                     ),
-                );
+                db
+                    .delete(schema.agent)
+                    .where(
+                        and(
+                            eq(schema.agent.id, id),
+                            eq(schema.agent.ownerUserId, user.id),
+                        ),
+                    ),
+            ]);
             return c.json({ id });
         },
     );

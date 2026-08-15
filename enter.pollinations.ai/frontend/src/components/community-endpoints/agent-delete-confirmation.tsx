@@ -19,7 +19,8 @@ export function AgentDeleteConfirmation({
             contentClassName="p-6"
         >
             <p className="mb-6 mt-4">
-                Delete this agent draft? This cannot be undone.
+                Delete this agent and its model registration? This cannot be
+                undone.
             </p>
             <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel}>

@@ -39,7 +39,7 @@ type AgentDialogProps = {
     onOpenChange: (open: boolean) => void;
     onSubmit: (
         agent: AgentPayload,
-        listing: AgentListingDetailsPayload | null,
+        listing: AgentListingDetailsPayload,
     ) => Promise<void>;
     trigger?: ReactNode;
 };
@@ -214,14 +214,12 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            const inputModalities = listingStarted
-                ? await inheritedInputModalities(form.baseModel)
-                : null;
+            const inputModalities = await inheritedInputModalities(
+                form.baseModel,
+            );
             await onSubmit(
                 toAgentPayload(form),
-                inputModalities
-                    ? toAgentListingPayload(form, inputModalities)
-                    : null,
+                toAgentListingPayload(form, inputModalities),
             );
             onOpenChange(false);
         } catch (thrown) {
@@ -233,28 +231,18 @@ export function AgentDialog({
         }
     }
 
-    const listingStarted =
-        !!endpoint ||
-        form.name.trim() !== "" ||
-        form.title.trim() !== "" ||
-        form.description.trim() !== "" ||
-        form.visibility === "public";
-    const listingComplete = form.name.trim() !== "" && form.title.trim() !== "";
     const canSubmit =
         !isSubmitting &&
+        form.name.trim() !== "" &&
+        form.title.trim() !== "" &&
         form.systemPrompt.trim() !== "" &&
         form.baseModel.trim() !== "" &&
-        form.mcpServers.every(isValidMcpRow) &&
-        (!listingStarted || listingComplete);
+        form.mcpServers.every(isValidMcpRow);
     const submitLabel = endpoint
         ? "Save Agent"
-        : listingStarted
-          ? form.visibility === "public"
-              ? "Publish Agent"
-              : "Add Private Agent"
-          : agent
-            ? "Save Draft"
-            : "Save Agent Draft";
+        : form.visibility === "public"
+          ? "Publish Agent"
+          : "Add Private Agent";
 
     return (
         <Dialog
@@ -274,7 +262,7 @@ export function AgentDialog({
                     <code>
                         {"{username}"}/{"{model-id}"}
                     </code>{" "}
-                    model. Leave the listing fields empty to save a draft.
+                    model.
                 </p>
             </div>
             <form
@@ -290,7 +278,7 @@ export function AgentDialog({
                         modality="text"
                         canPublish={canPublish}
                         isAgent
-                        required={listingStarted}
+                        required
                         onChange={(key, value) =>
                             setForm((current) => ({
                                 ...current,

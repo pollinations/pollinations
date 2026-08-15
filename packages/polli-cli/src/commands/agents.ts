@@ -146,7 +146,7 @@ const update = new Command("update")
     });
 
 const remove = new Command("delete")
-    .description("Delete an unregistered agent")
+    .description("Delete an agent and its model registration")
     .argument("<id>", "Agent id")
     .action(async (id) => {
         const key = requireKey();

@@ -10,27 +10,23 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type AgentConfig = {
+type Agent = {
+    id: string;
     systemPrompt: string;
     baseModel: string;
-    pollinationsTools?: boolean;
-    mcpServers?: { name: string; url: string }[];
-};
-
-type Agent = AgentConfig & {
-    id: string;
+    pollinationsTools: boolean;
+    mcpServers: {
+        name: string;
+        url: string;
+        headers: Record<string, null>;
+    }[];
     createdAt: string;
     updatedAt: string;
 };
 
-function readConfig(path: string): AgentConfig {
+function readConfig(path: string): unknown {
     try {
-        const config = JSON.parse(readFileSync(path, "utf8")) as AgentConfig;
-        return {
-            ...config,
-            pollinationsTools: config.pollinationsTools ?? false,
-            mcpServers: config.mcpServers ?? [],
-        };
+        return JSON.parse(readFileSync(path, "utf8"));
     } catch (error) {
         printError(
             `Failed to read agent config: ${error instanceof Error ? error.message : "unknown"}`,
@@ -71,11 +67,31 @@ const list = new Command("list")
         }
     });
 
+const get = new Command("get")
+    .description("Get an agent owned by your account")
+    .argument("<id>", "Agent id")
+    .action(async (id) => {
+        const key = requireKey();
+        try {
+            const agent = await gen<Agent>(
+                `/account/agents/${encodeURIComponent(id)}`,
+                { apiKey: key },
+            );
+            if (getOutputMode() === "json") printResult(agent);
+            else printAgents([agent]);
+        } catch (error) {
+            printError(
+                `Failed to get agent: ${error instanceof Error ? error.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    });
+
 const create = new Command("create")
     .description("Create a prompt agent")
     .requiredOption(
         "--config <file>",
-        "JSON config: { systemPrompt, baseModel, pollinationsTools?, mcpServers? }",
+        "JSON agent config file sent directly to the API",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -103,7 +119,7 @@ const update = new Command("update")
     .argument("<id>", "Agent id")
     .requiredOption(
         "--config <file>",
-        "JSON config: { systemPrompt, baseModel, pollinationsTools?, mcpServers? }",
+        "JSON agent config file sent directly to the API",
     )
     .action(async (id, opts) => {
         const key = requireKey();
@@ -150,8 +166,9 @@ const remove = new Command("delete")
     });
 
 export const agentsCommand = new Command("agents")
-    .description("Create, edit, and delete managed agents")
+    .description("Manage prompt agents")
     .addCommand(list)
+    .addCommand(get)
     .addCommand(create)
     .addCommand(update)
     .addCommand(remove);

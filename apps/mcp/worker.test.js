@@ -1,0 +1,268 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+    Client,
+    StreamableHTTPClientTransport,
+} from "@modelcontextprotocol/client";
+import worker from "./worker.js";
+
+const TOKEN = "sk_test_request_scoped";
+const EXPECTED_TOOLS = [
+    "createEmbeddings",
+    "generate3D",
+    "generateAudio",
+    "generateImage",
+    "generateText",
+    "generateVideo",
+    "getBalance",
+    "getModelStatus",
+    "listModels",
+];
+
+function localFetch(input, init) {
+    const request = input instanceof Request ? input : new Request(input, init);
+    return worker.fetch(request);
+}
+
+async function connectClient(options = {}, token = TOKEN) {
+    const client = new Client(
+        { name: "mcp-worker-test", version: "0.0.1" },
+        { capabilities: {}, ...options },
+    );
+    const transport = new StreamableHTTPClientTransport(
+        new URL("https://mcp.pollinations.ai/mcp"),
+        {
+            fetch: localFetch,
+            requestInit: {
+                headers: { Authorization: `Bearer ${token}` },
+            },
+        },
+    );
+    await client.connect(transport);
+    return client;
+}
+
+test("serves health and requires bearer auth", async () => {
+    const health = await worker.fetch(
+        new Request("https://mcp.pollinations.ai/"),
+    );
+    assert.equal(health.status, 200);
+    assert.equal((await health.json()).endpoint, "/mcp");
+
+    const unauthorized = await worker.fetch(
+        new Request("https://mcp.pollinations.ai/mcp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+        }),
+    );
+    assert.equal(unauthorized.status, 401);
+    assert.equal(
+        unauthorized.headers.get("www-authenticate"),
+        'Bearer realm="mcp.pollinations.ai"',
+    );
+});
+
+test("serves modern and legacy clients without sessions", async () => {
+    const modern = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    assert.equal(modern.getProtocolEra(), "modern");
+    const modernTools = (await modern.listTools()).tools;
+    assert.deepEqual(
+        modernTools.map(({ name }) => name).sort(),
+        EXPECTED_TOOLS,
+    );
+    await modern.close();
+
+    const legacy = await connectClient();
+    assert.equal(legacy.getProtocolEra(), "legacy");
+    assert.deepEqual(
+        (await legacy.listTools()).tools.map(({ name }) => name).sort(),
+        EXPECTED_TOOLS,
+    );
+    await legacy.close();
+});
+
+test("keeps bearer tokens scoped to each request", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const seenAuthorizations = new Set();
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init) => {
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/account/balance",
+        );
+        const authorization = new Headers(init?.headers).get("authorization");
+        seenAuthorizations.add(authorization);
+        return Response.json({
+            balance: authorization === "Bearer pk_first" ? 1 : 2,
+        });
+    };
+
+    const options = { versionNegotiation: { mode: "auto" } };
+    const firstClient = await connectClient(options, "pk_first");
+    const secondClient = await connectClient(options, "sk_second");
+
+    const [first, second] = await Promise.all([
+        firstClient.callTool({ name: "getBalance", arguments: {} }),
+        secondClient.callTool({ name: "getBalance", arguments: {} }),
+    ]);
+    assert.match(first.content[0].text, /"pollen": 1/);
+    assert.match(second.content[0].text, /"pollen": 2/);
+    assert.deepEqual(
+        seenAuthorizations,
+        new Set(["Bearer pk_first", "Bearer sk_second"]),
+    );
+
+    await Promise.all([firstClient.close(), secondClient.close()]);
+});
+
+test("maps the image API response format to MCP media blocks", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const requestBodies = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init) => {
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/v1/images/generations",
+        );
+        assert.equal(
+            new Headers(init?.headers).get("authorization"),
+            `Bearer ${TOKEN}`,
+        );
+        const body = JSON.parse(init.body);
+        requestBodies.push(body);
+
+        if (body.response_format === "url") {
+            return Response.json({
+                created: 1,
+                data: [{ url: "https://pollinations.ai/generated/image.jpg" }],
+            });
+        }
+        return Response.json({
+            created: 2,
+            data: [{ b64_json: "iVBORw0KGgo=" }],
+        });
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const linked = await client.callTool({
+        name: "generateImage",
+        arguments: { prompt: "a bee", response_format: "url" },
+    });
+    assert.deepEqual(linked.content[0], {
+        type: "resource_link",
+        uri: "https://pollinations.ai/generated/image.jpg",
+        name: "Generated image",
+    });
+
+    const embedded = await client.callTool({
+        name: "generateImage",
+        arguments: { prompt: "a flower", response_format: "b64_json" },
+    });
+    assert.deepEqual(embedded.content[0], {
+        type: "image",
+        data: "iVBORw0KGgo=",
+        mimeType: "image/png",
+    });
+    assert.deepEqual(requestBodies, [
+        { prompt: "a bee", response_format: "url" },
+        { prompt: "a flower", response_format: "b64_json" },
+    ]);
+
+    await client.close();
+});
+
+test("proxies discovery, embeddings, 3D, and video", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const seen = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        seen.push({
+            url,
+            authorization: new Headers(init.headers).get("authorization"),
+        });
+
+        if (url.endsWith("/audio/models?community=false")) {
+            return Response.json([{ name: "speech-test" }]);
+        }
+        if (url.endsWith("/video/models")) {
+            return Response.json([{ name: "veo" }]);
+        }
+        if (url.endsWith("/v1/models/status?minutes=15")) {
+            return Response.json({ data: [{ model: "speech-test" }] });
+        }
+        if (url.endsWith("/v1/embeddings")) {
+            assert.deepEqual(JSON.parse(init.body), { input: "hello" });
+            return Response.json({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.5], index: 0 }],
+                model: "embedding-test",
+                usage: { prompt_tokens: 1, total_tokens: 1 },
+            });
+        }
+        if (url.endsWith("/3d/a%20bee")) {
+            return new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": "model/gltf-binary" },
+            });
+        }
+        if (url.endsWith("/video/a%20bee?model=veo")) {
+            return new Response(new Uint8Array([4, 5, 6]), {
+                headers: { "Content-Type": "video/mp4" },
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const models = await client.callTool({
+        name: "listModels",
+        arguments: { type: "audio", community: false },
+    });
+    assert.match(models.content[0].text, /speech-test/);
+
+    const status = await client.callTool({
+        name: "getModelStatus",
+        arguments: { minutes: 15 },
+    });
+    assert.match(status.content[0].text, /speech-test/);
+
+    const embeddings = await client.callTool({
+        name: "createEmbeddings",
+        arguments: { input: "hello" },
+    });
+    assert.match(embeddings.content[0].text, /embedding-test/);
+
+    const model3d = await client.callTool({
+        name: "generate3D",
+        arguments: { prompt: "a bee" },
+    });
+    assert.equal(model3d.content[0].resource.mimeType, "model/gltf-binary");
+    assert.equal(model3d.content[0].resource.blob, "AQID");
+
+    const video = await client.callTool({
+        name: "generateVideo",
+        arguments: { prompt: "a bee" },
+    });
+    assert.equal(video.content[0].resource.mimeType, "video/mp4");
+
+    assert.ok(
+        seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),
+    );
+    await client.close();
+});

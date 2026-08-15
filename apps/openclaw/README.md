@@ -90,7 +90,7 @@ See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinat
 
 ## Pollinations Skill (Image/Video/Audio)
 
-The [Pollinations skill on ClawHub](https://github.com/openclaw/skills/blob/main/skills/isaacgounton/pollinations/SKILL.md) gives your agent image, video, and audio generation:
+The [Pollinations skill](https://github.com/pollinations/pollinations/tree/main/apps/openclaw) gives your agent image, video, and audio generation:
 
 ```
 /skill install isaacgounton/pollinations

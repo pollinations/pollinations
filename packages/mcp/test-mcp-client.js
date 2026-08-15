@@ -168,15 +168,21 @@ if (!KEY) {
         return out;
     });
     await step("generateImage (url)", async () => {
-        const out = await call("generateImage", {
-            prompt: "a small red apple",
-            model: "flux",
-            size: "256x256",
-            response_format: "url",
+        const result = await client.callTool({
+            name: "generateImage",
+            arguments: {
+                prompt: "a small red apple",
+                model: "flux",
+                size: "256x256",
+            },
         });
-        if (!/pollinations\.ai/.test(out))
-            throw new Error(`no URL: ${trim(out)}`);
-        return out;
+        const link = result.content?.find(
+            (part) => part.type === "resource_link",
+        );
+        if (!link || !/pollinations\.ai/.test(link.uri)) {
+            throw new Error(`no resource link: ${trim(result.content)}`);
+        }
+        return link.uri;
     });
     await step("getBalance", () => call("getBalance"));
     await step("clearApiKey", () => call("clearApiKey"));

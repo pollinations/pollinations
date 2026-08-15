@@ -1,6 +1,10 @@
 import { CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+import {
+    AgentBasePricingLabel,
+    AgentModelMetadata,
+} from "./agent-model-metadata.tsx";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
@@ -209,6 +213,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
+                    <AgentModelMetadata model={model} />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -261,6 +266,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             </div>
 
             <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
+                <AgentBasePricingLabel model={model} className="mb-1" />
                 <ModelPricingLedger pricing={pricing} />
             </div>
         </Surface>

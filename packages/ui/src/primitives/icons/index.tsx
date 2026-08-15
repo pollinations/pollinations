@@ -27,6 +27,17 @@ export function BeakerIcon(props: IconProps) {
     );
 }
 
+export function BotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 8V4H8" />
+            <rect x="4" y="8" width="16" height="12" rx="2" />
+            <path d="M2 14h2M20 14h2" />
+            <path d="M9 13v2M15 13v2" />
+        </svg>
+    );
+}
+
 export function BookIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -64,6 +75,16 @@ export function ClockIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
+        </svg>
+    );
+}
+
+export function CloudUploadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 13v8" />
+            <path d="m16 17-4-4-4 4" />
+            <path d="M4.4 15.4A5 5 0 0 1 6.5 6.5h1A7 7 0 1 1 20 11.5" />
         </svg>
     );
 }

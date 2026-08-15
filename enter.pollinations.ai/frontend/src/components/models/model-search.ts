@@ -7,6 +7,7 @@ export const MODEL_CATEGORIES = [
     "realtime",
     "text",
     "embedding",
+    "agent",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -53,9 +54,11 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope !== "community" ||
-                category === "text" ||
-                category === "image")
+            (scope === "community"
+                ? category === "text" ||
+                  category === "image" ||
+                  category === "agent"
+                : category !== "agent")
                 ? category
                 : undefined,
         q: query || undefined,

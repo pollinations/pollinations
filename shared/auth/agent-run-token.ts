@@ -10,6 +10,7 @@ const MAX_CLOCK_SKEW_SECONDS = 5;
 export type AgentRunClaims = {
     parentApiKeyId: string;
     runId: string;
+    managedAgentId?: string;
     issuedAt: number;
     expiresAt: number;
 };
@@ -24,6 +25,7 @@ export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
     runId: string;
+    managedAgentId?: string;
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
@@ -33,7 +35,10 @@ export async function signAgentRunToken(opts: {
         throw new Error("Invalid agent run token lifetime");
     }
 
-    const token = await new SignJWT({ version: 1 })
+    const token = await new SignJWT({
+        version: 1,
+        ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
+    })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
         .setAudience(AGENT_RUN_TOKEN_AUDIENCE)
@@ -77,7 +82,10 @@ export async function verifyAgentRunToken(
         typeof payload.jti !== "string" ||
         !payload.jti ||
         typeof payload.iat !== "number" ||
-        typeof payload.exp !== "number"
+        typeof payload.exp !== "number" ||
+        (payload.managedAgentId !== undefined &&
+            (typeof payload.managedAgentId !== "string" ||
+                !payload.managedAgentId))
     ) {
         throw new Error("Invalid agent run token claims");
     }
@@ -85,6 +93,9 @@ export async function verifyAgentRunToken(
     return {
         parentApiKeyId: payload.sub,
         runId: payload.jti,
+        ...(typeof payload.managedAgentId === "string"
+            ? { managedAgentId: payload.managedAgentId }
+            : {}),
         issuedAt: payload.iat,
         expiresAt: payload.exp,
     };

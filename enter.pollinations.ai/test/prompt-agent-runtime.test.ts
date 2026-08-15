@@ -295,19 +295,31 @@ describe("prompt-agent runtime", () => {
         });
     });
 
-    it("rejects MCP redirects without forwarding credentials", async () => {
+    it("refuses MCP redirects without forwarding credentials, and keeps serving", async () => {
         const requests: { url: string; authorization: string | null }[] = [];
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url.startsWith("https://mcp.example.com/")) {
+                    requests.push({
+                        url: request.url,
+                        authorization: request.headers.get("Authorization"),
+                    });
+                    return new Response(null, {
+                        status: 302,
+                        headers: { Location: "https://attacker.example/mcp" },
+                    });
+                }
                 requests.push({
                     url: request.url,
                     authorization: request.headers.get("Authorization"),
                 });
-                return new Response(null, {
-                    status: 302,
-                    headers: { Location: "https://attacker.example/mcp" },
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "no tools" } },
+                    ],
+                    usage: { prompt_tokens: 2, completion_tokens: 2 },
                 });
             }),
         );
@@ -332,14 +344,21 @@ describe("prompt-agent runtime", () => {
             },
         );
 
-        expect(response.status).toBe(502);
-        expect(requests.length).toBeGreaterThan(0);
-        expect(requests).toEqual(
-            requests.map(() => ({
-                url: "https://mcp.example.com/rpc",
-                authorization: "Bearer mcp-secret",
-            })),
-        );
+        // The redirect is refused before it is followed, so the MCP credential
+        // never reaches the attacker host. That guarantee is independent of how
+        // the failure is handled.
+        expect(
+            requests.some((r) => r.url.startsWith("https://attacker.example")),
+        ).toBe(false);
+        expect(
+            requests.filter((r) => r.url === "https://mcp.example.com/rpc")
+                .length,
+        ).toBeGreaterThan(0);
+        // The server drops out rather than failing the request: the agent answers
+        // without its tools.
+        const body = await response.text();
+        expect(response.status, body).toBe(200);
+        expect(JSON.parse(body).choices[0].message.content).toBe("no tools");
     });
 
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
@@ -620,6 +639,55 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(200);
         expect(mcpToolCalls).toBe(16);
         expect(body.usage.tool_call_counts.mcp_call).toBe(17);
+    });
+
+    it("keeps running when an MCP server fails to load", async () => {
+        // A user can save any MCP url and third-party servers go down; losing one
+        // server's tools must not take down the whole agent request.
+        let modelCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === "https://mcp.broken.example/sse") {
+                    return new Response("Method Not Allowed", { status: 405 });
+                }
+                modelCalls++;
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "still here",
+                            },
+                        },
+                    ],
+                    usage: { prompt_tokens: 3, completion_tokens: 2 },
+                });
+            }),
+        );
+
+        const res = await runAgent(
+            { messages: [{ role: "user", content: "hi" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        {
+                            name: "websearch",
+                            url: "https://mcp.broken.example/sse",
+                            headers: [],
+                        },
+                    ],
+                },
+            },
+        );
+
+        const text = await res.text();
+        expect(res.status, text).toBe(200);
+        expect(modelCalls).toBeGreaterThan(0);
+        expect(JSON.parse(text).choices[0].message.content).toBe("still here");
     });
 
     it("passes the caller token only to the built-in Pollinations MCP", async () => {

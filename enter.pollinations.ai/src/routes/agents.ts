@@ -46,10 +46,6 @@ const AgentDeleteResponseSchema = z.object({ id: z.string() });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.agent.$inferSelect;
 
-function agentRuntimeBaseUrl(env: Env["Bindings"]): string {
-    return `${env.BETTER_AUTH_URL.replace(/\/$/, "")}/api/agent-runtime/v1`;
-}
-
 function toResponse(row: AgentRow) {
     const config = parsePromptAgentConfig(row.config);
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
@@ -174,7 +170,6 @@ export const agentsRoutes = new Hono<Env>()
                     id,
                     ownerUserId: user.id,
                     config: serializePromptAgentConfig(config),
-                    baseUrl: agentRuntimeBaseUrl(c.env),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })

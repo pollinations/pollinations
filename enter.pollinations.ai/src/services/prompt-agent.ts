@@ -36,11 +36,35 @@ export const PromptAgentSchema = z
         pollinationsTools: z.boolean().optional().default(false),
         mcpServers: z.array(McpServerSchema).max(8).optional().default([]),
     })
+    .superRefine((config, context) => {
+        const names = new Set(config.pollinationsTools ? ["pollinations"] : []);
+        for (const [index, server] of config.mcpServers.entries()) {
+            if (!names.has(server.name)) {
+                names.add(server.name);
+                continue;
+            }
+            context.addIssue({
+                code: "custom",
+                path: ["mcpServers", index, "name"],
+                message: `MCP server name "${server.name}" is already in use`,
+            });
+        }
+    })
     .describe(
         "No-code agent config: a system prompt over a base model, with optional MCP servers. The platform runs it; no worker source or bearerToken is needed.",
     );
 
 export type PromptAgentConfig = z.infer<typeof PromptAgentSchema>;
+
+export function agentRuntimeBaseUrl(env: {
+    BETTER_AUTH_URL: string;
+    AGENT_RUNTIME_BASE_URL?: string;
+}): string {
+    return (
+        env.AGENT_RUNTIME_BASE_URL ??
+        `${env.BETTER_AUTH_URL.replace(/\/$/, "")}/api/agent-runtime/v1`
+    );
+}
 
 export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {
     try {

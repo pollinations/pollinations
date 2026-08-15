@@ -25,7 +25,7 @@ type McpServer = {
     name: string;
     url: string;
     headers?: Record<string, string>;
-    excludeTools?: string[];
+    includeTools?: string[];
 };
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
@@ -45,6 +45,16 @@ type AgentOutput = {
 };
 
 const MAX_STEPS = 8;
+const POLLINATIONS_AGENT_TOOLS = [
+    "generateImage",
+    "generateVideo",
+    "generate3D",
+    "generateText",
+    "createEmbeddings",
+    "generateAudio",
+    "listModels",
+    "getModelStatus",
+];
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
 
@@ -95,7 +105,8 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
             for (const [name, definition] of Object.entries(
                 await client.tools(),
             )) {
-                if (server.excludeTools?.includes(name)) continue;
+                if (server.includeTools && !server.includeTools.includes(name))
+                    continue;
                 tools[`mcp__${server.name}__${name}`] = definition;
             }
         }
@@ -114,7 +125,7 @@ async function createAgent(runtime: PromptAgentRuntime) {
             name: "pollinations",
             url: runtime.pollinationsMcpUrl,
             headers: { Authorization: `Bearer ${runtime.apiKey}` },
-            excludeTools: ["getBalance"],
+            includeTools: POLLINATIONS_AGENT_TOOLS,
         });
     }
     const { tools, close } = await loadMcpTools(servers);
@@ -196,8 +207,9 @@ async function runAgent(
             abortSignal: signal,
         });
         const limited = hitStepLimit(result.finishReason, result.steps.length);
+        const content = result.steps.map((step) => step.text).join("");
         return {
-            content: limited ? STEP_LIMIT_MESSAGE : result.text,
+            content: limited ? `${content}\n\n${STEP_LIMIT_MESSAGE}` : content,
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
@@ -258,7 +270,7 @@ async function streamAgent(
                             id,
                             created,
                             runtime.config.baseModel,
-                            STEP_LIMIT_MESSAGE,
+                            `\n\n${STEP_LIMIT_MESSAGE}`,
                         ),
                     );
                 }

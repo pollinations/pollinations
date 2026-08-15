@@ -25,7 +25,12 @@ type Agent = AgentConfig & {
 
 function readConfig(path: string): AgentConfig {
     try {
-        return JSON.parse(readFileSync(path, "utf8")) as AgentConfig;
+        const config = JSON.parse(readFileSync(path, "utf8")) as AgentConfig;
+        return {
+            ...config,
+            pollinationsTools: config.pollinationsTools ?? false,
+            mcpServers: config.mcpServers ?? [],
+        };
     } catch (error) {
         printError(
             `Failed to read agent config: ${error instanceof Error ? error.message : "unknown"}`,

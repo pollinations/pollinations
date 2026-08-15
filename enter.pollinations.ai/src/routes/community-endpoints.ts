@@ -52,6 +52,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { agentRuntimeBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
@@ -179,6 +180,9 @@ function fallbackTargetRejection(
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
+    }
+    if (target.agentId !== null || target.delegatesGeneration) {
+        return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
         target.visibility === "private" &&
@@ -538,10 +542,10 @@ async function requireOwnerGithubUsername(
 function toResponse(
     row: CommunityEndpointRow,
     ownerGithubUsername: string,
-    agentBaseUrl: string | null = null,
+    managedAgentBaseUrl: string,
 ) {
     const modality = normalizeCommunityEndpointModality(row.modality);
-    const baseUrl = row.baseUrl ?? agentBaseUrl;
+    const baseUrl = row.baseUrl ?? managedAgentBaseUrl;
     if (!baseUrl) {
         throw new Error(`Community endpoint ${row.id} has no runtime target`);
     }
@@ -718,15 +722,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             const rows = await db
-                .select({
-                    endpoint: schema.communityEndpoint,
-                    agentBaseUrl: schema.agent.baseUrl,
-                })
+                .select()
                 .from(schema.communityEndpoint)
-                .leftJoin(
-                    schema.agent,
-                    eq(schema.communityEndpoint.agentId, schema.agent.id),
-                )
                 .where(eq(schema.communityEndpoint.ownerUserId, user.id))
                 .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
@@ -737,8 +734,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 where: eq(schema.user.id, user.id),
             });
             return c.json({
-                data: rows.map(({ endpoint, agentBaseUrl }) =>
-                    toResponse(endpoint, ownerGithubUsername, agentBaseUrl),
+                data: rows.map((endpoint) =>
+                    toResponse(
+                        endpoint,
+                        ownerGithubUsername,
+                        agentRuntimeBaseUrl(c.env),
+                    ),
                 ),
                 provider: {
                     name: owner?.communityProviderName ?? null,
@@ -985,7 +986,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 })
                 .returning();
             return c.json(
-                toResponse(row, ownerGithubUsername, agent?.baseUrl ?? null),
+                toResponse(
+                    row,
+                    ownerGithubUsername,
+                    agentRuntimeBaseUrl(c.env),
+                ),
             );
         },
     )
@@ -1266,14 +1271,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            const agent = endpoint.agentId
-                ? await db.query.agent.findFirst({
-                      columns: { baseUrl: true },
-                      where: eq(schema.agent.id, endpoint.agentId),
-                  })
-                : null;
             return c.json(
-                toResponse(row, ownerGithubUsername, agent?.baseUrl ?? null),
+                toResponse(
+                    row,
+                    ownerGithubUsername,
+                    agentRuntimeBaseUrl(c.env),
+                ),
             );
         },
     )

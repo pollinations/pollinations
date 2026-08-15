@@ -47,6 +47,7 @@ export type CommunityModelRegistryEntry = {
 
 export async function getCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"] | undefined,
+    agentRuntimeBaseUrl: string,
 ): Promise<CommunityModelRegistryEntry[]> {
     if (!dbBinding) return [];
     const db = drizzle(dbBinding, { schema });
@@ -65,7 +66,6 @@ export async function getCommunityModelRegistryEntries(
             inputModalities: schema.communityEndpoint.inputModalities,
             agentId: schema.communityEndpoint.agentId,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
-            agentBaseUrl: schema.agent.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
@@ -93,15 +93,13 @@ export async function getCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .leftJoin(
-            schema.agent,
-            eq(schema.communityEndpoint.agentId, schema.agent.id),
-        )
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl = row.endpointBaseUrl ?? row.agentBaseUrl;
+        const baseUrl =
+            row.endpointBaseUrl ??
+            (row.agentId === null ? null : agentRuntimeBaseUrl);
         if (
             !baseUrl ||
             (row.agentId === null && !row.endpointBearerTokenCiphertext)

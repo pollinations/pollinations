@@ -11,6 +11,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -84,12 +85,18 @@ export type FallbackModelOption = {
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(
-    models: { name: string; type: string; community?: boolean }[],
+    models: {
+        name: string;
+        type: string;
+        community?: boolean;
+        agent?: boolean;
+    }[],
 ): FallbackModelOption[] {
     return models
         .filter(
             (model) =>
                 model.community &&
+                !model.agent &&
                 (model.type === "text" || model.type === "image"),
         )
         .map((model) => ({
@@ -362,7 +369,7 @@ export function isValidMcpRow(row: McpServerRow): boolean {
     const url = row.url.trim();
     if (!name && !url) return true;
     try {
-        new URL(url);
+        normalizeCommunityEndpointBaseUrl(url);
     } catch {
         return false;
     }
@@ -385,7 +392,16 @@ function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
         if (!url) {
             throw new Error(`MCP server "${name}" needs a URL`);
         }
-        servers.push({ name, url });
+        try {
+            servers.push({
+                name,
+                url: normalizeCommunityEndpointBaseUrl(url),
+            });
+        } catch {
+            throw new Error(
+                `MCP server "${name}" must use HTTPS and target a public host`,
+            );
+        }
     }
     return servers;
 }
@@ -399,11 +415,21 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     if (!baseModel) {
         throw new Error("Base model is required for a prompt agent");
     }
+    const mcpServers = mcpServersToPayload(form.mcpServers);
+    const names = new Set(form.pollinationsTools ? ["pollinations"] : []);
+    for (const server of mcpServers) {
+        if (names.has(server.name)) {
+            throw new Error(
+                `MCP server name "${server.name}" is already in use`,
+            );
+        }
+        names.add(server.name);
+    }
     return {
         systemPrompt,
         baseModel,
         pollinationsTools: form.pollinationsTools,
-        mcpServers: mcpServersToPayload(form.mcpServers),
+        mcpServers,
     };
 }
 

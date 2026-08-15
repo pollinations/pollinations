@@ -80,6 +80,30 @@ describe("prompt-agent config", () => {
             ).toBe(false);
         }
     });
+
+    it("rejects duplicate MCP server names", () => {
+        expect(
+            PromptAgentSchema.safeParse({
+                ...config,
+                mcpServers: [
+                    { name: "docs", url: "https://one.example.com/mcp" },
+                    { name: "docs", url: "https://two.example.com/mcp" },
+                ],
+            }).success,
+        ).toBe(false);
+        expect(
+            PromptAgentSchema.safeParse({
+                ...config,
+                pollinationsTools: true,
+                mcpServers: [
+                    {
+                        name: "pollinations",
+                        url: "https://example.com/mcp",
+                    },
+                ],
+            }).success,
+        ).toBe(false);
+    });
 });
 
 describe("prompt-agent runtime", () => {
@@ -133,7 +157,6 @@ describe("prompt-agent runtime", () => {
                 pollinationsTools: false,
                 mcpServers: [],
             }),
-            baseUrl: "https://enter.test/api/agent-runtime/v1",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -287,7 +310,7 @@ describe("prompt-agent runtime", () => {
                             {
                                 message: {
                                     role: "assistant",
-                                    content: "",
+                                    content: "checking ",
                                     tool_calls: [
                                         {
                                             id: "c1",
@@ -335,7 +358,7 @@ describe("prompt-agent runtime", () => {
                 tool_call_counts: Record<string, number>;
             };
         };
-        expect(json.choices[0].message.content).toBe("done");
+        expect(json.choices[0].message.content).toBe("checking done");
         expect(json.choices[0].finish_reason).toBe("stop");
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
@@ -417,6 +440,10 @@ describe("prompt-agent runtime", () => {
                                 },
                                 {
                                     name: "getBalance",
+                                    inputSchema: { type: "object" },
+                                },
+                                {
+                                    name: "getUsage",
                                     inputSchema: { type: "object" },
                                 },
                             ],

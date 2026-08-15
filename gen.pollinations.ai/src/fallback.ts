@@ -227,6 +227,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (candidate.agentId || candidate.delegatesGeneration) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }

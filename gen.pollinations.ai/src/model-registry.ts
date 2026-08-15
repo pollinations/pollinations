@@ -222,16 +222,19 @@ function buildRegistry(
 }
 
 async function loadGenerationModelRegistry(
-    dbBinding: CloudflareBindings["DB"] | undefined,
+    env: Pick<CloudflareBindings, "DB" | "AGENT_RUNTIME_BASE_URL">,
 ): Promise<GenerationModelRegistry> {
     const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
+        await getCommunityModelRegistryEntries(
+            env.DB,
+            env.AGENT_RUNTIME_BASE_URL,
+        )
     ).map(communityEntryToGenerationEntry);
     return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
 }
 
 export async function getGenerationModelRegistry(
-    env: Pick<CloudflareBindings, "DB">,
+    env: Pick<CloudflareBindings, "DB" | "AGENT_RUNTIME_BASE_URL">,
 ): Promise<GenerationModelRegistry> {
     if (
         cachedRegistry &&
@@ -246,7 +249,7 @@ export async function getGenerationModelRegistry(
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const registry = await loadGenerationModelRegistry(dbBinding);
+    const registry = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
         expiresAt: Date.now() + REGISTRY_TTL_MS,

@@ -212,6 +212,7 @@ export function CommunityEndpointDialog({
             ...current,
             mode,
             modality: mode === "agent" ? "text" : current.modality,
+            bearerToken: mode === "agent" ? "" : current.bearerToken,
             agentId:
                 mode === "agent" ? current.agentId || agents[0]?.id || "" : "",
         }));

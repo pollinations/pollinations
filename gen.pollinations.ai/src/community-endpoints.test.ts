@@ -3410,7 +3410,10 @@ fixtureTest(
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
 
         const registryEntry = (
-            await getCommunityModelRegistryEntries(env.DB)
+            await getCommunityModelRegistryEntries(
+                env.DB,
+                env.AGENT_RUNTIME_BASE_URL,
+            )
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
             brand: "Example AI",
@@ -3716,6 +3719,7 @@ fixtureTest(
         const enterEnv = {
             ...env,
             BETTER_AUTH_URL: "https://enter.test",
+            AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
         };
         const enterApi = await createEnterFrontendApi();
         const cookie = (await signedSessionCookie(sessionToken)).replace(
@@ -3760,9 +3764,7 @@ fixtureTest(
             .select()
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
-        expect(storedAgent.baseUrl).toBe(
-            `${enterEnv.BETTER_AUTH_URL}/api/agent-runtime/v1`,
-        );
+        expect(storedAgent.id).toBe(agent.id);
         const updateAgentResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3828,7 +3830,7 @@ fixtureTest(
         };
         expect(registration.id).not.toBe(agent.id);
         expect(registration.agentId).toBe(agent.id);
-        expect(registration.baseUrl).toBe(storedAgent.baseUrl);
+        expect(registration.baseUrl).toBe(enterEnv.AGENT_RUNTIME_BASE_URL);
         const paidUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -3846,10 +3848,13 @@ fixtureTest(
         );
         expect(paidUpdateResponse.status).toBe(400);
         const registryEntry = (
-            await getCommunityModelRegistryEntries(env.DB)
+            await getCommunityModelRegistryEntries(
+                env.DB,
+                env.AGENT_RUNTIME_BASE_URL,
+            )
         ).find((entry) => entry.id === registration.modelId);
         expect(registryEntry?.communityEndpoint).toMatchObject({
-            baseUrl: storedAgent.baseUrl,
+            baseUrl: env.AGENT_RUNTIME_BASE_URL,
             agentId: agent.id,
             upstreamModel: agent.id,
             bearerTokenCiphertext: null,
@@ -3873,7 +3878,7 @@ fixtureTest(
             managedAgentId: agent.id,
         });
         expect(gatewayContext.modelConfig).toMatchObject({
-            "custom-host": storedAgent.baseUrl,
+            "custom-host": env.AGENT_RUNTIME_BASE_URL,
             model: agent.id,
         });
 
@@ -3981,6 +3986,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         priv: `private-${crypto.randomUUID().slice(0, 8)}`,
         otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
         disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
+        delegating: `delegating-${crypto.randomUUID().slice(0, 8)}`,
         image: `image-${crypto.randomUUID().slice(0, 8)}`,
         pricey: `pricey-${crypto.randomUUID().slice(0, 8)}`,
     };
@@ -4033,6 +4039,20 @@ fixtureTest("validates community fallback targets on write", async () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "private-upstream",
             bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.delegating,
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "delegating-upstream",
+            bearerTokenCiphertext,
+            delegatesGeneration: true,
             promptTextPrice: 0,
             completionTextPrice: 0,
             createdAt: new Date(),
@@ -4141,6 +4161,15 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(disabledTarget.status).toBe(400);
     expect(await disabledTarget.text()).toContain("must be active");
 
+    const delegatingTarget = await createWithFallback(
+        `${primaryName}-delegating`,
+        communityModelId(ownerGithubUsername, targetNames.delegating),
+    );
+    expect(delegatingTarget.status).toBe(400);
+    expect(await delegatingTarget.text()).toContain(
+        "cannot delegate generation",
+    );
+
     const wrongModality = await createWithFallback(
         `${primaryName}-modality`,
         communityModelId(ownerGithubUsername, targetNames.image),
@@ -4210,6 +4239,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         targetNames.image,
         targetNames.pricey,
         targetNames.disabled,
+        targetNames.delegating,
     ]) {
         expect(eligible).not.toContain(
             communityModelId(ownerGithubUsername, rejected),
@@ -4299,6 +4329,14 @@ fixtureTest(
             endpoint("repriced-target", {
                 completionTextPrice: 0.5 / 1_000_000,
             }),
+            endpoint("delegating-primary", {
+                fallbackModelIds: [id("delegating-target")],
+            }),
+            endpoint("delegating-target", {
+                delegatesGeneration: true,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+            }),
             endpoint("second-target", {
                 promptTextPrice: 0.1 / 1_000_000,
                 completionTextPrice: 0.1 / 1_000_000,
@@ -4380,6 +4418,7 @@ fixtureTest(
         expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
+        expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.

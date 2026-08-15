@@ -18,7 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v24: one-year membership and established GitHub are now available.
+// Bumped to v24: one-year membership is now available; established GitHub is
+// built behind coming_soon.
 const CACHE_KEY = "quests:catalog:v24";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;

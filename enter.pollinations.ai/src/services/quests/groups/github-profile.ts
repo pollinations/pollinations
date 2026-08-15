@@ -170,6 +170,10 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     scope: "perSubject",
     rewardAmount: 3,
     balanceBucket: "tier",
+    // Built but not launched — hidden from the UI, not grantable. The
+    // perSubject idempotency below keeps one GitHub identity to one reward
+    // whenever this is flipped to available.
+    state: "coming_soon",
 };
 
 const publicRepoStarsQuest: QuestDefinition = {

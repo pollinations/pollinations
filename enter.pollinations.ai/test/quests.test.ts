@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as questIndex from "../src/services/quests/index.ts";
-import type { QuestGroup } from "../src/services/quests/types.ts";
+import { type QuestGroup, toReward } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -301,7 +301,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         "One-year Pollinations member",
     );
     expectStableCatalogFields("github_established", {
-        state: "available",
+        state: "coming_soon",
         rewardAmount: 3,
         balanceBucket: "tier",
     });
@@ -1177,10 +1177,13 @@ test("quest check continues after one group fails", async ({
     }
 });
 
-test("github established-account quest records once per GitHub identity", async ({
+test("github established-account quest is coming_soon and never records", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
+    // Built but launch-gated (state "coming_soon"): even an account well over
+    // the two-year age threshold records no reward, and the group does not call
+    // GitHub profile endpoints for inert quests.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
@@ -1189,121 +1192,67 @@ test("github established-account quest records once per GitHub identity", async 
     await mocks.enable("github", "tinybird");
 
     mocks.github.state.requests = [];
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
-
-    expect(
-        mocks.github.state.requests.some(
-            (request) => request.path === `/user/${user.githubId}`,
-        ),
-    ).toBe(true);
-
-    mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
 
     const establishedRows = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            userId: schema.rewards.userId,
-            pollenAmount: schema.rewards.pollenAmount,
-            balanceBucket: schema.rewards.balanceBucket,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toEqual([
-        {
-            idempotencyKey: `quest:github_established:github:${user.githubId}`,
-            userId: user.id,
-            pollenAmount: 3,
-            balanceBucket: "tier",
-        },
-    ]);
-    expect(
-        mocks.github.state.requests.some(
-            (request) =>
-                request.path === `/user/${user.githubId}` ||
-                request.path.startsWith("/users/"),
-        ),
-    ).toBe(false);
-});
-
-test("github established-account quest rejects duplicate GitHub identities", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = "2020-01-01T00:00:00.000Z";
-    await mocks.enable("github", "tinybird");
-
-    await db.insert(schema.user).values({
-        id: "duplicate-github-user",
-        name: "Duplicate GitHub User",
-        email: "duplicate-github-user@example.com",
-        emailVerified: false,
-        image: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        githubId: user.githubId,
-        githubUsername: user.githubUsername,
-        tierBalance: 0,
-        packBalance: 0,
-    });
-
-    await checkQuestsForUser(env, user.id);
-    mocks.github.state.requests = [];
-    const duplicate = await checkQuestsForUser(env, "duplicate-github-user");
-
-    const establishedRows = await db
-        .select({ userId: schema.rewards.userId })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toEqual([{ userId: user.id }]);
-    expect(duplicate.recorded).toBe(0);
-    expect(
-        mocks.github.state.requests.some(
-            (request) =>
-                request.path === `/user/${user.githubId}` ||
-                request.path.startsWith("/users/"),
-        ),
-    ).toBe(false);
-});
-
-test("github established-account quest waits until the threshold", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date(
-        Date.now() - 729 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    await mocks.enable("github", "tinybird");
-
-    mocks.github.state.requests = [];
-    await checkQuestsForUser(env, user.id);
-
-    let establishedRows = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "github_established"));
     expect(establishedRows).toHaveLength(0);
+
+    const [balance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
     expect(
         mocks.github.state.requests.some(
-            (request) => request.path === `/user/${user.githubId}`,
+            (request) =>
+                request.path === `/user/${user.githubId}` ||
+                request.path.startsWith("/users/"),
         ),
-    ).toBe(true);
+    ).toBe(false);
+});
 
-    mocks.github.state.user.created_at = new Date(
-        Date.now() - 730 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    await checkQuestsForUser(env, user.id);
+test("perSubject rewards key on the subject, not the user", async () => {
+    // github_established is gated, so cover the scope it introduced directly:
+    // one GitHub identity maps to one key no matter which account claims it.
+    const perSubjectQuest = {
+        id: "github_established",
+        title: "Established GitHub account",
+        description: "",
+        category: "contribute",
+        scope: "perSubject",
+        rewardAmount: 3,
+        balanceBucket: "tier",
+    } as const;
 
-    establishedRows = await db
-        .select({ id: schema.rewards.id })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toHaveLength(1);
+    const first = toReward({
+        quest: perSubjectQuest,
+        userId: "user-a",
+        idempotencySubject: "github:4242",
+    });
+    const second = toReward({
+        quest: perSubjectQuest,
+        userId: "user-b",
+        idempotencySubject: "github:4242",
+    });
+    expect(first.idempotencyKey).toBe("quest:github_established:github:4242");
+    expect(second.idempotencyKey).toBe(first.idempotencyKey);
+    expect(first.userId).toBe("user-a");
+    expect(second.userId).toBe("user-b");
+
+    expect(() =>
+        toReward({ quest: perSubjectQuest, userId: "user-a" }),
+    ).toThrow(/requires an idempotency subject/);
+
+    // perUser stays keyed on the user.
+    expect(
+        toReward({
+            quest: { ...perSubjectQuest, scope: "perUser" },
+            userId: "user-a",
+        }).idempotencyKey,
+    ).toBe("quest:github_established:user:user-a");
 });
 
 test("github public repo stars quest is coming_soon and never records", async ({

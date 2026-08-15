@@ -33,7 +33,7 @@ const PINNED_NEWS: Highlight[] = [
             "Create managed prompt agents and call them through the Pollinations API like any other model.",
         details: [
             "Choose a base model, add instructions, and optionally enable Pollinations tools or connect MCP servers.",
-            "Create an agent from [My Agents & Models](/my-models).",
+            "Create an agent from [My Models](/my-models).",
         ],
     },
     {

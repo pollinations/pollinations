@@ -342,23 +342,13 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 15,
         balanceBucket: "tier",
     });
-    expectStableCatalogFields("app_users_3", {
-        state: "available",
-        rewardAmount: 10,
-        balanceBucket: "tier",
-    });
     expectStableCatalogFields("app_users_10", {
         state: "available",
-        rewardAmount: 25,
-        balanceBucket: "tier",
-    });
-    expectStableCatalogFields("app_pollen_1", {
-        state: "available",
-        rewardAmount: 10,
+        rewardAmount: 15,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("app_pollen_10", {
-        state: "available",
+        state: "coming_soon",
         rewardAmount: 25,
         balanceBucket: "tier",
     });
@@ -972,7 +962,7 @@ test("six-month account quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("app growth quests record connection, paid usage, reach, and Pollen milestones", async ({
+test("app growth quests record connection, paid usage, and ten-user reach", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -982,15 +972,15 @@ test("app growth quests record connection, paid usage, reach, and Pollen milesto
     mocks.tinybird.state.appUsageResponse = [
         {
             userId: user.id,
-            pollenUsed: 10,
-            paidRequests: 1,
+            pollenUsed: 11,
+            paidRequests: 2,
         },
     ];
     mocks.tinybird.state.appDirectoryResponse = [
         { github_user_id: String(user.githubId) },
     ];
 
-    const [externalUserId] = await seedByopConnections(user.id, 10, "byop");
+    const [externalUserId] = await seedByopConnections(user.id, 11, "byop");
     if (!externalUserId) throw new Error("Expected an external BYOP user");
 
     mocks.tinybird.state.pipeCalls = [];
@@ -1015,10 +1005,7 @@ test("app growth quests record connection, paid usage, reach, and Pollen milesto
         new Set([
             "app_active",
             "app_paid_request",
-            "app_users_3",
             "app_users_10",
-            "app_pollen_1",
-            "app_pollen_10",
             "app_listed",
         ]),
     );
@@ -1055,7 +1042,36 @@ test("app growth quests record connection, paid usage, reach, and Pollen milesto
     ]);
 });
 
-test("app user and Pollen milestones are independent", async ({
+test("app milestones use inclusive thresholds while coming-soon Pollen stays inert", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    mocks.tinybird.state.appUsageResponse = [
+        {
+            userId: user.id,
+            pollenUsed: 10,
+            paidRequests: 0,
+        },
+    ];
+
+    await seedByopConnections(user.id, 10, "milestone");
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("app_users_10")).toBe(true);
+    expect(questIds.has("app_pollen_10")).toBe(false);
+    expect(questIds.has("app_paid_request")).toBe(false);
+});
+
+test("app milestones do not record below their thresholds", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1070,8 +1086,7 @@ test("app user and Pollen milestones are independent", async ({
         },
     ];
 
-    await seedByopConnections(user.id, 10, "milestone");
-
+    await seedByopConnections(user.id, 9, "below-milestone");
     await checkQuestsForUser(env, user.id);
 
     const rewards = await db
@@ -1079,11 +1094,9 @@ test("app user and Pollen milestones are independent", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("app_users_3")).toBe(true);
-    expect(questIds.has("app_users_10")).toBe(true);
-    expect(questIds.has("app_pollen_1")).toBe(true);
-    expect(questIds.has("app_pollen_10")).toBe(false);
     expect(questIds.has("app_paid_request")).toBe(false);
+    expect(questIds.has("app_users_10")).toBe(false);
+    expect(questIds.has("app_pollen_10")).toBe(false);
 });
 
 test("quest check records model-usage rewards per modality", async ({

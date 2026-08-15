@@ -57,17 +57,6 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const threeAppUsersQuest: QuestDefinition = {
-    id: "app_users_3",
-    title: "Your apps reach three users",
-    description:
-        "At least three external users connect to your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps.",
-    category: "grow",
-    scope: "perUser",
-    rewardAmount: 10,
-    balanceBucket: "tier",
-};
-
 const tenAppUsersQuest: QuestDefinition = {
     id: "app_users_10",
     title: "Your apps reach ten users",
@@ -75,18 +64,7 @@ const tenAppUsersQuest: QuestDefinition = {
         "At least ten external users connect to your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 25,
-    balanceBucket: "tier",
-};
-
-const onePollenAppUsageQuest: QuestDefinition = {
-    id: "app_pollen_1",
-    title: "One Pollen used in your apps",
-    description:
-        "Your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps process 1 Pollen of billed usage.",
-    category: "grow",
-    scope: "perUser",
-    rewardAmount: 10,
+    rewardAmount: 15,
     balanceBucket: "tier",
 };
 
@@ -99,6 +77,7 @@ const tenPollenAppUsageQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 25,
     balanceBucket: "tier",
+    state: "coming_soon",
 };
 
 const appListedQuest: QuestDefinition = {
@@ -116,9 +95,7 @@ const appListedQuest: QuestDefinition = {
 const QUESTS = [
     firstByopExternalUserQuest,
     firstPaidSpendInAppQuest,
-    threeAppUsersQuest,
     tenAppUsersQuest,
-    onePollenAppUsageQuest,
     tenPollenAppUsageQuest,
     appListedQuest,
 ];
@@ -148,14 +125,9 @@ export async function findRewardProposalsForUser(
 
     const usageQuestIds = [
         firstPaidSpendInAppQuest.id,
-        onePollenAppUsageQuest.id,
         tenPollenAppUsageQuest.id,
     ];
-    const reachQuestIds = [
-        firstByopExternalUserQuest.id,
-        threeAppUsersQuest.id,
-        tenAppUsersQuest.id,
-    ];
+    const reachQuestIds = [firstByopExternalUserQuest.id, tenAppUsersQuest.id];
     const [appUsage, appReach, listedAppRows] = await Promise.all([
         usageQuestIds.some((id) => rewardableQuestIds.has(id))
             ? loadAppUsage(ctx, user)
@@ -180,19 +152,9 @@ export async function findRewardProposalsForUser(
             ? [{ quest: firstPaidSpendInAppQuest, userId: user.id }]
             : []),
         ...(appReach &&
-        appReach.externalUsers >= 3 &&
-        rewardableQuestIds.has(threeAppUsersQuest.id)
-            ? [{ quest: threeAppUsersQuest, userId: user.id }]
-            : []),
-        ...(appReach &&
         appReach.externalUsers >= 10 &&
         rewardableQuestIds.has(tenAppUsersQuest.id)
             ? [{ quest: tenAppUsersQuest, userId: user.id }]
-            : []),
-        ...(appUsage &&
-        appUsage.pollenUsed >= 1 &&
-        rewardableQuestIds.has(onePollenAppUsageQuest.id)
-            ? [{ quest: onePollenAppUsageQuest, userId: user.id }]
             : []),
         ...(appUsage &&
         appUsage.pollenUsed >= 10 &&

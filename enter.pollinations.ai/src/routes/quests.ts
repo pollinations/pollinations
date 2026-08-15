@@ -18,8 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped past the pending v24 quest launch: app_paid_request and the BYOP user
-// and Pollen milestone quests are now available.
+// Bumped past the pending v24 quest launch: app_paid_request and app_users_10
+// are now available; app_pollen_10 is visible as coming soon.
 const CACHE_KEY = "quests:catalog:v25";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;

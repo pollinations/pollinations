@@ -2,9 +2,9 @@
 
 ## Design Principles
 
-1. **Thin proxy, single gateway.** All HTTP goes through `gen.pollinations.ai`. Do not add second hostnames (e.g. direct `enter.pollinations.ai` or `media.pollinations.ai`) — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
+1. **Thin proxy.** API calls go through `gen.pollinations.ai`; generated binary outputs are uploaded unlisted to `media.pollinations.ai` and returned as resource links. Do not call other service hosts directly — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
 2. **No hardcoded model or voice enums.** Validate against the live registry via `utils/models.js` (5-minute cache). Tool param schemas should be `z.string()` with a "use listX for the live list" hint.
-3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content-block is required (e.g. wrap binary as base64 image/audio).
+3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content block is required (for example, upload generated binary output and return a resource link).
 4. **Minimal tool surface.** Every tool is extra context for the LLM to reason over and a chance to pick the wrong one. Add only what's genuinely useful inside a host (Claude Desktop, Cursor, etc.).
 
 ## File Structure

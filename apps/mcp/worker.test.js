@@ -121,70 +121,75 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     await Promise.all([firstClient.close(), secondClient.close()]);
 });
 
-test("maps the image API response format to MCP media blocks", async (t) => {
+test("uploads generated images and returns an MCP resource link", async (t) => {
     const originalFetch = globalThis.fetch;
-    const requestBodies = [];
+    let generationBody;
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
 
     globalThis.fetch = async (input, init) => {
-        assert.equal(
-            String(input),
-            "https://gen.pollinations.ai/v1/images/generations",
-        );
+        const url = String(input);
         assert.equal(
             new Headers(init?.headers).get("authorization"),
             `Bearer ${TOKEN}`,
         );
-        const body = JSON.parse(init.body);
-        requestBodies.push(body);
-
-        if (body.response_format === "url") {
+        if (url === "https://gen.pollinations.ai/v1/images/generations") {
+            generationBody = JSON.parse(init.body);
             return Response.json({
                 created: 1,
-                data: [{ url: "https://pollinations.ai/generated/image.jpg" }],
+                data: [
+                    {
+                        url: "https://gen.pollinations.ai/image/a%20bee",
+                    },
+                ],
             });
         }
-        return Response.json({
-            created: 2,
-            data: [{ b64_json: "iVBORw0KGgo=" }],
-        });
+        if (url === "https://gen.pollinations.ai/image/a%20bee") {
+            return new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": "image/png" },
+            });
+        }
+        if (url === "https://media.pollinations.ai/upload") {
+            const file = init.body.get("file");
+            assert.equal(file.type, "image/png");
+            assert.deepEqual(
+                new Uint8Array(await file.arrayBuffer()),
+                new Uint8Array([1, 2, 3]),
+            );
+            assert.equal(init.body.get("tags"), null);
+            return Response.json({
+                url: "https://media.pollinations.ai/generated-image",
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
     };
 
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
-    const linked = await client.callTool({
+    const result = await client.callTool({
         name: "generateImage",
-        arguments: { prompt: "a bee", response_format: "url" },
+        arguments: { prompt: "a bee" },
     });
-    assert.deepEqual(linked.content[0], {
+    assert.deepEqual(result.content[0], {
         type: "resource_link",
-        uri: "https://pollinations.ai/generated/image.jpg",
+        uri: "https://media.pollinations.ai/generated-image",
         name: "Generated image",
-    });
-
-    const embedded = await client.callTool({
-        name: "generateImage",
-        arguments: { prompt: "a flower", response_format: "b64_json" },
-    });
-    assert.deepEqual(embedded.content[0], {
-        type: "image",
-        data: "iVBORw0KGgo=",
         mimeType: "image/png",
     });
-    assert.deepEqual(requestBodies, [
-        { prompt: "a bee", response_format: "url" },
-        { prompt: "a flower", response_format: "b64_json" },
-    ]);
+    assert.deepEqual(generationBody, {
+        prompt: "a bee",
+        response_format: "url",
+    });
 
     await client.close();
 });
 
-test("proxies discovery, embeddings, 3D, and video", async (t) => {
+test("proxies discovery and uploads generated audio, video, and 3D", async (t) => {
     const originalFetch = globalThis.fetch;
     const seen = [];
+    const uploadedTypes = [];
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
@@ -224,6 +229,18 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
                 headers: { "Content-Type": "video/mp4" },
             });
         }
+        if (url.endsWith("/audio/hello?model=speech-test")) {
+            return new Response(new Uint8Array([7, 8, 9]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        if (url === "https://media.pollinations.ai/upload") {
+            const file = init.body.get("file");
+            uploadedTypes.push(file.type);
+            return Response.json({
+                url: `https://media.pollinations.ai/${uploadedTypes.length}`,
+            });
+        }
         throw new Error(`Unexpected URL: ${url}`);
     };
 
@@ -252,14 +269,39 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
         name: "generate3D",
         arguments: { prompt: "a bee" },
     });
-    assert.equal(model3d.content[0].resource.mimeType, "model/gltf-binary");
-    assert.equal(model3d.content[0].resource.blob, "AQID");
+    assert.deepEqual(model3d.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/1",
+        name: "Generated 3D model",
+        mimeType: "model/gltf-binary",
+    });
 
     const video = await client.callTool({
         name: "generateVideo",
         arguments: { prompt: "a bee" },
     });
-    assert.equal(video.content[0].resource.mimeType, "video/mp4");
+    assert.deepEqual(video.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/2",
+        name: "Generated video",
+        mimeType: "video/mp4",
+    });
+
+    const audio = await client.callTool({
+        name: "generateAudio",
+        arguments: { text: "hello", model: "speech-test" },
+    });
+    assert.deepEqual(audio.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/3",
+        name: "Generated audio",
+        mimeType: "audio/mpeg",
+    });
+    assert.deepEqual(uploadedTypes, [
+        "model/gltf-binary",
+        "video/mp4",
+        "audio/mpeg",
+    ]);
 
     assert.ok(
         seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),

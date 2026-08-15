@@ -7,7 +7,10 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
+import {
+    agentRuntimeRoutes,
+    POLLINATIONS_MCP_URL,
+} from "../src/routes/agent-runtime.ts";
 import { PromptAgentSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
@@ -29,6 +32,17 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     genBaseUrl: "https://gen.test.example",
     pollinationsMcpUrl: "https://mcp.pollinations.test/",
 };
+
+describe("built-in Pollinations MCP endpoint", () => {
+    // The MCP worker serves Streamable HTTP only at /mcp and 404s every other
+    // pathname (apps/mcp/worker.js). Shipping the bare host broke every managed
+    // agent with Pollinations tools; the runtime tests mock whatever url they are
+    // given, so only asserting the real constant catches it.
+    it("points at the /mcp transport path", () => {
+        expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai/mcp");
+        expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/mcp");
+    });
+});
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({

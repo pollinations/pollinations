@@ -106,7 +106,7 @@ export function AgentDialog({
                           ...row,
                           [key]: value,
                           headers:
-                              key === "name" && value !== row.name
+                              value !== row[key]
                                   ? row.headers.map((header) => ({
                                         ...header,
                                         saved: false,

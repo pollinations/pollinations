@@ -3801,7 +3801,7 @@ fixtureTest(
                 "X-Team": "pollinations",
             },
         });
-        const updateAgentResponse = await fetchEnterApi(
+        const partialUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
                 method: "PATCH",
@@ -3811,6 +3811,31 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     systemPrompt: "You are an editable SQL tutor.",
+                }),
+            }),
+            enterEnv,
+        );
+        expect(partialUpdateResponse.status).toBe(400);
+        const updateAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    ...promptAgent,
+                    systemPrompt: "You are an editable SQL tutor.",
+                    mcpServers: [
+                        {
+                            ...promptAgent.mcpServers[0],
+                            headers: {
+                                Authorization: null,
+                                "X-Team": null,
+                            },
+                        },
+                    ],
                 }),
             }),
             enterEnv,
@@ -3839,6 +3864,34 @@ fixtureTest(
             storedAgent.mcpHeadersCiphertext,
         );
 
+        const reuseHeadersAtNewUrlResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                    baseModel: promptAgent.baseModel,
+                    pollinationsTools: true,
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://other.example.com/rpc",
+                            headers: { Authorization: null },
+                        },
+                    ],
+                }),
+            }),
+            enterEnv,
+        );
+        expect(reuseHeadersAtNewUrlResponse.status).toBe(400);
+        expect(await reuseHeadersAtNewUrlResponse.text()).toContain(
+            "needs a value",
+        );
+
         const updateHeadersResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3848,6 +3901,9 @@ fixtureTest(
                     Cookie: cookie,
                 },
                 body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                    baseModel: promptAgent.baseModel,
+                    pollinationsTools: true,
                     mcpServers: [
                         {
                             name: "docs",
@@ -3885,6 +3941,55 @@ fixtureTest(
                 "X-New": "new-secret",
             },
         });
+        const credentialedPublicResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Managed SQL Tutor",
+                    agentId: agent.id,
+                    visibility: "public",
+                }),
+            }),
+            enterEnv,
+        );
+        expect(credentialedPublicResponse.status).toBe(400);
+        expect(await credentialedPublicResponse.text()).toContain(
+            "cannot use private MCP headers",
+        );
+
+        const clearPrivateMcpResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                    baseModel: promptAgent.baseModel,
+                    pollinationsTools: true,
+                }),
+            }),
+            enterEnv,
+        );
+        expect(clearPrivateMcpResponse.status).toBe(200);
+        await expect(clearPrivateMcpResponse.json()).resolves.toMatchObject({
+            pollinationsTools: true,
+            mcpServers: [],
+        });
+        const [agentAfterClearingHeaders] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        expect(agentAfterClearingHeaders.mcpHeadersCiphertext).toBeNull();
+
         const registerResponse = await fetchEnterApi(
             enterApi,
             new Request("https://enter.test/api/account/my-models", {
@@ -3953,6 +4058,30 @@ fixtureTest(
         expect(registration.id).not.toBe(agent.id);
         expect(registration.agentId).toBe(agent.id);
         expect(registration.baseUrl).toBe(enterEnv.AGENT_RUNTIME_BASE_URL);
+        const addPrivateMcpToPublicAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                    baseModel: promptAgent.baseModel,
+                    pollinationsTools: true,
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/rpc",
+                            headers: { Authorization: "Bearer new-secret" },
+                        },
+                    ],
+                }),
+            }),
+            enterEnv,
+        );
+        expect(addPrivateMcpToPublicAgentResponse.status).toBe(400);
         const paidUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(

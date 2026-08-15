@@ -10,7 +10,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    McpServerInputSchema,
     McpServerResponseSchema,
     type PromptAgentConfig,
     type PromptAgentInput,
@@ -24,20 +23,7 @@ import {
 import { requireAccountPermission } from "./account-permissions.ts";
 
 const CreateAgentSchema = PromptAgentInputSchema;
-const UpdateAgentSchema = z
-    .object({
-        systemPrompt: PromptAgentInputSchema.shape.systemPrompt.optional(),
-        baseModel: PromptAgentInputSchema.shape.baseModel.optional(),
-        pollinationsTools:
-            PromptAgentInputSchema.shape.pollinationsTools.removeDefault(),
-        mcpServers: z.array(McpServerInputSchema).max(8).optional(),
-    })
-    .refine(
-        (input) => Object.values(input).some((value) => value !== undefined),
-        {
-            message: "Provide at least one field to update",
-        },
-    );
+const UpdateAgentSchema = PromptAgentInputSchema;
 const AgentResponseSchema = z.object({
     id: z.string(),
     systemPrompt: z.string(),
@@ -85,6 +71,7 @@ function savedHeaderValue(
 
 function resolveMcpServers(
     servers: PromptAgentInput["mcpServers"],
+    currentServers: PromptAgentConfig["mcpServers"] = [],
     currentHeaders: PromptAgentMcpHeaders = {},
 ): {
     mcpServers: PromptAgentConfig["mcpServers"];
@@ -92,10 +79,17 @@ function resolveMcpServers(
 } {
     const mcpHeaders: PromptAgentMcpHeaders = {};
     const mcpServers = servers.map((server) => {
+        const currentServer = currentServers.find(
+            (candidate) =>
+                candidate.name === server.name && candidate.url === server.url,
+        );
         const headers: Record<string, string> = {};
         for (const [name, value] of Object.entries(server.headers)) {
             const resolved =
-                value ?? savedHeaderValue(currentHeaders[server.name], name);
+                value ??
+                (currentServer
+                    ? savedHeaderValue(currentHeaders[server.name], name)
+                    : undefined);
             if (resolved === undefined) {
                 throw new HTTPException(400, {
                     message: `MCP header "${name}" for server "${server.name}" needs a value`,
@@ -113,6 +107,23 @@ function resolveMcpServers(
         };
     });
     return { mcpServers, mcpHeaders };
+}
+
+async function rejectCredentialsOnPublicListing(
+    db: Db,
+    agentId: string,
+    headers: PromptAgentMcpHeaders,
+): Promise<void> {
+    if (Object.keys(headers).length === 0) return;
+    const listing = await db.query.communityEndpoint.findFirst({
+        columns: { visibility: true },
+        where: eq(schema.communityEndpoint.agentId, agentId),
+    });
+    if (listing?.visibility === "public") {
+        throw new HTTPException(400, {
+            message: "Public managed agents cannot use private MCP headers",
+        });
+    }
 }
 
 async function encryptedMcpHeaders(
@@ -270,7 +281,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update Agent",
             description:
-                "Update an agent. Null MCP header values keep the saved value; omitted headers are removed. Existing community model registration is unchanged. API keys require `account:keys`.",
+                "Replace an agent configuration. Null MCP header values keep the saved value only when the server name and URL are unchanged. Omitted tools and servers are removed. Existing community model registration is unchanged. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -300,33 +311,29 @@ export const agentsRoutes = new Hono<Env>()
                     `Agent ${existing.id} has invalid configuration`,
                 );
             }
-            const resolvedMcp = input.mcpServers
-                ? resolveMcpServers(
-                      input.mcpServers,
-                      await storedMcpHeaders(
-                          existing,
-                          c.env.BETTER_AUTH_SECRET,
-                      ),
-                  )
-                : null;
+            const resolvedMcp = resolveMcpServers(
+                input.mcpServers,
+                currentConfig.mcpServers,
+                await storedMcpHeaders(existing, c.env.BETTER_AUTH_SECRET),
+            );
             const config = PromptAgentSchema.parse({
-                systemPrompt: input.systemPrompt ?? currentConfig.systemPrompt,
-                baseModel: input.baseModel ?? currentConfig.baseModel,
-                pollinationsTools:
-                    input.pollinationsTools ?? currentConfig.pollinationsTools,
-                mcpServers: resolvedMcp?.mcpServers ?? currentConfig.mcpServers,
+                ...input,
+                mcpServers: resolvedMcp.mcpServers,
             });
+            await rejectCredentialsOnPublicListing(
+                db,
+                id,
+                resolvedMcp.mcpHeaders,
+            );
             const serializedConfig = serializePromptAgentConfig(config);
             const update: Partial<typeof schema.agent.$inferInsert> = {
                 config: serializedConfig,
-                updatedAt: new Date(),
-            };
-            if (resolvedMcp) {
-                update.mcpHeadersCiphertext = await encryptedMcpHeaders(
+                mcpHeadersCiphertext: await encryptedMcpHeaders(
                     resolvedMcp.mcpHeaders,
                     c.env.BETTER_AUTH_SECRET,
-                );
-            }
+                ),
+                updatedAt: new Date(),
+            };
             const [row] = await db
                 .update(schema.agent)
                 .set(update)

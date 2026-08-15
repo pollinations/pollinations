@@ -7,15 +7,29 @@ import {
     stepCountIs,
     ToolLoopAgent,
 } from "ai";
+import { z } from "zod";
 import type {
     PromptAgentConfig,
     PromptAgentMcpHeaders,
 } from "./prompt-agent.ts";
 
-export type PromptAgentRequest = {
-    messages?: ModelMessage[];
-    stream?: boolean;
-};
+const PromptAgentMessageSchema = z.union([
+    z.object({ role: z.literal("user"), content: z.string() }).strict(),
+    z.object({ role: z.literal("assistant"), content: z.string() }).strict(),
+]);
+
+export const PromptAgentRequestSchema = z
+    .object({
+        messages: z.array(PromptAgentMessageSchema).optional().default([]),
+        stream: z.boolean().optional().default(false),
+    })
+    .strict();
+
+export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
+    model: z.string().uuid(),
+}).strict();
+
+export type PromptAgentRequest = z.input<typeof PromptAgentRequestSchema>;
 
 type PromptAgentRuntime = {
     config: PromptAgentConfig;
@@ -49,6 +63,8 @@ type AgentOutput = {
 };
 
 const MAX_STEPS = 8;
+const MAX_TOOL_CALLS = 16;
+const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
 const POLLINATIONS_AGENT_TOOLS = [
     "generateImage",
     "generateVideo",
@@ -78,7 +94,10 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadMcpTools(servers: McpServer[]): Promise<{
+async function loadMcpTools(
+    servers: McpServer[],
+    signal: AbortSignal,
+): Promise<{
     tools: Record<string, McpTool>;
     close: () => Promise<void>;
 }> {
@@ -96,13 +115,28 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
         for (const server of servers) {
             const client = await createMCPClient({
                 clientName: "pollinations-prompt-agent",
+                initializationOptions: {
+                    signal,
+                    timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+                },
                 transport: {
                     type: "http",
                     url: server.url,
                     headers: server.headers,
-                    fetch: globalThis.fetch.bind(globalThis),
-                    // Cloudflare Workers supports follow/manual, not error.
-                    redirect: "follow",
+                    fetch: async (input, init) => {
+                        const response = await globalThis.fetch.call(
+                            globalThis,
+                            input,
+                            { ...init, redirect: "manual" },
+                        );
+                        if (response.status >= 300 && response.status < 400) {
+                            await response.body?.cancel();
+                            throw new Error(
+                                "MCP server redirects are not allowed",
+                            );
+                        }
+                        return response;
+                    },
                 },
             });
             clients.push(client);
@@ -122,7 +156,7 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
     return { tools, close };
 }
 
-async function createAgent(runtime: PromptAgentRuntime) {
+async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
     const servers: McpServer[] = runtime.config.mcpServers.map((server) => {
         const storedHeaders = runtime.mcpHeaders[server.name] ?? {};
         return {
@@ -145,7 +179,7 @@ async function createAgent(runtime: PromptAgentRuntime) {
             includeTools: POLLINATIONS_AGENT_TOOLS,
         });
     }
-    const { tools, close } = await loadMcpTools(servers);
+    const { tools, close } = await loadMcpTools(servers, signal);
     if (runtime.config.pollinationsTools) {
         const imageTool = tools.mcp__pollinations__generateImage;
         if (imageTool) {
@@ -153,6 +187,23 @@ async function createAgent(runtime: PromptAgentRuntime) {
         }
     }
     const toolCallCounts: ToolCallCounts = {};
+    let toolCalls = 0;
+    for (const [name, tool] of Object.entries(tools)) {
+        const execute = tool.execute;
+        tools[name] = {
+            ...tool,
+            execute(input, options) {
+                toolCalls += 1;
+                toolCallCounts.mcp_call = toolCalls;
+                if (toolCalls > MAX_TOOL_CALLS) {
+                    throw new Error(
+                        `Agent exceeded the maximum of ${MAX_TOOL_CALLS} tool calls`,
+                    );
+                }
+                return execute(input, options);
+            },
+        };
+    }
     const pollinations = createOpenAICompatible({
         name: "pollinations",
         apiKey: runtime.apiKey,
@@ -162,14 +213,10 @@ async function createAgent(runtime: PromptAgentRuntime) {
     const agent = new ToolLoopAgent({
         model: pollinations(runtime.config.baseModel),
         instructions: runtime.config.systemPrompt,
-        allowSystemInMessages: true,
         tools,
         stopWhen: stepCountIs(MAX_STEPS),
         // Model calls spend the caller's balance, so do not retry billed calls.
         maxRetries: 0,
-        onToolExecutionStart: () => {
-            toolCallCounts.mcp_call = (toolCallCounts.mcp_call ?? 0) + 1;
-        },
     });
 
     return { agent, close, toolCallCounts };
@@ -279,7 +326,7 @@ async function runAgent(
     messages: ModelMessage[],
     signal: AbortSignal,
 ): Promise<AgentOutput> {
-    const { agent, close, toolCallCounts } = await createAgent(runtime);
+    const { agent, close, toolCallCounts } = await createAgent(runtime, signal);
     try {
         const result = await agent.generate({
             messages,
@@ -321,7 +368,7 @@ async function streamAgent(
     id: string,
     created: number,
 ): Promise<Response> {
-    const { agent, close, toolCallCounts } = await createAgent(runtime);
+    const { agent, close, toolCallCounts } = await createAgent(runtime, signal);
     let result: Awaited<ReturnType<typeof agent.stream>>;
     try {
         result = await agent.stream({ messages, abortSignal: signal });

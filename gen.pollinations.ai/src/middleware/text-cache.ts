@@ -10,11 +10,13 @@ import {
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
 } from "./generation-cache.ts";
+import type { ModelVariables } from "./model.ts";
 
 /**
  * Text cache middleware
@@ -37,7 +39,13 @@ const textCacheAdapter: GenerationCacheAdapter = {
             bodyText = c.var.generationCacheBody ?? (await c.req.text());
         }
 
-        return generateCacheKey(c.req.raw, bodyText);
+        const variables = c.var as typeof c.var &
+            Partial<AuthVariables & ModelVariables>;
+        const agentId = variables.model?.communityEndpoint?.agentId;
+        const partition = agentId
+            ? `agent:${agentId}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
+            : undefined;
+        return generateCacheKey(c.req.raw, bodyText, partition);
     },
     get: getCachedResponse,
     shouldCache(response) {

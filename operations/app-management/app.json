@@ -1,6 +1,26 @@
 [
   {
     "emoji": "💼",
+    "name": "Vyrsa Academy",
+    "url": "https://vyrsa.xyz",
+    "description": "[Vyrsa.xyz](https://vyrsa.xyz/) is a premium digital transformation academy designed to help you break free from imposter syndrome and build unshakable confidence. Through a proven \"Grow, Reflect, Tra",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "ariaerendev",
+    "githubUserId": "219682273",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13331",
+    "approvedDate": "2026-08-15",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "💼",
     "name": "Indish Marketer's Voice Agent",
     "url": "https://voice.prototools.in",
     "description": "An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads",

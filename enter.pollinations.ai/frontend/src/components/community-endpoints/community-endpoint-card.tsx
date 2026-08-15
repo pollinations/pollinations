@@ -52,8 +52,8 @@ export function CommunityEndpointCard({
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
                             {endpoint.title}
                         </h3>
                         <Chip intent={isPublic ? "news" : "neutral"} size="sm">

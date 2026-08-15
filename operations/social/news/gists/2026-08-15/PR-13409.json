@@ -1,0 +1,33 @@
+{
+  "pr_number": 13409,
+  "title": "fix: spell out RPM in model tooltip",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13409",
+  "merged_at": "2026-08-15T11:18:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Writes out “requests per minute” in the per-user rate-limit tooltip.\n- Keeps the compact `RPM/user` chip label unchanged.\n\nChecks:\n- Biome\n- `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "RPM Gets Its Full Name",
+    "blurb": "The tiny rate-limit tooltip now introduces itself properly. The chip stays compact; the explanation does the talking.",
+    "summary": "Expanded the per-user rate-limit tooltip from the abbreviation RPM to “requests per minute” while keeping the visible `RPM/user` chip unchanged.",
+    "impact": "Users inspecting model limits now get a clearer explanation of the per-user request rate without losing the compact status-chip layout.",
+    "keywords": [
+      "rate-limits",
+      "models",
+      "frontend",
+      "tooltip",
+      "ux"
+    ],
+    "visual_concept": "Depict Polli as a patient little librarian or teacher beside a retro model-status board: a small `RPM/user` chip points to a larger friendly tooltip reading “requests per minute.” Add tiny code-plants and flowers to make the clarification feel like a label growing into useful information.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny teacher glasses and pointing at a retro CRT model-status board with a small `RPM/user` chip and a clear pixel tooltip reading “requests per minute.” Code-plants and little flowers grow around the terminal in prominent lime green (#ecf874), with warm cream, mint, and lavender pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13409.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny teacher glasses and pointing at a retro CRT model-status board with a small `RPM/user` chip and a clear pixel tooltip reading “requests per minute.” Code-plants and little flowers grow around the terminal in prominent lime green (#ecf874), with warm cream, mint, and lavender pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-15T11:19:52.836071+00:00"
+}

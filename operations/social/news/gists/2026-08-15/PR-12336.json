@@ -1,0 +1,36 @@
+{
+  "pr_number": 12336,
+  "title": "feat: add editable prompt agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12336",
+  "merged_at": "2026-08-15T20:36:59Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Depends on #13407 being deployed before Pollinations tools are enabled.\n\n- Adds editable prompt agents with a system prompt, Pollinations base model, and public Streamable HTTP MCP servers.\n- Runs every definition in one shared Enter Worker using Vercel AI SDK ToolLoopAgent and the official @ai-sdk/mcp client.\n- Adds an opt-in Pollinations tools switch backed by `https://mcp.pollinations.ai`; external MCP servers never receive Pollinations credentials.\n- Mints a short-lived ag_ token scoped to the caller parent key and managed agent, then uses it for base-model and built-in tool calls.\n- Keeps agent definitions editable behind stable private/public My Models listings and requires managed-agent listings to remain free.\n- Adds dashboard and polli agents CRUD without per-agent Workers, bundles, or persistent agent API keys.\n\nV1 stays narrow: one agent per listing, no MCP OAuth/private headers, custom code, or versioning.\n\nValidation: Enter and Gen typechecks, CLI build, 15 prompt-agent runtime tests, 7 run-token tests, and 6 focused managed-agent registration/delegation tests.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents, but editable",
+    "blurb": "The hive can now grow little prompt-powered helpers without growing a Worker farm behind them. Pick a model, write the instructions, plug in public MCP tools, and let the agent get to work.",
+    "summary": "Added editable prompt agents to My Models and the Polli CLI, letting users publish one-agent listings with a system prompt, a Pollinations base model, public Streamable HTTP MCP servers, and an opt-in set of Pollinations tools.",
+    "impact": "Developers can create, edit, list, and run managed agents without deploying per-agent Workers or maintaining persistent agent API keys, while short-lived ag_ tokens safely scope model and built-in tool access.",
+    "keywords": [
+      "agents",
+      "MCP",
+      "My Models",
+      "Polli CLI",
+      "tool calling",
+      "AI SDK"
+    ],
+    "visual_concept": "Depict a cozy garden workbench where Polli is tuning a small friendly prompt-agent seedling: a retro terminal shows editable instruction cards, a model selector, and branching tool-vines connecting to public MCP server signposts. A CRT monitor robot eagerly holds a tiny tool box while Polli, wearing mechanic goggles, adjusts the agent's settings; the scene communicates composable agents without a pile of separate servers.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and tiny mechanic goggles, carefully editing a glowing prompt card on a retro terminal while a small code-plant agent sprouts from a lime green (#ecf874) pot and public MCP tool-vines branch toward friendly server signposts; a chunky CRT monitor robot holds a tiny toolbox beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-12336.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and tiny mechanic goggles, carefully editing a glowing prompt card on a retro terminal while a small code-plant agent sprouts from a lime green (#ecf874) pot and public MCP tool-vines branch toward friendly server signposts; a chunky CRT monitor robot holds a tiny toolbox beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-15T20:38:04.665024+00:00"
+}

@@ -23,8 +23,8 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * The admin flag alone decides whether to delegate. Once it is set the other
- * two conditions are invariants, so they throw rather than degrade: the
+ * Managed agents always delegate. External endpoints do so only when their
+ * admin flag is set. The other two conditions are invariants, so they throw:
  * endpoint must be free, since charging a wrapper price on top of the
  * generation it bills the caller for is double billing, and the request must
  * carry a key to bill, since falling back to the saved bearer would quietly
@@ -35,7 +35,7 @@ async function mintDelegatedToken(
     parentApiKeyId: string | undefined,
     secret: string,
 ): Promise<string | undefined> {
-    if (!endpoint.delegatesGeneration) return undefined;
+    if (!endpoint.agentId && !endpoint.delegatesGeneration) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
@@ -50,6 +50,7 @@ async function mintDelegatedToken(
         secret,
         parentApiKeyId,
         runId: crypto.randomUUID(),
+        managedAgentId: endpoint.agentId ?? undefined,
     });
 }
 
@@ -58,7 +59,6 @@ export async function communityEndpointGatewayContext(
     modelDefinition: ModelDefinition,
     requestData: RequestData,
     secret: string,
-    agentRuntimeToken: string,
     portkeyGatewayUrl: string,
     userApiKey: string,
     parentApiKeyId?: string,
@@ -67,7 +67,10 @@ export async function communityEndpointGatewayContext(
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
     // A delegating endpoint is sent the run token instead of its saved bearer,
     // so it never receives a credential it could spend on the owner's account.
-    let authKey = agentRuntimeToken;
+    let authKey = runToken;
+    if (endpoint.agentId && !authKey) {
+        throw new Error("Managed agent request has no agent run token");
+    }
     if (!endpoint.agentId) {
         if (!endpoint.bearerTokenCiphertext) {
             throw new Error("Community endpoint has no bearer token");
@@ -78,6 +81,7 @@ export async function communityEndpointGatewayContext(
                 await decryptSecret(endpoint.bearerTokenCiphertext, secret),
             );
     }
+    if (!authKey) throw new Error("Community endpoint has no bearer token");
 
     return {
         ...requestDataWithoutMessages,

@@ -7,6 +7,7 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    communityEndpointPrices,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -26,12 +27,16 @@ export type ManagedAgent = {
     id: string;
     systemPrompt: string;
     baseModel: string;
+    pollinationsTools: boolean;
     mcpServers: { name: string; url: string }[];
     createdAt: string;
     updatedAt: string;
 };
 
-type AgentFields = Pick<ManagedAgent, "systemPrompt" | "baseModel">;
+type AgentFields = Pick<
+    ManagedAgent,
+    "systemPrompt" | "baseModel" | "pollinationsTools"
+>;
 
 export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
 
@@ -174,6 +179,7 @@ export const emptyForm: EndpointFormState = {
 export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
+    pollinationsTools: false,
     mcpServers: [],
 };
 
@@ -396,6 +402,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     return {
         systemPrompt,
         baseModel,
+        pollinationsTools: form.pollinationsTools,
         mcpServers: mcpServersToPayload(form.mcpServers),
     };
 }
@@ -420,7 +427,9 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         // validated against a quoted price.
         fallbackModelIds:
             form.visibility === "public" ? form.fallbackModelIds : [],
-        ...formPricesToPayload(form, modality, imagePricing),
+        ...(form.mode === "agent"
+            ? communityEndpointPrices({})
+            : formPricesToPayload(form, modality, imagePricing)),
     };
     if (form.mode === "agent") {
         if (!form.agentId) throw new Error("Choose an agent");

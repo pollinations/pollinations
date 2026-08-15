@@ -13,6 +13,7 @@ import {
 type AgentConfig = {
     systemPrompt: string;
     baseModel: string;
+    pollinationsTools?: boolean;
     mcpServers?: { name: string; url: string }[];
 };
 
@@ -69,7 +70,7 @@ const create = new Command("create")
     .description("Create a prompt agent")
     .requiredOption(
         "--config <file>",
-        "JSON config: { systemPrompt, baseModel, mcpServers? }",
+        "JSON config: { systemPrompt, baseModel, pollinationsTools?, mcpServers? }",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -97,7 +98,7 @@ const update = new Command("update")
     .argument("<id>", "Agent id")
     .requiredOption(
         "--config <file>",
-        "JSON config: { systemPrompt, baseModel, mcpServers? }",
+        "JSON config: { systemPrompt, baseModel, pollinationsTools?, mcpServers? }",
     )
     .action(async (id, opts) => {
         const key = requireKey();

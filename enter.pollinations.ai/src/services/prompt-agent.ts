@@ -1,7 +1,5 @@
-// Configuration and key provisioning for no-code prompt agents. All agents
-// run in the shared Enter Worker; the agent row selects the prompt, model, MCP
-// servers, and dedicated owner key used for its internal gen calls.
-import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+// Configuration for no-code prompt agents. All agents run in the shared Enter
+// Worker; the agent row selects the prompt, model, and available MCP tools.
 import { z } from "zod";
 
 const McpServerSchema = z.object({
@@ -21,6 +19,7 @@ export const PromptAgentSchema = z
     .object({
         systemPrompt: z.string().trim().min(1).max(8000),
         baseModel: z.string().trim().min(1).max(253),
+        pollinationsTools: z.boolean().optional().default(false),
         mcpServers: z.array(McpServerSchema).max(8).optional().default([]),
     })
     .describe(
@@ -40,26 +39,4 @@ export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {
 
 export function serializePromptAgentConfig(config: PromptAgentConfig): string {
     return JSON.stringify(config);
-}
-
-type AuthClient = Parameters<typeof createApiKeyForUser>[0]["authClient"];
-
-// The key carries no account permissions. It only spends the owner's balance
-// on gen calls, exactly like the owner calling the API themselves.
-export async function createPromptAgentKey(
-    authClient: AuthClient,
-    dbBinding: D1Database,
-    userId: string,
-    agentId: string,
-): Promise<{ key: string; keyId: string }> {
-    const created = await createApiKeyForUser({
-        authClient,
-        dbBinding,
-        userId,
-        name: `prompt-agent:${agentId}`,
-        type: "secret",
-        allowAccountKeysPermission: false,
-        defaultCreatedVia: "prompt-agent",
-    });
-    return { key: created.key, keyId: created.id };
 }

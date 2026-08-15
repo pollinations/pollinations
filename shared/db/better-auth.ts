@@ -204,8 +204,6 @@ export const agent = sqliteTable("agent", {
     .references(() => user.id, { onDelete: "cascade" }),
   config: text("config").notNull(),
   baseUrl: text("base_url").notNull(),
-  apiKeyCiphertext: text("api_key_ciphertext").notNull(),
-  apiKeyId: text("api_key_id").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),

@@ -3,6 +3,7 @@ import {
     FieldStack,
     IconButton,
     Input,
+    Switch,
     Textarea,
     XIcon,
 } from "@pollinations/ui";
@@ -21,7 +22,7 @@ export function PromptAgentFields({
     disabled: boolean;
     onChange: (
         key: keyof Omit<AgentFormState, "mcpServers">,
-        value: string,
+        value: string | boolean,
     ) => void;
     onAddMcp: () => void;
     onUpdateMcp: (
@@ -58,6 +59,19 @@ export function PromptAgentFields({
                     value={form.baseModel}
                     disabled={disabled}
                     onChange={(value) => onChange("baseModel", value)}
+                />
+            </FieldStack>
+
+            <FieldStack
+                label="Allow Pollinations tools"
+                helper="Lets the agent call Pollinations text, image, audio, and video tools using the caller's API access."
+                alignLabelRow
+            >
+                <Switch
+                    checked={form.pollinationsTools}
+                    disabled={disabled}
+                    ariaLabel="Allow Pollinations tools"
+                    onChange={(value) => onChange("pollinationsTools", value)}
                 />
             </FieldStack>
 

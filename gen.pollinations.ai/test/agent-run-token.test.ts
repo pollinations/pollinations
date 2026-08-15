@@ -47,10 +47,11 @@ const communityProbe = new Hono<AuthEnv>()
         return c.text("ok");
     });
 
-async function runTokenFor(parentApiKeyId: string) {
+async function runTokenFor(parentApiKeyId: string, managedAgentId?: string) {
     return signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId,
+        managedAgentId,
         runId: crypto.randomUUID(),
     });
 }
@@ -89,6 +90,23 @@ test("resolves to the parent key, without its account scope", async () => {
         // dropped, so the token cannot manage the owner's account.
         permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
         agentRun: { parentApiKeyId: parent.id },
+    });
+});
+
+test("preserves the managed agent scope", async () => {
+    const parent = await createTestApiKey({ user: { tierBalance: 100 } });
+    const token = await runTokenFor(parent.id, "managed-agent-id");
+
+    const response = await probe(
+        authProbe,
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(await response.json()).toMatchObject({
+        agentRun: {
+            parentApiKeyId: parent.id,
+            managedAgentId: "managed-agent-id",
+        },
     });
 });
 

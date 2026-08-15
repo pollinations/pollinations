@@ -36,7 +36,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import {
     agent as agentTable,
-    apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
@@ -53,7 +52,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -973,7 +972,6 @@ describe("community endpoint helpers", () => {
                 max_tokens: 5,
             },
             secret,
-            "agent-runtime-token",
             "https://portkey.test",
             "sk_user_key",
         );
@@ -1037,7 +1035,6 @@ describe("community endpoint helpers", () => {
                 communityModelDefinition(endpoint),
                 { messages: [{ role: "user", content: "make a video" }] },
                 secret,
-                "agent-runtime-token",
                 "https://portkey.test",
                 "sk_user_key",
                 parentApiKeyId,
@@ -1065,6 +1062,21 @@ describe("community endpoint helpers", () => {
             });
             const context = await contextFor(endpoint, "parent-key-id");
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+        });
+
+        it("always scopes managed agents to their agent id", async () => {
+            const endpoint = await agentEndpoint({
+                agentId: "managed-agent-id",
+                delegatesGeneration: false,
+                bearerTokenCiphertext: null,
+            });
+            const context = await contextFor(endpoint, "parent-key-id");
+            const token = String(context.modelConfig?.authKey);
+            const claims = await verifyAgentRunToken(token, secret);
+            expect(claims).toMatchObject({
+                parentApiKeyId: "parent-key-id",
+                managedAgentId: "managed-agent-id",
+            });
         });
 
         it("refuses to delegate when there is no key to bill", async () => {
@@ -3712,6 +3724,7 @@ fixtureTest(
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
+            pollinationsTools: true,
             mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
         };
         const createAgentResponse = await fetchEnterApi(
@@ -3736,6 +3749,7 @@ fixtureTest(
         expect(agent).toMatchObject({
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
+            pollinationsTools: true,
         });
         expect(agent).not.toHaveProperty("apiKeyId");
         expect(agent).not.toHaveProperty("apiKeyCiphertext");
@@ -3748,9 +3762,6 @@ fixtureTest(
         expect(storedAgent.baseUrl).toBe(
             `${enterEnv.BETTER_AUTH_URL}/api/agent-runtime/v1`,
         );
-        await expect(
-            decryptSecret(storedAgent.apiKeyCiphertext, env.BETTER_AUTH_SECRET),
-        ).resolves.toMatch(/^sk_/);
         const updateAgentResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3789,8 +3800,26 @@ fixtureTest(
             }),
             enterEnv,
         );
-        expect(registerResponse.status).toBe(200);
-        const registration = (await registerResponse.json()) as {
+        expect(registerResponse.status).toBe(400);
+        const freeRegisterResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Managed SQL Tutor",
+                    agentId: agent.id,
+                    visibility: "public",
+                }),
+            }),
+            enterEnv,
+        );
+        expect(freeRegisterResponse.status).toBe(200);
+        const registration = (await freeRegisterResponse.json()) as {
             id: string;
             modelId: string;
             agentId: string | null;
@@ -3799,6 +3828,22 @@ fixtureTest(
         expect(registration.id).not.toBe(agent.id);
         expect(registration.agentId).toBe(agent.id);
         expect(registration.baseUrl).toBe(storedAgent.baseUrl);
+        const paidUpdateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `https://enter.test/api/account/my-models/${registration.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({ promptTextPrice: 0.00001 }),
+                },
+            ),
+            enterEnv,
+        );
+        expect(paidUpdateResponse.status).toBe(400);
         const registryEntry = (
             await getCommunityModelRegistryEntries(env.DB)
         ).find((entry) => entry.id === registration.modelId);
@@ -3814,13 +3859,20 @@ fixtureTest(
             registryEntry.definition,
             { messages: [{ role: "user", content: "hello" }] },
             env.BETTER_AUTH_SECRET,
-            env.PLN_ENTER_TOKEN,
             env.PORTKEY_GATEWAY_URL,
             "sk_user_key",
+            "caller-api-key-id",
         );
+        const runtimeToken = String(gatewayContext.modelConfig?.authKey);
+        expect(runtimeToken).toMatch(/^ag_/);
+        await expect(
+            verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
+        ).resolves.toMatchObject({
+            parentApiKeyId: "caller-api-key-id",
+            managedAgentId: agent.id,
+        });
         expect(gatewayContext.modelConfig).toMatchObject({
             "custom-host": storedAgent.baseUrl,
-            authKey: env.PLN_ENTER_TOKEN,
             model: agent.id,
         });
 
@@ -3871,12 +3923,6 @@ fixtureTest(
             enterEnv,
         );
         expect(deleteAgentResponse.status).toBe(200);
-        await expect(
-            db
-                .select({ id: apiKeyTable.id })
-                .from(apiKeyTable)
-                .where(eq(apiKeyTable.id, storedAgent.apiKeyId)),
-        ).resolves.toEqual([]);
     },
 );
 

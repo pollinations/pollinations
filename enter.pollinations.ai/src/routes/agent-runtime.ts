@@ -1,10 +1,10 @@
 import * as schema from "@shared/db/better-auth.ts";
-import { decryptSecret } from "@shared/secret-encryption.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
 import { parsePromptAgentConfig } from "../services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
@@ -20,16 +20,17 @@ function genBaseUrl(env: Env["Bindings"]): string {
     );
 }
 
+function pollinationsMcpUrl(env: Env["Bindings"]): string {
+    return (
+        (env as { POLLINATIONS_MCP_URL?: string }).POLLINATIONS_MCP_URL ??
+        "https://mcp.pollinations.ai/mcp"
+    );
+}
+
 export const agentRuntimeRoutes = new Hono<Env>()
-    .use("*", async (c, next) => {
-        if (
-            c.req.header("Authorization") !== `Bearer ${c.env.PLN_ENTER_TOKEN}`
-        ) {
-            throw new HTTPException(401, { message: "Unauthorized" });
-        }
-        await next();
-    })
+    .use("*", auth({ allowSessionCookie: false, allowApiKey: true }))
     .post("/v1/chat/completions", async (c) => {
+        await c.var.auth.requireAuthorization();
         let body: RuntimeRequest;
         try {
             body = await c.req.json<RuntimeRequest>();
@@ -38,6 +39,15 @@ export const agentRuntimeRoutes = new Hono<Env>()
         }
         if (typeof body.model !== "string") {
             throw new HTTPException(400, { message: "Agent ID is required" });
+        }
+        if (c.var.auth.agentRun?.managedAgentId !== body.model) {
+            throw new HTTPException(403, {
+                message: "Agent run token is not valid for this agent",
+            });
+        }
+        const apiKey = c.var.auth.rawApiKey;
+        if (!apiKey) {
+            throw new HTTPException(401, { message: "Unauthorized" });
         }
 
         const db = drizzle(c.env.DB, { schema });
@@ -51,13 +61,10 @@ export const agentRuntimeRoutes = new Hono<Env>()
         if (!config) {
             throw new Error(`Agent ${row.id} has invalid configuration`);
         }
-        const apiKey = await decryptSecret(
-            row.apiKeyCiphertext,
-            c.env.BETTER_AUTH_SECRET,
-        );
         return await handlePromptAgentRequest(body, c.req.raw.signal, {
             config,
             apiKey,
             genBaseUrl: genBaseUrl(c.env),
+            pollinationsMcpUrl: pollinationsMcpUrl(c.env),
         });
     });

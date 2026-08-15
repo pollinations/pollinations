@@ -43,6 +43,7 @@ export function AgentDialog({
                 ? {
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
+                      pollinationsTools: agent.pollinationsTools,
                       mcpServers: agent.mcpServers.map((server) => ({
                           ...server,
                           id: crypto.randomUUID(),
@@ -56,7 +57,7 @@ export function AgentDialog({
 
     function updateForm(
         key: keyof Omit<AgentFormState, "mcpServers">,
-        value: string,
+        value: string | boolean,
     ): void {
         setForm((current) => ({ ...current, [key]: value }));
     }

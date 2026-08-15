@@ -91,6 +91,14 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodOptional<z.ZodType<number>>
 >;
 
+function hasNonZeroPrice(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        (field) => (source[field.key] ?? 0) !== 0,
+    );
+}
+
 function enforceCommunityEndpointPriceLimits(
     source: Partial<Record<CommunityEndpointPriceKey, number>>,
     modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
@@ -909,6 +917,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       user.id,
                   )
                 : null;
+            if (agent && hasNonZeroPrice(input)) {
+                throw new HTTPException(400, {
+                    message: "Managed agent listings must be free",
+                });
+            }
             const modality = agent ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
@@ -917,13 +930,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities,
             );
             const prices =
-                input.visibility === "public"
-                    ? communityEndpointPricesForModality(
+                agent || input.visibility !== "public"
+                    ? communityEndpointPrices({})
+                    : communityEndpointPricesForModality(
                           input,
                           modality,
                           imagePricing,
-                      )
-                    : communityEndpointPrices({});
+                      );
             enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const fallbackModelIds = input.fallbackModelIds
                 ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
@@ -1124,6 +1137,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         "Update managed agent configuration through the agents API",
                 });
             }
+            if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
+                throw new HTTPException(400, {
+                    message: "Managed agent listings must be free",
+                });
+            }
             if (input.inputModalities !== undefined) {
                 enforceCommunityEndpointInputModalities(
                     modality,
@@ -1200,7 +1218,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // A private model is owner-only, so owner-declared public pricing
             // does not apply; making a published model private clears prices.
             const effectivePrices =
-                effectiveVisibility === "private"
+                endpoint.agentId !== null || effectiveVisibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPricesForModality(
                           { ...endpoint, ...update },

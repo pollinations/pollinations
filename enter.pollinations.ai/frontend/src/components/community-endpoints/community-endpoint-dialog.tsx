@@ -373,7 +373,7 @@ export function CommunityEndpointDialog({
             ? (["completionImagePrice"] as const)
             : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
-        isShared
+        isShared && !isManagedAgent
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
                   ...basePriceKeys,
               ])
@@ -966,7 +966,7 @@ export function CommunityEndpointDialog({
                         />
                     </FieldStack>
 
-                    {isShared && (
+                    {isShared && !isManagedAgent && (
                         <PriceGroups
                             form={form}
                             modality={form.modality}

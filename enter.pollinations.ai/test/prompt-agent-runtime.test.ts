@@ -1,7 +1,10 @@
-import { env } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
-import { createTestUser } from "@shared/test/fixtures/index.ts";
+import {
+    createTestApiKey,
+    createTestUser,
+} from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
@@ -16,11 +19,22 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     config: {
         systemPrompt: "You are a test agent.",
         baseModel: "openai",
+        pollinationsTools: false,
         mcpServers: [],
     },
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
+    pollinationsMcpUrl: "https://mcp.pollinations.test/mcp",
 };
+
+async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
+    return signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId,
+        managedAgentId,
+        runId: crypto.randomUUID(),
+    });
+}
 
 async function runAgent(
     body: PromptAgentRequest,
@@ -38,7 +52,7 @@ describe("prompt-agent runtime", () => {
         vi.unstubAllGlobals();
     });
 
-    it("rejects calls without the internal Enter token", async () => {
+    it("rejects calls without an agent run token", async () => {
         const response = await agentRuntimeRoutes.fetch(
             new Request("https://enter.example/v1/chat/completions", {
                 method: "POST",
@@ -46,42 +60,45 @@ describe("prompt-agent runtime", () => {
                 body: JSON.stringify({ model: crypto.randomUUID() }),
             }),
             env,
+            createExecutionContext(),
         );
         expect(response.status).toBe(401);
     });
 
     it("selects agents by the request model", async () => {
+        const agentId = crypto.randomUUID();
+        const parent = await createTestApiKey();
+        const token = await agentRunToken(parent.id, agentId);
         const response = await agentRuntimeRoutes.fetch(
             new Request("https://enter.example/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ model: crypto.randomUUID() }),
+                body: JSON.stringify({ model: agentId }),
             }),
             env,
+            createExecutionContext(),
         );
         expect(response.status).toBe(404);
     });
 
-    it("loads the selected config and owner key from D1", async () => {
+    it("uses the caller's run token for the selected agent", async () => {
         const db = drizzle(env.DB, { schema });
         const agentId = crypto.randomUUID();
+        const parent = await createTestApiKey();
+        const token = await agentRunToken(parent.id, agentId);
         await db.insert(schema.agent).values({
             id: agentId,
             ownerUserId: await createTestUser(),
             config: JSON.stringify({
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai-fast",
+                pollinationsTools: false,
                 mcpServers: [],
             }),
             baseUrl: "https://enter.test/api/agent-runtime/v1",
-            apiKeyCiphertext: await encryptSecret(
-                "sk_agent_owner",
-                env.BETTER_AUTH_SECRET,
-            ),
-            apiKeyId: crypto.randomUUID(),
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -93,7 +110,7 @@ describe("prompt-agent runtime", () => {
                     "https://gen.test/v1/chat/completions",
                 );
                 expect(request.headers.get("Authorization")).toBe(
-                    "Bearer sk_agent_owner",
+                    `Bearer ${token}`,
                 );
                 return Response.json({
                     choices: [
@@ -109,7 +126,7 @@ describe("prompt-agent runtime", () => {
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     model: agentId,
@@ -117,12 +134,31 @@ describe("prompt-agent runtime", () => {
                 }),
             }),
             { ...env, GEN_BASE_URL: "https://gen.test" },
+            createExecutionContext(),
         );
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toMatchObject({
             model: "openai-fast",
             choices: [{ message: { content: "done" } }],
         });
+    });
+
+    it("rejects a run token bound to another agent", async () => {
+        const parent = await createTestApiKey();
+        const token = await agentRunToken(parent.id, crypto.randomUUID());
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.test/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ model: crypto.randomUUID() }),
+            }),
+            env,
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(403);
     });
 
     it("propagates base-model HTTP errors", async () => {
@@ -294,6 +330,91 @@ describe("prompt-agent runtime", () => {
             expect(request.headers.get("Mcp-Session-Id")).toBe("session-1");
             expect(request.headers.get("MCP-Protocol-Version")).toBe(
                 "2025-06-18",
+            );
+        }
+        for (const request of mcpRequests) {
+            expect(request.headers.get("Authorization")).toBeNull();
+        }
+    });
+
+    it("passes the caller token only to the built-in Pollinations MCP", async () => {
+        const mcpRequests: Request[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                    mcpRequests.push(request.clone());
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: {
+                                    name: "pollinations",
+                                    version: "1.0.0",
+                                },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            tools: [
+                                {
+                                    name: "generateImage",
+                                    inputSchema: { type: "object" },
+                                },
+                                {
+                                    name: "getBalance",
+                                    inputSchema: { type: "object" },
+                                },
+                            ],
+                        },
+                    });
+                }
+
+                const body = (await request.json()) as {
+                    tools: { function: { name: string } }[];
+                };
+                expect(body.tools.map((tool) => tool.function.name)).toEqual([
+                    "mcp__pollinations__generateImage",
+                ]);
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "draw a bee" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    pollinationsTools: true,
+                },
+            },
+        );
+
+        expect(response.status).toBe(200);
+        expect(mcpRequests.length).toBeGreaterThan(0);
+        for (const request of mcpRequests) {
+            expect(request.headers.get("Authorization")).toBe(
+                `Bearer ${BASE_RUNTIME.apiKey}`,
             );
         }
     });

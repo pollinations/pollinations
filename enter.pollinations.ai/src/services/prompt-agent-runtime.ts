@@ -18,9 +18,15 @@ type PromptAgentRuntime = {
     config: PromptAgentConfig;
     apiKey: string;
     genBaseUrl: string;
+    pollinationsMcpUrl: string;
 };
 
-type McpServer = { name: string; url: string };
+type McpServer = {
+    name: string;
+    url: string;
+    headers?: Record<string, string>;
+    excludeTools?: string[];
+};
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
 type ToolCallCounts = Record<string, number>;
@@ -79,6 +85,7 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
                 transport: {
                     type: "http",
                     url: server.url,
+                    headers: server.headers,
                     // Cloudflare Workers supports follow/manual, not error.
                     redirect: "follow",
                 },
@@ -87,6 +94,7 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
             for (const [name, definition] of Object.entries(
                 await client.tools(),
             )) {
+                if (server.excludeTools?.includes(name)) continue;
                 tools[`mcp__${server.name}__${name}`] = definition;
             }
         }
@@ -99,7 +107,16 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
 }
 
 async function createAgent(runtime: PromptAgentRuntime) {
-    const { tools, close } = await loadMcpTools(runtime.config.mcpServers);
+    const servers: McpServer[] = [...runtime.config.mcpServers];
+    if (runtime.config.pollinationsTools) {
+        servers.push({
+            name: "pollinations",
+            url: runtime.pollinationsMcpUrl,
+            headers: { Authorization: `Bearer ${runtime.apiKey}` },
+            excludeTools: ["getBalance"],
+        });
+    }
+    const { tools, close } = await loadMcpTools(servers);
     const toolCallCounts: ToolCallCounts = {};
     const pollinations = createOpenAICompatible({
         name: "pollinations",
@@ -113,7 +130,7 @@ async function createAgent(runtime: PromptAgentRuntime) {
         allowSystemInMessages: true,
         tools,
         stopWhen: stepCountIs(MAX_STEPS),
-        // Model calls spend the owner's balance, so do not retry billed calls.
+        // Model calls spend the caller's balance, so do not retry billed calls.
         maxRetries: 0,
         onToolExecutionStart: () => {
             toolCallCounts.mcp_call = (toolCallCounts.mcp_call ?? 0) + 1;

@@ -1,6 +1,5 @@
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -10,7 +9,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    createPromptAgentKey,
     PromptAgentSchema,
     parsePromptAgentConfig,
     serializePromptAgentConfig,
@@ -22,6 +20,7 @@ const UpdateAgentSchema = z
     .object({
         systemPrompt: PromptAgentSchema.shape.systemPrompt.optional(),
         baseModel: PromptAgentSchema.shape.baseModel.optional(),
+        pollinationsTools: PromptAgentSchema.shape.pollinationsTools.optional(),
         mcpServers: PromptAgentSchema.shape.mcpServers.optional(),
     })
     .refine(
@@ -34,6 +33,7 @@ const AgentResponseSchema = z.object({
     id: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
+    pollinationsTools: z.boolean(),
     mcpServers: PromptAgentSchema.shape.mcpServers,
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -168,36 +168,18 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = crypto.randomUUID();
             const config = PromptAgentSchema.parse(input);
-            const { key, keyId } = await createPromptAgentKey(
-                c.var.auth.client,
-                c.env.DB,
-                user.id,
-                id,
-            );
-            try {
-                const [row] = await db
-                    .insert(schema.agent)
-                    .values({
-                        id,
-                        ownerUserId: user.id,
-                        config: serializePromptAgentConfig(config),
-                        baseUrl: agentRuntimeBaseUrl(c.env),
-                        apiKeyCiphertext: await encryptSecret(
-                            key,
-                            c.env.BETTER_AUTH_SECRET,
-                        ),
-                        apiKeyId: keyId,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    })
-                    .returning();
-                return c.json(toResponse(row));
-            } catch (error) {
-                await db
-                    .delete(schema.apikey)
-                    .where(eq(schema.apikey.id, keyId));
-                throw error;
-            }
+            const [row] = await db
+                .insert(schema.agent)
+                .values({
+                    id,
+                    ownerUserId: user.id,
+                    config: serializePromptAgentConfig(config),
+                    baseUrl: agentRuntimeBaseUrl(c.env),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+            return c.json(toResponse(row));
         },
     )
     .patch(
@@ -239,6 +221,8 @@ export const agentsRoutes = new Hono<Env>()
             const config = PromptAgentSchema.parse({
                 systemPrompt: input.systemPrompt ?? currentConfig.systemPrompt,
                 baseModel: input.baseModel ?? currentConfig.baseModel,
+                pollinationsTools:
+                    input.pollinationsTools ?? currentConfig.pollinationsTools,
                 mcpServers: input.mcpServers ?? currentConfig.mcpServers,
             });
             const serializedConfig = serializePromptAgentConfig(config);
@@ -285,7 +269,7 @@ export const agentsRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
-            const existing = await requireOwnedAgent(db, id, user.id);
+            await requireOwnedAgent(db, id, user.id);
             const registration = await db.query.communityEndpoint.findFirst({
                 columns: { id: true },
                 where: eq(schema.communityEndpoint.agentId, id),
@@ -296,9 +280,6 @@ export const agentsRoutes = new Hono<Env>()
                         "Delete the agent's community model registration first",
                 });
             }
-            await db
-                .delete(schema.apikey)
-                .where(eq(schema.apikey.id, existing.apiKeyId));
             await db
                 .delete(schema.agent)
                 .where(

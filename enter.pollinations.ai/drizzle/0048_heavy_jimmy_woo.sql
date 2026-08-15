@@ -3,8 +3,6 @@ CREATE TABLE `agent` (
 	`owner_user_id` text NOT NULL,
 	`config` text NOT NULL,
 	`base_url` text NOT NULL,
-	`api_key_ciphertext` text NOT NULL,
-	`api_key_id` text NOT NULL,
 	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade

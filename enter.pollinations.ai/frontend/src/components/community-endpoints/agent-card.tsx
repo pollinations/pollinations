@@ -74,8 +74,11 @@ export function AgentCard({
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                     <TokensIcon className="h-3.5 w-3.5" />
-                    {agent.mcpServers.length} MCP server
-                    {agent.mcpServers.length === 1 ? "" : "s"}
+                    {agent.pollinationsTools
+                        ? "Pollinations tools enabled"
+                        : "Pollinations tools disabled"}
+                    {agent.mcpServers.length > 0 &&
+                        ` · ${agent.mcpServers.length} custom MCP server${agent.mcpServers.length === 1 ? "" : "s"}`}
                 </span>
             </div>
         </Surface>

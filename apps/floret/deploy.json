@@ -1,0 +1,7 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "subdomain": "floret",
+  "install": "npm install --silent",
+  "deploy": "npx wrangler deploy worker.js"
+}

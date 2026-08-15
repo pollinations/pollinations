@@ -8,6 +8,7 @@ type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
     alphaTooltip?: boolean;
+    perUserRpm?: number | null;
 };
 
 type BalanceAccessChipProps = {
@@ -19,10 +20,19 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
     alphaTooltip = true,
+    perUserRpm,
 }) => {
-    if (!showNew && !showAlpha) {
+    if (!showNew && !showAlpha && perUserRpm == null) {
         return null;
     }
+
+    const rate =
+        perUserRpm == null
+            ? undefined
+            : {
+                  label: `${perUserRpm} RPM/user`,
+                  tooltip: `Per-user rate limit: ${perUserRpm} requests per minute.`,
+              };
 
     return (
         <span className="inline-flex shrink-0 items-center gap-1.5">
@@ -47,6 +57,17 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                         Alpha
                     </Chip>
                 ))}
+            {rate && (
+                <Tooltip
+                    triggerAs="span"
+                    content={rate.tooltip}
+                    displayContents
+                >
+                    <Chip intent="neutral" size="sm">
+                        {rate.label}
+                    </Chip>
+                </Tooltip>
+            )}
         </span>
     );
 };

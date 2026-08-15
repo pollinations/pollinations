@@ -137,6 +137,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-2.4t-a95b",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 
@@ -148,11 +163,64 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Muse Glimmer directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "muse-glimmer" });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/muse-glimmer-30b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Muse Spark 1.2 directly through Vercel without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "muse-spark-1.2",
+        });
+
+        expect(result.options.model).toBe("meta/muse-spark-1.2");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Grok 4.6 to xAI ZDR on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "grok-4.6" });
+
+        expect(result.options.model).toBe("x-ai/grok-4.6");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["xai/zdr"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, { model: "deepseek" });
 
         expect(result.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek Pro to the exact Fireworks 0813 checkpoint", () => {
+        const result = resolveModelConfig(messages, { model: "deepseek-pro" });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-pro-0813",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",

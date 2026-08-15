@@ -68,6 +68,7 @@ export async function getCommunityModelRegistryEntries(
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            perUserRpm: schema.communityEndpoint.perUserRpm,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
@@ -83,6 +84,7 @@ export async function getCommunityModelRegistryEntries(
             fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
+            createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -112,19 +114,24 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
+            perUserRpm: row.perUserRpm,
             delegatesGeneration: row.delegatesGeneration,
             fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        const definition = communityModelDefinition(communityEndpoint);
+        const definition = communityModelDefinition({
+            ...communityEndpoint,
+            addedDate: row.createdAt.getTime(),
+        });
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
+                    perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,

@@ -17,7 +17,9 @@ import type {
 // live model prices on it.
 export type PricingInput = {
     resolution?: string;
+    quality?: string;
     hasImage?: boolean;
+    megapixels?: number;
     searchContextSize?: "low" | "high";
 };
 
@@ -79,9 +81,18 @@ export function defineCostVariants<
         context: CostVariantContext,
     ) => (keyof V & string) | undefined,
     costVariantMetadata: { [K in keyof V]: CostVariantMetadata },
+    defaultCostVariantLabel: string,
 ): Pick<
     ModelDefinition,
-    "costVariants" | "selectCostVariant" | "costVariantMetadata"
+    | "costVariants"
+    | "selectCostVariant"
+    | "costVariantMetadata"
+    | "defaultCostVariantLabel"
 > {
-    return { costVariants, selectCostVariant, costVariantMetadata };
+    return {
+        costVariants,
+        selectCostVariant,
+        costVariantMetadata,
+        defaultCostVariantLabel,
+    };
 }

@@ -300,6 +300,9 @@ export type CommunityEndpointRuntime = {
     upstreamModel: string;
     bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
+    // Exact gateway-side cap per Pollinations user. Null delegates capacity
+    // limits to the upstream, whose 429 then remains a model failure.
+    perUserRpm: number | null;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
     // Community model ids tried in order when this endpoint's upstream fails.
@@ -311,6 +314,7 @@ export type CommunityEndpointRuntime = {
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    addedDate?: number;
     title?: string | null;
     description: string | null;
     providerName?: string | null;
@@ -539,7 +543,7 @@ export function communityModelDefinition(
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
-        addedDate: 0,
+        addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,

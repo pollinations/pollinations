@@ -292,7 +292,7 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "zimage",
+            model: options.model,
             width: options.width,
             height: options.height,
             seed: options.seed,
@@ -398,7 +398,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "flux",
+            model: options.model,
         };
 
         if (options.image) {
@@ -483,7 +483,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "zimage",
+            model: options.model,
         };
         if (size) body.size = size;
         if (options.n !== undefined) body.n = options.n;
@@ -546,6 +546,9 @@ export class Pollinations {
                 this.imageTimeout,
                 signal,
             );
+            if (!imgResponse.ok) {
+                await this.handleErrorResponse(imgResponse);
+            }
             const buffer = await imgResponse.arrayBuffer();
             const contentType =
                 imgResponse.headers.get("content-type") || "image/png";
@@ -579,10 +582,8 @@ export class Pollinations {
         prompt: string,
         options: VideoGenerateOptions = {},
     ): string {
-        const model = options.model || "veo";
-
         const params: Record<string, unknown> = {
-            model,
+            model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
             seed: options.seed,
@@ -690,7 +691,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai",
+            model: options.model,
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -756,7 +757,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai",
+            model: options.model,
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -828,7 +829,7 @@ export class Pollinations {
     ): Record<string, unknown> {
         return this.stripUndefined({
             messages,
-            model: options.model || "openai",
+            model: options.model,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -1046,8 +1047,8 @@ export class Pollinations {
 
         const body = {
             input: text,
-            voice: options.voice || "alloy",
-            model: options.model || "elevenlabs",
+            voice: options.voice,
+            model: options.model,
         };
 
         const response = await fetchWithTimeout(
@@ -1103,7 +1104,7 @@ export class Pollinations {
     }
 
     /**
-     * Get available models (OpenAI-compatible endpoint)
+     * Get all available models
      *
      * @example
      * ```ts
@@ -1111,7 +1112,7 @@ export class Pollinations {
      * ```
      */
     async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/v1/models`);
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
     }
 
     // ============================================================================
@@ -1154,7 +1155,7 @@ export class Pollinations {
                 : new Blob([audio], { type: "audio/mpeg" });
 
         formData.append("file", blob, "audio.mp3");
-        formData.append("model", options.model || "whisper-large-v3");
+        if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
         if (options.responseFormat)

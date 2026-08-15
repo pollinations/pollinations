@@ -1,0 +1,17 @@
+{
+  "target": "script",
+  "credentials": "apps",
+  "install": "npm ci --prefix ../.. && npm ci",
+  "build": "npm run build",
+  "deploy": "npx wrangler pages deploy dist --project-name=apps-model-monitor --branch=production --commit-dirty=true",
+  "verify": [
+    "https://model-monitor.myceli.ai",
+    "https://model-monitor.pollinations.ai"
+  ],
+  "watch": [
+    "packages/ui/",
+    "packages/sdk/",
+    "package.json",
+    "package-lock.json"
+  ]
+}

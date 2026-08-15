@@ -1,14 +1,20 @@
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     type Category,
     getModels,
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
@@ -29,6 +35,23 @@ const IMAGE_MODEL_ENDPOINTS = [
     "/v1/images/edits",
     "/image/{prompt}",
 ];
+const CATEGORY_ORDER: Record<Category, number> = {
+    text: 0,
+    image: 1,
+    video: 2,
+    "3d": 3,
+    audio: 4,
+    realtime: 5,
+    embedding: 6,
+};
+const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
+    text: DEFAULT_TEXT_MODEL,
+    image: DEFAULT_IMAGE_MODEL,
+    "3d": DEFAULT_3D_MODEL,
+    audio: DEFAULT_AUDIO_MODEL,
+    realtime: DEFAULT_REALTIME_MODEL,
+    embedding: DEFAULT_EMBEDDING_MODEL,
+};
 
 export type GenerationModelEntry = {
     id: string;
@@ -71,7 +94,9 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
         return ["/audio/{text}", "/v1/audio/speech"];
     }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
-    if (eventType === "generate.realtime") return ["/v1/realtime"];
+    if (eventType === "generate.realtime") {
+        return ["/realtime", "/v1/realtime"];
+    }
     return IMAGE_MODEL_ENDPOINTS;
 }
 
@@ -116,12 +141,47 @@ function communityEntryToGenerationEntry(
     };
 }
 
+function compareModelEntries(
+    left: GenerationModelEntry,
+    right: GenerationModelEntry,
+): number {
+    const leftCommunity = left.communityEndpoint !== undefined;
+    const rightCommunity = right.communityEndpoint !== undefined;
+    if (leftCommunity !== rightCommunity) return leftCommunity ? 1 : -1;
+
+    if (!leftCommunity) {
+        const categoryDifference =
+            CATEGORY_ORDER[left.definition.category] -
+            CATEGORY_ORDER[right.definition.category];
+        if (categoryDifference !== 0) return categoryDifference;
+
+        const defaultModel =
+            DEFAULT_MODEL_BY_CATEGORY[left.definition.category];
+        const defaultDifference =
+            Number(right.id === defaultModel) -
+            Number(left.id === defaultModel);
+        if (defaultDifference !== 0) return defaultDifference;
+
+        const alphaDifference =
+            Number(left.definition.alpha === true) -
+            Number(right.definition.alpha === true);
+        if (alphaDifference !== 0) return alphaDifference;
+    }
+
+    const addedDateDifference =
+        right.definition.addedDate - left.definition.addedDate;
+    if (addedDateDifference !== 0) return addedDateDifference;
+    return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+}
+
 function buildRegistry(
     sourceEntries: GenerationModelEntry[],
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
     const entries = sourceEntries.map((entry) => ({ ...entry }));
+    // Build lookup keys before presentation sorting so duplicate aliases keep
+    // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -136,6 +196,7 @@ function buildRegistry(
         }
     }
     linkFallbackEntries(entries, byIdOrAlias);
+    entries.sort(compareModelEntries);
 
     return {
         resolve: (model) => {

@@ -104,13 +104,12 @@ async function mcpTransportFetch(
     return response;
 }
 
-// A 404/405 on the initialize POST means the URL is a legacy HTTP+SSE
-// endpoint that only accepts GET (e.g. Gradio's /gradio_api/mcp/sse), per
-// the MCP back-compat flow.
+// A 400/404/405 on the initialize POST means the URL may be a legacy HTTP+SSE
+// endpoint (e.g. Gradio's /gradio_api/mcp/sse), per the MCP back-compat flow.
 function isMissingHttpTransport(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
     const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
-    return statusCode === 404 || statusCode === 405;
+    return statusCode === 400 || statusCode === 404 || statusCode === 405;
 }
 
 async function loadMcpTools(

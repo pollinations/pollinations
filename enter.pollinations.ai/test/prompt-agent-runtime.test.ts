@@ -338,7 +338,9 @@ describe("prompt-agent runtime", () => {
         );
     });
 
-    it("falls back to the legacy SSE transport when POST is rejected", async () => {
+    it.each([
+        400, 404, 405,
+    ])("falls back to the legacy SSE transport when POST returns HTTP %i", async (statusCode) => {
         const requests: { method: string; url: string; auth: string | null }[] =
             [];
         let sse: ReadableStreamDefaultController<Uint8Array>;
@@ -395,10 +397,10 @@ describe("prompt-agent runtime", () => {
                     auth: request.headers.get("Authorization"),
                 });
                 if (url.pathname === "/gradio/sse") {
-                    // Legacy HTTP+SSE endpoint: GET only.
+                    // Legacy HTTP+SSE endpoint: Streamable HTTP is unavailable.
                     if (request.method !== "GET") {
-                        return new Response("Method Not Allowed", {
-                            status: 405,
+                        return new Response("HTTP transport unavailable", {
+                            status: statusCode,
                         });
                     }
                     return new Response(

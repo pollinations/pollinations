@@ -830,6 +830,7 @@ export function CommunityEndpointDialog({
                                     <Dropdown
                                         // Rows are positional: the same slot
                                         // keeps its identity as targets change.
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: positional by design
                                         key={index}
                                         align="start"
                                         className="w-[var(--reference-width)] min-w-0 p-1"

@@ -1244,7 +1244,9 @@ test("github established-account quest waits until the threshold", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date().toISOString();
+    mocks.github.state.user.created_at = new Date(
+        Date.now() - 729 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     await mocks.enable("github", "tinybird");
 
     mocks.github.state.requests = [];

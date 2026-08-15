@@ -17,7 +17,7 @@ import { questToCard } from "../types.ts";
 
 const log = getLogger(["enter", "quest", "github-profile"]);
 
-const GITHUB_ACCOUNT_AGE_DAYS = 365;
+const GITHUB_ACCOUNT_AGE_DAYS = 730;
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -164,7 +164,8 @@ function accountAgeDays(createdAt: Date | null, now: Date): number {
 const establishedGitHubAccountQuest: QuestDefinition = {
     id: "github_established",
     title: "Established GitHub account",
-    description: "Sign in with a GitHub account that is at least one year old.",
+    description:
+        "Sign in with a GitHub account that is at least two years old.",
     category: "contribute",
     scope: "perSubject",
     rewardAmount: 3,

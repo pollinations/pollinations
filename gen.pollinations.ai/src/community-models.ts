@@ -43,7 +43,31 @@ export type CommunityModelRegistryEntry = {
     info: ModelInfo;
     definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
 };
+
+export type AgentCatalogConfig = {
+    baseModel: string;
+    pollinationsTools: boolean;
+};
+
+function parseAgentCatalogConfig(
+    raw: string | null,
+): AgentCatalogConfig | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        if (typeof parsed.baseModel !== "string" || !parsed.baseModel.trim()) {
+            return null;
+        }
+        return {
+            baseModel: parsed.baseModel,
+            pollinationsTools: parsed.pollinationsTools === true,
+        };
+    } catch {
+        return null;
+    }
+}
 
 export async function getCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"] | undefined,
@@ -65,6 +89,7 @@ export async function getCommunityModelRegistryEntries(
             imagePricing: schema.communityEndpoint.imagePricing,
             inputModalities: schema.communityEndpoint.inputModalities,
             agentId: schema.communityEndpoint.agentId,
+            agentConfig: schema.agent.config,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             endpointBearerTokenCiphertext:
@@ -92,6 +117,10 @@ export async function getCommunityModelRegistryEntries(
         .innerJoin(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+        )
+        .leftJoin(
+            schema.agent,
+            eq(schema.communityEndpoint.agentId, schema.agent.id),
         )
         .where(isNotNull(schema.user.githubUsername));
 
@@ -150,6 +179,11 @@ export async function getCommunityModelRegistryEntries(
                 }),
                 definition,
                 communityEndpoint,
+                agentConfig:
+                    row.agentId === null
+                        ? undefined
+                        : (parseAgentCatalogConfig(row.agentConfig) ??
+                          undefined),
             },
         ];
     });

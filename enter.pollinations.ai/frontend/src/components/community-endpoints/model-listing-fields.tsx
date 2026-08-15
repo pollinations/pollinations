@@ -36,7 +36,7 @@ export function ModelListingFields({
     isAgent: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
-    onInputModalitiesChange: (value: ModelInputModality[]) => void;
+    onInputModalitiesChange?: (value: ModelInputModality[]) => void;
 }) {
     function toggleInputModality(input: ModelInputModality): void {
         const selected = form.inputModalities.includes(input);
@@ -44,7 +44,7 @@ export function ModelListingFields({
         const next = new Set(form.inputModalities);
         if (selected) next.delete(input);
         else next.add(input);
-        onInputModalitiesChange(
+        onInputModalitiesChange?.(
             COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].filter((value) =>
                 next.has(value),
             ),

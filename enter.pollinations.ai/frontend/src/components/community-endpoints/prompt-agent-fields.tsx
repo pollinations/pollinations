@@ -8,7 +8,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { BaseModelInput } from "./base-model-input.tsx";
-import type { AgentFormState, McpServerRow } from "./types.ts";
+import type { AgentFormState } from "./types.ts";
 
 export function PromptAgentFields({
     form,
@@ -17,6 +17,9 @@ export function PromptAgentFields({
     onAddMcp,
     onUpdateMcp,
     onRemoveMcp,
+    onAddMcpHeader,
+    onUpdateMcpHeader,
+    onRemoveMcpHeader,
 }: {
     form: AgentFormState;
     disabled: boolean;
@@ -25,12 +28,16 @@ export function PromptAgentFields({
         value: string | boolean,
     ) => void;
     onAddMcp: () => void;
-    onUpdateMcp: (
-        index: number,
-        key: keyof Omit<McpServerRow, "id">,
+    onUpdateMcp: (index: number, key: "name" | "url", value: string) => void;
+    onRemoveMcp: (index: number) => void;
+    onAddMcpHeader: (serverIndex: number) => void;
+    onUpdateMcpHeader: (
+        serverIndex: number,
+        headerIndex: number,
+        key: "name" | "value",
         value: string,
     ) => void;
-    onRemoveMcp: (index: number) => void;
+    onRemoveMcpHeader: (serverIndex: number, headerIndex: number) => void;
 }) {
     return (
         <div className="space-y-4">
@@ -77,7 +84,7 @@ export function PromptAgentFields({
 
             <FieldStack
                 label="MCP servers"
-                helper="Public Streamable-HTTP MCP servers whose tools the agent can call."
+                helper="Public Streamable-HTTP MCP servers whose tools the agent can call. Optional request headers are stored encrypted."
                 alignLabelRow
                 action={
                     <Button
@@ -97,54 +104,136 @@ export function PromptAgentFields({
                         {form.mcpServers.map((row, index) => (
                             <div
                                 key={row.id}
-                                className="flex items-center gap-2"
+                                className="space-y-2 rounded-md border border-divider p-2"
                             >
-                                <Input
-                                    name={`prompt-agent-mcp-name-${index}`}
-                                    value={row.name}
-                                    placeholder="my-server"
-                                    autoComplete="off"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    className="w-40 shrink-0"
-                                    disabled={disabled}
-                                    onChange={(e) =>
-                                        onUpdateMcp(
-                                            index,
-                                            "name",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <Input
-                                    name={`prompt-agent-mcp-url-${index}`}
-                                    type="url"
-                                    inputMode="url"
-                                    value={row.url}
-                                    placeholder="https://mcp.example.com"
-                                    autoComplete="off"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    className="flex-1"
-                                    disabled={disabled}
-                                    onChange={(e) =>
-                                        onUpdateMcp(
-                                            index,
-                                            "url",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                {!disabled && (
-                                    <IconButton
-                                        intent="danger"
-                                        title="Remove MCP server"
-                                        tooltip="Remove MCP server"
-                                        onClick={() => onRemoveMcp(index)}
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        name={`prompt-agent-mcp-name-${index}`}
+                                        value={row.name}
+                                        placeholder="my-server"
+                                        autoComplete="off"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        className="w-40 shrink-0"
+                                        disabled={disabled}
+                                        onChange={(e) =>
+                                            onUpdateMcp(
+                                                index,
+                                                "name",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                    <Input
+                                        name={`prompt-agent-mcp-url-${index}`}
+                                        type="url"
+                                        inputMode="url"
+                                        value={row.url}
+                                        placeholder="https://mcp.example.com"
+                                        autoComplete="off"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        className="flex-1"
+                                        disabled={disabled}
+                                        onChange={(e) =>
+                                            onUpdateMcp(
+                                                index,
+                                                "url",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                    {!disabled && (
+                                        <IconButton
+                                            intent="danger"
+                                            title="Remove MCP server"
+                                            tooltip="Remove MCP server"
+                                            onClick={() => onRemoveMcp(index)}
+                                        >
+                                            <XIcon className="h-4 w-4" />
+                                        </IconButton>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs text-theme-text-muted">
+                                        Request headers
+                                    </span>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        disabled={
+                                            disabled || row.headers.length >= 16
+                                        }
+                                        onClick={() => onAddMcpHeader(index)}
                                     >
-                                        <XIcon className="h-4 w-4" />
-                                    </IconButton>
-                                )}
+                                        Add header
+                                    </Button>
+                                </div>
+                                {row.headers.map((header, headerIndex) => (
+                                    <div
+                                        key={header.id}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Input
+                                            name={`prompt-agent-mcp-header-name-${index}-${headerIndex}`}
+                                            value={header.name}
+                                            placeholder="Authorization"
+                                            autoComplete="off"
+                                            autoCapitalize="none"
+                                            spellCheck={false}
+                                            className="w-48 shrink-0"
+                                            disabled={disabled}
+                                            onChange={(event) =>
+                                                onUpdateMcpHeader(
+                                                    index,
+                                                    headerIndex,
+                                                    "name",
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <Input
+                                            name={`prompt-agent-mcp-header-value-${index}-${headerIndex}`}
+                                            type="password"
+                                            value={header.value}
+                                            placeholder={
+                                                header.saved
+                                                    ? "Saved — leave blank to keep"
+                                                    : "Header value"
+                                            }
+                                            autoComplete="new-password"
+                                            autoCapitalize="none"
+                                            data-lpignore="true"
+                                            data-1p-ignore="true"
+                                            data-bwignore="true"
+                                            className="flex-1"
+                                            disabled={disabled}
+                                            onChange={(event) =>
+                                                onUpdateMcpHeader(
+                                                    index,
+                                                    headerIndex,
+                                                    "value",
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        {!disabled && (
+                                            <IconButton
+                                                intent="danger"
+                                                title="Remove header"
+                                                tooltip="Remove header"
+                                                onClick={() =>
+                                                    onRemoveMcpHeader(
+                                                        index,
+                                                        headerIndex,
+                                                    )
+                                                }
+                                            >
+                                                <XIcon className="h-4 w-4" />
+                                            </IconButton>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </div>

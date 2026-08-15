@@ -23,6 +23,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
         pollinationsTools: false,
         mcpServers: [],
     },
+    mcpHeaders: {},
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
     pollinationsMcpUrl: "https://mcp.pollinations.test/mcp",
@@ -63,7 +64,13 @@ describe("prompt-agent config", () => {
                     { name: "docs", url: "https://mcp.example.com/rpc/" },
                 ],
             }).mcpServers,
-        ).toEqual([{ name: "docs", url: "https://mcp.example.com/rpc" }]);
+        ).toEqual([
+            {
+                name: "docs",
+                url: "https://mcp.example.com/rpc",
+                headers: [],
+            },
+        ]);
     });
 
     it("rejects plaintext and private-host MCP servers", () => {
@@ -343,8 +350,18 @@ describe("prompt-agent runtime", () => {
                 config: {
                     ...BASE_RUNTIME.config,
                     mcpServers: [
-                        { name: "docs", url: "https://mcp.example.com/rpc" },
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/rpc",
+                            headers: ["Authorization", "X-Tenant"],
+                        },
                     ],
+                },
+                mcpHeaders: {
+                    docs: {
+                        Authorization: "Bearer mcp-secret",
+                        "X-Tenant": "pollinations",
+                    },
                 },
             },
         );
@@ -391,7 +408,10 @@ describe("prompt-agent runtime", () => {
             );
         }
         for (const request of mcpRequests) {
-            expect(request.headers.get("Authorization")).toBeNull();
+            expect(request.headers.get("Authorization")).toBe(
+                "Bearer mcp-secret",
+            );
+            expect(request.headers.get("X-Tenant")).toBe("pollinations");
         }
     });
 
@@ -895,6 +915,7 @@ describe("prompt-agent runtime", () => {
                         {
                             name: "docs",
                             url: "https://mcp.example.com/rpc",
+                            headers: [],
                         },
                     ],
                 },

@@ -1,14 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import {
-    CommunityEndpoints,
-    publicCommunityFallbackOptions,
-} from "../components/community-endpoints";
-import type { FallbackModelOption } from "../components/community-endpoints/types.ts";
-import {
-    fetchModelCatalog,
-    getModelPricesFromCatalog,
-} from "../components/models/model-catalog.ts";
+import { Deployments } from "../components/community-endpoints";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-models")({
@@ -25,34 +16,5 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 
 function MyModelsPage() {
     const { communityEndpointsAllowed } = DashboardRoute.useLoaderData();
-    const [fallbackOptions, setFallbackOptions] = useState<
-        FallbackModelOption[]
-    >([]);
-
-    const loadFallbackOptions = useCallback(async (refresh = false) => {
-        try {
-            const models = await fetchModelCatalog({ refresh });
-            setFallbackOptions(
-                publicCommunityFallbackOptions(
-                    getModelPricesFromCatalog(models),
-                ),
-            );
-        } catch (error) {
-            console.error("Fallback model catalog fetch failed:", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        void loadFallbackOptions();
-    }, [loadFallbackOptions]);
-
-    return (
-        <div className="flex flex-col gap-6">
-            <CommunityEndpoints
-                canPublish={communityEndpointsAllowed}
-                fallbackOptions={fallbackOptions}
-                onChange={() => loadFallbackOptions(true)}
-            />
-        </div>
-    );
+    return <Deployments canPublish={communityEndpointsAllowed} />;
 }

@@ -19,6 +19,7 @@ export const ModelCapabilitySchema = z.enum([
     "reasoning",
     "web_search",
     "code_execution",
+    "pollinations_models",
 ]);
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
@@ -44,6 +45,7 @@ export const ModelInfoSchema = z.object({
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
     agent: z.boolean().optional(),
+    base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())

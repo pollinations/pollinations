@@ -52,7 +52,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
+import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -3734,7 +3734,16 @@ fixtureTest(
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
             pollinationsTools: true,
-            mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
+            mcpServers: [
+                {
+                    name: "docs",
+                    url: "https://mcp.example.com/rpc",
+                    headers: {
+                        Authorization: "Bearer mcp-secret",
+                        "X-Team": "pollinations",
+                    },
+                },
+            ],
         };
         const createAgentResponse = await fetchEnterApi(
             enterApi,
@@ -3759,16 +3768,39 @@ fixtureTest(
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
             pollinationsTools: true,
+            mcpServers: [
+                {
+                    name: "docs",
+                    headers: {
+                        Authorization: null,
+                        "X-Team": null,
+                    },
+                },
+            ],
         });
         expect(agent).not.toHaveProperty("apiKeyId");
         expect(agent).not.toHaveProperty("apiKeyCiphertext");
         expect(agent).not.toHaveProperty("bearerTokenCiphertext");
+        expect(agent).not.toHaveProperty("mcpHeadersCiphertext");
         expect(agent).not.toHaveProperty("baseUrl");
         const [storedAgent] = await db
             .select()
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
         expect(storedAgent.id).toBe(agent.id);
+        expect(storedAgent.config).not.toContain("mcp-secret");
+        expect(storedAgent.mcpHeadersCiphertext).not.toContain("mcp-secret");
+        await expect(
+            decryptSecret(
+                storedAgent.mcpHeadersCiphertext ?? "",
+                env.BETTER_AUTH_SECRET,
+            ).then(JSON.parse),
+        ).resolves.toEqual({
+            docs: {
+                Authorization: "Bearer mcp-secret",
+                "X-Team": "pollinations",
+            },
+        });
         const updateAgentResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3787,6 +3819,71 @@ fixtureTest(
         await expect(updateAgentResponse.json()).resolves.toMatchObject({
             id: agent.id,
             systemPrompt: "You are an editable SQL tutor.",
+            pollinationsTools: true,
+            mcpServers: [
+                {
+                    name: "docs",
+                    url: "https://mcp.example.com/rpc",
+                    headers: {
+                        Authorization: null,
+                        "X-Team": null,
+                    },
+                },
+            ],
+        });
+        const [agentAfterPromptUpdate] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        expect(agentAfterPromptUpdate.mcpHeadersCiphertext).toBe(
+            storedAgent.mcpHeadersCiphertext,
+        );
+
+        const updateHeadersResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/rpc",
+                            headers: {
+                                Authorization: null,
+                                "X-New": "new-secret",
+                            },
+                        },
+                    ],
+                }),
+            }),
+            enterEnv,
+        );
+        expect(updateHeadersResponse.status).toBe(200);
+        await expect(updateHeadersResponse.json()).resolves.toMatchObject({
+            mcpServers: [
+                {
+                    headers: { Authorization: null, "X-New": null },
+                },
+            ],
+        });
+        const [agentAfterHeaderUpdate] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        await expect(
+            decryptSecret(
+                agentAfterHeaderUpdate.mcpHeadersCiphertext ?? "",
+                env.BETTER_AUTH_SECRET,
+            ).then(JSON.parse),
+        ).resolves.toEqual({
+            docs: {
+                Authorization: "Bearer mcp-secret",
+                "X-New": "new-secret",
+            },
         });
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -3918,6 +4015,14 @@ fixtureTest(
             bearerTokenCiphertext: null,
         });
         if (!registryEntry) throw new Error("Agent listing was not registered");
+        expect(registryEntry.agentConfig).toEqual({
+            baseModel: promptAgent.baseModel,
+            pollinationsTools: true,
+        });
+        expect(registryEntry.definition.cost).toMatchObject({
+            promptTextTokens: 0,
+            completionTextTokens: 0,
+        });
         const gatewayContext = await communityEndpointGatewayContext(
             registryEntry.communityEndpoint,
             registryEntry.definition,
@@ -3948,21 +4053,63 @@ fixtureTest(
             name: string;
             community?: boolean;
             agent?: boolean;
+            base_model?: string;
+            pricing?: Record<string, string>;
+            capabilities?: string[];
+            input_modalities?: string[];
+            output_modalities?: string[];
         }[];
         const openaiModels = (await openaiModelsResponse.json()) as {
-            data: { id: string; agent?: boolean }[];
+            data: {
+                id: string;
+                agent?: boolean;
+                base_model?: string;
+                pricing?: Record<string, string>;
+                capabilities?: string[];
+                input_modalities?: string[];
+                output_modalities?: string[];
+                tools?: boolean;
+                reasoning?: boolean;
+                context_length?: number;
+            }[];
         };
-        expect(
-            models.find((model) => model.name === registration.modelId),
-        ).toMatchObject({
+        const baseModelInfo = models.find(
+            (model) => model.name === promptAgent.baseModel,
+        );
+        const agentModelInfo = models.find(
+            (model) => model.name === registration.modelId,
+        );
+        expect(baseModelInfo).toBeDefined();
+        const agentCapabilities = [
+            ...(baseModelInfo?.capabilities ?? []),
+            "pollinations_models",
+        ];
+        expect(agentModelInfo).toMatchObject({
             community: true,
             agent: true,
+            base_model: promptAgent.baseModel,
+            pricing: baseModelInfo?.pricing,
+            capabilities: agentCapabilities,
+            input_modalities: baseModelInfo?.input_modalities,
+            output_modalities: baseModelInfo?.output_modalities,
         });
-        expect(
-            openaiModels.data.find(
-                (model) => model.id === registration.modelId,
-            ),
-        ).toMatchObject({ agent: true });
+        const openaiBaseModel = openaiModels.data.find(
+            (model) => model.id === promptAgent.baseModel,
+        );
+        const openaiAgentModel = openaiModels.data.find(
+            (model) => model.id === registration.modelId,
+        );
+        expect(openaiBaseModel).toBeDefined();
+        expect(openaiAgentModel).toMatchObject({
+            agent: true,
+            base_model: promptAgent.baseModel,
+            pricing: baseModelInfo?.pricing,
+            capabilities: agentCapabilities,
+            input_modalities: openaiBaseModel?.input_modalities,
+            output_modalities: openaiBaseModel?.output_modalities,
+            tools: openaiBaseModel?.tools,
+            context_length: openaiBaseModel?.context_length,
+        });
 
         const duplicateRegistrationResponse = await fetchEnterApi(
             enterApi,

@@ -3,10 +3,10 @@
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
     BeakerIcon,
+    CloudUploadIcon,
     LockIcon,
     NewspaperIcon,
     SparkleIcon,
-    SparklesIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
@@ -23,8 +23,8 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "my-models",
         to: "/my-models",
-        label: "My Agents & Models",
-        icon: SparklesIcon,
+        label: "My Models",
+        icon: CloudUploadIcon,
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
     { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },

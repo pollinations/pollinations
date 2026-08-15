@@ -1,8 +1,8 @@
 import {
+    BotIcon,
     Button,
     Chip,
     IconButton,
-    SproutIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
@@ -43,7 +43,7 @@ export function AgentCard({
                         className="gap-1.5"
                         onClick={onEdit}
                     >
-                        <SproutIcon className="h-3.5 w-3.5" />
+                        <BotIcon className="h-3.5 w-3.5" />
                         Complete setup
                     </Button>
                     <IconButton

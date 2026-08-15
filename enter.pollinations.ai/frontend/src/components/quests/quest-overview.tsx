@@ -705,6 +705,53 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
     }
 
+    // Claims every unclaimed reward in one pass — including rewards whose
+    // questId is null (e.g. admin-created thank-you rewards), which never match
+    // a catalog quest and therefore never render a per-card Claim button.
+    async function handleClaimAllRewards(): Promise<void> {
+        const unclaimed = state.rewards.filter(
+            (reward) => reward.claimedAt == null,
+        );
+        if (unclaimed.length === 0) return;
+        setState((current) => ({
+            ...current,
+            claimingRewardId: unclaimed[0].id,
+            error: null,
+        }));
+        try {
+            for (const reward of unclaimed) {
+                const response = await apiClient.quests.rewards[
+                    ":rewardId"
+                ].claim.$post({
+                    param: { rewardId: reward.id },
+                });
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to claim reward (${response.status})`,
+                    );
+                }
+            }
+            const questData = await loadQuestData();
+            setState((current) => ({
+                ...current,
+                ...questData,
+                claimingRewardId: null,
+                checking: false,
+                loading: false,
+                error: null,
+            }));
+        } catch (error) {
+            setState((current) => ({
+                ...current,
+                claimingRewardId: null,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to claim reward",
+            }));
+        }
+    }
+
     // A reward's questId IS the catalog id it earned (one reward == one quest),
     // so the earned-set / reward lookup key directly off questId.
     const rewardedCatalogIds = useMemo(
@@ -952,6 +999,20 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                         );
                                     })}
                                     <span>pollen ready to claim!</span>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        disabled={
+                                            state.claimingRewardId != null
+                                        }
+                                        onClick={handleClaimAllRewards}
+                                        className="gap-1.5"
+                                    >
+                                        <SparkleIcon className="h-4 w-4 shrink-0" />
+                                        {state.claimingRewardId != null
+                                            ? "Claiming"
+                                            : "Claim all"}
+                                    </Button>
                                 </div>
                             )}
                         </div>

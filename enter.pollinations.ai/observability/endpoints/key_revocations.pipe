@@ -1,0 +1,20 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Forced API key revocations (GitHub Secret Scanning, admin, bot), newest first.
+
+NODE key_revocations_node
+SQL >
+    %
+    SELECT
+        created_at,
+        source,
+        triggered_by,
+        owner_user_id,
+        owner_email,
+        reference
+    FROM d1_apikey_revocation_audit
+    ORDER BY created_at DESC
+    LIMIT {{Int32(limit, 100)}}
+
+TYPE endpoint

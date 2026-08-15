@@ -4,6 +4,7 @@ import {
     BotIcon,
     Button,
     FieldStack,
+    GlobeIcon,
     InlineLink,
     Input,
     Section,
@@ -358,19 +359,13 @@ export function CommunityEndpoints({
         <>
             <div className="flex flex-col gap-6">
                 {canPublish && !isLoading && (
-                    <Surface className="p-4">
+                    <Section title="Profile" framed>
                         <form
                             className="flex flex-col gap-4"
                             onSubmit={(event) =>
                                 void handleProviderSubmit(event)
                             }
                         >
-                            <div>
-                                <p className="text-sm font-semibold">Brand</p>
-                                <p className="mt-0.5 text-xs text-theme-text-soft">
-                                    Shown on all your public models.
-                                </p>
-                            </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <FieldStack label="Name">
                                     <Input
@@ -413,7 +408,11 @@ export function CommunityEndpoints({
                                 </Button>
                             </div>
                         </form>
-                    </Surface>
+                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>Shown on all your public deployments.</span>
+                        </p>
+                    </Section>
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}
                 <Section

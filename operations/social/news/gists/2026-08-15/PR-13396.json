@@ -1,0 +1,36 @@
+{
+  "pr_number": 13396,
+  "title": "Add Indish Marketer's Voice Agent to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13396",
+  "merged_at": "2026-08-15T02:25:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Indish Marketer's Voice Agent](https://voice.prototools.in) to business\n- An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads\n\nFixes #13390",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The contact form learned to talk",
+    "blurb": "Indish Marketer's Voice Agent joined the business garden. Visitors can speak naturally with a website instead of negotiating with another tiny form field.",
+    "summary": "Added Indish Marketer's Voice Agent to the business app directory, letting businesses embed a voice agent that answers from their knowledge base and captures leads through natural spoken conversations.",
+    "impact": "Businesses can now discover a voice-first website assistant that turns visitor questions into informed answers and captured leads without requiring a contact form.",
+    "keywords": [
+      "community-app",
+      "voice-agent",
+      "business",
+      "lead-capture",
+      "knowledge-base",
+      "audio"
+    ],
+    "visual_concept": "Depict Polli as a friendly call-center gardener wearing tiny headphones, tending a glowing retro website terminal with a warm speech-wave flower growing from it. A small business storefront and code-plants represent an embeddable agent, while a visitor speech bubble turns into a neatly collected lead card; the Monitor Robot can eagerly hold the lead card.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny headset, helping a cheerful CRT Monitor Robot tend a glowing voice-wave flower growing from a retro business website terminal; a visitor's speech bubble becomes a small lead card beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, chunky retro sprites, subtle scanlines, pixel-font text: \"HELLO\"; lo-fi retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13396.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny headset, helping a cheerful CRT Monitor Robot tend a glowing voice-wave flower growing from a retro business website terminal; a visitor's speech bubble becomes a small lead card beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, chunky retro sprites, subtle scanlines, pixel-font text: \"HELLO\"; lo-fi retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-15T02:26:59.986908+00:00",
+  "app_name": "Indish Marketer's Voice Agent",
+  "app_url": "https://voice.prototools.in"
+}

@@ -17,6 +17,7 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import { MODERATION_SERVICES, type ModerationModelName } from "./moderation";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
@@ -27,6 +28,7 @@ export type Category =
     | "video"
     | "3d"
     | "embedding"
+    | "moderation"
     | "realtime";
 
 export const MODEL_INPUT_MODALITIES = [
@@ -84,7 +86,8 @@ export type ModelName =
     | AudioModelName
     | EmbeddingServiceId
     | RealtimeModelName
-    | Model3dName;
+    | Model3dName
+    | ModerationModelName;
 
 export type VideoCapability =
     | "start_frame"
@@ -498,6 +501,7 @@ const MODEL_REGISTRY = {
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
     ...MODEL3D_SERVICES,
+    ...MODERATION_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**

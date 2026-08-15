@@ -49,7 +49,7 @@ const TEXT_ENV_KEYS = [
     "PORTKEY_GATEWAY_URL",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
-function syncTextEnvironment(env: CloudflareBindings): void {
+export function syncTextEnvironment(env: CloudflareBindings): void {
     // Text provider config still reads process.env. In Workers all bindings are
     // stable per deployment, so copying known string bindings before generation
     // is deterministic across concurrent requests in the same isolate.

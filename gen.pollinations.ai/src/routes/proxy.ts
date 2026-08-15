@@ -71,6 +71,10 @@ import {
     type ModelListQueryParams,
     ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
+import {
+    CreateModerationRequestSchema,
+    CreateModerationResponseSchema,
+} from "@/schemas/moderations.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
@@ -84,6 +88,7 @@ import {
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
+    generateModerationResponse,
     generateSimpleText,
     generateTextContent,
     simpleAudioQuerySchema,
@@ -531,6 +536,34 @@ export const proxyRoutes = new Hono<Env>()
             getVisibleModelEntriesForEventType(c, "generate.embedding"),
         ),
     )
+    .get(
+        "/moderations/models",
+        describeRoute({
+            tags: ["🛡️ Moderations"],
+            summary: "List Moderation Models",
+            description:
+                "Returns available moderation models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of moderation models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.moderation"),
+        ),
+    )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -622,6 +655,42 @@ export const proxyRoutes = new Hono<Env>()
         generationAccess,
         deduplicateGeneration,
         generateEmbeddingsResponse,
+    )
+    .post(
+        "/v1/moderations",
+        describeRoute({
+            tags: ["🛡️ Moderations"],
+            summary: "Create Moderation",
+            description: [
+                "Classify text for harmful content with an OpenAI-compatible moderation response format.",
+                "",
+                "**Models:** `qwen-safety` (Qwen3Guard 8B) flags unsafe content across hate, harassment, self-harm, sexual, and violence categories.",
+                "",
+                "**Input:** Pass a string or an array of up to 32 strings in the `input` field. Each input gets its own moderation result.",
+                "",
+                "**Billing:** Billed per request at the model's per-token rate (prompt and completion tokens).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateModerationResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateModerationRequestSchema),
+        resolveModel("generate.moderation"),
+        track("generate.moderation"),
+        prepareGenerationRequest,
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
+        generateModerationResponse,
     )
     .post(
         "/text",

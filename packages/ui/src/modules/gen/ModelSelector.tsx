@@ -23,6 +23,7 @@ const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     audio: "Audio",
     embedding: "Embeddings",
     realtime: "Realtime",
+    moderation: "Moderation",
 };
 
 /** Human-readable label for a model category, e.g. "embedding" -> "Embeddings". */

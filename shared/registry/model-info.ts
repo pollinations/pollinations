@@ -38,6 +38,7 @@ export const ModelInfoSchema = z.object({
         "video",
         "3d",
         "embedding",
+        "moderation",
         "realtime",
     ]),
     brand: z.string(),

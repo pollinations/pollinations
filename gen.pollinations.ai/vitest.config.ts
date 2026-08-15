@@ -38,6 +38,7 @@ const genAliases = [
     "schemas/image.ts",
     "schemas/model3d.ts",
     "schemas/models.ts",
+    "schemas/moderations.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
     "userImage.ts",
@@ -76,6 +77,10 @@ const baseConfig = defineConfig({
             {
                 find: /^@\/model3d\/(.*)$/,
                 replacement: `${genSrc}model3d/$1`,
+            },
+            {
+                find: /^@\/moderations\/(.*)$/,
+                replacement: `${genSrc}moderations/$1`,
             },
             {
                 find: /^@shared\/(.*)$/,

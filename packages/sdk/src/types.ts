@@ -769,6 +769,7 @@ export const MODEL_CATEGORIES = [
     "audio",
     "embedding",
     "realtime",
+    "moderation",
 ] as const;
 
 /** Model category */

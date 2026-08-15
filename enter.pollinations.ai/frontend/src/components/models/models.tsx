@@ -103,6 +103,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    moderation: "moderation",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
@@ -124,6 +125,7 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        moderation: [],
     };
 
     for (const model of models) {

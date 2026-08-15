@@ -21,7 +21,9 @@ import {
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
+import { generateModeration } from "@/moderations/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
+import type { CreateModerationRequestSchema } from "@/schemas/moderations.ts";
 import {
     handleChatCompletionLocal,
     handleSimpleTextLocal,
@@ -162,6 +164,15 @@ export async function generateEmbeddingsResponse(
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;
+}
+
+export async function generateModerationResponse(
+    c: Context<Env>,
+): Promise<Response> {
+    const requestBody = c.req.valid("json" as never) as z.infer<
+        typeof CreateModerationRequestSchema
+    >;
+    return generateModeration(c, requestBody);
 }
 
 export async function generateChatCompletion(

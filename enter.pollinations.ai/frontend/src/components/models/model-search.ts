@@ -7,6 +7,7 @@ export const MODEL_CATEGORIES = [
     "realtime",
     "text",
     "embedding",
+    "moderation",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];

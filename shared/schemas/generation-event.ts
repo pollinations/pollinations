@@ -7,6 +7,7 @@ export type EventType =
     | "generate.image"
     | "generate.audio"
     | "generate.embedding"
+    | "generate.moderation"
     | "generate.realtime";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)

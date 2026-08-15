@@ -51,6 +51,7 @@ export const sectionLabels: Record<SectionType, string> = {
     realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
+    moderation: "Moderation",
 };
 
 // --- Tab content ---

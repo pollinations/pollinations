@@ -1,0 +1,34 @@
+{
+  "pr_number": 13432,
+  "title": "fix: point the built-in agent MCP server at /mcp",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13432",
+  "merged_at": "2026-08-15T22:59:02Z",
+  "labels": [],
+  "pr_body_excerpt": "Managed agents with Pollinations tools enabled fail: the runtime POSTs to `https://mcp.pollinations.ai`, which 404s.\n\nProbed directly:\n```\nPOST https://mcp.pollinations.ai      -> 404\nGET  https://mcp.pollinations.ai      -> 200 {\"transport\":\"streamable-http\",\"endpoint\":\"/mcp\"}\nPOST https://mcp.pollinations.ai/mcp  -> 401 \"Send a Pollinations API key as a bearer token\"\n```\n`apps/mcp/worker.js` routes only `/mcp` and returns 404 for every other pathname — its own discovery doc at `/` says so.\n\n- `agent-runtime.ts:19` — append `/mcp` to the built-in server URL (used verbatim by `prompt-agent-runtime.ts:172`).\n- `prompt-agent-fields.tsx:103` — the UI displayed the same bare URL to users next to the \"Built-in\" toggle.\n- Adds a test asserting the constant. The existing runtime tests inject `https://mcp.pollinations.test/` and match on whatever they were given, so nothing covered the real value. Reverting the constant now fails the guard.\n\nIntroduced by #12336 (merged 20:36Z), reached production via #13426 (20:40Z).\n\nChecks: `npx vitest run test/prompt-agent-runtime.test.ts` — 20 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The agent found the door",
+    "blurb": "Managed agents were knocking on the MCP server's front porch instead of its actual door. The built-in tools now head straight to `/mcp`, where the useful machinery lives.",
+    "summary": "Fixed managed agents with Pollinations tools so the built-in MCP server URL uses `https://mcp.pollinations.ai/mcp` instead of the bare host, which only serves discovery information.",
+    "impact": "Agents with the Built-in tools toggle enabled can now reach the authenticated MCP endpoint and use Pollinations tools instead of receiving a 404.",
+    "keywords": [
+      "managed agents",
+      "MCP",
+      "built-in tools",
+      "agent runtime",
+      "bug fix",
+      "API endpoint"
+    ],
+    "visual_concept": "A cozy garden-shed MCP server has a clearly marked `/mcp` doorway, while a friendly CRT monitor robot agent carries a tiny tool box through it. Polli, wearing a mechanic tool belt, points the robot toward the correct entrance; code-vines and small flowers grow around the server to represent tools becoming available.",
+    "image_prompt": "A cozy pixel art garden-server shed with a warmly glowing lime green (#ecf874) doorway labeled `/mcp` in simple chunky pixel text; a cute CRT monitor robot with eager square eyes carries a tiny tool box through the door while Polli, a cute yellow pixel bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and a tiny mechanic tool belt, points it inside. Code-plants, flowers, and curling vines surround the shed in soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13432.jpg",
+    "prompt": "A cozy pixel art garden-server shed with a warmly glowing lime green (#ecf874) doorway labeled `/mcp` in simple chunky pixel text; a cute CRT monitor robot with eager square eyes carries a tiny tool box through the door while Polli, a cute yellow pixel bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and a tiny mechanic tool belt, points it inside. Code-plants, flowers, and curling vines surround the shed in soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-15T23:00:10.426687+00:00"
+}

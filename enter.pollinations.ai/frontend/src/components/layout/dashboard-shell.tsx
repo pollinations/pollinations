@@ -23,7 +23,6 @@ import {
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 import type {
     ComponentType,
     CSSProperties,
@@ -39,6 +38,7 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
+import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -423,7 +423,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "quests" && (
+                        {item.id === "deployments" && (
                             <Chip
                                 intent="neutral"
                                 size="sm"

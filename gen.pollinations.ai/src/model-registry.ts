@@ -17,6 +17,7 @@ import {
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
+    type AgentCatalogConfig,
     type CommunityModelRegistryEntry,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
@@ -61,6 +62,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.
@@ -133,11 +135,52 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
+        agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
             entry.communityEndpoint.disabledAt === null &&
             entry.communityEndpoint.visibility === "public",
+    };
+}
+
+function applyAgentBaseModelMetadata(
+    entry: GenerationModelEntry,
+    baseEntry: GenerationModelEntry | undefined,
+): void {
+    const config = entry.agentConfig;
+    if (!config) return;
+    const agentCapabilities = config.pollinationsTools
+        ? (["pollinations_models"] as const)
+        : [];
+
+    entry.info = {
+        ...entry.info,
+        base_model: config.baseModel,
+        capabilities: [...entry.info.capabilities, ...agentCapabilities],
+    };
+    if (
+        !baseEntry ||
+        baseEntry.info.agent ||
+        baseEntry.eventType !== "generate.text"
+    ) {
+        return;
+    }
+
+    const base = baseEntry.info;
+    entry.info = {
+        ...entry.info,
+        pricing: base.pricing,
+        pricing_variants: base.pricing_variants,
+        pricing_default_label: base.pricing_default_label,
+        pricing_adjustments: base.pricing_adjustments,
+        input_modalities: base.input_modalities,
+        output_modalities: base.output_modalities,
+        capabilities: [...base.capabilities, ...agentCapabilities],
+        tools: base.tools,
+        reasoning: base.reasoning,
+        context_length: base.context_length,
+        paid_only: base.paid_only,
     };
 }
 
@@ -193,6 +236,12 @@ function buildRegistry(
             if (!byIdOrAlias.has(alias)) {
                 byIdOrAlias.set(alias, entry);
             }
+        }
+    }
+    for (const entry of entries) {
+        const baseModel = entry.agentConfig?.baseModel;
+        if (baseModel) {
+            applyAgentBaseModelMetadata(entry, byIdOrAlias.get(baseModel));
         }
     }
     linkFallbackEntries(entries, byIdOrAlias);

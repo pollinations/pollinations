@@ -23,7 +23,7 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "deployments",
         to: "/deployments",
-        label: "My Deployments",
+        label: "My Models",
         icon: CloudUploadIcon,
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },

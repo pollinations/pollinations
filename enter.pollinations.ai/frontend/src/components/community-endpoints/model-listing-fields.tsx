@@ -36,7 +36,7 @@ export function ModelListingFields({
     isAgent: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
-    onInputModalitiesChange: (value: ModelInputModality[]) => void;
+    onInputModalitiesChange?: (value: ModelInputModality[]) => void;
 }) {
     function toggleInputModality(input: ModelInputModality): void {
         const selected = form.inputModalities.includes(input);
@@ -44,7 +44,7 @@ export function ModelListingFields({
         const next = new Set(form.inputModalities);
         if (selected) next.delete(input);
         else next.add(input);
-        onInputModalitiesChange(
+        onInputModalitiesChange?.(
             COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].filter((value) =>
                 next.has(value),
             ),
@@ -55,34 +55,38 @@ export function ModelListingFields({
 
     return (
         <>
-            <FieldStack
-                label="Accepted inputs"
-                helper="Select every input type supported by this model. At least one is required."
-                alignLabelRow
-            >
-                <ButtonGroup aria-label="Accepted input modalities">
-                    {COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].map(
-                        (input) => {
-                            const selected =
-                                form.inputModalities.includes(input);
-                            return (
-                                <TabButton
-                                    key={input}
-                                    active={selected}
-                                    onClick={() => toggleInputModality(input)}
-                                    size="sm"
-                                    className="min-w-20 gap-1.5 capitalize"
-                                >
-                                    {selected && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    {input}
-                                </TabButton>
-                            );
-                        },
-                    )}
-                </ButtonGroup>
-            </FieldStack>
+            {!isAgent && (
+                <FieldStack
+                    label="Accepted inputs"
+                    helper="Select every input type supported by this model. At least one is required."
+                    alignLabelRow
+                >
+                    <ButtonGroup aria-label="Accepted input modalities">
+                        {COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].map(
+                            (input) => {
+                                const selected =
+                                    form.inputModalities.includes(input);
+                                return (
+                                    <TabButton
+                                        key={input}
+                                        active={selected}
+                                        onClick={() =>
+                                            toggleInputModality(input)
+                                        }
+                                        size="sm"
+                                        className="min-w-20 gap-1.5 capitalize"
+                                    >
+                                        {selected && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {input}
+                                    </TabButton>
+                                );
+                            },
+                        )}
+                    </ButtonGroup>
+                </FieldStack>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <FieldStack
@@ -179,21 +183,23 @@ export function ModelListingFields({
                 </ButtonGroup>
             </FieldStack>
 
-            <FieldStack
-                label="Per-user RPM"
-                helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."
-            >
-                <Input
-                    name="community-per-user-rpm"
-                    type="number"
-                    step="any"
-                    value={form.perUserRpm}
-                    placeholder="No limit"
-                    onChange={(event) =>
-                        onChange("perUserRpm", event.target.value)
-                    }
-                />
-            </FieldStack>
+            {!isAgent && (
+                <FieldStack
+                    label="Per-user RPM"
+                    helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."
+                >
+                    <Input
+                        name="community-per-user-rpm"
+                        type="number"
+                        step="any"
+                        value={form.perUserRpm}
+                        placeholder="No limit"
+                        onChange={(event) =>
+                            onChange("perUserRpm", event.target.value)
+                        }
+                    />
+                </FieldStack>
+            )}
         </>
     );
 }

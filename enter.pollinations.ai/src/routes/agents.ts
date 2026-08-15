@@ -29,7 +29,7 @@ const UpdateAgentSchema = z
         systemPrompt: PromptAgentInputSchema.shape.systemPrompt.optional(),
         baseModel: PromptAgentInputSchema.shape.baseModel.optional(),
         pollinationsTools:
-            PromptAgentInputSchema.shape.pollinationsTools.optional(),
+            PromptAgentInputSchema.shape.pollinationsTools.removeDefault(),
         mcpServers: z.array(McpServerInputSchema).max(8).optional(),
     })
     .refine(

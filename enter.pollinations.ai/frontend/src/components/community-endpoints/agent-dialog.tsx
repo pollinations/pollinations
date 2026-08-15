@@ -17,7 +17,6 @@ import {
     type CommunityEndpoint,
     emptyAgentForm,
     isValidMcpRow,
-    isValidPerUserRpm,
     type ManagedAgent,
     type ModelListingFormState,
     toAgentListingPayload,
@@ -228,12 +227,8 @@ export function AgentDialog({
         form.name.trim() !== "" ||
         form.title.trim() !== "" ||
         form.description.trim() !== "" ||
-        form.perUserRpm.trim() !== "" ||
         form.visibility === "public";
-    const listingComplete =
-        form.name.trim() !== "" &&
-        form.title.trim() !== "" &&
-        isValidPerUserRpm(form.perUserRpm);
+    const listingComplete = form.name.trim() !== "" && form.title.trim() !== "";
     const canSubmit =
         !isSubmitting &&
         form.systemPrompt.trim() !== "" &&
@@ -289,12 +284,6 @@ export function AgentDialog({
                             setForm((current) => ({
                                 ...current,
                                 [key]: value,
-                            }))
-                        }
-                        onInputModalitiesChange={(inputModalities) =>
-                            setForm((current) => ({
-                                ...current,
-                                inputModalities,
                             }))
                         }
                     />

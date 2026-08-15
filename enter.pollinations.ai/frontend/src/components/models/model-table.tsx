@@ -1,5 +1,9 @@
 import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+    AgentBasePricingLabel,
+    AgentModelMetadata,
+} from "./agent-model-metadata.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -279,6 +283,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
+                        <AgentModelMetadata model={model} />
+                        <AgentBasePricingLabel model={model} />
                         <ModelPricingControls model={model} pricing={pricing} />
                         <ModelPricingLedger
                             pricing={pricing}

@@ -1,5 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import * as schema from "@shared/db/better-auth.ts";
+import {
+    getInstallationToken,
+    githubAppCredentialsFromEnv,
+} from "@shared/github/app-auth.ts";
 import { eq } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
@@ -20,6 +24,7 @@ const log = getLogger(["enter", "quest", "github-profile"]);
 const GITHUB_ACCOUNT_AGE_DAYS = 730;
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const REPO_OWNER = "pollinations";
 
 type GitHubProfileResponse = {
     login?: string;
@@ -32,15 +37,25 @@ type GitHubRepoResponse = {
     stargazers_count?: number;
 };
 
-function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
-    const headers: Record<string, string> = {
+// GitHub removed OAuth client_id/client_secret Basic auth for API requests: it
+// now answers 401 Bad credentials, so the App installation token is the only
+// authenticated path (15,000 req/hr, against 60 unauthenticated).
+async function githubApiHeaders(
+    env: CloudflareBindings,
+): Promise<Record<string, string>> {
+    const token =
+        env.ENVIRONMENT === "test"
+            ? "mock_github_auth_token"
+            : await getInstallationToken(
+                  githubAppCredentialsFromEnv(env),
+                  REPO_OWNER,
+              );
+    return {
         Accept: "application/vnd.github+json",
         "User-Agent": "pollinations-enter",
+        "X-GitHub-Api-Version": "2022-11-28",
+        Authorization: `token ${token}`,
     };
-    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-    }
-    return headers;
 }
 
 async function fetchGitHubProfile(
@@ -49,7 +64,7 @@ async function fetchGitHubProfile(
 ): Promise<{ login: string | null; createdAt: Date | null } | null> {
     log.info("GITHUB_PROFILE_FETCH_START: githubId={githubId}", { githubId });
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
-        headers: githubApiHeaders(env),
+        headers: await githubApiHeaders(env),
     });
     const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
     const rateLimitReset = response.headers.get("x-ratelimit-reset");
@@ -103,7 +118,7 @@ async function fetchPublicRepoStars(
         });
         const response = await fetch(
             `https://api.github.com/users/${encodeURIComponent(login)}/repos?type=owner&per_page=100&page=${page}`,
-            { headers: githubApiHeaders(env) },
+            { headers: await githubApiHeaders(env) },
         );
         const rateLimitRemaining = response.headers.get(
             "x-ratelimit-remaining",

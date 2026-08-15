@@ -985,9 +985,7 @@ export function CommunityEndpointDialog({
                             <div className="flex flex-col gap-2">
                                 {fallbackRows.map((selected, index) => (
                                     <Dropdown
-                                        // Rows are positional: the same slot
-                                        // keeps its identity as targets change.
-                                        key={index}
+                                        key={selected || "new-fallback"}
                                         align="start"
                                         className="w-[var(--reference-width)] min-w-0 p-1"
                                         trigger={(open) => (

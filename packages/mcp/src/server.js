@@ -33,15 +33,6 @@ function createServerInstructions(apiBaseUrl, includeAuthTools, version) {
 
 The credential is forwarded to the Pollinations API for that request only.`;
 
-    const authenticationTools = includeAuthTools
-        ? `
-### Authentication
-- **setApiKey** - Set your API key
-- **getKeyInfo** - Check current key status (local)
-- **clearApiKey** - Remove stored key
-`
-        : "";
-
     return `# Pollinations MCP Server v${version}
 
 ## Authentication
@@ -49,31 +40,18 @@ ${authentication}
 
 Get your API key at: https://enter.pollinations.ai/keys
 
-## Available Tools
+## Model discovery and generation
 
-### Image & Video Generation
-- **generateImage** - Generate or edit an image; edits accept reference image URLs
-- **generateVideo** - Generate a video as an unlisted media resource link
-- **generate3D** - Generate a GLB model as an unlisted media resource link
+Pollinations is a live multi-model gateway. Never decide that a requested model is unavailable based on prior knowledge.
 
-### Text Generation
-- **generateText** - OpenAI-compatible text, search, multimodal, and tool-calling API
-- **createEmbeddings** - Create text or multimodal embeddings
-
-### Audio
-- **generateAudio** - Generate speech, music, or sound as an unlisted media resource link
-
-### Discovery
-- **listModels** - List models by modality
-- **getModelStatus** - Get recent model health and latency
-${authenticationTools}
-### Account
-- **getBalance** - Get the authenticated key's Pollen balance
+- When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first.
+- Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
+- generateText can invoke any listed text model; generateImage can invoke any listed image model.
+- For pricing, quote the returned pricing fields and currency; do not estimate.
+- Use getModelStatus for recent health and latency, not model discovery.
 
 ## API Endpoint
-All requests go through: ${apiBaseUrl}
-
-Model listing results include the current capabilities, voices, and pricing.`;
+All requests go through: ${apiBaseUrl}`;
 }
 
 export function buildServer({
@@ -85,13 +63,13 @@ export function buildServer({
         {
             name: "pollinations-mcp",
             version,
+        },
+        {
             instructions: createServerInstructions(
                 apiBaseUrl,
                 includeAuthTools,
                 version,
             ),
-        },
-        {
             capabilities: {
                 tools: {},
             },

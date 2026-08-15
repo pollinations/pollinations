@@ -16,9 +16,8 @@ import {
     PromptAgentRuntimeRequestSchema,
 } from "../services/prompt-agent-runtime.ts";
 
-// Must include /mcp: the MCP worker serves the Streamable HTTP transport only
-// at that path and returns 404 for every other pathname (apps/mcp/worker.js).
-export const POLLINATIONS_MCP_URL = "https://mcp.pollinations.ai/mcp";
+// The MCP worker serves Streamable HTTP directly at the root URL.
+export const POLLINATIONS_MCP_URL = "https://mcp.pollinations.ai";
 
 function genBaseUrl(env: Env["Bindings"]): string {
     return (

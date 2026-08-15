@@ -100,7 +100,7 @@ export function PromptAgentFields({
                             </div>
                             <div className="flex min-w-0 items-center gap-2">
                                 <span className="min-w-0 flex-1 break-all font-mono text-xs text-theme-text-muted">
-                                    https://mcp.pollinations.ai/mcp
+                                    https://mcp.pollinations.ai
                                 </span>
                                 <Switch
                                     checked={form.pollinationsTools}

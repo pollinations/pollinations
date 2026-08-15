@@ -34,13 +34,11 @@ const BASE_RUNTIME: PromptAgentRuntime = {
 };
 
 describe("built-in Pollinations MCP endpoint", () => {
-    // The MCP worker serves Streamable HTTP only at /mcp and 404s every other
-    // pathname (apps/mcp/worker.js). Shipping the bare host broke every managed
-    // agent with Pollinations tools; the runtime tests mock whatever url they are
-    // given, so only asserting the real constant catches it.
-    it("points at the /mcp transport path", () => {
-        expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai/mcp");
-        expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/mcp");
+    // Runtime tests mock whichever URL they receive, so assert the real hosted
+    // transport URL directly to keep the agent and MCP Worker in sync.
+    it("points at the root transport URL", () => {
+        expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai");
+        expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/");
     });
 });
 

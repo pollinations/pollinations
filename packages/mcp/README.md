@@ -6,6 +6,16 @@ All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS
 
 ## Quick Start
 
+For Streamable HTTP clients, connect to `https://mcp.pollinations.ai` and send
+your API key as `Authorization: Bearer YOUR_KEY`.
+
+The server can only use models and account features allowed by that key's
+permissions, and it cannot spend beyond the key's budget. Configure both in
+[API key settings](https://enter.pollinations.ai/keys); see
+[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
+
+Or run the server locally over stdio:
+
 ```bash
 # Run directly with npx (no installation required)
 npx @pollinations/mcp
@@ -27,7 +37,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys),
 - `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
 - `sk_` (secret) — server-side only, no rate limits, can spend Pollen
 
-Set your key via environment variable or the `setApiKey` tool:
+For the local server, set your key via environment variable or the `setApiKey`
+tool:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here

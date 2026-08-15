@@ -50,7 +50,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "app_paid_request",
     title: "First Paid Pollen request",
     description:
-        "Your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app processes its first successful request using Paid Pollen.",
+        "Someone other than you makes a successful Paid Pollen request in your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 15,
@@ -72,7 +72,7 @@ const tenPollenAppUsageQuest: QuestDefinition = {
     id: "app_pollen_10",
     title: "Ten Pollen used in your apps",
     description:
-        "Your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps process 10 Pollen of billed usage.",
+        "Other users spend 10 Pollen of billed usage across your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 25,

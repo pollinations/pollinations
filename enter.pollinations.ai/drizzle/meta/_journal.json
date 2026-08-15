@@ -351,6 +351,13 @@
       "when": 1786782545630,
       "tag": "0049_legal_the_renegades",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1786792201937,
+      "tag": "0050_bitter_black_bolt",
+      "breakpoints": true
     }
   ]
 }

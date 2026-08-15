@@ -87,47 +87,50 @@ export function PromptAgentFields({
                     </Button>
                 }
             >
-                <div className="rounded-md border border-divider p-3">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
+                <div className="grid gap-2">
+                    <div className="rounded-md border border-divider p-2">
+                        <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium">
-                                    Pollinations MCP
+                                    Pollinations
                                 </span>
                                 <Chip size="sm" intent="neutral">
                                     Built-in
                                 </Chip>
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-text-muted">
-                                <span className="break-all font-mono">
-                                    https://mcp.pollinations.ai
-                                </span>
-                                <a
-                                    href="https://gen.pollinations.ai/docs#tag/mcp-server"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                                >
-                                    Documentation
-                                </a>
+                            <div className="flex min-w-0 items-center gap-2">
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-text-muted">
+                                        <span className="break-all font-mono">
+                                            https://mcp.pollinations.ai
+                                        </span>
+                                        <a
+                                            href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                                        >
+                                            Documentation
+                                        </a>
+                                    </div>
+                                    <p className="text-xs text-theme-text-muted">
+                                        Uses the caller's Pollinations API
+                                        access.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={form.pollinationsTools}
+                                    disabled={disabled}
+                                    ariaLabel="Allow Pollinations tools"
+                                    onChange={(value) =>
+                                        onChange("pollinationsTools", value)
+                                    }
+                                />
                             </div>
-                            <p className="text-xs text-theme-text-muted">
-                                Uses the caller's Pollinations API access.
-                            </p>
                         </div>
-                        <Switch
-                            checked={form.pollinationsTools}
-                            disabled={disabled}
-                            ariaLabel="Allow Pollinations tools"
-                            onChange={(value) =>
-                                onChange("pollinationsTools", value)
-                            }
-                        />
                     </div>
-                </div>
-                {form.mcpServers.length > 0 && (
-                    <div className="mt-2 grid gap-2">
-                        {form.mcpServers.map((row, index) => (
+                    {form.mcpServers.length > 0 &&
+                        form.mcpServers.map((row, index) => (
                             <div
                                 key={row.id}
                                 className="space-y-2 rounded-md border border-divider p-2"
@@ -187,12 +190,15 @@ export function PromptAgentFields({
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs text-theme-text-muted">
-                                        Request headers
-                                    </span>
+                                    {row.headers.length > 0 && (
+                                        <span className="text-xs text-theme-text-muted">
+                                            Request headers
+                                        </span>
+                                    )}
                                     <Button
                                         type="button"
                                         size="sm"
+                                        className="ml-auto"
                                         disabled={
                                             disabled || row.headers.length >= 16
                                         }
@@ -272,8 +278,7 @@ export function PromptAgentFields({
                                 ))}
                             </div>
                         ))}
-                    </div>
-                )}
+                </div>
             </FieldStack>
         </div>
     );

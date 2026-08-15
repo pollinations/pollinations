@@ -1,0 +1,34 @@
+{
+  "pr_number": 13415,
+  "title": "docs: update DreamShaper Vast fleet",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13415",
+  "merged_at": "2026-08-15T13:54:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces retired DreamShaper instance `46387155` with RTX 4070 instance `47789794` in the fleet inventory.\n- Records machine `100803`, the `$0.093889/hour` all-in rate, and the new named tunnel hostname.\n- Updates the DreamShaper server table for the mixed RTX 3090/4070 pool.\n- Uses the refactored `operations/infrastructure/gpu/dreamshaper/` model path.\n\nValidation:\n- `git diff --check`\n- Candidate restart and public-path image tests passed.\n- Post-cutover sample: 39 successful renders, 3 intentional queue spills, 0 backend errors.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "DreamShaper gets fresh wings",
+    "blurb": "A retired DreamShaper worker has made way for a new RTX 4070 in the rendering garden. The hive kept producing pixels through the handoff, as hives tend to do when the paperwork is good.",
+    "summary": "DreamShaper’s fleet inventory now records RTX 4070 machine 100803 replacing retired instance 46387155, with the mixed RTX 3090/4070 server pool and new tunnel hostname documented under the refactored dreamshaper path.",
+    "impact": "DreamShaper image generation now has a documented RTX 4070 backend in its mixed fleet, with cutover validation reporting 39 successful renders and no backend errors.",
+    "keywords": [
+      "dreamshaper",
+      "gpu",
+      "rtx-4070",
+      "image-generation",
+      "infrastructure",
+      "fleet"
+    ],
+    "visual_concept": "Depict DreamShaper as a cozy pixel-art image workshop where Polli welcomes a new RTX 4070-powered retro computer into a garden of rendering machines. A small server rack with a lime-green route/tunnel cable and pixel flowers represents the refreshed backend fleet; Polli’s mechanic accessory makes her part of the upgrade rather than a bystander.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt while connecting a lime green (#ecf874) cable to a friendly retro GPU computer labeled “RTX 4070”; nearby code-plants bloom beside older RTX 3090 terminals. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13415.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt while connecting a lime green (#ecf874) cable to a friendly retro GPU computer labeled “RTX 4070”; nearby code-plants bloom beside older RTX 3090 terminals. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and a warm cream background."
+  },
+  "generated_at": "2026-08-15T13:55:13.080252+00:00"
+}

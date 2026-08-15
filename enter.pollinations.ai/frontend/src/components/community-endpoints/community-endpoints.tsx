@@ -3,8 +3,8 @@ import {
     BeakerIcon,
     BotIcon,
     Button,
-    CloudUploadIcon,
     FieldStack,
+    GlobeIcon,
     InlineLink,
     Input,
     Section,
@@ -321,73 +321,51 @@ export function CommunityEndpoints({
         </>
     );
 
-    const endpointByAgentId = new Map(
-        endpoints.flatMap((endpoint) =>
-            endpoint.agentId ? [[endpoint.agentId, endpoint] as const] : [],
-        ),
-    );
+    const endpointByAgentId = new Map<string, CommunityEndpoint>();
+    const modelEndpoints: CommunityEndpoint[] = [];
+    const agentEndpoints: CommunityEndpoint[] = [];
+    for (const endpoint of endpoints) {
+        if (endpoint.agentId) {
+            endpointByAgentId.set(endpoint.agentId, endpoint);
+            agentEndpoints.push(endpoint);
+        } else {
+            modelEndpoints.push(endpoint);
+        }
+    }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
     const unregisteredAgents = agents.filter(
         (agent) => !endpointByAgentId.has(agent.id),
     );
-    const hasDeployments =
-        endpoints.length > 0 || unregisteredAgents.length > 0;
+
+    function renderEndpointCard(endpoint: CommunityEndpoint) {
+        const agent = endpoint.agentId
+            ? agentById.get(endpoint.agentId)
+            : undefined;
+        return (
+            <CommunityEndpointCard
+                key={endpoint.id}
+                endpoint={endpoint}
+                isToggling={togglingId === endpoint.id}
+                onToggle={() => setToggling(endpoint)}
+                onEdit={() =>
+                    agent ? setEditingAgent(agent) : setEditing(endpoint)
+                }
+                onDelete={() => setDeleting(endpoint)}
+            />
+        );
+    }
 
     return (
         <>
-            <Section
-                title="My Agents"
-                framed
-                action={
-                    <div className="flex flex-wrap justify-end gap-2">
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
-                        <CommunityEndpointDialog
-                            open={createOpen}
-                            onOpenChange={setCreateOpen}
-                            onSubmit={handleCreate}
-                            canPublish={canPublish}
-                            fallbackOptions={fallbackOptions}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BeakerIcon className="h-4 w-4" />
-                                    Add Model
-                                </Button>
-                            }
-                        />
-                    </div>
-                }
-            >
+            <div className="flex flex-col gap-6">
                 {canPublish && !isLoading && (
-                    <Surface className="mb-3 p-4">
+                    <Section title="Profile" framed>
                         <form
                             className="flex flex-col gap-4"
                             onSubmit={(event) =>
                                 void handleProviderSubmit(event)
                             }
                         >
-                            <div>
-                                <p className="text-sm font-semibold">Brand</p>
-                                <p className="mt-0.5 text-xs text-theme-text-soft">
-                                    Shown on all your public models.
-                                </p>
-                            </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <FieldStack label="Name">
                                     <Input
@@ -430,81 +408,130 @@ export function CommunityEndpoints({
                                 </Button>
                             </div>
                         </form>
-                    </Surface>
+                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>Shown on all your public deployments.</span>
+                        </p>
+                    </Section>
                 )}
-                {error && (
-                    <Alert intent="danger" className="mb-3">
-                        {error}
-                    </Alert>
-                )}
-                <div className="flex flex-col gap-3">
-                    {isLoading ? (
-                        <Surface className="p-6 text-center text-sm text-theme-text-muted">
-                            Loading…
-                        </Surface>
-                    ) : !hasDeployments ? (
-                        <Surface className="p-6 text-center">
-                            <CloudUploadIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                            <p className="mb-2 text-lg font-semibold">
-                                Add your first deployment
-                            </p>
-                            <p className="text-sm text-theme-text-muted">
-                                {canPublish
-                                    ? "Create a managed agent or register an OpenAI-compatible endpoint."
-                                    : privateModelGuidance}
-                            </p>
-                        </Surface>
-                    ) : (
-                        <>
-                            {unregisteredAgents.map((agent) => (
-                                <AgentCard
-                                    key={agent.id}
-                                    agent={agent}
-                                    onEdit={() => setEditingAgent(agent)}
-                                    onDelete={() => setDeletingAgent(agent)}
-                                />
-                            ))}
-                            {endpoints.map((endpoint) => {
-                                const agent = endpoint.agentId
-                                    ? agentById.get(endpoint.agentId)
-                                    : undefined;
-                                return (
-                                    <CommunityEndpointCard
-                                        key={endpoint.id}
-                                        endpoint={endpoint}
-                                        isToggling={togglingId === endpoint.id}
-                                        onToggle={() => setToggling(endpoint)}
-                                        onEdit={() =>
-                                            agent
-                                                ? setEditingAgent(agent)
-                                                : setEditing(endpoint)
-                                        }
-                                        onDelete={() => setDeleting(endpoint)}
+                {error && <Alert intent="danger">{error}</Alert>}
+                <Section
+                    title="Agents"
+                    framed
+                    action={
+                        <AgentDialog
+                            open={agentCreateOpen}
+                            onOpenChange={setAgentCreateOpen}
+                            onSubmit={handleCreateAgent}
+                            canPublish={canPublish}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <BotIcon className="h-4 w-4" />
+                                    Add Agent
+                                </Button>
+                            }
+                        />
+                    }
+                >
+                    <div className="flex flex-col gap-3">
+                        {isLoading ? (
+                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
+                                Loading…
+                            </Surface>
+                        ) : unregisteredAgents.length === 0 &&
+                          agentEndpoints.length === 0 ? (
+                            <Surface className="p-6 text-center">
+                                <BotIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="mb-2 text-lg font-semibold">
+                                    Create your first agent
+                                </p>
+                                <p className="text-sm text-theme-text-muted">
+                                    Build a managed agent with a system prompt,
+                                    model, and tools.
+                                </p>
+                            </Surface>
+                        ) : (
+                            <>
+                                {unregisteredAgents.map((agent) => (
+                                    <AgentCard
+                                        key={agent.id}
+                                        agent={agent}
+                                        onEdit={() => setEditingAgent(agent)}
+                                        onDelete={() => setDeletingAgent(agent)}
                                     />
-                                );
-                            })}
-                        </>
+                                ))}
+                                {agentEndpoints.map(renderEndpointCard)}
+                            </>
+                        )}
+                    </div>
+                </Section>
+
+                <Section
+                    title="Models"
+                    framed
+                    action={
+                        <CommunityEndpointDialog
+                            open={createOpen}
+                            onOpenChange={setCreateOpen}
+                            onSubmit={handleCreate}
+                            canPublish={canPublish}
+                            fallbackOptions={fallbackOptions}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <BeakerIcon className="h-4 w-4" />
+                                    Add Model
+                                </Button>
+                            }
+                        />
+                    }
+                >
+                    <div className="flex flex-col gap-3">
+                        {isLoading ? (
+                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
+                                Loading…
+                            </Surface>
+                        ) : modelEndpoints.length === 0 ? (
+                            <Surface className="p-6 text-center">
+                                <BeakerIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="mb-2 text-lg font-semibold">
+                                    Add your first model
+                                </p>
+                                <p className="text-sm text-theme-text-muted">
+                                    {canPublish
+                                        ? "Register an OpenAI-compatible endpoint."
+                                        : privateModelGuidance}
+                                </p>
+                            </Surface>
+                        ) : (
+                            modelEndpoints.map(renderEndpointCard)
+                        )}
+                    </div>
+                    {!isLoading && modelEndpoints.length > 0 && (
+                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                {canPublish ? (
+                                    <>
+                                        Private models are callable only by you
+                                        and shown only when model lists use your
+                                        API key. Make one public to list it for
+                                        everyone in <strong>/models</strong> and
+                                        bill callers at your configured pricing.
+                                    </>
+                                ) : (
+                                    privateModelGuidance
+                                )}
+                            </span>
+                        </p>
                     )}
-                </div>
-                {!isLoading && endpoints.length > 0 && (
-                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            {canPublish ? (
-                                <>
-                                    Private models are callable only by you and
-                                    shown only when model lists use your API
-                                    key. Make one public to list it for everyone
-                                    in <strong>/models</strong> and bill callers
-                                    at your configured pricing.
-                                </>
-                            ) : (
-                                privateModelGuidance
-                            )}
-                        </span>
-                    </p>
-                )}
-            </Section>
+                </Section>
+            </div>
 
             {editing && !editing.agentId && (
                 <CommunityEndpointDialog

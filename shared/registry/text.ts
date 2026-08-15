@@ -1725,6 +1725,33 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "orcarouter-auto": {
+        aliases: ["orcarouter/auto", "orcarouter"],
+        provider: "orcarouter",
+        brand: "OrcaRouter",
+        category: "text",
+        addedDate: new Date("2026-08-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OrcaRouter is a pass-through gateway: `auto` routes each request
+            // to the best-fit upstream model, so cost varies per request. These
+            // are a conservative mid-range estimate pending live billing
+            // verification; treat as a placeholder until real usage is observed.
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(2.0),
+        },
+        title: "OrcaRouter Auto",
+        description:
+            "Routes each request to the best-fit upstream model through one gateway endpoint",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // Varies by the upstream model OrcaRouter routes to; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
     "mistral-large": {
         aliases: ["mistral-large-3"],
         provider: "azure",

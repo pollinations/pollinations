@@ -423,6 +423,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "orcarouter-auto",
+        config: portkeyConfig["orcarouter/auto"],
+    },
+    {
         name: "llama",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
         // No reasoning mode; Azure 422/400s on reasoning_effort.

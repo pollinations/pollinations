@@ -108,6 +108,16 @@ export function createOpenRouterModelConfig(
     );
 }
 
+export function createOrcaRouterModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.orcarouter.ai/v1",
+        process.env.ORCAROUTER_API_KEY,
+        overrides,
+    );
+}
+
 export function createVercelAIGatewayModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

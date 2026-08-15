@@ -156,6 +156,41 @@ test("filters OpenRouter text models by paid balance", async ({
     expect(generation.status).toBe(402);
 });
 
+test("filters OrcaRouter text models by paid balance", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const freeResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+
+    expect(freeResponse.status).toBe(200);
+    expect(paidResponse.status).toBe(200);
+
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const orcaRouterModelNames = getVisibleTextModels().filter(
+        (model) => getRegistryModelDefinition(model).provider === "orcarouter",
+    );
+    const freeModelNames = new Set(freeModels.data.map((model) => model.id));
+    const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    expect(orcaRouterModelNames.length).toBeGreaterThan(0);
+    expect(
+        orcaRouterModelNames.every((model) => !freeModelNames.has(model)),
+    ).toBe(true);
+    expect(
+        orcaRouterModelNames.every((model) => paidModelNames.has(model)),
+    ).toBe(true);
+});
+
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
     paidApiKey,

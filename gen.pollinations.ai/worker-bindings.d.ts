@@ -68,6 +68,7 @@ interface CloudflareBindings {
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;
+    ORCAROUTER_API_KEY?: string;
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;

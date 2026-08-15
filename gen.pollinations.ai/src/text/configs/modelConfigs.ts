@@ -5,6 +5,7 @@ import {
     createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
+    createOrcaRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityModelConfig,
@@ -253,6 +254,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+
+    // -- OrcaRouter (auto-routing gateway) ------------------------------------
+    "orcarouter/auto": () =>
+        createOrcaRouterModelConfig({ model: "orcarouter/auto" }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4-flash-0731": () =>

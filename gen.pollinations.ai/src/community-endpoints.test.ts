@@ -3702,7 +3702,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "keeps editable agent definitions and community registration as separate lifecycles",
+    "creates, edits, registers, and deletes managed agents",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
@@ -4137,27 +4137,16 @@ fixtureTest(
             }),
             enterEnv,
         );
-        expect(deleteRegisteredAgentResponse.status).toBe(409);
-
-        const deleteListingResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `https://enter.test/api/account/my-models/${registration.id}`,
-                { method: "DELETE", headers: { Cookie: cookie } },
-            ),
-            enterEnv,
-        );
-        expect(deleteListingResponse.status).toBe(200);
-
-        const deleteAgentResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "DELETE",
-                headers: { Cookie: cookie },
-            }),
-            enterEnv,
-        );
-        expect(deleteAgentResponse.status).toBe(200);
+        expect(deleteRegisteredAgentResponse.status).toBe(200);
+        await expect(
+            db.select().from(agentTable).where(eq(agentTable.id, agent.id)),
+        ).resolves.toEqual([]);
+        await expect(
+            db
+                .select()
+                .from(communityEndpointTable)
+                .where(eq(communityEndpointTable.id, registration.id)),
+        ).resolves.toEqual([]);
     },
 );
 

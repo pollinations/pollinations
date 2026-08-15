@@ -79,11 +79,11 @@ describe("OpenAI image cache", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
         expect(response.headers.get("x-model-used")).toBe("flux");
-        expect(result.data[0]?.url).toMatch(
+        expect(response.headers.get("content-location")).toMatch(
             /^https:\/\/gen\.pollinations\.ai\/media\/[A-Za-z0-9_-]+$/,
         );
-        expect(response.headers.get("content-location")).toBe(
-            result.data[0]?.url,
+        expect(result.data[0]?.url).toBe(
+            "https://gen.pollinations.ai/image/a%20cat?model=flux&width=1024&height=1024&quality=medium&seed=7",
         );
         expect(result.usage.total_tokens).toBe(0);
     });

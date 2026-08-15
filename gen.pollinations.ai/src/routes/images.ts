@@ -292,12 +292,12 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
             if (!mediaUrl) {
                 throw new Error("Generated media URL is missing");
             }
-            c.res = withSafetyHeaders(
+            const formattedResponse = withSafetyHeaders(
                 c,
                 c.json(
                     imageResponse(
                         {
-                            url: mediaUrl,
+                            url: c.var.generationCacheUrl?.toString(),
                             ...mediaData,
                         },
                         body.prompt,
@@ -305,6 +305,8 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
                     ),
                 ),
             );
+            formattedResponse.headers.set("Content-Location", mediaUrl);
+            c.res = formattedResponse;
             return;
         }
 

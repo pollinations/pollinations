@@ -5,8 +5,8 @@ import {
     createImageContent,
     createMCPResponse,
     createTextContent,
-    fetchJsonWithAuth,
     fetchMediaWithAuth,
+    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
 import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
@@ -48,7 +48,7 @@ async function generateImage(params, context) {
         transparent: params.transparent,
         guidance_scale: params.guidance_scale,
     };
-    const result = await fetchJsonWithAuth(
+    const response = await fetchResponseWithAuth(
         buildUrl("/v1/images/generations"),
         {
             method: "POST",
@@ -57,14 +57,17 @@ async function generateImage(params, context) {
         },
         context,
     );
+    const mediaUrl = response.headers.get("content-location");
+    const result = await response.json();
     const image = result.data?.[0];
     if (!image) throw new Error("Image API returned no image data");
 
     const content = [];
     if (image.url) {
+        if (!mediaUrl) throw new Error("Image API returned no media URL");
         content.push({
             type: "resource_link",
-            uri: image.url,
+            uri: mediaUrl,
             name: "Generated image",
             ...(image.media_type ? { mimeType: image.media_type } : {}),
         });
@@ -83,9 +86,10 @@ async function generateImage(params, context) {
         createTextContent(
             {
                 ...result,
-                data: result.data.map(({ b64_json, ...entry }) =>
-                    b64_json ? { ...entry, encoding: "base64" } : entry,
-                ),
+                data: result.data.map(({ b64_json, ...entry }) => {
+                    if (b64_json) return { ...entry, encoding: "base64" };
+                    return mediaUrl ? { ...entry, url: mediaUrl } : entry;
+                }),
             },
             true,
         ),

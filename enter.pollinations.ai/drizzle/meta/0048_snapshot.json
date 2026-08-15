@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "65081f50-8b73-48a3-90c4-a9c6dce838c8",
+  "id": "dfd92e83-e77e-4e3e-a350-5810513c2a9e",
   "prevId": "042a6398-9671-424c-a76a-0b00789e4c1c",
   "tables": {
     "account": {
@@ -152,11 +152,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "base_url": {
-          "name": "base_url",
+        "mcp_headers_ciphertext": {
+          "name": "mcp_headers_ciphertext",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "created_at": {

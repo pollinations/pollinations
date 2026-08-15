@@ -31,7 +31,7 @@ export function PromptAgentFields({
     onAddMcp: () => void;
     onUpdateMcp: (index: number, key: "name" | "url", value: string) => void;
     onRemoveMcp: (index: number) => void;
-    onAddMcpHeader: (serverIndex: number) => void;
+    onAddMcpHeader: (serverIndex: number, bearer?: boolean) => void;
     onUpdateMcpHeader: (
         serverIndex: number,
         headerIndex: number,
@@ -87,8 +87,8 @@ export function PromptAgentFields({
                     </Button>
                 }
             >
-                <div className="grid gap-2">
-                    <div className="space-y-1 p-2">
+                <div className="overflow-hidden rounded-md border border-divider">
+                    <div className="space-y-2 p-3">
                         <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium">
@@ -137,7 +137,7 @@ export function PromptAgentFields({
                         form.mcpServers.map((row, index) => (
                             <div
                                 key={row.id}
-                                className="space-y-2 rounded-md border border-divider p-2"
+                                className="space-y-3 border-t border-divider p-3"
                             >
                                 <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center">
                                     <Input
@@ -193,93 +193,117 @@ export function PromptAgentFields({
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
-                                    {row.headers.length > 0 && (
+                                <div className="ml-4 space-y-2 rounded-md bg-theme-bg-subtle p-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
                                         <span className="text-xs text-theme-text-muted">
                                             Request headers
                                         </span>
-                                    )}
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className="ml-auto"
-                                        disabled={
-                                            disabled || row.headers.length >= 16
-                                        }
-                                        onClick={() => onAddMcpHeader(index)}
-                                    >
-                                        Add header
-                                    </Button>
-                                </div>
-                                {row.headers.map((header, headerIndex) => (
-                                    <div
-                                        key={header.id}
-                                        className="grid gap-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center"
-                                    >
-                                        <Input
-                                            name={`prompt-agent-mcp-header-name-${index}-${headerIndex}`}
-                                            aria-label={`MCP server ${index + 1} header ${headerIndex + 1} name`}
-                                            value={header.name}
-                                            placeholder="Authorization"
-                                            autoComplete="off"
-                                            autoCapitalize="none"
-                                            spellCheck={false}
-                                            className="min-w-0"
-                                            disabled={disabled}
-                                            onChange={(event) =>
-                                                onUpdateMcpHeader(
-                                                    index,
-                                                    headerIndex,
-                                                    "name",
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            <Input
-                                                name={`prompt-agent-mcp-header-value-${index}-${headerIndex}`}
-                                                aria-label={`MCP server ${index + 1} header ${headerIndex + 1} value`}
-                                                type="password"
-                                                value={header.value}
-                                                placeholder={
-                                                    header.saved
-                                                        ? "Saved — leave blank to keep"
-                                                        : "Header value"
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                disabled={
+                                                    disabled ||
+                                                    row.headers.length >= 16 ||
+                                                    row.headers.some(
+                                                        (header) =>
+                                                            header.name
+                                                                .trim()
+                                                                .toLowerCase() ===
+                                                            "authorization",
+                                                    )
                                                 }
-                                                autoComplete="new-password"
+                                                onClick={() =>
+                                                    onAddMcpHeader(index, true)
+                                                }
+                                            >
+                                                Add bearer token
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                disabled={
+                                                    disabled ||
+                                                    row.headers.length >= 16
+                                                }
+                                                onClick={() =>
+                                                    onAddMcpHeader(index)
+                                                }
+                                            >
+                                                Add header
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {row.headers.map((header, headerIndex) => (
+                                        <div
+                                            key={header.id}
+                                            className="grid gap-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center"
+                                        >
+                                            <Input
+                                                name={`prompt-agent-mcp-header-name-${index}-${headerIndex}`}
+                                                aria-label={`MCP server ${index + 1} header ${headerIndex + 1} name`}
+                                                value={header.name}
+                                                placeholder="Authorization"
+                                                autoComplete="off"
                                                 autoCapitalize="none"
-                                                data-lpignore="true"
-                                                data-1p-ignore="true"
-                                                data-bwignore="true"
-                                                className="min-w-0 flex-1"
+                                                spellCheck={false}
+                                                className="min-w-0"
                                                 disabled={disabled}
                                                 onChange={(event) =>
                                                     onUpdateMcpHeader(
                                                         index,
                                                         headerIndex,
-                                                        "value",
+                                                        "name",
                                                         event.target.value,
                                                     )
                                                 }
                                             />
-                                            {!disabled && (
-                                                <IconButton
-                                                    intent="danger"
-                                                    title="Remove header"
-                                                    tooltip="Remove header"
-                                                    onClick={() =>
-                                                        onRemoveMcpHeader(
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <Input
+                                                    name={`prompt-agent-mcp-header-value-${index}-${headerIndex}`}
+                                                    aria-label={`MCP server ${index + 1} header ${headerIndex + 1} value`}
+                                                    type="password"
+                                                    value={header.value}
+                                                    placeholder={
+                                                        header.saved
+                                                            ? "Saved — leave blank to keep"
+                                                            : "Header value"
+                                                    }
+                                                    autoComplete="new-password"
+                                                    autoCapitalize="none"
+                                                    data-lpignore="true"
+                                                    data-1p-ignore="true"
+                                                    data-bwignore="true"
+                                                    className="min-w-0 flex-1"
+                                                    disabled={disabled}
+                                                    onChange={(event) =>
+                                                        onUpdateMcpHeader(
                                                             index,
                                                             headerIndex,
+                                                            "value",
+                                                            event.target.value,
                                                         )
                                                     }
-                                                >
-                                                    <XIcon className="h-4 w-4" />
-                                                </IconButton>
-                                            )}
+                                                />
+                                                {!disabled && (
+                                                    <IconButton
+                                                        intent="danger"
+                                                        title="Remove header"
+                                                        tooltip="Remove header"
+                                                        onClick={() =>
+                                                            onRemoveMcpHeader(
+                                                                index,
+                                                                headerIndex,
+                                                            )
+                                                        }
+                                                    >
+                                                        <XIcon className="h-4 w-4" />
+                                                    </IconButton>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         ))}
                 </div>

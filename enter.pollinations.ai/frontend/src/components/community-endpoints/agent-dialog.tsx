@@ -126,7 +126,7 @@ export function AgentDialog({
         }));
     }
 
-    function addMcpHeader(serverIndex: number): void {
+    function addMcpHeader(serverIndex: number, bearer = false): void {
         setForm((current) => ({
             ...current,
             mcpServers: current.mcpServers.map((server, index) =>
@@ -137,8 +137,8 @@ export function AgentDialog({
                               ...server.headers,
                               {
                                   id: crypto.randomUUID(),
-                                  name: "",
-                                  value: "",
+                                  name: bearer ? "Authorization" : "",
+                                  value: bearer ? "Bearer " : "",
                                   saved: false,
                               },
                           ],

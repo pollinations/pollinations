@@ -81,6 +81,7 @@ function resolveMcpServers(
     const mcpServers = servers.map((server, index) => {
         const currentServer =
             currentServers.find((candidate) => candidate.name === server.name) ??
+            currentServers.find((candidate) => candidate.url === server.url) ??
             currentServers[index];
         const headers: Record<string, string> = {};
         for (const [name, value] of Object.entries(server.headers)) {

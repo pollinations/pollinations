@@ -1,0 +1,34 @@
+{
+  "pr_number": 13429,
+  "title": "fix: authenticate GitHub reads with the App installation token",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13429",
+  "merged_at": "2026-08-15T21:06:41Z",
+  "labels": [],
+  "pr_body_excerpt": "`github_established` (\"Senior dev\") shipped today and cannot be earned by anyone. Root cause: GitHub rejects OAuth `client_id`/`client_secret` Basic auth with **401 Bad credentials**, so `fetchGitHubProfile` always returned `null`.\n\nVerified against production credentials:\n```\nAuthorization: Basic base64(client_id:client_secret)  -> HTTP 401 \"Bad credentials\"\nAuthorization: token <installation token>             -> HTTP 200, 15,000 req/hr\n(no Authorization header)                             -> HTTP 200, 60 req/hr\n```\n\n- Switches to `getInstallationToken`, the pattern `github-contributions` already uses.\n- Fixes the same broken auth in the `auth.ts` username sync, which had been failing silently.\n- Stops the GitHub test mock accepting `Basic ` — it accepted exactly what real GitHub rejects, which is why this shipped green. Reverting the source now fails 3 tests.\n\nConfirmed no `github_established` reward exists for any user in production D1.\n\nChecks: `npx vitest run test/quests.test.ts` — 30 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Senior dev quest wakes up",
+    "blurb": "The Senior dev badge had a locked garden gate: GitHub was refusing the wrong key. Polli found the installation token, and the quest can finally recognize the people who earned it.",
+    "summary": "GitHub profile reads for the github_established “Senior dev” quest and username sync now authenticate with the GitHub App installation token instead of rejected OAuth Basic credentials.",
+    "impact": "Eligible users can now earn github_established, while GitHub username syncing works reliably with the installation token’s 15,000-requests-per-hour allowance.",
+    "keywords": [
+      "quests",
+      "github",
+      "authentication",
+      "github_established",
+      "profile-sync",
+      "installation-token"
+    ],
+    "visual_concept": "Depict Polli as a tiny senior developer with round glasses and a tool belt, using a glowing installation-token key to open a cozy GitHub-profile garden gate labeled “Senior dev.” Behind the gate, a retro terminal shows a successful profile check, with code-plants and small flowers growing to represent restored quest verification.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, round developer glasses, and a tiny tool belt, unlocking a garden gate with a glowing lime green (#ecf874) installation-token key; the gate has simple pixel text reading “SENIOR DEV,” and a warm retro terminal behind it shows a successful GitHub profile check among blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13429.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, round developer glasses, and a tiny tool belt, unlocking a garden gate with a glowing lime green (#ecf874) installation-token key; the gate has simple pixel text reading “SENIOR DEV,” and a warm retro terminal behind it shows a successful GitHub profile check among blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-15T21:07:37.818592+00:00"
+}

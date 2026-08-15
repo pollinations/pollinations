@@ -1,0 +1,34 @@
+{
+  "pr_number": 13419,
+  "title": "docs: remove duplicate guide pages",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13419",
+  "merged_at": "2026-08-15T22:55:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the standalone `/docs/guides` index and BYOP, CLI, and MCP guide pages that duplicate Scalar content.\n- Links existing docs references directly to the corresponding Scalar tags.\n- Keeps the canonical source documents, Scalar integration sections, and `/docs/llm.txt` slices unchanged.\n- Removes the now-unused guide renderer, CSS, tests, and `marked` dependency.\n\nChecks:\n- `npx vitest run test/docs.test.ts --reporter=dot`\n- `npm run typecheck`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One guide, fewer copies",
+    "blurb": "The duplicate guide shed has been tidied up. Docs now point straight to Scalar, where the canonical BYOP, CLI, and MCP instructions already grow.",
+    "summary": "Removed the standalone /docs/guides index plus duplicate BYOP, CLI, and MCP guide pages, replacing their references with direct links to the corresponding Scalar tags while preserving canonical documents and /docs/llm.txt slices.",
+    "impact": "Readers now reach the maintained Scalar documentation directly for BYOP, CLI, and MCP guidance, with fewer duplicate pages to wander through.",
+    "keywords": [
+      "documentation",
+      "scalar",
+      "guides",
+      "byop",
+      "cli",
+      "mcp"
+    ],
+    "visual_concept": "A cozy documentation garden is being pruned: Polli uses tiny gardener shears to remove duplicate signposts while leaving three healthy, clearly labeled paths leading to a glowing Scalar terminal. Small code-plants, flowers, and preserved document scrolls show that the canonical material remains intact.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny gardener hat, carefully pruning duplicate paper signposts in a warm documentation garden; three tidy paths lead to a glowing retro terminal labeled \"SCALAR\" with small signs for \"BYOP\", \"CLI\", and \"MCP\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13419.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny gardener hat, carefully pruning duplicate paper signposts in a warm documentation garden; three tidy paths lead to a glowing retro terminal labeled \"SCALAR\" with small signs for \"BYOP\", \"CLI\", and \"MCP\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-15T22:56:40.875260+00:00"
+}

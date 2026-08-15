@@ -39,7 +39,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
     id: "app_active",
     title: "First user connects to your app",
     description:
-        "A user logs in to your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
+        "A user logs in to your [app](https://gen.pollinations.ai/docs#tag/byop) using the authorize flow.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 7,
@@ -50,7 +50,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "app_paid_request",
     title: "First Paid Pollen request",
     description:
-        "Someone other than you makes a successful Paid Pollen request in your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
+        "Someone other than you makes a successful Paid Pollen request in your [app](https://gen.pollinations.ai/docs#tag/byop).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 15,
@@ -59,9 +59,9 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
 
 const tenAppUsersQuest: QuestDefinition = {
     id: "app_users_10",
-    title: "Your apps reach ten users",
+    title: "Your app is gaining users",
     description:
-        "At least ten external users connect to your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps.",
+        "At least ten external users connect to your [apps](https://gen.pollinations.ai/docs#tag/byop).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 15,
@@ -70,9 +70,9 @@ const tenAppUsersQuest: QuestDefinition = {
 
 const tenPollenAppUsageQuest: QuestDefinition = {
     id: "app_pollen_10",
-    title: "Ten Pollen used in your apps",
+    title: "Pollen is flowing through your app",
     description:
-        "Other users spend 10 Pollen of billed usage across your [BYOP](https://gen.pollinations.ai/docs#tag/byop) apps.",
+        "Other users spend 10 Pollen of billed usage across your [apps](https://gen.pollinations.ai/docs#tag/byop).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 25,

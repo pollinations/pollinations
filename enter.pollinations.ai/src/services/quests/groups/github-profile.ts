@@ -163,7 +163,7 @@ function accountAgeDays(createdAt: Date | null, now: Date): number {
 
 const establishedGitHubAccountQuest: QuestDefinition = {
     id: "github_established",
-    title: "Established GitHub account",
+    title: "Senior dev",
     description:
         "Sign in with a GitHub account that is at least two years old.",
     category: "contribute",

@@ -306,7 +306,7 @@ const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
-// storage + account + safety + errors. BYOP, CLI, MCP are separate guides.
+// storage + account + safety + errors. BYOP, CLI, MCP are separate sections.
 const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
@@ -342,6 +342,13 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     byop: BYOP_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
+};
+
+// Scalar tag anchors for the retired /docs/guides/:id pages.
+const GUIDE_REDIRECT_TAGS: Record<string, string> = {
+    byop: "byop",
+    cli: "cli",
+    mcp: "mcp-server",
 };
 
 function pollinationsHeaderHtml(): string {
@@ -897,7 +904,7 @@ export async function buildMergedOpenApiSpec(
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
-    return new Hono<Env>()
+    const routes = new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
@@ -961,4 +968,13 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             }
             return c.json(merged);
         });
+    // The standalone guide pages moved into the Scalar reference as tag
+    // sections; keep their old URLs redirecting so shared links survive.
+    routes.get("/guides", (c) => c.redirect("/docs", 301));
+    routes.get("/guides/:id", (c) => {
+        const tag = GUIDE_REDIRECT_TAGS[c.req.param("id")];
+        if (!tag) return c.text("Guide not found", 404);
+        return c.redirect(`/docs#tag/${tag}`, 301);
+    });
+    return routes;
 }

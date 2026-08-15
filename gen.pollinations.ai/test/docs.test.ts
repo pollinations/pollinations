@@ -324,6 +324,38 @@ describe("docs routes", () => {
         expect(parsed.paths["/v1/chat/completions"]).toBeDefined();
     });
 
+    it("redirects retired guide URLs to Scalar tag anchors", async () => {
+        const ctx = createExecutionContext();
+
+        const indexRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(indexRes.status).toBe(301);
+        expect(indexRes.headers.get("Location")).toBe("/docs");
+
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/mcp", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(mcpRes.status).toBe(301);
+        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
+
+        const missingRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/notexist"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(missingRes.status).toBe(404);
+    });
+
     it("filters /docs/llm.txt by section", async () => {
         const ctx = createExecutionContext();
 

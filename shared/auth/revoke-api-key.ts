@@ -65,21 +65,22 @@ export async function revokeApiKeyByHash(
         .where(eq(userTable.id, key.userId))
         .get();
 
-    // Write the audit row before deleting the key so the snapshot is complete
-    // even if the delete below fails.
-    await db.insert(apikeyRevocationAuditTable).values({
-        id: crypto.randomUUID(),
-        apikeyId: key.id,
-        keyHash,
-        ownerUserId: key.userId,
-        ownerEmail: owner?.email ?? null,
-        triggeredBy,
-        source,
-        reference: reference ?? null,
-        createdAt: new Date(),
-    });
-
-    await db.delete(apikeyTable).where(eq(apikeyTable.id, key.id));
+    // Audit insert + key delete in one D1 batch = single transaction, so the
+    // trail can never claim "revoked" while the key is still live.
+    await db.batch([
+        db.insert(apikeyRevocationAuditTable).values({
+            id: crypto.randomUUID(),
+            apikeyId: key.id,
+            keyHash,
+            ownerUserId: key.userId,
+            ownerEmail: owner?.email ?? null,
+            triggeredBy,
+            source,
+            reference: reference ?? null,
+            createdAt: new Date(),
+        }),
+        db.delete(apikeyTable).where(eq(apikeyTable.id, key.id)),
+    ]);
 
     return {
         apikeyId: key.id,

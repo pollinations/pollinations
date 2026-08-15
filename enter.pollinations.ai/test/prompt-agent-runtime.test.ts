@@ -347,9 +347,11 @@ describe("prompt-agent runtime", () => {
         // The redirect is refused before it is followed, so the MCP credential
         // never reaches the attacker host. That guarantee is independent of how
         // the failure is handled.
-        expect(
-            requests.some((r) => r.url.startsWith("https://attacker.example")),
-        ).toBe(false);
+        // Compare the parsed hostname rather than a url prefix: a prefix match
+        // also accepts attacker.example.evil.com, so it is not a sound host check.
+        expect(requests.map((r) => new URL(r.url).hostname)).not.toContain(
+            "attacker.example",
+        );
         expect(
             requests.filter((r) => r.url === "https://mcp.example.com/rpc")
                 .length,

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-14",
+  "period_start": "2026-08-14",
+  "period_end": "2026-08-14",
+  "generated_at": "2026-08-15T06:12:59.108969+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-14/images/reddit.jpg"
+    }
+  ],
+  "title": "37 merges: models, audio, and safer operations",
+  "text": "37 PRs merged today. The visible part is a larger model shelf: Muse Glimmer 30B, Muse Spark 1.2, Grok 4.6, Seedance 2.0 Mini/Fast, MiniMax H3, Grok Imagine Image 2.0, Qwen3.8 2.4T A95B, and DeepSeek Pro 0813. Gemini moved to 3.7 Flash.\n\nAudio/realtime got less fragmented. Scribe is now available through the OpenAI realtime protocol; dialogue can route through the speech API; and speech models are exposed through the simple audio route. Qwen TTS now receives OpenAI-compatible instructions, which is a small compatibility fix with surprisingly large consequences.\n\nGeneration deduplication also returned after an initial revert: repeated requests now share work without the storage timeout failure mode. Cache lifecycle handling was consolidated alongside it.\n\nFor community-model operators, model monitor now has persistent filters and favorites, activation changes require confirmation, discovery endpoints accept `?community`, and per-user RPM limits landed. App keys now default to zero budget; publishable keys require it; leaked publishable-key owners get notified.\n\nDocs were regenerated, request bodies were fixed in API docs, and a D1 permission migration was split per alias because databases apparently also enjoy administrative paperwork.\n\nCode and docs: https://github.com/pollinations/pollinations and https://github.com/pollinations/pollinations/blob/main/APIDOCS.md"
+}

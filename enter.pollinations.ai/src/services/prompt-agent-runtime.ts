@@ -13,54 +13,16 @@ import type {
     PromptAgentMcpHeaders,
 } from "./prompt-agent.ts";
 
-const PromptAgentMessageSchema = z.union([
-    z.object({ role: z.literal("user"), content: z.string() }).strict(),
-    z.object({ role: z.literal("assistant"), content: z.string() }).strict(),
-]);
-
-const IgnoredCallerInstructionSchema = z
-    .object({ role: z.enum(["system", "developer"]) })
-    .passthrough();
-
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z
-            .array(
-                z.union([
-                    PromptAgentMessageSchema,
-                    IgnoredCallerInstructionSchema,
-                ]),
-            )
-            .optional()
-            .default([])
-            .transform((messages) =>
-                messages.filter(
-                    (
-                        message,
-                    ): message is z.infer<typeof PromptAgentMessageSchema> =>
-                        message.role === "user" || message.role === "assistant",
-                ),
-            ),
+        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
-    .strict();
+    .passthrough();
 
 export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
     model: z.string().uuid(),
-    // Gen and OpenAI-compatible clients add these fields. The agent definition
-    // owns its tools and model controls, so accept but ignore them here.
-    max_tokens: z.number().int().nonnegative().optional(),
-    tools: z.array(z.unknown()).optional(),
-    stream_options: z
-        .object({ include_usage: z.boolean().optional() })
-        .strict()
-        .optional(),
-    presence_penalty: z.literal(0).optional(),
-    frequency_penalty: z.literal(0).optional(),
-    logprobs: z.literal(false).optional(),
-    parallel_tool_calls: z.literal(true).optional(),
-    jsonMode: z.literal(false).optional(),
-}).strict();
+});
 
 export type PromptAgentRequest = z.output<typeof PromptAgentRequestSchema>;
 

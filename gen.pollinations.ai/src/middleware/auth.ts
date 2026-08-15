@@ -71,9 +71,13 @@ function installAuth(
         const model = c.var.model;
         if (!model) return;
 
-        if (agentRun && model.communityEndpoint) {
+        if (
+            agentRun &&
+            (model.communityEndpoint?.agentId ||
+                model.communityEndpoint?.delegatesGeneration)
+        ) {
             throw new HTTPException(403, {
-                message: "Agent run tokens cannot call community models",
+                message: "Agent run tokens cannot call agent models",
             });
         }
 

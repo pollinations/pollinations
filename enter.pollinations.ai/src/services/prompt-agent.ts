@@ -1,6 +1,20 @@
 // Configuration for no-code prompt agents. All agents run in the shared Enter
 // Worker; the agent row selects the prompt, model, and available MCP tools.
+import { normalizeCommunityEndpointBaseUrl } from "@shared/community-endpoints.ts";
 import { z } from "zod";
+
+const McpServerUrlSchema = z
+    .string()
+    .url()
+    .refine((value) => {
+        try {
+            normalizeCommunityEndpointBaseUrl(value);
+            return true;
+        } catch {
+            return false;
+        }
+    }, "MCP server URL must use https and target a public host")
+    .transform(normalizeCommunityEndpointBaseUrl);
 
 const McpServerSchema = z.object({
     // Namespaces the server's tools (mcp__<name>__<tool>); lowercase to match
@@ -12,7 +26,7 @@ const McpServerSchema = z.object({
             /^[a-z0-9][a-z0-9_-]{0,39}$/,
             "MCP server name must be lowercase alphanumeric with _ or - (max 40 chars)",
         ),
-    url: z.string().url(),
+    url: McpServerUrlSchema,
 });
 
 export const PromptAgentSchema = z

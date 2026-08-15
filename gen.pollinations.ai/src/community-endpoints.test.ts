@@ -1662,6 +1662,7 @@ fixtureTest(
             });
             expect(listed).not.toHaveProperty("baseUrl");
             expect(listed).not.toHaveProperty("bearerTokenCiphertext");
+            expect(listed).not.toHaveProperty("agent");
         }
 
         expect(openaiModels.data).toEqual(
@@ -3875,6 +3876,30 @@ fixtureTest(
             "custom-host": storedAgent.baseUrl,
             model: agent.id,
         });
+
+        const [modelsResponse, openaiModelsResponse] = await Promise.all([
+            fetchGen("https://gen.pollinations.ai/models"),
+            fetchGen("https://gen.pollinations.ai/v1/models"),
+        ]);
+        const models = (await modelsResponse.json()) as {
+            name: string;
+            community?: boolean;
+            agent?: boolean;
+        }[];
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: { id: string; agent?: boolean }[];
+        };
+        expect(
+            models.find((model) => model.name === registration.modelId),
+        ).toMatchObject({
+            community: true,
+            agent: true,
+        });
+        expect(
+            openaiModels.data.find(
+                (model) => model.id === registration.modelId,
+            ),
+        ).toMatchObject({ agent: true });
 
         const duplicateRegistrationResponse = await fetchEnterApi(
             enterApi,

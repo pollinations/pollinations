@@ -145,6 +145,9 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
+                    agent:
+                        communityEndpoint.agentId !== null ||
+                        communityEndpoint.delegatesGeneration,
                     perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,

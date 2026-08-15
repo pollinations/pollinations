@@ -30,22 +30,32 @@ const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     }),
 );
 
-const communityProbe = new Hono<AuthEnv>()
-    .use("*", auth())
-    .use("*", async (c, next) => {
-        c.set("model", {
-            requested: "Itachi-1824/polli",
-            resolved: "Itachi-1824/polli",
-            communityEndpoint: {
-                modelId: "Itachi-1824/polli",
-            } as CommunityEndpointRuntime,
+function communityProbe({
+    agentId = null,
+    delegatesGeneration = false,
+}: {
+    agentId?: string | null;
+    delegatesGeneration?: boolean;
+} = {}) {
+    return new Hono<AuthEnv>()
+        .use("*", auth())
+        .use("*", async (c, next) => {
+            c.set("model", {
+                requested: "Itachi-1824/polli",
+                resolved: "Itachi-1824/polli",
+                communityEndpoint: {
+                    modelId: "Itachi-1824/polli",
+                    agentId,
+                    delegatesGeneration,
+                } as CommunityEndpointRuntime,
+            });
+            await next();
+        })
+        .get("/", (c) => {
+            c.var.auth.requireModelAccess();
+            return c.text("ok");
         });
-        await next();
-    })
-    .get("/", (c) => {
-        c.var.auth.requireModelAccess();
-        return c.text("ok");
-    });
+}
 
 async function runTokenFor(parentApiKeyId: string, managedAgentId?: string) {
     return signAgentRunToken({
@@ -110,16 +120,30 @@ test("preserves the managed agent scope", async () => {
     });
 });
 
-test("agent run tokens cannot recurse into community models", async () => {
+test("agent run tokens can call community models but cannot recurse into agent models", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id);
 
-    const response = await probe(
-        communityProbe,
+    const communityResponse = await probe(
+        communityProbe(),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(response.status).toBe(403);
+    expect(communityResponse.status).toBe(200);
+
+    const agentResponse = await probe(
+        communityProbe({ agentId: "managed-agent-id" }),
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(agentResponse.status).toBe(403);
+
+    const delegatedAgentResponse = await probe(
+        communityProbe({ delegatesGeneration: true }),
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(delegatedAgentResponse.status).toBe(403);
 });
 
 test("is rejected as a query parameter", async () => {

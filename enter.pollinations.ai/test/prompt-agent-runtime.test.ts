@@ -8,6 +8,7 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
+import { PromptAgentSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
     type PromptAgentRequest,
@@ -46,6 +47,40 @@ async function runAgent(
         runtime,
     );
 }
+
+describe("prompt-agent config", () => {
+    const config = {
+        systemPrompt: "You are a test agent.",
+        baseModel: "openai",
+        pollinationsTools: false,
+    };
+
+    it("accepts public HTTPS MCP servers", () => {
+        expect(
+            PromptAgentSchema.parse({
+                ...config,
+                mcpServers: [
+                    { name: "docs", url: "https://mcp.example.com/rpc/" },
+                ],
+            }).mcpServers,
+        ).toEqual([{ name: "docs", url: "https://mcp.example.com/rpc" }]);
+    });
+
+    it("rejects plaintext and private-host MCP servers", () => {
+        for (const url of [
+            "http://mcp.example.com/rpc",
+            "https://localhost/rpc",
+            "https://127.0.0.1/rpc",
+        ]) {
+            expect(
+                PromptAgentSchema.safeParse({
+                    ...config,
+                    mcpServers: [{ name: "docs", url }],
+                }).success,
+            ).toBe(false);
+        }
+    });
+});
 
 describe("prompt-agent runtime", () => {
     beforeEach(() => {

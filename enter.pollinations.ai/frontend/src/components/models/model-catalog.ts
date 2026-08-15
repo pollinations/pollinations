@@ -22,6 +22,7 @@ export type ApiModelInfo = {
     brand?: string;
     brand_url?: string;
     community?: boolean;
+    agent?: boolean;
     per_user_rpm?: number | null;
     pricing?: ApiPricing;
     pricing_variants?: Array<{

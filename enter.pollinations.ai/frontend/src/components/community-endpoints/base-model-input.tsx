@@ -31,7 +31,11 @@ export function BaseModelInput({
                 if (cancelled) return;
                 setModelOptions(
                     models
-                        .filter((model) => getCatalogCategory(model) === "text")
+                        .filter(
+                            (model) =>
+                                getCatalogCategory(model) === "text" &&
+                                model.agent !== true,
+                        )
                         .map(getCatalogModelId)
                         .filter(Boolean)
                         .sort((a, b) => a.localeCompare(b)),

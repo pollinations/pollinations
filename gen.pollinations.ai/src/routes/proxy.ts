@@ -325,6 +325,7 @@ export const proxyRoutes = new Hono<Env>()
                 input_modalities: entry.info.input_modalities,
                 output_modalities: entry.info.output_modalities,
                 supported_endpoints: entry.supportedEndpoints,
+                ...(entry.info.agent && { agent: true }),
                 ...(entry.info.tools && { tools: entry.info.tools }),
                 ...(entry.info.reasoning && {
                     reasoning: entry.info.reasoning,

@@ -57,13 +57,9 @@ export const PromptAgentSchema = z
 export type PromptAgentConfig = z.infer<typeof PromptAgentSchema>;
 
 export function agentRuntimeBaseUrl(env: {
-    BETTER_AUTH_URL: string;
-    AGENT_RUNTIME_BASE_URL?: string;
+    AGENT_RUNTIME_BASE_URL: string;
 }): string {
-    return (
-        env.AGENT_RUNTIME_BASE_URL ??
-        `${env.BETTER_AUTH_URL.replace(/\/$/, "")}/api/agent-runtime/v1`
-    );
+    return env.AGENT_RUNTIME_BASE_URL;
 }
 
 export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {

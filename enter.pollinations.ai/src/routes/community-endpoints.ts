@@ -366,6 +366,11 @@ const CreateEndpointSchema = z
         (input) =>
             input.agentId === undefined || input.bearerToken === undefined,
         { message: "Managed agent credentials are configured on the agent" },
+    )
+    .refine(
+        (input) =>
+            input.agentId === undefined || !input.fallbackModelIds?.length,
+        { message: "Managed agent listings do not support fallback models" },
     );
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
@@ -842,6 +847,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!endpoint) {
                 throw new HTTPException(404, { message: "Model not found" });
             }
+            if (endpoint.agentId !== null) return c.json({ data: [] });
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -1145,6 +1151,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
                 throw new HTTPException(400, {
                     message: "Managed agent listings must be free",
+                });
+            }
+            if (endpoint.agentId !== null && input.fallbackModelIds?.length) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed agent listings do not support fallback models",
                 });
             }
             if (input.inputModalities !== undefined) {

@@ -35,6 +35,7 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+AGENT_RUNTIME_BASE_URL = "http://localhost:3000/api/agent-runtime/v1"
 # Stripe Payment Method Configurations (sandbox)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
@@ -68,6 +69,7 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+AGENT_RUNTIME_BASE_URL = "http://localhost:3000/api/agent-runtime/v1"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
@@ -241,6 +243,7 @@ TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

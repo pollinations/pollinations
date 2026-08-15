@@ -22,7 +22,9 @@ import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
+import { ManagedAgentListingDialog } from "./managed-agent-listing-dialog.tsx";
 import {
+    type AgentListingPayload,
     type AgentPayload,
     type CommunityEndpoint,
     type CommunityProviderProfile,
@@ -113,7 +115,6 @@ export function CommunityEndpoints({
         const createdAgent = (await response.json()) as ManagedAgent;
         await loadEndpoints();
         setRegisteringAgent(createdAgent);
-        setCreateOpen(true);
     }
 
     async function handleUpdateAgent(payload: AgentPayload): Promise<void> {
@@ -148,7 +149,7 @@ export function CommunityEndpoints({
     }
 
     async function handleCreate(
-        payload: EndpointPayload,
+        payload: EndpointPayload | AgentListingPayload,
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
@@ -162,7 +163,7 @@ export function CommunityEndpoints({
     }
 
     async function handleUpdate(
-        payload: EndpointPayload,
+        payload: EndpointPayload | AgentListingPayload,
         bearerToken: string,
     ): Promise<void> {
         if (!editing) return;
@@ -294,13 +295,9 @@ export function CommunityEndpoints({
     const unregisteredAgents = agents.filter(
         (agent) => !endpointByAgentId.has(agent.id),
     );
-    const selectableAgents = editing?.agentId
-        ? agents.filter(
-              (agent) =>
-                  agent.id === editing.agentId ||
-                  !endpointByAgentId.has(agent.id),
-          )
-        : unregisteredAgents;
+    const editingListedAgent = editing?.agentId
+        ? agentById.get(editing.agentId)
+        : undefined;
     const hasModels = endpoints.length > 0 || unregisteredAgents.length > 0;
 
     return (
@@ -325,13 +322,8 @@ export function CommunityEndpoints({
                             }
                         />
                         <CommunityEndpointDialog
-                            initialAgent={registeringAgent ?? undefined}
-                            agents={unregisteredAgents}
                             open={createOpen}
-                            onOpenChange={(open) => {
-                                setCreateOpen(open);
-                                if (!open) setRegisteringAgent(null);
-                            }}
+                            onOpenChange={setCreateOpen}
                             onSubmit={handleCreate}
                             canPublish={canPublish}
                             fallbackOptions={fallbackOptions}
@@ -434,10 +426,9 @@ export function CommunityEndpoints({
                                 <AgentCard
                                     key={agent.id}
                                     agent={agent}
-                                    onComplete={() => {
-                                        setRegisteringAgent(agent);
-                                        setCreateOpen(true);
-                                    }}
+                                    onComplete={() =>
+                                        setRegisteringAgent(agent)
+                                    }
                                     onEdit={() => setEditingAgent(agent)}
                                     onDelete={() => setDeletingAgent(agent)}
                                 />
@@ -485,16 +476,40 @@ export function CommunityEndpoints({
                 )}
             </Section>
 
-            <CommunityEndpointDialog
-                key={editing?.id ?? "edit-closed"}
-                endpoint={editing ?? undefined}
-                agents={selectableAgents}
-                open={!!editing}
-                onOpenChange={(open) => !open && setEditing(null)}
-                onSubmit={handleUpdate}
-                canPublish={canPublish}
-                fallbackOptions={fallbackOptions}
-            />
+            {registeringAgent && (
+                <ManagedAgentListingDialog
+                    key={`register-${registeringAgent.id}`}
+                    agent={registeringAgent}
+                    open
+                    onOpenChange={(open) => !open && setRegisteringAgent(null)}
+                    onSubmit={(payload) => handleCreate(payload, "")}
+                    canPublish={canPublish}
+                />
+            )}
+
+            {editing && !editing.agentId && (
+                <CommunityEndpointDialog
+                    key={editing.id}
+                    endpoint={editing}
+                    open
+                    onOpenChange={(open) => !open && setEditing(null)}
+                    onSubmit={handleUpdate}
+                    canPublish={canPublish}
+                    fallbackOptions={fallbackOptions}
+                />
+            )}
+
+            {editing && editingListedAgent && (
+                <ManagedAgentListingDialog
+                    key={editing.id}
+                    endpoint={editing}
+                    agent={editingListedAgent}
+                    open
+                    onOpenChange={(open) => !open && setEditing(null)}
+                    onSubmit={(payload) => handleUpdate(payload, "")}
+                    canPublish={canPublish}
+                />
+            )}
 
             <CommunityEndpointDeleteConfirmation
                 endpoint={deleting}

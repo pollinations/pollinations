@@ -3804,6 +3804,27 @@ fixtureTest(
             enterEnv,
         );
         expect(registerResponse.status).toBe(400);
+        const fallbackRegisterResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Managed SQL Tutor",
+                    agentId: agent.id,
+                    fallbackModelIds: ["owner/backup"],
+                }),
+            }),
+            enterEnv,
+        );
+        expect(fallbackRegisterResponse.status).toBe(400);
+        expect(await fallbackRegisterResponse.text()).toContain(
+            "do not support fallback models",
+        );
         const freeRegisterResponse = await fetchEnterApi(
             enterApi,
             new Request("https://enter.test/api/account/my-models", {
@@ -3847,6 +3868,39 @@ fixtureTest(
             enterEnv,
         );
         expect(paidUpdateResponse.status).toBe(400);
+        const fallbackUpdateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `https://enter.test/api/account/my-models/${registration.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        fallbackModelIds: ["owner/backup"],
+                    }),
+                },
+            ),
+            enterEnv,
+        );
+        expect(fallbackUpdateResponse.status).toBe(400);
+        expect(await fallbackUpdateResponse.text()).toContain(
+            "do not support fallback models",
+        );
+        const fallbackCandidatesResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `https://enter.test/api/account/my-models/${registration.id}/fallback-candidates`,
+                { headers: { Cookie: cookie } },
+            ),
+            enterEnv,
+        );
+        expect(fallbackCandidatesResponse.status).toBe(200);
+        await expect(fallbackCandidatesResponse.json()).resolves.toEqual({
+            data: [],
+        });
         const registryEntry = (
             await getCommunityModelRegistryEntries(
                 env.DB,
@@ -4279,6 +4333,21 @@ fixtureTest(
             "sk_saved_token",
             env.BETTER_AUTH_SECRET,
         );
+        const managedAgentId = crypto.randomUUID();
+        await db.insert(agentTable).values({
+            id: managedAgentId,
+            ownerUserId,
+            config: JSON.stringify({
+                version: 1,
+                kind: "prompt",
+                systemPrompt: "Use the available tools.",
+                baseModel: "openai",
+                pollinationsTools: false,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
         const suffix = crypto.randomUUID().slice(0, 8);
         const name = (label: string) => `${label}-${suffix}`;
         const id = (label: string) =>
@@ -4334,6 +4403,14 @@ fixtureTest(
             }),
             endpoint("delegating-target", {
                 delegatesGeneration: true,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+            }),
+            endpoint("managed-primary", {
+                baseUrl: null,
+                agentId: managedAgentId,
+                bearerTokenCiphertext: null,
+                fallbackModelIds: [id("valid-target")],
                 promptTextPrice: 0,
                 completionTextPrice: 0,
             }),
@@ -4419,6 +4496,7 @@ fixtureTest(
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
+        expect(fallbackIds(id("managed-primary"))).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.

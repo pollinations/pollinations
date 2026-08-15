@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
     emptyAgentForm,
+    emptyAgentListingForm,
     emptyForm,
     isValidMcpRow,
     isValidPerUserRpm,
     publicCommunityFallbackOptions,
+    toAgentListingPayload,
     toAgentPayload,
     toEndpointPayload,
 } from "../frontend/src/components/community-endpoints/types.ts";
@@ -88,5 +90,22 @@ describe("community endpoint per-user RPM input", () => {
                 },
             ]),
         ).toEqual([{ modelId: "owner/model", modality: "text" }]);
+    });
+
+    it("serializes agent listings without prices or fallbacks", () => {
+        const payload = toAgentListingPayload({
+            ...emptyAgentListingForm,
+            agentId: "a8e56371-73b5-43e5-85f7-555f20c1697f",
+            name: "researcher",
+            title: "Researcher",
+            visibility: "public",
+        });
+        expect(payload).toMatchObject({
+            agentId: "a8e56371-73b5-43e5-85f7-555f20c1697f",
+            modality: "text",
+        });
+        expect(payload).not.toHaveProperty("baseUrl");
+        expect(payload).not.toHaveProperty("fallbackModelIds");
+        expect(payload).not.toHaveProperty("promptTextPrice");
     });
 });

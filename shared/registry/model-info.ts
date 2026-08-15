@@ -39,6 +39,7 @@ export const ModelInfoSchema = z.object({
         "3d",
         "embedding",
         "realtime",
+        "ocr",
     ]),
     brand: z.string(),
     brand_url: z.string().url().optional(),

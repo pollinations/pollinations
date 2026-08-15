@@ -19,6 +19,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { generateOcr } from "@/ocr/handler.ts";
 import { handleImageEdit, handleImageGeneration } from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
@@ -71,6 +72,10 @@ import {
     GenerateVideoRequestQueryParamsSchema,
 } from "@/schemas/image.ts";
 import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
+import {
+    CreateOcrRequestSchema,
+    CreateOcrResponseSchema,
+} from "@/schemas/ocr.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -658,6 +663,59 @@ export const proxyRoutes = new Hono<Env>()
                         {
                             ...requestBody,
                             model: getEmbeddingProviderModelId(candidate.id),
+                        },
+                        candidate.definition ?? c.var.model.definition,
+                        candidate.id,
+                    ),
+                c.var.track?.failedCalls,
+            );
+            if (servedEntry) c.set("servedModelEntry", servedEntry);
+            return response;
+        },
+    )
+    .post(
+        "/v1/ocr",
+        describeRoute({
+            tags: ["📄 OCR"],
+            summary: "Optical Character Recognition",
+            description: [
+                "Extract structured content from documents and images, returning Markdown with layout and bounding boxes for embedded images (Mistral OCR API shape).",
+                "",
+                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64.",
+                "",
+                "**Models:** `mistral-ocr` (Mistral OCR 4), `paddle-ocr` (PaddleOCR, 80+ languages), `baidu-unlimited-ocr` (high-volume). Defaults to `mistral-ocr`.",
+                "",
+                "**Billing:** Input is billed per processed page (image-input tokens); the returned Markdown is billed as completion text tokens.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateOcrResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateOcrRequestSchema),
+        resolveModel("generate.ocr"),
+        track("generate.ocr"),
+        generationAccess,
+        async (c) => {
+            const requestBody = c.req.valid("json" as never) as z.infer<
+                typeof CreateOcrRequestSchema
+            >;
+            const { response, servedEntry } = await withModelFallbackResponse(
+                c.var.model,
+                (candidate) =>
+                    generateOcr(
+                        c.env,
+                        {
+                            ...requestBody,
+                            model: candidate.id,
                         },
                         candidate.definition ?? c.var.model.definition,
                         candidate.id,

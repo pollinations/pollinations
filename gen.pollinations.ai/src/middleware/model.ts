@@ -2,6 +2,7 @@ import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_OCR_MODEL } from "@shared/registry/ocr.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -20,6 +21,7 @@ const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.audio": "audio",
     "generate.embedding": "embeddings",
     "generate.realtime": "realtime",
+    "generate.ocr": "ocr",
 };
 
 export type ModelVariables = {
@@ -179,7 +181,9 @@ export function resolveModel(
                     ? DEFAULT_EMBEDDING_MODEL
                     : eventType === "generate.realtime"
                       ? DEFAULT_REALTIME_MODEL
-                      : DEFAULT_IMAGE_MODEL);
+                      : eventType === "generate.ocr"
+                        ? DEFAULT_OCR_MODEL
+                        : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
         // auth() runs before resolveModel on the authenticated generation
         // routes, so the caller identity is available to gate private

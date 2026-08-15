@@ -68,6 +68,11 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
+    MISTRAL_API_KEY: string;
+    PADDLE_OCR_API_KEY?: string;
+    PADDLE_OCR_HOST?: string;
+    BAIDU_OCR_API_KEY?: string;
+    BAIDU_OCR_HOST?: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;

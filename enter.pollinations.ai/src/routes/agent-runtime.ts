@@ -19,6 +19,13 @@ import {
 // The MCP worker serves Streamable HTTP directly at the root URL.
 export const POLLINATIONS_MCP_URL = "https://mcp.pollinations.ai";
 
+function pollinationsMcpUrl(env: Env["Bindings"]): string {
+    return (
+        (env as { POLLINATIONS_MCP_URL?: string }).POLLINATIONS_MCP_URL ??
+        POLLINATIONS_MCP_URL
+    );
+}
+
 function genBaseUrl(env: Env["Bindings"]): string {
     return (
         (env as { GEN_BASE_URL?: string }).GEN_BASE_URL ??
@@ -77,7 +84,7 @@ export const agentRuntimeRoutes = new Hono<Env>()
                 mcpHeaders,
                 apiKey,
                 genBaseUrl: genBaseUrl(c.env),
-                pollinationsMcpUrl: POLLINATIONS_MCP_URL,
+                pollinationsMcpUrl: pollinationsMcpUrl(c.env),
             });
         },
     );

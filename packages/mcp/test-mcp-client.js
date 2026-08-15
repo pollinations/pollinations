@@ -119,6 +119,41 @@ await step("modern listTools", async () => {
     return `${tools.length} tools`;
 });
 
+await step("model discovery guidance", () => {
+    const instructions = client.getInstructions();
+    assert.match(
+        instructions,
+        /Never decide that a requested model is unavailable based on prior knowledge/,
+    );
+    assert.match(
+        instructions,
+        /call listModels with the relevant modality first/,
+    );
+
+    const tools = new Map(modernTools.map((tool) => [tool.name, tool]));
+    assert.match(
+        tools.get("listModels").description,
+        /before claiming that a named model is unavailable/,
+    );
+    assert.match(
+        tools.get("generateText").description,
+        /any text model in the live Pollinations registry/,
+    );
+    assert.match(
+        tools.get("generateImage").description,
+        /any image model in the live Pollinations registry/,
+    );
+    assert.match(
+        tools.get("generateText").inputSchema.properties.model.description,
+        /Canonical text model name or alias returned by listModels/,
+    );
+    assert.match(
+        tools.get("generateImage").inputSchema.properties.model.description,
+        /Canonical image model name or alias returned by listModels/,
+    );
+    return "instructions and tool descriptions";
+});
+
 await step("listModels (unauthenticated)", () =>
     call("listModels", { type: "text" }),
 );

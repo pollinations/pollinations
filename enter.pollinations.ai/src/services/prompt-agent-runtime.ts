@@ -27,6 +27,13 @@ export const PromptAgentRequestSchema = z
 
 export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
     model: z.string().uuid(),
+    // Gen's OpenAI normalization forwards these defaults even when the caller
+    // omitted them. Accept only their inert values; other controls stay errors.
+    presence_penalty: z.literal(0).optional(),
+    frequency_penalty: z.literal(0).optional(),
+    logprobs: z.literal(false).optional(),
+    parallel_tool_calls: z.literal(true).optional(),
+    jsonMode: z.literal(false).optional(),
 }).strict();
 
 export type PromptAgentRequest = z.input<typeof PromptAgentRequestSchema>;

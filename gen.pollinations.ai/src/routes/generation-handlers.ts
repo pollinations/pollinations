@@ -8,11 +8,11 @@ import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
 } from "@/embeddings/handler.ts";
-import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
 import {

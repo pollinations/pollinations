@@ -27,6 +27,7 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
+import { CreateModerationRequestSchema } from "@/schemas/moderations.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
     handleSimpleAudio,
@@ -41,6 +42,7 @@ import {
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
+    generateModerationResponse,
     generateSimpleText,
     generateTextContent,
     simpleAudioQuerySchema,
@@ -89,6 +91,17 @@ generationExecutorRoutes.post(
     prepareGenerationRequest,
     textExecutionCache,
     generateEmbeddingsResponse,
+);
+
+generationExecutorRoutes.post(
+    "/v1/moderations",
+    textBodyLimit,
+    validator("json", CreateModerationRequestSchema),
+    resolveModel("generate.moderation"),
+    track("generate.moderation"),
+    prepareGenerationRequest,
+    textExecutionCache,
+    generateModerationResponse,
 );
 
 generationExecutorRoutes.post(

@@ -7,6 +7,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_MODERATION_MODEL } from "@shared/registry/moderation.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     type Category,
@@ -43,6 +44,7 @@ const CATEGORY_ORDER: Record<Category, number> = {
     audio: 4,
     realtime: 5,
     embedding: 6,
+    moderation: 7,
 };
 const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     text: DEFAULT_TEXT_MODEL,
@@ -51,6 +53,7 @@ const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     audio: DEFAULT_AUDIO_MODEL,
     realtime: DEFAULT_REALTIME_MODEL,
     embedding: DEFAULT_EMBEDDING_MODEL,
+    moderation: DEFAULT_MODERATION_MODEL,
 };
 
 export type GenerationModelEntry = {
@@ -83,6 +86,7 @@ let cachedRegistry: CachedRegistry | null = null;
 function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
     if (category === "embedding") return "generate.embedding";
+    if (category === "moderation") return "generate.moderation";
     if (category === "realtime") return "generate.realtime";
     if (category === "text") return "generate.text";
     return "generate.image";
@@ -94,6 +98,7 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
         return ["/audio/{text}", "/v1/audio/speech"];
     }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
+    if (eventType === "generate.moderation") return ["/v1/moderations"];
     if (eventType === "generate.realtime") {
         return ["/realtime", "/v1/realtime"];
     }
@@ -129,7 +134,9 @@ function communityEntryToGenerationEntry(
                 ? communityImageSupportedEndpoints(
                       entry.definition.inputModalities,
                   )
-                : communityTextSupportedEndpoints(),
+                : eventType === "generate.moderation"
+                  ? ["/v1/moderations"]
+                  : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

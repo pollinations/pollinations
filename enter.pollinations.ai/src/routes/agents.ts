@@ -78,18 +78,20 @@ function resolveMcpServers(
     mcpHeaders: PromptAgentMcpHeaders;
 } {
     const mcpHeaders: PromptAgentMcpHeaders = {};
-    const mcpServers = servers.map((server) => {
-        const currentServer = currentServers.find(
-            (candidate) =>
-                candidate.name === server.name && candidate.url === server.url,
-        );
+    const mcpServers = servers.map((server, index) => {
+        const currentServer =
+            currentServers.find((candidate) => candidate.name === server.name) ??
+            currentServers[index];
         const headers: Record<string, string> = {};
         for (const [name, value] of Object.entries(server.headers)) {
             const resolved =
                 value ??
-                (currentServer
-                    ? savedHeaderValue(currentHeaders[server.name], name)
-                    : undefined);
+                savedHeaderValue(
+                    currentServer
+                        ? currentHeaders[currentServer.name]
+                        : undefined,
+                    name,
+                );
             if (resolved === undefined) {
                 throw new HTTPException(400, {
                     message: `MCP header "${name}" for server "${server.name}" needs a value`,
@@ -264,7 +266,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update Agent",
             description:
-                "Replace an agent configuration. Null MCP header values keep the saved value only when the server name and URL are unchanged. Omitted tools and servers are removed. Existing community model registration is unchanged. API keys require `account:keys`.",
+                "Replace an agent configuration. Null MCP header values keep the saved value in the same server row. Omitted tools and servers are removed. Existing community model registration is unchanged. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",

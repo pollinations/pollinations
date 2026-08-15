@@ -3895,10 +3895,19 @@ fixtureTest(
             }),
             enterEnv,
         );
-        expect(reuseHeadersAtNewUrlResponse.status).toBe(400);
-        expect(await reuseHeadersAtNewUrlResponse.text()).toContain(
-            "needs a value",
-        );
+        expect(reuseHeadersAtNewUrlResponse.status).toBe(200);
+        const [agentAfterUrlUpdate] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        await expect(
+            decryptSecret(
+                agentAfterUrlUpdate.mcpHeadersCiphertext ?? "",
+                env.BETTER_AUTH_SECRET,
+            ).then(JSON.parse),
+        ).resolves.toEqual({
+            docs: { Authorization: "Bearer mcp-secret" },
+        });
 
         const updateHeadersResponse = await fetchEnterApi(
             enterApi,

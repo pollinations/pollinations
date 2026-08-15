@@ -105,13 +105,6 @@ export function AgentDialog({
                     ? {
                           ...row,
                           [key]: value,
-                          headers:
-                              value !== row[key]
-                                  ? row.headers.map((header) => ({
-                                        ...header,
-                                        saved: false,
-                                    }))
-                                  : row.headers,
                       }
                     : row,
             ),

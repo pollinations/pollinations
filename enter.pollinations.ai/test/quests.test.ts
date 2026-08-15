@@ -1252,7 +1252,7 @@ test("github established-account quest waits until the threshold", async ({
     mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
 
-    const establishedRows = await db
+    let establishedRows = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "github_established"));
@@ -1262,6 +1262,17 @@ test("github established-account quest waits until the threshold", async ({
             (request) => request.path === `/user/${user.githubId}`,
         ),
     ).toBe(true);
+
+    mocks.github.state.user.created_at = new Date(
+        Date.now() - 730 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    await checkQuestsForUser(env, user.id);
+
+    establishedRows = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github_established"));
+    expect(establishedRows).toHaveLength(1);
 });
 
 test("github public repo stars quest is coming_soon and never records", async ({

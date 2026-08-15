@@ -1,5 +1,6 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { getLogger } from "@logtape/logtape";
 import {
     APICallError,
     type FinishReason,
@@ -12,6 +13,8 @@ import type {
     PromptAgentConfig,
     PromptAgentMcpHeaders,
 } from "./prompt-agent.ts";
+
+const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
@@ -106,8 +109,11 @@ async function loadMcpTools(
         await Promise.all(clients.map((client) => client.close()));
     };
 
-    try {
-        for (const server of servers) {
+    for (const server of servers) {
+        // Isolated per server: a broken MCP endpoint must not take down the whole
+        // agent. A user can save any url, and third-party servers go down; losing
+        // one server's tools is recoverable, losing the request is not.
+        try {
             const client = await createMCPClient({
                 clientName: "pollinations-prompt-agent",
                 initializationOptions: {
@@ -135,17 +141,34 @@ async function loadMcpTools(
                 },
             });
             clients.push(client);
+            let loaded = 0;
             for (const [name, definition] of Object.entries(
                 await client.tools(),
             )) {
                 if (server.includeTools && !server.includeTools.includes(name))
                     continue;
                 tools[`mcp__${server.name}__${name}`] = definition;
+                loaded++;
             }
+            log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
+                name: server.name,
+                url: server.url,
+                tools: loaded,
+            });
+        } catch (error) {
+            // The agent route returns a Response rather than throwing, so Hono's
+            // onError never fires and nothing reaches error_event: this log is the
+            // only signal that a server dropped out.
+            log.error(
+                "MCP_SERVER_FAILED: name={name} url={url} error={error}",
+                {
+                    name: server.name,
+                    url: server.url,
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
         }
-    } catch (error) {
-        await close();
-        throw error;
     }
 
     return { tools, close };

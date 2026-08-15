@@ -1,0 +1,35 @@
+{
+  "pr_number": 13111,
+  "title": "refactor(mcp): add stateless SDK v2 protocol support",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13111",
+  "merged_at": "2026-08-15T04:17:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Upgrades MCP to the stable split `@modelcontextprotocol/server`/`client` v2 packages with modern and legacy stateless protocol support.\n- Adds the `mcp.pollinations.ai` Streamable HTTP Worker with request-scoped bearer authentication, no sessions, and no OAuth.\n- Forwards each credential unchanged to `gen.pollinations.ai`, where authentication, permissions, billing, and rate limits remain authoritative.\n- Returns a standard `WWW-Authenticate: Bearer` challenge on missing or malformed authentication.\n- Keeps seven hosted tools: chat, image, video, audio, image/text model discovery, and balance; stdio adds three local key-management tools.\n\nValidation: MCP stdio 5/5, Worker tests 4/4, Wrangler dry-run, Biome, and diff checks pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive goes stateless",
+    "blurb": "MCP now speaks the stable v2 protocol over Streamable HTTP, with no session jar to babysit. Bring a bearer token; the seven hosted tools will handle the rest.",
+    "summary": "Upgraded the MCP server to stable split @modelcontextprotocol/server and client v2 packages, adding mcp.pollinations.ai as a stateless Streamable HTTP endpoint with request-scoped bearer authentication and seven hosted tools for chat, image, video, audio, model discovery, and balance.",
+    "impact": "MCP clients can now use modern or legacy stateless protocol flows against mcp.pollinations.ai, while each credential is passed unchanged to gen.pollinations.ai for authoritative permissions, billing, and rate limits.",
+    "keywords": [
+      "mcp",
+      "streamable-http",
+      "sdk-v2",
+      "bearer-auth",
+      "tools",
+      "api",
+      "agents"
+    ],
+    "visual_concept": "Depict Polli delivering a tiny bearer-key token through a garden hose-like HTTP pipe into a cozy CRT terminal labeled mcp.pollinations.ai, where seven small tool icons bloom like flowers: chat bubble, image frame, video reel, speaker, two model catalog sprouts, and a balance scale. The Monitor Robot eagerly watches the stateless request arrive with no piles of session cookies anywhere, while code-vines connect the MCP terminal to a gen.pollinations.ai terminal.",
+    "image_prompt": "A cozy pixel-art garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny messenger bag and carries a glowing bearer-key token into a CRT terminal labeled \"mcp.pollinations.ai\"; a cheerful monitor robot watches seven flower-like tool icons bloom beside a connected \"gen.pollinations.ai\" terminal, with code-vines and no session-cookie clutter. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13111.jpg",
+    "prompt": "A cozy pixel-art garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny messenger bag and carries a glowing bearer-key token into a CRT terminal labeled \"mcp.pollinations.ai\"; a cheerful monitor robot watches seven flower-like tool icons bloom beside a connected \"gen.pollinations.ai\" terminal, with code-vines and no session-cookie clutter. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-15T04:19:05.538845+00:00"
+}

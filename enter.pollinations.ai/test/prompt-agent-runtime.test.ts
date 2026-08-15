@@ -26,7 +26,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     mcpHeaders: {},
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
-    pollinationsMcpUrl: "https://mcp.pollinations.test/mcp",
+    pollinationsMcpUrl: "https://mcp.pollinations.test/",
 };
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {

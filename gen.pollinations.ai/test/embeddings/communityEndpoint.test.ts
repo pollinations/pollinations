@@ -1,12 +1,10 @@
-import type {
-    CommunityEndpointRuntime,
-    ModelInputModality,
-} from "@shared/community-endpoints.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import {
     type CommunityEndpointModality,
     type CommunityEndpointVisibility,
     communityEndpointPrices,
 } from "@shared/community-endpoints.ts";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import { MODEL_USED_HEADER } from "@shared/registry/usage-headers.ts";
 import * as decryptSecretModule from "@shared/secret-encryption.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -81,7 +79,11 @@ describe("generateCommunityEmbeddings", () => {
 
         const response = await generateCommunityEmbeddings(
             endpoint,
-            { input: "hello" },
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
             "owner/bge",
             SECRET,
         );
@@ -114,7 +116,11 @@ describe("generateCommunityEmbeddings", () => {
 
         const response = await generateCommunityEmbeddings(
             endpoint,
-            { input: "hello" },
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
             "owner/bge",
             SECRET,
         );
@@ -134,7 +140,11 @@ describe("generateCommunityEmbeddings", () => {
 
         const response = await generateCommunityEmbeddings(
             endpoint,
-            { input: "hello" },
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
             "owner/bge",
             SECRET,
         );
@@ -152,7 +162,12 @@ describe("generateCommunityEmbeddings", () => {
         await expect(
             generateCommunityEmbeddings(
                 endpoint,
-                { input: "hello", task_type: "RETRIEVAL_QUERY" },
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello",
+                    task_type: "RETRIEVAL_QUERY",
+                },
                 "owner/bge",
                 SECRET,
             ),
@@ -166,7 +181,7 @@ describe("generateCommunityEmbeddings", () => {
 
         const response = await generateCommunityEmbeddings(
             endpoint,
-            { input: [] },
+            { model: "upstream-model", encoding_format: "float", input: [] },
             "owner/bge",
             SECRET,
         );
@@ -206,7 +221,11 @@ describe("generateCommunityEmbeddings", () => {
         await expect(
             generateCommunityEmbeddings(
                 endpoint,
-                { input: "hello" },
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello",
+                },
                 "owner/bge",
                 SECRET,
             ),

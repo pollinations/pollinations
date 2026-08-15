@@ -38,6 +38,18 @@ const PINNED_NEWS: Highlight[] = [
         ],
     },
     {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools or connect MCP servers.",
+            "Create an agent from [My Agents & Models](/my-models).",
+        ],
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",

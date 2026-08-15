@@ -1,12 +1,12 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
 Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
@@ -18,6 +18,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
+- User wants to create or update a hosted prompt **agent**
 
 ## Quick reference
 
@@ -39,6 +40,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
+| Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
@@ -159,6 +161,17 @@ polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
 `my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+
+### Manage agents
+
+```bash
+polli agents list
+polli agents get <id>
+polli agents create --config agent.json
+polli agents update <id> --config agent.json
+polli agents delete <id>
+```
+The config file is sent directly to the agent API. A create config contains `systemPrompt`, `baseModel`, and optional `pollinationsTools` and `mcpServers`. Each MCP server accepts `name`, `url`, and optional `headers`, for example `{"Authorization":"Bearer ..."}`. Header values are encrypted by the API and returned as `null`; passing those `null` values back on update keeps the saved credentials. Omitted update fields remain unchanged; use `false` or `[]` to clear optional settings.
 
 ### Manage API keys
 ```bash

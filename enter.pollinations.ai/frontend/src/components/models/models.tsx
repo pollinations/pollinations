@@ -28,10 +28,6 @@ import {
     useState,
 } from "react";
 import {
-    CommunityEndpoints,
-    publicCommunityFallbackOptions,
-} from "../community-endpoints";
-import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
@@ -47,14 +43,6 @@ import {
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-type ModelsProps = {
-    // Render the owner-scoped "My Models" section (logged-in dashboard only).
-    showCommunityEndpoints?: boolean;
-    // Allowlisted owners can make their models public; everyone else is limited
-    // to private, owner-only models.
-    canPublish?: boolean;
-};
-
 const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
@@ -66,7 +54,12 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const COMMUNITY_SECTION_ORDER: SectionType[] = [
+    "all",
+    "text",
+    "image",
+    "agent",
+];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
@@ -103,6 +96,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    agent: "agent",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
@@ -124,10 +118,11 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        agent: [],
     };
 
     for (const model of models) {
-        categorized[model.type].push(model);
+        categorized[model.agent ? "agent" : model.type].push(model);
     }
     return categorized;
 }
@@ -163,10 +158,7 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     items[nextIndex]?.focus();
 }
 
-export const Models: FC<ModelsProps> = ({
-    showCommunityEndpoints = false,
-    canPublish = false,
-}) => {
+export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
@@ -200,8 +192,8 @@ export const Models: FC<ModelsProps> = ({
     );
 
     const loadModelCatalog = useCallback(
-        (options: { refresh?: boolean } = {}) =>
-            fetchModelCatalog(options)
+        () =>
+            fetchModelCatalog()
                 .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
@@ -282,11 +274,15 @@ export const Models: FC<ModelsProps> = ({
                 ...previous,
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
-                    scope === "community" &&
-                    previous.category !== "text" &&
-                    previous.category !== "image"
-                        ? undefined
-                        : previous.category,
+                    scope === "community"
+                        ? previous.category === "text" ||
+                          previous.category === "image" ||
+                          previous.category === "agent"
+                            ? previous.category
+                            : undefined
+                        : previous.category === "agent"
+                          ? undefined
+                          : previous.category,
             }),
         });
     };
@@ -465,6 +461,7 @@ export const Models: FC<ModelsProps> = ({
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
                             embeddingModels={sectionModels.embedding}
+                            agentModels={sectionModels.agent}
                             activeTab={activeTab}
                         />
                     </div>
@@ -501,15 +498,6 @@ export const Models: FC<ModelsProps> = ({
                     </p>
                 </div>
             </Section>
-            {showCommunityEndpoints && (
-                <CommunityEndpoints
-                    canPublish={canPublish}
-                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
-                    onChange={() => {
-                        void loadModelCatalog({ refresh: true });
-                    }}
-                />
-            )}
         </div>
     );
 };

@@ -31,7 +31,7 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
             ? undefined
             : {
                   label: `${perUserRpm} RPM/user`,
-                  tooltip: `Per-user rate limit: ${perUserRpm} RPM.`,
+                  tooltip: `Per-user rate limit: ${perUserRpm} requests per minute.`,
               };
 
     return (

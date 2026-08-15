@@ -1,0 +1,42 @@
+DESCRIPTION >
+    Materializes BYOP traffic at daily owner grain, keeping the owner-vs-external
+    spender split that byop_app_daily collapses into a uniq state.
+
+    A spender with no identity is never counted as external: an unattributed row
+    must not be able to complete a quest that requires a real user to pay.
+
+NODE byop_app_payer_daily_mv_node
+SQL >
+    SELECT
+        toDate(start_time) AS day,
+        environment,
+        api_key_created_for_user_id AS owner_user_id,
+        (
+            user_id NOT IN ('', 'undefined')
+            AND user_id != api_key_created_for_user_id
+        ) AS is_external,
+        sumState(
+            toUInt64(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')
+            )
+        ) AS billed_paid_calls,
+        sumState(
+            if(
+                response_status >= 200 AND response_status < 300 AND is_billed_usage,
+                total_price,
+                0
+            )
+        ) AS gross_consumption
+    FROM generation_event_v2
+    WHERE
+        environment IN ('production', 'debug-prod-copy')
+        AND api_key_client_id NOT IN ('', 'undefined')
+        AND api_key_created_for_user_id NOT IN ('', 'undefined')
+        AND start_time >= toDateTime('2026-01-09 00:00:00')
+    GROUP BY day, environment, owner_user_id, is_external
+
+TYPE MATERIALIZED
+DATASOURCE byop_app_payer_daily

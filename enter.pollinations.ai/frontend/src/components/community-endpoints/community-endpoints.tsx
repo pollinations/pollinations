@@ -1,11 +1,12 @@
 import {
     Alert,
+    BeakerIcon,
+    BotIcon,
     Button,
+    CloudUploadIcon,
     FieldStack,
     Input,
     Section,
-    SparklesIcon,
-    SproutIcon,
     Surface,
     TokensIcon,
 } from "@pollinations/ui";
@@ -332,12 +333,13 @@ export function CommunityEndpoints({
     const unregisteredAgents = agents.filter(
         (agent) => !endpointByAgentId.has(agent.id),
     );
-    const hasModels = endpoints.length > 0 || unregisteredAgents.length > 0;
+    const hasDeployments =
+        endpoints.length > 0 || unregisteredAgents.length > 0;
 
     return (
         <>
             <Section
-                title="My Models"
+                title="My Deployments"
                 framed
                 action={
                     <div className="flex flex-wrap justify-end gap-2">
@@ -351,7 +353,7 @@ export function CommunityEndpoints({
                                     type="button"
                                     className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                                 >
-                                    <SparklesIcon className="h-4 w-4" />
+                                    <BotIcon className="h-4 w-4" />
                                     Add Agent
                                 </Button>
                             }
@@ -367,7 +369,7 @@ export function CommunityEndpoints({
                                     type="button"
                                     className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                                 >
-                                    <SproutIcon className="h-4 w-4" />
+                                    <BeakerIcon className="h-4 w-4" />
                                     Add Model
                                 </Button>
                             }
@@ -443,11 +445,11 @@ export function CommunityEndpoints({
                         <Surface className="p-6 text-center text-sm text-theme-text-muted">
                             Loading…
                         </Surface>
-                    ) : !hasModels ? (
+                    ) : !hasDeployments ? (
                         <Surface className="p-6 text-center">
-                            <SproutIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                            <CloudUploadIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                             <p className="mb-2 text-lg font-semibold">
-                                Add your first model
+                                Add your first deployment
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish

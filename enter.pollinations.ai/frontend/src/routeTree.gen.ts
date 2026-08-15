@@ -23,6 +23,7 @@ import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardDeploymentsRouteImport } from './routes/_dashboard.deployments'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 
 const TermsRoute = TermsRouteImport.update({
@@ -94,6 +95,11 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardDeploymentsRoute = DashboardDeploymentsRouteImport.update({
+  id: '/deployments',
+  path: '/deployments',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/activity': typeof DashboardActivityRoute
+  '/deployments': typeof DashboardDeploymentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/activity': typeof DashboardActivityRoute
+  '/deployments': typeof DashboardDeploymentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/deployments': typeof DashboardDeploymentsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/terms'
     | '/activity'
+    | '/deployments'
     | '/keys'
     | '/models'
     | '/news'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/terms'
     | '/activity'
+    | '/deployments'
     | '/keys'
     | '/models'
     | '/news'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/terms'
     | '/_dashboard/activity'
+    | '/_dashboard/deployments'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/news'
@@ -314,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/deployments': {
+      id: '/_dashboard/deployments'
+      path: '/deployments'
+      fullPath: '/deployments'
+      preLoaderRoute: typeof DashboardDeploymentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/activity': {
       id: '/_dashboard/activity'
       path: '/activity'
@@ -326,6 +345,7 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardDeploymentsRoute: typeof DashboardDeploymentsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
@@ -335,6 +355,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivityRoute: DashboardActivityRoute,
+  DashboardDeploymentsRoute: DashboardDeploymentsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,

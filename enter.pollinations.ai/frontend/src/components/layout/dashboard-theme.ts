@@ -3,6 +3,7 @@
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
     BeakerIcon,
+    CloudUploadIcon,
     LockIcon,
     NewspaperIcon,
     SparkleIcon,
@@ -19,6 +20,12 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: NewspaperIcon,
     },
     { id: "models", to: "/models", label: "Models", icon: BeakerIcon },
+    {
+        id: "deployments",
+        to: "/deployments",
+        label: "My Deployments",
+        icon: CloudUploadIcon,
+    },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
     { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
     {

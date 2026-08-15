@@ -151,6 +151,8 @@ export type ModelDefinition = {
     provider: string;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
+    /** Override the shared fallback status list for this model. Network failures always retry. */
+    fallbackOnStatusCodes?: number[];
     brand: string;
     category: Category;
     cost: CostDefinition;

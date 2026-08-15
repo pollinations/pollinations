@@ -6,12 +6,11 @@ import {
     getVideoModelIds,
     IMAGE_SERVICES,
 } from "@shared/registry/image.ts";
+import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
-    getModel3dModelsInfo,
-    getRealtimeModelsInfo,
-} from "@shared/registry/model-info.ts";
-import { OCR_SERVICES } from "@shared/registry/ocr.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -228,10 +227,7 @@ const videoModelDisplayNames = getVideoModelIds().join(", ");
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
-const ocrModelDisplayNames = Object.keys(OCR_SERVICES).join(", ");
-const realtimeModelDisplayNames = getRealtimeModelsInfo()
-    .map((model) => model.name)
-    .join(", ");
+const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
@@ -280,19 +276,20 @@ const MODEL3D_GENERATION_DOCS = interpolate(
     MODEL_VARS,
 );
 const REALTIME_DOCS = [
-    "## Realtime Voice",
+    "## Realtime",
     "",
-    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+    "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
     "",
     "| Endpoint | Description |",
     "|----------|-------------|",
+    `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
-    "The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes. Input transcription sessions are not supported yet.",
+    "The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "Events sent and received over the socket use the OpenAI Realtime protocol unchanged. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
     "",
     "```js",
     'import WebSocket from "ws";',

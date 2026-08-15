@@ -24,6 +24,12 @@ export type TinybirdEvent = {
     environment?: string;
     eventType: EventType;
 
+    // Cache identity is emitted only for requests that reached cache-backed
+    // generation handling. The key is SHA-256 hashed before ingestion.
+    cacheHit?: boolean;
+    cacheType?: string;
+    cacheKey?: string;
+
     // User
     userId?: string;
     userTier?: string;

@@ -1,71 +1,57 @@
 import { getAuthHeaders } from "./authUtils.js";
+import { buildUrl } from "./coreUtils.js";
 
-const API_BASE_URL = "https://gen.pollinations.ai";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map();
 
-async function fetchCached(path) {
-    const hit = cache.get(path);
-    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
+const MODEL_PATHS = {
+    all: "/models",
+    text: "/text/models",
+    image: "/image/models",
+    video: "/video/models",
+    audio: "/audio/models",
+    embedding: "/embeddings/models",
+    "3d": "/3d/models",
+};
+
+async function fetchCached(url, context) {
+    const isRequestScoped = Boolean(context?.http?.authInfo?.token);
+    const hit = cache.get(url);
+    if (!isRequestScoped && hit && Date.now() - hit.at < CACHE_TTL_MS) {
+        return hit.data;
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: getAuthHeaders(),
+    const response = await fetch(url, {
+        headers: getAuthHeaders(context),
         signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch ${path}: ${response.status}`);
+        throw new Error(`Failed to fetch model registry: ${response.status}`);
     }
     const data = await response.json();
-    cache.set(path, { data, at: Date.now() });
+    if (!isRequestScoped) cache.set(url, { data, at: Date.now() });
     return data;
 }
 
-export const getImageModels = () => fetchCached("/image/models");
-export const getTextModels = () => fetchCached("/text/models");
-export const getAudioModels = () => fetchCached("/audio/models");
-
-export async function getVideoModels() {
-    const models = await getImageModels();
-    return models.filter((m) => m.output_modalities?.includes("video"));
+export function getModels(type = "all", context, community) {
+    const path = MODEL_PATHS[type];
+    if (!path) throw new Error(`Unknown model type: ${type}`);
+    return fetchCached(buildUrl(path, { community }), context);
 }
 
-export async function getAudioVoices() {
-    try {
-        const audioModels = await getAudioModels();
-        const voices = new Set();
-        for (const m of audioModels) {
-            if (Array.isArray(m.voices)) {
-                for (const v of m.voices) voices.add(v);
-            }
-        }
-        if (voices.size > 0) return Array.from(voices);
-    } catch {}
-    // Last-resort fallback. Keep in sync with AUDIO_VOICES in
-    // shared/registry/text.ts (the canonical list the API serves).
-    return [
-        "alloy",
-        "echo",
-        "fable",
-        "onyx",
-        "nova",
-        "shimmer",
-        "coral",
-        "verse",
-        "ballad",
-        "ash",
-        "sage",
-        "amuch",
-        "dan",
-    ];
-}
+export const getImageModels = (context) => getModels("image", context);
+export const getTextModels = (context) => getModels("text", context);
+export const getVideoModels = (context) => getModels("video", context);
+export const getEmbeddingModels = (context) => getModels("embedding", context);
+export const getModel3dModels = (context) => getModels("3d", context);
 
-async function validateAgainstRegistry(modelName, fetcher, kind) {
+async function validateAgainstRegistry(modelName, fetcher, kind, context) {
     if (!modelName) return { valid: true };
-    const models = await fetcher();
+    const models = await fetcher(context);
     const model = models.find(
         (m) => m.name === modelName || m.aliases?.includes(modelName),
     );
@@ -89,31 +75,17 @@ async function validateAgainstRegistry(modelName, fetcher, kind) {
     };
 }
 
-export const validateImageModel = (name) =>
-    validateAgainstRegistry(name, getImageModels, "image");
+export const validateImageModel = (name, context) =>
+    validateAgainstRegistry(name, getImageModels, "image", context);
 
-export const validateTextModel = (name) =>
-    validateAgainstRegistry(name, getTextModels, "text");
+export const validateTextModel = (name, context) =>
+    validateAgainstRegistry(name, getTextModels, "text", context);
 
-export const validateVideoModel = (name) =>
-    validateAgainstRegistry(name, getVideoModels, "video");
+export const validateVideoModel = (name, context) =>
+    validateAgainstRegistry(name, getVideoModels, "video", context);
 
-export async function validateVoice(voice) {
-    if (!voice) return { valid: true };
-    const voices = await getAudioVoices();
-    if (voices.includes(voice)) return { valid: true };
-    const lower = voice.toLowerCase();
-    const suggestions = voices
-        .filter(
-            (v) =>
-                v.toLowerCase().includes(lower) ||
-                lower.includes(v.toLowerCase()),
-        )
-        .slice(0, 3);
-    return {
-        valid: false,
-        error: `Unknown voice "${voice}".`,
-        suggestions: suggestions.length > 0 ? suggestions : voices.slice(0, 8),
-        availableCount: voices.length,
-    };
-}
+export const validateEmbeddingModel = (name, context) =>
+    validateAgainstRegistry(name, getEmbeddingModels, "embedding", context);
+
+export const validateModel3d = (name, context) =>
+    validateAgainstRegistry(name, getModel3dModels, "3D", context);

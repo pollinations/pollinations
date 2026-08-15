@@ -17,6 +17,9 @@ interface CloudflareBindings {
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
+    GENERATION_COORDINATOR: DurableObjectNamespace<
+        import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
+    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"
@@ -75,6 +78,7 @@ interface CloudflareBindings {
     BAIDU_OCR_HOST?: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

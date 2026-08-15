@@ -83,6 +83,14 @@ describe("/openapi.json", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
+        expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+
+        const speechRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "reference_audio" in properties &&
+                "composition_plan" in properties,
+        );
+        expect(speechRequestPropertySets.length).toBeGreaterThan(0);
 
         const chatRequestPropertySets = collectPropertySets(schema).filter(
             (properties) => "reasoning_effort" in properties,

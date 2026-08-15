@@ -13,17 +13,21 @@
 packages/mcp/
   pollinations-mcp.js            # bin wrapper → calls startMcpServer()
   src/
-    index.js                     # server bootstrap, tool registration, instructions
+    index.js                     # stdio bootstrap
+    server.js                    # shared server factory, tool registration, instructions
     services/
-      imageService.js            # generateImage(Url|Batch), generateVideo(Url), describeImage, analyzeVideo, listImageModels
-      textService.js             # generateText, chatCompletion, webSearch, listTextModels, getPricing
-      audioService.js            # respondAudio, sayText, transcribeAudio, listAudioVoices
+      imageService.js            # generateImage, generateVideo
+      textService.js             # generateText
+      audioService.js            # generateAudio
+      embeddingService.js        # createEmbeddings
+      model3dService.js           # generate3D
+      discoveryService.js        # listModels, getModelStatus
       authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
-      accountService.js          # getBalance, getUsage                (via /account/*)
+      accountService.js          # getBalance                          (via /account/*)
     utils/
-      authUtils.js               # in-memory key store, header/query builders
-      coreUtils.js               # fetch wrappers, URL builders, chatWithMedia helper, error mapping
-      models.js                  # registry fetchers + validators (cached 5 min)
+      authUtils.js               # in-memory key store and auth headers
+      coreUtils.js               # fetch wrappers, URL builders, error mapping
+      models.js                  # registry fetchers + validators
 ```
 
 ## Stdio Discipline
@@ -38,7 +42,7 @@ The MCP server speaks JSON-RPC over stdio. `console.log` corrupts the protocol.
 
 1. Add the handler to the relevant service file (or create a new one for a new domain).
 2. Export a `[name, description, zodShape, handler]` entry in a tool array.
-3. Import the array into `src/index.js` and spread it into `allTools`.
+3. Import the array into `src/server.js` and spread it into `serviceTools`.
 4. Update the `SERVER_INSTRUCTIONS` blurb with a one-line entry.
 5. Update `README.md`'s tool table.
 
@@ -49,17 +53,11 @@ import { validateImageModel } from "../utils/models.js";
 
 const result = await validateImageModel(model);
 if (!result.valid) {
-    throw new Error(
-        `${result.error} Did you mean: ${result.suggestions.join(", ")}?`,
-    );
+    throw new Error(`${result.error} Use listModels for the live registry.`);
 }
 ```
 
 Cache is shared across all tool calls within a process — don't roll your own fetcher for model lists.
-
-## Media-Chat Helper
-
-`describeImage`, `analyzeVideo`, `transcribeAudio` all call `/v1/chat/completions` with a single media block. Use `chatWithMedia({ model, prompt, mediaType, mediaUrl })` from `coreUtils.js` — do not re-inline the fetch+parse boilerplate.
 
 ## Testing
 

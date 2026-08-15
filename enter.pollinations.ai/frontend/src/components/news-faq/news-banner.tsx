@@ -2,9 +2,9 @@ import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -24,6 +24,19 @@ interface Highlight {
  * Edit this array to add/remove pinned announcements.
  */
 const PINNED_NEWS: Highlight[] = [
+    {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways for developers to earn Pollen",
+        description:
+            "Earn Quest Pollen when people use your apps or through your GitHub history.",
+        details: [
+            "Earn 15 Pollen for your first external Paid Pollen request and 15 Pollen when your apps reach ten external users.",
+            "GitHub accounts that are at least two years old can earn 3 Pollen.",
+            "Visit the [Quests tab](/quests) to see the new rewards and upcoming quests.",
+        ],
+    },
     {
         date: "2026-07-15",
         dateLabel: "Limited time",

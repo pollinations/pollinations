@@ -44,6 +44,7 @@ export const ModelInfoSchema = z.object({
     brand: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
+    per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -124,6 +125,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 
 type ModelInfoOptions = {
     community?: boolean;
+    perUserRpm?: number | null;
 };
 
 function pricingInfoFromDefinition(
@@ -170,6 +172,7 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         brand_url: service.brandUrl,
         community: options.community || undefined,
+        per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata

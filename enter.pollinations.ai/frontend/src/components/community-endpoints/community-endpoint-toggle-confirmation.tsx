@@ -22,8 +22,8 @@ export function CommunityEndpointToggleConfirmation({
         >
             <p className="mb-6 mt-4">
                 {endpoint?.disabled ? "Reactivate" : "Deactivate"}{" "}
-                <span className="font-mono text-sm">{endpoint?.modelId}</span>?
-                {" "}{endpoint?.disabled
+                <span className="font-mono text-sm">{endpoint?.modelId}</span>?{" "}
+                {endpoint?.disabled
                     ? "It will be callable by users again."
                     : "It will stop responding but stays configured."}
             </p>

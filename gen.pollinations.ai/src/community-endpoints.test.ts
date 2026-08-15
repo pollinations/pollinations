@@ -2909,8 +2909,8 @@ fixtureTest(
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
-                    url: expect.stringContaining(
-                        `/image/blue%20flower?model=${encodeURIComponent(registered.modelId)}`,
+                    url: expect.stringMatching(
+                        /^https:\/\/gen\.pollinations\.ai\/media\/[A-Za-z0-9_-]+$/,
                     ),
                 },
             ],

@@ -22,8 +22,8 @@ import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
-import { ManagedAgentListingDialog } from "./managed-agent-listing-dialog.tsx";
 import {
+    type AgentListingDetailsPayload,
     type AgentListingPayload,
     type AgentPayload,
     type CommunityEndpoint,
@@ -66,8 +66,6 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
-    const [registeringAgent, setRegisteringAgent] =
-        useState<ManagedAgent | null>(null);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
@@ -107,23 +105,62 @@ export function CommunityEndpoints({
         void loadEndpoints();
     }, [loadEndpoints]);
 
-    async function handleCreateAgent(payload: AgentPayload): Promise<void> {
+    async function handleCreateAgent(
+        payload: AgentPayload,
+        listing: AgentListingDetailsPayload | null,
+    ): Promise<void> {
         const response = await apiClient.account.agents.$post({
             json: payload,
         });
         if (!response.ok) throw new Error(await readError(response));
         const createdAgent = (await response.json()) as ManagedAgent;
+        let listingError: string | null = null;
+        if (listing) {
+            const listingResponse = await apiClient.account["my-models"].$post({
+                json: { ...listing, agentId: createdAgent.id },
+            });
+            if (!listingResponse.ok) {
+                listingError = await readError(listingResponse);
+            }
+        }
         await loadEndpoints();
-        setRegisteringAgent(createdAgent);
+        if (listingError) {
+            setError(`Agent saved as a draft. ${listingError}`);
+            return;
+        }
+        if (listing) await onChange?.();
     }
 
-    async function handleUpdateAgent(payload: AgentPayload): Promise<void> {
+    async function handleUpdateAgent(
+        payload: AgentPayload,
+        listing: AgentListingDetailsPayload | null,
+    ): Promise<void> {
         if (!editingAgent) return;
+        const endpoint = endpoints.find(
+            (candidate) => candidate.agentId === editingAgent.id,
+        );
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
             json: payload,
         });
         if (!response.ok) throw new Error(await readError(response));
+        if (listing) {
+            const listingPayload: AgentListingPayload = {
+                ...listing,
+                agentId: editingAgent.id,
+            };
+            const listingResponse = endpoint
+                ? await apiClient.account["my-models"][":id"].update.$post({
+                      param: { id: endpoint.id },
+                      json: listingPayload,
+                  })
+                : await apiClient.account["my-models"].$post({
+                      json: listingPayload,
+                  });
+            if (!listingResponse.ok) {
+                throw new Error(await readError(listingResponse));
+            }
+        }
         await loadEndpoints();
         await onChange?.();
     }
@@ -295,9 +332,6 @@ export function CommunityEndpoints({
     const unregisteredAgents = agents.filter(
         (agent) => !endpointByAgentId.has(agent.id),
     );
-    const editingListedAgent = editing?.agentId
-        ? agentById.get(editing.agentId)
-        : undefined;
     const hasModels = endpoints.length > 0 || unregisteredAgents.length > 0;
 
     return (
@@ -311,6 +345,7 @@ export function CommunityEndpoints({
                             open={agentCreateOpen}
                             onOpenChange={setAgentCreateOpen}
                             onSubmit={handleCreateAgent}
+                            canPublish={canPublish}
                             trigger={
                                 <Button
                                     type="button"
@@ -426,9 +461,6 @@ export function CommunityEndpoints({
                                 <AgentCard
                                     key={agent.id}
                                     agent={agent}
-                                    onComplete={() =>
-                                        setRegisteringAgent(agent)
-                                    }
                                     onEdit={() => setEditingAgent(agent)}
                                     onDelete={() => setDeletingAgent(agent)}
                                 />
@@ -443,12 +475,11 @@ export function CommunityEndpoints({
                                         endpoint={endpoint}
                                         isToggling={togglingId === endpoint.id}
                                         onToggle={() => setToggling(endpoint)}
-                                        onEditAgent={
+                                        onEdit={() =>
                                             agent
-                                                ? () => setEditingAgent(agent)
-                                                : undefined
+                                                ? setEditingAgent(agent)
+                                                : setEditing(endpoint)
                                         }
-                                        onEdit={() => setEditing(endpoint)}
                                         onDelete={() => setDeleting(endpoint)}
                                     />
                                 );
@@ -476,17 +507,6 @@ export function CommunityEndpoints({
                 )}
             </Section>
 
-            {registeringAgent && (
-                <ManagedAgentListingDialog
-                    key={`register-${registeringAgent.id}`}
-                    agent={registeringAgent}
-                    open
-                    onOpenChange={(open) => !open && setRegisteringAgent(null)}
-                    onSubmit={(payload) => handleCreate(payload, "")}
-                    canPublish={canPublish}
-                />
-            )}
-
             {editing && !editing.agentId && (
                 <CommunityEndpointDialog
                     key={editing.id}
@@ -499,18 +519,6 @@ export function CommunityEndpoints({
                 />
             )}
 
-            {editing && editingListedAgent && (
-                <ManagedAgentListingDialog
-                    key={editing.id}
-                    endpoint={editing}
-                    agent={editingListedAgent}
-                    open
-                    onOpenChange={(open) => !open && setEditing(null)}
-                    onSubmit={(payload) => handleUpdate(payload, "")}
-                    canPublish={canPublish}
-                />
-            )}
-
             <CommunityEndpointDeleteConfirmation
                 endpoint={deleting}
                 onConfirm={() => void handleDelete()}
@@ -519,6 +527,12 @@ export function CommunityEndpoints({
             <AgentDialog
                 key={editingAgent?.id ?? "agent-edit-closed"}
                 agent={editingAgent ?? undefined}
+                endpoint={
+                    editingAgent
+                        ? endpointByAgentId.get(editingAgent.id)
+                        : undefined
+                }
+                canPublish={canPublish}
                 open={!!editingAgent}
                 onOpenChange={(open) => !open && setEditingAgent(null)}
                 onSubmit={handleUpdateAgent}

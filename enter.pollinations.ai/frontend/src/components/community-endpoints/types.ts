@@ -123,10 +123,6 @@ export type EndpointFormState = ModelListingFormState & {
     fallbackModelIds: string[];
 } & EndpointFormPrices;
 
-export type AgentListingFormState = ModelListingFormState & {
-    agentId: string;
-};
-
 type ModelListingPayload = {
     inputModalities: ModelInputModality[];
     name: string;
@@ -148,6 +144,8 @@ export type AgentListingPayload = ModelListingPayload & {
     agentId: string;
     modality: "text";
 };
+
+export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -189,11 +187,6 @@ export const emptyForm: EndpointFormState = {
     bearerToken: "",
     fallbackModelIds: [],
     ...emptyPriceForm,
-};
-
-export const emptyAgentListingForm: AgentListingFormState = {
-    ...emptyListingForm,
-    agentId: "",
 };
 
 export const emptyAgentForm: AgentFormState = {
@@ -306,12 +299,10 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 }
 
 export function agentListingToForm(
-    agentId: string,
     endpoint?: CommunityEndpoint,
-): AgentListingFormState {
+): ModelListingFormState {
     return endpoint
         ? {
-              agentId,
               inputModalities: endpoint.inputModalities,
               name: endpoint.name,
               title: endpoint.title,
@@ -319,7 +310,7 @@ export function agentListingToForm(
               visibility: endpoint.visibility,
               perUserRpm: endpoint.perUserRpm?.toString() ?? "",
           }
-        : { ...emptyAgentListingForm, agentId };
+        : { ...emptyListingForm };
 }
 
 function formPricesToPayload(
@@ -493,13 +484,11 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
 }
 
 export function toAgentListingPayload(
-    form: AgentListingFormState,
-): AgentListingPayload {
-    if (!form.agentId) throw new Error("Choose an agent");
+    form: ModelListingFormState,
+): AgentListingDetailsPayload {
     return {
         ...listingFieldsToPayload(form),
         modality: "text",
-        agentId: form.agentId,
     };
 }
 

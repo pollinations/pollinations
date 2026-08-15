@@ -2,7 +2,6 @@ import {
     Button,
     Chip,
     IconButton,
-    PencilIcon,
     SproutIcon,
     Surface,
     TerminalIcon,
@@ -13,12 +12,10 @@ import type { ManagedAgent } from "./types.ts";
 
 export function AgentCard({
     agent,
-    onComplete,
     onEdit,
     onDelete,
 }: {
     agent: ManagedAgent;
-    onComplete: () => void;
     onEdit: () => void;
     onDelete: () => void;
 }) {
@@ -44,19 +41,11 @@ export function AgentCard({
                         size="sm"
                         intent="info"
                         className="gap-1.5"
-                        onClick={onComplete}
+                        onClick={onEdit}
                     >
                         <SproutIcon className="h-3.5 w-3.5" />
                         Complete setup
                     </Button>
-                    <IconButton
-                        intent="info"
-                        title="Edit agent"
-                        tooltip="Edit agent"
-                        onClick={onEdit}
-                    >
-                        <PencilIcon className="h-4 w-4" />
-                    </IconButton>
                     <IconButton
                         intent="danger"
                         title="Delete agent"

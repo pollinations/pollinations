@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+    agentListingToForm,
     emptyAgentForm,
-    emptyAgentListingForm,
     emptyForm,
     isValidMcpRow,
     isValidPerUserRpm,
@@ -94,16 +94,15 @@ describe("community endpoint per-user RPM input", () => {
 
     it("serializes agent listings without prices or fallbacks", () => {
         const payload = toAgentListingPayload({
-            ...emptyAgentListingForm,
-            agentId: "a8e56371-73b5-43e5-85f7-555f20c1697f",
+            ...agentListingToForm(),
             name: "researcher",
             title: "Researcher",
             visibility: "public",
         });
         expect(payload).toMatchObject({
-            agentId: "a8e56371-73b5-43e5-85f7-555f20c1697f",
             modality: "text",
         });
+        expect(payload).not.toHaveProperty("agentId");
         expect(payload).not.toHaveProperty("baseUrl");
         expect(payload).not.toHaveProperty("fallbackModelIds");
         expect(payload).not.toHaveProperty("promptTextPrice");

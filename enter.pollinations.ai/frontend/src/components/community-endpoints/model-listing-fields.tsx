@@ -26,6 +26,7 @@ export function ModelListingFields({
     modality,
     canPublish,
     isAgent,
+    required = true,
     onChange,
     onInputModalitiesChange,
 }: {
@@ -33,6 +34,7 @@ export function ModelListingFields({
     modality: CommunityEndpointModality;
     canPublish: boolean;
     isAgent: boolean;
+    required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange: (value: ModelInputModality[]) => void;
 }) {
@@ -95,7 +97,7 @@ export function ModelListingFields({
                         autoComplete="off"
                         autoCapitalize="none"
                         spellCheck={false}
-                        required
+                        required={required}
                         onChange={(event) =>
                             onChange("name", event.target.value)
                         }
@@ -112,7 +114,7 @@ export function ModelListingFields({
                         placeholder={isAgent ? "My Agent" : "My Model"}
                         autoComplete="off"
                         maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
-                        required
+                        required={required}
                         onChange={(event) =>
                             onChange("title", event.target.value)
                         }

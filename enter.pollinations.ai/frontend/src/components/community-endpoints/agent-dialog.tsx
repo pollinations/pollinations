@@ -7,39 +7,59 @@ import {
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
     type AgentFormState,
+    type AgentListingDetailsPayload,
     type AgentPayload,
+    agentListingToForm,
+    type CommunityEndpoint,
     emptyAgentForm,
     isValidMcpRow,
+    isValidPerUserRpm,
     type ManagedAgent,
     type McpServerRow,
+    type ModelListingFormState,
+    toAgentListingPayload,
     toAgentPayload,
 } from "./types.ts";
 
+type AgentDialogFormState = AgentFormState & ModelListingFormState;
+
 type AgentDialogProps = {
     agent?: ManagedAgent;
+    endpoint?: CommunityEndpoint;
+    canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (payload: AgentPayload) => Promise<void>;
+    onSubmit: (
+        agent: AgentPayload,
+        listing: AgentListingDetailsPayload | null,
+    ) => Promise<void>;
     trigger?: ReactNode;
 };
 
 export function AgentDialog({
     agent,
+    endpoint,
+    canPublish,
     open,
     onOpenChange,
     onSubmit,
     trigger,
 }: AgentDialogProps) {
-    const [form, setForm] = useState<AgentFormState>(emptyAgentForm);
+    const [form, setForm] = useState<AgentDialogFormState>(() => ({
+        ...agentListingToForm(),
+        ...emptyAgentForm,
+    }));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setForm(
-            open && agent
+        setForm({
+            ...agentListingToForm(open ? endpoint : undefined),
+            ...(open && agent
                 ? {
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
@@ -49,13 +69,13 @@ export function AgentDialog({
                           id: crypto.randomUUID(),
                       })),
                   }
-                : emptyAgentForm,
-        );
+                : emptyAgentForm),
+        });
         setError(null);
         setIsSubmitting(false);
-    }, [open, agent]);
+    }, [open, agent, endpoint]);
 
-    function updateForm(
+    function updateAgentForm(
         key: keyof Omit<AgentFormState, "mcpServers">,
         value: string | boolean,
     ): void {
@@ -97,7 +117,10 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(toAgentPayload(form));
+            await onSubmit(
+                toAgentPayload(form),
+                listingStarted ? toAgentListingPayload(form) : null,
+            );
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -108,11 +131,32 @@ export function AgentDialog({
         }
     }
 
+    const listingStarted =
+        !!endpoint ||
+        form.name.trim() !== "" ||
+        form.title.trim() !== "" ||
+        form.description.trim() !== "" ||
+        form.perUserRpm.trim() !== "" ||
+        form.visibility === "public";
+    const listingComplete =
+        form.name.trim() !== "" &&
+        form.title.trim() !== "" &&
+        isValidPerUserRpm(form.perUserRpm);
     const canSubmit =
         !isSubmitting &&
         form.systemPrompt.trim() !== "" &&
         form.baseModel.trim() !== "" &&
-        form.mcpServers.every(isValidMcpRow);
+        form.mcpServers.every(isValidMcpRow) &&
+        (!listingStarted || listingComplete);
+    const submitLabel = endpoint
+        ? "Save Agent"
+        : listingStarted
+          ? form.visibility === "public"
+              ? "Publish Agent"
+              : "Add Private Agent"
+          : agent
+            ? "Save Draft"
+            : "Save Agent Draft";
 
     return (
         <Dialog
@@ -124,20 +168,15 @@ export function AgentDialog({
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
-                <div className="flex items-center justify-between gap-3">
-                    <DialogTitle className="text-lg font-semibold">
-                        {agent ? "Edit Agent" : "Add Agent"}
-                    </DialogTitle>
-                    {!agent && (
-                        <span className="shrink-0 text-xs font-medium text-theme-text-muted">
-                            Step 1 of 2
-                        </span>
-                    )}
-                </div>
+                <DialogTitle className="text-lg font-semibold">
+                    {agent ? "Edit Agent" : "Add Agent"}
+                </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
-                    {agent
-                        ? "Update the agent behavior. Listing details are edited from its model card."
-                        : "Configure the agent now. You can complete its listing next or save it for later."}
+                    Configure and list an agent as a{" "}
+                    <code>
+                        {"{username}"}/{"{model-id}"}
+                    </code>{" "}
+                    model. Leave the listing fields empty to save a draft.
                 </p>
             </div>
             <form
@@ -147,10 +186,41 @@ export function AgentDialog({
             >
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
+
+                    <ModelListingFields
+                        form={form}
+                        modality="text"
+                        canPublish={canPublish}
+                        isAgent
+                        required={listingStarted}
+                        onChange={(key, value) =>
+                            setForm((current) => ({
+                                ...current,
+                                [key]: value,
+                            }))
+                        }
+                        onInputModalitiesChange={(inputModalities) =>
+                            setForm((current) => ({
+                                ...current,
+                                inputModalities,
+                            }))
+                        }
+                    />
+
+                    <div className="border-t border-divider pt-4">
+                        <p className="text-sm font-semibold text-theme-text-strong">
+                            Agent details
+                        </p>
+                        <p className="mt-0.5 text-xs text-theme-text-muted">
+                            Choose the model, instructions, and tools used on
+                            every request.
+                        </p>
+                    </div>
+
                     <PromptAgentFields
                         form={form}
                         disabled={isSubmitting}
-                        onChange={updateForm}
+                        onChange={updateAgentForm}
                         onAddMcp={addMcpServer}
                         onUpdateMcp={updateMcpServer}
                         onRemoveMcp={removeMcpServer}
@@ -161,11 +231,7 @@ export function AgentDialog({
                         Cancel
                     </Button>
                     <Button type="submit" intent="info" disabled={!canSubmit}>
-                        {isSubmitting
-                            ? "Saving…"
-                            : agent
-                              ? "Save"
-                              : "Save & continue"}
+                        {isSubmitting ? "Saving…" : submitLabel}
                     </Button>
                 </div>
             </form>

@@ -3,6 +3,7 @@ import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
+import { OCR_SERVICES } from "@shared/registry/ocr.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
@@ -50,6 +51,7 @@ import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
+import OCR_MD from "../docs/ocr.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
@@ -80,6 +82,7 @@ const DOC_TAGS = {
     model3d: "3D",
     audio: "Audio",
     embeddings: "Embeddings",
+    ocr: "OCR",
     models: "Models",
     quests: "Quests",
     mediaStorage: "Media Storage",
@@ -104,6 +107,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
+    "📄 OCR": DOC_TAGS.ocr,
     "🤖 Models": DOC_TAGS.models,
     "✨ Quests": DOC_TAGS.quests,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
@@ -171,6 +175,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.embeddings]: docsIcon(
         '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />',
+    ),
+    [DOC_TAGS.ocr]: docsIcon(
+        '<path d="M21 12c0 3.87-4.03 7-9 7s-9-3.13-9-7 4.03-7 9-7 9 3.13 9 7z" /><rect x="3" y="12" width="18" height="3" />',
     ),
     [DOC_TAGS.models]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
@@ -244,6 +251,7 @@ const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
+const ocrModelDisplayNames = Object.keys(OCR_SERVICES).join(", ");
 // Substitute live registry values into the section markdown.
 const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
@@ -253,6 +261,7 @@ const MODEL_VARS: Record<string, string> = {
     "3D_MODELS": model3dModelDisplayNames,
     AUDIO_MODELS: audioModelDisplayNames,
     EMBEDDING_MODELS: embeddingModelDisplayNames,
+    OCR_MODELS: ocrModelDisplayNames,
     ELEVENLABS_VOICES: ELEVENLABS_VOICES.join(", "),
 };
 
@@ -311,6 +320,7 @@ const REALTIME_DOCS = [
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");
 const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
+const OCR_DOCS = interpolate(OCR_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
@@ -326,6 +336,7 @@ const GEN_API_DOCS = [
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
     EMBEDDINGS_DOCS,
+    OCR_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
     ACCOUNT_DOCS,
@@ -498,6 +509,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
                     DOC_TAGS.embeddings,
+                    DOC_TAGS.ocr,
                 ],
             },
             {
@@ -597,6 +609,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.embeddings,
                 description: stripLeadingHeading(EMBEDDINGS_DOCS),
+            },
+            {
+                name: DOC_TAGS.ocr,
+                description: stripLeadingHeading(OCR_DOCS),
             },
             {
                 name: DOC_TAGS.models,

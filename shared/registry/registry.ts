@@ -18,6 +18,7 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import { OCR_SERVICES, type OcrServiceId } from "./ocr";
 import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
@@ -30,6 +31,7 @@ export const MODEL_CATEGORIES = [
     "3d",
     "embedding",
     "realtime",
+    "ocr",
 ] as const;
 
 export type Category = (typeof MODEL_CATEGORIES)[number];
@@ -109,7 +111,8 @@ export type ModelName =
     | AudioModelName
     | EmbeddingServiceId
     | RealtimeModelName
-    | Model3dName;
+    | Model3dName
+    | OcrServiceId;
 
 export const VIDEO_CAPABILITIES = [
     "start_frame",
@@ -552,6 +555,7 @@ const MODEL_REGISTRY = {
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
     ...MODEL3D_SERVICES,
+    ...OCR_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**

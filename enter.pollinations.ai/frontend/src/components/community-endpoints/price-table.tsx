@@ -16,6 +16,7 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -182,11 +183,18 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
-    const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
+    const unitLabel =
+        field.priceUnit === "image"
+            ? "/image"
+            : field.priceUnit === "second"
+              ? "/sec"
+              : "/1M";
     const maximum =
         field.priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : field.priceUnit === "second"
+              ? MAX_COMMUNITY_PRICE_PER_SECOND
+              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -217,7 +225,8 @@ function PriceInputCell({
                 </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        {field.priceUnit === "image"
+                        {field.priceUnit === "image" ||
+                        field.priceUnit === "second"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>

@@ -22,6 +22,7 @@ import {
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -105,13 +106,17 @@ function enforceCommunityEndpointPriceLimits(
         const maxPrice =
             field.priceUnit === "image"
                 ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+                : field.priceUnit === "second"
+                  ? MAX_COMMUNITY_PRICE_PER_SECOND
+                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
         if (price === undefined || price <= maxPrice) continue;
 
         const limit =
             field.priceUnit === "image"
                 ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+                : field.priceUnit === "second"
+                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
+                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
         throw new HTTPException(400, {
             message: `${field.label} price must not exceed ${limit}`,
         });

@@ -43,6 +43,9 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// Per-second audio (STT/TTS) prices are tiny compared to per-token rates; the
+// ceiling mirrors the priciest first-party model, not the per-token bound.
+export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.006;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
@@ -162,7 +165,7 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     key: "promptAudioPrice",
     usageType: "promptAudioSeconds",
     label: "Prompt audio",
-    priceUnit: "million",
+    priceUnit: "second",
     rawUsagePaths: ["usage.duration", "usage.seconds"],
 } as const;
 

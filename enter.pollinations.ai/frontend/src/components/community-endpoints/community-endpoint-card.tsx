@@ -256,7 +256,12 @@ function communityPriceGroups(
                 price: storedPriceToFormValue(price, field.priceUnit),
                 kind,
                 subKinds: [kind],
-                unit: field.priceUnit === "million" ? "token" : "request",
+                unit:
+                    field.priceUnit === "million"
+                        ? "token"
+                        : field.priceUnit === "second"
+                          ? "second"
+                          : "request",
             },
         });
     }

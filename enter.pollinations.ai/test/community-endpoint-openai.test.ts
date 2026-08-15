@@ -317,6 +317,13 @@ describe("community endpoint OpenAI service", () => {
             const file = formData.get("file");
             expect(file).toBeInstanceOf(File);
             expect((file as File).type).toBe("audio/wav");
+            // The sample must be a structurally valid WAV: 44-byte RIFF/WAVE
+            // header + 1600 bytes of PCM silence (0.1s at 8 kHz mono 16-bit).
+            const wav = new Uint8Array(await (file as File).arrayBuffer());
+            expect(wav.length).toBe(1644);
+            expect(new TextDecoder().decode(wav.subarray(0, 4))).toBe("RIFF");
+            expect(new TextDecoder().decode(wav.subarray(8, 12))).toBe("WAVE");
+            expect(wav.subarray(44).every((byte) => byte === 0)).toBe(true);
             return Response.json({
                 text: "Hello",
                 usage: { duration: 0.5 },

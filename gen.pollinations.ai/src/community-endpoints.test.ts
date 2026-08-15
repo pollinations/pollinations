@@ -26,6 +26,7 @@ import {
     legacyCommunityModelId,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -739,6 +740,20 @@ describe("community endpoint helpers", () => {
             "transcription",
         );
         expect(definition).toEqual({ promptAudioSeconds: 0.00002 });
+    });
+
+    it("prices transcription audio in per-second units, not per 1M", () => {
+        const [field] =
+            communityEndpointPriceFieldsForModality("transcription");
+        expect(field).toMatchObject({
+            key: "promptAudioPrice",
+            usageType: "promptAudioSeconds",
+            priceUnit: "second",
+        });
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeGreaterThan(0);
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeLessThan(
+            MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+        );
     });
 
     describe("fallback target pricing", () => {

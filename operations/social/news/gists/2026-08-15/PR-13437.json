@@ -1,0 +1,33 @@
+{
+  "pr_number": 13437,
+  "title": "fix: verify MCP deployment health endpoint",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13437",
+  "merged_at": "2026-08-15T23:26:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops the generic Worker verifier from polling the authenticated MCP root for HTTP 200.\n- Verifies `/health` on both `mcp.myceli.ai` and `mcp.pollinations.ai` after deployment.\n- Keeps the root MCP transport authenticated and `/mcp` removed.\n\nChecks:\n- Deployment discovery tests: 2/2\n- Hosted MCP Worker tests: 5/5\n- Biome and diff checks",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive checks its pulse",
+    "blurb": "The MCP worker now gets checked at the door it actually leaves open. Polli brought a tiny stethoscope; the authenticated transport may continue minding its business.",
+    "summary": "MCP deployment verification now polls the public `/health` endpoint on both `mcp.myceli.ai` and `mcp.pollinations.ai` instead of expecting an HTTP 200 from the authenticated root transport.",
+    "impact": "Deployments gain more reliable post-release health checks while the MCP root remains authenticated and `/mcp` stays removed.",
+    "keywords": [
+      "mcp",
+      "deployment",
+      "health-checks",
+      "workers",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a gentle deployment mechanic checking two cozy CRT server terminals labeled with the two MCP domains, each showing a healthy green heartbeat. Small code-plants and flowers grow around the server rack to represent a service quietly staying alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blushes and light blue wings, wearing a tiny mechanic tool belt and using a stethoscope to check two friendly CRT server terminals with lime green (#ecf874) heartbeat displays; pixel labels read “mcp.myceli.ai” and “mcp.pollinations.ai,” with little code-plants flowering around their cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-15/PR-13437.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blushes and light blue wings, wearing a tiny mechanic tool belt and using a stethoscope to check two friendly CRT server terminals with lime green (#ecf874) heartbeat displays; pixel labels read “mcp.myceli.ai” and “mcp.pollinations.ai,” with little code-plants flowering around their cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-15T23:27:59.285886+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13453,
+  "title": "fix: clarify Pollinations contacts and legal operator",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13453",
+  "merged_at": "2026-08-16T09:38:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Presents Pollinations.ai as the product and service name in the Terms.\n- Explicitly identifies Myceli.AI OÜ as the legal service provider and contracting party, including the Estonian Commercial Register, registry code, VAT number, and registered address.\n- Uses `hello@pollinations.ai` for general, privacy, and legal contact and `billing@pollinations.ai` for billing contact.\n- Preserves all Myceli legal-entity, copyright, ownership, contributor, provider-account, infrastructure, and operational references.\n- Documents the Pollinations brand/Myceli entity distinction and the feature branch → `main` → `production` flow; validated with `git diff --check`.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Names on the garden gate",
+    "blurb": "The legal pages now make the Pollinations.ai product name and its Myceli.AI OÜ operator a little less mysterious. General questions, privacy notes, and billing bees each have a clearer inbox too.",
+    "summary": "Updated the Terms and Privacy Policy to identify Pollinations.ai as the service, Myceli.AI OÜ as the Estonian legal provider and contracting party, and hello@pollinations.ai and billing@pollinations.ai as the relevant contact addresses.",
+    "impact": "Users can more easily see who operates the service, find the registered legal details, and reach the right Pollinations contact for general, privacy, legal, or billing questions.",
+    "keywords": [
+      "legal",
+      "terms-of-service",
+      "privacy-policy",
+      "contacts",
+      "myceli",
+      "pollinations"
+    ],
+    "visual_concept": "A cozy garden noticeboard represents clearer service identity and contact details: Polli, wearing a tiny postal-worker cap, pins two neatly labeled pixel letters onto a warm cream board marked “Pollinations.ai” and “Myceli.AI OÜ.” A small retro mailbox, flowering code-plants, and a subtle lime-green glow make the administrative task feel friendly rather than ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny postal-worker cap as she pins two neat contact letters to a garden noticeboard labeled in simple pixel text “Pollinations.ai” and “Myceli.AI OÜ.” A retro lime green (#ecf874) mailbox, flowering code-plants, warm cream and lavender pastels, and soft ambient light create a friendly legal-info garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13453.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny postal-worker cap as she pins two neat contact letters to a garden noticeboard labeled in simple pixel text “Pollinations.ai” and “Myceli.AI OÜ.” A retro lime green (#ecf874) mailbox, flowering code-plants, warm cream and lavender pastels, and soft ambient light create a friendly legal-info garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-16T09:39:23.590743+00:00"
+}

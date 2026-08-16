@@ -1,0 +1,33 @@
+{
+  "pr_number": 13445,
+  "title": "fix: unify model description display",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13445",
+  "merged_at": "2026-08-16T03:31:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses the shared model-name tooltip for agent descriptions\n- Removes the agent-only inline description row\n- Keeps catalog model and agent rows consistent\n\nFollow-up to #13442",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One tooltip to rule them",
+    "blurb": "The model catalog and agent list now tell the same story. Polli removed a spare description row before it could grow roots.",
+    "summary": "Agent model rows now use the shared model-name tooltip and no longer render their separate inline description row, matching the catalog display.",
+    "impact": "Users get a consistent model-description experience across catalog and agent rows, with details available through the same tooltip behavior.",
+    "keywords": [
+      "model catalog",
+      "agents",
+      "tooltips",
+      "frontend",
+      "ui consistency"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian wearing round reading glasses, tidying two matching model cards beside a cozy retro terminal. One shared tooltip floats above both cards while small code-plants and flowers make the interface feel like an orderly garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny round librarian glasses, aligning two matching model cards beside a glowing retro terminal; one neat shared tooltip hovers above them while code-plants grow in lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"SAME DETAILS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13445.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny round librarian glasses, aligning two matching model cards beside a glowing retro terminal; one neat shared tooltip hovers above them while code-plants grow in lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"SAME DETAILS\"."
+  },
+  "generated_at": "2026-08-16T03:32:13.990734+00:00"
+}

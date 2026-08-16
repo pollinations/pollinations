@@ -1,0 +1,33 @@
+{
+  "pr_number": 13455,
+  "title": "fix: move agent pricing note to legend",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13455",
+  "merged_at": "2026-08-16T11:13:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the agent-specific pricing explanation below the model list.\n- Reuses the existing pricing legend styling and keeps the note visible only on the Agents tab.\n- Removes the large pricing notice above the agent rows.\n\nChecks: `npm --prefix enter.pollinations.ai run typecheck`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pricing note found its shelf",
+    "blurb": "The Agents tab put its pricing explanation where people already look for legends. Twelve lines of very large notice have been peacefully returned to the soil.",
+    "summary": "Moved the agent-specific pricing explanation from above the agent model rows into the existing pricing legend, where it appears only on the Agents tab.",
+    "impact": "Users browsing agent models get the same pricing context in a quieter, more consistent place without a large notice interrupting the table.",
+    "keywords": [
+      "agents",
+      "pricing",
+      "model-table",
+      "frontend",
+      "ui"
+    ],
+    "visual_concept": "Polli tidies a cozy model-directory garden, carefully moving a small pricing-note sign from the middle of a path to a neat legend board beside the Agents-only flower bed. A tiny CRT monitor robot can point eagerly at the organized legend, while code-plants and labeled model rows make the UI context clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny librarian scarf, moving a small pricing-note sign from the middle of a model garden path onto a neat lime green (#ecf874) legend board beside an Agents-only flower bed; a chunky CRT monitor robot points approvingly while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: 'AGENTS' and 'PRICING LEGEND', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13455.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny librarian scarf, moving a small pricing-note sign from the middle of a model garden path onto a neat lime green (#ecf874) legend board beside an Agents-only flower bed; a chunky CRT monitor robot points approvingly while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: 'AGENTS' and 'PRICING LEGEND', nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-16T11:14:39.592979+00:00"
+}

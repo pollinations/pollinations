@@ -1,0 +1,34 @@
+{
+  "pr_number": 13472,
+  "title": "fix: update Enter community links",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13472",
+  "merged_at": "2026-08-16T23:10:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Refreshes the Enter drawer counts to 5k GitHub stars and 19k Discord members.\n- Replaces the Pollen Beta shortcut with “Get Help” linking to the community chat.\n- Renames “Report an issue” to “Report a Bug” and adds a shared UI bug icon.\n- Verified with Biome, UI and Enter typechecks, and a local browser check including GitHub sign-in.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The help drawer grew up",
+    "blurb": "Enter’s community drawer got its numbers refreshed and its shortcuts put to better use. Polli replaced the old Beta path with a proper door to the people who can help.",
+    "summary": "Updated the Enter dashboard drawer with 5k GitHub stars and 19k Discord members, replaced the Pollen Beta shortcut with a Get Help link to community chat, and renamed Report an issue to Report a Bug with a shared bug icon.",
+    "impact": "Enter users now see current community counts and have clearer, direct routes to community help and bug reporting from the dashboard.",
+    "keywords": [
+      "enter",
+      "community",
+      "dashboard",
+      "support",
+      "bug-reporting",
+      "ui"
+    ],
+    "visual_concept": "A cozy Enter dashboard help drawer becomes a little community garden noticeboard: Polli updates a star counter and hangs two clear signposts, one for Get Help leading to a friendly chat room and one with a tiny bug icon for reporting bugs. Include glowing retro terminal elements, flowers, and code-vines to make navigation feel like a welcoming shared space.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a lime green (#ecf874) community noticeboard beside a retro CRT terminal; the board shows chunky pixel signs reading “GET HELP,” “5K STARS,” and “19K FRIENDS,” with a tiny friendly bug icon, flowers, and code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13472.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a lime green (#ecf874) community noticeboard beside a retro CRT terminal; the board shows chunky pixel signs reading “GET HELP,” “5K STARS,” and “19K FRIENDS,” with a tiny friendly bug icon, flowers, and code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-16T23:11:41.506672+00:00"
+}

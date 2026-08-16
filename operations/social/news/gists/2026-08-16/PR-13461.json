@@ -1,0 +1,34 @@
+{
+  "pr_number": 13461,
+  "title": "refactor: remove custom MCP servers from agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13461",
+  "merged_at": "2026-08-16T14:38:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes per-agent custom MCP URLs, headers, credential encryption, and third-party runtime loading until reusable account-level MCPs are designed.\n- Stores enabled MCP server IDs in `mcpServers`; `pollinations` is the only supported ID and keeps caller-token forwarding plus the generation/discovery tool allowlist.\n- Simplifies the agent dashboard, API, catalog integration, CLI output, and tests around the built-in server.\n- Migrates legacy `pollinationsTools` configs to the ID array, removes embedded custom definitions, and drops `agent.mcp_headers_ciphertext`.\n\nDeployment note: the D1 migration and new Enter Worker must remain paired; the existing production workflow applies migrations immediately before deployment.\n\nChecks: Enter 25/25 focused tests, Gen managed-agent integration, Enter/Gen typechecks, Biome, Drizzle check, seeded legacy migration test, and all 51 migrations on fresh local D1.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One tool shed, tidied",
+    "blurb": "Managed agents now keep their tools in one small, well-labeled shed. Pollinations MCP remains wired in, with token forwarding and its generation and discovery tools ready to go.",
+    "summary": "Managed agents now store enabled MCP server IDs in `mcpServers`, supporting the built-in `pollinations` server with caller-token forwarding and generation/discovery tool allowlists while legacy `pollinationsTools`, custom URLs, headers, encrypted credentials, and runtime loading are migrated away.",
+    "impact": "Agent creators get a simpler dashboard, API, catalog, and CLI centered on the built-in Pollinations MCP, while the platform prepares reusable account-level MCP connections.",
+    "keywords": [
+      "managed agents",
+      "MCP",
+      "pollinations server",
+      "agent dashboard",
+      "migration",
+      "CLI"
+    ],
+    "visual_concept": "Depict Polli as a careful gardener-organizer clearing a cluttered tool shed of mismatched cables and unlabeled toolboxes, leaving one friendly Pollinations-branded MCP terminal connected to healthy code-plants. The monitor robot can eagerly hold a neat ID label reading `mcpServers`, showing that agent tools are now a simpler built-in setup.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tidying a warm garden-shed hackerspace: old tangled cables and unlabeled boxes are neatly stacked aside while one retro Pollinations MCP terminal glows prominently lime green (#ecf874) beside thriving code-plants. A cute CRT monitor robot holds a small pixel label reading `mcpServers`; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13461.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tidying a warm garden-shed hackerspace: old tangled cables and unlabeled boxes are neatly stacked aside while one retro Pollinations MCP terminal glows prominently lime green (#ecf874) beside thriving code-plants. A cute CRT monitor robot holds a small pixel label reading `mcpServers`; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-16T14:40:10.827030+00:00"
+}

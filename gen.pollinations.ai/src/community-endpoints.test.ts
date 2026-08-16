@@ -37,7 +37,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import {
     agent as agentTable,
-    apikey as apikeyTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
@@ -2159,34 +2158,45 @@ fixtureTest(
             name: "owner-key",
             userId: ownerUserId,
         });
-        // The owner's app, and a key minted through it for an unrelated user.
-        const { id: appKeyId } = await createTestApiKey({
+        // The owner's app, and a key minted THROUGH it for an unrelated user.
+        // Go through the real authorize binding (requestedClientId +
+        // redirectUri) rather than stamping byop_client_key_id directly, so the
+        // test covers the flow that actually produces app-attributed keys.
+        const appRedirectUri = "https://app.example/callback";
+        const { key: appClientId } = await createTestApiKey({
             name: "owner-app",
             userId: ownerUserId,
             type: "publishable",
+            metadata: { redirectUris: [appRedirectUri] },
         });
-        const { key: appUserKey, id: appUserKeyId } = await createTestApiKey({
-            name: "app-user-key",
-            user: { tierBalance: 10 },
-        });
-        await db
-            .update(apikeyTable)
-            .set({ byopClientKeyId: appKeyId })
-            .where(eq(apikeyTable.id, appUserKeyId));
+        const { key: appUserKey, byopClientKeyId: appAttribution } =
+            await createTestApiKey({
+                name: "app-user-key",
+                user: { tierBalance: 10 },
+                metadata: {
+                    requestedClientId: appClientId,
+                    redirectUri: appRedirectUri,
+                },
+            });
+        // The binding must have been established server-side, or the rest of
+        // this test would pass for the wrong reason.
+        expect(appAttribution).toBeTruthy();
+
         // A key minted through a DIFFERENT developer's app must not qualify.
-        const { id: otherAppKeyId } = await createTestApiKey({
+        const otherRedirectUri = "https://other.example/callback";
+        const { key: otherClientId } = await createTestApiKey({
             name: "other-app",
             type: "publishable",
+            metadata: { redirectUris: [otherRedirectUri] },
         });
-        const { key: otherAppUserKey, id: otherAppUserKeyId } =
-            await createTestApiKey({
-                name: "other-app-user-key",
-                user: { tierBalance: 10 },
-            });
-        await db
-            .update(apikeyTable)
-            .set({ byopClientKeyId: otherAppKeyId })
-            .where(eq(apikeyTable.id, otherAppUserKeyId));
+        const { key: otherAppUserKey } = await createTestApiKey({
+            name: "other-app-user-key",
+            user: { tierBalance: 10 },
+            metadata: {
+                requestedClientId: otherClientId,
+                redirectUri: otherRedirectUri,
+            },
+        });
 
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,

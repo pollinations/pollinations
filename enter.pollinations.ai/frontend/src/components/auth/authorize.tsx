@@ -41,7 +41,6 @@ import {
 import {
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
 } from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
@@ -815,6 +814,7 @@ export function Authorize() {
                                 visiblePermissions={visibleOptionalPermissions}
                                 showApiName={false}
                                 modelsInitiallyExpanded
+                                extraModels={attribution?.appModels}
                             />
                         </Collapsible>
                     </div>

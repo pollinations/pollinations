@@ -2,10 +2,12 @@ import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
 import { ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+} from "../models/model-catalog.ts";
 import {
     getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
@@ -28,6 +30,13 @@ type AccountPermissionsInputProps = {
     showApiName?: boolean;
     /** Whether the Models section starts expanded. Always collapsible. */
     modelsInitiallyExpanded?: boolean;
+    /**
+     * Models to offer alongside the public catalog. The authorize screen passes
+     * the app's own "app"-visibility models, which the catalog omits: without
+     * them the picker cannot show what is being granted, and toggling any model
+     * would drop them from the selection.
+     */
+    extraModels?: ApiModelInfo[];
 };
 
 export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
@@ -62,6 +71,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     visiblePermissions,
     showApiName = true,
     modelsInitiallyExpanded = false,
+    extraModels,
 }) => {
     const { row: rowTheme } = PERMISSION_UI_THEME;
     const permissionOptions =
@@ -71,9 +81,15 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                   visiblePermissions.includes(p.id),
               );
     const isUnrestricted = allowedModels === null;
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const modelCategories = useMemo(
+        () =>
+            getModelCategoriesFromCatalog([
+                ...catalogModels,
+                ...(extraModels ?? []),
+            ]),
+        [catalogModels, extraModels],
+    );
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;
@@ -95,12 +111,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
         fetchModelCatalog()
             .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
+                if (!cancelled) setCatalogModels(models);
             })
             .catch(() => {
-                if (!cancelled) setModelCategories([]);
+                if (!cancelled) setCatalogModels([]);
             });
 
         return () => {

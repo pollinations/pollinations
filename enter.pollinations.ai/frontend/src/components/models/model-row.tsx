@@ -64,7 +64,10 @@ export const ModelId: FC<ModelIdProps> = ({ name }) => (
     </CopyButton>
 );
 
-export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
+export const PerPollenEstimate: FC<{
+    model: ModelPrice;
+    inline?: boolean;
+}> = ({ model, inline = false }) => {
     const value = calculatePerPollen(model);
     const isFree = value === "∞";
     const isUnavailable = value === "—";
@@ -95,7 +98,12 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
 
     return (
         <Tooltip content={tooltip} displayContents>
-            <span className="pointer-events-auto inline-flex flex-col items-center gap-1 whitespace-nowrap">
+            <span
+                className={cn(
+                    "pointer-events-auto inline-flex items-center gap-1 whitespace-nowrap",
+                    !inline && "flex-col",
+                )}
+            >
                 <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                     {value}
                 </span>

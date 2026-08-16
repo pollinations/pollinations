@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { type ApiModelInfo, fetchModelCatalog } from "./model-catalog.ts";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getCatalogModelId,
+} from "./model-catalog.ts";
 import {
     getModelCategoriesFromCatalog,
     type ModelCategoryGroup,
@@ -7,12 +11,16 @@ import {
 
 /**
  * The public model catalog, plus any models the caller supplies that the
- * catalog omits — an app's own "app"-visibility models — grouped into
- * categories.
+ * catalog omits — an app's own "app"-visibility models, and the signed-in
+ * user's own private ones — grouped into categories.
  *
  * The consent screen and the permission picker have to agree on this list: one
  * renders the summary of what is being granted and the other renders the
  * checkboxes, so a divergence would describe two different grants.
+ *
+ * Extras win over catalog entries of the same id, and over each other in order,
+ * so a developer authorizing their own app sees one entry per model rather than
+ * one per source.
  */
 export function useModelCategories(
     extraModels?: ApiModelInfo[],
@@ -35,12 +43,11 @@ export function useModelCategories(
         };
     }, []);
 
-    return useMemo(
-        () =>
-            getModelCategoriesFromCatalog([
-                ...catalogModels,
-                ...(extraModels ?? []),
-            ]),
-        [catalogModels, extraModels],
-    );
+    return useMemo(() => {
+        const byId = new Map<string, ApiModelInfo>();
+        for (const model of [...catalogModels, ...(extraModels ?? [])]) {
+            byId.set(getCatalogModelId(model), model);
+        }
+        return getModelCategoriesFromCatalog([...byId.values()]);
+    }, [catalogModels, extraModels]);
 }

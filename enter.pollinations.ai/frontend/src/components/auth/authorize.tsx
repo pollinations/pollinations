@@ -105,6 +105,7 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const [ownModels, setOwnModels] = useState<ApiModelInfo[]>([]);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
@@ -120,7 +121,16 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    const modelCategories = useModelCategories(attribution?.appModels);
+    // Models the minted key could call but the public catalog omits: the app's
+    // own app-scoped models, and the signing-in user's own models — the key is
+    // theirs, so it reaches their private models just as their dashboard key
+    // does. Offering them here is what lets someone point an app at their own
+    // upstream.
+    const grantableModels = useMemo(
+        () => [...(attribution?.appModels ?? []), ...ownModels],
+        [attribution, ownModels],
+    );
+    const modelCategories = useModelCategories(grantableModels);
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,
@@ -150,13 +160,43 @@ export function Authorize() {
     const isMobile = window.innerWidth < 768;
     useScrollLock(!isMobile);
 
+    // The user's own community models, which only they can list. Public ones
+    // already arrive with the catalog, so only the rest are worth merging.
     useEffect(() => {
+        if (!user) return;
         let cancelled = false;
-
+        void (async () => {
+            try {
+                const response = await apiClient.account["my-models"].$get();
+                if (!response.ok) return;
+                const { data } = await response.json();
+                if (cancelled) return;
+                setOwnModels(
+                    data
+                        .filter(
+                            (model) =>
+                                !model.disabled &&
+                                model.visibility !== "public",
+                        )
+                        .map((model) => ({
+                            name: model.modelId,
+                            title: model.title,
+                            category:
+                                model.modality === "image"
+                                    ? ("image" as const)
+                                    : ("text" as const),
+                            community: true,
+                            agent: model.agentId !== null,
+                        })),
+                );
+            } catch {
+                // Leave the picker on the catalog alone.
+            }
+        })();
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");

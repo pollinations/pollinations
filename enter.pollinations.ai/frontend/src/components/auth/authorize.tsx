@@ -37,6 +37,7 @@ import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -105,7 +106,6 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
-    const [ownModels, setOwnModels] = useState<ApiModelInfo[]>([]);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
@@ -121,11 +121,10 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    // Models the minted key could call but the public catalog omits: the app's
-    // own app-scoped models, and the signing-in user's own models — the key is
-    // theirs, so it reaches their private models just as their dashboard key
-    // does. Offering them here is what lets someone point an app at their own
-    // upstream.
+    // Everything the minted key could call that the public catalog omits: the
+    // app's own app-scoped models, and the user's own — the key is theirs, so
+    // it reaches their private models just as their dashboard keys do.
+    const ownModels = useOwnCommunityModels(!!user);
     const grantableModels = useMemo(
         () => [...(attribution?.appModels ?? []), ...ownModels],
         [attribution, ownModels],
@@ -159,44 +158,6 @@ export function Authorize() {
 
     const isMobile = window.innerWidth < 768;
     useScrollLock(!isMobile);
-
-    // The user's own community models, which only they can list. Public ones
-    // already arrive with the catalog, so only the rest are worth merging.
-    useEffect(() => {
-        if (!user) return;
-        let cancelled = false;
-        void (async () => {
-            try {
-                const response = await apiClient.account["my-models"].$get();
-                if (!response.ok) return;
-                const { data } = await response.json();
-                if (cancelled) return;
-                setOwnModels(
-                    data
-                        .filter(
-                            (model) =>
-                                !model.disabled &&
-                                model.visibility !== "public",
-                        )
-                        .map((model) => ({
-                            name: model.modelId,
-                            title: model.title,
-                            category:
-                                model.modality === "image"
-                                    ? ("image" as const)
-                                    : ("text" as const),
-                            community: true,
-                            agent: model.agentId !== null,
-                        })),
-                );
-            } catch {
-                // Leave the picker on the catalog alone.
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");

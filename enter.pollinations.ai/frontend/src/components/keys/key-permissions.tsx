@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { useModelCategories } from "../models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
@@ -61,7 +62,11 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setExpiryDays,
         setAccountPermissions,
     } = value;
-    const modelCategories = useModelCategories();
+    // A dashboard key belongs to the account, so it can call that account's own
+    // private and app models. Offer them here too, or a key could be granted
+    // one through the authorize flow and then never be edited without it
+    // vanishing from the picker.
+    const modelCategories = useModelCategories(useOwnCommunityModels());
 
     return (
         <div className="space-y-6">

@@ -17,6 +17,15 @@ export function AppIcon(props: IconProps) {
     );
 }
 
+export function AccountIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -419,6 +428,16 @@ export function SearchIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
+        </svg>
+    );
+}
+
+export function SignOutIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
         </svg>
     );
 }

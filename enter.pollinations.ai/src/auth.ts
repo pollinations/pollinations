@@ -75,6 +75,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         ],
         user: {
             additionalFields: authAdditionalFields.user,
+            deleteUser: {
+                enabled: true,
+            },
         },
         socialProviders: {
             github: {

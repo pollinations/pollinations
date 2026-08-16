@@ -92,6 +92,30 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
+async function mcpTransportFetch(
+    input: string | URL | Request,
+    init?: RequestInit,
+): Promise<Response> {
+    // The redirect override is required, not optional: the MCP client asks for
+    // redirect "error", which workerd rejects outright ("must be one of follow
+    // or manual"). We follow them — refusing bought little, since a hostile
+    // server can proxy anywhere without a redirect and the config-time host
+    // blocklist is the real SSRF control, while redirects are ordinary
+    // (trailing slashes, http->https, moved paths).
+    return globalThis.fetch.call(globalThis, input, {
+        ...init,
+        redirect: "follow",
+    });
+}
+
+// A 400/404/405 on the initialize POST means the URL may be a legacy HTTP+SSE
+// endpoint (e.g. Gradio's /gradio_api/mcp/sse), per the MCP back-compat flow.
+export function isMissingHttpTransport(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
+    return statusCode === 400 || statusCode === 404 || statusCode === 405;
+}
+
 async function loadMcpTools(
     servers: McpServer[],
     signal: AbortSignal,
@@ -109,35 +133,33 @@ async function loadMcpTools(
         await Promise.all(clients.map((client) => client.close()));
     };
 
+    const connect = (server: McpServer, type: "http" | "sse") =>
+        createMCPClient({
+            clientName: "pollinations-prompt-agent",
+            initializationOptions: {
+                signal,
+                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+            },
+            transport: {
+                type,
+                url: server.url,
+                headers: server.headers,
+                fetch: mcpTransportFetch,
+            },
+        });
+
     for (const server of servers) {
         // Isolated per server: a broken MCP endpoint must not take down the whole
         // agent. A user can save any url, and third-party servers go down; losing
         // one server's tools is recoverable, losing the request is not.
         try {
-            const client = await createMCPClient({
-                clientName: "pollinations-prompt-agent",
-                initializationOptions: {
-                    signal,
-                    timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-                },
-                transport: {
-                    type: "http",
-                    url: server.url,
-                    headers: server.headers,
-                    // The redirect override is required, not optional: the MCP
-                    // client asks for redirect "error", which workerd rejects
-                    // outright ("must be one of follow or manual"). We follow
-                    // them — refusing bought little, since a hostile server can
-                    // proxy anywhere without a redirect and the config-time host
-                    // blocklist is the real SSRF control, while redirects are
-                    // ordinary (trailing slashes, http->https, moved paths).
-                    fetch: async (input, init) =>
-                        globalThis.fetch.call(globalThis, input, {
-                            ...init,
-                            redirect: "follow",
-                        }),
-                },
-            });
+            let client: McpClient;
+            try {
+                client = await connect(server, "http");
+            } catch (error) {
+                if (!isMissingHttpTransport(error)) throw error;
+                client = await connect(server, "sse");
+            }
             clients.push(client);
             let loaded = 0;
             for (const [name, definition] of Object.entries(

@@ -24,7 +24,7 @@ import {
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
@@ -34,7 +34,10 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+} from "../models/model-catalog.ts";
 import {
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
@@ -52,6 +55,13 @@ type Attribution = {
     appName?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
+    /**
+     * The app's own "app"-visibility models. They are absent from the public
+     * catalog, so the consent screen has to learn them from the app it is
+     * authorizing or it would show "no models enabled" while still scoping the
+     * minted key to them.
+     */
+    appModels?: ApiModelInfo[];
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
@@ -102,9 +112,7 @@ export function Authorize() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -118,6 +126,18 @@ export function Authorize() {
         }),
     );
     const { setAccountPermissions } = keyPermissions;
+
+    // The app's app-scoped models sit outside the public catalog, so fold them
+    // in before deriving categories — otherwise a key scoped to one of them
+    // reads as granting nothing.
+    const modelCategories = useMemo(
+        () =>
+            getModelCategoriesFromCatalog([
+                ...catalogModels,
+                ...(attribution?.appModels ?? []),
+            ]),
+        [catalogModels, attribution],
+    );
 
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
@@ -153,12 +173,10 @@ export function Authorize() {
 
         fetchModelCatalog()
             .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
+                if (!cancelled) setCatalogModels(models);
             })
             .catch(() => {
-                if (!cancelled) setModelCategories([]);
+                if (!cancelled) setCatalogModels([]);
             });
 
         return () => {

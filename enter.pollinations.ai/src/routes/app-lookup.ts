@@ -2,9 +2,13 @@ import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
+import {
+    communityEndpointTitle,
+    communityModelId,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
@@ -31,7 +35,54 @@ async function resolveAttribution(
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
+        appModels: await resolveAppModels(db, keyRow.userId, user),
     };
+}
+
+/**
+ * The app owner's "app"-visibility models, which keys minted through this app
+ * can call. The consent screen needs them to name what it is granting: they are
+ * absent from the public catalog it otherwise reads, so without this an
+ * app-scoped `models=` request renders as "no models enabled".
+ *
+ * Safe on an unauthenticated route because "app" is unlisted rather than
+ * secret, and because this returns only what the app is asking the user to
+ * approve — ids and titles, no upstream URL, price, or token.
+ */
+async function resolveAppModels(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    ownerUserId: string,
+    owner: typeof schema.user.$inferSelect | undefined,
+) {
+    if (!owner?.githubUsername) return [];
+    const rows = await db
+        .select({
+            name: schema.communityEndpoint.name,
+            title: schema.communityEndpoint.title,
+            description: schema.communityEndpoint.description,
+            modality: schema.communityEndpoint.modality,
+            agentId: schema.communityEndpoint.agentId,
+        })
+        .from(schema.communityEndpoint)
+        .where(
+            and(
+                eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+                eq(schema.communityEndpoint.visibility, "app"),
+                isNull(schema.communityEndpoint.disabledAt),
+            ),
+        );
+    return rows.map((row) => ({
+        name: communityModelId(owner.githubUsername as string, row.name),
+        title: communityEndpointTitle({
+            modelId: row.name,
+            title: row.title,
+            description: row.description,
+        }),
+        category:
+            row.modality === "image" ? ("image" as const) : ("text" as const),
+        community: true as const,
+        agent: row.agentId !== null,
+    }));
 }
 
 /**

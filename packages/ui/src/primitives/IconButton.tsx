@@ -65,6 +65,7 @@ export const IconButton: FC<IconButtonProps> = ({
             content={tooltipContent}
             align={tooltipAlign}
             clampToViewport={tooltipClampToViewport}
+            tapEnabled={false}
         >
             {button}
         </Tooltip>

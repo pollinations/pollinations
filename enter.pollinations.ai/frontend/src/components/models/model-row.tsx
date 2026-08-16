@@ -3,7 +3,7 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import {
     AgentBasePricingLabel,
-    AgentModelMetadata,
+    AgentPricingNote,
 } from "./agent-model-metadata.tsx";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -203,6 +203,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     <ModelId name={model.name} />
+                    {model.agent && modelDescription && (
+                        <Tooltip
+                            content={modelDescription}
+                            triggerAs="span"
+                            className="min-w-0 max-w-full"
+                        >
+                            <span className="block min-w-0 max-w-full truncate text-xs text-theme-text-soft">
+                                {modelDescription}
+                            </span>
+                        </Tooltip>
+                    )}
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}
@@ -213,7 +224,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
-                    <AgentModelMetadata model={model} />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -268,6 +278,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
                 <AgentBasePricingLabel model={model} className="mb-1" />
                 <ModelPricingLedger pricing={pricing} />
+                <AgentPricingNote model={model} />
             </div>
         </Surface>
     );

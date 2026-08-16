@@ -359,6 +359,22 @@ export function isDelegatingEndpoint(
     return endpoint.kind === "agent" || endpoint.delegatesGeneration;
 }
 
+/**
+ * isDelegatingEndpoint() for a stored row or its API representation, where the
+ * two kinds are not yet split into a union and `agentId` stands in for `kind`.
+ *
+ * Kept beside the runtime version so the rule reads the same everywhere: the
+ * catalog labels these models "agent", and a surface that recomputes the test
+ * by hand drifts from that label the moment an external endpoint is granted
+ * delegation.
+ */
+export function endpointDelegatesGeneration(endpoint: {
+    agentId: string | null;
+    delegatesGeneration: boolean;
+}): boolean {
+    return endpoint.agentId !== null || endpoint.delegatesGeneration;
+}
+
 /** Who is asking, as far as community model access is concerned. */
 export type CommunityModelAccess = {
     /** The authenticated Pollinations user, if any. */

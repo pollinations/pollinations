@@ -5,6 +5,7 @@ import {
 import {
     communityEndpointTitle,
     communityModelId,
+    endpointDelegatesGeneration,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -64,6 +65,7 @@ async function resolveAppModels(
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             agentId: schema.communityEndpoint.agentId,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
         })
         .from(schema.communityEndpoint)
         .where(
@@ -83,7 +85,7 @@ async function resolveAppModels(
         category:
             row.modality === "image" ? ("image" as const) : ("text" as const),
         community: true as const,
-        agent: row.agentId !== null,
+        agent: endpointDelegatesGeneration(row),
     }));
 }
 

@@ -18,6 +18,7 @@ import {
     communityEndpointPricesForModality,
     communityEndpointTitle,
     communityModelId,
+    endpointDelegatesGeneration,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -181,7 +182,7 @@ function fallbackTargetRejection(
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
-    if (target.agentId !== null || target.delegatesGeneration) {
+    if (endpointDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
@@ -444,6 +445,7 @@ const CommunityEndpointResponseSchema = z.object({
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
+    delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
@@ -601,6 +603,7 @@ function toResponse(
         ),
         baseUrl,
         agentId: row.agentId,
+        delegatesGeneration: row.delegatesGeneration,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,

@@ -485,17 +485,18 @@ export const Models: FC = () => {
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
-                        <span>
-                            <strong className="text-theme-text-soft">
-                                agent pricing
-                            </strong>{" "}
-                            — rates apply to each base-model call; agents can
-                            make multiple calls, and tool calls use the selected
-                            model&apos;s listed price.
-                        </span>
-                    </p>
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
+                            <span>
+                                <strong className="text-theme-text-soft">
+                                    agent pricing
+                                </strong>{" "}
+                                — agents may make multiple model calls. Each is
+                                billed at that model&apos;s listed price.
+                            </span>
+                        </p>
+                    )}
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>

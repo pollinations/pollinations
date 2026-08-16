@@ -1,37 +1,5 @@
-import { cn } from "@pollinations/ui";
+import { cn, Tooltip } from "@pollinations/ui";
 import type { ModelPrice } from "./types.ts";
-
-export function AgentModelMetadata({ model }: { model: ModelPrice }) {
-    const hasPollinationsModelAccess = model.capabilities.includes(
-        "pollinations_models",
-    );
-    if (!model.agent || (!model.baseModel && !hasPollinationsModelAccess)) {
-        return null;
-    }
-
-    return (
-        <div className="flex flex-col gap-1 text-xs text-theme-text-muted">
-            {model.baseModel && (
-                <>
-                    <span>
-                        Base model:{" "}
-                        <span className="font-mono">{model.baseModel}</span>
-                    </span>
-                    <span>
-                        Rates are per base-model call; total usage depends on
-                        the agent&apos;s steps and tools.
-                    </span>
-                </>
-            )}
-            {hasPollinationsModelAccess && (
-                <span>
-                    Can call other Pollinations models on the caller&apos;s
-                    behalf using their API access and balance.
-                </span>
-            )}
-        </div>
-    );
-}
 
 export function AgentBasePricingLabel({
     model,
@@ -42,13 +10,37 @@ export function AgentBasePricingLabel({
 }) {
     if (!model.agent || !model.baseModel) return null;
     return (
-        <p
+        <div
             className={cn(
-                "text-xs font-medium text-theme-text-muted",
+                "flex min-w-0 items-center gap-2 text-xs font-medium text-theme-text-muted",
                 className,
             )}
         >
-            Base model pricing
+            <span className="shrink-0">Base model pricing</span>
+            <Tooltip
+                content={model.baseModel}
+                triggerAs="span"
+                className="min-w-0 max-w-48"
+            >
+                <span className="block max-w-full truncate rounded-md bg-theme-bg-subtle px-2 py-1 font-mono text-[10px] font-medium text-theme-text-muted">
+                    {model.baseModel}
+                </span>
+            </Tooltip>
+        </div>
+    );
+}
+
+export function AgentPricingNote({ model }: { model: ModelPrice }) {
+    if (!model.agent || !model.capabilities.includes("pollinations_models")) {
+        return null;
+    }
+
+    return (
+        <p className="mt-2 border-t border-divider pt-2 text-[11px] leading-snug text-theme-text-muted">
+            <span className="font-medium text-theme-text-soft">
+                Pollinations tools enabled
+            </span>{" "}
+            · additional model calls use the caller&apos;s access and balance.
         </p>
     );
 }

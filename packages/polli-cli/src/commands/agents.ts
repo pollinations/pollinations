@@ -14,12 +14,7 @@ type Agent = {
     id: string;
     systemPrompt: string;
     baseModel: string;
-    pollinationsTools: boolean;
-    mcpServers: {
-        name: string;
-        url: string;
-        headers: Record<string, null>;
-    }[];
+    mcpServers: string[];
     createdAt: string;
     updatedAt: string;
 };
@@ -44,9 +39,11 @@ function printAgents(agents: Agent[]): void {
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
             model: agent.baseModel,
-            mcp_servers: agent.mcpServers?.length ?? 0,
+            pollinations_tools: agent.mcpServers.includes("pollinations")
+                ? "yes"
+                : "no",
         })),
-        ["id", "model", "mcp_servers"],
+        ["id", "model", "pollinations_tools"],
     );
 }
 

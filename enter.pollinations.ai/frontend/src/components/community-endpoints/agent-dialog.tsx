@@ -22,7 +22,6 @@ import {
     agentListingToForm,
     type CommunityEndpoint,
     emptyAgentForm,
-    isValidMcpRow,
     type ManagedAgent,
     type ModelListingFormState,
     toAgentListingPayload,
@@ -67,18 +66,7 @@ export function AgentDialog({
                 ? {
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
-                      pollinationsTools: agent.pollinationsTools,
-                      mcpServers: agent.mcpServers.map((server) => ({
-                          id: crypto.randomUUID(),
-                          name: server.name,
-                          url: server.url,
-                          headers: Object.keys(server.headers).map((name) => ({
-                              id: crypto.randomUUID(),
-                              name,
-                              value: "",
-                              saved: true,
-                          })),
-                      })),
+                      mcpServers: agent.mcpServers,
                   }
                 : emptyAgentForm),
         });
@@ -87,119 +75,10 @@ export function AgentDialog({
     }, [open, agent, endpoint]);
 
     function updateAgentForm(
-        key: keyof Omit<AgentFormState, "mcpServers">,
-        value: string | boolean,
+        key: keyof AgentFormState,
+        value: string | AgentFormState["mcpServers"],
     ): void {
         setForm((current) => ({ ...current, [key]: value }));
-    }
-
-    function updateMcpServer(
-        index: number,
-        key: "name" | "url",
-        value: string,
-    ): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.map((row, rowIndex) =>
-                rowIndex === index
-                    ? {
-                          ...row,
-                          [key]: value,
-                      }
-                    : row,
-            ),
-        }));
-    }
-
-    function addMcpServer(): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: [
-                ...current.mcpServers,
-                {
-                    id: crypto.randomUUID(),
-                    name: "",
-                    url: "",
-                    headers: [],
-                },
-            ],
-        }));
-    }
-
-    function addMcpHeader(serverIndex: number, bearer = false): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.map((server, index) =>
-                index === serverIndex
-                    ? {
-                          ...server,
-                          headers: [
-                              ...server.headers,
-                              {
-                                  id: crypto.randomUUID(),
-                                  name: bearer ? "Authorization" : "",
-                                  value: bearer ? "Bearer " : "",
-                                  saved: false,
-                              },
-                          ],
-                      }
-                    : server,
-            ),
-        }));
-    }
-
-    function updateMcpHeader(
-        serverIndex: number,
-        headerIndex: number,
-        key: "name" | "value",
-        value: string,
-    ): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.map((server, index) =>
-                index === serverIndex
-                    ? {
-                          ...server,
-                          headers: server.headers.map((header, index) =>
-                              index === headerIndex
-                                  ? {
-                                        ...header,
-                                        [key]: value,
-                                        saved:
-                                            key === "name" &&
-                                            value !== header.name
-                                                ? false
-                                                : header.saved,
-                                    }
-                                  : header,
-                          ),
-                      }
-                    : server,
-            ),
-        }));
-    }
-
-    function removeMcpHeader(serverIndex: number, headerIndex: number): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.map((server, index) =>
-                index === serverIndex
-                    ? {
-                          ...server,
-                          headers: server.headers.filter(
-                              (_, index) => index !== headerIndex,
-                          ),
-                      }
-                    : server,
-            ),
-        }));
-    }
-
-    function removeMcpServer(index: number): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.filter((_, i) => i !== index),
-        }));
     }
 
     async function handleSubmit(event: FormEvent): Promise<void> {
@@ -229,8 +108,7 @@ export function AgentDialog({
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
         form.systemPrompt.trim() !== "" &&
-        form.baseModel.trim() !== "" &&
-        form.mcpServers.every(isValidMcpRow);
+        form.baseModel.trim() !== "";
     const submitLabel = endpoint
         ? "Save Agent"
         : form.visibility === "public"
@@ -294,12 +172,6 @@ export function AgentDialog({
                         form={form}
                         disabled={isSubmitting}
                         onChange={updateAgentForm}
-                        onAddMcp={addMcpServer}
-                        onUpdateMcp={updateMcpServer}
-                        onRemoveMcp={removeMcpServer}
-                        onAddMcpHeader={addMcpHeader}
-                        onUpdateMcpHeader={updateMcpHeader}
-                        onRemoveMcpHeader={removeMcpHeader}
                     />
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">

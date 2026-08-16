@@ -35,7 +35,7 @@ async function resolveAttribution(
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
-        appModels: await resolveAppModels(db, keyRow.userId, user),
+        appModels: await resolveAppModels(db, user),
     };
 }
 
@@ -51,10 +51,10 @@ async function resolveAttribution(
  */
 async function resolveAppModels(
     db: ReturnType<typeof drizzle<typeof schema>>,
-    ownerUserId: string,
     owner: typeof schema.user.$inferSelect | undefined,
 ) {
-    if (!owner?.githubUsername) return [];
+    const ownerGithubUsername = owner?.githubUsername;
+    if (!ownerGithubUsername) return [];
     const rows = await db
         .select({
             name: schema.communityEndpoint.name,
@@ -66,13 +66,13 @@ async function resolveAppModels(
         .from(schema.communityEndpoint)
         .where(
             and(
-                eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+                eq(schema.communityEndpoint.ownerUserId, owner.id),
                 eq(schema.communityEndpoint.visibility, "app"),
                 isNull(schema.communityEndpoint.disabledAt),
             ),
         );
     return rows.map((row) => ({
-        name: communityModelId(owner.githubUsername as string, row.name),
+        name: communityModelId(ownerGithubUsername, row.name),
         title: communityEndpointTitle({
             modelId: row.name,
             title: row.title,

@@ -1,15 +1,10 @@
 import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
 import { ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
-import { useEffect, useMemo, useState } from "react";
-import {
-    type ApiModelInfo,
-    fetchModelCatalog,
-} from "../models/model-catalog.ts";
-import {
-    getModelCategoriesFromCatalog,
-    type ModelCategoryModel,
-} from "../models/model-categories.ts";
+import { useMemo, useState } from "react";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
+import type { ModelCategoryModel } from "../models/model-categories.ts";
+import { useModelCategories } from "../models/use-model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { PERMISSION_UI_THEME } from "./permission-ui.ts";
 
@@ -81,15 +76,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                   visiblePermissions.includes(p.id),
               );
     const isUnrestricted = allowedModels === null;
-    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
-    const modelCategories = useMemo(
-        () =>
-            getModelCategoriesFromCatalog([
-                ...catalogModels,
-                ...(extraModels ?? []),
-            ]),
-        [catalogModels, extraModels],
-    );
+    const modelCategories = useModelCategories(extraModels);
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;
@@ -105,22 +92,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
             onChange([...currentPermissions, permissionId]);
         }
     };
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) setCatalogModels(models);
-            })
-            .catch(() => {
-                if (!cancelled) setCatalogModels([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const allModelIds = useMemo(
         () =>

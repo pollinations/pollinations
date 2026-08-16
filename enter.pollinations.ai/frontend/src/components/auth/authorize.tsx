@@ -34,14 +34,9 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import {
-    type ApiModelInfo,
-    fetchModelCatalog,
-} from "../models/model-catalog.ts";
-import {
-    computeCategoryModalities,
-    getModelCategoriesFromCatalog,
-} from "../models/model-categories.ts";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
+import { computeCategoryModalities } from "../models/model-categories.ts";
+import { useModelCategories } from "../models/use-model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -111,7 +106,6 @@ export function Authorize() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -126,18 +120,7 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    // The app's app-scoped models sit outside the public catalog, so fold them
-    // in before deriving categories — otherwise a key scoped to one of them
-    // reads as granting nothing.
-    const modelCategories = useMemo(
-        () =>
-            getModelCategoriesFromCatalog([
-                ...catalogModels,
-                ...(attribution?.appModels ?? []),
-            ]),
-        [catalogModels, attribution],
-    );
-
+    const modelCategories = useModelCategories(attribution?.appModels);
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,
@@ -169,14 +152,6 @@ export function Authorize() {
 
     useEffect(() => {
         let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) setCatalogModels(models);
-            })
-            .catch(() => {
-                if (!cancelled) setCatalogModels([]);
-            });
 
         return () => {
             cancelled = true;

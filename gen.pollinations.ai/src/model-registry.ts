@@ -144,13 +144,9 @@ function communityEntryToGenerationEntry(
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
         agentConfig: entry.agentConfig,
-        // Only public endpoints are in the global catalog. Private and app
-        // endpoints are added back by visibleEntries() — private for their
-        // owner, app for their owner and for callers holding a key that
-        // owner's app issued.
-        visible:
-            entry.communityEndpoint.disabledAt === null &&
-            entry.communityEndpoint.visibility === "public",
+        // Who may list a community model depends on who is asking, so
+        // visibleEntries() decides per caller rather than baking an answer in.
+        visible: false,
     };
 }
 
@@ -224,10 +220,14 @@ function buildRegistry(
         },
         visibleEntries: (access) =>
             entries.filter((entry) => {
-                if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
-                if (!endpoint || endpoint.disabledAt !== null) return false;
-                return canAccessCommunityModel(endpoint, access);
+                // Static models carry their own `hidden` flag; community models
+                // are listed only for callers allowed to call them.
+                if (!endpoint) return entry.visible;
+                return (
+                    endpoint.disabledAt === null &&
+                    canAccessCommunityModel(endpoint, access)
+                );
             }),
     };
 }

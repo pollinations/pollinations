@@ -42,12 +42,14 @@ async function resolveAttribution(
 /**
  * The app owner's "app"-visibility models, which keys minted through this app
  * can call. The consent screen needs them to name what it is granting: they are
- * absent from the public catalog it otherwise reads, so without this an
- * app-scoped `models=` request renders as "no models enabled".
+ * listed only for keys the app has already issued, and at consent time the user
+ * holds no such key yet, so without this an app-scoped `models=` request
+ * renders as "no models enabled".
  *
- * Safe on an unauthenticated route because "app" is unlisted rather than
- * secret, and because this returns only what the app is asking the user to
- * approve — ids and titles, no upstream URL, price, or token.
+ * Safe on an unauthenticated route because "app" scopes who a model reaches
+ * rather than conferring secrecy, and because this returns only what the app is
+ * asking the user to approve — ids and titles, no upstream URL, price, or
+ * token.
  */
 async function resolveAppModels(
     db: ReturnType<typeof drizzle<typeof schema>>,

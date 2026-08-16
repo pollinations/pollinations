@@ -2291,8 +2291,9 @@ fixtureTest(
             return models.some((model) => model.name === modelId);
         };
 
-        // Listed for the owner and their app's users; invisible to everyone
-        // else, including anonymous callers.
+        // Listed for the owner and their app's users, and for them only —
+        // a stranger, another dev's app user, and an anonymous caller all see
+        // a catalog without it.
         await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(appUserKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(otherAppUserKey)).resolves.toBe(

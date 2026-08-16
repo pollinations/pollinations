@@ -275,16 +275,17 @@ export function normalizeCommunityEndpointInputModalities(
 
 // Access/visibility of a registered endpoint. Private is the default; only
 // public is allowlist-gated on create or update.
-//   private → owner-only callable, shown only to the owner, price forced to 0
+//   private → callable by the owner, listed for the owner, price forced to 0
 //   app     → callable by the owner and by any key minted through one of the
-//             owner's publishable app keys; kept out of the global catalog.
-//             Open to every account, and owner-priced for external endpoints.
-//   public  → anyone callable, listed in the model catalog, priced,
+//             owner's publishable app keys, and listed for exactly those
+//             callers. Open to every account, and owner-priced for external
+//             endpoints.
+//   public  → callable by anyone, listed in the model catalog, priced,
 //             allowlist-gated
-// "app" is unlisted, not confidential. The app attribution it tests
-// (byopClientKeyId) is verified but caller-chosen: any account can mint itself
-// a key attributed to a published pk_, so treat "app" as "off the catalog",
-// never as an access-control boundary.
+// "app" scopes who a model is listed and billed for; it does not keep the
+// model secret. The attribution it tests (byopClientKeyId) is verified but
+// caller-chosen: any account can mint itself a key attributed to a published
+// pk_, so treat "app" as reach, never as an access-control boundary.
 // Agents are never priced at any visibility: they spend the caller's balance on
 // Pollinations models downstream rather than charging for themselves.
 export const COMMUNITY_ENDPOINT_VISIBILITIES = [

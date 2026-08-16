@@ -288,7 +288,7 @@ async function resolveFallbackModelIds(
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": callable only by the owner, listed only for the owner, and always free. "app": also callable by API keys issued through apps owned by the same account, kept out of the public catalog, and priced like public models. "public": callable by anyone and listed in the model catalog; requires an allowlisted account. Managed agent listings are always free.',
+        '"private": callable by the owner, listed for the owner, and always free. "app": also callable by API keys issued through apps owned by the same account, listed for exactly those keys, and priced like public models. "public": callable by anyone and listed in the model catalog; requires an allowlisted account. Managed agent listings are always free.',
     );
 const PerUserRpmSchema = z
     .number()

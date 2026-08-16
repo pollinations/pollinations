@@ -100,8 +100,8 @@ export type ModelListingFormState = {
     title: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
-    // app → callable by keys issued through the owner's apps, kept out of the
-    // public catalog, priced; public → globally listed + billed to callers.
+    // app → callable by keys issued through the owner's apps and listed for
+    // those keys, priced; public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     perUserRpm: string;

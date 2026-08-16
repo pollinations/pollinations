@@ -6,6 +6,7 @@ import {
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { mediaItem as mediaItemTable } from "@shared/db/media-catalog.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -21,8 +22,10 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+
+const DELETED_ACCOUNT_REASON = "account_deleted";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -77,6 +80,127 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
+            },
+        },
+        databaseHooks: {
+            user: {
+                create: {
+                    before: async (user) => {
+                        const githubId = (user as { githubId?: number })
+                            .githubId;
+                        if (!githubId) return;
+
+                        const deletedAccount = await db
+                            .select({ id: userTable.id })
+                            .from(userTable)
+                            .where(
+                                and(
+                                    eq(userTable.githubId, githubId),
+                                    eq(userTable.banned, true),
+                                    eq(
+                                        userTable.banReason,
+                                        DELETED_ACCOUNT_REASON,
+                                    ),
+                                ),
+                            )
+                            .limit(1);
+
+                        if (deletedAccount.length > 0) {
+                            throw new APIError("FORBIDDEN", {
+                                code: "ACCOUNT_DELETED",
+                                message:
+                                    "This Pollinations account has been deleted.",
+                            });
+                        }
+                    },
+                },
+                delete: {
+                    before: async (user, context) => {
+                        if (
+                            context?.path !== "/delete-user" &&
+                            context?.path !== "/delete-user/callback"
+                        ) {
+                            return;
+                        }
+
+                        const userId = user.id;
+                        await db.batch([
+                            db
+                                .delete(mediaItemTable)
+                                .where(eq(mediaItemTable.ownerUserId, userId)),
+                            db
+                                .delete(betterAuthSchema.communityEndpoint)
+                                .where(
+                                    eq(
+                                        betterAuthSchema.communityEndpoint
+                                            .ownerUserId,
+                                        userId,
+                                    ),
+                                ),
+                            db
+                                .delete(betterAuthSchema.agent)
+                                .where(
+                                    eq(
+                                        betterAuthSchema.agent.ownerUserId,
+                                        userId,
+                                    ),
+                                ),
+                            db
+                                .delete(betterAuthSchema.deviceCode)
+                                .where(
+                                    eq(
+                                        betterAuthSchema.deviceCode.userId,
+                                        userId,
+                                    ),
+                                ),
+                            db
+                                .delete(betterAuthSchema.apikey)
+                                .where(
+                                    eq(betterAuthSchema.apikey.userId, userId),
+                                ),
+                            db
+                                .delete(betterAuthSchema.account)
+                                .where(
+                                    eq(betterAuthSchema.account.userId, userId),
+                                ),
+                            db
+                                .delete(betterAuthSchema.session)
+                                .where(
+                                    eq(betterAuthSchema.session.userId, userId),
+                                ),
+                            db
+                                .update(userTable)
+                                .set({
+                                    name: "Deleted account",
+                                    email: `deleted-${userId}@pollinations.invalid`,
+                                    emailVerified: false,
+                                    image: null,
+                                    updatedAt: new Date(),
+                                    role: "user",
+                                    banned: true,
+                                    banReason: DELETED_ACCOUNT_REASON,
+                                    banExpires: null,
+                                    githubUsername: null,
+                                    communityProviderName: null,
+                                    communityProviderUrl: null,
+                                    tier: "spore",
+                                    tierBalance: 0,
+                                    packBalance: 0,
+                                    lastTierGrant: null,
+                                    stripeCustomerId: null,
+                                    autoTopUpEnabled: false,
+                                    autoTopUpAmountUsd: null,
+                                })
+                                .where(eq(userTable.id, userId)),
+                        ]);
+
+                        // Preserve the minimized user row and reward ledger as
+                        // an anti-abuse tombstone instead of physically deleting
+                        // them. Better Auth has already revoked account sessions
+                        // and provider credentials before this hook runs.
+                        return false;
+                    },
+                },
             },
         },
         socialProviders: {

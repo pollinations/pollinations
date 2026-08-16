@@ -155,7 +155,7 @@ function AccountPage() {
                         <p className="flex items-start gap-1.5">
                             <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Permanently remove your account and revoke
+                                Permanently close your account and revoke
                                 access.
                             </span>
                         </p>
@@ -224,15 +224,21 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                         <p>Deleting your Pollinations account removes:</p>
                         <ul className="list-disc space-y-1 pl-5">
                             <li>
-                                Profile, Pollinations ID, sessions, GitHub
-                                connection, and API keys
+                                Profile, sessions, GitHub connection, and API
+                                keys
                             </li>
                             <li>
-                                Pollen balances, rewards, agents, and community
-                                models
+                                Pollen balances, access to reward history,
+                                agents, and community models
                             </li>
                             <li>Published media listings and tags</li>
                         </ul>
+                        <p>
+                            You will not be able to create another account with
+                            the same GitHub identity. We retain a limited
+                            internal account identifier and reward records to
+                            prevent duplicate quest payouts.
+                        </p>
                         <p>
                             Cached copies of uploaded and generated media may
                             remain temporarily until their retention period

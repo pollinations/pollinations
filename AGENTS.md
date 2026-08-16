@@ -222,6 +222,12 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
+### Pollinations identity
+
+- Use `hello@pollinations.ai` for public support, privacy, legal, and customer-facing contact. Do not introduce `@myceli.ai` customer contact addresses or present Myceli as the product brand.
+- `Myceli.AI OÜ` may remain where the registered legal entity or data controller must be named.
+- Existing `myceli.ai` infrastructure hostnames and provider-account identifiers are legacy migration targets. Do not rename or remove them piecemeal; migrate each service with routing, deployment, and rollback verification.
+
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
 - Code reviews: focus on what needs improving; link specific lines; don't praise fine code or repeat obvious things.

@@ -6,7 +6,7 @@ _2026-07-02 — Pollen purchases now include a service fee shown before payment,
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
-## What Myceli.AI Is
+## What Pollinations Is
 
 We operate commercial, hosted services (dashboard & APIs) built on the open-source pollinations.ai codebase. We handle billing and support; the OSS remains under its repository licences.
 
@@ -15,7 +15,7 @@ Myceli.AI OÜ
 Registry code: 17186693  
 VAT number: EE102877908  
 Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hello@myceli.ai
+Email: hello@pollinations.ai
 
 ---
 

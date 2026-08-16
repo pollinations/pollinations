@@ -54,7 +54,7 @@ npm run dev
 
 ## Deployment
 
-**Cloudflare account:** Myceli (`b6ec751c0862027ba269faf7029b2501` / Elliot@myceli.ai)
+**Cloudflare account:** Myceli (`b6ec751c0862027ba269faf7029b2501`; contact: hello@pollinations.ai)
 
 This is NOT on the Pollinations account. You must be logged into the myceli Cloudflare account.
 
@@ -63,7 +63,7 @@ cd operations/kpi
 
 # 1. Login to the myceli account (opens browser)
 npx wrangler login
-# Verify: npx wrangler whoami → should show "Elliot@myceli.ai's Account"
+# Verify: npx wrangler whoami → should show account ID b6ec751c0862027ba269faf7029b2501
 
 # 2. Build frontend
 npm run build

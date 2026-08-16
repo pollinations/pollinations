@@ -1,0 +1,34 @@
+{
+  "pr_number": 13463,
+  "title": "fix: simplify agent form labels",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13463",
+  "merged_at": "2026-08-16T15:04:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the redundant **Agent details** heading and helper copy while preserving the section divider.\n- Removes the **Pollinations tools** field label and places the toggle directly beside **Pollinations MCP**.\n- Keeps the MCP explanation, endpoint, and documentation links unchanged.\n\nChecks:\n- `npx biome check --write` on both changed files\n- `npm --prefix enter.pollinations.ai run typecheck`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Less label, more agent",
+    "blurb": "The agent form shed a few ceremonial labels and kept the useful bits. Pollinations MCP now sits directly beside its toggle, where it was probably trying to get all along.",
+    "summary": "Simplified the community agent form by removing the redundant Agent details heading and Pollinations tools label, while placing the Pollinations MCP toggle beside its name and preserving its endpoint and documentation links.",
+    "impact": "People creating agents get a cleaner, less repetitive setup form with MCP controls easier to scan without losing any guidance or links.",
+    "keywords": [
+      "agents",
+      "community-endpoints",
+      "MCP",
+      "frontend",
+      "UX",
+      "forms"
+    ],
+    "visual_concept": "Depict Polli as a tidy little gardener pruning excess signposts from a cozy agent-setup garden, leaving one clear Pollinations MCP switch beside a glowing retro terminal. Include a preserved divider path, a small endpoint scroll and documentation book, plus code-plants to show that the useful guidance remains.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, carefully pruning redundant wooden form labels in a warm garden-hackerspace while a glowing lime green (#ecf874) retro terminal displays a neat \"Pollinations MCP\" toggle beside its name. A small endpoint scroll and documentation book rest beside code-plants and flowers, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13463.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, carefully pruning redundant wooden form labels in a warm garden-hackerspace while a glowing lime green (#ecf874) retro terminal displays a neat \"Pollinations MCP\" toggle beside its name. A small endpoint scroll and documentation book rest beside code-plants and flowers, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-16T15:05:14.843572+00:00"
+}

@@ -2,6 +2,7 @@ import {
     Button,
     Collapsible,
     cn,
+    ExternalLinkIcon,
     MailIcon,
     useScrollLock,
 } from "@pollinations/ui";
@@ -807,8 +808,12 @@ export function Authorize() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Terms & Conditions"
-                    className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
+                    className="inline-flex items-center gap-1 text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
                 >
+                    <ExternalLinkIcon
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 shrink-0"
+                    />
                     <span className="sm:hidden">Terms</span>
                     <span className="hidden sm:inline">Terms & Conditions</span>
                 </a>

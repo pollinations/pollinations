@@ -491,9 +491,9 @@ export const Models: FC = () => {
                             <strong className="text-theme-text-soft">
                                 agent pricing
                             </strong>{" "}
-                            — Rates apply to each base-model call. Agents can
-                            make multiple calls; Pollinations tool calls use the
-                            selected model&apos;s listed price.
+                            — rates apply to each base-model call; agents can
+                            make multiple calls, and tool calls use the selected
+                            model&apos;s listed price.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

@@ -586,6 +586,7 @@ export function Authorize() {
                     : { labelledBy: "authorize-dialog-title" }
             }
             tone={error ? "error" : undefined}
+            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
@@ -628,7 +629,7 @@ export function Authorize() {
                 </div>
             </AuthModalHeader>
 
-            <div className="px-6 py-2 space-y-4">
+            <div className="min-h-0 overflow-y-auto px-6 py-2 space-y-4">
                 {error ? (
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
@@ -800,7 +801,7 @@ export function Authorize() {
                 )}
             </div>
 
-            <div className="flex items-center justify-between p-6 pt-4">
+            <div className="flex shrink-0 items-center justify-between border-t border-divider bg-surface-white p-6 pt-4">
                 <a
                     href="https://pollinations.ai/terms"
                     target="_blank"

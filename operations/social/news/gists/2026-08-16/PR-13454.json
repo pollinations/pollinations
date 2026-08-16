@@ -1,0 +1,34 @@
+{
+  "pr_number": 13454,
+  "title": "fix: clean up responsive agent cards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13454",
+  "merged_at": "2026-08-16T11:32:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps long agent and base-model IDs contained and truncated\n- Gives mobile cards a fixed three-row header with consistent spacing\n- Shows the generation estimate as a one-line third row on mobile\n- Moves the agent-pricing explanation into the standard footer legend and keeps it visible across all model views\n- Verifies 320px–1440px layouts; passes Biome, TypeScript, and the frontend production build",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cards learned to wrap",
+    "blurb": "The model garden got a small pruning. Even the longest agent IDs now stay politely inside their pots, including on the tiniest screens.",
+    "summary": "Fixed responsive agent model cards so long agent and base-model IDs truncate cleanly, mobile headers keep a fixed three-row layout, generation estimates occupy a one-line third row, and agent-pricing help remains visible in the shared footer legend.",
+    "impact": "People browsing models from 320px mobile screens through desktop will see stable card spacing, readable pricing context, and no escaped model-name vines.",
+    "keywords": [
+      "models",
+      "agent-cards",
+      "responsive-design",
+      "mobile",
+      "pricing",
+      "frontend"
+    ],
+    "visual_concept": "A cozy model garden where oversized label vines are neatly trimmed to fit small seed packets, representing long agent and base-model IDs being contained. Polli, wearing a tiny gardener visor, tends a three-tier mobile card planter beside a glowing retro phone; a clear footer sign explains agent pricing while flowers and code-plants fill the scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and carefully trimming long code-label vines so they fit inside a three-row mobile card planter beside a retro phone; a small footer sign reads “AGENT PRICING,” with flowering code-plants around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13454.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and carefully trimming long code-label vines so they fit inside a three-row mobile card planter beside a retro phone; a small footer sign reads “AGENT PRICING,” with flowering code-plants around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-16T11:33:18.477420+00:00"
+}

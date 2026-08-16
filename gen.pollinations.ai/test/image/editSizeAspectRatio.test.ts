@@ -1,82 +1,19 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+    CreateImageEditRequestSchema,
+    CreateImageRequestSchema,
+} from "@shared/schemas/openai.ts";
+import { describe, expect, it } from "vitest";
 import { resolveEditDimensionsForImage } from "../../src/image/handler.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
-/** Minimal valid PNG header (8-byte signature + IHDR with width/height). */
-function makePng(width: number, height: number): Buffer {
+function pngDataUri(width: number, height: number): string {
     const bytes = new Uint8Array(33);
     bytes.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
-    bytes.set([0, 0, 0, 13], 8); // IHDR chunk length
-    bytes.set([73, 72, 68, 82], 12); // "IHDR"
-    bytes.set(
-        [
-            (width >> 24) & 0xff,
-            (width >> 16) & 0xff,
-            (width >> 8) & 0xff,
-            width & 0xff,
-        ],
-        16,
-    );
-    bytes.set(
-        [
-            (height >> 24) & 0xff,
-            (height >> 16) & 0xff,
-            (height >> 8) & 0xff,
-            height & 0xff,
-        ],
-        20,
-    );
-    return Buffer.from(bytes);
-}
-
-/**
- * Minimal valid JPEG header (SOI + APP0 + SOF0). SOF0 declares its full
- * segment length (17 = 8 + 3 components + length field) so the parser can
- * walk past it.
- */
-function makeJpeg(width: number, height: number): Buffer {
-    const bytes = new Uint8Array([
-        0xff,
-        0xd8, // SOI
-        0xff,
-        0xe0,
-        0x00,
-        0x10,
-        0x4a,
-        0x46,
-        0x49,
-        0x46,
-        0x00,
-        0x01,
-        0x01,
-        0x00,
-        0x00,
-        0x01,
-        0x00,
-        0x01,
-        0x00,
-        0x00, // APP0 (len 16)
-        0xff,
-        0xc0,
-        0x00,
-        0x11,
-        0x08, // SOF0 (len 17), precision 8
-        (height >> 8) & 0xff,
-        height & 0xff, // height
-        (width >> 8) & 0xff,
-        width & 0xff, // width
-        0x03, // 3 components
-        0x01,
-        0x11,
-        0x00, // component 1: id/sampling/qt
-        0x02,
-        0x11,
-        0x00, // component 2
-        0x03,
-        0x11,
-        0x00, // component 3
-    ]);
-    return Buffer.from(bytes);
+    bytes.set([0, 0, 0, 13, 73, 72, 68, 82], 8);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(16, width);
+    view.setUint32(20, height);
+    return `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`;
 }
 
 function makeParams(overrides: Partial<ImageParams> = {}): ImageParams {
@@ -96,100 +33,58 @@ function makeParams(overrides: Partial<ImageParams> = {}): ImageParams {
     };
 }
 
-function mockImageFetch(buffer: Buffer, contentType: string): void {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(new Uint8Array(buffer), {
-            status: 200,
-            headers: { "content-type": contentType },
-        }),
-    );
-}
+describe("image edit dimensions", () => {
+    it("does not default an omitted JSON edit size to square", () => {
+        const edit = CreateImageEditRequestSchema.parse({
+            prompt: "add flowers",
+            image: "https://example.com/source.png",
+        });
+        const generation = CreateImageRequestSchema.parse({
+            prompt: "flowers",
+        });
+        const explicit = CreateImageEditRequestSchema.parse({
+            prompt: "add flowers",
+            image: "https://example.com/source.png",
+            size: "512x1024",
+        });
 
-function spyOnFetch(): void {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(null, { status: 404 }),
-    );
-}
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
-
-describe("resolveEditDimensionsForImage", () => {
-    it("preserves a portrait source aspect ratio when size is omitted", async () => {
-        mockImageFetch(makePng(800, 1200), "image/png");
-
-        const resolved = await resolveEditDimensionsForImage(
-            makeParams({ image: ["https://example.com/portrait.png"] }),
-        );
-
-        expect(resolved.width).toBe(800);
-        expect(resolved.height).toBe(1200);
+        expect(edit.size).toBeUndefined();
+        expect(generation.size).toBe("1024x1024");
+        expect(explicit.size).toBe("512x1024");
     });
 
-    it("preserves a landscape source aspect ratio when size is omitted", async () => {
-        mockImageFetch(makeJpeg(1536, 1024), "image/jpeg");
-
+    it.each([
+        [800, 1200, 688, 1024],
+        [1536, 1024, 1024, 688],
+        [4032, 3024, 1024, 768],
+        [100, 10_000, 256, 1024],
+    ])("fits a %ix%i source into safe defaults as %ix%i", async (sourceWidth, sourceHeight, width, height) => {
         const resolved = await resolveEditDimensionsForImage(
-            makeParams({ image: ["https://example.com/landscape.jpg"] }),
+            makeParams({
+                image: [pngDataUri(sourceWidth, sourceHeight)],
+            }),
         );
 
-        expect(resolved.width).toBe(1536);
-        expect(resolved.height).toBe(1024);
+        expect(resolved).toMatchObject({ width, height });
+        expect(resolved.dimensionsExplicit).toBe(false);
     });
 
-    it("does not download or override when the caller explicitly passed size", async () => {
-        spyOnFetch();
+    it("leaves an explicit size unchanged", async () => {
         const params = makeParams({
-            image: ["https://example.com/portrait.png"],
+            image: [pngDataUri(800, 1200)],
             width: 512,
             height: 1024,
             dimensionsExplicit: true,
         });
 
-        const resolved = await resolveEditDimensionsForImage(params);
-
-        expect(resolved).toBe(params);
-        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(await resolveEditDimensionsForImage(params)).toBe(params);
     });
 
-    it("falls back to the model default when the source image cannot be read", async () => {
-        vi.spyOn(globalThis, "fetch").mockRejectedValue(
-            new TypeError("Network connection lost"),
-        );
+    it("keeps model defaults when source dimensions are unreadable", async () => {
         const params = makeParams({
-            image: ["https://example.com/broken.png"],
+            image: ["data:image/png;base64,AQID"],
         });
 
-        const resolved = await resolveEditDimensionsForImage(params);
-
-        expect(resolved).toBe(params);
-        expect(resolved.width).toBe(1024);
-        expect(resolved.height).toBe(1024);
-    });
-
-    it("keeps model defaults when dimensions cannot be parsed", async () => {
-        mockImageFetch(Buffer.from([1, 2, 3, 4]), "application/octet-stream");
-        const params = makeParams({
-            image: ["https://example.com/mystery.bin"],
-        });
-
-        const resolved = await resolveEditDimensionsForImage(params);
-
-        expect(resolved).toBe(params);
-        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-    });
-
-    it("leaves video models untouched", async () => {
-        spyOnFetch();
-        const params = makeParams({
-            model: "veo",
-            image: ["https://example.com/first-frame.png"],
-        });
-
-        const resolved = await resolveEditDimensionsForImage(params);
-
-        expect(resolved).toBe(params);
-        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(await resolveEditDimensionsForImage(params)).toBe(params);
     });
 });

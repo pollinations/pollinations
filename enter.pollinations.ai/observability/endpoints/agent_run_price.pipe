@@ -3,21 +3,17 @@ TOKEN tinybird_read READ
 DESCRIPTION >
     Estimated price of one agent call, per agent.
 
-    A managed agent turns one request into several generations - model steps and
-    MCP tool calls - each authenticated with the run token minted for the parent
-    request. Every one of those carries `parent_request_id`, so grouping by it
-    reassembles a single agent call. The parent row itself is always free, so a
-    run's cost is exactly the sum over its children and the parent never needs
-    to be read.
+    An agent call's generations - model steps and MCP tool calls - all carry the
+    id of the request that minted their run token, so grouping by it reassembles
+    the call. The parent row is free, so cost is the sum over its children.
 
-    Reported as median and p90 rather than a mean: a run that enters a tool loop
-    costs a multiple of one that answers directly, and an average hides that.
+    Median and p90 rather than a mean: a run that enters a tool loop costs a
+    multiple of one that answers directly, and an average hides that.
 
 NODE runs
 DESCRIPTION >
-    One row per agent call. Non-final rows are fallback attempts that never
-    carry price, so excluding them keeps `calls` a count of generations rather
-    than of attempts.
+    One row per agent call. Non-final rows are fallback attempts with no price,
+    so excluding them keeps `calls` a count of generations, not attempts.
 SQL >
     %
     SELECT

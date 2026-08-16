@@ -138,8 +138,8 @@ test("surfaces the parent request id, and stays valid without one", async () => 
         agentRun: { parentRequestId: "req-abc" },
     });
 
-    // Tokens live for 30 minutes, so ones minted before this claim existed are
-    // still in flight at deploy: they must keep authenticating, just untagged.
+    // Tokens minted before this claim are still in flight at deploy (30 min
+    // TTL): they must keep authenticating, just untagged.
     const untagged = await runTokenFor(parent.id);
     const untaggedBody = (await (
         await probe(authProbe, "https://gen.pollinations.ai/", untagged)

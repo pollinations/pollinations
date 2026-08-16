@@ -1071,12 +1071,9 @@ describe("community endpoint helpers", () => {
                 String(context.modelConfig?.authKey),
                 secret,
             );
-            // Every generation the endpoint makes with this token reports the
-            // request that minted it, which is what reassembles one agent call
-            // out of its model steps and tool calls.
             expect(claims.parentRequestId).toBe("req-abc");
-            // Still a unique token id: one request can mint several tokens when
-            // a delegating fallback runs, and they must not share a jti.
+            // Still a unique token id: a delegating fallback mints several
+            // tokens per request and they must not share a jti.
             expect(claims.runId).not.toBe("req-abc");
         });
 

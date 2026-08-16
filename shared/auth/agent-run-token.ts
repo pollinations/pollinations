@@ -9,11 +9,9 @@ const MAX_CLOCK_SKEW_SECONDS = 5;
 
 export type AgentRunClaims = {
     parentApiKeyId: string;
-    // The request_id of the call that minted this token. It travels in the
-    // signed claims rather than a header because a header would be
-    // client-settable, and request_id is keyed on elsewhere (see #12889).
-    // Analytics uses it to reassemble one agent call from the several
-    // generations it fans out into.
+    // The request_id of the call that minted this token, so its generations can
+    // be grouped. Signed rather than sent as a header: headers are
+    // client-settable and request_id is keyed on elsewhere (#12889).
     parentRequestId?: string;
     runId: string;
     managedAgentId?: string;

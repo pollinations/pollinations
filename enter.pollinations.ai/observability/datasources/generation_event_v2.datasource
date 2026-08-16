@@ -145,18 +145,13 @@ SCHEMA >
 `ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
 `ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
 
--- Agent runs. Appended rather than grouped with the other request columns
--- because Tinybird Forward evolves a populated datasource by column order, and
--- it needs the FORWARD_QUERY below either way. Drop that block once this
--- deployment is promoted (see #10763): while it is present every deployment
--- copies the table instead of applying a metadata-only ALTER.
+-- Agent runs: the request_id of the call that minted the run token, grouping
+-- one agent call's model steps and tool calls. The parent row is free, so cost
+-- is the sum over its children. `agent_id` is denormalized because a
+-- materialized view cannot join a child row back to its parent.
 --
--- Set only on generations made with an agent run token: the request_id of the
--- call that minted it. One agent call fans out into several generations (model
--- steps, MCP tool calls) and this is what reassembles them. The parent's own
--- row is free, so a run's cost is the sum over its children. `agent_id` is
--- denormalized from the same token because a materialized view only sees the
--- block being inserted and cannot join a child row back to its parent.
+-- Drop the FORWARD_QUERY below once this is promoted (#10763): while it is
+-- there, every deployment copies the table instead of an ALTER.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT '',
 `agent_id`          String               `json:$.agentId` DEFAULT ''
 

@@ -219,6 +219,7 @@ export const Models: FC = () => {
         activeScope === "community"
             ? COMMUNITY_SECTION_ORDER
             : POLLINATIONS_SECTION_ORDER;
+    const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
@@ -360,15 +361,31 @@ export const Models: FC = () => {
                             ))}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => (
-                                <TabButton
-                                    key={section}
-                                    active={activeTab === section}
-                                    onClick={() => setActiveTab(section)}
-                                >
-                                    {sectionLabels[section]}
-                                </TabButton>
-                            ))}
+                            {sectionOrder.map((section) => {
+                                const showAgentsNew =
+                                    section === "agent" && hasAgents;
+                                return (
+                                    <TabButton
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={
+                                            showAgentsNew
+                                                ? "Agents, new"
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {sectionLabels[section]}
+                                            {showAgentsNew && (
+                                                <Chip intent="news" size="sm">
+                                                    New
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TabButton>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">

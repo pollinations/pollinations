@@ -203,17 +203,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     <ModelId name={model.name} />
-                    {model.agent && modelDescription && (
-                        <Tooltip
-                            content={modelDescription}
-                            triggerAs="span"
-                            className="min-w-0 max-w-full"
-                        >
-                            <span className="block min-w-0 max-w-full truncate text-xs text-theme-text-soft">
-                                {modelDescription}
-                            </span>
-                        </Tooltip>
-                    )}
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}

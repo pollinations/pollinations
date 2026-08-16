@@ -829,7 +829,7 @@ export function Authorize() {
                                 visiblePermissions={visibleOptionalPermissions}
                                 showApiName={false}
                                 modelsInitiallyExpanded
-                                extraModels={attribution?.appModels}
+                                modelCategories={modelCategories}
                             />
                         </Collapsible>
                     </div>

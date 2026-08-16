@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    canAccessCommunityModel,
     isCommunityFallbackPricingAllowed,
     isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
@@ -228,6 +229,17 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (candidate.disabledAt !== null) return false;
+    // The primary owner's own authorization, not a caller's: linking runs at
+    // registry build time, so there is no app-key identity in scope and an app
+    // target is reachable only for its own owner.
+    if (
+        !canAccessCommunityModel(candidate, {
+            callerUserId: primary.ownerUserId,
+        })
+    ) {
+        return false;
+    }
     if (isDelegatingEndpoint(primary) || isDelegatingEndpoint(candidate)) {
         return false;
     }
@@ -252,23 +264,11 @@ export function linkFallbackEntries(
         for (const targetId of declared) {
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
-            if (entry.communityEndpoint) {
-                const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.disabledAt != null) continue;
-                // Only a public target may serve another owner's traffic.
-                // Private and app targets are reachable through a fallback
-                // only for their own owner: linking runs at registry build
-                // time with no caller in scope, so there is no app-key identity
-                // here to test an app target against.
-                if (
-                    targetEndpoint &&
-                    targetEndpoint.visibility !== "public" &&
-                    entry.communityEndpoint.ownerUserId !==
-                        targetEndpoint.ownerUserId
-                ) {
-                    continue;
-                }
-                if (!isUsableCommunityFallback(entry, target)) continue;
+            if (
+                entry.communityEndpoint &&
+                !isUsableCommunityFallback(entry, target)
+            ) {
+                continue;
             }
             if (targets.some((linked) => linked.id === target.id)) continue;
             targets.push({ ...target, fallbackEntries: undefined });

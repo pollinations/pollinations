@@ -2,9 +2,10 @@ import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
 import { ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useMemo, useState } from "react";
-import type { ApiModelInfo } from "../models/model-catalog.ts";
-import type { ModelCategoryModel } from "../models/model-categories.ts";
-import { useModelCategories } from "../models/use-model-categories.ts";
+import type {
+    ModelCategoryGroup,
+    ModelCategoryModel,
+} from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { PERMISSION_UI_THEME } from "./permission-ui.ts";
 
@@ -26,12 +27,11 @@ type AccountPermissionsInputProps = {
     /** Whether the Models section starts expanded. Always collapsible. */
     modelsInitiallyExpanded?: boolean;
     /**
-     * Models to offer alongside the public catalog. The authorize screen passes
-     * the app's own "app"-visibility models, which the catalog omits: without
-     * them the picker cannot show what is being granted, and toggling any model
-     * would drop them from the selection.
+     * The models on offer. The owning screen supplies these so that whatever
+     * else it renders from the same list — the authorize screen summarises the
+     * grant above this picker — cannot describe a different set of models.
      */
-    extraModels?: ApiModelInfo[];
+    modelCategories: ModelCategoryGroup[];
 };
 
 export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
@@ -66,7 +66,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     visiblePermissions,
     showApiName = true,
     modelsInitiallyExpanded = false,
-    extraModels,
+    modelCategories,
 }) => {
     const { row: rowTheme } = PERMISSION_UI_THEME;
     const permissionOptions =
@@ -76,7 +76,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                   visiblePermissions.includes(p.id),
               );
     const isUnrestricted = allowedModels === null;
-    const modelCategories = useModelCategories(extraModels);
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;

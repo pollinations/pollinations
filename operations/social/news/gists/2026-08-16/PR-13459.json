@@ -1,0 +1,34 @@
+{
+  "pr_number": 13459,
+  "title": "fix: preserve aspect ratio for image edits when size is omitted",
+  "author": "Creatneworld",
+  "url": "https://github.com/pollinations/pollinations/pull/13459",
+  "merged_at": "2026-08-16T21:30:50Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12583\nReferences #10944\n\n- Preserves the source image's aspect ratio when an image edit omits `size`.\n- Leaves caller-provided dimensions unchanged.\n- Removes the square default only from JSON edit requests; image generation still defaults to `1024x1024`.\n- Runs inference only for image models that accept image input.\n- Fits derived dimensions into the model's existing size budget, aligned to 16px with a 256px minimum, so large or extreme inputs are not forwarded raw.\n- Reuses the existing guarded image downloader and dimension reader; no cache, provider table, or new public parameter.\n\nValidation:\n\n- 7 focused aspect-ratio and schema tests\n- 31 related parameter, routing, and image-decoder tests\n- Gen TypeScript check\n- Biome on all modified files\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Edits keep their shape",
+    "blurb": "Image edits now remember the shape they arrived in. No more quietly turning a panoramic masterpiece into a square little postage stamp.",
+    "summary": "JSON image edit requests that omit size now derive a 16px-aligned, budget-safe size from the source image's aspect ratio, while explicit caller dimensions and 1024x1024 generation defaults remain unchanged.",
+    "impact": "Users can send portrait, landscape, and wide source images to supported edit models without specifying size and receive edits that preserve the original composition rather than defaulting to a square.",
+    "keywords": [
+      "image edits",
+      "aspect ratio",
+      "image API",
+      "dimensions",
+      "OpenAI schema",
+      "generation"
+    ],
+    "visual_concept": "Polli is a tiny art restorer wearing a painter's beret, carefully fitting a wide landscape photo into a glowing retro image-editing monitor without squashing it; a 16px pixel ruler and friendly code-plants show the dimensions being measured and kept in proportion. The scene represents source-aware sizing, with a landscape frame and portrait frame both retaining their shapes.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny painter's beret while carefully resizing a wide pixel landscape inside a glowing retro CRT image editor without stretching it; pixel rulers and proportional landscape and portrait frames sit beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, with subtle pixel-font text: 'KEEP THE SHAPE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13459.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny painter's beret while carefully resizing a wide pixel landscape inside a glowing retro CRT image editor without stretching it; pixel rulers and proportional landscape and portrait frames sit beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, with subtle pixel-font text: 'KEEP THE SHAPE'."
+  },
+  "generated_at": "2026-08-16T21:31:58.857254+00:00"
+}

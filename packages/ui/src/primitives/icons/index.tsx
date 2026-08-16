@@ -27,11 +27,33 @@ export function BeakerIcon(props: IconProps) {
     );
 }
 
+export function BotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 8V4H8" />
+            <rect x="4" y="8" width="16" height="12" rx="2" />
+            <path d="M2 14h2M20 14h2" />
+            <path d="M9 13v2M15 13v2" />
+        </svg>
+    );
+}
+
 export function BookIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
             <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
+        </svg>
+    );
+}
+
+export function BugIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m8 2 1.9 1.9M14.1 3.9 16 2" />
+            <path d="M9 7V6a3 3 0 0 1 6 0v1" />
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" />
+            <path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />
         </svg>
     );
 }
@@ -64,6 +86,16 @@ export function ClockIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
+        </svg>
+    );
+}
+
+export function CloudUploadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 13v8" />
+            <path d="m16 17-4-4-4 4" />
+            <path d="M4.4 15.4A5 5 0 0 1 6.5 6.5h1A7 7 0 1 1 20 11.5" />
         </svg>
     );
 }

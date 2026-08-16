@@ -10,6 +10,7 @@ Read live code before relying on this map; paths evolve.
 | Registry conversion and prices | `shared/registry/registry.ts`, `shared/registry/price-helpers.ts`, `shared/registry/usage-headers.ts` |
 | Text routing | `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, `providerConfigs.ts`, `availableModels.ts` |
 | Image and video | `gen.pollinations.ai/src/image/`, especially dispatch, params, models, and provider handlers |
+| Durable media coordination | `gen.pollinations.ai/src/durable-objects/GenerationCoordinator.ts`, `gen.pollinations.ai/src/middleware/generation-deduplication.ts`, `gen.pollinations.ai/src/routes/generation-executor.ts`, `gen.pollinations.ai/src/utils/execute-generation.ts` |
 | Audio and speech | `gen.pollinations.ai/src/routes/audio.ts` and transcription/realtime routes |
 | Embeddings | `gen.pollinations.ai/src/embeddings/` |
 | Billing and observability | `gen.pollinations.ai/src/middleware/track.ts`, `enter.pollinations.ai/observability/` |

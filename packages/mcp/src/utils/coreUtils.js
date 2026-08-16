@@ -1,7 +1,11 @@
-import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
+import { getAuthHeaders } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
-const configuredApiBaseUrl = process.env.POLLINATIONS_BASE_URL?.trim();
+const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
+const configuredApiBaseUrl =
+    typeof process !== "undefined"
+        ? process.env?.POLLINATIONS_BASE_URL?.trim()
+        : undefined;
 
 const API_BASE_URL = (configuredApiBaseUrl || DEFAULT_API_BASE_URL).replace(
     /\/+$/,
@@ -61,65 +65,18 @@ export function createTextContent(text, stringify = false) {
 }
 
 /**
- * @param {string} data - Base64-encoded image data
- * @param {string} mimeType - MIME type of the image
- * @returns {Object} - Image content object
- */
-export function createImageContent(data, mimeType) {
-    return {
-        type: "image",
-        data,
-        mimeType,
-    };
-}
-
-/**
- * @param {string} data - Base64-encoded audio data
- * @param {string} mimeType - MIME type of the audio
- * @returns {Object} - Audio content object
- */
-export function createAudioContent(data, mimeType) {
-    return {
-        type: "audio",
-        data,
-        mimeType,
-    };
-}
-
-/**
  * @param {string} path - URL path (will be appended to API_BASE_URL)
  * @param {Object} params - Query parameters
- * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
  * @returns {string} - Complete URL
  */
-export function buildUrl(path, params = {}, includeAuth = false) {
-    const url = createApiUrl(path);
-    const allParams = includeAuth
-        ? { ...params, ...getAuthQueryParam() }
-        : params;
-    Object.entries(allParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            url.searchParams.set(key, String(value));
-        }
-    });
-    return url.toString();
-}
-
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters (auth key will be excluded)
- * @returns {string} - Complete URL without auth
- */
-export function buildShareableUrl(path, params = {}) {
+export function buildUrl(path, params = {}) {
     const url = createApiUrl(path);
     Object.entries(params).forEach(([key, value]) => {
-        if (
-            value !== undefined &&
-            value !== null &&
-            key !== "key" &&
-            key !== "token"
-        ) {
-            url.searchParams.set(key, String(value));
+        if (value !== undefined && value !== null) {
+            url.searchParams.set(
+                key,
+                Array.isArray(value) ? value.join("|") : String(value),
+            );
         }
     });
     return url.toString();
@@ -130,12 +87,21 @@ export function buildShareableUrl(path, params = {}) {
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - Fetch response
  */
-export async function fetchWithAuth(url, options = {}) {
+export async function fetchWithAuth(url, options = {}, context) {
     const headers = {
         ...options.headers,
-        ...getAuthHeaders(),
+        ...getAuthHeaders(context),
     };
     return fetch(url, { ...options, headers });
+}
+
+export async function fetchResponseWithAuth(url, options = {}, context) {
+    const response = await fetchWithAuth(url, options, context);
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(parseApiError(response.status, errorText));
+    }
+    return response;
 }
 
 /**
@@ -143,45 +109,9 @@ export async function fetchWithAuth(url, options = {}) {
  * @param {Object} options - Fetch options
  * @returns {Promise<Object>} - Parsed JSON response
  */
-export async function fetchJsonWithAuth(url, options = {}) {
-    const response = await fetchWithAuth(url, options);
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
+export async function fetchJsonWithAuth(url, options = {}, context) {
+    const response = await fetchResponseWithAuth(url, options, context);
     return response.json();
-}
-
-/**
- * Run a vision/audio/video chat-completion prompt against /v1/chat/completions.
- * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
- *
- * @param {Object} args
- * @param {string} args.model - Model name (e.g. "openai", "gemini-large")
- * @param {string} args.prompt - Text prompt to pair with the media
- * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
- * @param {string} args.mediaUrl - URL of the media to analyze
- * @returns {Promise<{content: string, model: string}>}
- */
-export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
-    const mediaBlock =
-        mediaType === "input_audio"
-            ? { type: "input_audio", input_audio: { url: mediaUrl } }
-            : { type: mediaType, [mediaType]: { url: mediaUrl } };
-
-    const result = await postChatCompletion({
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [{ type: "text", text: prompt }, mediaBlock],
-            },
-        ],
-    });
-    return {
-        content: result.choices?.[0]?.message?.content || "",
-        model: result.model || model,
-    };
 }
 
 /**
@@ -191,7 +121,7 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
  * @param {Object} body - Request body (null/undefined fields are stripped)
  * @returns {Promise<Object>} - Parsed chat-completion response
  */
-export async function postChatCompletion(body) {
+export async function postChatCompletion(body, context) {
     const cleanedBody = {};
     for (const [key, value] of Object.entries(body)) {
         if (value !== undefined && value !== null) {
@@ -199,36 +129,40 @@ export async function postChatCompletion(body) {
         }
     }
 
-    return fetchJsonWithAuth(buildUrl("/v1/chat/completions"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedBody),
-    });
+    return fetchJsonWithAuth(
+        buildUrl("/v1/chat/completions"),
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cleanedBody),
+        },
+        context,
+    );
 }
 
 /**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
- * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
+ * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and uploaded public URL
  */
-export async function fetchBinaryWithAuth(url, options = {}) {
-    const response = await fetchWithAuth(url, options);
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
-    const buffer = await response.arrayBuffer();
+export async function fetchAndUploadMedia(url, options = {}, context) {
+    const response = await fetchResponseWithAuth(url, options, context);
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
-    return { buffer, contentType };
-}
-
-/**
- * @param {ArrayBuffer} buffer - Array buffer to convert
- * @returns {string} - Base64 encoded string
- */
-export function arrayBufferToBase64(buffer) {
-    return Buffer.from(buffer).toString("base64");
+    const form = new FormData();
+    form.append(
+        "file",
+        new Blob([await response.arrayBuffer()], { type: contentType }),
+        "generation",
+    );
+    const upload = await fetchResponseWithAuth(
+        MEDIA_UPLOAD_URL,
+        { method: "POST", body: form },
+        context,
+    );
+    const result = await upload.json();
+    if (!result?.url) throw new Error("Media upload returned no URL");
+    return { contentType, mediaUrl: result.url };
 }
 
 /**
@@ -253,7 +187,7 @@ export function parseApiError(status, errorText) {
                 return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
             }
             if (errorMessage.toLowerCase().includes("invalid model")) {
-                return `Invalid model specified. Use listImageModels or listTextModels to see available options.`;
+                return `Invalid model specified. Use listModels to see available options.`;
             }
             return `Bad request: ${errorMessage}`;
         case 401:

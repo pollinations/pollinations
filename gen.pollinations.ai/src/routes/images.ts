@@ -186,6 +186,9 @@ async function parseEditInput(c: Context): Promise<{
                 ...(formData.has("safe")
                     ? { safe: formData.get("safe") as string }
                     : {}),
+                ...(formData.has("resolution")
+                    ? { resolution: formData.get("resolution") as string }
+                    : {}),
             },
         };
     }
@@ -208,7 +211,7 @@ async function parseEditInput(c: Context): Promise<{
             message: "Missing required field: image",
         });
 
-    const extra = collectPassthrough(body, "seed");
+    const extra = collectPassthrough(body, "seed", "resolution");
     const { seed, ...passthrough } = extra as { seed?: number } & Record<
         string,
         unknown
@@ -232,12 +235,6 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
         const model = c.var.model.resolved;
-        if (body.response_format === "url" && c.var.model.communityEndpoint) {
-            throw new UpstreamError(400 as ContentfulStatusCode, {
-                message:
-                    'Community image models support response_format "b64_json" only',
-            });
-        }
 
         const resolved = resolveParams(body);
         const safePrompt = await applySafety(

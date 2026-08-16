@@ -833,6 +833,64 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
+    "grok-imagine-image-2.0": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        cost: {
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
+        },
+        ...defineCostVariants(
+            {
+                low_1k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
+                },
+            },
+            ({ input }) => {
+                if (input?.quality === "low") {
+                    return input.resolution === "2k" ? "low_2k" : "low_1k";
+                }
+                return input?.resolution === "2k" ? "medium_2k" : undefined;
+            },
+            {
+                low_1k: {
+                    label: "Low · 1K",
+                    description: "Applies to low-quality 1K requests.",
+                },
+                low_2k: {
+                    label: "Low · 2K",
+                    description: "Applies to low-quality 2K requests.",
+                },
+                medium_2k: {
+                    label: "Medium · 2K",
+                    description: "Applies to medium-quality 2K requests.",
+                },
+            },
+            "Medium · 1K",
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Grok Imagine Image 2.0",
+        description:
+            "Creates and edits high-detail images at 1K or 2K with up to three references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3,
+    },
     "recraft-v4.1-vector": {
         aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
         provider: "openrouter",
@@ -968,6 +1026,45 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+    },
+    "minimax-h3": {
+        aliases: [],
+        provider: "fal",
+        brand: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-08-14").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.05, // fal, 480p per second, verified 2026-08-14.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.08 },
+                "2k": { completionVideoSeconds: 0.13 },
+            },
+            matchResolution("768p", "2k"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested video resolution is 2K.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p", "2k"],
+        title: "MiniMax H3",
+        description:
+            "Five-second text-to-video clips with synchronized stereo audio at 480p, 768p, or 2K",
+        inputModalities: ["text"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["audio_output"],
     },
     "klein": {
         aliases: ["flux-klein"],

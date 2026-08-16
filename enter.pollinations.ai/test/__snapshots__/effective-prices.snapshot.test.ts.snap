@@ -658,6 +658,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.002,
     },
   },
+  "grok-imagine-image-2.0": {
+    "cost": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "low_1k": {
+        "completionImageTokens": 0.04,
+        "promptImageTokens": 0.01,
+      },
+      "low_2k": {
+        "completionImageTokens": 0.06,
+        "promptImageTokens": 0.01,
+      },
+      "medium_2k": {
+        "completionImageTokens": 0.08,
+        "promptImageTokens": 0.01,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
+    },
+  },
   "grok-imagine-pro": {
     "cost": {
       "completionImageTokens": 0.05,
@@ -977,6 +1001,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000012,
       "promptCachedTokens": 0.00000006,
       "promptTextTokens": 0.0000003,
+    },
+  },
+  "minimax-h3": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.13,
+      },
+      "768p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
     },
   },
   "minimax-m2.7": {
@@ -1482,6 +1522,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000184375,
       "promptCachedTokens": 0.000000295,
       "promptTextTokens": 0.000001475,
+    },
+  },
+  "qwen3.8-2.4t-a95b": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
     },
   },
   "qwen3.8-max": {

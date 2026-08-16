@@ -52,6 +52,16 @@ Do not advertise a capability because the base model supports it if the selected
 - Run repeated generations to measure typical and slow-tail latency; require completion within the supported synchronous budget.
 - Verify resolution/duration-specific billing rather than assuming one flat media price.
 
+## Durable long-running media
+
+For any media route that may exceed 120 seconds:
+
+- Disconnect the original client and retry the byte-identical request. The retry must join the running job rather than start a second upstream execution.
+- After completion, retry again and verify retrieval from the completed R2 cache with an intact response.
+- Verify exactly one wallet debit and one billed Tinybird event across the original request, running-job join, and completed-cache retrieval.
+- Exercise durations just below, at, and above 300 seconds. Requests within the boundary must complete; requests beyond it must terminate clearly unless a separately approved asynchronous public contract exists.
+- Keep provider polling internal. Do not expose provider job IDs or require user polling under the synchronous public contract.
+
 ## Audio, speech, and music
 
 - TTS through every advertised public endpoint, with every declared voice and format.
@@ -76,7 +86,7 @@ Do not advertise a capability because the base model supports it if the selected
 - For OCR, test PDF and image inputs, page selection, structured blocks, and large-payload behavior when exposed.
 - For SVG/vector output, validate parseability and render the result.
 - For 3D, inspect the actual asset type and any preview; do not label PLY, splats, or point clouds as GLB meshes.
-- Run multiple timed media jobs; do not add a specialist model that routinely exceeds the synchronous budget.
+- Run multiple timed media jobs; do not add a specialist model that routinely exceeds the supported request-lifetime budget.
 
 ## Errors, permissions, cache, and capacity
 

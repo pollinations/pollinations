@@ -69,6 +69,16 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Models: `/image/models`, `/v1/models`
 - See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
 
+## Durable Media Requests
+
+- Media generation uses the durable generation coordinator and supports request
+  lifetimes up to 300 seconds. Do not reject a route solely because it exceeds
+  120 seconds or polls an asynchronous provider internally.
+- Prove identical-request disconnect/rejoin, one upstream execution, completed
+  R2 cache retrieval, one wallet debit, and one billed Tinybird event.
+- Test behavior just below, at, and above 300 seconds. A route expected to exceed
+  300 seconds requires a separately approved asynchronous public contract.
+
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 
 **Follow YAGNI religiously:**
@@ -202,6 +212,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
+- Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
@@ -211,6 +222,12 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 ## Communication Style
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
+
+### Pollinations identity
+
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").

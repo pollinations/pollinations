@@ -35,6 +35,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -46,10 +50,15 @@ new_classes = ["PollenRateLimiter"]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
 
+[[migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
+AGENT_RUNTIME_BASE_URL = "https://dev.enter.myceli.ai/api/agent-runtime/v1"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -118,6 +127,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.production.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.production.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -129,8 +142,13 @@ new_classes = ["PollenRateLimiter"]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
 
+[[env.production.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
+AGENT_RUNTIME_BASE_URL = "https://enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -186,6 +204,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.staging.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.staging.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -197,8 +219,13 @@ new_classes = ["PollenRateLimiter"]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
 
+[[env.staging.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
+AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -246,6 +273,10 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.test.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.test.durable_objects.bindings]]
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
@@ -257,8 +288,13 @@ new_classes = ["PollenRateLimiter"]
 tag = "v2"
 new_sqlite_classes = ["GenerationCoordinator"]
 
+[[env.test.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.test.vars]
 ENVIRONMENT = "test"
+AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"

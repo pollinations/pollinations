@@ -15,6 +15,7 @@ const CREDENTIAL_QUERY_PARAMS = new Set([
     "authorization",
     "bearer_token",
     "bearertoken",
+    "headers",
     "key",
     "token",
 ]);

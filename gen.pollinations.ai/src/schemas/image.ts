@@ -57,7 +57,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+                "Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`.",
         }),
     image: z
         .string()
@@ -92,21 +92,24 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 
     // Video-specific params
-    resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
-        description:
-            "Output resolution for video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
-    }),
+    resolution: z
+        .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+        .optional()
+        .meta({
+            description:
+                "Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
+        }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `seedance-2.5` otherwise defaults to `16:9`.",
+            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `seedance-2.5` otherwise defaults to `16:9`. `minimax-h3` supports only `16:9`.",
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
     }),
 });
 

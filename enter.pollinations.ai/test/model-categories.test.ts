@@ -18,6 +18,12 @@ const catalog = [
         category: "image" as const,
         community: true,
     },
+    {
+        name: "community-agent",
+        category: "text" as const,
+        community: true,
+        agent: true,
+    },
 ];
 
 describe("model categories", () => {
@@ -56,6 +62,12 @@ describe("model categories", () => {
                 modality: "images",
                 models: ["community-image"],
             },
+            {
+                category: "community-agent",
+                label: "Community Agents",
+                modality: "text",
+                models: ["community-agent"],
+            },
         ]);
     });
 
@@ -68,6 +80,9 @@ describe("model categories", () => {
         expect(
             computeCategoryModalities(["community-image"], categories),
         ).toEqual(["images"]);
+        expect(
+            computeCategoryModalities(["community-agent"], categories),
+        ).toEqual(["text"]);
         expect(
             computeCategoryModalities(
                 ["official-text", "community-text", "community-image"],
@@ -96,9 +111,23 @@ describe("model categories", () => {
             sort: undefined,
         });
         expect(
+            validateModelSearch({ scope: "community", category: "agent" }),
+        ).toEqual({
+            scope: "community",
+            category: "agent",
+            q: undefined,
+            sort: undefined,
+        });
+        expect(
             validateModelSearch({ scope: "community", category: "video" }),
         ).toEqual({
             scope: "community",
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+        expect(validateModelSearch({ category: "agent" })).toEqual({
+            scope: undefined,
             category: undefined,
             q: undefined,
             sort: undefined,

@@ -2,6 +2,7 @@ import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     communityOpenAIBaseUrl,
+    isDelegatingEndpoint,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -23,8 +24,8 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * The admin flag alone decides whether to delegate. Once it is set the other
- * two conditions are invariants, so they throw rather than degrade: the
+ * Managed agents always delegate. External endpoints do so only when their
+ * admin flag is set. The other two conditions are invariants, so they throw:
  * endpoint must be free, since charging a wrapper price on top of the
  * generation it bills the caller for is double billing, and the request must
  * carry a key to bill, since falling back to the saved bearer would quietly
@@ -35,7 +36,7 @@ async function mintDelegatedToken(
     parentApiKeyId: string | undefined,
     secret: string,
 ): Promise<string | undefined> {
-    if (!endpoint.delegatesGeneration) return undefined;
+    if (!isDelegatingEndpoint(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
@@ -50,6 +51,8 @@ async function mintDelegatedToken(
         secret,
         parentApiKeyId,
         runId: crypto.randomUUID(),
+        managedAgentId:
+            endpoint.kind === "agent" ? endpoint.agentId : undefined,
     });
 }
 
@@ -66,11 +69,17 @@ export async function communityEndpointGatewayContext(
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
     // A delegating endpoint is sent the run token instead of its saved bearer,
     // so it never receives a credential it could spend on the owner's account.
+    // An agent has no saved bearer at all: mintDelegatedToken always returns a
+    // token for it, so a missing one means the caller had no key to bill.
     const authKey =
-        runToken ??
-        normalizeCommunityEndpointBearerToken(
-            await decryptSecret(endpoint.bearerTokenCiphertext, secret),
-        );
+        endpoint.kind === "agent"
+            ? runToken
+            : (runToken ??
+              normalizeCommunityEndpointBearerToken(
+                  await decryptSecret(endpoint.bearerTokenCiphertext, secret),
+              ));
+    if (!authKey)
+        throw new Error("Managed agent request has no agent run token");
 
     return {
         ...requestDataWithoutMessages,

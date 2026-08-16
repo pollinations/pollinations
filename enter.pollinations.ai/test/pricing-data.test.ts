@@ -344,11 +344,10 @@ test("cached modality adjustments remain visible without a matching base row", (
     const markup = renderToStaticMarkup(
         createElement(ModelPricingLedger, { pricing }),
     );
-    const text = markup.replace(/<[^>]+>/g, "");
 
-    expect(text).toContain("Cached input");
-    expect(text).toContain("Cached audio input");
-    expect(text).toContain("0.24");
+    expect(markup).toContain("Cached input");
+    expect(markup).toContain("Cached audio input");
+    expect(markup).toContain("0.24");
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {

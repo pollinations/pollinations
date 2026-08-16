@@ -25,6 +25,6 @@ export const LAYOUT = {
     termsLink: "Terms",
     privacyLink: "Privacy",
     refundsLink: "Refunds",
-    footerBranding: "Pollinations.AI © 2026",
+    footerBranding: "Pollinations.AI © 2026 Myceli AI OÜ",
     footerTagline: "Open source AI innovation",
 };

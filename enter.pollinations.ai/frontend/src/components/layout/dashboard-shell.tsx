@@ -440,10 +440,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter
-                links={footerLinks}
-                note="© 2026 Pollinations.AI"
-            />
+            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
         </div>
     </aside>
 );

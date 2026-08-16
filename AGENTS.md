@@ -225,9 +225,9 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ### Pollinations identity
 
-- Use `hello@pollinations.ai` for public support, privacy, legal, and customer-facing contact. Do not introduce `@myceli.ai` customer contact addresses or present Myceli as the product brand.
-- `Myceli.AI OÜ` may remain where the registered legal entity or data controller must be named.
-- Existing `myceli.ai` infrastructure hostnames and provider-account identifiers are legacy migration targets. Do not rename or remove them piecemeal; migrate each service with routing, deployment, and rollback verification.
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").

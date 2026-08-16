@@ -47,8 +47,7 @@ export class ObservabilityGrafana extends Container {
     envVars = {
         GF_SECURITY_ADMIN_USER: workerEnv.GF_ADMIN_USER || "admin",
         GF_SECURITY_ADMIN_PASSWORD: requiredSecret("GF_ADMIN_PASSWORD"),
-        GF_SECURITY_ADMIN_EMAIL:
-            workerEnv.GF_ADMIN_EMAIL || "hello@pollinations.ai",
+        GF_SECURITY_ADMIN_EMAIL: workerEnv.GF_ADMIN_EMAIL || "hi@myceli.ai",
         GF_SERVER_ROOT_URL: ROOT_URL,
         GF_SERVER_DOMAIN: DOMAIN,
         GF_USERS_ALLOW_SIGN_UP: "false",

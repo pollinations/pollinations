@@ -6,7 +6,7 @@ _2026-07-02 — Pollen purchases now include a service fee shown before payment,
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
-## What Pollinations Is
+## What Myceli.AI Is
 
 We operate commercial, hosted services (dashboard & APIs) built on the open-source pollinations.ai codebase. We handle billing and support; the OSS remains under its repository licences.
 

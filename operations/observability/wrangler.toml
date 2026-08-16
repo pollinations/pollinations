@@ -32,7 +32,7 @@ crons = ["*/5 * * * *"]
 [vars]
 GF_SERVER_ROOT_URL = "https://observability.pollinations.ai"
 GF_ADMIN_USER = "admin"
-GF_ADMIN_EMAIL = "hello@pollinations.ai"
+GF_ADMIN_EMAIL = "hi@myceli.ai"
 
 # Secrets:
 # - GF_ADMIN_PASSWORD

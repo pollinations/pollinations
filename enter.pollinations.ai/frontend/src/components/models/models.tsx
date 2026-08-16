@@ -1,5 +1,6 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -218,6 +219,7 @@ export const Models: FC = () => {
         activeScope === "community"
             ? COMMUNITY_SECTION_ORDER
             : POLLINATIONS_SECTION_ORDER;
+    const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
@@ -359,15 +361,31 @@ export const Models: FC = () => {
                             ))}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => (
-                                <TabButton
-                                    key={section}
-                                    active={activeTab === section}
-                                    onClick={() => setActiveTab(section)}
-                                >
-                                    {sectionLabels[section]}
-                                </TabButton>
-                            ))}
+                            {sectionOrder.map((section) => {
+                                const showAgentsNew =
+                                    section === "agent" && hasAgents;
+                                return (
+                                    <TabButton
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={
+                                            showAgentsNew
+                                                ? "Agents, new"
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {sectionLabels[section]}
+                                            {showAgentsNew && (
+                                                <Chip intent="news" size="sm">
+                                                    New
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TabButton>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">
@@ -467,17 +485,17 @@ export const Models: FC = () => {
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    {activeTab === "agent" && (
-                        <p className="flex items-start gap-1.5">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>Agent pricing</strong> — rates apply to
-                                each base-model call. Agents can make multiple
-                                calls; Pollinations tool calls use the selected
-                                model&apos;s listed price.
-                            </span>
-                        </p>
-                    )}
+                    <p className="flex items-start gap-1.5">
+                        <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
+                        <span>
+                            <strong className="text-theme-text-soft">
+                                agent pricing
+                            </strong>{" "}
+                            — rates apply to each base-model call; agents can
+                            make multiple calls, and tool calls use the selected
+                            model&apos;s listed price.
+                        </span>
+                    </p>
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>

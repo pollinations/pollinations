@@ -1,0 +1,34 @@
+{
+  "pr_number": 13457,
+  "title": "fix: follow MCP server redirects",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13457",
+  "merged_at": "2026-08-16T11:37:09Z",
+  "labels": [],
+  "pr_body_excerpt": "Drops the redirect restriction on user-configured MCP servers.\n\nThe rationale for refusing them was weak: a hostile server can proxy anywhere without a redirect, and the user supplies both the URL and the headers, so a redirect adds nothing they could not do directly. The real SSRF control is the config-time host blocklist (`isBlockedHostname` rejects localhost, RFC1918, `169.254.*`, CGNAT, multicast), and on Workers there is little internal surface to reach anyway.\n\nMeanwhile redirects are ordinary — trailing-slash normalisation, `http`→`https`, load balancers, moved paths. Our own `/mcp` → `/` endpoint move would have been served as a redirect if this restriction had not made that unusable.\n\n**The override itself has to stay.** Removing the custom `fetch` breaks all MCP loading: the AI SDK asks for `redirect: \"error\"`, which workerd rejects with `TypeError: Invalid redirect value, must be one of \"follow\" or \"manual\"`. So the wrapper is a Workers compatibility shim as much as a policy — it now passes `\"follow\"` instead of `\"manual\"` plus a throw. The comment records this so it is not removed again.\n\nThe redirect test is kept but renamed: it no longer describes refusal, since the stub returns the 302 itself and nothing follows the hop. It still asserts credentials reach only the configured host and that an unusable response degrades rather than 502s.\n\nIf you later want redirects bounded, the sound version is to follow them manually and re-run `isBlockedHostname` on each hop — that keeps the only property worth keeping without the compatibility cost.\n\nChecks: `npx vitest run test/prompt-agent-runtime.test.ts` — 21 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The MCP path bends",
+    "blurb": "MCP servers can now take the scenic route. Polli follows ordinary redirects for moved endpoints, trailing slashes, and the very normal journey from http to https.",
+    "summary": "Updated the MCP loading fetch shim in enter.pollinations.ai to follow redirects, so user-configured MCP servers work through trailing-slash normalization, HTTP-to-HTTPS upgrades, load balancers, and moved paths while retaining the Workers-compatible custom fetch override.",
+    "impact": "Developers connecting MCP servers can use endpoints that return standard redirects instead of seeing those integrations fail, including servers whose paths have moved or normalize URLs.",
+    "keywords": [
+      "mcp",
+      "redirects",
+      "prompt-agent",
+      "workers",
+      "agent-runtime",
+      "compatibility"
+    ],
+    "visual_concept": "Depict MCP connections as a cozy winding garden path between a retro terminal and a helpful server mailbox, with friendly redirect signposts guiding the route toward a secure-looking destination. Polli, wearing a tiny explorer scarf, follows the signs with the eager CRT Monitor Robot; code-plants and flowers make the previously awkward route feel ordinary and welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf and following cheerful redirect signposts along a winding garden path from a retro terminal to an MCP server mailbox; a cute chunky CRT-monitor robot points excitedly at the safe route while code-plants bloom beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"FOLLOW\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13457.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf and following cheerful redirect signposts along a winding garden path from a retro terminal to an MCP server mailbox; a cute chunky CRT-monitor robot points excitedly at the safe route while code-plants bloom beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"FOLLOW\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-16T11:38:28.865396+00:00"
+}

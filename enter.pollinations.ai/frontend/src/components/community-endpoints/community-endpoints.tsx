@@ -290,19 +290,20 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Enter
-            the upstream model ID manually, then test the saved model by calling
-            its model ID. Public publishing is allowlist-only. To request
-            publishing access for your account, submit a{" "}
+            Private models are callable only by you and shown only when{" "}
+            <strong>/models</strong> is authenticated with your API key. App
+            models add every API key issued through one of your apps, with your
+            own pricing, and need no approval. Only public listing is
+            allowlist-only. To request publishing access for your account,
+            submit a{" "}
             <InlineLink
                 href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
                 showIcon={false}
             >
                 community model publisher allowlist request
             </InlineLink>{" "}
-            form. You can register and test private models without approval. For
-            questions, ask in{" "}
+            form. You can register and test private and app models without
+            approval. For questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 showIcon={false}
@@ -500,9 +501,12 @@ export function CommunityEndpoints({
                                     <>
                                         Private models are callable only by you
                                         and shown only when model lists use your
-                                        API key. Make one public to list it for
-                                        everyone in <strong>/models</strong> and
-                                        bill callers at your configured pricing.
+                                        API key. App models add the API keys
+                                        issued through your apps. Make one
+                                        public to list it for everyone in{" "}
+                                        <strong>/models</strong>. App and public
+                                        callers are billed at your configured
+                                        pricing.
                                     </>
                                 ) : (
                                     privateModelGuidance

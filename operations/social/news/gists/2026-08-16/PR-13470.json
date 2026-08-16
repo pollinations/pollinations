@@ -1,0 +1,34 @@
+{
+  "pr_number": 13470,
+  "title": "feat: add quest reward campaigns",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13470",
+  "merged_at": "2026-08-16T21:55:19Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #13000\n\n- Adds admin-managed coupon campaigns that redeem as hidden quests and immediately credit Quest Pollen.\n- Adds an idempotent bulk grant endpoint for rewarding GitHub contributors by campaign, amount, reason, and source URL.\n- Shows rewards without catalog entries in a dedicated Bonus rewards section with the normal claim flow.\n- Reuses the existing reward ledger and balance claim transaction; no migration or direct balance adjustment.\n\nChecks: 34 coupon, grant, and quest tests; Enter TypeScript; Biome; production frontend build.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bonus pollen found",
+    "blurb": "The quest garden has a new hidden path: campaign rewards can bloom straight into your wallet. Contributors can now receive their Pollen without anyone manually tending a spreadsheet.",
+    "summary": "Added admin-managed coupon campaigns that redeem as hidden quests with immediate Quest Pollen credit, plus an idempotent bulk-grant endpoint for rewarding GitHub contributors by campaign, amount, reason, and source URL.",
+    "impact": "Users can claim campaign rewards through the normal quest flow and find uncatalogued rewards in a new Bonus rewards section, while maintainers can reliably grant contributor Pollen without direct balance adjustments.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "rewards",
+      "coupons",
+      "github contributors",
+      "admin api"
+    ],
+    "visual_concept": "A cozy quest-reward garden where Polli discovers a hidden quest coupon blooming from a code-plant, while the eager CRT monitor robot distributes small Pollen jars to contributor seedlings. A retro quest board includes a clearly separate Bonus rewards nook, representing rewards that do not need catalog entries and still use the familiar claim path.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she uncovers a hidden quest coupon growing from a lime green (#ecf874) code-plant; beside her, a cute chunky CRT-monitor robot happily places glowing Pollen jars into a wooden signpost labeled \"BONUS REWARDS,\" surrounded by flowers and contributor seedlings. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13470.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she uncovers a hidden quest coupon growing from a lime green (#ecf874) code-plant; beside her, a cute chunky CRT-monitor robot happily places glowing Pollen jars into a wooden signpost labeled \"BONUS REWARDS,\" surrounded by flowers and contributor seedlings. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-16T21:56:22.561012+00:00"
+}

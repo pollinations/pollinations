@@ -310,8 +310,17 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
 
             {/* Expanded: full pricing */}
             {expanded && (
-                <div id={detailsId} className="px-4 pb-4 pt-0">
-                    <div className="flex min-w-0 flex-col gap-2">
+                <div id={detailsId} className="flex gap-2.5 px-4 pb-4 pt-0">
+                    {hasLeadingIcon && (
+                        <>
+                            <span aria-hidden="true" className="w-8 shrink-0" />
+                            <span
+                                aria-hidden="true"
+                                className="w-px shrink-0"
+                            />
+                        </>
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <ModelPricingControls model={model} pricing={pricing} />
                         <ModelPricingLedger
                             pricing={pricing}

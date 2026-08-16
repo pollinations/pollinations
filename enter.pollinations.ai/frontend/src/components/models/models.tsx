@@ -492,9 +492,8 @@ export const Models: FC = () => {
                                 <strong className="text-theme-text-soft">
                                     agent pricing
                                 </strong>{" "}
-                                — rates apply to each base-model call; agents
-                                can make multiple calls, and tool calls use the
-                                selected model&apos;s listed price.
+                                — agents may make multiple model calls. Each is
+                                billed at that model&apos;s listed price.
                             </span>
                         </p>
                     )}

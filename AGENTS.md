@@ -2,13 +2,13 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/catalog.json`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `apps/catalog.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/catalog.json`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
@@ -24,13 +24,15 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
 - `gen.pollinations.ai/` — Edge router + text generation Worker
-- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
+- `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `catalog.json`
-- `social/` — Discord/Reddit/GitHub automation
+- `apps/` — Applications maintained in this repository
+- `operations/app-management/` — Community app catalog and automation
+- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
@@ -41,7 +43,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
-  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
+  connector prompt (`operations/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
@@ -66,6 +68,16 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Audio: `GET gen.pollinations.ai/audio/{text}?voice=nova&key=...`
 - Models: `/image/models`, `/v1/models`
 - See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
+
+## Durable Media Requests
+
+- Media generation uses the durable generation coordinator and supports request
+  lifetimes up to 300 seconds. Do not reject a route solely because it exceeds
+  120 seconds or polls an asynchronous provider internally.
+- Prove identical-request disconnect/rejoin, one upstream execution, completed
+  R2 cache retrieval, one wallet debit, and one billed Tinybird event.
+- Test behavior just below, at, and above 300 seconds. A route expected to exceed
+  300 seconds requires a separately approved asynchronous public contract.
 
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 
@@ -161,7 +173,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 Commands:
 - enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
 - gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
 
 Run individually — full suite is slow:
 ```bash
@@ -177,7 +188,7 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `operations/infrastructure/gpu/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.
@@ -201,6 +212,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
+- Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
@@ -210,6 +222,12 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 ## Communication Style
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
+
+### Pollinations identity
+
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").

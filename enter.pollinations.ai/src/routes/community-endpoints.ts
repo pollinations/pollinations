@@ -38,7 +38,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -52,6 +52,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { agentRuntimeBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
@@ -90,6 +91,14 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     CommunityEndpointPriceKey,
     z.ZodOptional<z.ZodType<number>>
 >;
+
+function hasNonZeroPrice(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        (field) => (source[field.key] ?? 0) !== 0,
+    );
+}
 
 function enforceCommunityEndpointPriceLimits(
     source: Partial<Record<CommunityEndpointPriceKey, number>>,
@@ -171,6 +180,9 @@ function fallbackTargetRejection(
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
+    }
+    if (target.agentId !== null || target.delegatesGeneration) {
+        return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
         target.visibility === "private" &&
@@ -278,15 +290,26 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const PerUserRpmSchema = z
+    .number()
+    .finite()
+    .positive()
+    .nullable()
+    .describe(
+        "Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit.",
+    );
 const EndpointFieldsSchema = {
-    // No "/": the public model id is `<owner>/<name>`, so a slash in the name
-    // would inject a second separator and let one model spoof another's id.
+    // This slug is used in `<owner>/<name>` model ids and by operational tools.
+    // Keep it safe to pass as data without accepting shell or SQL syntax.
     name: z
         .string()
         .trim()
         .min(1)
         .max(120)
-        .regex(/^[^/]+$/, "Model name cannot contain '/'"),
+        .regex(
+            /^[A-Za-z0-9._:-]+$/,
+            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
+        ),
     title: z
         .string()
         .trim()
@@ -308,15 +331,77 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    modality: ModalitySchema.optional().default("text"),
-    imagePricing: ImagePricingSchema.optional().default("request"),
-    inputModalities: InputModalitiesSchema.optional().default(["text"]),
-    visibility: VisibilitySchema.optional().default("private"),
-    fallbackModelIds: FallbackModelIdsSchema.optional(),
-    ...UpdatePriceFieldsSchema,
-});
+const CreateEndpointSchema = z
+    .object({
+        ...EndpointFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        agentId: z.string().uuid().optional(),
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        modality: ModalitySchema.optional().default("text"),
+        imagePricing: ImagePricingSchema.optional().default("request"),
+        inputModalities: InputModalitiesSchema.optional().default(["text"]),
+        visibility: VisibilitySchema.optional().default("private"),
+        perUserRpm: PerUserRpmSchema.optional(),
+        fallbackModelIds: FallbackModelIdsSchema.optional(),
+        ...UpdatePriceFieldsSchema,
+    })
+    // A registration is one of two shapes: a managed agent, which resolves its
+    // target and credentials from the agent row, or an external endpoint, which
+    // brings its own. Validating each shape once keeps the two sets of rules
+    // readable and stops them being restated per field.
+    .superRefine((input, context) => {
+        const isAgent = input.agentId !== undefined;
+        if (isAgent === (input.baseUrl !== undefined)) {
+            context.addIssue({
+                code: "custom",
+                message: "Provide exactly one of baseUrl or agentId",
+            });
+            return;
+        }
+        if (!isAgent) {
+            if (!input.bearerToken) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["bearerToken"],
+                    message:
+                        "bearerToken is required when registering with baseUrl",
+                });
+            }
+            return;
+        }
+        const agentRejections = [
+            {
+                invalid: input.modality !== "text",
+                path: "modality",
+                message: "Managed agents must use text modality",
+            },
+            {
+                invalid: input.bearerToken !== undefined,
+                path: "bearerToken",
+                message:
+                    "Managed agent credentials are configured on the agent",
+            },
+            {
+                invalid: Boolean(input.fallbackModelIds?.length),
+                path: "fallbackModelIds",
+                message:
+                    "Managed agent listings do not support fallback models",
+            },
+            {
+                invalid: input.perUserRpm != null,
+                path: "perUserRpm",
+                message: "Managed agent listings do not support per-user RPM",
+            },
+        ];
+        for (const rejection of agentRejections) {
+            if (!rejection.invalid) continue;
+            context.addIssue({
+                code: "custom",
+                path: [rejection.path],
+                message: rejection.message,
+            });
+        }
+    });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
     title: EndpointFieldsSchema.title.optional(),
@@ -325,6 +410,7 @@ const UpdateEndpointSchema = z.object({
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
+    perUserRpm: PerUserRpmSchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -357,8 +443,10 @@ const CommunityEndpointResponseSchema = z.object({
     imagePricing: ImagePricingSchema,
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
+    agentId: z.string().nullable(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
+    perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
@@ -486,8 +574,14 @@ async function requireOwnerGithubUsername(
     });
 }
 
-function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+function toResponse(
+    row: CommunityEndpointRow,
+    ownerGithubUsername: string,
+    env: { AGENT_RUNTIME_BASE_URL: string },
+) {
     const modality = normalizeCommunityEndpointModality(row.modality);
+    // Agent listings have no target of their own; they resolve to the runtime.
+    const baseUrl = row.baseUrl ?? agentRuntimeBaseUrl(env);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
@@ -504,9 +598,11 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
             row.inputModalities,
             modality,
         ),
-        baseUrl: row.baseUrl,
+        baseUrl,
+        agentId: row.agentId,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
+        perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
@@ -530,6 +626,32 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
         });
     }
     return row;
+}
+
+async function requireUnregisteredOwnedAgent(
+    db: Db,
+    id: string,
+    ownerUserId: string,
+) {
+    const agent = await db.query.agent.findFirst({
+        where: and(
+            eq(schema.agent.id, id),
+            eq(schema.agent.ownerUserId, ownerUserId),
+        ),
+    });
+    if (!agent) {
+        throw new HTTPException(404, { message: "Agent not found" });
+    }
+    const registration = await db.query.communityEndpoint.findFirst({
+        columns: { id: true },
+        where: eq(schema.communityEndpoint.agentId, id),
+    });
+    if (registration) {
+        throw new HTTPException(400, {
+            message: "Agent is already registered as a community model",
+        });
+    }
+    return agent;
 }
 
 async function ensureModelNameAvailable(
@@ -632,10 +754,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            const rows = await db.query.communityEndpoint.findMany({
-                where: eq(schema.communityEndpoint.ownerUserId, user.id),
-                orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
-            });
+            const rows = await db
+                .select()
+                .from(schema.communityEndpoint)
+                .where(eq(schema.communityEndpoint.ownerUserId, user.id))
+                .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
                 columns: {
                     communityProviderName: true,
@@ -644,7 +767,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 where: eq(schema.user.id, user.id),
             });
             return c.json({
-                data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+                data: rows.map((endpoint) =>
+                    toResponse(endpoint, ownerGithubUsername, c.env),
+                ),
                 provider: {
                     name: owner?.communityProviderName ?? null,
                     url: owner?.communityProviderUrl ?? null,
@@ -746,6 +871,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!endpoint) {
                 throw new HTTPException(404, { message: "Model not found" });
             }
+            if (endpoint.agentId !== null) return c.json({ data: [] });
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -815,25 +941,34 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const agent = input.agentId
+                ? await requireUnregisteredOwnedAgent(
+                      db,
+                      input.agentId,
+                      user.id,
+                  )
+                : null;
+            if (agent && hasNonZeroPrice(input)) {
+                throw new HTTPException(400, {
+                    message: "Managed agent listings must be free",
+                });
+            }
+            const modality = agent ? "text" : input.modality;
             const imagePricing =
-                input.modality === "image" ? input.imagePricing : "request";
+                modality === "image" ? input.imagePricing : "request";
             enforceCommunityEndpointInputModalities(
-                input.modality,
+                modality,
                 input.inputModalities,
             );
             const prices =
-                input.visibility === "public"
-                    ? communityEndpointPricesForModality(
+                agent || input.visibility !== "public"
+                    ? communityEndpointPrices({})
+                    : communityEndpointPricesForModality(
                           input,
-                          input.modality,
+                          modality,
                           imagePricing,
-                      )
-                    : communityEndpointPrices({});
-            enforceCommunityEndpointPriceLimits(
-                prices,
-                input.modality,
-                imagePricing,
-            );
+                      );
+            enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const fallbackModelIds = input.fallbackModelIds
                 ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
                       modelId: communityModelId(
@@ -841,7 +976,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           input.name,
                       ),
                       ownerUserId: user.id,
-                      modality: input.modality,
+                      modality,
                       imagePricing,
                       prices,
                   })
@@ -856,23 +991,31 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    modality: input.modality,
+                    modality,
                     imagePricing,
                     inputModalities: input.inputModalities,
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: agent
+                        ? null
+                        : normalizeInputBaseUrl(input.baseUrl ?? ""),
+                    agentId: agent?.id ?? null,
                     upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
+                    bearerTokenCiphertext: agent
+                        ? null
+                        : await encryptSecret(
+                              normalizeInputBearerToken(
+                                  input.bearerToken ?? "",
+                              ),
+                              c.env.BETTER_AUTH_SECRET,
+                          ),
                     visibility: input.visibility,
+                    perUserRpm: agent ? null : (input.perUserRpm ?? null),
                     fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(toResponse(row, ownerGithubUsername, c.env));
         },
     )
     .post(
@@ -1014,6 +1157,36 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            if (
+                endpoint.agentId !== null &&
+                (input.baseUrl !== undefined || input.bearerToken !== undefined)
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Update managed agent configuration through the agents API",
+                });
+            }
+            if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
+                throw new HTTPException(400, {
+                    message: "Managed agent listings must be free",
+                });
+            }
+            if (endpoint.agentId !== null && input.fallbackModelIds?.length) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed agent listings do not support fallback models",
+                });
+            }
+            if (
+                endpoint.agentId !== null &&
+                input.perUserRpm !== undefined &&
+                input.perUserRpm !== null
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed agent listings do not support per-user RPM",
+                });
+            }
             if (input.inputModalities !== undefined) {
                 enforceCommunityEndpointInputModalities(
                     modality,
@@ -1043,7 +1216,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined) {
+            if (input.bearerToken !== undefined && endpoint.agentId === null) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -1051,6 +1224,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (endpoint.agentId !== null) {
+                update.perUserRpm = null;
+            } else if (input.perUserRpm !== undefined) {
+                update.perUserRpm = input.perUserRpm;
             }
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;
@@ -1087,7 +1265,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // A private model is owner-only, so owner-declared public pricing
             // does not apply; making a published model private clears prices.
             const effectivePrices =
-                effectiveVisibility === "private"
+                endpoint.agentId !== null || effectiveVisibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPricesForModality(
                           { ...endpoint, ...update },
@@ -1135,7 +1313,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(toResponse(row, ownerGithubUsername, c.env));
         },
     )
     .delete(

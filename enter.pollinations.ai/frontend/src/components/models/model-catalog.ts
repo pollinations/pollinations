@@ -22,6 +22,9 @@ export type ApiModelInfo = {
     brand?: string;
     brand_url?: string;
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
+    per_user_rpm?: number | null;
     pricing?: ApiPricing;
     pricing_variants?: Array<{
         name: string;
@@ -225,6 +228,9 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         name,
         type: getCatalogCategory(model),
         community: model.community,
+        agent: model.agent,
+        baseModel: model.base_model,
+        perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
@@ -365,6 +371,18 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
                 "3d",
                 formatPrice(completionImageTokens, formatPriceFlat),
                 "request",
+            ]),
+        };
+    }
+
+    if (price.type === "realtime" && promptAudioSeconds) {
+        return {
+            ...price,
+            prices: priceLines([
+                "input",
+                "audioIn",
+                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                "second",
             ]),
         };
     }

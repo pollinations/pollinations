@@ -130,6 +130,7 @@ export interface RequestData {
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;

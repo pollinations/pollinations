@@ -1,6 +1,7 @@
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import {
@@ -183,6 +184,7 @@ describe("Responses API adapter", () => {
 
         expect(response).toMatchObject({
             object: "response",
+            completed_at: expect.any(Number),
             status: "incomplete",
             incomplete_details: { reason: "max_output_tokens" },
             output_text: "Partial",
@@ -197,7 +199,12 @@ describe("Responses API adapter", () => {
             ],
             usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 },
             store: false,
+            truncation: "disabled",
+            service_tier: "default",
         });
+        expect(() =>
+            CreateResponseResponseSchema.parse(response),
+        ).not.toThrow();
     });
 
     it("maps content filtering to an incomplete response", () => {
@@ -253,7 +260,7 @@ describe("Responses API adapter", () => {
         expect(output).toContain("event: response.output_text.done");
         expect(output).toContain("event: response.completed");
         expect(output).toContain('"input_tokens":2');
-        expect(output).not.toContain("[DONE]");
+        expect(output).toContain("data: [DONE]");
     });
 
     it("assembles streaming function-call argument deltas", async () => {
@@ -290,7 +297,9 @@ describe("Responses API adapter", () => {
         expect(output).toContain("event: response.completed");
         const events = output
             .split("\n")
-            .filter((line) => line.startsWith("data: "))
+            .filter(
+                (line) => line.startsWith("data: ") && line !== "data: [DONE]",
+            )
             .map((line) => JSON.parse(line.slice(6)));
         expect(
             events.find(
@@ -326,14 +335,18 @@ describe("Responses API adapter", () => {
         ).text();
         const events = output
             .split("\n")
-            .filter((line) => line.startsWith("data: "))
+            .filter(
+                (line) => line.startsWith("data: ") && line !== "data: [DONE]",
+            )
             .map((line) => JSON.parse(line.slice(6)));
         expect(events).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
                     type: "error",
-                    code: "server_error",
-                    param: null,
+                    error: expect.objectContaining({
+                        code: "server_error",
+                        param: null,
+                    }),
                 }),
                 expect.objectContaining({ type: "response.failed" }),
             ]),

@@ -8,9 +8,24 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /v1/models` | All models in OpenAI-compatible format (`{object: "list", data: [...]}`) |
 | `GET /text/models` | Text models with pricing, context window, tool support |
 | `GET /image/models` | Image & video models with capabilities and pricing |
+| `GET /video/models` | Video models with capabilities and pricing |
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
+
+### Query Parameters
+
+All model discovery endpoints accept an optional `community` query parameter:
+
+| Parameter | Values | Behaviour |
+|-----------|--------|-----------|
+| *(omitted)* | | Returns all models (default, backward-compatible) |
+| `community=false` | `false`, `0` | Excludes community models — returns official models only |
+| `community=true` | `true`, `1` | Returns community models only |
+
+Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+
+Example: `GET /models?community=false`
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -49,4 +64,4 @@ Community models are user-owned, OpenAI-compatible text or image-generation endp
 - Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
 - Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
 
-To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and called without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai); fetching upstream models, testing the upstream endpoint, and publishing require approval. Registration and management are also documented under the Account section of this reference. The dashboard and Account API support text and image models; the [CLI](/docs/guides/cli) (`polli my-models`) currently supports text models only.
+To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and called without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai); fetching upstream models, testing the upstream endpoint, and publishing require approval. Registration and management are also documented under the Account section of this reference. The dashboard and Account API support text and image models; the [CLI](/docs#tag/cli) (`polli my-models`) currently supports text models only.

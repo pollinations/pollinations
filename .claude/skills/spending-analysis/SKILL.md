@@ -12,7 +12,7 @@ description: Analyze Pollinations Stripe revenue, pack purchases, and balance-bu
 # Setup
 
 ```bash
-export TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_READ_TOKEN')
+export TINYBIRD_TOKEN=$(sops -d operations/kpi/secrets/env.json | jq -r '.TINYBIRD_READ_TOKEN')
 ```
 
 Never print the token. Revenue queries must filter successful Stripe checkout

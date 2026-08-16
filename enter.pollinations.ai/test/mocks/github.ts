@@ -65,9 +65,10 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
+        // Real GitHub rejects OAuth client_id/secret Basic auth with 401, so the
+        // mock must too — accepting it hid a live 401 behind green tests.
         const isUserToken = authHeader?.includes("mock_github_auth_token");
-        const isAppCredentials = authHeader?.startsWith("Basic ");
-        if (!isUserToken && !isAppCredentials) {
+        if (!isUserToken) {
             return c.json({ message: "Bad credentials" }, 401);
         }
         return await next();

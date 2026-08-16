@@ -6,28 +6,25 @@ import {
     getVideoModelIds,
     IMAGE_SERVICES,
 } from "@shared/registry/image.ts";
+import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
-    getModel3dModelsInfo,
-    getRealtimeModelsInfo,
-} from "@shared/registry/model-info.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
-import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
-    GUIDES_CSS,
     POLLINATIONS_HEADER_CSS,
     POLLINATIONS_HEADER_SCALAR_CSS,
-    POLLINATIONS_HEADER_STANDALONE_CSS,
 } from "./docs-styles.ts";
-import { docsSocialHeadTags, injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
+import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
 // Same amber favicon as gen.pollinations.ai/public/favicon-32x32.png. Scalar
 // needs this as a data URI, while conventional browser/favicon URLs are served
@@ -221,9 +218,7 @@ const videoModelDisplayNames = getVideoModelIds().join(", ");
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
-const realtimeModelDisplayNames = getRealtimeModelsInfo()
-    .map((model) => model.name)
-    .join(", ");
+const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
@@ -271,19 +266,20 @@ const MODEL3D_GENERATION_DOCS = interpolate(
     MODEL_VARS,
 );
 const REALTIME_DOCS = [
-    "## Realtime Voice",
+    "## Realtime",
     "",
-    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+    "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
     "",
     "| Endpoint | Description |",
     "|----------|-------------|",
+    `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
-    "The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes. Input transcription sessions are not supported yet.",
+    "The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "Events sent and received over the socket use the OpenAI Realtime protocol unchanged. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
     "",
     "```js",
     'import WebSocket from "ws";',
@@ -310,7 +306,7 @@ const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
-// storage + account + safety + errors. BYOP, CLI, MCP are separate guides.
+// storage + account + safety + errors. BYOP, CLI, MCP are separate sections.
 const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
@@ -348,14 +344,16 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     mcp: MCP_SECTION,
 };
 
-type GuideId = "byop" | "cli" | "mcp";
+// Scalar tag anchors for the retired /docs/guides/:id pages.
+const GUIDE_REDIRECT_TAGS: Record<string, string> = {
+    byop: "byop",
+    cli: "cli",
+    mcp: "mcp-server",
+};
 
-function pollinationsHeaderHtml(scalarHosted = false): string {
-    const contextCss = scalarHosted
-        ? POLLINATIONS_HEADER_SCALAR_CSS
-        : POLLINATIONS_HEADER_STANDALONE_CSS;
+function pollinationsHeaderHtml(): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
-    return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
+    return `<style>${POLLINATIONS_HEADER_CSS}${POLLINATIONS_HEADER_SCALAR_CSS}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
 </header>
@@ -886,86 +884,6 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
     );
 }
 
-type Guide = {
-    id: GuideId;
-    title: string;
-    icon: string;
-    summary: string;
-    markdown: string;
-};
-
-const GUIDES: Guide[] = [
-    {
-        id: "byop",
-        title: "BYOP",
-        icon: DOC_TAGS.byop,
-        summary:
-            "Let your users authorize your app to spend their own Pollen on Pollinations requests.",
-        markdown: BYOP_DOCS,
-    },
-    {
-        id: "cli",
-        title: "CLI",
-        icon: DOC_TAGS.cli,
-        summary:
-            "The Pollinations CLI — for humans, AI agents, and everything in between.",
-        markdown: CLI_DOCS,
-    },
-    {
-        id: "mcp",
-        title: "MCP Server",
-        icon: DOC_TAGS.mcpServer,
-        summary:
-            "Wire Pollinations into Claude Desktop, Cursor, and other MCP-compatible clients.",
-        markdown: MCP_DOCS,
-    },
-];
-
-const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
-
-function guidesPage(c: Context<Env>, body: string): string {
-    return `<!doctype html>
-<html lang="en" class="dark">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${SEO_TITLE}</title>
-<link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
-${docsSocialHeadTags(c)}
-<style>${GUIDES_CSS}</style>
-</head>
-<body>
-${pollinationsHeaderHtml()}
-<main class="wrap">${body}</main>
-</body>
-</html>`;
-}
-
-function guidesIndexHtml(c: Context<Env>): string {
-    const cards = GUIDES.map(
-        (g) =>
-            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${guideIconHtml(g.icon)}<span>${g.title}</span></h3><p>${g.summary}</p></a>`,
-    ).join("");
-    const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage(c, body);
-}
-
-function guideIconHtml(icon: string): string {
-    return DOC_TAG_ICON_HTML[icon] ?? "";
-}
-
-function guideHtml(c: Context<Env>, guide: Guide): string {
-    // Prepend the guide title as an H1 so each guide page has a clear heading.
-    // Source READMEs have their H1 stripped (because we render the page title
-    // separately) — re-adding it here gives the rendered page a proper title
-    // without duplicating it across surfaces.
-    const rendered = marked.parse(guide.markdown, { async: false }) as string;
-    return guidesPage(
-        c,
-        `<h1 class="guide-title">${guideIconHtml(guide.icon)}<span>${guide.title}</span></h1>${rendered}`,
-    );
-}
-
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -986,7 +904,7 @@ export async function buildMergedOpenApiSpec(
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
-    return new Hono<Env>()
+    const routes = new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
@@ -1025,7 +943,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsHeaderHtml(true) +
+                    pollinationsHeaderHtml() +
                     htmlWithMeta.slice(insertAt),
             );
         })
@@ -1042,12 +960,6 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
-        .get("/guides", (c) => c.html(guidesIndexHtml(c)))
-        .get("/guides/:id", (c) => {
-            const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
-            if (!guide) return c.text("Guide not found", 404);
-            return c.html(guideHtml(c, guide));
-        })
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {
@@ -1056,4 +968,13 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             }
             return c.json(merged);
         });
+    // The standalone guide pages moved into the Scalar reference as tag
+    // sections; keep their old URLs redirecting so shared links survive.
+    routes.get("/guides", (c) => c.redirect("/docs", 301));
+    routes.get("/guides/:id", (c) => {
+        const tag = GUIDE_REDIRECT_TAGS[c.req.param("id")];
+        if (!tag) return c.text("Guide not found", 404);
+        return c.redirect(`/docs#tag/${tag}`, 301);
+    });
+    return routes;
 }

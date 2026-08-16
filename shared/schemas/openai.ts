@@ -324,7 +324,7 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         reasoning_effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
             )
@@ -516,13 +516,36 @@ export const CreateResponseResponseSchema = z
     .object({
         id: z.string(),
         object: z.literal("response"),
-        created_at: z.number().optional(),
+        created_at: z.number().int(),
+        completed_at: z.number().int().nullable(),
         model: z.string(),
         output: z.array(ResponseOutputItemSchema),
         output_text: z.string().optional(),
-        status: z.string().optional(),
+        status: z.string(),
+        incomplete_details: z.any().nullable(),
         error: z.any().nullish(),
-        usage: ResponseUsageSchema.optional(),
+        instructions: z.string().nullable(),
+        metadata: z.record(z.string(), z.any()),
+        parallel_tool_calls: z.boolean(),
+        tool_choice: z.any(),
+        tools: z.array(z.record(z.string(), z.any())),
+        temperature: z.number(),
+        top_p: z.number(),
+        frequency_penalty: z.number(),
+        presence_penalty: z.number(),
+        top_logprobs: z.number().int(),
+        max_output_tokens: z.number().int().nullable(),
+        max_tool_calls: z.number().int().nullable(),
+        previous_response_id: z.string().nullable(),
+        store: z.boolean(),
+        background: z.boolean(),
+        reasoning: z.record(z.string(), z.any()).nullable(),
+        text: z.record(z.string(), z.any()),
+        truncation: z.literal("disabled"),
+        service_tier: z.string(),
+        safety_identifier: z.string().nullable(),
+        prompt_cache_key: z.string().nullable(),
+        usage: ResponseUsageSchema.nullable(),
     })
     .passthrough()
     .meta({ $id: "CreateResponseResponse" });
@@ -613,9 +636,14 @@ const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -655,6 +683,13 @@ const imageQualityField = z
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
+const imageResolutionField = z
+    .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -683,10 +718,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
-        resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
-            description:
-                "Output resolution for resolution-priced video models (Pollinations extension)",
-        }),
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -748,6 +780,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough()

@@ -340,25 +340,45 @@ function baseResponse(
         id,
         object: "response",
         created_at: createdAt,
+        completed_at: null,
         model,
         status: "completed",
+        incomplete_details: null,
         error: null,
         output: [],
         instructions: request.instructions ?? null,
         metadata: request.metadata || {},
         parallel_tool_calls: request.parallel_tool_calls ?? true,
         tool_choice: request.tool_choice ?? "auto",
-        tools: request.tools || [],
+        tools: (request.tools || []).map((tool) => ({
+            ...tool,
+            description:
+                typeof tool.description === "string" ? tool.description : null,
+            parameters: isObject(tool.parameters) ? tool.parameters : null,
+            strict: typeof tool.strict === "boolean" ? tool.strict : null,
+        })),
         temperature: request.temperature ?? 1,
         top_p: request.top_p ?? 1,
         frequency_penalty: request.frequency_penalty ?? 0,
         presence_penalty: request.presence_penalty ?? 0,
+        top_logprobs: 0,
         max_output_tokens: request.max_output_tokens ?? null,
+        max_tool_calls: null,
         previous_response_id: null,
         store: false,
         background: false,
-        reasoning: request.reasoning || null,
+        reasoning: request.reasoning
+            ? {
+                  effort: request.reasoning.effort ?? null,
+                  summary: null,
+              }
+            : null,
         text: request.text || { format: { type: "text" } },
+        truncation: "disabled",
+        service_tier: "default",
+        safety_identifier: null,
+        prompt_cache_key: null,
+        usage: null,
     };
 }
 
@@ -379,6 +399,7 @@ export function chatCompletionToResponse(
         completion.model || request.model,
         createdAt,
     );
+    response.completed_at = Math.floor(Date.now() / 1000);
     const message = choice.message;
     const output: (JsonObject & { type: string })[] = [];
     if (typeof message.content === "string") {
@@ -421,7 +442,8 @@ export function chatCompletionToResponse(
         }
     }
     response.output = output;
-    response.usage = chatUsageToResponse(completion.usage) as never;
+    response.usage = (chatUsageToResponse(completion.usage) ??
+        null) as CreateResponseResponse["usage"];
     if (choice.finish_reason === "length") {
         response.status = "incomplete";
         response.incomplete_details = { reason: "max_output_tokens" };
@@ -534,7 +556,9 @@ export function chatCompletionStreamToResponseStream(
                     failed = true;
                     response.status = "failed";
                     response.error = error;
-                    emit(controller, "error", error);
+                    emit(controller, "error", {
+                        error: { type: "server_error", ...error },
+                    });
                     return;
                 }
                 if (isObject(chunk.error)) {
@@ -542,10 +566,14 @@ export function chatCompletionStreamToResponseStream(
                     response.status = "failed";
                     response.error = chunk.error;
                     emit(controller, "error", {
-                        code: chunk.error.code || "server_error",
-                        message:
-                            chunk.error.message || "Upstream streaming error",
-                        param: chunk.error.param || null,
+                        error: {
+                            type: "server_error",
+                            code: chunk.error.code || "server_error",
+                            message:
+                                chunk.error.message ||
+                                "Upstream streaming error",
+                            param: chunk.error.param || null,
+                        },
                     });
                     return;
                 }
@@ -691,7 +719,9 @@ export function chatCompletionStreamToResponseStream(
                     .sort((a, b) => a.outputIndex - b.outputIndex)
                     .map(({ item }) => item);
                 response.output_text = text;
-                response.usage = usage as never;
+                response.usage = (usage ??
+                    null) as CreateResponseResponse["usage"];
+                response.completed_at = Math.floor(Date.now() / 1000);
                 if (failed) {
                     emit(controller, "response.failed", { response });
                 } else {
@@ -713,6 +743,9 @@ export function chatCompletionStreamToResponseStream(
                         emit(controller, "response.completed", { response });
                     }
                 }
+                controller.enqueue(
+                    new TextEncoder().encode("data: [DONE]\n\n"),
+                );
             },
         }),
     );

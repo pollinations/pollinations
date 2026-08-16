@@ -485,6 +485,17 @@ export const Models: FC = () => {
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>Agent pricing</strong> — rates apply to
+                                each base-model call. Agents can make multiple
+                                calls; Pollinations tool calls use the selected
+                                model&apos;s listed price.
+                            </span>
+                        </p>
+                    )}
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>

@@ -1,3 +1,4 @@
+import { BotIcon, ChatIcon, ImageIcon } from "@pollinations/ui";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -28,6 +29,7 @@ import {
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
+import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 
 const getCatalogModelPrices = () =>
@@ -294,17 +296,24 @@ test("catalog models resolve brand logo SVG assets", () => {
     expect(missingLogos).toEqual([]);
 });
 
-test("community models use the community logo regardless of provider brand", () => {
-    expect(
-        getModelBrandLogoPath({
-            name: "owner/model",
-            type: "text",
-            community: true,
-            brand: "Custom Provider",
-            capabilities: [],
-            prices: [],
-        }),
-    ).toBe("/brand-logos/community.svg");
+test("community models use their model type icon instead of a provider logo", () => {
+    const communityModel = {
+        name: "owner/model",
+        type: "text" as const,
+        community: true,
+        brand: "Custom Provider",
+        capabilities: [],
+        prices: [],
+    };
+
+    expect(getModelBrandLogoPath(communityModel)).toBeUndefined();
+    expect(getCommunityModelIcon(communityModel)).toBe(ChatIcon);
+    expect(getCommunityModelIcon({ ...communityModel, type: "image" })).toBe(
+        ImageIcon,
+    );
+    expect(getCommunityModelIcon({ ...communityModel, agent: true })).toBe(
+        BotIcon,
+    );
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {

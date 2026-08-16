@@ -124,20 +124,18 @@ async function loadMcpTools(
                     type: "http",
                     url: server.url,
                     headers: server.headers,
-                    fetch: async (input, init) => {
-                        const response = await globalThis.fetch.call(
-                            globalThis,
-                            input,
-                            { ...init, redirect: "manual" },
-                        );
-                        if (response.status >= 300 && response.status < 400) {
-                            await response.body?.cancel();
-                            throw new Error(
-                                "MCP server redirects are not allowed",
-                            );
-                        }
-                        return response;
-                    },
+                    // The redirect override is required, not optional: the MCP
+                    // client asks for redirect "error", which workerd rejects
+                    // outright ("must be one of follow or manual"). We follow
+                    // them — refusing bought little, since a hostile server can
+                    // proxy anywhere without a redirect and the config-time host
+                    // blocklist is the real SSRF control, while redirects are
+                    // ordinary (trailing slashes, http->https, moved paths).
+                    fetch: async (input, init) =>
+                        globalThis.fetch.call(globalThis, input, {
+                            ...init,
+                            redirect: "follow",
+                        }),
                 },
             });
             clients.push(client);

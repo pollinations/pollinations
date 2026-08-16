@@ -27,7 +27,6 @@ export type AuthVariables = {
     auth: {
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
-        requireAuthorization: () => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
         agentRun?: AgentRunClaims;
@@ -57,14 +56,6 @@ function installAuth(
     },
 ): void {
     const { user, apiKey, agentRun } = authResult;
-
-    const requireAuthorization = async (): Promise<void> => {
-        if (!user) {
-            throw new HTTPException(401, {
-                message: AUTHENTICATION_REQUIRED_MESSAGE,
-            });
-        }
-    };
 
     const requireUser = (): AuthUser => {
         if (!user) {
@@ -101,7 +92,6 @@ function installAuth(
     c.set("auth", {
         user,
         apiKey,
-        requireAuthorization,
         requireUser,
         requireModelAccess,
         ...(agentRun && { agentRun }),

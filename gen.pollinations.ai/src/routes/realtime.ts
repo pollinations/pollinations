@@ -1332,7 +1332,6 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    await c.var.auth.requireAuthorization();
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;

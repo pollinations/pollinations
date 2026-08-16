@@ -17,11 +17,8 @@ export type TinybirdEvent = {
     requestId: string;
     // Set on generations made with a run token: the requestId of the call that
     // minted it. Groups one agent call's model steps and tool calls; the parent
-    // row is free, so cost is the sum over its children.
+    // row is free, so a run costs the sum over its children.
     parentRequestId?: string;
-    // Denormalized from the same token: a materialized view sees only the block
-    // being inserted, so it cannot join a child row back to its parent.
-    agentId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;

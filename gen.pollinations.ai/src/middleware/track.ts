@@ -184,7 +184,6 @@ export const track = (eventType: EventType) =>
             // Verified claims, never a header — the run token is the only
             // channel that crosses the hop.
             parentRequestId: c.var.auth.agentRun?.parentRequestId,
-            agentId: c.var.auth.agentRun?.managedAgentId,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
@@ -850,7 +849,6 @@ type UserData = {
     userId?: string;
     userTier?: string;
     parentRequestId?: string;
-    agentId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;

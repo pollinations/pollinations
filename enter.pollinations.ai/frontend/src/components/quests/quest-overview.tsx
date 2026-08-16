@@ -8,6 +8,7 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    Input,
     Markdown,
     RocketIcon,
     SearchIcon,
@@ -42,6 +43,7 @@ type QuestReward = {
     balanceBucket: string;
     earnedAt: string;
     claimedAt: string | null;
+    url?: string | null;
 };
 
 type QuestOverviewProps = Record<string, never>;
@@ -118,6 +120,13 @@ const CATEGORIES: CategoryMeta[] = [
 
 function issueNumberFromId(id: string): number | null {
     const match = /^github:issue:(\d+)$/.exec(id);
+    return match ? Number(match[1]) : null;
+}
+
+function githubNumberFromUrl(url: string | null | undefined): number | null {
+    const match = url?.match(
+        /github\.com\/[^/]+\/[^/]+\/(?:issues|pull)\/(\d+)/,
+    );
     return match ? Number(match[1]) : null;
 }
 
@@ -589,6 +598,9 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    const [couponCode, setCouponCode] = useState("");
+    const [couponMessage, setCouponMessage] = useState<string | null>(null);
+    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -705,6 +717,51 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
     }
 
+    async function handleRedeemCoupon(): Promise<void> {
+        const code = couponCode.trim();
+        if (!code || redeemingCoupon) return;
+
+        setRedeemingCoupon(true);
+        setCouponMessage(null);
+        try {
+            const response = await apiClient.quests.coupons.redeem.$post({
+                json: { code },
+            });
+            if (!response.ok) {
+                const message =
+                    response.status === 404
+                        ? "Quest code not found."
+                        : response.status === 409
+                          ? "You already redeemed this quest code."
+                          : "Could not redeem this quest code.";
+                throw new Error(message);
+            }
+
+            const result = (await response.json()) as {
+                pollenAmount: number;
+            };
+            const questData = await loadQuestData();
+            setState((current) => ({
+                ...current,
+                ...questData,
+                checking: false,
+                loading: false,
+            }));
+            setCouponCode("");
+            setCouponMessage(
+                `${formatRewardAmount(result.pollenAmount)} Quest Pollen added to your wallet.`,
+            );
+        } catch (error) {
+            setCouponMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not redeem this quest code.",
+            );
+        } finally {
+            setRedeemingCoupon(false);
+        }
+    }
+
     // A reward's questId IS the catalog id it earned (one reward == one quest),
     // so the earned-set / reward lookup key directly off questId.
     const rewardedCatalogIds = useMemo(
@@ -783,6 +840,29 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
+
+    // Rewards created by a maintainer or another non-catalog source still need
+    // their own claim control. This is deliberately derived from the ledger —
+    // no synthetic catalog entry or special balance path.
+    const bonusRewardCards = useMemo(() => {
+        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
+        return state.rewards
+            .filter(
+                (reward) =>
+                    reward.questId == null || !catalogIds.has(reward.questId),
+            )
+            .map<QuestCard>((reward) => ({
+                key: reward.id,
+                rewardId: reward.id,
+                title: reward.title,
+                url: reward.url ?? undefined,
+                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                reward: reward.pollenAmount,
+                balanceBucket: reward.balanceBucket,
+                status: reward.claimedAt ? "claimed" : "claimable",
+                earnedAmount: reward.pollenAmount,
+            }));
+    }, [state.catalog, state.rewards]);
 
     // Logged-out totals for the summary cards: across every available quest
     // shown (coming_soon excluded), how many there are and the pollen on offer,
@@ -966,6 +1046,45 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 </span>
                             </div>
                         )}
+                        <div className="mt-4 border-t border-divider pt-4">
+                            <p className="mb-2 text-sm font-semibold text-theme-text-soft">
+                                Have a quest code?
+                            </p>
+                            <form
+                                className="flex max-w-md gap-2"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    void handleRedeemCoupon();
+                                }}
+                            >
+                                <Input
+                                    aria-label="Quest code"
+                                    value={couponCode}
+                                    onChange={(event) => {
+                                        setCouponCode(event.target.value);
+                                        setCouponMessage(null);
+                                    }}
+                                    placeholder="Enter code"
+                                    autoCapitalize="characters"
+                                    className="flex-1"
+                                    disabled={redeemingCoupon}
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        redeemingCoupon ||
+                                        couponCode.trim().length === 0
+                                    }
+                                >
+                                    {redeemingCoupon ? "Redeeming…" : "Redeem"}
+                                </Button>
+                            </form>
+                            {couponMessage && (
+                                <p className="mt-2 text-[13px] text-theme-text-muted">
+                                    {couponMessage}
+                                </p>
+                            )}
+                        </div>
                     </>
                 )}
                 {/* Logged-out summary: the same two-card pair, but the numbers are
@@ -1063,6 +1182,39 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             )}
 
             <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
+                {bonusRewardCards.length > 0 && (
+                    <Section
+                        title="Bonus rewards"
+                        framed
+                        panelClassName="flex flex-col gap-2"
+                        action={
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                className="tabular-nums"
+                            >
+                                {
+                                    bonusRewardCards.filter(
+                                        (card) => card.status === "claimed",
+                                    ).length
+                                }{" "}
+                                / {bonusRewardCards.length}
+                            </Chip>
+                        }
+                    >
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={
+                                    state.claimingRewardId === card.rewardId
+                                }
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </Section>
+                )}
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
                     if (cards.length === 0) return null;

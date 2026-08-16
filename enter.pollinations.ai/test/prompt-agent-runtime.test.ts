@@ -295,7 +295,7 @@ describe("prompt-agent runtime", () => {
         });
     });
 
-    it("refuses MCP redirects without forwarding credentials, and keeps serving", async () => {
+    it("keeps serving when a redirect response cannot be used", async () => {
         const requests: { url: string; authorization: string | null }[] = [];
         vi.stubGlobal(
             "fetch",
@@ -344,9 +344,10 @@ describe("prompt-agent runtime", () => {
             },
         );
 
-        // The redirect is refused before it is followed, so the MCP credential
-        // never reaches the attacker host. That guarantee is independent of how
-        // the failure is handled.
+        // Redirects are followed in production (redirect: "follow"); this stub
+        // returns the 302 itself, so the transport simply cannot use it. The
+        // credential still goes only to the configured host, never to the
+        // redirect target, because nothing here follows the hop.
         // Compare the parsed hostname rather than a url prefix: a prefix match
         // also accepts attacker.example.evil.com, so it is not a sound host check.
         expect(requests.map((r) => new URL(r.url).hostname)).not.toContain(

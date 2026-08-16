@@ -63,6 +63,12 @@
     --color-intent-news-bg-light:   var(--polli-color-news-bg-light);
     --color-intent-news-text:       var(--polli-color-news-text);
 
+    --color-intent-new-bg-light:    var(--polli-color-new-bg-light);
+    --color-intent-new-text:        var(--polli-color-new-text);
+
+    --color-intent-free-bg-light:   var(--polli-color-free-bg-light);
+    --color-intent-free-text:       var(--polli-color-free-text);
+
     --color-intent-alpha-bg-light:  var(--polli-color-alpha-bg-light);
     --color-intent-alpha-text:      var(--polli-color-alpha-text);
 

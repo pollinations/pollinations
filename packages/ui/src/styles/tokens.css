@@ -134,9 +134,15 @@
     --polli-color-info-bg-light:    oklch(0.935 0.04 252);
     --polli-color-info-bg-hover:    oklch(0.88 0.05 252);
     --polli-color-info-text:        oklch(0.5 0.15 252);
-    /* LABELS — news / alpha */
+    /* LABELS — news / new / free / alpha. New and Free reuse established
+       status hues through semantic aliases: New is attention-red; Free is
+       informational-blue. */
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
+    --polli-color-new-bg-light:     var(--polli-color-danger-bg-light);
+    --polli-color-new-text:         var(--polli-color-danger-text);
+    --polli-color-free-bg-light:    var(--polli-color-info-bg-light);
+    --polli-color-free-text:        var(--polli-color-info-text);
     --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
     --polli-color-alpha-text:       oklch(0.42 0.18 300);
 }
@@ -331,6 +337,10 @@
     --color-intent-info-text:        var(--polli-color-info-text);
     --color-intent-news-bg-light:    var(--polli-color-news-bg-light);
     --color-intent-news-text:        var(--polli-color-news-text);
+    --color-intent-new-bg-light:     var(--polli-color-new-bg-light);
+    --color-intent-new-text:         var(--polli-color-new-text);
+    --color-intent-free-bg-light:    var(--polli-color-free-bg-light);
+    --color-intent-free-text:        var(--polli-color-free-text);
     --color-intent-alpha-bg-light:   var(--polli-color-alpha-bg-light);
     --color-intent-alpha-text:       var(--polli-color-alpha-text);
 

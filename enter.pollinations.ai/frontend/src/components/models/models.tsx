@@ -378,7 +378,7 @@ export const Models: FC = () => {
                                         <span className="inline-flex items-center gap-1.5">
                                             {sectionLabels[section]}
                                             {showAgentsNew && (
-                                                <Chip intent="news" size="sm">
+                                                <Chip intent="new" size="sm">
                                                     New
                                                 </Chip>
                                             )}
@@ -487,13 +487,15 @@ export const Models: FC = () => {
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">
-                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong className="text-theme-text-soft">
-                                    agent pricing
-                                </strong>{" "}
-                                — agents may make multiple model calls. Each is
-                                billed at that model&apos;s listed price.
+                                <strong>agent pricing</strong> — shown rates are
+                                for the agent&apos;s base model. An agent may
+                                make several model calls per request, including
+                                Pollinations tools for generating text, images,
+                                video, audio, 3D, or embeddings. Each call is
+                                billed separately at the selected model&apos;s
+                                listed price.
                             </span>
                         </p>
                     )}
@@ -522,7 +524,7 @@ export const Models: FC = () => {
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             <strong>gen /pollen</strong> — how many generations
-                            you can make with 1 Pollen, estimated from average
+                            you can make with 1 pollen, estimated from average
                             usage over the last 7 days.
                         </span>
                     </p>

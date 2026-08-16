@@ -8,7 +8,6 @@ const BRAND_LOGOS: Record<string, string> = {
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
     Cohere: "cohere",
-    Community: "community",
     Deemos: "deemos",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
@@ -58,7 +57,7 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return "/brand-logos/community.svg";
+    if (model.community) return undefined;
     const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

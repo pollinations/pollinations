@@ -1,14 +1,13 @@
-import { Chip, Tooltip } from "@pollinations/ui";
+import { Chip, cn, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 
-export type BalanceAccess = "quest" | "paid";
+export type BalanceAccess = "quest" | "paid" | "free";
 
 type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
     alphaTooltip?: boolean;
-    perUserRpm?: number | null;
 };
 
 type BalanceAccessChipProps = {
@@ -20,24 +19,15 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
     alphaTooltip = true,
-    perUserRpm,
 }) => {
-    if (!showNew && !showAlpha && perUserRpm == null) {
-        return null;
-    }
+    if (!showNew && !showAlpha) return null;
 
-    const rate =
-        perUserRpm == null
-            ? undefined
-            : {
-                  label: `${perUserRpm} RPM/user`,
-                  tooltip: `Per-user rate limit: ${perUserRpm} requests per minute.`,
-              };
+    const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
     return (
         <span className="inline-flex shrink-0 items-center gap-1.5">
             {showNew && (
-                <Chip intent="news" size="sm">
+                <Chip intent="new" size="sm">
                     New
                 </Chip>
             )}
@@ -45,7 +35,15 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                 (alphaTooltip ? (
                     <Tooltip
                         triggerAs="span"
-                        content="Alpha model — experimental, may be unstable"
+                        content={
+                            <span>
+                                <strong className="font-semibold text-theme-text-strong">
+                                    Alpha model
+                                </strong>{" "}
+                                — experimental, may be unstable
+                            </span>
+                        }
+                        ariaLabel={alphaTooltipLabel}
                         displayContents
                     >
                         <Chip intent="alpha" size="sm">
@@ -57,18 +55,52 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                         Alpha
                     </Chip>
                 ))}
-            {rate && (
-                <Tooltip
-                    triggerAs="span"
-                    content={rate.tooltip}
-                    displayContents
-                >
-                    <Chip intent="neutral" size="sm">
-                        {rate.label}
-                    </Chip>
-                </Tooltip>
-            )}
         </span>
+    );
+};
+
+export const ModelRateValue: FC<{
+    value: string | number;
+    unit: string;
+    valueClassName?: string;
+}> = ({ value, unit, valueClassName }) => (
+    <span className="pointer-events-auto inline-flex items-baseline gap-1 whitespace-nowrap">
+        <span
+            className={cn(
+                "text-sm font-semibold leading-none tabular-nums text-theme-text-strong",
+                valueClassName,
+            )}
+        >
+            {value}
+        </span>
+        <span className="text-xs font-normal text-theme-text-muted">
+            {unit}
+        </span>
+    </span>
+);
+
+export const PerUserRateLimit: FC<{ value?: number | null }> = ({ value }) => {
+    if (value == null) return null;
+
+    const tooltipLabel = `Limit per user: ${value} requests per minute.`;
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span>
+                    Limit per user:{" "}
+                    <strong className="font-semibold text-theme-text-strong">
+                        {value} requests per minute
+                    </strong>
+                    .
+                </span>
+            }
+            ariaLabel={tooltipLabel}
+            className="pointer-events-auto shrink-0"
+            displayContents
+        >
+            <ModelRateValue value={value} unit="req /minute" />
+        </Tooltip>
     );
 };
 
@@ -76,13 +108,50 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
     access,
     className,
 }) => {
+    const tooltipLabel =
+        access === "free"
+            ? "This model is free to use."
+            : access === "paid"
+              ? "Paid pollen only."
+              : "Uses Quest pollen first, then Paid pollen if needed.";
     const tooltipContent =
-        access === "paid"
-            ? "Paid Pollen only."
-            : "Uses Quest Pollen first, then Paid Pollen if needed.";
+        access === "free" ? (
+            <span>
+                This model is{" "}
+                <strong className="font-semibold text-theme-text-strong">
+                    free
+                </strong>{" "}
+                to use.
+            </span>
+        ) : access === "paid" ? (
+            <span className="inline-flex flex-wrap items-center gap-1">
+                <WalletKindIcon kind="paid" />
+                <strong className="font-semibold text-theme-text-strong">
+                    Paid pollen
+                </strong>{" "}
+                only.
+            </span>
+        ) : (
+            <span className="inline-flex flex-wrap items-center gap-1">
+                Uses <WalletKindIcon kind="tier" />
+                <strong className="font-semibold text-theme-text-strong">
+                    Quest pollen
+                </strong>{" "}
+                first, then <WalletKindIcon kind="paid" />
+                <strong className="font-semibold text-theme-text-strong">
+                    Paid pollen
+                </strong>{" "}
+                if needed.
+            </span>
+        );
 
     const chip =
-        access === "paid" ? (
+        access === "free" ? (
+            <Chip intent="free" size="sm" className={className}>
+                <SparklesIcon className="h-3.5 w-3.5 shrink-0" />
+                Free
+            </Chip>
+        ) : access === "paid" ? (
             <PaidChip size="sm" className={className}>
                 <WalletKindIcon kind="paid" />
                 Paid
@@ -98,7 +167,8 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
         <Tooltip
             triggerAs="span"
             content={tooltipContent}
-            ariaLabel={tooltipContent}
+            ariaLabel={tooltipLabel}
+            maxWidth={340}
             className="pointer-events-auto shrink-0"
             displayContents
         >

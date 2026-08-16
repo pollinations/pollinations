@@ -7,10 +7,14 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
+import {
+    agentRuntimeRoutes,
+    POLLINATIONS_MCP_URL,
+} from "../src/routes/agent-runtime.ts";
 import { PromptAgentSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
+    isMissingHttpTransport,
     type PromptAgentRequest,
     PromptAgentRuntimeRequestSchema,
 } from "../src/services/prompt-agent-runtime.ts";
@@ -29,6 +33,15 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     genBaseUrl: "https://gen.test.example",
     pollinationsMcpUrl: "https://mcp.pollinations.test/",
 };
+
+describe("built-in Pollinations MCP endpoint", () => {
+    // Runtime tests mock whichever URL they receive, so assert the real hosted
+    // transport URL directly to keep the agent and MCP Worker in sync.
+    it("points at the root transport URL", () => {
+        expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai");
+        expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/");
+    });
+});
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
@@ -291,19 +304,31 @@ describe("prompt-agent runtime", () => {
         });
     });
 
-    it("rejects MCP redirects without forwarding credentials", async () => {
+    it("keeps serving when a redirect response cannot be used", async () => {
         const requests: { url: string; authorization: string | null }[] = [];
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url.startsWith("https://mcp.example.com/")) {
+                    requests.push({
+                        url: request.url,
+                        authorization: request.headers.get("Authorization"),
+                    });
+                    return new Response(null, {
+                        status: 302,
+                        headers: { Location: "https://attacker.example/mcp" },
+                    });
+                }
                 requests.push({
                     url: request.url,
                     authorization: request.headers.get("Authorization"),
                 });
-                return new Response(null, {
-                    status: 302,
-                    headers: { Location: "https://attacker.example/mcp" },
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "no tools" } },
+                    ],
+                    usage: { prompt_tokens: 2, completion_tokens: 2 },
                 });
             }),
         );
@@ -328,14 +353,24 @@ describe("prompt-agent runtime", () => {
             },
         );
 
-        expect(response.status).toBe(502);
-        expect(requests.length).toBeGreaterThan(0);
-        expect(requests).toEqual(
-            requests.map(() => ({
-                url: "https://mcp.example.com/rpc",
-                authorization: "Bearer mcp-secret",
-            })),
+        // Redirects are followed in production (redirect: "follow"); this stub
+        // returns the 302 itself, so the transport simply cannot use it. The
+        // credential still goes only to the configured host, never to the
+        // redirect target, because nothing here follows the hop.
+        // Compare the parsed hostname rather than a url prefix: a prefix match
+        // also accepts attacker.example.evil.com, so it is not a sound host check.
+        expect(requests.map((r) => new URL(r.url).hostname)).not.toContain(
+            "attacker.example",
         );
+        expect(
+            requests.filter((r) => r.url === "https://mcp.example.com/rpc")
+                .length,
+        ).toBeGreaterThan(0);
+        // The server drops out rather than failing the request: the agent answers
+        // without its tools.
+        const body = await response.text();
+        expect(response.status, body).toBe(200);
+        expect(JSON.parse(body).choices[0].message.content).toBe("no tools");
     });
 
     it.each([
@@ -501,9 +536,25 @@ describe("prompt-agent runtime", () => {
     });
 
     it("does not fall back to SSE on MCP auth errors", async () => {
+        // Only 400/404/405 mean "maybe a legacy SSE endpoint". A 401 is a real
+        // answer from a Streamable HTTP server, so it must not trigger a retry —
+        // and per-server isolation means the agent still answers without it.
+        const mcpAttempts: string[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => new Response("Unauthorized", { status: 401 })),
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url.startsWith("https://mcp.example.com/")) {
+                    mcpAttempts.push(request.method);
+                    return new Response("Unauthorized", { status: 401 });
+                }
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "no tools" } },
+                    ],
+                    usage: { prompt_tokens: 2, completion_tokens: 2 },
+                });
+            }),
         );
 
         const response = await runAgent(
@@ -523,12 +574,24 @@ describe("prompt-agent runtime", () => {
             },
         );
 
-        expect(response.status).toBe(502);
-        // The Streamable HTTP error propagates instead of an SSE retry error.
-        const body = (await response.json()) as {
-            error: { message: string };
-        };
-        expect(body.error.message).toContain("POSTing to endpoint (HTTP 401)");
+        const body = await response.text();
+        expect(response.status, body).toBe(200);
+        expect(JSON.parse(body).choices[0].message.content).toBe("no tools");
+        // A GET here is HttpMCPTransport's own inbound SSE stream, not a retry,
+        // so the retry decision is asserted directly on the predicate below.
+        expect(mcpAttempts.length).toBeGreaterThan(0);
+    });
+    it("only retries as SSE for the back-compat status codes", () => {
+        const withStatus = (statusCode: number) =>
+            Object.assign(new Error("boom"), { statusCode });
+        for (const code of [400, 404, 405]) {
+            expect(isMissingHttpTransport(withStatus(code))).toBe(true);
+        }
+        for (const code of [401, 403, 429, 500, 502]) {
+            expect(isMissingHttpTransport(withStatus(code))).toBe(false);
+        }
+        expect(isMissingHttpTransport(new Error("no status"))).toBe(false);
+        expect(isMissingHttpTransport("not an error")).toBe(false);
     });
 
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
@@ -809,6 +872,55 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(200);
         expect(mcpToolCalls).toBe(16);
         expect(body.usage.tool_call_counts.mcp_call).toBe(17);
+    });
+
+    it("keeps running when an MCP server fails to load", async () => {
+        // A user can save any MCP url and third-party servers go down; losing one
+        // server's tools must not take down the whole agent request.
+        let modelCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === "https://mcp.broken.example/sse") {
+                    return new Response("Method Not Allowed", { status: 405 });
+                }
+                modelCalls++;
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "still here",
+                            },
+                        },
+                    ],
+                    usage: { prompt_tokens: 3, completion_tokens: 2 },
+                });
+            }),
+        );
+
+        const res = await runAgent(
+            { messages: [{ role: "user", content: "hi" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        {
+                            name: "websearch",
+                            url: "https://mcp.broken.example/sse",
+                            headers: [],
+                        },
+                    ],
+                },
+            },
+        );
+
+        const text = await res.text();
+        expect(res.status, text).toBe(200);
+        expect(modelCalls).toBeGreaterThan(0);
+        expect(JSON.parse(text).choices[0].message.content).toBe("still here");
     });
 
     it("passes the caller token only to the built-in Pollinations MCP", async () => {

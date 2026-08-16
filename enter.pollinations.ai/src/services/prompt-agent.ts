@@ -15,9 +15,10 @@ const McpServerUrlSchema = z
         }
     }, "MCP server URL must use https and target a public host")
     .transform((value) => {
-        // The transport POSTs to this URL verbatim and redirects are blocked,
-        // so a trailing slash must survive normalization (e.g. Gradio's
-        // /gradio_api/mcp/http/ answers 307 without it).
+        // The transport POSTs to this URL verbatim, so a trailing slash must
+        // survive normalization: Gradio's /gradio_api/mcp/http/ answers 307
+        // without it. Redirects are followed now, so this saves a round trip
+        // rather than being load-bearing.
         const normalized = normalizeCommunityEndpointBaseUrl(value);
         return new URL(value).pathname.endsWith("/")
             ? `${normalized}/`

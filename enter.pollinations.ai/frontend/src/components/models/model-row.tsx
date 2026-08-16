@@ -3,7 +3,7 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import {
     AgentBasePricingLabel,
-    AgentModelMetadata,
+    AgentPricingNote,
 } from "./agent-model-metadata.tsx";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -50,9 +50,10 @@ export const ModelId: FC<ModelIdProps> = ({ name }) => (
         copiedTooltip="Copied model id"
         aria-label={`Copy model id ${name}`}
         tooltipAlign="start"
+        tooltipClassName="min-w-0 max-w-full"
         className={(copied) =>
             cn(
-                "pointer-events-auto flex min-w-0 cursor-pointer text-left font-mono text-xs font-medium transition-colors",
+                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
                 copied
                     ? "text-intent-success-text"
                     : "text-theme-text-muted hover:text-theme-text-soft",
@@ -63,7 +64,10 @@ export const ModelId: FC<ModelIdProps> = ({ name }) => (
     </CopyButton>
 );
 
-export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
+export const PerPollenEstimate: FC<{
+    model: ModelPrice;
+    inline?: boolean;
+}> = ({ model, inline = false }) => {
     const value = calculatePerPollen(model);
     const isFree = value === "∞";
     const isUnavailable = value === "—";
@@ -94,7 +98,12 @@ export const PerPollenEstimate: FC<{ model: ModelPrice }> = ({ model }) => {
 
     return (
         <Tooltip content={tooltip} displayContents>
-            <span className="pointer-events-auto inline-flex flex-col items-center gap-1 whitespace-nowrap">
+            <span
+                className={cn(
+                    "pointer-events-auto inline-flex items-center gap-1 whitespace-nowrap",
+                    !inline && "flex-col",
+                )}
+            >
                 <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                     {value}
                 </span>
@@ -213,7 +222,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
-                    <AgentModelMetadata model={model} />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -268,6 +276,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <div className="w-[clamp(320px,32%,360px)] shrink-0 px-3 py-3">
                 <AgentBasePricingLabel model={model} className="mb-1" />
                 <ModelPricingLedger pricing={pricing} />
+                <AgentPricingNote model={model} />
             </div>
         </Surface>
     );

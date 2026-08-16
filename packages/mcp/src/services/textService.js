@@ -266,7 +266,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). Use listModels with type=text",
+            "Canonical text model name or alias returned by listModels with type=text",
         ),
     temperature: z
         .number()
@@ -406,7 +406,7 @@ const chatParamsSchema = {
 export const textTools = [
     [
         "generateText",
-        "Call POST /v1/chat/completions for text, search, multimodal input, tool calling, structured output, reasoning, or audio output.",
+        "Run a completion through any text model in the live Pollinations registry. If the user requests a named model or provider, call listModels with type=text first and pass the matched canonical model name. Supports search, multimodal input, tool calling, structured output, reasoning, and audio output.",
         chatParamsSchema,
         generateText,
     ],

@@ -2,7 +2,7 @@ import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     AgentBasePricingLabel,
-    AgentModelMetadata,
+    AgentPricingNote,
 } from "./agent-model-metadata.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
@@ -238,14 +238,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 alphaTooltip={false}
                                 perUserRpm={model.perUserRpm}
                             />
-                            <span className="inline-flex shrink-0 items-center gap-1">
-                                <BalanceAccessChip
-                                    access={balanceAccess}
-                                    className="whitespace-nowrap"
-                                />
-                                <PerPollenEstimate model={model} />
-                            </span>
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
                         </div>
+                        <PerPollenEstimate model={model} inline />
                     </div>
                     <ChevronIcon
                         expanded={expanded}
@@ -283,13 +281,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
-                        <AgentModelMetadata model={model} />
                         <AgentBasePricingLabel model={model} />
                         <ModelPricingControls model={model} pricing={pricing} />
                         <ModelPricingLedger
                             pricing={pricing}
                             className="w-full"
                         />
+                        <AgentPricingNote model={model} />
                     </div>
                 </div>
             )}

@@ -1,5 +1,6 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { getLogger } from "@logtape/logtape";
 import {
     APICallError,
     type FinishReason,
@@ -12,6 +13,8 @@ import type {
     PromptAgentConfig,
     PromptAgentMcpHeaders,
 } from "./prompt-agent.ts";
+
+const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
@@ -93,20 +96,21 @@ async function mcpTransportFetch(
     input: string | URL | Request,
     init?: RequestInit,
 ): Promise<Response> {
-    const response = await globalThis.fetch.call(globalThis, input, {
+    // The redirect override is required, not optional: the MCP client asks for
+    // redirect "error", which workerd rejects outright ("must be one of follow
+    // or manual"). We follow them — refusing bought little, since a hostile
+    // server can proxy anywhere without a redirect and the config-time host
+    // blocklist is the real SSRF control, while redirects are ordinary
+    // (trailing slashes, http->https, moved paths).
+    return globalThis.fetch.call(globalThis, input, {
         ...init,
-        redirect: "manual",
+        redirect: "follow",
     });
-    if (response.status >= 300 && response.status < 400) {
-        await response.body?.cancel();
-        throw new Error("MCP server redirects are not allowed");
-    }
-    return response;
 }
 
 // A 400/404/405 on the initialize POST means the URL may be a legacy HTTP+SSE
 // endpoint (e.g. Gradio's /gradio_api/mcp/sse), per the MCP back-compat flow.
-function isMissingHttpTransport(error: unknown): boolean {
+export function isMissingHttpTransport(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
     const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
     return statusCode === 400 || statusCode === 404 || statusCode === 405;
@@ -144,8 +148,11 @@ async function loadMcpTools(
             },
         });
 
-    try {
-        for (const server of servers) {
+    for (const server of servers) {
+        // Isolated per server: a broken MCP endpoint must not take down the whole
+        // agent. A user can save any url, and third-party servers go down; losing
+        // one server's tools is recoverable, losing the request is not.
+        try {
             let client: McpClient;
             try {
                 client = await connect(server, "http");
@@ -154,17 +161,34 @@ async function loadMcpTools(
                 client = await connect(server, "sse");
             }
             clients.push(client);
+            let loaded = 0;
             for (const [name, definition] of Object.entries(
                 await client.tools(),
             )) {
                 if (server.includeTools && !server.includeTools.includes(name))
                     continue;
                 tools[`mcp__${server.name}__${name}`] = definition;
+                loaded++;
             }
+            log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
+                name: server.name,
+                url: server.url,
+                tools: loaded,
+            });
+        } catch (error) {
+            // The agent route returns a Response rather than throwing, so Hono's
+            // onError never fires and nothing reaches error_event: this log is the
+            // only signal that a server dropped out.
+            log.error(
+                "MCP_SERVER_FAILED: name={name} url={url} error={error}",
+                {
+                    name: server.name,
+                    url: server.url,
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
         }
-    } catch (error) {
-        await close();
-        throw error;
     }
 
     return { tools, close };

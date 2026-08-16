@@ -1,0 +1,34 @@
+{
+  "pr_number": 13460,
+  "title": "fix: show agent pricing only in agent category",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13460",
+  "merged_at": "2026-08-16T14:19:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows the agent-specific pricing note only when the Agent category is selected.\n- Keeps the shared `/gen`, token, duration, and usage legends visible across model categories.\n- Fixes the unconditional footer rendering without adding state or new components.\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/frontend/src/components/models/models.tsx`\n- `npm run typecheck` in `enter.pollinations.ai`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Legends know their place",
+    "blurb": "The model picker footer stopped bringing agent-only pricing notes to every category party. Shared usage details still bloom exactly where they belong.",
+    "summary": "Fixed the models UI so the agent-specific pricing note renders only for the Agent category, while the shared /gen, token, duration, and usage legends remain visible across categories.",
+    "impact": "Users browsing image, text, audio, or other model categories now see the relevant shared pricing guidance without an unrelated agent pricing footer.",
+    "keywords": [
+      "models",
+      "pricing",
+      "agent",
+      "frontend",
+      "ui",
+      "legends"
+    ],
+    "visual_concept": "A cozy model-selection garden with clearly labeled category tabs; Polli, wearing tiny librarian glasses, gently moves an Agent-only price placard into a small Agent flowerbed while shared /gen, token, duration, and usage signs remain visible along every garden path.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny librarian glasses as she places an \"AGENT\" pricing sign only beside one labeled garden bed; shared little signs for \"/gen\", \"TOKENS\", \"DURATION\", and \"USAGE\" line all the other paths. Lime green (#ecf874) glows prominently among pastel flowers and code-plants, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13460.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny librarian glasses as she places an \"AGENT\" pricing sign only beside one labeled garden bed; shared little signs for \"/gen\", \"TOKENS\", \"DURATION\", and \"USAGE\" line all the other paths. Lime green (#ecf874) glows prominently among pastel flowers and code-plants, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-16T14:20:45.608550+00:00"
+}

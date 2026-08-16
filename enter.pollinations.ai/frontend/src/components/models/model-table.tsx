@@ -238,14 +238,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 alphaTooltip={false}
                                 perUserRpm={model.perUserRpm}
                             />
-                            <span className="inline-flex shrink-0 items-center gap-1">
-                                <BalanceAccessChip
-                                    access={balanceAccess}
-                                    className="whitespace-nowrap"
-                                />
-                                <PerPollenEstimate model={model} />
-                            </span>
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
                         </div>
+                        <PerPollenEstimate model={model} inline />
                     </div>
                     <ChevronIcon
                         expanded={expanded}

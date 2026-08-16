@@ -79,12 +79,16 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(401);
         await expect(response.json()).resolves.toMatchObject({
-            error: { code: "UNAUTHORIZED" },
+            error: {
+                code: "UNAUTHORIZED",
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+            },
         });
         await waitOnExecutionContext(ctx);
     });
 
-    it("tells callers when a provided API key is not recognized", async () => {
+    it("returns the same 401 message for an invalid API key", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(
@@ -104,7 +108,8 @@ describe("gen worker routing", () => {
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 code: "UNAUTHORIZED",
-                message: expect.stringContaining("Invalid API key"),
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
             },
         });
         await waitOnExecutionContext(ctx);

@@ -806,9 +806,11 @@ export function Authorize() {
                     href="https://pollinations.ai/terms"
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="Terms & Conditions"
                     className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
                 >
-                    Terms & Conditions
+                    <span className="sm:hidden">Terms</span>
+                    <span className="hidden sm:inline">Terms & Conditions</span>
                 </a>
                 <div className="flex gap-2">
                     <Button

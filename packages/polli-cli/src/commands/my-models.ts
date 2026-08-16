@@ -44,7 +44,7 @@ interface MyModel {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    visibility: "private" | "public";
+    visibility: "private" | "app" | "public";
     fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
@@ -92,8 +92,12 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (opts.visibility !== undefined) {
-        if (opts.visibility !== "private" && opts.visibility !== "public") {
-            fail("--visibility must be 'private' or 'public'");
+        if (
+            opts.visibility !== "private" &&
+            opts.visibility !== "app" &&
+            opts.visibility !== "public"
+        ) {
+            fail("--visibility must be 'private', 'app', or 'public'");
         }
         body.visibility = opts.visibility;
     }
@@ -191,7 +195,7 @@ const create = addPriceOptions(
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
-            "Model visibility: private (default) or public",
+            "Model visibility: private (default), app (callable by keys issued through your apps), or public",
         )
         .option(
             "--fallback-models <ids>",
@@ -231,7 +235,7 @@ const update = addPriceOptions(
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
-            "Model visibility: private or public",
+            "Model visibility: private, app, or public",
         )
         .option(
             "--fallback-models <ids>",

@@ -35,6 +35,7 @@ async function mintDelegatedToken(
     endpoint: CommunityEndpointRuntime,
     parentApiKeyId: string | undefined,
     secret: string,
+    parentRequestId?: string,
 ): Promise<string | undefined> {
     if (!isDelegatingEndpoint(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
@@ -50,6 +51,7 @@ async function mintDelegatedToken(
     return signAgentRunToken({
         secret,
         parentApiKeyId,
+        parentRequestId,
         runId: crypto.randomUUID(),
         managedAgentId:
             endpoint.kind === "agent" ? endpoint.agentId : undefined,
@@ -64,9 +66,15 @@ export async function communityEndpointGatewayContext(
     portkeyGatewayUrl: string,
     userApiKey: string,
     parentApiKeyId?: string,
+    parentRequestId?: string,
 ): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
-    const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
+    const runToken = await mintDelegatedToken(
+        endpoint,
+        parentApiKeyId,
+        secret,
+        parentRequestId,
+    );
     // A delegating endpoint is sent the run token instead of its saved bearer,
     // so it never receives a credential it could spend on the owner's account.
     // An agent has no saved bearer at all: mintDelegatedToken always returns a

@@ -122,6 +122,31 @@ test("preserves the managed agent scope", async () => {
     });
 });
 
+test("surfaces the parent request id, and stays valid without one", async () => {
+    const parent = await createTestApiKey({ user: { tierBalance: 100 } });
+
+    const tagged = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: "req-abc",
+        runId: crypto.randomUUID(),
+    });
+    const taggedBody = await (
+        await probe(authProbe, "https://gen.pollinations.ai/", tagged)
+    ).json();
+    expect(taggedBody).toMatchObject({
+        agentRun: { parentRequestId: "req-abc" },
+    });
+
+    // Tokens live for 30 minutes, so ones minted before this claim existed are
+    // still in flight at deploy: they must keep authenticating, just untagged.
+    const untagged = await runTokenFor(parent.id);
+    const untaggedBody = (await (
+        await probe(authProbe, "https://gen.pollinations.ai/", untagged)
+    ).json()) as { agentRun: { parentRequestId?: string } };
+    expect(untaggedBody.agentRun.parentRequestId).toBeUndefined();
+});
+
 test("agent run tokens can call community models but cannot recurse into agent models", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id);

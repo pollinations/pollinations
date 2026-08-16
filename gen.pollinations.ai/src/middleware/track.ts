@@ -181,6 +181,11 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
+            // Verified claims, never a header: the run token is the only channel
+            // that crosses the hop from an agent call into the generations it
+            // makes.
+            parentRequestId: c.var.auth.agentRun?.parentRequestId,
+            agentId: c.var.auth.agentRun?.managedAgentId,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
@@ -845,6 +850,8 @@ async function* asyncIteratorStream<T>(
 type UserData = {
     userId?: string;
     userTier?: string;
+    parentRequestId?: string;
+    agentId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;

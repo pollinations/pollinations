@@ -135,6 +135,7 @@ function gatewayContext(
         c.env.PORTKEY_GATEWAY_URL,
         c.var.auth?.apiKey?.rawKey || "",
         c.var.auth?.apiKey?.id,
+        c.get("requestId"),
     );
 }
 

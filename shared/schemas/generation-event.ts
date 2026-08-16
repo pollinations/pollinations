@@ -15,6 +15,15 @@ export type TinybirdEvent = {
 
     // Request
     requestId: string;
+    // Set only on generations a managed agent or delegating endpoint made with
+    // its run token: the requestId of the call that minted it. One agent call
+    // fans out into several generations - model steps and MCP tool calls - and
+    // this is what reassembles them. The parent's own row is free, so a run's
+    // cost is the sum over its children.
+    parentRequestId?: string;
+    // Which managed agent produced the call, denormalized from the run token so
+    // cost can be grouped by agent without joining a child back to its parent.
+    agentId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;

@@ -1030,6 +1030,7 @@ describe("community endpoint helpers", () => {
         async function contextFor(
             endpoint: CommunityEndpointRuntime,
             parentApiKeyId?: string,
+            parentRequestId = "parent-request-id",
         ) {
             return communityEndpointGatewayContext(
                 endpoint,
@@ -1039,6 +1040,7 @@ describe("community endpoint helpers", () => {
                 "https://portkey.test",
                 "sk_user_key",
                 parentApiKeyId,
+                parentRequestId,
             );
         }
 
@@ -1055,6 +1057,27 @@ describe("community endpoint helpers", () => {
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+        });
+
+        it("carries the parent request id so a run's generations can be grouped", async () => {
+            const endpoint = await agentEndpoint();
+            const context = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+
+            const claims = await verifyAgentRunToken(
+                String(context.modelConfig?.authKey),
+                secret,
+            );
+            // Every generation the endpoint makes with this token reports the
+            // request that minted it, which is what reassembles one agent call
+            // out of its model steps and tool calls.
+            expect(claims.parentRequestId).toBe("req-abc");
+            // Still a unique token id: one request can mint several tokens when
+            // a delegating fallback runs, and they must not share a jti.
+            expect(claims.runId).not.toBe("req-abc");
         });
 
         it("sends the saved bearer when the endpoint is not flagged", async () => {

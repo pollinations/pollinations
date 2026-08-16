@@ -501,7 +501,7 @@ export const Models: FC = () => {
                         <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
                         <span>
                             <strong className="text-theme-text-soft">
-                                Agent pricing
+                                agent pricing
                             </strong>{" "}
                             — Rates apply to each base-model call. Agents can
                             make multiple calls; Pollinations tool calls use the

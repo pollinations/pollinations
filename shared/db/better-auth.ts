@@ -248,9 +248,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   }),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext"),
-  // Models default to private (owner-only and free). Public visibility is
-  // allowlist-gated and may be free or owner-priced.
-  visibility: text("visibility", { enum: ["private", "public"] })
+  // Models default to private (owner-only and free). "app" is callable by the
+  // owner and by keys minted through the owner's app keys — open to every
+  // account, and owner-priced for external endpoints. "public" is
+  // allowlist-gated. Plain TEXT with no CHECK constraint: the enum below is a
+  // TypeScript refinement, so widening it needs no migration.
+  visibility: text("visibility", { enum: ["private", "app", "public"] })
     .default("private")
     .notNull(),
   perUserRpm: real("per_user_rpm"),

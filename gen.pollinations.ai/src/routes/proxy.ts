@@ -233,9 +233,10 @@ const modelsListHandler = (
     ] as const;
 
 async function getVisibleModelEntries(c: Context<Env>) {
-    return (await getGenerationModelRegistry(c.env)).visibleEntries(
-        c.var.auth?.user?.id,
-    );
+    return (await getGenerationModelRegistry(c.env)).visibleEntries({
+        callerUserId: c.var.auth?.user?.id,
+        appOwnerUserId: c.var.auth?.apiKey?.byopClientUserId,
+    });
 }
 
 async function getVisibleModelEntriesForEventType(

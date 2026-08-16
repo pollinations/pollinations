@@ -255,8 +255,14 @@ export function linkFallbackEntries(
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
                 if (targetEndpoint?.disabledAt != null) continue;
+                // Only a public target may serve another owner's traffic.
+                // Private and app targets are reachable through a fallback
+                // only for their own owner: linking runs at registry build
+                // time with no caller in scope, so there is no app-key identity
+                // here to test an app target against.
                 if (
-                    targetEndpoint?.visibility === "private" &&
+                    targetEndpoint &&
+                    targetEndpoint.visibility !== "public" &&
                     entry.communityEndpoint.ownerUserId !==
                         targetEndpoint.ownerUserId
                 ) {

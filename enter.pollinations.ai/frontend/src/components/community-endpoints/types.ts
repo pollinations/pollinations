@@ -100,7 +100,8 @@ export type ModelListingFormState = {
     title: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
-    // public → globally listed + billed to callers.
+    // app → callable by keys issued through the owner's apps, kept out of the
+    // public catalog, priced; public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     perUserRpm: string;
@@ -113,7 +114,8 @@ export type EndpointFormState = ModelListingFormState & {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
-    // Public community model ids, tried in the order listed.
+    // Community model ids, tried in the order listed. Each must be public or
+    // owned by the same account.
     fallbackModelIds: string[];
 } & EndpointFormPrices;
 
@@ -193,6 +195,7 @@ export const idleAction: ActionState = { status: "idle" };
 
 export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
     private: "Private",
+    app: "App",
     public: "Public",
 };
 
@@ -411,10 +414,10 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
-        // Private models carry no public pricing, so their fallbacks cannot be
+        // Private models carry no pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbackModelIds:
-            form.visibility === "public" ? form.fallbackModelIds : [],
+            form.visibility === "private" ? [] : form.fallbackModelIds,
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }

@@ -1,4 +1,8 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    type CommunityModelAccess,
+    canAccessCommunityModel,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -75,7 +79,7 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
+    visibleEntries: (access: CommunityModelAccess) => GenerationModelEntry[];
 };
 
 type CachedRegistry = {
@@ -140,8 +144,10 @@ function communityEntryToGenerationEntry(
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
         agentConfig: entry.agentConfig,
-        // Public endpoints appear for everyone. Private endpoints are added
-        // back for their owner by visibleEntries().
+        // Only public endpoints are in the global catalog. Private and app
+        // endpoints are added back by visibleEntries() — private for their
+        // owner, app for their owner and for callers holding a key that
+        // owner's app issued.
         visible:
             entry.communityEndpoint.disabledAt === null &&
             entry.communityEndpoint.visibility === "public",
@@ -216,15 +222,12 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: (callerUserId) =>
+        visibleEntries: (access) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
-                return (
-                    endpoint?.disabledAt === null &&
-                    endpoint.visibility === "private" &&
-                    endpoint.ownerUserId === callerUserId
-                );
+                if (!endpoint || endpoint.disabledAt !== null) return false;
+                return canAccessCommunityModel(endpoint, access);
             }),
     };
 }

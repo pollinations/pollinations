@@ -12,7 +12,7 @@ import type { GenerationModelEntry } from "./model-registry.ts";
 /** The agent fields the catalog reads out of the stored agent config. */
 export type AgentCatalogConfig = {
     baseModel: string;
-    pollinationsTools: boolean;
+    mcpServers: "pollinations"[];
 };
 
 /** Every environment binding the agent catalog needs. */
@@ -43,7 +43,12 @@ export function parseAgentCatalogConfig(
         }
         return {
             baseModel: parsed.baseModel,
-            pollinationsTools: parsed.pollinationsTools === true,
+            mcpServers: Array.isArray(parsed.mcpServers)
+                ? parsed.mcpServers.filter(
+                      (server): server is "pollinations" =>
+                          server === "pollinations",
+                  )
+                : [],
         };
     } catch {
         return null;
@@ -56,7 +61,9 @@ function applyBaseModelMetadata(
 ): void {
     const config = entry.agentConfig;
     if (!config) return;
-    const agentCapabilities: ModelCapability[] = config.pollinationsTools
+    const agentCapabilities: ModelCapability[] = config.mcpServers.includes(
+        "pollinations",
+    )
         ? ["pollinations_models"]
         : [];
 

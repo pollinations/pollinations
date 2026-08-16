@@ -21,6 +21,7 @@ export function AgentBasePricingLabel({
                 content={model.baseModel}
                 triggerAs="span"
                 className="min-w-0 max-w-48"
+                displayContents
             >
                 <span className="block max-w-full truncate rounded-md bg-theme-bg-subtle px-2 py-1 font-mono text-[10px] font-medium text-theme-text-muted">
                     {model.baseModel}

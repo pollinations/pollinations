@@ -238,14 +238,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 alphaTooltip={false}
                                 perUserRpm={model.perUserRpm}
                             />
-                            <span className="inline-flex shrink-0 items-center gap-1">
-                                <BalanceAccessChip
-                                    access={balanceAccess}
-                                    className="whitespace-nowrap"
-                                />
-                                <PerPollenEstimate model={model} />
-                            </span>
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
                         </div>
+                        <PerPollenEstimate model={model} inline />
                     </div>
                     <ChevronIcon
                         expanded={expanded}
@@ -367,18 +365,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div ref={containerRef}>
-            {activeTab === "agent" && (
-                <div className="mb-2 flex items-baseline gap-2 rounded-xl border border-divider bg-theme-bg-subtle px-3 py-2 text-xs leading-snug text-theme-text-muted">
-                    <span className="shrink-0 font-medium uppercase tracking-wide text-theme-text-soft">
-                        Agent pricing
-                    </span>
-                    <span>
-                        Rates apply to each base-model call. Agents can make
-                        multiple calls; Pollinations tool calls use the selected
-                        model&apos;s listed price.
-                    </span>
-                </div>
-            )}
             {/* Tab content — the selected modality */}
             {activeSection && isDesktop !== null && (
                 <TabContent

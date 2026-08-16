@@ -11,7 +11,10 @@ import {
     agentRuntimeRoutes,
     POLLINATIONS_MCP_URL,
 } from "../src/routes/agent-runtime.ts";
-import { PromptAgentSchema } from "../src/services/prompt-agent.ts";
+import {
+    PromptAgentInputSchema,
+    PromptAgentSchema,
+} from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
     type PromptAgentRequest,
@@ -24,10 +27,8 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     config: {
         systemPrompt: "You are a test agent.",
         baseModel: "openai",
-        pollinationsTools: false,
         mcpServers: [],
     },
-    mcpHeaders: {},
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
     pollinationsMcpUrl: "https://mcp.pollinations.test/",
@@ -66,63 +67,25 @@ describe("prompt-agent config", () => {
     const config = {
         systemPrompt: "You are a test agent.",
         baseModel: "openai",
-        pollinationsTools: false,
+        mcpServers: [],
     };
 
-    it("accepts public HTTPS MCP servers", () => {
+    it("rejects custom MCP configuration on write", () => {
+        expect(
+            PromptAgentInputSchema.safeParse({
+                ...config,
+                mcpServers: [{ name: "docs", url: "https://mcp.example.com" }],
+            }).success,
+        ).toBe(false);
+    });
+
+    it("accepts the built-in Pollinations MCP server", () => {
         expect(
             PromptAgentSchema.parse({
                 ...config,
-                mcpServers: [
-                    { name: "docs", url: "https://mcp.example.com/rpc/" },
-                ],
-            }).mcpServers,
-        ).toEqual([
-            {
-                name: "docs",
-                url: "https://mcp.example.com/rpc",
-                headers: [],
-            },
-        ]);
-    });
-
-    it("rejects plaintext and private-host MCP servers", () => {
-        for (const url of [
-            "http://mcp.example.com/rpc",
-            "https://localhost/rpc",
-            "https://127.0.0.1/rpc",
-        ]) {
-            expect(
-                PromptAgentSchema.safeParse({
-                    ...config,
-                    mcpServers: [{ name: "docs", url }],
-                }).success,
-            ).toBe(false);
-        }
-    });
-
-    it("rejects duplicate MCP server names", () => {
-        expect(
-            PromptAgentSchema.safeParse({
-                ...config,
-                mcpServers: [
-                    { name: "docs", url: "https://one.example.com/mcp" },
-                    { name: "docs", url: "https://two.example.com/mcp" },
-                ],
-            }).success,
-        ).toBe(false);
-        expect(
-            PromptAgentSchema.safeParse({
-                ...config,
-                pollinationsTools: true,
-                mcpServers: [
-                    {
-                        name: "pollinations",
-                        url: "https://example.com/mcp",
-                    },
-                ],
-            }).success,
-        ).toBe(false);
+                mcpServers: ["pollinations"],
+            }),
+        ).toEqual({ ...config, mcpServers: ["pollinations"] });
     });
 });
 
@@ -174,7 +137,6 @@ describe("prompt-agent runtime", () => {
             config: JSON.stringify({
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai-fast",
-                pollinationsTools: false,
                 mcpServers: [],
             }),
             createdAt: new Date(),
@@ -295,74 +257,6 @@ describe("prompt-agent runtime", () => {
         });
     });
 
-    it("refuses MCP redirects without forwarding credentials, and keeps serving", async () => {
-        const requests: { url: string; authorization: string | null }[] = [];
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                const request = new Request(input, init);
-                if (request.url.startsWith("https://mcp.example.com/")) {
-                    requests.push({
-                        url: request.url,
-                        authorization: request.headers.get("Authorization"),
-                    });
-                    return new Response(null, {
-                        status: 302,
-                        headers: { Location: "https://attacker.example/mcp" },
-                    });
-                }
-                requests.push({
-                    url: request.url,
-                    authorization: request.headers.get("Authorization"),
-                });
-                return Response.json({
-                    choices: [
-                        { message: { role: "assistant", content: "no tools" } },
-                    ],
-                    usage: { prompt_tokens: 2, completion_tokens: 2 },
-                });
-            }),
-        );
-
-        const response = await runAgent(
-            { messages: [{ role: "user", content: "hello" }] },
-            {
-                ...BASE_RUNTIME,
-                config: {
-                    ...BASE_RUNTIME.config,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://mcp.example.com/rpc",
-                            headers: ["Authorization"],
-                        },
-                    ],
-                },
-                mcpHeaders: {
-                    docs: { Authorization: "Bearer mcp-secret" },
-                },
-            },
-        );
-
-        // The redirect is refused before it is followed, so the MCP credential
-        // never reaches the attacker host. That guarantee is independent of how
-        // the failure is handled.
-        // Compare the parsed hostname rather than a url prefix: a prefix match
-        // also accepts attacker.example.evil.com, so it is not a sound host check.
-        expect(requests.map((r) => new URL(r.url).hostname)).not.toContain(
-            "attacker.example",
-        );
-        expect(
-            requests.filter((r) => r.url === "https://mcp.example.com/rpc")
-                .length,
-        ).toBeGreaterThan(0);
-        // The server drops out rather than failing the request: the agent answers
-        // without its tools.
-        const body = await response.text();
-        expect(response.status, body).toBe(200);
-        expect(JSON.parse(body).choices[0].message.content).toBe("no tools");
-    });
-
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
         const mcpRequests: Request[] = [];
         let modelCalls = 0;
@@ -370,7 +264,7 @@ describe("prompt-agent runtime", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
-                if (url.hostname === "mcp.example.com") {
+                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     mcpRequests.push(request.clone());
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
@@ -409,7 +303,7 @@ describe("prompt-agent runtime", () => {
                             result: {
                                 tools: [
                                     {
-                                        name: "lookup",
+                                        name: "listModels",
                                         inputSchema: { type: "object" },
                                     },
                                 ],
@@ -438,7 +332,7 @@ describe("prompt-agent runtime", () => {
                                         {
                                             id: "c1",
                                             function: {
-                                                name: "mcp__docs__lookup",
+                                                name: "mcp__pollinations__listModels",
                                                 arguments: "{}",
                                             },
                                         },
@@ -465,19 +359,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://mcp.example.com/rpc",
-                            headers: ["Authorization", "X-Tenant"],
-                        },
-                    ],
-                },
-                mcpHeaders: {
-                    docs: {
-                        Authorization: "Bearer mcp-secret",
-                        "X-Tenant": "pollinations",
-                    },
+                    mcpServers: ["pollinations"],
                 },
             },
         );
@@ -525,9 +407,8 @@ describe("prompt-agent runtime", () => {
         }
         for (const request of mcpRequests) {
             expect(request.headers.get("Authorization")).toBe(
-                "Bearer mcp-secret",
+                `Bearer ${BASE_RUNTIME.apiKey}`,
             );
-            expect(request.headers.get("X-Tenant")).toBe("pollinations");
         }
     });
 
@@ -538,7 +419,7 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (new URL(request.url).hostname === "mcp.example.com") {
+                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     if (request.method === "DELETE") {
                         return new Response(null, { status: 200 });
                     }
@@ -567,7 +448,7 @@ describe("prompt-agent runtime", () => {
                             result: {
                                 tools: [
                                     {
-                                        name: "lookup",
+                                        name: "listModels",
                                         inputSchema: { type: "object" },
                                     },
                                 ],
@@ -598,7 +479,7 @@ describe("prompt-agent runtime", () => {
                                             id: `call-${index}`,
                                             type: "function",
                                             function: {
-                                                name: "mcp__docs__lookup",
+                                                name: "mcp__pollinations__listModels",
                                                 arguments: "{}",
                                             },
                                         }),
@@ -625,13 +506,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://mcp.example.com/rpc",
-                            headers: [],
-                        },
-                    ],
+                    mcpServers: ["pollinations"],
                 },
             },
         );
@@ -643,15 +518,13 @@ describe("prompt-agent runtime", () => {
         expect(body.usage.tool_call_counts.mcp_call).toBe(17);
     });
 
-    it("keeps running when an MCP server fails to load", async () => {
-        // A user can save any MCP url and third-party servers go down; losing one
-        // server's tools must not take down the whole agent request.
+    it("keeps running when the Pollinations MCP fails to load", async () => {
         let modelCalls = 0;
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url === "https://mcp.broken.example/sse") {
+                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     return new Response("Method Not Allowed", { status: 405 });
                 }
                 modelCalls++;
@@ -675,13 +548,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: [
-                        {
-                            name: "websearch",
-                            url: "https://mcp.broken.example/sse",
-                            headers: [],
-                        },
-                    ],
+                    mcpServers: ["pollinations"],
                 },
             },
         );
@@ -769,7 +636,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    pollinationsTools: true,
+                    mcpServers: ["pollinations"],
                 },
             },
         );
@@ -961,7 +828,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    pollinationsTools: true,
+                    mcpServers: ["pollinations"],
                 },
             },
         );
@@ -1099,8 +966,7 @@ describe("prompt-agent runtime", () => {
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                const url = new URL(request.url);
-                if (url.hostname === "mcp.example.com") {
+                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
                     }
@@ -1135,7 +1001,7 @@ describe("prompt-agent runtime", () => {
                             result: {
                                 tools: [
                                     {
-                                        name: "lookup",
+                                        name: "listModels",
                                         inputSchema: { type: "object" },
                                     },
                                 ],
@@ -1159,7 +1025,7 @@ describe("prompt-agent runtime", () => {
                                         {
                                             id: "c1",
                                             function: {
-                                                name: "mcp__docs__lookup",
+                                                name: "mcp__pollinations__listModels",
                                                 arguments: "{}",
                                             },
                                         },
@@ -1194,13 +1060,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://mcp.example.com/rpc",
-                            headers: [],
-                        },
-                    ],
+                    mcpServers: ["pollinations"],
                 },
             },
         );

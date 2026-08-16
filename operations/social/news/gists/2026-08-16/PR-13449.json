@@ -1,0 +1,37 @@
+{
+  "pr_number": 13449,
+  "title": "Add NeuralCanvas to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13449",
+  "merged_at": "2026-08-16T07:18:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [NeuralCanvas](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) to image\n- NeuralCanvas is a native Android app (Kotlin + Jetpack Compose) that turns a text prompt into an AI-generated image, built entirely on the Pollinations image API. How it uses Pollinations: every gener\n\nFixes #13448",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A canvas in your pocket",
+    "blurb": "NeuralCanvas has joined the garden: an Android app that turns a few words into images using the Pollinations API. Your phone was already full of prompts anyway.",
+    "summary": "Added NeuralCanvas to the app directory, a native Kotlin and Jetpack Compose Android app that generates AI images from text prompts through the Pollinations image API.",
+    "impact": "Android users now have a discoverable mobile example of a complete image-generation app built directly on Pollinations, from prompt to pixels.",
+    "keywords": [
+      "NeuralCanvas",
+      "Android",
+      "image generation",
+      "Pollinations API",
+      "Kotlin",
+      "Jetpack Compose",
+      "community app"
+    ],
+    "visual_concept": "Depict NeuralCanvas as a cozy Android phone-sized canvas blooming with a generated pastel landscape. Polli, wearing a tiny painter's beret, taps a prompt into the phone while pixel flowers and code-plants grow from the screen, showing that a simple mobile prompt becomes an image through the API.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light-blue translucent wings, wearing a tiny painter's beret as she taps a text prompt into a large Android phone that blooms into a pastel pixel landscape and code-flowers. The phone screen glows prominently lime green (#ecf874), with a tiny retro terminal and garden vines nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'NEURALCANVAS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13449.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light-blue translucent wings, wearing a tiny painter's beret as she taps a text prompt into a large Android phone that blooms into a pastel pixel landscape and code-flowers. The phone screen glows prominently lime green (#ecf874), with a tiny retro terminal and garden vines nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: 'NEURALCANVAS'."
+  },
+  "generated_at": "2026-08-16T07:19:25.234686+00:00",
+  "app_name": "NeuralCanvas",
+  "app_url": "https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator"
+}

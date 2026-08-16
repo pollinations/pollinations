@@ -213,11 +213,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/bring-your-own-pollen",
-                                    )}
-                                >
+                                <InlineLink href={genDocsUrl("#tag/byop")}>
                                     Read the guide
                                 </InlineLink>
                             </li>

@@ -2,6 +2,7 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
@@ -13,6 +14,7 @@ import {
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
+import { genDocsUrl } from "../../config.ts";
 import { type ModelListingFormState, VISIBILITY_LABELS } from "./types.ts";
 
 type ListingTextField =
@@ -153,15 +155,25 @@ export function ModelListingFields({
             <FieldStack
                 label="Visibility"
                 helper={
-                    form.visibility === "private"
-                        ? "Private: callable by you, and listed in model lists authenticated with your API key."
-                        : form.visibility === "app"
-                          ? isAgent
-                              ? "App: callable by you and by any API key issued through one of your apps, and listed for exactly those keys. Calls use the caller's Pollinations balance and API-key permissions."
-                              : "App: callable by you and by any API key issued through one of your apps, and listed for exactly those keys. Anyone who authorizes through one of your apps can call it — set prices below, or leave them at 0 for free."
-                          : isAgent
-                            ? "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
-                            : "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
+                    form.visibility === "private" ? (
+                        "Private: callable by you, and listed in model lists authenticated with your API key."
+                    ) : form.visibility === "app" ? (
+                        <>
+                            App: callable by you and by any API key issued
+                            through one of your apps, and listed for exactly
+                            those keys.{" "}
+                            {isAgent
+                                ? "Calls use the caller's Pollinations balance and API-key permissions."
+                                : "Anyone who authorizes through one of your apps can call it — set prices below, or leave them at 0 for free."}{" "}
+                            <InlineLink href={genDocsUrl("#tag/byop")}>
+                                How apps issue keys
+                            </InlineLink>
+                        </>
+                    ) : isAgent ? (
+                        "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
+                    ) : (
+                        "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
+                    )
                 }
                 alignLabelRow
             >

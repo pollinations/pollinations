@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "NeuralCanvas",
+    "url": "https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator",
+    "description": "NeuralCanvas is a native Android app (Kotlin + Jetpack Compose) that turns a text prompt into an AI-generated image, built entirely on the Pollinations image API. How it uses Pollinations: every gener",
+    "language": "en",
+    "category": "image",
+    "platform": "android",
+    "githubUsername": "greysonmiller67-lang",
+    "githubUserId": "287692444",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13448",
+    "approvedDate": "2026-08-16",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💼",
     "name": "Vyrsa Academy",
     "url": "https://vyrsa.xyz",

@@ -44,11 +44,22 @@ export function PromptAgentFields({
                 />
             </FieldStack>
 
-            <FieldStack
-                label="Pollinations tools"
-                helper="Allow the agent to call Pollinations generation and model-discovery tools."
-                alignLabelRow
-                action={
+            <div className="space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">
+                                Pollinations MCP
+                            </span>
+                            <Chip size="sm" intent="neutral">
+                                Built-in
+                            </Chip>
+                        </div>
+                        <p className="text-xs text-theme-text-muted">
+                            Allow the agent to call Pollinations generation and
+                            model-discovery tools.
+                        </p>
+                    </div>
                     <Switch
                         checked={form.mcpServers.includes("pollinations")}
                         disabled={disabled}
@@ -60,40 +71,31 @@ export function PromptAgentFields({
                             )
                         }
                     />
-                }
-            >
-                <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">Pollinations MCP</span>
-                        <Chip size="sm" intent="neutral">
-                            Built-in
-                        </Chip>
-                    </div>
-                    <p className="break-all font-mono text-xs text-theme-text-muted">
-                        https://mcp.pollinations.ai
-                    </p>
-                    <p className="text-xs text-theme-text-muted">
-                        Uses the caller's Pollinations API access.{" "}
-                        <a
-                            href="https://gen.pollinations.ai/docs#tag/mcp-server"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                        >
-                            API docs
-                        </a>
-                        {" · "}
-                        <a
-                            href="https://github.com/pollinations/pollinations/tree/main/packages/mcp"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                        >
-                            GitHub
-                        </a>
-                    </p>
                 </div>
-            </FieldStack>
+                <p className="break-all font-mono text-xs text-theme-text-muted">
+                    https://mcp.pollinations.ai
+                </p>
+                <p className="text-xs text-theme-text-muted">
+                    Uses the caller's Pollinations API access.{" "}
+                    <a
+                        href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                    >
+                        API docs
+                    </a>
+                    {" · "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/tree/main/packages/mcp"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                    >
+                        GitHub
+                    </a>
+                </p>
+            </div>
         </div>
     );
 }

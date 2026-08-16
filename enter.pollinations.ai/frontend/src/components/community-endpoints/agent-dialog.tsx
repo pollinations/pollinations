@@ -159,20 +159,12 @@ export function AgentDialog({
                     />
 
                     <div className="border-t border-divider pt-4">
-                        <p className="text-sm font-semibold text-theme-text-strong">
-                            Agent details
-                        </p>
-                        <p className="mt-0.5 text-xs text-theme-text-muted">
-                            Choose the model, instructions, and tools used on
-                            every request.
-                        </p>
+                        <PromptAgentFields
+                            form={form}
+                            disabled={isSubmitting}
+                            onChange={updateAgentForm}
+                        />
                     </div>
-
-                    <PromptAgentFields
-                        form={form}
-                        disabled={isSubmitting}
-                        onChange={updateAgentForm}
-                    />
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
                     <Button

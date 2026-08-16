@@ -38,7 +38,12 @@ import {
     contentPolicyMessage,
     firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
-import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
+import {
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
@@ -474,6 +479,29 @@ async function generateVideoResult(
     );
 }
 
+/**
+ * Edit requests that omit `size` should preserve the source image's aspect
+ * ratio instead of silently defaulting to the model's square default (e.g.
+ * 1024x1024). Downloads the first reference image, reads its actual
+ * dimensions, and overrides the params. Explicit size requests and video
+ * models are untouched; any failure falls back to the model default.
+ */
+export async function resolveEditDimensionsForImage(
+    safeParams: RuntimeImageParams,
+): Promise<RuntimeImageParams> {
+    if (safeParams.dimensionsExplicit) return safeParams;
+    const imageUrls = safeParams.image;
+    if (!imageUrls?.length || isVideoModel(safeParams.model)) return safeParams;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(imageUrls[0]);
+        const dimensions = readImageDimensions(buffer, mimeType);
+        if (!dimensions) return safeParams;
+        return { ...safeParams, ...dimensions };
+    } catch {
+        // Keep the model default if the source image cannot be read.
+        return safeParams;
+    }
+}
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -481,7 +509,9 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    const safeParams = await resolveEditDimensionsForImage(
+        parseImageParams(c, body),
+    );
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,

@@ -31,10 +31,7 @@ export function AgentBasePricingLabel({
 }
 
 export function AgentPricingNote({ model }: { model: ModelPrice }) {
-    if (
-        !model.agent ||
-        !model.capabilities.includes("pollinations_models")
-    ) {
+    if (!model.agent || !model.capabilities.includes("pollinations_models")) {
         return null;
     }
 

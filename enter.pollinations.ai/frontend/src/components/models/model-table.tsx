@@ -313,10 +313,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 <div id={detailsId} className="flex gap-2.5 px-4 pb-4 pt-0">
                     {hasLeadingIcon && (
                         <>
-                            <span aria-hidden="true" className="w-8 shrink-0" />
                             <span
                                 aria-hidden="true"
-                                className="w-px shrink-0"
+                                className="hidden w-8 shrink-0 min-[480px]:block"
+                            />
+                            <span
+                                aria-hidden="true"
+                                className="hidden w-px shrink-0 min-[480px]:block"
                             />
                         </>
                     )}

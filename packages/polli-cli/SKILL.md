@@ -171,7 +171,7 @@ polli agents create --config agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file is sent directly to the agent API. A create config contains `systemPrompt`, `baseModel`, and optional `pollinationsTools` and `mcpServers`. Each MCP server accepts `name`, `url`, and optional `headers`, for example `{"Authorization":"Bearer ..."}`. Header values are encrypted by the API and returned as `null`; passing those `null` values back on update keeps the saved credentials. Omitted update fields remain unchanged; use `false` or `[]` to clear optional settings.
+The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
 
 ### Manage API keys
 ```bash

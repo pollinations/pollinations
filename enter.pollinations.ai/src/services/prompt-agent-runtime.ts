@@ -9,10 +9,7 @@ import {
     ToolLoopAgent,
 } from "ai";
 import { z } from "zod";
-import type {
-    PromptAgentConfig,
-    PromptAgentMcpHeaders,
-} from "./prompt-agent.ts";
+import type { PromptAgentConfig } from "./prompt-agent.ts";
 
 const log = getLogger(["enter", "prompt-agent-runtime"]);
 
@@ -31,18 +28,11 @@ export type PromptAgentRequest = z.output<typeof PromptAgentRequestSchema>;
 
 type PromptAgentRuntime = {
     config: PromptAgentConfig;
-    mcpHeaders: PromptAgentMcpHeaders;
     apiKey: string;
     genBaseUrl: string;
     pollinationsMcpUrl: string;
 };
 
-type McpServer = {
-    name: string;
-    url: string;
-    headers?: Record<string, string>;
-    includeTools?: string[];
-};
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
 type ToolCallCounts = Record<string, number>;
@@ -92,110 +82,76 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadMcpTools(
-    servers: McpServer[],
+async function loadPollinationsTools(
+    url: string,
+    apiKey: string,
     signal: AbortSignal,
 ): Promise<{
     tools: Record<string, McpTool>;
     close: () => Promise<void>;
 }> {
-    const clients: McpClient[] = [];
+    let client: McpClient | undefined;
     const tools: Record<string, McpTool> = {};
     let closed = false;
 
     const close = async () => {
         if (closed) return;
         closed = true;
-        await Promise.all(clients.map((client) => client.close()));
+        await client?.close();
     };
 
-    for (const server of servers) {
-        // Isolated per server: a broken MCP endpoint must not take down the whole
-        // agent. A user can save any url, and third-party servers go down; losing
-        // one server's tools is recoverable, losing the request is not.
-        try {
-            const client = await createMCPClient({
-                clientName: "pollinations-prompt-agent",
-                initializationOptions: {
-                    signal,
-                    timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-                },
-                transport: {
-                    type: "http",
-                    url: server.url,
-                    headers: server.headers,
-                    // The redirect override is required, not optional: the MCP
-                    // client asks for redirect "error", which workerd rejects
-                    // outright ("must be one of follow or manual"). We follow
-                    // them — refusing bought little, since a hostile server can
-                    // proxy anywhere without a redirect and the config-time host
-                    // blocklist is the real SSRF control, while redirects are
-                    // ordinary (trailing slashes, http->https, moved paths).
-                    fetch: async (input, init) =>
-                        globalThis.fetch.call(globalThis, input, {
-                            ...init,
-                            redirect: "follow",
-                        }),
-                },
-            });
-            clients.push(client);
-            let loaded = 0;
-            for (const [name, definition] of Object.entries(
-                await client.tools(),
-            )) {
-                if (server.includeTools && !server.includeTools.includes(name))
-                    continue;
-                tools[`mcp__${server.name}__${name}`] = definition;
-                loaded++;
-            }
-            log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
-                name: server.name,
-                url: server.url,
-                tools: loaded,
-            });
-        } catch (error) {
-            // The agent route returns a Response rather than throwing, so Hono's
-            // onError never fires and nothing reaches error_event: this log is the
-            // only signal that a server dropped out.
-            log.error(
-                "MCP_SERVER_FAILED: name={name} url={url} error={error}",
-                {
-                    name: server.name,
-                    url: server.url,
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                },
-            );
+    try {
+        client = await createMCPClient({
+            clientName: "pollinations-prompt-agent",
+            initializationOptions: {
+                signal,
+                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+            },
+            transport: {
+                type: "http",
+                url,
+                headers: { Authorization: `Bearer ${apiKey}` },
+                // The MCP client asks for redirect "error", which workerd does
+                // not support. Use a valid fetch mode for the hosted endpoint.
+                fetch: async (input, init) =>
+                    globalThis.fetch.call(globalThis, input, {
+                        ...init,
+                        redirect: "follow",
+                    }),
+            },
+        });
+        for (const [name, definition] of Object.entries(await client.tools())) {
+            if (!POLLINATIONS_AGENT_TOOLS.includes(name)) continue;
+            tools[`mcp__pollinations__${name}`] = definition;
         }
+        log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
+            name: "pollinations",
+            url,
+            tools: Object.keys(tools).length,
+        });
+    } catch (error) {
+        // Tool availability is recoverable; the base model can still answer.
+        log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
+            name: "pollinations",
+            url,
+            error: error instanceof Error ? error.message : String(error),
+        });
     }
 
     return { tools, close };
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
-    const servers: McpServer[] = runtime.config.mcpServers.map((server) => {
-        const storedHeaders = runtime.mcpHeaders[server.name] ?? {};
-        return {
-            name: server.name,
-            url: server.url,
-            headers: Object.fromEntries(
-                server.headers.flatMap((name) =>
-                    storedHeaders[name] === undefined
-                        ? []
-                        : [[name, storedHeaders[name]]],
-                ),
-            ),
-        };
-    });
-    if (runtime.config.pollinationsTools) {
-        servers.push({
-            name: "pollinations",
-            url: runtime.pollinationsMcpUrl,
-            headers: { Authorization: `Bearer ${runtime.apiKey}` },
-            includeTools: POLLINATIONS_AGENT_TOOLS,
-        });
-    }
-    const { tools, close } = await loadMcpTools(servers, signal);
+    const { tools, close } = runtime.config.mcpServers.includes("pollinations")
+        ? await loadPollinationsTools(
+              runtime.pollinationsMcpUrl,
+              runtime.apiKey,
+              signal,
+          )
+        : {
+              tools: {} as Record<string, McpTool>,
+              close: async () => {},
+          };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {

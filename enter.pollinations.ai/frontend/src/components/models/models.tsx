@@ -1,5 +1,6 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -496,6 +497,19 @@ export const Models: FC = () => {
                             usage over the last 7 days.
                         </span>
                     </p>
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
+                            <span>
+                                <strong className="text-theme-text-soft">
+                                    Agent pricing
+                                </strong>{" "}
+                                — Rates apply to each base-model call. Agents
+                                can make multiple calls; Pollinations tool calls
+                                use the selected model&apos;s listed price.
+                            </span>
+                        </p>
+                    )}
                 </div>
             </Section>
         </div>

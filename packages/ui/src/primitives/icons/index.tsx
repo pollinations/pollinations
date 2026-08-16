@@ -47,6 +47,17 @@ export function BookIcon(props: IconProps) {
     );
 }
 
+export function BugIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m8 2 1.9 1.9M14.1 3.9 16 2" />
+            <path d="M9 7V6a3 3 0 0 1 6 0v1" />
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" />
+            <path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />
+        </svg>
+    );
+}
+
 export function CheckIcon(props: IconProps) {
     return (
         <svg

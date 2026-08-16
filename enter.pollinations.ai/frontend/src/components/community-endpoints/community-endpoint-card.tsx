@@ -52,8 +52,8 @@ export function CommunityEndpointCard({
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
                             {endpoint.title}
                         </h3>
                         <Chip intent={isPublic ? "news" : "neutral"} size="sm">
@@ -64,6 +64,11 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {endpoint.agentId && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -87,8 +92,8 @@ export function CommunityEndpointCard({
                     </Button>
                     <IconButton
                         intent="info"
-                        title="Edit model"
-                        tooltip="Edit model"
+                        title={endpoint.agentId ? "Edit agent" : "Edit model"}
+                        tooltip={endpoint.agentId ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -125,23 +130,27 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                <CommunityDetailRow
-                    icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
-                    label="Endpoint"
-                    value={endpoint.baseUrl}
-                    copyLabel="Copy endpoint"
-                />
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={endpoint.baseUrl}
+                        copyLabel="Copy endpoint"
+                    />
+                )}
                 <CommunityDetailRow
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
                     label="Modality"
                     value={endpoint.modality}
                 />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Upstream model"
-                    value={endpoint.upstreamModel}
-                />
-                {endpoint.perUserRpm !== null && (
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                        label="Upstream model"
+                        value={endpoint.upstreamModel}
+                    />
+                )}
+                {!endpoint.agentId && endpoint.perUserRpm !== null && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Per-user limit"

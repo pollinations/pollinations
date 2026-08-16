@@ -1,5 +1,9 @@
 import { ChevronIcon, CopyButton, cn } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+    AgentBasePricingLabel,
+    AgentPricingNote,
+} from "./agent-model-metadata.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -39,6 +43,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
+    agentModels: ModelPrice[];
     activeTab: SectionType;
 };
 
@@ -51,6 +56,7 @@ export const sectionLabels: Record<SectionType, string> = {
     realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
+    agent: "Agents",
 };
 
 // --- Tab content ---
@@ -277,11 +283,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {modelDescription}
                             </p>
                         )}
+                        <AgentBasePricingLabel model={model} />
                         <ModelPricingControls model={model} pricing={pricing} />
                         <ModelPricingLedger
                             pricing={pricing}
                             className="w-full"
                         />
+                        <AgentPricingNote model={model} />
                     </div>
                 </div>
             )}
@@ -339,6 +347,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     realtimeModels,
     embeddingModels,
+    agentModels,
     activeTab,
 }) => {
     const { containerRef, isDesktop } = useDesktopModelTable();
@@ -351,12 +360,25 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
         { type: "embedding", models: embeddingModels },
+        { type: "agent", models: agentModels },
     ];
 
     const activeSection = sections.find((s) => s.type === activeTab);
 
     return (
         <div ref={containerRef}>
+            {activeTab === "agent" && (
+                <div className="mb-2 flex items-baseline gap-2 rounded-xl border border-divider bg-theme-bg-subtle px-3 py-2 text-xs leading-snug text-theme-text-muted">
+                    <span className="shrink-0 font-medium uppercase tracking-wide text-theme-text-soft">
+                        Agent pricing
+                    </span>
+                    <span>
+                        Rates apply to each base-model call. Agents can make
+                        multiple calls; Pollinations tool calls use the selected
+                        model&apos;s listed price.
+                    </span>
+                </div>
+            )}
             {/* Tab content — the selected modality */}
             {activeSection && isDesktop !== null && (
                 <TabContent

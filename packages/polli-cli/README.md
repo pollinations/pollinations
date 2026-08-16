@@ -93,7 +93,17 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli quests mine --completed # completed and earned quests
+polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text models
+```
+
+Manage agents with API-shaped JSON config files:
+
+```bash
+polli agents get <id>
+polli agents create --config agent.json
+polli agents update <id> --config agent.json
+polli agents delete <id>
 ```
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.

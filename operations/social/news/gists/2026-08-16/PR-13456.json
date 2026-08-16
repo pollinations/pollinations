@@ -1,0 +1,34 @@
+{
+  "pr_number": 13456,
+  "title": "fix: keep OAuth authorize actions visible on short screens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13456",
+  "merged_at": "2026-08-16T12:18:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the OAuth consent actions visible by capping the modal to the viewport and scrolling only the consent details.\n- Adds opt-in `AuthModal` content classes so other authentication screens keep their current layout.\n- Shortens the mobile terms link to `Terms`, retains the full accessible name, and adds the existing external-link cue.\n- Validated at 900×529, 375×529, expanded permissions, and 900×720; `npm run typecheck` and `npm run build:frontend` pass.\n- Fixes #13451",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Consent buttons stay put",
+    "blurb": "OAuth consent dialogs learned a useful trick: the important buttons now remain in view when a small screen runs out of vertical real estate. The details scroll; the decision does not wander offscreen.",
+    "summary": "OAuth authorize modals now cap themselves to short viewports and scroll only expanded consent details, keeping Allow and Deny actions visible at 900×529 and mobile-sized screens.",
+    "impact": "People approving OAuth access on compact screens can review permissions and complete the consent flow without hunting for actions below the fold; mobile terms links now read “Terms” while retaining their full accessible label and external-link cue.",
+    "keywords": [
+      "oauth",
+      "authorization",
+      "consent",
+      "mobile",
+      "accessibility",
+      "auth-modal"
+    ],
+    "visual_concept": "Polli is a careful consent-garden keeper inside a cozy compact OAuth modal, using a tiny tool belt to pin the Allow and Deny buttons safely at the bottom while a tall permissions list scrolls like a flowering vine above them. A small retro monitor robot can hold a readable “TERMS ↗” sign, with pixel flowers and code-plants making the constrained space feel orderly rather than cramped.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny tool belt, carefully securing two visible consent buttons at the bottom of a compact retro OAuth window while a long permission-list vine scrolls above them. A friendly CRT monitor robot holds a small pixel sign reading “TERMS ↗”, surrounded by code-plants and flowers; lime green (#ecf874) is prominent with warm cream, mint, lavender, and peach pastels. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-16/PR-13456.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny tool belt, carefully securing two visible consent buttons at the bottom of a compact retro OAuth window while a long permission-list vine scrolls above them. A friendly CRT monitor robot holds a small pixel sign reading “TERMS ↗”, surrounded by code-plants and flowers; lime green (#ecf874) is prominent with warm cream, mint, lavender, and peach pastels. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-16T12:20:01.664268+00:00"
+}

@@ -1,21 +1,24 @@
 # Terms of Service
 
-**Updated: 2026-07-02**
+**Updated: 2026-08-16**
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
-## What Myceli.AI Is
+## About Pollinations
 
-We operate commercial, hosted services (dashboard & APIs) built on the open-source pollinations.ai codebase. We handle billing and support; the OSS remains under its repository licences.
+Pollinations.ai ("Pollinations", "we", "us") is a service operated by Myceli.AI OÜ, the legal service provider and contracting party. We operate commercial, hosted services (dashboard & APIs) built on the open-source Pollinations codebase. We handle billing and support; the open-source software remains under its repository licences.
 
-**Company identity:**  
-Myceli.AI OÜ  
-Registry code: 17186693  
-VAT number: EE102877908  
-Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hello@pollinations.ai
+**Legal operator:**
+
+- Myceli.AI OÜ
+- Registered in: Estonian Commercial Register
+- Registry code: 17186693
+- VAT number: EE102877908
+- Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia
+- General contact: hello@pollinations.ai
+- Billing contact: billing@pollinations.ai
 
 ---
 

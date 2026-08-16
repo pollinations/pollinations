@@ -50,9 +50,10 @@ export const ModelId: FC<ModelIdProps> = ({ name }) => (
         copiedTooltip="Copied model id"
         aria-label={`Copy model id ${name}`}
         tooltipAlign="start"
+        tooltipClassName="min-w-0 max-w-full"
         className={(copied) =>
             cn(
-                "pointer-events-auto flex min-w-0 cursor-pointer text-left font-mono text-xs font-medium transition-colors",
+                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
                 copied
                     ? "text-intent-success-text"
                     : "text-theme-text-muted hover:text-theme-text-soft",

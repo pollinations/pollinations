@@ -44,7 +44,7 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     text: { input: "Text in", output: "Text out" },
     image: { input: "Image in", output: "Image out" },
     "3d": { input: "3D in", output: "3D out" },
-    cached: { input: "Cached text", output: "Cached out" },
+    cached: { input: "Cached input", output: "Cached out" },
     cacheWrite: { input: "Cache write", output: "Cache write" },
     reasoning: { input: "Reasoning in", output: "Reasoning out" },
     video: { input: "Video in", output: "Video out" },
@@ -77,7 +77,7 @@ const formatAdjustmentUnit = ({
     if (kind === "search_request") return `${quantityLabel} requests`;
     if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
     if (kind === "cache_storage") {
-        return `${quantityLabel} tokens written`;
+        return `${quantityLabel} tokens`;
     }
     return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
 };
@@ -328,7 +328,7 @@ const LedgerPriceValue: FC<{ value: string }> = ({ value }) => {
     const [whole, fraction] = value.split(".", 2);
 
     return (
-        <span className="grid w-[8ch] shrink-0 grid-cols-[minmax(2ch,1fr)_auto_5ch] text-sm font-semibold tabular-nums text-theme-text-strong">
+        <span className="grid w-[9ch] shrink-0 grid-cols-[minmax(2ch,1fr)_auto_6ch] text-sm font-semibold tabular-nums text-theme-text-strong">
             <span className="sr-only">{value}</span>
             <span aria-hidden="true" className="text-right">
                 {whole}
@@ -360,8 +360,8 @@ const PricingAdjustmentRows: FC<{
                 className={cn(
                     "grid items-baseline gap-x-1.5 py-0.5",
                     align === "left"
-                        ? "grid-cols-[6.5rem_8ch_4.25rem]"
-                        : "grid-cols-[1fr_6.5rem_8ch_4.25rem]",
+                        ? "grid-cols-[6.5rem_9ch_max-content]"
+                        : "grid-cols-[1fr_6.5rem_9ch_max-content]",
                 )}
             >
                 {align === "right" && <span aria-hidden="true" />}
@@ -417,8 +417,15 @@ export const ModelPricingLedger: FC<{
                       ? { kind: "image" as const, label: "Cached image" }
                       : null;
             const surcharge = Number(adjustment.price);
+            const hasModalityBasePrice = pricing.prices.some(
+                (price) =>
+                    price.direction === "input" &&
+                    price.kind === modality?.kind &&
+                    price.unit === "token",
+            );
             if (
                 !modality ||
+                !hasModalityBasePrice ||
                 adjustment.quantity !== 1_000_000 ||
                 !adjustment.unit.includes("token") ||
                 !Number.isFinite(basePrice) ||
@@ -481,12 +488,7 @@ export const ModelPricingLedger: FC<{
         const rows = [
             {
                 key: `${price.direction}-${price.kind}-${price.unit}`,
-                label:
-                    cachedModalityRates.size > 0 &&
-                    price.direction === "input" &&
-                    price.kind === "cached"
-                        ? "Cached text"
-                        : PRICE_LINE_LABELS[price.kind][price.direction],
+                label: PRICE_LINE_LABELS[price.kind][price.direction],
                 value:
                     price === cacheWritePrice && combinedCacheWriteValue
                         ? combinedCacheWriteValue
@@ -540,8 +542,8 @@ export const ModelPricingLedger: FC<{
                     className={cn(
                         "grid items-baseline gap-x-1.5 py-0.5",
                         align === "left"
-                            ? "grid-cols-[6.5rem_8ch_4.25rem]"
-                            : "grid-cols-[1fr_6.5rem_8ch_4.25rem]",
+                            ? "grid-cols-[6.5rem_9ch_max-content]"
+                            : "grid-cols-[1fr_6.5rem_9ch_max-content]",
                     )}
                 >
                     {align === "right" && <span aria-hidden="true" />}

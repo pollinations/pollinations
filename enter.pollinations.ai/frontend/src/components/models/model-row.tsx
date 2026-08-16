@@ -142,13 +142,10 @@ export const PerPollenEstimate: FC<{
             triggerAs="span"
             content={tooltip}
             ariaLabel={tooltipLabel}
+            tapEnabled
             displayContents
         >
-            <ModelRateValue
-                value={value}
-                unit={isFree ? "req /pollen" : "gen /pollen"}
-                valueClassName={isFree ? "text-lg font-medium" : undefined}
-            />
+            <ModelRateValue value={value} unit="gen /pollen" />
         </Tooltip>
     );
 };
@@ -245,7 +242,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <Tooltip
                                 triggerAs="span"
                                 content={titleTooltip}
+                                ariaLabel={`${publicModelName}: model details`}
                                 className="min-w-0"
+                                tapEnabled
                                 displayContents
                             >
                                 <span className="min-w-0 truncate text-base font-medium leading-tight">
@@ -289,6 +288,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </span>
                                             }
                                             ariaLabel={modalityLabel}
+                                            tapEnabled
                                         >
                                             <span className="inline-flex items-center gap-2">
                                                 {inputModalities.map((key) => {
@@ -316,6 +316,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </strong>
                                             }
                                             ariaLabel={capabilityLabel}
+                                            tapEnabled
                                         >
                                             <span className="inline-flex items-center gap-2 text-theme-text-soft">
                                                 {capabilities.map((key) => {

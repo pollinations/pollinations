@@ -1,4 +1,4 @@
-import { Chip, cn, SparklesIcon, Tooltip } from "@pollinations/ui";
+import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 
@@ -44,6 +44,7 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                             </span>
                         }
                         ariaLabel={alphaTooltipLabel}
+                        tapEnabled
                         displayContents
                     >
                         <Chip intent="alpha" size="sm">
@@ -62,15 +63,9 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
 export const ModelRateValue: FC<{
     value: string | number;
     unit: string;
-    valueClassName?: string;
-}> = ({ value, unit, valueClassName }) => (
+}> = ({ value, unit }) => (
     <span className="pointer-events-auto inline-flex items-baseline gap-1 whitespace-nowrap">
-        <span
-            className={cn(
-                "text-sm font-semibold leading-none tabular-nums text-theme-text-strong",
-                valueClassName,
-            )}
-        >
+        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
             {value}
         </span>
         <span className="text-xs font-normal text-theme-text-muted">
@@ -97,6 +92,7 @@ export const PerUserRateLimit: FC<{ value?: number | null }> = ({ value }) => {
             }
             ariaLabel={tooltipLabel}
             className="pointer-events-auto shrink-0"
+            tapEnabled
             displayContents
         >
             <ModelRateValue value={value} unit="req /minute" />
@@ -170,6 +166,7 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             ariaLabel={tooltipLabel}
             maxWidth={340}
             className="pointer-events-auto shrink-0"
+            tapEnabled
             displayContents
         >
             {chip}

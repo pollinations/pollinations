@@ -22,6 +22,8 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { type ComponentProps, createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import {
     formatDisplayPrice,
@@ -31,6 +33,7 @@ import {
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
+import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -314,6 +317,38 @@ test("community models use their model type icon instead of a provider logo", ()
     expect(getCommunityModelIcon({ ...communityModel, agent: true })).toBe(
         BotIcon,
     );
+});
+
+test("cached modality adjustments remain visible without a matching base row", () => {
+    const pricing: ComponentProps<typeof ModelPricingLedger>["pricing"] = {
+        prices: [
+            {
+                direction: "input",
+                kind: "cached",
+                price: "0.06",
+                unit: "token",
+            },
+        ],
+        adjustments: [
+            {
+                name: "cached-audio-delta",
+                label: "Cached audio input",
+                kind: "cached_audio_input",
+                price: "0.24",
+                quantity: 1_000_000,
+                unit: "tokens",
+            },
+        ],
+        dropdowns: [],
+    };
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, { pricing }),
+    );
+    const text = markup.replace(/<[^>]+>/g, "");
+
+    expect(text).toContain("Cached input");
+    expect(text).toContain("Cached audio input");
+    expect(text).toContain("0.24");
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {

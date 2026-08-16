@@ -134,13 +134,13 @@
     --polli-color-info-bg-light:    oklch(0.935 0.04 252);
     --polli-color-info-bg-hover:    oklch(0.88 0.05 252);
     --polli-color-info-text:        oklch(0.5 0.15 252);
-    /* LABELS — news / new / free / alpha. New and Free reuse established
-       status hues through semantic aliases: New is attention-red; Free is
-       informational-blue. */
+    /* LABELS — news / new / free / alpha. New keeps its own attention-red
+       tokens so future danger changes cannot silently restyle it. Free uses
+       the established informational-blue family. */
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
-    --polli-color-new-bg-light:     var(--polli-color-danger-bg-light);
-    --polli-color-new-text:         var(--polli-color-danger-text);
+    --polli-color-new-bg-light:     oklch(0.935 0.045 25);
+    --polli-color-new-text:         oklch(0.48 0.18 25);
     --polli-color-free-bg-light:    var(--polli-color-info-bg-light);
     --polli-color-free-text:        var(--polli-color-info-text);
     --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
@@ -240,6 +240,8 @@
     --polli-color-info-text:        oklch(0.82 0.09 252);
     --polli-color-news-bg-light:    oklch(0.35 0.07 158);
     --polli-color-news-text:        oklch(0.86 0.1 158);
+    --polli-color-new-bg-light:     oklch(0.36 0.095 25);
+    --polli-color-new-text:         oklch(0.855 0.105 25);
     --polli-color-alpha-bg-light:   oklch(0.35 0.085 300);
     --polli-color-alpha-text:       oklch(0.85 0.12 300);
 

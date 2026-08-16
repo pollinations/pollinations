@@ -5,6 +5,7 @@ import {
     type MouseEvent,
     type ReactNode,
     useEffect,
+    useId,
     useRef,
     useState,
 } from "react";
@@ -46,7 +47,7 @@ export const Tooltip: FC<TooltipProps> = ({
     onClick,
     stopClickPropagation = true,
     style,
-    tapEnabled = true,
+    tapEnabled = false,
     triggerAs = "button",
     displayContents = false,
 }) => {
@@ -63,6 +64,7 @@ export const Tooltip: FC<TooltipProps> = ({
     });
     const triggerRef = useRef<HTMLElement | null>(null);
     const tapPinnedRef = useRef(false);
+    const tooltipId = useId();
 
     const closeTooltip = () => {
         tapPinnedRef.current = false;
@@ -82,12 +84,23 @@ export const Tooltip: FC<TooltipProps> = ({
             tapPinnedRef.current = false;
             setShowTooltip(false);
         };
+        const dismissOnViewportChange = () => {
+            tapPinnedRef.current = false;
+            setShowTooltip(false);
+        };
 
         document.addEventListener("pointerdown", dismissOnOutsideTap);
         document.addEventListener("keydown", dismissOnEscape);
+        window.addEventListener("scroll", dismissOnViewportChange, {
+            capture: true,
+            passive: true,
+        });
+        window.addEventListener("resize", dismissOnViewportChange);
         return () => {
             document.removeEventListener("pointerdown", dismissOnOutsideTap);
             document.removeEventListener("keydown", dismissOnEscape);
+            window.removeEventListener("scroll", dismissOnViewportChange, true);
+            window.removeEventListener("resize", dismissOnViewportChange);
         };
     }, [showTooltip]);
 
@@ -142,6 +155,7 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const popupNode = content ? (
         <span
+            id={tooltipId}
             role="tooltip"
             aria-hidden={!showTooltip}
             style={{
@@ -172,7 +186,7 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const sharedProps = {
         "aria-label": ariaLabel,
-        "aria-expanded": content && tapEnabled ? showTooltip : undefined,
+        "aria-describedby": content && showTooltip ? tooltipId : undefined,
         className: triggerClassName,
         onMouseEnter: () => {
             updateTooltipPosition();
@@ -195,6 +209,11 @@ export const Tooltip: FC<TooltipProps> = ({
             tapPinnedRef.current = true;
             setShowTooltip(true);
         },
+        onFocus: () => {
+            updateTooltipPosition();
+            setShowTooltip(true);
+        },
+        onBlur: closeTooltip,
         style,
     };
 
@@ -237,11 +256,13 @@ export const Tooltip: FC<TooltipProps> = ({
             }}
             type="button"
             aria-label={ariaLabel}
-            aria-expanded={content && tapEnabled ? showTooltip : undefined}
+            aria-describedby={content && showTooltip ? tooltipId : undefined}
             className={triggerClassName}
             onMouseEnter={sharedProps.onMouseEnter}
             onMouseLeave={sharedProps.onMouseLeave}
             onClick={sharedProps.onClick}
+            onFocus={sharedProps.onFocus}
+            onBlur={sharedProps.onBlur}
             style={style}
         >
             {contentNode}

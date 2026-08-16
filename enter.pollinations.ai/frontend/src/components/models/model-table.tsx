@@ -1,4 +1,4 @@
-import { ChevronIcon, cn, Tooltip } from "@pollinations/ui";
+import { ChevronIcon, Tooltip } from "@pollinations/ui";
 import {
     type FC,
     useEffect,
@@ -238,7 +238,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             <Tooltip
                                 triggerAs="span"
                                 content={titleTooltip}
+                                ariaLabel={`${publicModelName}: model details`}
                                 className="min-w-0"
+                                tapEnabled
                                 displayContents
                             >
                                 <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
@@ -309,12 +311,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
             {/* Expanded: full pricing */}
             {expanded && (
                 <div id={detailsId} className="px-4 pb-4 pt-0">
-                    <div
-                        className={cn(
-                            "flex min-w-0 flex-col gap-2",
-                            hasLeadingIcon ? "pl-[53px]" : "pl-0",
-                        )}
-                    >
+                    <div className="flex min-w-0 flex-col gap-2">
                         <ModelPricingControls model={model} pricing={pricing} />
                         <ModelPricingLedger
                             pricing={pricing}
@@ -359,6 +356,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                         </span>
                     }
                     ariaLabel={modalityLabel}
+                    tapEnabled
                     displayContents
                 >
                     <span className="inline-flex items-center gap-1">
@@ -381,6 +379,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                         </strong>
                     }
                     ariaLabel={capabilityLabel}
+                    tapEnabled
                     displayContents
                 >
                     <span className="inline-flex items-center gap-1 text-theme-text-soft">

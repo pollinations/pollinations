@@ -14,6 +14,7 @@ export type ModelCategoryLabel =
     | "Audio"
     | "Realtime"
     | "Embedding"
+    | "Agents"
     | "Community Text"
     | "Community Image"
     | "Community Agents";
@@ -40,6 +41,7 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "audio",
     "realtime",
     "embedding",
+    "agent",
     "community-text",
     "community-image",
     "community-agent",
@@ -53,6 +55,7 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
+    agent: "Agents",
     "community-text": "Community Text",
     "community-image": "Community Image",
     "community-agent": "Community Agents",
@@ -69,6 +72,7 @@ const CATEGORY_MODALITIES: Record<
     audio: "audio",
     realtime: "realtime",
     embedding: "embeddings",
+    agent: "text",
     "community-text": "text",
     "community-image": "images",
     "community-agent": "text",
@@ -85,11 +89,12 @@ const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
 ];
 
 export function getModelDisplayCategory(
-    category: ModelCategory,
+    category: ModelCategory | undefined,
     community = false,
     agent = false,
-): ModelDisplayCategory {
+): ModelDisplayCategory | undefined {
     if (community && agent) return "community-agent";
+    if (agent) return "agent";
     if (community && (category === "text" || category === "image")) {
         return `community-${category}`;
     }

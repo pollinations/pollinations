@@ -1741,8 +1741,9 @@ fixtureTest(
 
         type ListedModel = {
             name: string;
-            category: string;
+            category?: string;
             community?: boolean;
+            agent?: boolean;
             alpha?: boolean;
             added_date?: number;
         };
@@ -1760,7 +1761,10 @@ fixtureTest(
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" || model.agent === true,
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -1778,7 +1782,11 @@ fixtureTest(
             "embedding",
         ];
         expect([
-            ...new Set(officialModels.map((model) => model.category)),
+            ...new Set(
+                officialModels.flatMap((model) =>
+                    model.category ? [model.category] : [],
+                ),
+            ),
         ]).toEqual(
             categoryOrder.filter((category) =>
                 officialModels.some((model) => model.category === category),
@@ -4072,6 +4080,7 @@ fixtureTest(
             input_modalities: baseModelInfo?.input_modalities,
             output_modalities: baseModelInfo?.output_modalities,
         });
+        expect(agentModelInfo).not.toHaveProperty("category");
         const openaiBaseModel = openaiModels.data.find(
             (model) => model.id === promptAgent.baseModel,
         );

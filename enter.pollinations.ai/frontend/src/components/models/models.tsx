@@ -124,7 +124,11 @@ function categorizeModels(
     };
 
     for (const model of models) {
-        categorized[model.agent ? "agent" : model.type].push(model);
+        if (model.agent) {
+            categorized.agent.push(model);
+        } else if (model.type) {
+            categorized[model.type].push(model);
+        }
     }
     return categorized;
 }

@@ -52,6 +52,7 @@ describe("MIDIjourney agent registry", () => {
             },
         });
         expect(info).not.toHaveProperty("is_specialized");
+        expect(info).not.toHaveProperty("category");
         expect(info.brand_url).toBeUndefined();
     });
 });

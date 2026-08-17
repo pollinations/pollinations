@@ -76,7 +76,7 @@ export type FallbackModelOption = {
 export function publicCommunityFallbackOptions(
     models: {
         name: string;
-        type: string;
+        type?: string;
         community?: boolean;
         agent?: boolean;
     }[],

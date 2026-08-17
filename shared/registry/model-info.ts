@@ -32,15 +32,17 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    category: z.enum([
-        "text",
-        "image",
-        "audio",
-        "video",
-        "3d",
-        "embedding",
-        "realtime",
-    ]),
+    category: z
+        .enum([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ])
+        .optional(),
     brand: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
@@ -167,14 +169,15 @@ export function modelInfoFromDefinition(
     service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
+    const agent = service.agent || options.agent || undefined;
     return {
         name,
         aliases: service.aliases,
-        category: service.category,
+        ...(!agent && { category: service.category }),
         brand: service.brand,
         brand_url: service.brandUrl,
         community: options.community || undefined,
-        agent: service.agent || options.agent || undefined,
+        agent,
         base_model: service.baseModel,
         per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),

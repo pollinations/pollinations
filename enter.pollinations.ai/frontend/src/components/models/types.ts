@@ -9,6 +9,7 @@ export type ModelCategory =
 
 export type ModelDisplayCategory =
     | ModelCategory
+    | "agent"
     | "community-text"
     | "community-image"
     | "community-agent";
@@ -67,7 +68,7 @@ export type ModelPriceAdjustment = {
 
 export type ModelPrice = {
     name: string;
-    type: ModelCategory;
+    type?: ModelCategory;
     community?: boolean;
     agent?: boolean;
     baseModel?: string;

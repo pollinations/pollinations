@@ -42,6 +42,7 @@ describe("MIDIjourney agent", () => {
             max_reference_images: base?.info.max_reference_images,
         });
         expect(agent?.info.input_modalities).toContain("image");
+        expect(agent?.info).not.toHaveProperty("category");
         if (!agent) throw new Error("MIDI Journey agent is missing");
         expect(agent.info.pricing).toEqual(
             modelInfoFromDefinition(agent.id, agent.definition).pricing,

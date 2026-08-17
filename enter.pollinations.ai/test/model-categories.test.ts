@@ -9,6 +9,11 @@ const catalog = [
     { name: "official-text", category: "text" as const },
     { name: "official-image", category: "image" as const },
     {
+        name: "official-agent",
+        agent: true,
+        output_modalities: ["text"],
+    },
+    {
         name: "community-text",
         category: "text" as const,
         community: true,
@@ -20,9 +25,9 @@ const catalog = [
     },
     {
         name: "community-agent",
-        category: "text" as const,
         community: true,
         agent: true,
+        output_modalities: ["text"],
     },
 ];
 
@@ -51,6 +56,12 @@ describe("model categories", () => {
                 models: ["official-image"],
             },
             {
+                category: "agent",
+                label: "Agents",
+                modality: "text",
+                models: ["official-agent"],
+            },
+            {
                 category: "community-text",
                 label: "Community Text",
                 modality: "text",
@@ -74,6 +85,9 @@ describe("model categories", () => {
     it("reports the correct OAuth modality for each community category", () => {
         const categories = getModelCategoriesFromCatalog(catalog);
 
+        expect(
+            computeCategoryModalities(["official-agent"], categories),
+        ).toEqual(["text"]);
         expect(
             computeCategoryModalities(["community-text"], categories),
         ).toEqual(["text"]);

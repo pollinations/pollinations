@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-16",
+  "period_start": "2026-08-16",
+  "period_end": "2026-08-16",
+  "generated_at": "2026-08-17T06:18:52.226372+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-16/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: image edits now keep the original aspect ratio when size is omitted. agents show their tool calls, follow MCP redirects, and have a quieter catalog. quest reward campaigns landed too. 14 PRs; fewer tiny ways for a UI to become a side quest."
+}

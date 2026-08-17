@@ -167,7 +167,7 @@ export const PollinationsToolsCapability: FC = () => (
             </span>
         }
         ariaLabel="Pollinations tools. This agent can call Pollinations models through its built-in MCP connection."
-        className="self-center leading-none"
+        className="relative -top-0.5 self-center leading-none"
         tapEnabled
         displayContents
     >

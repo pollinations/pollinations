@@ -494,7 +494,7 @@ export const Models: FC = () => {
                                 are for the agent&apos;s base model, which runs
                                 with the agent&apos;s saved instructions. Agents
                                 with the{" "}
-                                <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle text-theme-text-soft">
                                     <McpIcon className="h-3.5 w-3.5 shrink-0" />
                                     <strong>Tools</strong>
                                 </span>{" "}

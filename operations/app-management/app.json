@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Meadows",
+    "url": "https://meadowy.roboticrobot.xyz",
+    "description": "Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "pegalink",
+    "githubUserId": "85689068",
+    "repositoryUrl": "https://github.com/pegalink/meadowy",
+    "repositoryStars": null,
+    "discordUsername": "robotic.robot",
+    "other": null,
+    "submittedDate": "2026-08-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13483",
+    "approvedDate": "2026-08-17",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "NeuralCanvas",
     "url": "https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator",

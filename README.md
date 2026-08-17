@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 Meadows](https://meadowy.roboticrobot.xyz) | Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a | [@pegalink](https://github.com/pegalink) |
 | [🖼️ NeuralCanvas](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) | NeuralCanvas is a native Android app (Kotlin + Jetpack Compose) that turns a text prompt into an AI-generated image, built entirely on the Pollinations image API. How it uses Pollinations: every gener | [@greysonmiller67-lang](https://github.com/greysonmiller67-lang) |
 | [💼 Vyrsa Academy](https://vyrsa.xyz) | [Vyrsa.xyz](https://vyrsa.xyz/) is a premium digital transformation academy designed to help you break free from imposter syndrome and build unshakable confidence. Through a proven "Grow, Reflect, Tra | [@ariaerendev](https://github.com/ariaerendev) |
 | [💼 Indish Marketer's Voice Agent](https://voice.prototools.in) | An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads | [@indishmarketer](https://github.com/indishmarketer) |
@@ -30,7 +31,6 @@
 | [🖼️ HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) | Create comic strips quickly with HQ IA, an AI-powered comic book creator. | [@wljrodrigues](https://github.com/wljrodrigues) |
 | [🖼️ IMADreamer](https://fastnow.github.io/imadreamer) | IMADreamer is a free AI image generation tool built on the Pollinations API. | [@fastnow](https://github.com/fastnow) |
 | [📚 FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) | With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition) | [@rpbmultiongh](https://github.com/rpbmultiongh) |
-| [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

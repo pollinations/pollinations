@@ -61,9 +61,9 @@ npx @pollinations/mcp
 | `generateImage` | `/v1/images/generations` | Image resource link |
 | `generateVideo` | `/video/{prompt}`        | Video resource link |
 | `generate3D`    | `/3d/{prompt}`           | GLB resource link   |
-| `transformMedia` | `/v1/media/transforms`   | Media resource link |
+| `runFfmpeg`    | `/v1/media/ffmpeg`      | Media resource link |
 
-Generated and transformed media is uploaded unlisted to `media.pollinations.ai` and returned as an MCP resource link, so binary data does not consume model context. Anyone with the unguessable URL can access it; uploads use the media service's 30-day lifecycle. To edit an image, pass its HTTP(S) URL in `image`. Generate multiple images with multiple tool calls rather than a separate batch contract.
+Generated and FFmpeg-processed media is uploaded unlisted to `media.pollinations.ai` and returned as an MCP resource link, so binary data does not consume model context. Anyone with the unguessable URL can access it; uploads use the media service's 30-day lifecycle. `runFfmpeg` accepts a Pollinations media URL and ordinary FFmpeg arguments, excluding the executable, `-i`, and output path. To edit an image, pass its HTTP(S) URL in `image`. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 

@@ -59,11 +59,11 @@ import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
+import { FfmpegRequestSchema } from "@/schemas/ffmpeg.ts";
 import {
     GenerateImageRequestQueryParamsSchema,
     GenerateVideoRequestQueryParamsSchema,
 } from "@/schemas/image.ts";
-import { MediaTransformRequestSchema } from "@/schemas/media-transform.ts";
 import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
@@ -80,6 +80,7 @@ import {
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
+import { ffmpegAccess, resolveFfmpeg, runFfmpeg } from "./ffmpeg.ts";
 import {
     generateChatCompletion,
     generateEmbeddingsResponse,
@@ -90,11 +91,6 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
-import {
-    mediaTransformAccess,
-    resolveMediaTransform,
-    transformMedia,
-} from "./media-transform.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -550,23 +546,32 @@ export const proxyRoutes = new Hono<Env>()
     .use(frontendKeyRateLimit)
     .use(balance)
     .post(
-        "/v1/media/transforms",
+        "/v1/media/ffmpeg",
         describeRoute({
             tags: ["🎞️ Media"],
-            summary: "Transform Media",
+            summary: "Run FFmpeg",
             description:
-                "Trim or resize a video, extract audio, or capture a frame from a public media URL. Video and audio outputs support 1–60 second durations.",
+                "Run FFmpeg arguments against a media.pollinations.ai input. Omit the executable, -i, and output path; Pollinations supplies them.",
             responses: {
-                200: { description: "Transformed media bytes" },
+                200: { description: "FFmpeg output bytes" },
                 413: { description: "Source media is too large" },
-                ...errorResponseDescriptions(400, 401, 402, 429, 500, 502, 503),
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    422,
+                    429,
+                    500,
+                    502,
+                    503,
+                ),
             },
         }),
-        validator("json", MediaTransformRequestSchema),
-        resolveMediaTransform,
+        validator("json", FfmpegRequestSchema),
+        resolveFfmpeg,
         track("tool.media"),
-        mediaTransformAccess,
-        transformMedia,
+        ffmpegAccess,
+        runFfmpeg,
     )
     .get(
         "/realtime",

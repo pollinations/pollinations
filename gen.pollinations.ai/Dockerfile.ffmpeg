@@ -1,0 +1,12 @@
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg coreutils ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 ffmpeg \
+    && mkdir -p /work \
+    && chown ffmpeg:ffmpeg /work
+
+USER ffmpeg
+WORKDIR /work
+CMD ["sleep", "infinity"]

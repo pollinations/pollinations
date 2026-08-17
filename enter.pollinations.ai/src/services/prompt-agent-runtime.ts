@@ -60,7 +60,7 @@ const POLLINATIONS_AGENT_TOOLS = [
     "generateText",
     "createEmbeddings",
     "generateAudio",
-    "transformMedia",
+    "runFfmpeg",
     "listModels",
     "getModelStatus",
 ];

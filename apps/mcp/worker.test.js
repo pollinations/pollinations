@@ -17,7 +17,7 @@ const EXPECTED_TOOLS = [
     "getBalance",
     "getModelStatus",
     "listModels",
-    "transformMedia",
+    "runFfmpeg",
 ];
 
 function localFetch(input, init) {
@@ -192,7 +192,7 @@ test("uploads generated images and returns an MCP resource link", async (t) => {
     await client.close();
 });
 
-test("transforms media and returns an MCP resource link", async (t) => {
+test("runs FFmpeg and returns an MCP resource link", async (t) => {
     const originalFetch = globalThis.fetch;
     let transformBody;
     t.after(() => {
@@ -205,7 +205,7 @@ test("transforms media and returns an MCP resource link", async (t) => {
             new Headers(init?.headers).get("authorization"),
             `Bearer ${TOKEN}`,
         );
-        if (url === "https://gen.pollinations.ai/v1/media/transforms") {
+        if (url === "https://gen.pollinations.ai/v1/media/ffmpeg") {
             transformBody = JSON.parse(init.body);
             return new Response(new Uint8Array([7, 8, 9]), {
                 headers: { "content-type": "audio/mp4" },
@@ -229,25 +229,23 @@ test("transforms media and returns an MCP resource link", async (t) => {
         versionNegotiation: { mode: "auto" },
     });
     const result = await client.callTool({
-        name: "transformMedia",
+        name: "runFfmpeg",
         arguments: {
-            source: "https://example.com/input.mp4",
-            mode: "audio",
-            time: 2,
-            duration: 4,
+            source: "https://media.pollinations.ai/input-video",
+            args: ["-vn", "-c:a", "aac"],
+            outputExtension: "m4a",
         },
     });
 
     assert.deepEqual(transformBody, {
-        source: "https://example.com/input.mp4",
-        mode: "audio",
-        time: 2,
-        duration: 4,
+        source: "https://media.pollinations.ai/input-video",
+        args: ["-vn", "-c:a", "aac"],
+        outputExtension: "m4a",
     });
     assert.deepEqual(result.content[0], {
         type: "resource_link",
         uri: "https://media.pollinations.ai/transformed-audio",
-        name: "Transformed media",
+        name: "FFmpeg output",
         mimeType: "audio/mp4",
     });
     await client.close();

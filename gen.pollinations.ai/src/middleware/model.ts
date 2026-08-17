@@ -20,7 +20,7 @@ const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.audio": "audio",
     "generate.embedding": "embeddings",
     "generate.realtime": "realtime",
-    "tool.media": "media transformation",
+    "tool.media": "FFmpeg",
 };
 
 export type ModelVariables = {

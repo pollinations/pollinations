@@ -12,10 +12,6 @@ services = [
 [images]
 binding = "IMAGES"
 
-[media]
-binding = "MEDIA"
-remote = true
-
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -83,8 +79,12 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 [env.production.images]
 binding = "IMAGES"
 
-[env.production.media]
-binding = "MEDIA"
+[[env.production.containers]]
+name = "pollinations-gen-ffmpeg-production"
+class_name = "FfmpegContainer"
+image = "./Dockerfile.ffmpeg"
+max_instances = 100
+instance_type = "basic"
 
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
@@ -141,6 +141,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.production.durable_objects.bindings]]
+name = "FFMPEG"
+class_name = "FfmpegContainer"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -152,6 +156,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.production.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.production.migrations]]
+tag = "v4"
+new_sqlite_classes = ["FfmpegContainer"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -169,8 +177,12 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 [env.staging.images]
 binding = "IMAGES"
 
-[env.staging.media]
-binding = "MEDIA"
+[[env.staging.containers]]
+name = "pollinations-gen-ffmpeg-staging"
+class_name = "FfmpegContainer"
+image = "./Dockerfile.ffmpeg"
+max_instances = 10
+instance_type = "basic"
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"
@@ -221,6 +233,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.staging.durable_objects.bindings]]
+name = "FFMPEG"
+class_name = "FfmpegContainer"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -232,6 +248,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.staging.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.staging.migrations]]
+tag = "v4"
+new_sqlite_classes = ["FfmpegContainer"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"

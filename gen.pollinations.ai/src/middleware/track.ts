@@ -78,6 +78,7 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import { ffmpegBillingOutput } from "@/routes/ffmpeg.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import type { FailedCall } from "../fallback.ts";
 
@@ -637,6 +638,28 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
+        const ffmpegOutput = ffmpegBillingOutput(response);
+        if (ffmpegOutput) {
+            const billing = calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage: {},
+                servedBy:
+                    servedModelDefinition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output: ffmpegOutput,
+                input: pricingInput,
+            });
+            return {
+                responseStatus: response.status,
+                cacheHit,
+                isBilledUsage: billing.price.totalPrice > 0,
+                fallbackUsed,
+                ...billing,
+                modelUsed: modelCalled,
+                modelProviderUsed,
+                usage: {},
+            };
+        }
         return notBilled({
             modelUsed: modelCalled,
             fallbackUsed:
@@ -1034,6 +1057,9 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
 async function extractResponseJsonOutput(
     response: Response,
 ): Promise<unknown | undefined> {
+    const ffmpegOutput = ffmpegBillingOutput(response);
+    if (ffmpegOutput) return ffmpegOutput;
+
     // Timestamped TTS JSON contains the complete base64 audio. Billing comes
     // from usage headers, and copying that payload into analytics is wasteful.
     if (

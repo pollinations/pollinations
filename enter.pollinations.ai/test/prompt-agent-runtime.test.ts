@@ -610,7 +610,7 @@ describe("prompt-agent runtime", () => {
                                     inputSchema: { type: "object" },
                                 },
                                 {
-                                    name: "transformMedia",
+                                    name: "runFfmpeg",
                                     inputSchema: { type: "object" },
                                 },
                                 {
@@ -631,7 +631,7 @@ describe("prompt-agent runtime", () => {
                 };
                 expect(body.tools.map((tool) => tool.function.name)).toEqual([
                     "mcp__pollinations__generateImage",
-                    "mcp__pollinations__transformMedia",
+                    "mcp__pollinations__runFfmpeg",
                 ]);
                 return Response.json({
                     choices: [

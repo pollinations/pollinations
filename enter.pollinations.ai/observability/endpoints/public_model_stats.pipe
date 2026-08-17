@@ -24,7 +24,7 @@ SQL >
     -- joins for an ordinary call and run_price is 0, leaving total_price.
     SELECT
         calls.resolved_model_requested as model,
-        calls.total_price + steps.run_price as price,
+        calls.total_price + ifNull(steps.run_price, 0) as price,
         calls.response_status as response_status,
         calls.response_time as response_time
     FROM generation_event_v2 as calls

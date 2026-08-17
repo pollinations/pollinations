@@ -58,16 +58,25 @@ async function mintDelegatedToken(
     });
 }
 
-export async function communityEndpointGatewayContext(
-    endpoint: CommunityEndpointRuntime,
-    modelDefinition: ModelDefinition,
-    requestData: RequestData,
-    secret: string,
-    portkeyGatewayUrl: string,
-    userApiKey: string,
-    parentRequestId: string,
-    parentApiKeyId?: string,
-): Promise<TransformOptions> {
+export async function communityEndpointGatewayContext({
+    endpoint,
+    modelDefinition,
+    requestData,
+    secret,
+    portkeyGatewayUrl,
+    userApiKey,
+    parentRequestId,
+    parentApiKeyId,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    modelDefinition: ModelDefinition;
+    requestData: RequestData;
+    secret: string;
+    portkeyGatewayUrl: string;
+    userApiKey: string;
+    parentRequestId: string;
+    parentApiKeyId?: string;
+}): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(
         endpoint,

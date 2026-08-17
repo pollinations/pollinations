@@ -32,11 +32,16 @@ function formatCount(num: number): string {
     return compact(Math.round(num / 100) * 100);
 }
 
+// Measured cost wins over the declared price. An agent lists as free because it
+// charges no wrapper price, but it spends the caller's balance on the models and
+// tools it calls — "∞" would be a lie. A genuinely free model never clears the
+// stats pipe's priced-request floor, so it has no measured cost and still
+// reads "∞".
 export function calculatePerPollen(model: ModelPrice): string {
-    if (model.free) return "∞";
     if (model.realAvgCost !== undefined && model.realAvgCost > 0) {
         return formatCount(1 / model.realAvgCost);
     }
+    if (model.free) return "∞";
     return "—";
 }
 

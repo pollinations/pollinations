@@ -291,4 +291,32 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             1_001,
         ),
     ).rejects.toThrow("Invalid agent run token claims");
+
+    // The parent request id is what groups a run's generations, so a token
+    // that cannot be attributed is rejected rather than billed untagged.
+    for (const payload of [
+        { version: 1 },
+        { version: 1, parentRequestId: "" },
+    ]) {
+        const untagged = await new SignJWT(payload)
+            .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+            .setIssuer("gen.pollinations.ai")
+            .setAudience("pollinations-api")
+            .setSubject("parent-key-id")
+            .setJti("run-id")
+            .setIssuedAt(1_000)
+            .setExpirationTime(1_000 + AGENT_RUN_TOKEN_TTL_SECONDS)
+            .sign(
+                new TextEncoder().encode(
+                    `pollinations-agent-run-token:v1\0${env.BETTER_AUTH_SECRET}`,
+                ),
+            );
+        await expect(
+            verifyAgentRunToken(
+                `ag_${untagged}`,
+                env.BETTER_AUTH_SECRET,
+                1_001,
+            ),
+        ).rejects.toThrow("Invalid agent run token claims");
+    }
 });

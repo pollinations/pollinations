@@ -97,6 +97,7 @@ type RealtimeBillingContext = {
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;
+    parentRequestId?: string;
     requestPath: string;
     environment: string;
     referrerUrl?: string;
@@ -710,6 +711,7 @@ function createRealtimeTrackingEvent(args: {
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
+        parentRequestId: args.tracking.parentRequestId,
         requestPath: args.tracking.requestPath,
         startTime: args.startTime,
         endTime: args.endTime,
@@ -1314,6 +1316,7 @@ async function createRealtimeBillingContext(
         modelCostDefinition: modelInfo.definition.cost,
         modelPriceDefinition,
         requestId: c.get("requestId"),
+        parentRequestId: c.var.auth.agentRun?.parentRequestId,
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,
         ...referrer,

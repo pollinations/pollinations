@@ -127,16 +127,16 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext(
-        communityEndpoint,
-        definition,
-        candidateRequest,
-        c.env.BETTER_AUTH_SECRET,
-        c.env.PORTKEY_GATEWAY_URL,
-        c.var.auth?.apiKey?.rawKey || "",
-        c.get("requestId"),
-        c.var.auth?.apiKey?.id,
-    );
+    return communityEndpointGatewayContext({
+        endpoint: communityEndpoint,
+        modelDefinition: definition,
+        requestData: candidateRequest,
+        secret: c.env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        userApiKey: c.var.auth?.apiKey?.rawKey || "",
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {

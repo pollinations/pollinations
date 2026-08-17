@@ -13,7 +13,6 @@ SCHEMA >
 -- Request
 `request_id`      String                 `json:$.requestId`,
 `request_path`    String                 `json:$.requestPath`,
-
 `start_time`      DateTime               `json:$.startTime`,
 `end_time`        DateTime               `json:$.endTime`,
 `response_time`   Float32                `json:$.responseTime` DEFAULT 0,
@@ -149,8 +148,12 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- Drop the FORWARD_QUERY below once this is promoted (#10763): while it is
--- there, every deployment copies the table instead of an ALTER.
+-- The FORWARD_QUERY below is a defaulted-column addition, which #10763 already
+-- established needs no forward query: it measured the copy at ~30 GiB / 422M
+-- rows per deploy and confirmed `deploy --check` reports a metadata-only ALTER
+-- without one. It is here only because the check failed anyway on CLI 4.5.1 and
+-- 4.6.14. Re-run `deployment create --check` without it on the next CLI bump
+-- and drop it — and until then, mirror every new column into its 95-name list.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

@@ -965,18 +965,18 @@ describe("community endpoint helpers", () => {
         };
         const modelDefinition = communityModelDefinition(endpoint);
 
-        const context = await communityEndpointGatewayContext(
+        const context = await communityEndpointGatewayContext({
             endpoint,
             modelDefinition,
-            {
+            requestData: {
                 messages: [{ role: "user", content: "hello" }],
                 max_tokens: 5,
             },
             secret,
-            "https://portkey.test",
-            "sk_user_key",
-            "parent-request-id",
-        );
+            portkeyGatewayUrl: "https://portkey.test",
+            userApiKey: "sk_user_key",
+            parentRequestId: "parent-request-id",
+        });
 
         expect(context).toMatchObject({
             max_tokens: 5,
@@ -1033,16 +1033,18 @@ describe("community endpoint helpers", () => {
             parentApiKeyId?: string,
             parentRequestId = "parent-request-id",
         ) {
-            return communityEndpointGatewayContext(
+            return communityEndpointGatewayContext({
                 endpoint,
-                communityModelDefinition(endpoint),
-                { messages: [{ role: "user", content: "make a video" }] },
+                modelDefinition: communityModelDefinition(endpoint),
+                requestData: {
+                    messages: [{ role: "user", content: "make a video" }],
+                },
                 secret,
-                "https://portkey.test",
-                "sk_user_key",
+                portkeyGatewayUrl: "https://portkey.test",
+                userApiKey: "sk_user_key",
                 parentRequestId,
                 parentApiKeyId,
-            );
+            });
         }
 
         it("authenticates as a run token, not the caller's or owner's key", async () => {
@@ -1073,9 +1075,21 @@ describe("community endpoint helpers", () => {
                 secret,
             );
             expect(claims.parentRequestId).toBe("req-abc");
-            // Still a unique token id: a delegating fallback mints several
-            // tokens per request and they must not share a jti.
-            expect(claims.runId).not.toBe("req-abc");
+
+            // A delegating fallback mints one token per attempt, all under the
+            // same parent request. They share the grouping id and must not
+            // share a jti.
+            const second = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+            const secondClaims = await verifyAgentRunToken(
+                String(second.modelConfig?.authKey),
+                secret,
+            );
+            expect(secondClaims.parentRequestId).toBe("req-abc");
+            expect(secondClaims.runId).not.toBe(claims.runId);
         });
 
         it("sends the saved bearer when the endpoint is not flagged", async () => {
@@ -3979,21 +3993,23 @@ fixtureTest(
             promptTextTokens: 0,
             completionTextTokens: 0,
         });
-        const gatewayContext = await communityEndpointGatewayContext(
-            registryEntry.communityEndpoint,
-            registryEntry.definition,
-            { messages: [{ role: "user", content: "hello" }] },
-            env.BETTER_AUTH_SECRET,
-            env.PORTKEY_GATEWAY_URL,
-            "sk_user_key",
-            "caller-api-key-id",
-        );
+        const gatewayContext = await communityEndpointGatewayContext({
+            endpoint: registryEntry.communityEndpoint,
+            modelDefinition: registryEntry.definition,
+            requestData: { messages: [{ role: "user", content: "hello" }] },
+            secret: env.BETTER_AUTH_SECRET,
+            portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+            userApiKey: "sk_user_key",
+            parentRequestId: "caller-request-id",
+            parentApiKeyId: "caller-api-key-id",
+        });
         const runtimeToken = String(gatewayContext.modelConfig?.authKey);
         expect(runtimeToken).toMatch(/^ag_/);
         await expect(
             verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
         ).resolves.toMatchObject({
             parentApiKeyId: "caller-api-key-id",
+            parentRequestId: "caller-request-id",
             managedAgentId: agent.id,
         });
         expect(gatewayContext.modelConfig).toMatchObject({

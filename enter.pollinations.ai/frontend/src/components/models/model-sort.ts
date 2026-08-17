@@ -11,11 +11,11 @@ const compareKnownValues = (
     return direction === "asc" ? a - b : b - a;
 };
 
+// Same order as calculatePerPollen: a measured cost beats a declared free
+// price, so an agent sorts by what its run actually spends, not as free.
 const getAverageCost = (model: ModelPrice): number | undefined => {
-    if (model.free) return 0;
-    return model.realAvgCost && model.realAvgCost > 0
-        ? model.realAvgCost
-        : undefined;
+    if (model.realAvgCost && model.realAvgCost > 0) return model.realAvgCost;
+    return model.free ? 0 : undefined;
 };
 
 const getTitle = (model: ModelPrice): string => model.displayName ?? model.name;

@@ -5,16 +5,16 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { QUEST_GROUPS } from "./quests/index.ts";
 import {
+    type QuestEvaluation,
     type QuestEvaluationContext,
+    type QuestProgress,
     type QuestUser,
-    type RewardProposal,
     toReward,
 } from "./quests/types.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 
-type QuestProposalSourceResult = {
-    proposals: RewardProposal[];
+type QuestEvaluationSourceResult = QuestEvaluation & {
     error?: string;
 };
 
@@ -22,6 +22,7 @@ export type QuestCheckResult = {
     success: boolean;
     recorded: number;
     rewardIds: string[];
+    progress: QuestProgress[];
 };
 
 export async function checkQuestsForUser(
@@ -50,7 +51,7 @@ export async function checkQuestsForUser(
 
     const ctx: QuestEvaluationContext = { db, env };
     const sourceResults = await Promise.all(
-        QUEST_GROUPS.map((group) => findGroupRewardProposals(ctx, group, user)),
+        QUEST_GROUPS.map((group) => evaluateGroup(ctx, group, user)),
     );
     const proposals = sourceResults.flatMap((entry) => entry.proposals);
     const rewardInputs = proposals.map(toReward);
@@ -74,6 +75,7 @@ export async function checkQuestsForUser(
         success: sourceResults.every((entry) => !entry.error),
         recorded: recorded.recorded,
         rewardIds: recorded.rewardIds,
+        progress: sourceResults.flatMap((entry) => entry.progress ?? []),
     };
 
     log.info("QUEST_CHECK_COMPLETE: userId={userId} result={result}", {
@@ -100,25 +102,23 @@ async function loadQuestUser(
     return rows[0] ?? null;
 }
 
-async function findGroupRewardProposals(
+async function evaluateGroup(
     ctx: QuestEvaluationContext,
     group: (typeof QUEST_GROUPS)[number],
     user: QuestUser,
-): Promise<QuestProposalSourceResult> {
+): Promise<QuestEvaluationSourceResult> {
     try {
         log.info("QUEST_GROUP_START: groupId={groupId} userId={userId}", {
             groupId: group.id,
             userId: user.id,
         });
-        const proposals = await group.findRewardProposalsForUser(ctx, user);
+        const evaluation = await group.evaluateUser(ctx, user);
         log.info("QUEST_GROUP_PROPOSALS: groupId={groupId} count={count}", {
             groupId: group.id,
-            count: proposals.length,
+            count: evaluation.proposals.length,
         });
 
-        return {
-            proposals,
-        };
+        return evaluation;
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         log.error(

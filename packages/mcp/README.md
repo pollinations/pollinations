@@ -6,6 +6,16 @@ All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS
 
 ## Quick Start
 
+For Streamable HTTP clients, connect to `https://mcp.pollinations.ai` and send
+your API key as `Authorization: Bearer YOUR_KEY`.
+
+The server can only use models and account features allowed by that key's
+permissions, and it cannot spend beyond the key's budget. Configure both in
+[API key settings](https://enter.pollinations.ai/keys); see
+[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
+
+Or run the server locally over stdio:
+
 ```bash
 # Run directly with npx (no installation required)
 npx @pollinations/mcp
@@ -27,7 +37,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys),
 - `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
 - `sk_` (secret) — server-side only, no rate limits, can spend Pollen
 
-Set your key via environment variable or the `setApiKey` tool:
+For the local server, set your key via environment variable or the `setApiKey`
+tool:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here
@@ -45,13 +56,13 @@ npx @pollinations/mcp
 
 ### Media Generation
 
-| Tool            | API route                | MCP result                    |
-| --------------- | ------------------------ | ----------------------------- |
-| `generateImage` | `/v1/images/generations` | Image data or a resource link |
-| `generateVideo` | `/video/{prompt}`        | Embedded video resource       |
-| `generate3D`    | `/3d/{prompt}`           | Embedded GLB resource         |
+| Tool            | API route                | MCP result         |
+| --------------- | ------------------------ | ------------------ |
+| `generateImage` | `/v1/images/generations` | Image resource link |
+| `generateVideo` | `/video/{prompt}`        | Video resource link |
+| `generate3D`    | `/3d/{prompt}`           | GLB resource link   |
 
-`generateImage` uses the API's `response_format`: `b64_json` returns an MCP image block (the API default), while `url` returns an MCP resource link. To edit an image, pass its HTTP(S) URL in `image`; use `url` output when the result will be passed into another edit. Generate multiple images with multiple tool calls rather than a separate batch contract.
+Generated media is uploaded unlisted to `media.pollinations.ai` and returned as an MCP resource link, so binary data does not consume model context. Anyone with the unguessable URL can access it; uploads use the media service's 30-day lifecycle. To edit an image, pass its HTTP(S) URL in `image`. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 
@@ -68,7 +79,7 @@ Use `generateText` with the appropriate model and message content for simple tex
 | --------------- | -------------- | -------------------------------- |
 | `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-`generateAudio` returns an MCP audio block. Call `listModels` with `type=audio` for model and voice metadata.
+`generateAudio` returns an unlisted media resource link. Call `listModels` with `type=audio` for model and voice metadata.
 
 ### Discovery
 

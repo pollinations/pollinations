@@ -26,6 +26,8 @@ export function ModelListingFields({
     modality,
     canPublish,
     isAgent,
+    showInputModalities = !isAgent,
+    allowPerUserRpm = !isAgent,
     required = true,
     onChange,
     onInputModalitiesChange,
@@ -34,6 +36,8 @@ export function ModelListingFields({
     modality: CommunityEndpointModality;
     canPublish: boolean;
     isAgent: boolean;
+    showInputModalities?: boolean;
+    allowPerUserRpm?: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
@@ -55,7 +59,7 @@ export function ModelListingFields({
 
     return (
         <>
-            {!isAgent && (
+            {showInputModalities && (
                 <FieldStack
                     label="Accepted inputs"
                     helper="Select every input type supported by this model. At least one is required."
@@ -187,7 +191,7 @@ export function ModelListingFields({
                 </ButtonGroup>
             </FieldStack>
 
-            {!isAgent && (
+            {allowPerUserRpm && (
                 <FieldStack
                     label="Per-user RPM"
                     helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."

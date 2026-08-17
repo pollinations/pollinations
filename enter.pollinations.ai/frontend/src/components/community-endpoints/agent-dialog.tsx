@@ -18,12 +18,12 @@ import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
     type AgentFormState,
     type AgentListingDetailsPayload,
-    type AgentPayload,
     agentListingToForm,
     type CommunityEndpoint,
     emptyAgentForm,
-    type ManagedAgent,
     type ModelListingFormState,
+    type PromptAgent,
+    type PromptAgentPayload,
     toAgentListingPayload,
     toAgentPayload,
 } from "./types.ts";
@@ -31,13 +31,13 @@ import {
 type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
-    agent?: ManagedAgent;
+    agent?: PromptAgent;
     endpoint?: CommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (
-        agent: AgentPayload,
+        agent: PromptAgentPayload,
         listing: AgentListingDetailsPayload,
     ) => Promise<void>;
     trigger?: ReactNode;

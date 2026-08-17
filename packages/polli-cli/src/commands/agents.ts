@@ -10,14 +10,27 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type Agent = {
+type AgentBase = {
     id: string;
-    systemPrompt: string;
-    baseModel: string;
-    mcpServers: string[];
+    kind: "prompt" | "endpoint";
     createdAt: string;
     updatedAt: string;
 };
+
+type PromptAgent = AgentBase & {
+    kind: "prompt";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: string[];
+};
+
+type EndpointAgent = AgentBase & {
+    kind: "endpoint";
+    baseUrl: string;
+    upstreamModel: string;
+};
+
+type Agent = PromptAgent | EndpointAgent;
 
 function readConfig(path: string): unknown {
     try {
@@ -38,12 +51,16 @@ function printAgents(agents: Agent[]): void {
     printTable(
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
-            model: agent.baseModel,
-            pollinations_tools: agent.mcpServers.includes("pollinations")
-                ? "yes"
-                : "no",
+            kind: agent.kind,
+            target:
+                agent.kind === "prompt" ? agent.baseModel : agent.upstreamModel,
+            pollinations_tools:
+                agent.kind === "prompt" &&
+                agent.mcpServers.includes("pollinations")
+                    ? "yes"
+                    : "no",
         })),
-        ["id", "model", "pollinations_tools"],
+        ["id", "kind", "target", "pollinations_tools"],
     );
 }
 
@@ -85,7 +102,7 @@ const get = new Command("get")
     });
 
 const create = new Command("create")
-    .description("Create a prompt agent")
+    .description("Create an agent")
     .requiredOption(
         "--config <file>",
         "JSON agent config file sent directly to the API",
@@ -163,7 +180,7 @@ const remove = new Command("delete")
     });
 
 export const agentsCommand = new Command("agents")
-    .description("Manage prompt agents")
+    .description("Manage agents")
     .addCommand(list)
     .addCommand(get)
     .addCommand(create)

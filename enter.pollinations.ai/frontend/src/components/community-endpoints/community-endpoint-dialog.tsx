@@ -49,6 +49,8 @@ import {
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
+    /** Treat this external target as an endpoint agent in labels and listing fields. */
+    isAgent?: boolean;
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
@@ -63,6 +65,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    isAgent = false,
     canPublish,
     fallbackOptions,
     open,
@@ -358,14 +361,16 @@ export function CommunityEndpointDialog({
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
-                    {isEdit ? "Edit Model" : "Add Model"}
+                    {isEdit
+                        ? `Edit ${isAgent ? "Agent" : "Model"}`
+                        : `Add ${isAgent ? "Endpoint Agent" : "Model"}`}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     Register an OpenAI-compatible endpoint as a{" "}
                     <code>
                         {"{username}"}/{"{model-id}"}
                     </code>{" "}
-                    model.
+                    {isAgent ? "agent" : "model"}.
                 </p>
             </div>
 
@@ -378,41 +383,47 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
-                    <FieldStack
-                        label="Modality"
-                        helper={
-                            isEdit
-                                ? "Existing models keep their registered modality."
-                                : "Choose the public API family this endpoint serves."
-                        }
-                        alignLabelRow
-                    >
-                        <ButtonGroup aria-label="Modality">
-                            {(["text", "image"] as const).map((modality) => (
-                                <TabButton
-                                    key={modality}
-                                    active={form.modality === modality}
-                                    disabled={isEdit}
-                                    onClick={() =>
-                                        updateForm("modality", modality)
-                                    }
-                                    size="sm"
-                                    className="min-w-20 gap-1.5 capitalize"
-                                >
-                                    {form.modality === modality && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    {modality}
-                                </TabButton>
-                            ))}
-                        </ButtonGroup>
-                    </FieldStack>
+                    {!isAgent && (
+                        <FieldStack
+                            label="Modality"
+                            helper={
+                                isEdit
+                                    ? "Existing models keep their registered modality."
+                                    : "Choose the public API family this endpoint serves."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Modality">
+                                {(["text", "image"] as const).map(
+                                    (modality) => (
+                                        <TabButton
+                                            key={modality}
+                                            active={form.modality === modality}
+                                            disabled={isEdit}
+                                            onClick={() =>
+                                                updateForm("modality", modality)
+                                            }
+                                            size="sm"
+                                            className="min-w-20 gap-1.5 capitalize"
+                                        >
+                                            {form.modality === modality && (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            )}
+                                            {modality}
+                                        </TabButton>
+                                    ),
+                                )}
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
 
                     <ModelListingFields
                         form={form}
                         modality={form.modality}
                         canPublish={canPublish}
-                        isAgent={false}
+                        isAgent={isAgent}
+                        showInputModalities
+                        allowPerUserRpm
                         onChange={(key, value) => updateForm(key, value)}
                         onInputModalitiesChange={(inputModalities) =>
                             setForm((current) => ({
@@ -671,10 +682,10 @@ export function CommunityEndpointDialog({
                         {isSubmitting
                             ? "Saving…"
                             : isEdit
-                              ? "Save Model"
+                              ? `Save ${isAgent ? "Agent" : "Model"}`
                               : isShared
-                                ? "Publish Model"
-                                : "Add Private Model"}
+                                ? `Publish ${isAgent ? "Agent" : "Model"}`
+                                : `Add Private ${isAgent ? "Agent" : "Model"}`}
                     </Button>
                 </div>
             </form>

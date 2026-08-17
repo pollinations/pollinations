@@ -3708,7 +3708,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "creates, edits, registers, and deletes managed agents",
+    "creates, edits, registers, and deletes prompt agents",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
@@ -3737,6 +3737,7 @@ fixtureTest(
             "__Secure-better-auth.session_token",
         );
         const promptAgent = {
+            kind: "prompt" as const,
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
             mcpServers: ["pollinations"],
@@ -3756,11 +3757,13 @@ fixtureTest(
         expect(createAgentResponse.status).toBe(200);
         const agent = (await createAgentResponse.json()) as {
             id: string;
+            kind: "prompt";
             systemPrompt: string;
             baseModel: string;
             mcpServers: string[];
         };
         expect(agent).toMatchObject({
+            kind: "prompt",
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
             mcpServers: ["pollinations"],
@@ -3774,7 +3777,11 @@ fixtureTest(
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
         expect(storedAgent.id).toBe(agent.id);
-        expect(JSON.parse(storedAgent.config)).toEqual(promptAgent);
+        expect(JSON.parse(storedAgent.config)).toEqual({
+            systemPrompt: promptAgent.systemPrompt,
+            baseModel: promptAgent.baseModel,
+            mcpServers: promptAgent.mcpServers,
+        });
         const partialUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3816,8 +3823,9 @@ fixtureTest(
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
         expect(JSON.parse(agentAfterPromptUpdate.config)).toEqual({
-            ...promptAgent,
             systemPrompt: "You are an editable SQL tutor.",
+            baseModel: promptAgent.baseModel,
+            mcpServers: promptAgent.mcpServers,
         });
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -4082,6 +4090,146 @@ fixtureTest(
                 .from(communityEndpointTable)
                 .where(eq(communityEndpointTable.id, registration.id)),
         ).resolves.toEqual([]);
+    },
+);
+
+fixtureTest(
+    "creates endpoint agents with independent identity and target metadata",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterEnv = {
+            ...env,
+            BETTER_AUTH_URL: "https://enter.test",
+            AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+        };
+        const enterApi = await createEnterFrontendApi();
+        const cookie = (await signedSessionCookie(sessionToken)).replace(
+            "better-auth.session_token",
+            "__Secure-better-auth.session_token",
+        );
+        const createAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/agents", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    kind: "endpoint",
+                    baseUrl: "https://agent.example.com/v1",
+                    upstreamModel: "agent-v1",
+                }),
+            }),
+            enterEnv,
+        );
+        expect(createAgentResponse.status).toBe(200);
+        const agent = (await createAgentResponse.json()) as {
+            id: string;
+            kind: "endpoint";
+            baseUrl: string;
+            upstreamModel: string;
+        };
+        expect(agent).toMatchObject({
+            kind: "endpoint",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "agent-v1",
+        });
+        expect(agent).not.toHaveProperty("bearerTokenCiphertext");
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Endpoint Agent",
+                    agentId: agent.id,
+                    bearerToken: "sk_endpoint_agent",
+                    visibility: "public",
+                    perUserRpm: 5,
+                    promptTextPrice: 0.1 / 1_000_000,
+                    completionTextPrice: 0.2 / 1_000_000,
+                }),
+            }),
+            enterEnv,
+        );
+        expect(registerResponse.status).toBe(200);
+        const registration = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            agentId: string | null;
+        };
+        expect(registration.agentId).toBe(agent.id);
+
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === registration.modelId);
+        expect(registryEntry?.info.agent).toBe(true);
+        expect(registryEntry?.communityEndpoint).toMatchObject({
+            kind: "external",
+            agentId: agent.id,
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "agent-v1",
+            perUserRpm: 5,
+        });
+        expect(registryEntry?.agentConfig).toBeUndefined();
+        if (!registryEntry)
+            throw new Error("Endpoint agent was not registered");
+        const gatewayContext = await communityEndpointGatewayContext(
+            registryEntry.communityEndpoint,
+            registryEntry.definition,
+            { messages: [{ role: "user", content: "hello" }] },
+            env.BETTER_AUTH_SECRET,
+            env.PORTKEY_GATEWAY_URL,
+            "sk_user_key",
+        );
+        expect(gatewayContext.modelConfig).toMatchObject({
+            authKey: "sk_endpoint_agent",
+            "custom-host": "https://agent.example.com/v1",
+            model: "agent-v1",
+        });
+
+        const changeKindResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    kind: "prompt",
+                    systemPrompt: "No",
+                    baseModel: "openai-fast",
+                    mcpServers: [],
+                }),
+            }),
+            enterEnv,
+        );
+        expect(changeKindResponse.status).toBe(400);
+        expect(await changeKindResponse.text()).toContain(
+            "Agent kind cannot be changed",
+        );
     },
 );
 

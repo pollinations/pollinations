@@ -22,12 +22,14 @@ import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ManagedAgent,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
 } from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    agent?: ManagedAgent;
     isToggling: boolean;
     onToggle: () => void;
     onEdit: () => void;
@@ -36,6 +38,7 @@ type CommunityEndpointCardProps = {
 
 export function CommunityEndpointCard({
     endpoint,
+    agent,
     isToggling,
     onToggle,
     onEdit,
@@ -130,11 +133,15 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {!endpoint.agentId && (
+                {agent?.kind !== "prompt" && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
-                        value={endpoint.baseUrl}
+                        value={
+                            agent?.kind === "endpoint"
+                                ? agent.baseUrl
+                                : endpoint.baseUrl
+                        }
                         copyLabel="Copy endpoint"
                     />
                 )}
@@ -143,14 +150,18 @@ export function CommunityEndpointCard({
                     label="Modality"
                     value={endpoint.modality}
                 />
-                {!endpoint.agentId && (
+                {agent?.kind !== "prompt" && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Upstream model"
-                        value={endpoint.upstreamModel}
+                        value={
+                            agent?.kind === "endpoint"
+                                ? agent.upstreamModel
+                                : endpoint.upstreamModel
+                        }
                     />
                 )}
-                {!endpoint.agentId && endpoint.perUserRpm !== null && (
+                {agent?.kind !== "prompt" && endpoint.perUserRpm !== null && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Per-user limit"

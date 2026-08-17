@@ -202,6 +202,9 @@ export const agent = sqliteTable("agent", {
   ownerUserId: text("owner_user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: ["prompt", "endpoint"] })
+    .default("prompt")
+    .notNull(),
   config: text("config").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
@@ -240,8 +243,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  // External models keep their target here. Managed agents resolve their
-  // target through agentId so the agent can outlive its community listing.
+  // External models keep their target here. Agent listings resolve their
+  // kind-specific target through agentId.
   baseUrl: text("base_url"),
   agentId: text("agent_id").references(() => agent.id, {
     onDelete: "restrict",

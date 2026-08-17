@@ -16,23 +16,41 @@ import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type ManagedAgent = {
+type AgentTimestamps = {
     id: string;
-    systemPrompt: string;
-    baseModel: string;
-    mcpServers: "pollinations"[];
     createdAt: string;
     updatedAt: string;
 };
 
+export type PromptAgent = AgentTimestamps & {
+    kind: "prompt";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: "pollinations"[];
+};
+
+export type EndpointAgent = AgentTimestamps & {
+    kind: "endpoint";
+    baseUrl: string;
+    upstreamModel: string;
+};
+
+export type ManagedAgent = PromptAgent | EndpointAgent;
+
 type AgentFields = Pick<
-    ManagedAgent,
+    PromptAgent,
     "systemPrompt" | "baseModel" | "mcpServers"
 >;
 
 export type AgentFormState = AgentFields;
 
-export type AgentPayload = AgentFields;
+export type PromptAgentPayload = AgentFields & { kind: "prompt" };
+export type EndpointAgentPayload = {
+    kind: "endpoint";
+    baseUrl: string;
+    upstreamModel: string;
+};
+export type AgentPayload = PromptAgentPayload | EndpointAgentPayload;
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -372,7 +390,7 @@ export function observedUsageValue(
         : null;
 }
 
-export function toAgentPayload(form: AgentFormState): AgentPayload {
+export function toAgentPayload(form: AgentFormState): PromptAgentPayload {
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");
@@ -382,10 +400,21 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         throw new Error("Base model is required for a prompt agent");
     }
     return {
+        kind: "prompt",
         systemPrompt,
         baseModel,
         mcpServers: form.mcpServers,
     };
+}
+
+export function toEndpointAgentPayload(
+    form: Pick<EndpointFormState, "baseUrl" | "upstreamModel" | "name">,
+): EndpointAgentPayload {
+    const baseUrl = form.baseUrl.trim();
+    if (!baseUrl) throw new Error("Endpoint URL is required");
+    const upstreamModel = form.upstreamModel.trim() || form.name.trim();
+    if (!upstreamModel) throw new Error("Upstream model is required");
+    return { kind: "endpoint", baseUrl, upstreamModel };
 }
 
 function listingFieldsToPayload(form: ModelListingFormState) {

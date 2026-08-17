@@ -186,7 +186,7 @@ const create = addPriceOptions(
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--agent-id <id>", "Managed agent to register")
+        .option("--agent-id <id>", "Agent to register")
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(

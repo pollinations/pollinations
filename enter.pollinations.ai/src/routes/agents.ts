@@ -1,3 +1,10 @@
+import {
+    AgentInputSchema,
+    AgentKindSchema,
+    BuiltinMcpServerIdSchema,
+    parseAgentConfig,
+    serializeAgentConfig,
+} from "@shared/agent-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { and, eq } from "drizzle-orm";
@@ -8,24 +15,29 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import {
-    BuiltinMcpServerIdSchema,
-    PromptAgentInputSchema,
-    parsePromptAgentConfig,
-    serializePromptAgentConfig,
-} from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-const CreateAgentSchema = PromptAgentInputSchema;
-const UpdateAgentSchema = PromptAgentInputSchema;
-const AgentResponseSchema = z.object({
-    id: z.string(),
-    systemPrompt: z.string(),
-    baseModel: z.string(),
-    mcpServers: z.array(BuiltinMcpServerIdSchema),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-});
+const CreateAgentSchema = AgentInputSchema;
+const UpdateAgentSchema = AgentInputSchema;
+const AgentResponseSchema = z.discriminatedUnion("kind", [
+    z.object({
+        id: z.string(),
+        kind: z.literal("prompt"),
+        systemPrompt: z.string(),
+        baseModel: z.string(),
+        mcpServers: z.array(BuiltinMcpServerIdSchema),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    }),
+    z.object({
+        id: z.string(),
+        kind: z.literal("endpoint"),
+        baseUrl: z.string(),
+        upstreamModel: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    }),
+]);
 const AgentListResponseSchema = z.object({
     data: z.array(AgentResponseSchema),
 });
@@ -35,10 +47,12 @@ type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.agent.$inferSelect;
 
 function toResponse(row: AgentRow) {
-    const config = parsePromptAgentConfig(row.config);
+    const kind = AgentKindSchema.parse(row.kind);
+    const config = parseAgentConfig(kind, row.config);
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
     return {
         id: row.id,
+        kind,
         ...config,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -66,7 +80,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Agents",
             description:
-                "List prompt agents owned by the authenticated account. API keys require `account:keys`.",
+                "List agents owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Owned agents",
@@ -129,7 +143,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create Agent",
             description:
-                "Create an editable prompt agent with optional access to Pollinations tools. The agent can later be registered separately as a community model. API keys require `account:keys`.",
+                "Create an editable prompt or endpoint agent. The agent can later be registered separately as a community model. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -156,7 +170,8 @@ export const agentsRoutes = new Hono<Env>()
                 .values({
                     id,
                     ownerUserId: user.id,
-                    config: serializePromptAgentConfig(input),
+                    kind: input.kind,
+                    config: serializeAgentConfig(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -193,11 +208,16 @@ export const agentsRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
-            await requireOwnedAgent(db, id, user.id);
+            const existing = await requireOwnedAgent(db, id, user.id);
+            if (input.kind !== existing.kind) {
+                throw new HTTPException(400, {
+                    message: "Agent kind cannot be changed",
+                });
+            }
             const [row] = await db
                 .update(schema.agent)
                 .set({
-                    config: serializePromptAgentConfig(input),
+                    config: serializeAgentConfig(input),
                     updatedAt: new Date(),
                 })
                 .where(

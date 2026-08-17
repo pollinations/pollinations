@@ -315,12 +315,14 @@ type CommunityEndpointRuntimeBase = {
 /** A third-party OpenAI-compatible server the owner registered. */
 export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     kind: "external";
+    /** Present when this external runtime belongs to an endpoint agent. */
+    agentId?: string;
     bearerTokenCiphertext: string;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
 };
 
-/** A managed prompt agent, run by Enter's own agent runtime. */
+/** A prompt agent, run by Enter's own agent runtime. */
 export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     kind: "agent";
     agentId: string;

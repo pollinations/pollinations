@@ -60,6 +60,11 @@ export const agentRuntimeRoutes = new Hono<Env>()
             if (!row) {
                 throw new HTTPException(404, { message: "Agent not found" });
             }
+            if (row.kind !== "prompt") {
+                throw new HTTPException(400, {
+                    message: "Agent is not a prompt agent",
+                });
+            }
             const config = parsePromptAgentConfig(row.config);
             if (!config) {
                 throw new Error(`Agent ${row.id} has invalid configuration`);

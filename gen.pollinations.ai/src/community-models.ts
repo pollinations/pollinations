@@ -1,9 +1,9 @@
+import { parseAgentConfig } from "@shared/agent-config.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    isDelegatingEndpoint,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
@@ -76,6 +76,7 @@ export async function getCommunityModelRegistryEntries(
             imagePricing: schema.communityEndpoint.imagePricing,
             inputModalities: schema.communityEndpoint.inputModalities,
             agentId: schema.communityEndpoint.agentId,
+            agentKind: schema.agent.kind,
             agentConfig: schema.agent.config,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
@@ -135,19 +136,32 @@ export async function getCommunityModelRegistryEntries(
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        // A row is one kind or the other: an agent resolves its target from the
-        // agent runtime, an external endpoint from its own stored target and
-        // credential. Anything missing the fields its kind requires is not
-        // routable, so it is dropped from the catalog rather than carried as a
-        // half-populated entry.
+        // Prompt and endpoint agents resolve their target from the typed agent
+        // config. Plain community models keep it on the listing. Anything
+        // missing the fields its kind requires is not routable, so it is
+        // dropped rather than carried as a half-populated entry.
         let communityEndpoint: CommunityEndpointRuntime;
-        if (row.agentId !== null) {
+        if (row.agentId !== null && row.agentKind === "prompt") {
             communityEndpoint = {
                 ...shared,
                 kind: "agent",
                 baseUrl: agentRuntimeBaseUrl(env),
                 upstreamModel: row.agentId,
                 agentId: row.agentId,
+            };
+        } else if (row.agentId !== null && row.agentKind === "endpoint") {
+            const config = row.agentConfig
+                ? parseAgentConfig("endpoint", row.agentConfig)
+                : null;
+            if (!config || !row.endpointBearerTokenCiphertext) return [];
+            communityEndpoint = {
+                ...shared,
+                kind: "external",
+                baseUrl: config.baseUrl,
+                upstreamModel: config.upstreamModel,
+                agentId: row.agentId,
+                bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
+                delegatesGeneration: row.delegatesGeneration,
             };
         } else {
             if (!row.endpointBaseUrl || !row.endpointBearerTokenCiphertext) {
@@ -172,13 +186,13 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
-                    agent: isDelegatingEndpoint(communityEndpoint),
+                    agent: row.agentId !== null,
                     perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,
                 agentConfig:
-                    communityEndpoint.kind === "agent"
+                    row.agentKind === "prompt"
                         ? (parseAgentCatalogConfig(row.agentConfig) ??
                           undefined)
                         : undefined,

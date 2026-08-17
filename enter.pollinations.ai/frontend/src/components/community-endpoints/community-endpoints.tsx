@@ -26,13 +26,16 @@ import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle
 import {
     type AgentListingDetailsPayload,
     type AgentListingPayload,
-    type AgentPayload,
     type CommunityEndpoint,
     type CommunityProviderProfile,
+    type EndpointAgent,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
+    type PromptAgent,
+    type PromptAgentPayload,
     readError,
+    toEndpointAgentPayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
@@ -70,7 +73,11 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
-    const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
+    const [endpointAgentCreateOpen, setEndpointAgentCreateOpen] =
+        useState(false);
+    const [editingAgent, setEditingAgent] = useState<PromptAgent | null>(null);
+    const [editingEndpointAgent, setEditingEndpointAgent] =
+        useState<EndpointAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
     );
@@ -110,7 +117,7 @@ export function CommunityEndpoints({
     }, [loadEndpoints]);
 
     async function handleCreateAgent(
-        payload: AgentPayload,
+        payload: PromptAgentPayload,
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
         const response = await apiClient.account.agents.$post({
@@ -133,7 +140,7 @@ export function CommunityEndpoints({
     }
 
     async function handleUpdateAgent(
-        payload: AgentPayload,
+        payload: PromptAgentPayload,
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
         if (!editingAgent) return;
@@ -155,6 +162,66 @@ export function CommunityEndpoints({
         ].update.$post({
             param: { id: endpoint.id },
             json: listingPayload,
+        });
+        if (!listingResponse.ok) {
+            throw new Error(await readError(listingResponse));
+        }
+        await loadEndpoints();
+        await onChange?.();
+    }
+
+    async function handleCreateEndpointAgent(
+        payload: EndpointPayload,
+        bearerToken: string,
+    ): Promise<void> {
+        const response = await apiClient.account.agents.$post({
+            json: toEndpointAgentPayload(payload),
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        const createdAgent = (await response.json()) as EndpointAgent;
+        const {
+            baseUrl: _baseUrl,
+            upstreamModel: _upstreamModel,
+            ...listing
+        } = payload;
+        const listingResponse = await apiClient.account["my-models"].$post({
+            json: { ...listing, agentId: createdAgent.id, bearerToken },
+        });
+        if (!listingResponse.ok) {
+            const listingError = await readError(listingResponse);
+            await apiClient.account.agents[":id"]
+                .$delete({ param: { id: createdAgent.id } })
+                .catch(() => undefined);
+            throw new Error(listingError);
+        }
+        await loadEndpoints();
+        await onChange?.();
+    }
+
+    async function handleUpdateEndpointAgent(
+        payload: EndpointPayload,
+        bearerToken: string,
+    ): Promise<void> {
+        if (!editingEndpointAgent) return;
+        const endpoint = endpoints.find(
+            (candidate) => candidate.agentId === editingEndpointAgent.id,
+        );
+        if (!endpoint) throw new Error("Agent listing not found");
+        const response = await apiClient.account.agents[":id"].$patch({
+            param: { id: editingEndpointAgent.id },
+            json: toEndpointAgentPayload(payload),
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        const {
+            baseUrl: _baseUrl,
+            upstreamModel: _upstreamModel,
+            ...listing
+        } = payload;
+        const listingResponse = await apiClient.account["my-models"][
+            ":id"
+        ].update.$post({
+            param: { id: endpoint.id },
+            json: bearerToken ? { ...listing, bearerToken } : listing,
         });
         if (!listingResponse.ok) {
             throw new Error(await readError(listingResponse));
@@ -328,6 +395,9 @@ export function CommunityEndpoints({
         }
     }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+    const editingEndpoint = editingEndpointAgent
+        ? endpointByAgentId.get(editingEndpointAgent.id)
+        : undefined;
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
         const agent = endpoint.agentId
@@ -337,11 +407,15 @@ export function CommunityEndpoints({
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
+                agent={agent}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
-                onEdit={() =>
-                    agent ? setEditingAgent(agent) : setEditing(endpoint)
-                }
+                onEdit={() => {
+                    if (agent?.kind === "prompt") setEditingAgent(agent);
+                    else if (agent?.kind === "endpoint") {
+                        setEditingEndpointAgent(agent);
+                    } else setEditing(endpoint);
+                }}
                 onDelete={() =>
                     agent ? setDeletingAgent(agent) : setDeleting(endpoint)
                 }
@@ -413,21 +487,41 @@ export function CommunityEndpoints({
                     title="Agents"
                     framed
                     action={
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <CommunityEndpointDialog
+                                isAgent
+                                open={endpointAgentCreateOpen}
+                                onOpenChange={setEndpointAgentCreateOpen}
+                                onSubmit={handleCreateEndpointAgent}
+                                canPublish={canPublish}
+                                fallbackOptions={fallbackOptions}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        intent="info"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <BotIcon className="h-4 w-4" />
+                                        Add Endpoint Agent
+                                    </Button>
+                                }
+                            />
+                            <AgentDialog
+                                open={agentCreateOpen}
+                                onOpenChange={setAgentCreateOpen}
+                                onSubmit={handleCreateAgent}
+                                canPublish={canPublish}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <BotIcon className="h-4 w-4" />
+                                        Add Prompt Agent
+                                    </Button>
+                                }
+                            />
+                        </div>
                     }
                 >
                     <div className="flex flex-col gap-3">
@@ -442,8 +536,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build a prompt agent or connect an
+                                    OpenAI-compatible agent endpoint.
                                 </p>
                             </Surface>
                         ) : (
@@ -557,6 +651,25 @@ export function CommunityEndpoints({
                 onOpenChange={(open) => !open && setEditingAgent(null)}
                 onSubmit={handleUpdateAgent}
             />
+
+            {editingEndpointAgent && editingEndpoint && (
+                <CommunityEndpointDialog
+                    key={editingEndpointAgent.id}
+                    isAgent
+                    endpoint={{
+                        ...editingEndpoint,
+                        baseUrl: editingEndpointAgent.baseUrl,
+                        upstreamModel: editingEndpointAgent.upstreamModel,
+                    }}
+                    open
+                    onOpenChange={(open) =>
+                        !open && setEditingEndpointAgent(null)
+                    }
+                    onSubmit={handleUpdateEndpointAgent}
+                    canPublish={canPublish}
+                    fallbackOptions={fallbackOptions}
+                />
+            )}
 
             <AgentDeleteConfirmation
                 agent={deletingAgent}

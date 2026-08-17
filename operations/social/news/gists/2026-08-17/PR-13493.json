@@ -1,0 +1,34 @@
+{
+  "pr_number": 13493,
+  "title": "feat: open upstream model probe and endpoint test to every account",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13493",
+  "merged_at": "2026-08-17T14:32:23Z",
+  "labels": [],
+  "pr_body_excerpt": "Split out of #13464 so the policy change gets reviewed on its own.\n\n- Drops the publish-allowlist gate from `POST /community-endpoints/models` and `/test`. The pre-existing 30s per-account-per-kind throttle is now the only limiter.\n- Un-hides \"Fetch models\" and \"Test endpoint\" in the My Models dialog, so a non-allowlisted owner can probe an upstream before saving a private model instead of typing the model ID blind.\n- Updates the OpenAPI descriptions, the allowlist 403 message, and the docs sentences that said probing needs approval.\n- Rewrites the denied-account test to stub the upstream and assert the returned model IDs, replacing a bare `403` expectation.\n\nScope note: it reverses part of #12333, which deliberately kept the allowlist on the probes. It widens who can make the enter Worker issue an outbound HTTPS request to a caller-supplied host with a caller-supplied bearer token — bounded by the existing https-only + private-host blocklist in `normalizeCommunityEndpointBaseUrl`, `redirect: \"manual\"` in the probe client, and the throttle.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every hive gets a probe",
+    "blurb": "The model workbench is open to every account now. Fetch the upstream catalog, test the connection, then plant a private model with fewer guesses involved.",
+    "summary": "Opened the community endpoint model-fetch and endpoint-test tools to every account, retaining the existing 30-second per-account, per-kind throttle while removing the publishing allowlist requirement.",
+    "impact": "Owners can now fetch upstream model IDs and test a private community endpoint directly from My Models before saving it, rather than entering model IDs blind.",
+    "keywords": [
+      "community endpoints",
+      "private models",
+      "model discovery",
+      "endpoint testing",
+      "My Models",
+      "API"
+    ],
+    "visual_concept": "Depict Polli as a careful garden technician opening a small greenhouse gate to a community-endpoint testing bench. A retro terminal fetches a neat catalog of model-name seed packets while friendly code-plants grow from pots; the scene represents every account being able to inspect and verify an upstream before planting a private model.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a happy smile, light blue rounded wings, and tiny technician goggles, using a handheld probe at an open greenhouse gate beside a retro terminal that reads \"FETCH MODELS\" in simple pixel font; model-name seed packets and code-plants bloom from lime green (#ecf874) pots, with a helpful CRT monitor robot holding a checklist. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13493.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a happy smile, light blue rounded wings, and tiny technician goggles, using a handheld probe at an open greenhouse gate beside a retro terminal that reads \"FETCH MODELS\" in simple pixel font; model-name seed packets and code-plants bloom from lime green (#ecf874) pots, with a helpful CRT monitor robot holding a checklist. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-17T14:33:22.657849+00:00"
+}

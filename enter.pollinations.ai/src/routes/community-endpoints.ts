@@ -163,6 +163,17 @@ type FallbackPrimary = {
 };
 
 /**
+ * Whether a stored row generates through something else — always for an agent,
+ * and for an external endpoint that was granted delegation.
+ */
+function rowDelegatesGeneration(row: {
+    agentId: string | null;
+    delegatesGeneration: boolean;
+}): boolean {
+    return row.agentId !== null || row.delegatesGeneration;
+}
+
+/**
  * Why `target` may not serve as a fallback for `primary`, or null when it may.
  *
  * The candidate list the dashboard offers and the validation the write path
@@ -181,7 +192,7 @@ function fallbackTargetRejection(
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
-    if (target.agentId !== null || target.delegatesGeneration) {
+    if (rowDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
@@ -444,6 +455,9 @@ const CommunityEndpointResponseSchema = z.object({
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
+    // Derived, not the stored column: true for every agent as well. Clients get
+    // the answer rather than the two columns it is computed from.
+    delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
@@ -600,6 +614,7 @@ function toResponse(
         ),
         baseUrl,
         agentId: row.agentId,
+        delegatesGeneration: rowDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,

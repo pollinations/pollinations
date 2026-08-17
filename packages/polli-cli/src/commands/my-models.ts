@@ -112,7 +112,9 @@ export function modelBody(
         body.visibility = opts.visibility;
     }
 
-    if (opts.modality !== undefined) {
+    // Create only. UpdateEndpointSchema has no modality — a model's family
+    // is fixed at registration, so update must not send this field.
+    if (includeRequired && opts.modality !== undefined) {
         if (opts.modality !== "text" && opts.modality !== "image") {
             fail("--modality must be 'text' or 'image'");
         }

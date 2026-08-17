@@ -35,12 +35,15 @@ describe("modelBody", () => {
                 {
                     imagePricing: "tokens",
                     promptImagePrice: "0.000001",
+                    completionImagePrice: "0.02",
+                    modality: "image",
                 },
                 false,
             ),
         ).toEqual({
             imagePricing: "tokens",
             promptImagePrice: 0.000001,
+            completionImagePrice: 0.02,
         });
     });
 });

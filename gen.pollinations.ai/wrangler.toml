@@ -12,6 +12,10 @@ services = [
 [images]
 binding = "IMAGES"
 
+[media]
+binding = "MEDIA"
+remote = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -78,6 +82,9 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 
 [env.production.images]
 binding = "IMAGES"
+
+[env.production.media]
+binding = "MEDIA"
 
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
@@ -161,6 +168,9 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.staging.images]
 binding = "IMAGES"
+
+[env.staging.media]
+binding = "MEDIA"
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"

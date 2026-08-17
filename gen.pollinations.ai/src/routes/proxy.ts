@@ -63,6 +63,7 @@ import {
     GenerateImageRequestQueryParamsSchema,
     GenerateVideoRequestQueryParamsSchema,
 } from "@/schemas/image.ts";
+import { MediaTransformRequestSchema } from "@/schemas/media-transform.ts";
 import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
@@ -89,6 +90,11 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
+import {
+    mediaTransformAccess,
+    resolveMediaTransform,
+    transformMedia,
+} from "./media-transform.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -543,6 +549,25 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
+    .post(
+        "/v1/media/transforms",
+        describeRoute({
+            tags: ["🎞️ Media"],
+            summary: "Transform Media",
+            description:
+                "Trim or resize a video, extract audio, or capture a frame from a public media URL. Video and audio outputs support 1–60 second durations.",
+            responses: {
+                200: { description: "Transformed media bytes" },
+                413: { description: "Source media is too large" },
+                ...errorResponseDescriptions(400, 401, 402, 429, 500, 502, 503),
+            },
+        }),
+        validator("json", MediaTransformRequestSchema),
+        resolveMediaTransform,
+        track("tool.media"),
+        mediaTransformAccess,
+        transformMedia,
+    )
     .get(
         "/realtime",
         describeRealtimeWebSocket("/realtime"),

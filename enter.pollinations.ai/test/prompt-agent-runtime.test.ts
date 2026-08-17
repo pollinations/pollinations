@@ -610,6 +610,10 @@ describe("prompt-agent runtime", () => {
                                     inputSchema: { type: "object" },
                                 },
                                 {
+                                    name: "transformMedia",
+                                    inputSchema: { type: "object" },
+                                },
+                                {
                                     name: "getBalance",
                                     inputSchema: { type: "object" },
                                 },
@@ -627,6 +631,7 @@ describe("prompt-agent runtime", () => {
                 };
                 expect(body.tools.map((tool) => tool.function.name)).toEqual([
                     "mcp__pollinations__generateImage",
+                    "mcp__pollinations__transformMedia",
                 ]);
                 return Response.json({
                     choices: [

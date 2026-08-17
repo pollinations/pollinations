@@ -17,6 +17,7 @@ const EXPECTED_TOOLS = [
     "getBalance",
     "getModelStatus",
     "listModels",
+    "transformMedia",
 ];
 
 function localFetch(input, init) {
@@ -188,6 +189,67 @@ test("uploads generated images and returns an MCP resource link", async (t) => {
         response_format: "url",
     });
 
+    await client.close();
+});
+
+test("transforms media and returns an MCP resource link", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let transformBody;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init) => {
+        const url = String(input);
+        assert.equal(
+            new Headers(init?.headers).get("authorization"),
+            `Bearer ${TOKEN}`,
+        );
+        if (url === "https://gen.pollinations.ai/v1/media/transforms") {
+            transformBody = JSON.parse(init.body);
+            return new Response(new Uint8Array([7, 8, 9]), {
+                headers: { "content-type": "audio/mp4" },
+            });
+        }
+        if (url === "https://media.pollinations.ai/upload") {
+            const file = init.body.get("file");
+            assert.equal(file.type, "audio/mp4");
+            assert.deepEqual(
+                new Uint8Array(await file.arrayBuffer()),
+                new Uint8Array([7, 8, 9]),
+            );
+            return Response.json({
+                url: "https://media.pollinations.ai/transformed-audio",
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const result = await client.callTool({
+        name: "transformMedia",
+        arguments: {
+            source: "https://example.com/input.mp4",
+            mode: "audio",
+            time: 2,
+            duration: 4,
+        },
+    });
+
+    assert.deepEqual(transformBody, {
+        source: "https://example.com/input.mp4",
+        mode: "audio",
+        time: 2,
+        duration: 4,
+    });
+    assert.deepEqual(result.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/transformed-audio",
+        name: "Transformed media",
+        mimeType: "audio/mp4",
+    });
     await client.close();
 });
 

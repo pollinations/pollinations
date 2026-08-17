@@ -36,6 +36,7 @@ const genAliases = [
     "routes/generation-executor.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
+    "schemas/media-transform.ts",
     "schemas/model3d.ts",
     "schemas/models.ts",
     "schemas/realtime.ts",
@@ -51,6 +52,7 @@ const genAliases = [
     "utils/model-stats.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
+    "utils/user-media-url.ts",
 ];
 
 const baseConfig = defineConfig({

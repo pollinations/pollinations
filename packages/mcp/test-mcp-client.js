@@ -55,6 +55,7 @@ const EXPECTED_TOOLS = [
     "getModelStatus",
     "listModels",
     "setApiKey",
+    "transformMedia",
 ];
 
 const createTransport = () =>

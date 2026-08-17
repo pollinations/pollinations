@@ -147,6 +147,14 @@ export async function postChatCompletion(body, context) {
  */
 export async function fetchAndUploadMedia(url, options = {}, context) {
     const response = await fetchResponseWithAuth(url, options, context);
+    return uploadMediaResponse(response, context);
+}
+
+/**
+ * @param {Response} response - Successful media response to upload
+ * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and uploaded public URL
+ */
+export async function uploadMediaResponse(response, context) {
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
     const form = new FormData();

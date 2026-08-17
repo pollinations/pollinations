@@ -23,15 +23,15 @@ type GenerationAccessEnv = {
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
+    exactPrice?: number,
 ): Promise<void> {
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
-    const estimatedCost = getEstimatedPrice(
-        await getModelStats(env.KV, log),
-        model.resolved,
-    );
+    const estimatedCost =
+        exactPrice ??
+        getEstimatedPrice(await getModelStats(env.KV, log), model.resolved);
     const communityEndpoint = model.communityEndpoint;
     const isFreeCommunityModel =
         communityEndpoint !== undefined &&

@@ -6,6 +6,7 @@ import { authTools } from "./services/authService.js";
 import { discoveryTools } from "./services/discoveryService.js";
 import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
+import { mediaTools } from "./services/mediaService.js";
 import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
@@ -16,6 +17,7 @@ const serviceTools = [
     ...audioTools,
     ...embeddingTools,
     ...model3dTools,
+    ...mediaTools,
     ...discoveryTools,
     ...accountTools,
 ];
@@ -47,6 +49,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first.
 - Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
 - generateText can invoke any listed text model; generateImage can invoke any listed image model.
+- transformMedia trims or resizes video, extracts audio, or captures a frame from a public media URL.
 - For pricing, quote the returned pricing fields and currency; do not estimate.
 - Use getModelStatus for recent health and latency, not model discovery.
 

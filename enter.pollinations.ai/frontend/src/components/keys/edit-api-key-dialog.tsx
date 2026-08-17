@@ -16,6 +16,12 @@ import {
 import type { FC } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import {
+    isAppKey,
+    isPublishableKey,
+    readInitialRedirectUris,
+    shouldPostKeyMetadata,
+} from "./key-type.ts";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
@@ -25,35 +31,8 @@ interface EditApiKeyDialogProps {
     onClose: () => void;
 }
 
-function readInitialRedirectUris(
-    metadata: Record<string, unknown> | null | undefined,
-): string[] {
-    const list = metadata?.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
-}
-
-function sameRedirectUris(a: string[], b: string[]): boolean {
-    if (a.length !== b.length) return false;
-    return a.every((v, i) => v === b[i]);
-}
-
 function cleanRedirectUris(uris: string[]): string[] {
     return uris.map((v) => v.trim()).filter((v) => v !== "");
-}
-
-function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
-function isAppKey(apiKey: ApiKey): boolean {
-    return (
-        isPublishableKey(apiKey) &&
-        (readInitialRedirectUris(apiKey.metadata).length > 0 ||
-            apiKey.metadata?.earningsEnabled === true)
-    );
 }
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
@@ -95,34 +74,21 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, ...permissions } = keyPermissions.permissions;
-            await onUpdate(apiKey.id, {
-                name,
-                ...permissions,
-                expiresAt: expiryDays
-                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
-                    : null,
-            });
-
-            // Save app settings only for keys that belong in the App section.
-            if (appKey) {
-                const cleaned = cleanRedirectUris(redirectUris);
-                if (
-                    sameRedirectUris(cleaned, initialRedirectUris) &&
-                    earningsEnabled === initialEarningsEnabled
-                ) {
-                    onClose();
-                    return;
-                }
-                const metadataBody = {
+            // Metadata must post before onUpdate: onUpdate ends in
+            // router.invalidate(), which would refetch the key list before this
+            // write lands and close the dialog onto a stale card.
+            const cleaned = cleanRedirectUris(redirectUris);
+            if (
+                shouldPostKeyMetadata(apiKey, {
                     redirectUris: cleaned,
                     earningsEnabled,
-                };
+                })
+            ) {
                 const metaRes = await apiClient["api-keys"][
                     ":id"
                 ].metadata.$post({
                     param: { id: apiKey.id },
-                    json: metadataBody,
+                    json: { redirectUris: cleaned, earningsEnabled },
                 });
                 if (!metaRes.ok) {
                     const err = await metaRes.json().catch(() => null);
@@ -132,6 +98,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     );
                 }
             }
+
+            const { expiryDays, ...permissions } = keyPermissions.permissions;
+            await onUpdate(apiKey.id, {
+                name,
+                ...permissions,
+                expiresAt: expiryDays
+                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+                    : null,
+            });
 
             onClose();
         } catch (error) {
@@ -222,7 +197,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         />
                     </Field.Root>
 
-                    {appKey && (
+                    {isPublishable && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}
                             onRedirectUrisChange={setRedirectUris}

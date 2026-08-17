@@ -31,8 +31,10 @@ SQL >
         -- id on a failed one (`voodoohop/anyvm-deepseek-chat`), so that
         -- comparison is false for 97% of successful community calls and would
         -- read as a permanently dead model.
-        countIf(NOT fallback_used) as own_calls,
-        countIf(NOT fallback_used AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        -- A gateway-enforced per-user cap says nothing about whether the
+        -- upstream works. Keep the 429 visible without depressing its health.
+        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit') as own_calls,
+        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit' AND response_status >= 200 AND response_status < 300) as own_calls_ok,
         maxIf(start_time, is_final AND response_status >= 500) as last_error_at,
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,

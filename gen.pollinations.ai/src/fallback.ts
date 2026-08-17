@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointRuntime,
     isCommunityFallbackPricingAllowed,
+    isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -147,7 +148,10 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(error: unknown): boolean {
+export function isRetryableFallbackError(
+    error: unknown,
+    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
+): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
@@ -159,10 +163,10 @@ export function isRetryableFallbackError(error: unknown): boolean {
     if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    if (
-        !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !isGatewayRoutingFailure(failure)
-    ) {
+    const gatewayRoutingFailure =
+        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
+        isGatewayRoutingFailure(failure);
+    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -224,6 +228,9 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (isDelegatingEndpoint(primary) || isDelegatingEndpoint(candidate)) {
+        return false;
+    }
     if (primary.imagePricing !== candidate.imagePricing) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
@@ -284,10 +291,11 @@ export type FailedCall = {
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
- * authentication, balance, rate limiting and moderation run exactly once no
- * matter how many models are tried. Every candidate is tried at most once: the
- * dominant failure is an exhausted quota, and asking the same endpoint again
- * would only spend more of a budget that is already gone.
+ * authentication, balance and moderation run exactly once no matter how many
+ * models are tried. A local per-candidate guard may run immediately before an
+ * attempt. Every candidate is tried at most once: the dominant failure is an
+ * exhausted quota, and asking the same endpoint again would only spend more of
+ * a budget that is already gone.
  *
  * Every failed call is appended to `failures`, including the one that ends the
  * request. Recording is not the same as retrying: this loop decides only which
@@ -301,8 +309,13 @@ export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
+        // Local gates are not upstream failures and must not trigger or be
+        // attributed to another fallback candidate.
+        await beforeAttempt?.(candidate);
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.
@@ -312,7 +325,7 @@ export async function withModelFallback<T>(
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error);
+                !isRetryableFallbackError(error, allowedStatusCodes);
             failures?.push({
                 candidate,
                 error,

@@ -1,6 +1,7 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
+import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -9,7 +10,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
 ];
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
-const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
+const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
@@ -21,10 +22,9 @@ const sanitizedBoolean = z
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
     const parsedSeed = Number.parseInt(seed, 10);
-    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : 42;
-    // seed=-1 means "random" - generate a random seed
-    return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
-}, z.int().min(0).max(MAX_RANDOM_SEED).catch(42));
+    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : SENTINEL_SEED;
+    return normalizeSeed(parsed);
+}, z.int().min(0).max(MAX_SEED).catch(SENTINEL_SEED));
 
 const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
@@ -58,7 +58,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.literal(validQualities).catch("medium"),
+        quality: z.string().catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -86,7 +86,9 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        resolution: z.enum(["480p", "720p", "1080p"]).optional(),
+        resolution: z
+            .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+            .optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -123,6 +125,47 @@ export const ImageParamsSchema = z
                     "Transparent backgrounds are not supported by gpt-image-2.",
             });
         }
+        if (data.model === "minimax-h3") {
+            if (data.duration !== undefined && data.duration !== 5) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message: "minimax-h3 supports exactly 5 seconds.",
+                });
+            }
+            if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message: "minimax-h3 currently supports 16:9 only.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["image"],
+                    message: "minimax-h3 currently supports text input only.",
+                });
+            }
+        }
+        if (
+            data.model === "grok-imagine-image-2.0" &&
+            !["low", "medium"].includes(data.quality)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
+            });
+        }
     })
     .transform((data) => {
         // Capture whether the caller actually specified dimensions BEFORE we
@@ -136,8 +179,13 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
+        const quality = validQualities.includes(
+            data.quality as (typeof validQualities)[number],
+        )
+            ? (data.quality as (typeof validQualities)[number])
+            : "medium";
 
-        return { ...data, width, height, dimensionsExplicit };
+        return { ...data, quality, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

@@ -170,6 +170,33 @@ describe("isRetryableFallbackError", () => {
         );
     });
 
+    it("honors a model-specific fallback status list", () => {
+        expect(
+            isRetryableFallbackError(new HttpError("queue full", 503), [503]),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(
+                new HttpError("backend failed", 500),
+                [503],
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                new TypeError("fetch failed: connection refused"),
+                [503],
+            ),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(
+                new HttpError("gateway failed", 400, {
+                    status: "failure",
+                    message: "Invalid custom host",
+                }),
+                [503],
+            ),
+        ).toBe(false);
+    });
+
     it("does not multiply the owned Portkey timeout across fallbacks", () => {
         expect(
             isRetryableFallbackError(
@@ -352,6 +379,25 @@ describe("withModelFallback", () => {
         // Nothing was moved on from, but the 400 still came from a named
         // model, and that name is the only thing the response cannot carry.
         expect(seen(failures)).toEqual(["primary!"]);
+    });
+
+    it("uses the primary model's configured fallback status list", async () => {
+        const primary = registryEntry("primary", ["second"]);
+        const second = registryEntry("second");
+        primary.definition.fallbackOnStatusCodes = [503];
+        primary.fallbackEntries = [second];
+        const candidates = fallbackCandidates({
+            resolved: primary.id,
+            definition: primary.definition,
+            fallbackEntries: primary.fallbackEntries,
+        });
+        const attempt = vi.fn(async () => "served");
+        attempt.mockRejectedValueOnce(new HttpError("backend failed", 500));
+
+        await expect(withModelFallback(candidates, attempt)).rejects.toThrow(
+            "backend failed",
+        );
+        expect(attempt).toHaveBeenCalledTimes(1);
     });
 
     it("reports only the failures it moved on from once a model serves", async () => {

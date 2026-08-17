@@ -15,7 +15,7 @@ describe("OpenRouter Gemini routing", () => {
             "google/gemini-3.1-pro-preview",
             "google-vertex/global",
         ],
-        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
+        ["gemini", "google/gemini-3.7-flash", "google-vertex/global"],
         [
             "gemini-flash-lite-3.5",
             "google/gemini-3.5-flash-lite",

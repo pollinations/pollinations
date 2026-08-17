@@ -458,6 +458,32 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         expect(result.contentType).toBe("image/png");
     });
 
+    it("throws the API error when an image URL cannot be downloaded", async () => {
+        const client = newClient();
+
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ url: "https://img.test/x.png" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(
+                    {
+                        error: {
+                            message: "Image not found",
+                            code: "NOT_FOUND",
+                        },
+                    },
+                    { ok: false, status: 404 },
+                ),
+            );
+
+        await expect(client.imageEdit("make it blue")).rejects.toMatchObject({
+            message: "Image not found",
+            code: "NOT_FOUND",
+            status: 404,
+        });
+    });
+
     it("returns the resolved image item for a b64_json response", async () => {
         const client = newClient();
 
@@ -493,5 +519,18 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
             code: "NO_IMAGE",
             status: 500,
         });
+    });
+});
+
+describe("Pollinations model discovery", () => {
+    it("returns the model array from the registry endpoint", async () => {
+        const client = newClient();
+        const models = [{ name: "openai", title: "OpenAI" }];
+        fetchMock.mockResolvedValueOnce(makeResponse(models));
+
+        await expect(client.models()).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models",
+        );
     });
 });

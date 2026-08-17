@@ -107,58 +107,107 @@ export const COMMUNITY_PAGE = {
         {
             name: "Perplexity AI",
             url: "https://www.perplexity.ai/",
-            description: "AI-powered search and conversational answer engine",
+            logo: "/supporters/perplexity.svg",
         },
         {
             name: "AWS Activate",
             url: "https://aws.amazon.com/",
-            description: "GPU Cloud Credits",
+            logo: "/supporters/aws.svg",
         },
         {
             name: "io.net",
             url: "https://io.net/",
-            description: "Decentralized GPU network for AI compute",
+            logo: "/supporters/io-net.svg",
         },
         {
             name: "BytePlus",
             url: "https://www.byteplus.com/",
-            description: "Official ByteDance cloud services and AI solutions",
+            logo: "/supporters/byteplus.svg",
         },
         {
             name: "Google Cloud for Startups",
             url: "https://cloud.google.com/",
-            description: "GPU Cloud Credits",
+            logo: "/supporters/google-cloud.svg",
         },
         {
             name: "NVIDIA Inception",
             url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
-            description: "AI startup support",
+            logo: "/supporters/nvidia.svg",
         },
         {
             name: "Azure (MS for Startups)",
             url: "https://azure.microsoft.com/",
-            description: "OpenAI credits",
+            logo: "/supporters/azure.svg",
         },
         {
             name: "Cloudflare",
             url: "https://developers.cloudflare.com/workers-ai/",
-            description: "Put the connectivity cloud to work for you.",
+            logo: "/supporters/cloudflare.svg",
         },
         {
             name: "Scaleway",
             url: "https://www.scaleway.com/",
-            description: "Europe's empowering cloud provider",
+            logo: "/supporters/scaleway.svg",
         },
         {
             name: "Modal",
             url: "https://modal.com/",
-            description: "High-performance AI infrastructure",
+            logo: "/supporters/modal.svg",
         },
         {
             name: "Nebius",
             url: "https://nebius.com/",
-            description:
-                "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
+            logo: "/supporters/nebius.svg",
+        },
+        {
+            name: "OpenAI",
+            url: "https://openai.com/",
+            logo: "/supporters/openai.svg",
+        },
+        {
+            name: "OpenRouter",
+            url: "https://openrouter.ai/",
+            logo: "/supporters/openrouter.svg",
+        },
+        {
+            name: "Fireworks AI",
+            url: "https://fireworks.ai/",
+            logo: "/supporters/fireworks.svg",
+        },
+        {
+            name: "Replicate",
+            url: "https://replicate.com/",
+            logo: "/supporters/replicate.svg",
+        },
+        {
+            name: "RunPod",
+            url: "https://www.runpod.io/",
+            logo: "/supporters/runpod.svg",
+        },
+        {
+            name: "OVHcloud",
+            url: "https://www.ovhcloud.com/",
+            logo: "/supporters/ovhcloud.svg",
+        },
+        {
+            name: "Lambda Labs",
+            url: "https://lambda.ai/",
+            logo: "/supporters/lambda.svg",
+        },
+        {
+            name: "ElevenLabs",
+            url: "https://elevenlabs.io/",
+            logo: "/supporters/elevenlabs.svg",
+        },
+        {
+            name: "AssemblyAI",
+            url: "https://www.assemblyai.com/",
+            logo: "/supporters/assemblyai.svg",
+        },
+        {
+            name: "Alibaba Cloud",
+            url: "https://www.alibabacloud.com/",
+            logo: "/supporters/alibaba.svg",
         },
     ],
 };

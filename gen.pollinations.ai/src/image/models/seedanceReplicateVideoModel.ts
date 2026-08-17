@@ -135,12 +135,16 @@ async function generateSeedanceVideo(
     const input: SeedanceInput = {
         prompt,
         duration,
-        resolution: safeParams.resolution ?? "720p",
+        resolution:
+            safeParams.resolution === "480p" ||
+            safeParams.resolution === "1080p"
+                ? safeParams.resolution
+                : "720p",
         aspect_ratio: resolveSeedanceAspectRatio(safeParams),
         fps: 24,
         camera_fixed: false,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
 

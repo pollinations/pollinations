@@ -3,7 +3,7 @@ TOKEN tinybird_read READ
 DESCRIPTION >
     GitHub user IDs (numeric, stable across renames) of users who have ever
     completed a paid Stripe checkout. Used by
-    .github/scripts/project_manager.py to flag support issues from paid
+    operations/github/project_manager.py to flag support issues from paid
     customers as Urgent priority.
 
 NODE paid_customers_node

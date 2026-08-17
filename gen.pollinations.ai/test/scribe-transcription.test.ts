@@ -1,14 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { transcribeWithElevenLabs } from "../src/routes/audio.ts";
 
+const errorLog = vi.fn();
 const log = {
+    error: errorLog,
     info: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
 } as never;
 
-function jsonResponse(body: unknown): Response {
-    return Response.json(body);
+function jsonResponse(body: unknown, headers?: HeadersInit): Response {
+    return Response.json(body, { headers });
 }
 
 describe("transcribeWithElevenLabs", () => {
@@ -22,6 +24,7 @@ describe("transcribeWithElevenLabs", () => {
             jsonResponse({
                 text: "hello there general kenobi",
                 language_code: "en",
+                audio_duration_secs: 10,
                 words: [
                     {
                         text: "hello",
@@ -77,6 +80,7 @@ describe("transcribeWithElevenLabs", () => {
         const sentFormData = fetchMock.mock.calls[0][1].body as FormData;
         expect(sentFormData.get("diarize")).toBe("true");
         expect(sentFormData.get("num_speakers")).toBe("2");
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
 
         await expect(response.json()).resolves.toMatchObject({
             task: "transcribe",
@@ -112,6 +116,7 @@ describe("transcribeWithElevenLabs", () => {
             jsonResponse({
                 text: "hello",
                 language_code: "en",
+                audio_duration_secs: 0.5,
                 words: [{ text: "hello", start: 0, end: 0.5 }],
             }),
         );
@@ -129,5 +134,62 @@ describe("transcribeWithElevenLabs", () => {
 
         const body = (await response.json()) as Record<string, unknown>;
         expect(body).not.toHaveProperty("utterances");
+    });
+
+    it("bills silent audio from provider metering", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValueOnce(
+                jsonResponse(
+                    {
+                        text: "",
+                        language_code: "en",
+                        words: [],
+                    },
+                    { "character-cost": "4" },
+                ),
+            ),
+        );
+
+        const response = await transcribeWithElevenLabs({
+            file: new File(["silence"], "silence.wav", {
+                type: "audio/wav",
+            }),
+            apiKey: "test-key",
+            log,
+        });
+
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
+        await expect(response.json()).resolves.toEqual({ text: "" });
+    });
+
+    it.each([
+        ["missing", undefined],
+        ["zero", { "character-cost": "0" }],
+    ])("fails closed when provider metering is %s", async (_, headers) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValueOnce(
+                jsonResponse(
+                    {
+                        text: "hello",
+                        language_code: "en",
+                        words: [{ text: "hello", start: 0, end: 0.5 }],
+                    },
+                    headers,
+                ),
+            ),
+        );
+
+        await expect(
+            transcribeWithElevenLabs({
+                file: new File(["audio"], "audio.mp3", {
+                    type: "audio/mpeg",
+                }),
+                apiKey: "test-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+        expect(errorLog).toHaveBeenCalledOnce();
     });
 });

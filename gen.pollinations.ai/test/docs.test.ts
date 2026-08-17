@@ -135,7 +135,11 @@ describe("docs routes", () => {
             { url: "https://gen.pollinations.ai" },
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(
+            schema.paths["/v1/audio/transcriptions/realtime"],
+        ).toBeUndefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         const model3dPost = (
             schema.paths["/3d/{prompt}"] as Record<string, unknown>
@@ -231,6 +235,15 @@ describe("docs routes", () => {
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
 
+        const nativeRealtimeGet = (
+            schema.paths["/realtime"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        const nativeRealtimeResponses = nativeRealtimeGet?.responses as
+            | Record<string, unknown>
+            | undefined;
+        expect(nativeRealtimeResponses?.["426"]).toBeDefined();
+        expect(nativeRealtimeResponses?.["503"]).toBeDefined();
+
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
@@ -311,27 +324,28 @@ describe("docs routes", () => {
         expect(parsed.paths["/v1/chat/completions"]).toBeDefined();
     });
 
-    it("serves the guides index and individual guide pages", async () => {
+    it("redirects retired guide URLs to Scalar tag anchors", async () => {
         const ctx = createExecutionContext();
 
         const indexRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides"),
+            new Request("https://gen.pollinations.ai/docs/guides", {
+                redirect: "manual",
+            }),
             envWithEnterSchema({}),
             ctx,
         );
-        expect(indexRes.status).toBe(200);
-        const indexHtml = await indexRes.text();
-        expect(indexHtml).toContain("/docs/guides/byop");
-        expect(indexHtml).toContain("/docs/guides/cli");
-        expect(indexHtml).toContain("/docs/guides/mcp");
+        expect(indexRes.status).toBe(301);
+        expect(indexRes.headers.get("Location")).toBe("/docs");
 
-        const byopRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides/byop"),
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/mcp", {
+                redirect: "manual",
+            }),
             envWithEnterSchema({}),
             ctx,
         );
-        expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("BYOP");
+        expect(mcpRes.status).toBe(301);
+        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
@@ -355,7 +369,15 @@ describe("docs routes", () => {
         expect(apiBody).toContain("Base URL:");
         // Stable heading marker proves the realtime modality is composed into
         // the api section, without pinning volatile mid-prose wording.
-        expect(apiBody).toContain("## Realtime Voice");
+        expect(apiBody).toContain("## Realtime");
+        const realtimeSection = apiBody.slice(
+            apiBody.indexOf("## Realtime"),
+            apiBody.indexOf("## 3D Generation"),
+        );
+        expect(realtimeSection).toContain("scribe-realtime");
+        expect(realtimeSection).toContain("`GET /realtime`");
+        expect(realtimeSection).toContain("`GET /v1/realtime`");
+        expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

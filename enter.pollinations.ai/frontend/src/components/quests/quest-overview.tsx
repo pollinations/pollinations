@@ -8,7 +8,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    Input,
     Markdown,
     RocketIcon,
     SearchIcon,
@@ -598,9 +597,6 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    const [couponCode, setCouponCode] = useState("");
-    const [couponMessage, setCouponMessage] = useState<string | null>(null);
-    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -714,51 +710,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         ? error.message
                         : "Failed to claim reward",
             }));
-        }
-    }
-
-    async function handleRedeemCoupon(): Promise<void> {
-        const code = couponCode.trim();
-        if (!code || redeemingCoupon) return;
-
-        setRedeemingCoupon(true);
-        setCouponMessage(null);
-        try {
-            const response = await apiClient.quests.coupons.redeem.$post({
-                json: { code },
-            });
-            if (!response.ok) {
-                const message =
-                    response.status === 404
-                        ? "Quest code not found."
-                        : response.status === 409
-                          ? "You already redeemed this quest code."
-                          : "Could not redeem this quest code.";
-                throw new Error(message);
-            }
-
-            const result = (await response.json()) as {
-                pollenAmount: number;
-            };
-            const questData = await loadQuestData();
-            setState((current) => ({
-                ...current,
-                ...questData,
-                checking: false,
-                loading: false,
-            }));
-            setCouponCode("");
-            setCouponMessage(
-                `${formatRewardAmount(result.pollenAmount)} Quest Pollen added to your wallet.`,
-            );
-        } catch (error) {
-            setCouponMessage(
-                error instanceof Error
-                    ? error.message
-                    : "Could not redeem this quest code.",
-            );
-        } finally {
-            setRedeemingCoupon(false);
         }
     }
 
@@ -1046,45 +997,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 </span>
                             </div>
                         )}
-                        <div className="mt-4 border-t border-divider pt-4">
-                            <p className="mb-2 text-sm font-semibold text-theme-text-soft">
-                                Have a quest code?
-                            </p>
-                            <form
-                                className="flex max-w-md gap-2"
-                                onSubmit={(event) => {
-                                    event.preventDefault();
-                                    void handleRedeemCoupon();
-                                }}
-                            >
-                                <Input
-                                    aria-label="Quest code"
-                                    value={couponCode}
-                                    onChange={(event) => {
-                                        setCouponCode(event.target.value);
-                                        setCouponMessage(null);
-                                    }}
-                                    placeholder="Enter code"
-                                    autoCapitalize="characters"
-                                    className="flex-1"
-                                    disabled={redeemingCoupon}
-                                />
-                                <Button
-                                    type="submit"
-                                    disabled={
-                                        redeemingCoupon ||
-                                        couponCode.trim().length === 0
-                                    }
-                                >
-                                    {redeemingCoupon ? "Redeeming…" : "Redeem"}
-                                </Button>
-                            </form>
-                            {couponMessage && (
-                                <p className="mt-2 text-[13px] text-theme-text-muted">
-                                    {couponMessage}
-                                </p>
-                            )}
-                        </div>
                     </>
                 )}
                 {/* Logged-out summary: the same two-card pair, but the numbers are

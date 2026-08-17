@@ -1,0 +1,34 @@
+{
+  "pr_number": 13512,
+  "title": "fix: cover a zero-cost model with a zero balance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13512",
+  "merged_at": "2026-08-17T23:02:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preflight compares balance against the estimate with `>=`, so a zero-priced model is covered by a zero balance. The old strict `>` degenerated to \"balance must be strictly positive\" whenever the estimate was 0 — rejecting exactly the users a free model exists for.\n- Drops the `isFreeCommunityEndpoint` special case in `checkBalance`. It existed only to defeat that floor: Tinybird already reports 0 for free endpoints, since `public_model_stats` averages only `total_price > 0` rows.\n- Keeps paid-only strict. `paidOnly` means \"must hold paid balance\" — a positive-balance requirement, not cost coverage — and a paid-only model is never free.\n- Updates the two preflight tests that encoded the old boundary (balance *equal* to the estimate now passes) and adds one for zero cost at zero balance.\n\nGroundwork for #13353: once community models can set `paidOnly`, the balance gate needs one path rather than a free-model bypass that would silently ignore the flag.\n\nNote: a caller at exactly 0 can now issue one request against a model with no priced-success history (estimate 0), going negative and blocked thereafter. Not new exposure — anyone holding dust already cleared `> 0` on every model, and deduction is post-response in `waitUntil` either way.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Free means zero works",
+    "blurb": "The balance gate learned a small but important piece of arithmetic: zero covers zero. Free models now welcome wallets that are, appropriately, empty.",
+    "summary": "Changed generation preflight balance coverage from strict `>` to `>=`, allowing a zero balance to cover a zero-cost model while preserving the positive paid-balance requirement for `paidOnly` models.",
+    "impact": "Users with a 0 Pollen balance can now call models whose estimated cost is 0, instead of being blocked by a boundary check meant for paid requests.",
+    "keywords": [
+      "billing",
+      "balance",
+      "free-models",
+      "generation-access",
+      "preflight",
+      "paidOnly"
+    ],
+    "visual_concept": "Depict a tiny balanced scale at a cozy API garden gate: one side holds a pixel coin labeled 0 and the other a free code-flower labeled 0, perfectly level. Polli, wearing a little accountant visor, opens the gate for the zero-cost flower while a retro terminal shows the friendly comparison `0 >= 0`; code-plants and soft flowers make the access-control fix feel welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny accountant visor as she opens a garden gate beside a perfectly balanced pixel scale showing `0 >= 0`; a free code-flower and retro terminal glow nearby among vines and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `ZERO COVERS ZERO`, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13512.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny accountant visor as she opens a garden gate beside a perfectly balanced pixel scale showing `0 >= 0`; a free code-flower and retro terminal glow nearby among vines and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `ZERO COVERS ZERO`, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-17T23:03:18.386515+00:00"
+}

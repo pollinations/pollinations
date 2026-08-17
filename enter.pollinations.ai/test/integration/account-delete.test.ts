@@ -160,9 +160,9 @@ describe("POST /api/auth/delete-user", () => {
         expect(callbackResponse.headers.get("Location") ?? "").not.toContain(
             "error=",
         );
-        expect(callbackResponse.headers.get("Set-Cookie") ?? "").toContain(
-            "better-auth.session_token=",
-        );
+        const replacementCookies =
+            callbackResponse.headers.get("Set-Cookie") ?? "";
+        expect(replacementCookies).toContain("better-auth.session_token=");
 
         const replacementUsers = await db.select().from(userTable);
         expect(replacementUsers).toHaveLength(1);
@@ -184,5 +184,59 @@ describe("POST /api/auth/delete-user", () => {
         ]);
         expect(duplicate.recorded).toBe(0);
         expect(await db.select().from(rewardsTable)).toHaveLength(1);
+
+        const replacementSessionToken = replacementCookies.match(
+            /better-auth\.session_token=([^;]+)/,
+        )?.[1];
+        if (!replacementSessionToken) {
+            throw new Error("Expected replacement session token");
+        }
+
+        const questStatusResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/quests",
+            {
+                headers: {
+                    Cookie: `better-auth.session_token=${replacementSessionToken}`,
+                },
+            },
+        );
+        expect(questStatusResponse.status).toBe(200);
+        const questStatus = (await questStatusResponse.json()) as {
+            quests: Array<{
+                id: string;
+                status: string;
+                reward: unknown;
+            }>;
+        };
+        expect(
+            questStatus.quests.find((quest) => quest.id === "first_api_key"),
+        ).toMatchObject({ status: "completed", reward: null });
+    });
+
+    test("requires a session created within the last ten minutes", async ({
+        sessionToken,
+    }) => {
+        const db = drizzle(env.DB);
+        await db
+            .update(sessionTable)
+            .set({ createdAt: new Date(Date.now() - 11 * 60 * 1000) });
+
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/auth/delete-user",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({}),
+            },
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            code: "SESSION_EXPIRED",
+        });
+        expect(await db.select().from(userTable)).toHaveLength(1);
     });
 });

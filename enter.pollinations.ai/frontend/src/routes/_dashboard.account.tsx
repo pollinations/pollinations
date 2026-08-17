@@ -200,7 +200,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
         if (result.error) {
             const message = result.error.message || "Account deletion failed.";
             setError(
-                /fresh|expired/i.test(message)
+                result.error.code === "SESSION_EXPIRED"
                     ? "For security, sign out and sign in again before deleting your account."
                     : message,
             );

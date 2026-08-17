@@ -16,7 +16,7 @@ import {
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -835,7 +835,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Quest Status",
             description:
-                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. API keys require the read-only `account:usage` permission. Claiming rewards remains dashboard-only.",
+                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests, rewards earned by the account, and rewards previously issued to the same linked GitHub identity are returned as `completed`. API keys require the read-only `account:usage` permission. Claiming rewards remains dashboard-only.",
             responses: {
                 200: {
                     description: "Quest status for the authenticated account",
@@ -858,22 +858,38 @@ export const accountRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB, { schema });
-            const [cards, rewardRows] = await Promise.all([
-                listQuestCards({ db, env: c.env }),
-                db
-                    .select({
-                        id: rewardsTable.id,
-                        questId: rewardsTable.questId,
-                        title: rewardsTable.title,
-                        pollenAmount: rewardsTable.pollenAmount,
-                        balanceBucket: rewardsTable.balanceBucket,
-                        earnedAt: rewardsTable.earnedAt,
-                        claimedAt: rewardsTable.claimedAt,
-                    })
-                    .from(rewardsTable)
-                    .where(eq(rewardsTable.userId, user.id))
-                    .orderBy(desc(rewardsTable.earnedAt)),
-            ]);
+            const githubId = user.githubId ?? null;
+            const priorIdentityRewards =
+                githubId === null
+                    ? Promise.resolve([])
+                    : db
+                          .select({ questId: rewardsTable.questId })
+                          .from(rewardsTable)
+                          .where(
+                              and(
+                                  eq(rewardsTable.githubId, githubId),
+                                  isNull(rewardsTable.userId),
+                              ),
+                          );
+
+            const [cards, rewardRows, priorIdentityRewardRows] =
+                await Promise.all([
+                    listQuestCards({ db, env: c.env }),
+                    db
+                        .select({
+                            id: rewardsTable.id,
+                            questId: rewardsTable.questId,
+                            title: rewardsTable.title,
+                            pollenAmount: rewardsTable.pollenAmount,
+                            balanceBucket: rewardsTable.balanceBucket,
+                            earnedAt: rewardsTable.earnedAt,
+                            claimedAt: rewardsTable.claimedAt,
+                        })
+                        .from(rewardsTable)
+                        .where(eq(rewardsTable.userId, user.id))
+                        .orderBy(desc(rewardsTable.earnedAt)),
+                    priorIdentityRewards,
+                ]);
 
             const rewardsByQuestId = new Map<
                 string,
@@ -884,13 +900,20 @@ export const accountRoutes = new Hono<Env>()
                     rewardsByQuestId.set(reward.questId, reward);
                 }
             }
+            const priorIdentityQuestIds = new Set(
+                priorIdentityRewardRows.flatMap((reward) =>
+                    reward.questId ? [reward.questId] : [],
+                ),
+            );
 
             const quests = cards.map((card) => {
                 const reward = rewardsByQuestId.get(card.id) ?? null;
                 const status =
                     card.state === "coming_soon"
                         ? "coming_soon"
-                        : card.state === "completed" || reward
+                        : card.state === "completed" ||
+                            reward ||
+                            priorIdentityQuestIds.has(card.id)
                           ? "completed"
                           : "open";
 

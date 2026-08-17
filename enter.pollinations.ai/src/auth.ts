@@ -19,10 +19,16 @@ import {
     type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
+import {
+    APIError,
+    createAuthMiddleware,
+    getSessionFromCtx,
+} from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+
+const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -45,6 +51,28 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
+        },
+        hooks: {
+            before: createAuthMiddleware(async (authContext) => {
+                if (authContext.path !== "/delete-user") return;
+
+                const session = await getSessionFromCtx(authContext);
+                if (!session) return;
+
+                const sessionCreatedAt = new Date(
+                    session.session.createdAt,
+                ).getTime();
+                if (
+                    Date.now() - sessionCreatedAt >
+                    DELETE_ACCOUNT_FRESH_SESSION_MS
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        code: "SESSION_EXPIRED",
+                        message:
+                            "For security, sign in again before deleting your account.",
+                    });
+                }
+            }),
         },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13492,
+  "title": "feat: show quest progress",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13492",
+  "merged_at": "2026-08-17T13:11:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds optional goals to measurable quests.\n- Returns progress through the existing quest check response without new storage or endpoints.\n- Shows exact values and progress bars for open, claimable, and completed quests.\n- Covers top-up volume, app users, and GitHub account age.\n- Keeps progress optional inside quest groups and an always-present array in the public API.\n\nChecks:\n- `npx biome check`\n- `npx tsc --noEmit`\n- `npx vitest run test/quests.test.ts --reporter=dot` (30 tests)\n- staging deployment verified",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Quest bars grow leaves",
+    "blurb": "Quests now show how far along you are, because progress should not require divination. Watch your top-ups, app users, and GitHub account age inch toward their Pollen reward.",
+    "summary": "Measurable quests now support optional goals and return an always-present progress array in the existing quest-check response, with exact values and progress bars for top-up volume, app users, and GitHub account age.",
+    "impact": "Quest participants can see their current value, target, and completion progress for open, claimable, and completed quests without any new endpoint or setup.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "progress",
+      "rewards",
+      "frontend",
+      "api"
+    ],
+    "visual_concept": "A cozy quest garden where progress is visible: Polli tends three code-plants growing toward marked goal posts for top-up volume, app users, and GitHub account age. A retro quest board displays chunky progress bars while flowers bloom at completed milestones, making the formerly invisible work feel measurable and rewarding.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, watering three code-plants beside a retro quest board with simple pixel-font progress bars labeled \"QUEST PROGRESS\"; one plant represents top-ups, one has tiny user icons as blossoms, and one grows from a GitHub-style calendar, all approaching friendly goal markers. Prominent soft lime green (#ecf874) glows across the garden with warm cream, mint, lavender, and peach pastel gradients, pixel flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13492.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, watering three code-plants beside a retro quest board with simple pixel-font progress bars labeled \"QUEST PROGRESS\"; one plant represents top-ups, one has tiny user icons as blossoms, and one grows from a GitHub-style calendar, all approaching friendly goal markers. Prominent soft lime green (#ecf874) glows across the garden with warm cream, mint, lavender, and peach pastel gradients, pixel flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T13:12:10.627352+00:00"
+}

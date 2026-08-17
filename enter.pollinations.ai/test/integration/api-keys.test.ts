@@ -880,7 +880,7 @@ describe("API Key Management", () => {
             expect(restrictedKey.permissions).toEqual({
                 models: [
                     "openai/gpt-5-nano",
-                    "black-forest-labs/FLUX.1-schnell",
+                    "black-forest-labs/flux.1-schnell",
                 ],
             });
         });
@@ -925,7 +925,7 @@ describe("API Key Management", () => {
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
             expect(listed?.permissions?.models).toEqual([
-                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/flux.1-schnell",
                 "google/gemini-3.1-flash-image",
             ]);
 
@@ -934,7 +934,7 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/flux.1-schnell",
                 "google/gemini-3.1-flash-image",
                 "retired-model",
             ]);
@@ -1112,7 +1112,7 @@ describe("API Key Management", () => {
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
                 models: [
-                    "black-forest-labs/FLUX.1-schnell",
+                    "black-forest-labs/flux.1-schnell",
                     "google/gemini-3.1-flash-image",
                 ],
                 account: ["profile", "usage"],
@@ -1155,7 +1155,7 @@ describe("API Key Management", () => {
                 permissions?: { models?: string[] };
             };
             expect(keyInfo.permissions?.models).toEqual([
-                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/flux.1-schnell",
             ]);
         });
 
@@ -1297,7 +1297,7 @@ describe("API Key Management", () => {
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
             expect(JSON.parse(result.permissions).models).toEqual([
-                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/flux.1-schnell",
             ]);
 
             // Verify in list

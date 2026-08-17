@@ -7,8 +7,8 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 const NOVA_REEL_MODELS = new Set([
-    "amazon.nova-reel-v1:1",
-    ...IMAGE_SERVICES["amazon.nova-reel-v1:1"].aliases,
+    "amazon/nova-reel-v1",
+    ...IMAGE_SERVICES["amazon/nova-reel-v1"].aliases,
 ]);
 
 const modelSchema = (defaultModel: string) =>
@@ -48,7 +48,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/FLUX.1-schnell, Tongyi-MAI/Z-Image-Turbo, bytedance/seedream-4, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon.nova-reel-v1:1. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, bytedance-seed/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z

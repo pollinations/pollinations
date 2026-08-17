@@ -30,7 +30,7 @@ describe("long-context cost variants", () => {
     it.each([
         ["openai/gpt-5.4", 272_000],
         ["openai/gpt-5.5", 272_000],
-        ["midijourney-large", 272_000],
+        ["pollinations/midijourney-large", 272_000],
         ["openai/gpt-5.6-sol", 272_000],
         ["openai/gpt-5.6-terra", 272_000],
         ["openai/gpt-5.6-luna", 272_000],
@@ -475,7 +475,7 @@ describe("selection safety and composition", () => {
     ): ModelDefinition => ({
         aliases: [],
         provider: "test",
-        brand: "Test",
+        author: "Test",
         category: "text",
         cost: { promptTextTokens: 1e-6, completionTextTokens: 2e-6 },
         priceMultiplier: 1,

@@ -105,6 +105,23 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
+- Canonical public IDs use `<author-slug>/<official-model-slug>`. Keep both
+  components lowercase, preserve the publisher's model family and version,
+  and follow the publisher's public slug when one exists. Never invent, drop,
+  or silently advance a version.
+- `author` is the human-readable publisher (`OpenAI`, `Anthropic`, `xAI`), not
+  the inference provider. Keep provider deployment IDs, casing, punctuation,
+  and revision suffixes internal when they are routing details rather than the
+  publisher's public model identity.
+- Never encode a provider route or fallback in a public canonical ID. Declare
+  routing through the registry's ordered fallback relationship. When that
+  relationship requires a hidden registry target for the same model, name it
+  `<public-canonical-id>:fallback`, mark it hidden, and never expose it in the
+  public catalog.
+- When multiple entries are only operations or parameter presets of the same
+  publisher model, consolidate them under that model identity and select the
+  operation through an explicit endpoint or request field. Do not create a
+  second canonical model or make an alias select behavior.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
@@ -162,7 +179,7 @@ A model change is not complete until all applicable statements are true:
 - Every non-zero usage field is accounted for and billed at the confirmed rate.
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
 - Capacity and media latency fit the expected production load.
-- The catalog description is developer-facing, does not repeat the title, and the brand logo resolves.
+- The catalog description is developer-facing, does not repeat the title, and the author logo resolves.
 - No public API surface was added or changed without its separate explicit confirmation.
 - No unapproved secret or deployment mutation occurred.
 - The PR contains only this model or tightly coupled family.

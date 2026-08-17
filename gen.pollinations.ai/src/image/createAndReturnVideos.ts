@@ -54,7 +54,7 @@ export async function createAndReturnVideo(
         case "alibaba/wan-2.6":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "wan-video/wan-2.2-fast":
+        case "alibaba/wan-2.2-fast":
             result = await callWanFastAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.7":
@@ -63,7 +63,7 @@ export async function createAndReturnVideo(
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "amazon.nova-reel-v1:1":
+        case "amazon/nova-reel-v1":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "x-ai/grok-imagine-video-1.5":

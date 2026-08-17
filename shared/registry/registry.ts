@@ -150,7 +150,8 @@ export type ModelDefinition = {
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */
     fallbackOnStatusCodes?: number[];
-    brand: string;
+    /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
+    author: string;
     category: Category;
     cost: CostDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant

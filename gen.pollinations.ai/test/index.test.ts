@@ -339,10 +339,10 @@ describe("gen worker routing", () => {
             pricing: Record<string, string>;
         }[];
         expect(
-            models.find((model) => model.name === "dreamshaper"),
+            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
         ).toMatchObject({
-            name: "dreamshaper",
-            aliases: ["sana"],
+            name: "lykon/dreamshaper-8-lcm",
+            aliases: ["sana", "dreamshaper"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -454,7 +454,7 @@ describe("gen worker routing", () => {
             pricing_adjustments?: unknown[];
         }[];
         expect(
-            models.find((model) => model.name === "perplexity-fast")
+            models.find((model) => model.name === "perplexity/sonar")
                 ?.pricing_adjustments,
         ).toEqual(
             expect.arrayContaining([
@@ -568,7 +568,7 @@ describe("gen worker routing", () => {
         }[];
 
         expect(
-            models.find((model) => model.name === "perplexity-fast"),
+            models.find((model) => model.name === "perplexity/sonar"),
         ).toMatchObject({
             title: "Perplexity Sonar Fast Search",
             description:
@@ -1029,7 +1029,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("qwen-tts-instruct");
+        expect(response.headers.get("x-model-used")).toBe(
+            "qwen/qwen3-tts-instruct-flash",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );

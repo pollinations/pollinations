@@ -35,7 +35,7 @@ const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "google/gemini-embedding-2": "gemini-embedding-2",
     "openai/text-embedding-3-small": "text-embedding-3-small",
     "openai/text-embedding-3-large": "text-embedding-3-large",
-    "embed-v4.0": "embed-v-4-0",
+    "cohere/embed-v4.0": "embed-v-4-0",
     "qwen/qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
 };
 
@@ -57,7 +57,7 @@ const EMBEDDING_DIMENSIONS: Record<
     "google/gemini-embedding-2": { max: 3072 },
     "openai/text-embedding-3-small": { max: 1536 },
     "openai/text-embedding-3-large": { max: 3072 },
-    "embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
+    "cohere/embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
     "qwen/qwen3-embedding-8b": { max: 4096 },
 };
 

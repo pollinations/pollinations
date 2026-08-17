@@ -2,36 +2,20 @@
 
 exports[`effective cost and price per model — snapshot 1`] = `
 {
-  "PrunaAI/p-image": {
-    "cost": {
-      "completionImageTokens": 0.005,
-    },
-    "price": {
-      "completionImageTokens": 0.005,
-    },
-  },
-  "PrunaAI/p-image-Edit": {
-    "cost": {
-      "completionImageTokens": 0.01,
-    },
-    "price": {
-      "completionImageTokens": 0.01,
-    },
-  },
-  "Tongyi-MAI/Z-Image-Turbo": {
-    "cost": {
-      "completionImageTokens": 0.004,
-    },
-    "price": {
-      "completionImageTokens": 0.004,
-    },
-  },
   "alibaba/happyhorse-1.1": {
     "cost": {
       "completionVideoSeconds": 0.0988,
     },
     "price": {
       "completionVideoSeconds": 0.0988,
+    },
+  },
+  "alibaba/wan-2.2-fast": {
+    "cost": {
+      "completionVideoSeconds": 0.01,
+    },
+    "price": {
+      "completionVideoSeconds": 0.01,
     },
   },
   "alibaba/wan-2.6": {
@@ -58,20 +42,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1,
     },
   },
-  "amazon.nova-canvas-v1:0": {
+  "alibaba/wan-2.7-image": {
     "cost": {
-      "completionImageTokens": 0.04,
+      "completionImageTokens": 0.03,
     },
     "price": {
-      "completionImageTokens": 0.04,
+      "completionImageTokens": 0.03,
     },
   },
-  "amazon.nova-reel-v1:1": {
+  "alibaba/wan-2.7-image-pro": {
     "cost": {
-      "completionVideoSeconds": 0.08,
+      "completionImageTokens": 0.03,
     },
     "price": {
-      "completionVideoSeconds": 0.08,
+      "completionImageTokens": 0.03,
     },
   },
   "amazon/nova-2-lite-v1": {
@@ -88,6 +72,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000033,
     },
   },
+  "amazon/nova-canvas-v1": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.04,
+    },
+  },
   "amazon/nova-micro-v1": {
     "cost": {
       "completionTextTokens": 0.00000014,
@@ -100,6 +92,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0,
       "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
+    },
+  },
+  "amazon/nova-reel-v1": {
+    "cost": {
+      "completionVideoSeconds": 0.08,
+    },
+    "price": {
+      "completionVideoSeconds": 0.08,
     },
   },
   "anthropic/claude-fable-5": {
@@ -216,20 +216,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000583333333333333,
     },
   },
-  "black-forest-labs/FLUX.1-schnell": {
-    "cost": {
-      "completionImageTokens": 0.002,
-    },
-    "price": {
-      "completionImageTokens": 0.002,
-    },
-  },
   "black-forest-labs/flux.1-kontext-pro": {
     "cost": {
       "completionImageTokens": 0.04,
     },
     "price": {
       "completionImageTokens": 0.04,
+    },
+  },
+  "black-forest-labs/flux.1-schnell": {
+    "cost": {
+      "completionImageTokens": 0.002,
+    },
+    "price": {
+      "completionImageTokens": 0.002,
     },
   },
   "black-forest-labs/flux.2-klein-4b": {
@@ -240,12 +240,36 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.005,
     },
   },
+  "bytedance-seed/seedream-4.0": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
   "bytedance-seed/seedream-4.5": {
     "cost": {
       "completionImageTokens": 0.04,
     },
     "price": {
       "completionImageTokens": 0.04,
+    },
+  },
+  "bytedance-seed/seedream-5-0-lite": {
+    "cost": {
+      "completionImageTokens": 0.035,
+    },
+    "price": {
+      "completionImageTokens": 0.035,
+    },
+  },
+  "bytedance-seed/seedream-5-0-pro": {
+    "cost": {
+      "completionImageTokens": 0.09,
+    },
+    "price": {
+      "completionImageTokens": 0.09,
     },
   },
   "bytedance/seedance-1-pro-fast": {
@@ -306,31 +330,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1028,
     },
   },
-  "bytedance/seedream-4": {
-    "cost": {
-      "completionImageTokens": 0.03,
-    },
-    "price": {
-      "completionImageTokens": 0.03,
-    },
-  },
-  "bytedance/seedream-5-lite": {
-    "cost": {
-      "completionImageTokens": 0.035,
-    },
-    "price": {
-      "completionImageTokens": 0.035,
-    },
-  },
-  "bytedance/seedream-5-pro": {
-    "cost": {
-      "completionImageTokens": 0.09,
-    },
-    "price": {
-      "completionImageTokens": 0.09,
-    },
-  },
-  "command-a-plus-05-2026": {
+  "cohere/command-a-plus-05-2026": {
     "cost": {
       "completionTextTokens": 0.0000032,
       "promptTextTokens": 0.0000008,
@@ -338,6 +338,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.0000024,
       "promptTextTokens": 0.0000006,
+    },
+  },
+  "cohere/embed-v4.0": {
+    "cost": {
+      "promptImageTokens": 0.00000047,
+      "promptTextTokens": 0.00000012,
+    },
+    "price": {
+      "promptImageTokens": 0.0000003525,
+      "promptTextTokens": 0.00000009,
     },
   },
   "deepseek/deepseek-v4-flash-0731": {
@@ -364,44 +374,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000132,
     },
   },
-  "dreamshaper": {
-    "cost": {
-      "completionImageTokens": 0.0001,
-    },
-    "price": {
-      "completionImageTokens": 0.0001,
-    },
-  },
-  "eleven-dialogue": {
-    "cost": {
-      "completionAudioTokens": 0.0001,
-    },
-    "price": {
-      "completionAudioTokens": 0.0001,
-    },
-  },
-  "eleven-voice-changer": {
-    "cost": {
-      "promptAudioSeconds": 0.002,
-    },
-    "price": {
-      "promptAudioSeconds": 0.002,
-    },
-  },
-  "eleven-voice-isolator": {
-    "cost": {
-      "promptAudioSeconds": 0.002,
-    },
-    "price": {
-      "promptAudioSeconds": 0.002,
-    },
-  },
   "elevenlabs/eleven-flash-v2.5": {
     "cost": {
       "completionAudioTokens": 0.00005,
     },
     "price": {
       "completionAudioTokens": 0.00005,
+    },
+  },
+  "elevenlabs/eleven-multilingual-sts-v2": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
     },
   },
   "elevenlabs/eleven-multilingual-v2": {
@@ -428,6 +414,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.0001,
     },
   },
+  "elevenlabs/eleven-v3:dialogue": {
+    "cost": {
+      "completionAudioTokens": 0.0001,
+    },
+    "price": {
+      "completionAudioTokens": 0.0001,
+    },
+  },
   "elevenlabs/music-v2": {
     "cost": {
       "completionAudioSeconds": 0.0025,
@@ -446,44 +440,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000611111111111111,
     },
   },
-  "embed-v4.0": {
+  "elevenlabs/scribe-v2-realtime": {
     "cost": {
-      "promptImageTokens": 0.00000047,
-      "promptTextTokens": 0.00000012,
+      "promptAudioSeconds": 0.000108333333333333,
     },
     "price": {
-      "promptImageTokens": 0.0000003525,
-      "promptTextTokens": 0.00000009,
+      "promptAudioSeconds": 0.000108333333333333,
     },
   },
-  "fal-ai/stable-audio-3/medium": {
+  "elevenlabs/voice-isolator": {
     "cost": {
-      "completionAudioTokens": 0.0376,
-      "promptAudioTokens": 0.0041,
+      "promptAudioSeconds": 0.002,
     },
     "price": {
-      "completionAudioTokens": 0.0376,
-      "promptAudioTokens": 0.0041,
-    },
-  },
-  "gemini-search": {
-    "cost": {
-      "completionTextTokens": 0.0000004,
-      "promptAudioTokens": 0.0000003,
-      "promptCacheWriteTokens": 0.0000001,
-      "promptCachedTokens": 0.00000001,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
-      "promptVideoTokens": 0.0000001,
-    },
-    "price": {
-      "completionTextTokens": 0.0000004,
-      "promptAudioTokens": 0.0000003,
-      "promptCacheWriteTokens": 0.0000001,
-      "promptCachedTokens": 0.00000001,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
-      "promptVideoTokens": 0.0000001,
+      "promptAudioSeconds": 0.002,
     },
   },
   "google/gemini-2.5-flash-image": {
@@ -501,6 +471,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "google/gemini-2.5-flash-lite": {
+    "cost": {
+      "completionTextTokens": 0.0000004,
+      "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000004,
+      "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
+    },
+  },
+  "google/gemini-2.5-flash-lite:search": {
     "cost": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
@@ -709,28 +699,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.08,
     },
   },
-  "grok": {
-    "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
-    },
-    "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
-    },
-  },
-  "grok-transcribe": {
-    "cost": {
-      "promptAudioSeconds": 0.0000277777777777778,
-    },
-    "price": {
-      "promptAudioSeconds": 0.0000277777777777778,
-    },
-  },
   "hexgrad/kokoro-82m": {
     "cost": {
       "completionAudioTokens": 0.00000062,
@@ -739,7 +707,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.00000062,
     },
   },
-  "hyper3d-rodin": {
+  "hyper3d/rodin-2.5": {
     "cost": {
       "completionImageTokens": 0.1,
     },
@@ -789,6 +757,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.03,
+    },
+  },
+  "lykon/dreamshaper-8-lcm": {
+    "cost": {
+      "completionImageTokens": 0.0001,
+    },
+    "price": {
+      "completionImageTokens": 0.0001,
     },
   },
   "meituan/longcat-2.0": {
@@ -857,35 +833,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
-  "midijourney": {
+  "microsoft/trellis-2": {
     "cost": {
-      "completionTextTokens": 0.0000045,
-      "promptCachedTokens": 0.000000075,
-      "promptTextTokens": 0.00000075,
-    },
-    "price": {
-      "completionTextTokens": 0.000003375,
-      "promptCachedTokens": 0.00000005625,
-      "promptTextTokens": 0.0000005625,
-    },
-  },
-  "midijourney-large": {
-    "cost": {
-      "completionTextTokens": 0.00003,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.24,
     },
     "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.000045,
-        "promptCachedTokens": 0.000001,
-        "promptTextTokens": 0.00001,
+      "high": {
+        "completionImageTokens": 0.35,
+      },
+      "medium": {
+        "completionImageTokens": 0.29,
       },
     },
     "price": {
-      "completionTextTokens": 0.00003,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.24,
     },
   },
   "minimax/minimax-h3": {
@@ -1310,7 +1271,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000445,
     },
   },
-  "perplexity-fast": {
+  "perplexity/sonar": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,
@@ -1340,6 +1301,37 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "pollinations/midijourney": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.00000075,
+    },
+    "price": {
+      "completionTextTokens": 0.000003375,
+      "promptCachedTokens": 0.00000005625,
+      "promptTextTokens": 0.0000005625,
+    },
+  },
+  "pollinations/midijourney-large": {
+    "cost": {
+      "completionTextTokens": 0.00003,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000045,
+        "promptCachedTokens": 0.000001,
+        "promptTextTokens": 0.00001,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00003,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+  },
   "poolside/laguna-s-2.1": {
     "cost": {
       "completionTextTokens": 0.0000002,
@@ -1350,6 +1342,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000002,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
+    },
+  },
+  "prunaai/p-image": {
+    "cost": {
+      "completionImageTokens": 0.005,
+    },
+    "price": {
+      "completionImageTokens": 0.005,
+    },
+  },
+  "prunaai/p-image-edit": {
+    "cost": {
+      "completionImageTokens": 0.01,
+    },
+    "price": {
+      "completionImageTokens": 0.01,
     },
   },
   "prunaai/p-video": {
@@ -1580,14 +1588,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.08,
     },
   },
-  "scribe-realtime": {
-    "cost": {
-      "promptAudioSeconds": 0.000108333333333333,
-    },
-    "price": {
-      "promptAudioSeconds": 0.000108333333333333,
-    },
-  },
   "sesame/csm-1b": {
     "cost": {
       "completionAudioTokens": 0.000007,
@@ -1596,12 +1596,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.000007,
     },
   },
-  "stable-audio-3": {
+  "stability-ai/stable-audio-3": {
     "cost": {
       "completionAudioTokens": 0.26,
     },
     "price": {
       "completionAudioTokens": 0.26,
+    },
+  },
+  "stability-ai/stable-audio-3-medium": {
+    "cost": {
+      "completionAudioTokens": 0.0376,
+      "promptAudioTokens": 0.0041,
+    },
+    "price": {
+      "completionAudioTokens": 0.0376,
+      "promptAudioTokens": 0.0041,
     },
   },
   "stepfun/step-3.5-flash": {
@@ -1638,44 +1648,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
-  "trellis-2": {
+  "tongyi-mai/z-image-turbo": {
     "cost": {
-      "completionImageTokens": 0.24,
-    },
-    "costVariants": {
-      "high": {
-        "completionImageTokens": 0.35,
-      },
-      "medium": {
-        "completionImageTokens": 0.29,
-      },
+      "completionImageTokens": 0.004,
     },
     "price": {
-      "completionImageTokens": 0.24,
+      "completionImageTokens": 0.004,
     },
   },
-  "wan-video/wan-2.2-fast": {
+  "tongyi-mai/z-image-turbo:fallback": {
     "cost": {
-      "completionVideoSeconds": 0.01,
+      "completionImageTokens": 0,
     },
     "price": {
-      "completionVideoSeconds": 0.01,
+      "completionImageTokens": 0,
     },
   },
-  "wan-video/wan-2.7-image": {
+  "x-ai/grok-4.20": {
     "cost": {
-      "completionImageTokens": 0.03,
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionImageTokens": 0.03,
-    },
-  },
-  "wan-video/wan-2.7-image-pro": {
-    "cost": {
-      "completionImageTokens": 0.03,
-    },
-    "price": {
-      "completionImageTokens": 0.03,
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
     },
   },
   "x-ai/grok-4.3": {
@@ -1783,6 +1783,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
+  "x-ai/speech-to-text": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+  },
   "xiaomi/mimo-v2.5": {
     "cost": {
       "completionTextTokens": 0.00000028,
@@ -1817,14 +1825,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000044,
       "promptCachedTokens": 0.00000014,
       "promptTextTokens": 0.0000014,
-    },
-  },
-  "zimage-fal": {
-    "cost": {
-      "completionImageTokens": 0,
-    },
-    "price": {
-      "completionImageTokens": 0,
     },
   },
 }

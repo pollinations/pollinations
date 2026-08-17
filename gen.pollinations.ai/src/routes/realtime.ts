@@ -370,7 +370,7 @@ function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
             input: {
                 format,
                 transcription: {
-                    model: "scribe-realtime",
+                    model: "elevenlabs/scribe-v2-realtime",
                     ...(config.prompt && { prompt: config.prompt }),
                     ...(languages.length && { languages }),
                 },
@@ -412,7 +412,7 @@ function parseScribeSessionUpdate(
             next.audioFormat = "pcm_24000";
         } else {
             return {
-                error: "scribe-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
+                error: "elevenlabs/scribe-v2-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
                 param: "session.audio.input.format",
             };
         }
@@ -457,7 +457,7 @@ function parseScribeSessionUpdate(
         const turnDetection = asRecord(input.turn_detection);
         if (turnDetection.type !== "server_vad") {
             return {
-                error: 'scribe-realtime supports null or "server_vad" turn detection.',
+                error: 'elevenlabs/scribe-v2-realtime supports null or "server_vad" turn detection.',
                 param: "session.audio.input.turn_detection.type",
             };
         }
@@ -1352,7 +1352,7 @@ export async function handleRealtimeWebSocket(
     }
     const userId = await authorizeRealtimeSession(c);
     const tracking = await createRealtimeBillingContext(c);
-    if (c.var.model.resolved === "scribe-realtime") {
+    if (c.var.model.resolved === "elevenlabs/scribe-v2-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {
             throw new HTTPException(503, {
                 message: "ElevenLabs realtime provider is not configured.",

@@ -273,7 +273,7 @@ describe("resolveModelConfig", () => {
     ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
         const model = findModelByName(modelName);
 
-        expect(model?.name).toBe("perplexity-fast");
+        expect(model?.name).toBe("perplexity/sonar");
         const result = resolveModelConfig(messages, {
             model: modelName,
             web_search_options: { search_context_size: "high" },

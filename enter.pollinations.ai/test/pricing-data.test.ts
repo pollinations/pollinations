@@ -213,7 +213,7 @@ test("catalog prices keep community text models flagged for display", () => {
             aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
-            brand: "Example AI",
+            author: "Example AI",
             brand_url: "https://example.com/",
             title: "OpenAI relay",
             description: "OpenAI relay",
@@ -233,7 +233,7 @@ test("catalog prices keep community text models flagged for display", () => {
         type: "text",
         community: true,
         displayName: "OpenAI relay",
-        brand: "Example AI",
+        author: "Example AI",
         brandUrl: "https://example.com/",
         capabilities: [],
     });
@@ -282,14 +282,14 @@ test("catalog prices expose 3D flat output generation rates", () => {
 test("Trellis 2 prices selectable resolution tiers", () => {
     const usage = { completionImageTokens: 1 };
 
-    expect(calculateCost("trellis-2", usage).totalCost).toBe(0.24);
+    expect(calculateCost("microsoft/trellis-2", usage).totalCost).toBe(0.24);
     expect(
-        calculateCost("trellis-2", usage, undefined, {
+        calculateCost("microsoft/trellis-2", usage, undefined, {
             resolution: "medium",
         }).totalCost,
     ).toBe(0.29);
     expect(
-        calculateCost("trellis-2", usage, undefined, {
+        calculateCost("microsoft/trellis-2", usage, undefined, {
             resolution: "high",
         }).totalCost,
     ).toBe(0.35);
@@ -305,7 +305,7 @@ test("catalog models resolve brand logo SVG assets", () => {
         const logoPath = getModelBrandLogoPath(model);
         return logoPath && logoAssets.has(logoPath)
             ? []
-            : [{ name: model.name, brand: model.brand, logoPath }];
+            : [{ name: model.name, author: model.author, logoPath }];
     });
 
     expect(missingLogos).toEqual([]);
@@ -316,7 +316,7 @@ test("community models use their model type icon instead of a provider logo", ()
         name: "owner/model",
         type: "text" as const,
         community: true,
-        brand: "Custom Provider",
+        author: "Custom Provider",
         capabilities: [],
         prices: [],
     };
@@ -619,12 +619,12 @@ test("Gemini search cost follows each route's provider metadata", () => {
         ],
     };
     const geminiSearchCost = calculateCost(
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
         usage,
         vertex25SearchOutput,
     );
     const geminiSearchPrice = calculatePrice(
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
         usage,
         vertex25SearchOutput,
     );
@@ -691,8 +691,8 @@ test("Perplexity request search fees are added by declarative billing rules", ()
         completionTextTokens: 1_000_000,
     };
     const cases = [
-        ["perplexity-fast", 2.005, undefined],
-        ["perplexity-fast", 2.012, { searchContextSize: "high" as const }],
+        ["perplexity/sonar", 2.005, undefined],
+        ["perplexity/sonar", 2.012, { searchContextSize: "high" as const }],
         ["perplexity/sonar-pro", 18.014, undefined],
         ["perplexity/sonar-reasoning-pro", 10.014, undefined],
     ] as const;
@@ -735,13 +735,13 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
     };
 
     expect(
-        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+        calculateCost("perplexity/sonar", usage, responseOutput).totalCost,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
+        calculatePrice("perplexity/sonar", usage, responseOutput).totalPrice,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
+        calculateCost("perplexity/sonar", usage, streamOutput).totalCost,
     ).toBeCloseTo(2.012, 8);
 });
 
@@ -750,7 +750,7 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    // perplexity-fast token cost = 2.0; static request fee = 0.005 → total 2.005.
+    // perplexity/sonar token cost = 2.0; static request fee = 0.005 → total 2.005.
 
     // Malformed cost data is NOT a request-failing fault: fall back to the
     // static registry fee (no throw) and alert.
@@ -758,33 +758,33 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     for (const requestCost of malformed) {
         const output = { usage: { cost: { request_cost: requestCost } } };
         expect(
-            calculateCost("perplexity-fast", usage, output).totalCost,
+            calculateCost("perplexity/sonar", usage, output).totalCost,
         ).toBeCloseTo(2.005, 8);
         expect(
-            calculatePrice("perplexity-fast", usage, output).totalPrice,
+            calculatePrice("perplexity/sonar", usage, output).totalPrice,
         ).toBeCloseTo(2.005, 8);
     }
 
     // A finite non-negative value within 10× the static fee is billed verbatim.
     const reasonable = { usage: { cost: { request_cost: 0.04 } } };
     expect(
-        calculateCost("perplexity-fast", usage, reasonable).totalCost,
+        calculateCost("perplexity/sonar", usage, reasonable).totalCost,
     ).toBeCloseTo(2.04, 8);
 
     // A value above 10× the static fee is clamped down to the static fee.
     const runaway = { usage: { cost: { request_cost: 9.99 } } };
     expect(
-        calculateCost("perplexity-fast", usage, runaway).totalCost,
+        calculateCost("perplexity/sonar", usage, runaway).totalCost,
     ).toBeCloseTo(2.005, 8);
 
     // Absent cost data falls back to the static registry fee.
-    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
+    expect(calculateCost("perplexity/sonar", usage, {}).totalCost).toBeCloseTo(
         2.005,
         8,
     );
 });
 
-test("independent Vertex Gemini Search detects streamed grounding", () => {
+test("dedicated Vertex Gemini Search detects streamed grounding", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -806,10 +806,18 @@ test("independent Vertex Gemini Search detects streamed grounding", () => {
 
     // Vertex reports grounding metadata on a streamed response event.
     expect(
-        calculateCost("gemini-search", usage, vertexStreamOutput).totalCost,
+        calculateCost(
+            "google/gemini-2.5-flash-lite:search",
+            usage,
+            vertexStreamOutput,
+        ).totalCost,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculatePrice("gemini-search", usage, vertexStreamOutput).totalPrice,
+        calculatePrice(
+            "google/gemini-2.5-flash-lite:search",
+            usage,
+            vertexStreamOutput,
+        ).totalPrice,
     ).toBeCloseTo(0.535, 8);
 });
 
@@ -830,7 +838,7 @@ test("Perplexity billing keeps executable rules private", () => {
     ] as const;
 
     expect(
-        getRegistryModelDefinition("perplexity-fast").billing?.adjustments,
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments,
     ).toMatchObject([
         {
             id: "perplexity.sonar_low.search_request.v1",
@@ -842,7 +850,7 @@ test("Perplexity billing keeps executable rules private", () => {
         },
     ]);
     const sonarRules =
-        getRegistryModelDefinition("perplexity-fast").billing?.adjustments;
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments;
     expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
         1,
     );
@@ -914,7 +922,7 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
         "google/gemini-3.5-flash-lite",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
     ] as const;
     for (const model of models) {
         // getRegistryModelDefinition throws on unknown names, so a renamed
@@ -935,7 +943,7 @@ test("Gemini routes price separately reported media input tokens", () => {
         "google/gemini-3.5-flash-lite",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
     ] as const) {
         const cost = getRegistryModelDefinition(model).cost;
         expect(
@@ -957,7 +965,7 @@ test("Google text model providers match their configured routes", () => {
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
     ] as const;
-    const vertexModels = ["gemini-search"] as const;
+    const vertexModels = ["google/gemini-2.5-flash-lite:search"] as const;
     const publicModels = new Map(
         getTextModelsInfo().map((model) => [model.name, model]),
     );
@@ -1008,8 +1016,8 @@ test("Step Flash uses DeepInfra's standard and cached token rates", () => {
 
 test("Pruna image models retain DeepInfra's flat per-image rates", () => {
     for (const [model, expectedCost] of [
-        ["PrunaAI/p-image", 0.005],
-        ["PrunaAI/p-image-Edit", 0.01],
+        ["prunaai/p-image", 0.005],
+        ["prunaai/p-image-edit", 0.01],
     ] as const) {
         const definition = getRegistryModelDefinition(model);
 
@@ -1189,8 +1197,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
 });
 
 test("Vertex Gemini Search adjustments use grounding metadata", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
     const groundedPrompt = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(model),
         {
             choices: [
                 {
@@ -1200,7 +1209,7 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
                 },
             ],
         },
-        "gemini-search",
+        model,
     );
     expect(groundedPrompt).toEqual([
         {
@@ -1215,11 +1224,11 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
     ]);
 
     const cacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(model),
         {
             usage: { cache_creation_input_tokens: 1_000_000 },
         },
-        "gemini-search",
+        model,
     );
     expect(cacheWrite).toEqual([
         {
@@ -1256,8 +1265,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
+    const vertexModel = "google/gemini-2.5-flash-lite:search";
     const vertexGeminiSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(vertexModel),
         {
             choices: [
                 {
@@ -1267,7 +1277,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
                 },
             ],
         },
-        "gemini-search",
+        vertexModel,
     );
     expect(vertexGeminiSearch).toEqual([
         {
@@ -1283,9 +1293,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
 
     // Perplexity: request fee prefers provider-reported cost when present.
     const perplexity = calculateBillingAdjustments(
-        getRegistryModelDefinition("perplexity-fast"),
+        getRegistryModelDefinition("perplexity/sonar"),
         { usage: { cost: { request_cost: 0.006 } } },
-        "perplexity-fast",
+        "perplexity/sonar",
     );
     expect(perplexity).toEqual([
         {
@@ -1302,11 +1312,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     // No grounding evidence → no adjustment entries.
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition("gemini-search"),
-            {
-                choices: [],
-            },
-            "gemini-search",
+            getRegistryModelDefinition(vertexModel),
+            { choices: [] },
+            vertexModel,
         ),
     ).toEqual([]);
 });

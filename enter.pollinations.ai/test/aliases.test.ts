@@ -74,13 +74,15 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("gemini-search applies grounding cost on top of shared token rates", () => {
+test("gemini-search resolves to the dedicated search variant", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
     const geminiFastCost = calculateCost("google/gemini-2.5-flash-lite", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage, {
+    const canonicalSearchModel = resolveModelName("gemini-search");
+    expect(canonicalSearchModel).toBe("google/gemini-2.5-flash-lite:search");
+    const geminiSearchCost = calculateCost(canonicalSearchModel, usage, {
         choices: [
             {
                 groundingMetadata: {
@@ -118,7 +120,7 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     // cost × priceMultiplier. Assert the runtime aggregation honours that for a
     // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
-    const model = "black-forest-labs/FLUX.1-schnell";
+    const model = "black-forest-labs/flux.1-schnell";
     const { priceMultiplier } = getRegistryModelDefinition(model);
     const cost = calculateCost(model, usage);
     const price = calculatePrice(model, usage);
@@ -149,7 +151,9 @@ test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition("bytedance/seedream-5-pro");
+    const definition = getRegistryModelDefinition(
+        "bytedance-seed/seedream-5-0-pro",
+    );
 
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
@@ -158,8 +162,8 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
 
 test("Amazon Nova media models use the Bedrock registry provider", () => {
     for (const model of [
-        "amazon.nova-canvas-v1:0",
-        "amazon.nova-reel-v1:1",
+        "amazon/nova-canvas-v1",
+        "amazon/nova-reel-v1",
     ] as const) {
         expect(getRegistryModelDefinition(model).provider).toBe("bedrock");
     }

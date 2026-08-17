@@ -21,14 +21,14 @@ const APIDOCS_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 
 // Image models — must NOT appear as `model=<x>` inside a `/video/` example.
 const IMAGE_MODELS = new Set([
-    "black-forest-labs/FLUX.1-schnell",
-    "Tongyi-MAI/Z-Image-Turbo",
+    "black-forest-labs/flux.1-schnell",
+    "tongyi-mai/z-image-turbo",
     "openai/gpt-image-1-mini",
     "openai/gpt-image-1.5",
     "openai/gpt-image-2",
     "black-forest-labs/flux.1-kontext-pro",
-    "bytedance/seedream-5-lite",
-    "bytedance/seedream-4",
+    "bytedance-seed/seedream-5-0-lite",
+    "bytedance-seed/seedream-4.0",
     "google/gemini-2.5-flash-image",
     "google/gemini-3-pro-image",
     "black-forest-labs/flux.2-klein-4b",

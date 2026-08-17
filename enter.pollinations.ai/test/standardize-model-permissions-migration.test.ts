@@ -54,14 +54,14 @@ async function runMigrationForTest(): Promise<void> {
 
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID with bounded statements", async () => {
-        expect(modelMappings).toHaveLength(135);
+        expect(modelMappings).toHaveLength(149);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
-            135,
+            149,
         );
         expect(
             new Set(modelMappings.map(([, canonical]) => canonical)).size,
-        ).toBe(135);
-        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(135);
+        ).toBe(149);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(149);
         for (const [retiredId, canonicalId] of modelMappings) {
             expect(resolveModelName(retiredId)).toBe(canonicalId);
             expect(getRegistryModelDefinition(canonicalId).aliases).toContain(
@@ -89,7 +89,7 @@ describe("standardize model permissions migration", () => {
             INSERT INTO canonical_rename_apikey
             SELECT
                 printf('unaffected-%06d', x),
-                json_object('models', json_array('trellis-2', 'gemini-search'), 'role', 'keep')
+                json_object('models', json_array('unknown-model', 'owner/community-model'), 'role', 'keep')
             FROM seq
         `).run();
 
@@ -112,14 +112,14 @@ describe("standardize model permissions migration", () => {
                         firstOld,
                         "owner/community-model",
                         firstCanonical,
-                        "trellis-2",
+                        "owner/another-model",
                     ],
                     account: ["profile"],
                 }),
             ],
             [
                 "retired-elsewhere",
-                JSON.stringify({ models: ["trellis-2"], note: firstOld }),
+                JSON.stringify({ models: ["unknown-model"], note: firstOld }),
             ],
             ["missing-models", JSON.stringify({ note: retiredIds[1] })],
             ["non-array", JSON.stringify({ models: retiredIds[2] })],
@@ -170,7 +170,7 @@ describe("standardize model permissions migration", () => {
                 "unknown-model",
                 firstCanonical,
                 "owner/community-model",
-                "trellis-2",
+                "owner/another-model",
             ],
             account: ["profile"],
         });
@@ -194,7 +194,7 @@ describe("standardize model permissions migration", () => {
             FROM canonical_rename_apikey
             WHERE id LIKE 'unaffected-%'
               AND permissions != json_object(
-                    'models', json_array('trellis-2', 'gemini-search'),
+                    'models', json_array('unknown-model', 'owner/community-model'),
                     'role', 'keep'
               )
         `).first<{ count: number }>();

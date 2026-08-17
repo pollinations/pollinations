@@ -97,7 +97,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "command-a-plus-05-2026",
+        name: "cohere/command-a-plus-05-2026",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },
     {
@@ -191,7 +191,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "grok",
+        name: "x-ai/grok-4.20",
         config: (options = {}) =>
             (usesGrokReasoning(options)
                 ? portkeyConfig["grok-4-20-reasoning"]
@@ -296,7 +296,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-search",
+        name: "google/gemini-2.5-flash-lite:search",
         config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -306,17 +306,17 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "midijourney",
+        name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "midijourney-large",
+        name: "pollinations/midijourney-large",
         config: portkeyConfig["gpt-5.5"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "perplexity-fast",
+        name: "perplexity/sonar",
         config: portkeyConfig["sonar"],
     },
     {

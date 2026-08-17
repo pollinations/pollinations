@@ -6,7 +6,7 @@ import { SENTINEL_SEED } from "../../src/util.ts";
 describe("ImageParamsSchema", () => {
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
-            model: "black-forest-labs/FLUX.1-schnell",
+            model: "black-forest-labs/flux.1-schnell",
             seed: -1,
         });
 
@@ -130,7 +130,7 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
         expect(
             ImageParamsSchema.parse({
-                model: "black-forest-labs/FLUX.1-schnell",
+                model: "black-forest-labs/flux.1-schnell",
                 quality: "LOW",
             }).quality,
         ).toBe("medium");
@@ -154,7 +154,7 @@ describe("ImageParamsSchema", () => {
 
     it("rejects resolution on models without resolution tiers", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "black-forest-labs/FLUX.1-schnell",
+            model: "black-forest-labs/flux.1-schnell",
             resolution: "720p",
         });
 
@@ -163,7 +163,7 @@ describe("ImageParamsSchema", () => {
             expect(result.error.issues[0]).toMatchObject({
                 path: ["resolution"],
                 message:
-                    "black-forest-labs/FLUX.1-schnell does not accept a resolution parameter.",
+                    "black-forest-labs/flux.1-schnell does not accept a resolution parameter.",
             });
         }
     });

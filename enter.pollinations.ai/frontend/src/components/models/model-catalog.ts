@@ -19,7 +19,7 @@ export type ApiModelInfo = {
     name?: string;
     id?: string;
     category?: ModelCategory;
-    brand?: string;
+    author?: string;
     brand_url?: string;
     community?: boolean;
     agent?: boolean;
@@ -233,7 +233,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
-        brand: model.brand,
+        author: model.author,
         brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,

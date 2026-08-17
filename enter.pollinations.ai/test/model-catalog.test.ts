@@ -8,7 +8,7 @@ describe("parseModelCatalogResponse", () => {
     it("returns the array when entries have identifiable models", () => {
         const data = [
             { name: "openai/gpt-5.4-nano" },
-            { id: "black-forest-labs/FLUX.1-schnell" },
+            { id: "black-forest-labs/flux.1-schnell" },
         ];
 
         expect(parseModelCatalogResponse(data)).toEqual(data);

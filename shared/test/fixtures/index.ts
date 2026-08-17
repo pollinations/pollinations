@@ -3,7 +3,7 @@ import { createTestApiKey } from "./api-keys.ts";
 
 export const RESTRICTED_TEXT_TEST_MODEL = "openai/gpt-5-nano" as const;
 export const RESTRICTED_IMAGE_TEST_MODEL =
-    "black-forest-labs/FLUX.1-schnell" as const;
+    "black-forest-labs/flux.1-schnell" as const;
 export const RESTRICTED_TEST_MODELS = [
     RESTRICTED_TEXT_TEST_MODEL,
     RESTRICTED_IMAGE_TEST_MODEL,

@@ -93,6 +93,7 @@ describe("OpenRouter Gemini routing", () => {
 
 describe("Vertex Gemini Search routing", () => {
     const routes = [
+        "google/gemini-2.5-flash-lite:search",
         "gemini-search",
         "gemini-2.5-flash-search",
         "gemini-2.5-flash-lite-search",

@@ -132,7 +132,7 @@ describe("Account Key Management API", () => {
                     body: JSON.stringify({
                         name: "restricted-child",
                         allowedModels: [
-                            "black-forest-labs/FLUX.1-schnell",
+                            "black-forest-labs/flux.1-schnell",
                             "openai/gpt-5.4-nano",
                         ],
                         pollenBudget: 50,
@@ -145,7 +145,7 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.permissions).toEqual({
                 models: [
-                    "black-forest-labs/FLUX.1-schnell",
+                    "black-forest-labs/flux.1-schnell",
                     "openai/gpt-5.4-nano",
                 ],
                 account: ["profile", "usage"],
@@ -356,7 +356,7 @@ describe("Account Key Management API", () => {
                     body: JSON.stringify({
                         name: "account-key-with-retired-model",
                         allowedModels: [
-                            "black-forest-labs/FLUX.1-schnell",
+                            "black-forest-labs/flux.1-schnell",
                             "retired-model",
                         ],
                     }),
@@ -380,7 +380,7 @@ describe("Account Key Management API", () => {
                 (key: { id: string }) => key.id === created.id,
             );
             expect(listed.permissions.models).toEqual([
-                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/flux.1-schnell",
             ]);
         });
 

@@ -155,7 +155,7 @@ workerTest(
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "eleven-dialogue",
+                    model: "elevenlabs/eleven-v3:dialogue",
                     input: dialogue,
                     voice: "alloy",
                     response_format: "mp3",
@@ -381,7 +381,7 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "eleven-dialogue",
+                    model: "elevenlabs/eleven-v3:dialogue",
                     input: "nova: Hello.\ngeorge: Hi!",
                     response_format: "mp3",
                 }),

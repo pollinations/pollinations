@@ -623,13 +623,13 @@ describe("tracking observability", () => {
             trackingUser,
             200,
             consumePollen,
-            "perplexity-fast",
+            "perplexity/sonar",
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity-fast",
+                    model: "perplexity/sonar",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -655,7 +655,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             responseStatus: 200,
             isBilledUsage: true,
-            modelUsed: "perplexity-fast",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0.005,
             adjustmentCosts: {
@@ -690,14 +690,14 @@ describe("tracking observability", () => {
             trackingUser,
             200,
             consumePollen,
-            "perplexity-fast",
+            "perplexity/sonar",
             createStaticEntry("openai/gpt-5.4-nano"),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity-fast",
+                    model: "perplexity/sonar",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -745,14 +745,14 @@ describe("tracking observability", () => {
         await createHeaderApp(
             {
                 "x-usage-missing": "true",
-                "x-model-used": "perplexity-fast",
+                "x-model-used": "perplexity/sonar",
                 "x-fallback-target": "config.targets[1]",
             },
             trackingUser,
             200,
             consumePollen,
             "openai/gpt-5.4-nano",
-            createStaticEntry("perplexity-fast"),
+            createStaticEntry("perplexity/sonar"),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -782,7 +782,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             isBilledUsage: false,
             fallbackUsed: true,
-            modelUsed: "perplexity-fast",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0,
             devPrice: 0,
@@ -1896,7 +1896,7 @@ describe("trackResponse missing usage", () => {
     it("leaves a model with a knowable flat fee unmarked", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(true, "perplexity-fast"),
+            requestTrackingFixture(true, "perplexity/sonar"),
             emptyStream(),
         );
         expect(tracking.isBilledUsage).toBe(true);

@@ -123,7 +123,7 @@ test(
         expect(data.permissions).toBeDefined();
         expect(data.permissions.models).toEqual([
             "openai/gpt-5-nano",
-            "black-forest-labs/FLUX.1-schnell",
+            "black-forest-labs/flux.1-schnell",
         ]);
     },
 );

@@ -521,7 +521,7 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("projects a provider profile onto the community model brand", () => {
+    it("projects a provider profile onto the community model author", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
@@ -531,7 +531,7 @@ describe("community endpoint helpers", () => {
             ...communityEndpointPrices({}),
         });
 
-        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.author).toBe("Example AI");
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
@@ -3470,7 +3470,7 @@ fixtureTest(
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
-            brand: "Example AI",
+            author: "Example AI",
             brand_url: "https://example.com/",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);

@@ -174,14 +174,14 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanFastAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-video/wan-2.2-fast",
+            model: "alibaba/wan-2.2-fast",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-t2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].cancelAfter).toBe("6m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-video/wan-2.2-fast",
+            actualModel: "alibaba/wan-2.2-fast",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -228,7 +228,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         await callWanFastAPI("a cat walking", {
             ...baseParams,
-            model: "wan-video/wan-2.2-fast",
+            model: "alibaba/wan-2.2-fast",
             image: [INPUT_IMAGE_URL],
         });
 

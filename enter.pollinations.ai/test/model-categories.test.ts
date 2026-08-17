@@ -135,11 +135,11 @@ describe("model categories", () => {
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
-        expect(validateModelSearch({ sort: "brand" })).toEqual({
+        expect(validateModelSearch({ sort: "author" })).toEqual({
             scope: undefined,
             category: undefined,
             q: undefined,
-            sort: "brand",
+            sort: "author",
         });
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             scope: undefined,

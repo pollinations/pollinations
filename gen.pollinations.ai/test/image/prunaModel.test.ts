@@ -72,7 +72,7 @@ function mockPrunaFetch(
 }
 
 const baseParams: ImageParams = {
-    model: "PrunaAI/p-image",
+    model: "prunaai/p-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -122,7 +122,7 @@ describe("prunaModel - p-image", () => {
         expect(input.width).toBe(1024);
         expect(input.height).toBe(1024);
         expect(input.seed).toBe(42);
-        expect(result.trackingData?.actualModel).toBe("PrunaAI/p-image");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-image");
     });
 });
 
@@ -170,7 +170,7 @@ describe("prunaModel - p-image-edit", () => {
         const images = input.images as string[];
         expect(images).toHaveLength(1);
         expect(images[0]).toBe("https://example.com/apple.jpg");
-        expect(result.trackingData?.actualModel).toBe("PrunaAI/p-image-Edit");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-image-edit");
     });
 });
 

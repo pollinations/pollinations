@@ -82,16 +82,16 @@ const CreateSpeechRequestSchema = z
         }),
         seconds: z.number().min(1).max(380).optional().meta({
             description:
-                "Audio duration in seconds for fal-ai/stable-audio-3/medium and stable-audio-3, 1-380.",
+                "Audio duration in seconds for stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3, 1-380.",
             example: 30,
         }),
         steps: z.number().int().min(1).max(100).optional().meta({
             description:
-                "Sampling steps (fal-ai/stable-audio-3/medium 1-100, stable-audio-3 4-8).",
+                "Sampling steps (stability-ai/stable-audio-3-medium 1-100, stability-ai/stable-audio-3 4-8).",
             example: 8,
         }),
         negative_prompt: z.string().max(10000).optional().meta({
-            description: "Negative prompt for stable-audio-3.",
+            description: "Negative prompt for stability-ai/stable-audio-3.",
             example: "distortion, vocals",
         }),
         loop: z.boolean().optional().meta({
@@ -583,7 +583,7 @@ export async function generateElevenLabsDialogue(opts: {
         endpoint,
     );
     const usageHeaders = buildUsageHeaders(
-        "eleven-dialogue",
+        "elevenlabs/eleven-v3:dialogue",
         createAudioTokenUsage(characterCount),
     );
     return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
@@ -704,7 +704,7 @@ export async function changeVoiceWithElevenLabs(opts: {
     const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const usageHeaders = {
         ...buildUsageHeaders(
-            "eleven-voice-changer",
+            "elevenlabs/eleven-multilingual-sts-v2",
             createAudioSecondsUsage(inputSeconds),
         ),
         "x-voice-changer-voice": voice,
@@ -774,7 +774,7 @@ export async function isolateVoiceWithElevenLabs(opts: {
             "Content-Type":
                 response.headers.get("content-type") || "audio/mpeg",
             ...buildUsageHeaders(
-                "eleven-voice-isolator",
+                "elevenlabs/voice-isolator",
                 createAudioSecondsUsage(inputSeconds),
             ),
         },
@@ -866,7 +866,7 @@ export async function transcribeWithXai(opts: {
         )
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for grok-transcribe: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
+            message: `Unsupported response_format for x-ai/speech-to-text: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
         });
     }
 
@@ -922,7 +922,7 @@ export async function transcribeWithXai(opts: {
         },
         responseFormat,
         usageHeaders: buildUsageHeaders(
-            "grok-transcribe",
+            "x-ai/speech-to-text",
             createAudioSecondsUsage(transcript.duration),
         ),
     });
@@ -1650,12 +1650,12 @@ function requireElevenMusicOptions(
         opts.conditioningRef !== undefined ||
         opts.storeForInpainting === true;
 
-    // fal-ai/stable-audio-3/medium and stable-audio-3 (Stability direct)
+    // stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3
     // accept reference_audio for audio-to-audio, but not the ElevenLabs
     // composition/conditioning options.
     if (
-        model === "fal-ai/stable-audio-3/medium" ||
-        model === "stable-audio-3"
+        model === "stability-ai/stable-audio-3-medium" ||
+        model === "stability-ai/stable-audio-3"
     ) {
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -1671,7 +1671,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 (fal-ai/stable-audio-3/medium and stable-audio-3 also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
     });
 }
 
@@ -2108,10 +2108,13 @@ export async function generateStableAudio3Medium(opts: {
     // Flat per-generation fee: always one output audio unit, plus one input
     // audio unit when a reference clip switches fal to audio-to-audio. The
     // registry prices the base + audio-input surcharge (see its cost block).
-    const usageHeaders = buildUsageHeaders("fal-ai/stable-audio-3/medium", {
-        completionAudioTokens: 1,
-        promptAudioTokens: isAudioToAudio ? 1 : 0,
-    });
+    const usageHeaders = buildUsageHeaders(
+        "stability-ai/stable-audio-3-medium",
+        {
+            completionAudioTokens: 1,
+            promptAudioTokens: isAudioToAudio ? 1 : 0,
+        },
+    );
 
     log.info("Stable Audio 3 Medium success: {bytes} bytes", {
         bytes: audioBuffer.byteLength,
@@ -2164,7 +2167,8 @@ export async function generateStableAudio3Large(opts: {
 
     if (!["mp3", "wav"].includes(responseFormat)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "stable-audio-3 supports response_format values: mp3, wav",
+            message:
+                "stability-ai/stable-audio-3 supports response_format values: mp3, wav",
         });
     }
 
@@ -2179,8 +2183,7 @@ export async function generateStableAudio3Large(opts: {
 
     const formData = new FormData();
     formData.append("prompt", prompt);
-    // The direct API's only accepted `model` value is "stable-audio-3" (our
-    // registry key is also "stable-audio-3").
+    // The direct API's only accepted `model` value is "stable-audio-3".
     formData.append("model", "stable-audio-3");
     formData.append("output_format", responseFormat);
     if (isAudioToAudio) {
@@ -2264,7 +2267,7 @@ export async function generateStableAudio3Large(opts: {
         }
 
         const audioBuffer = await pollResponse.arrayBuffer();
-        const usageHeaders = buildUsageHeaders("stable-audio-3", {
+        const usageHeaders = buildUsageHeaders("stability-ai/stable-audio-3", {
             completionAudioTokens: 1,
         });
 
@@ -2384,7 +2387,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "fal-ai/stable-audio-3/medium") {
+    if (model === "stability-ai/stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Medium({
@@ -2399,7 +2402,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "stable-audio-3") {
+    if (model === "stability-ai/stable-audio-3") {
         return withSafetyHeaders(
             c,
             await generateStableAudio3Large({
@@ -2512,7 +2515,7 @@ async function generateAudioFromSpeechRequest(
         storeForInpainting: store_for_inpainting,
     });
 
-    if (c.var.model.resolved === "eleven-dialogue") {
+    if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
         const inputs = parseDialogueInput(input);
         const safeTexts = await applySafetyToTexts(
             c,
@@ -2736,7 +2739,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     }
 
     const result = await withAudioFallback(c, async (candidate) => {
-        if (candidate.id === "grok-transcribe") {
+        if (candidate.id === "x-ai/speech-to-text") {
             return transcribeWithXai({
                 file,
                 language: language || undefined,
@@ -2840,7 +2843,8 @@ export const audioRoutes = new Hono<Env>()
                             properties: {
                                 model: {
                                     type: "string",
-                                    default: "eleven-voice-changer",
+                                    default:
+                                        "elevenlabs/eleven-multilingual-sts-v2",
                                 },
                                 audio: {
                                     type: "string",
@@ -2889,7 +2893,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         resolveModel("generate.audio", {
-            defaultModel: "eleven-voice-changer",
+            defaultModel: "elevenlabs/eleven-multilingual-sts-v2",
             supportedEndpoint: "/v1/audio/voice-changer",
         }),
         track("generate.audio"),
@@ -2916,7 +2920,7 @@ export const audioRoutes = new Hono<Env>()
                             properties: {
                                 model: {
                                     type: "string",
-                                    default: "eleven-voice-isolator",
+                                    default: "elevenlabs/voice-isolator",
                                 },
                                 audio: {
                                     type: "string",
@@ -2943,7 +2947,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         resolveModel("generate.audio", {
-            defaultModel: "eleven-voice-isolator",
+            defaultModel: "elevenlabs/voice-isolator",
             supportedEndpoint: "/v1/audio/voice-isolator",
         }),
         track("generate.audio"),
@@ -2961,9 +2965,9 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `fal-ai/stable-audio-3/medium`, or `stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `fal-ai/stable-audio-3/medium` or `stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
-                "For multi-speaker audio, set `model` to `eleven-dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
+                "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
                 `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
@@ -2983,7 +2987,7 @@ export const audioRoutes = new Hono<Env>()
                                     minLength: 1,
                                     maxLength: 10000,
                                     description:
-                                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
+                                        "Text or prompt to generate. The `elevenlabs/eleven-v3:dialogue` model expects one `voice: text` turn per line.",
                                 },
                                 safe: {
                                     oneOf: [
@@ -3050,7 +3054,7 @@ export const audioRoutes = new Hono<Env>()
                             dialogue: {
                                 summary: "Multi-speaker dialogue",
                                 value: {
-                                    model: "eleven-dialogue",
+                                    model: "elevenlabs/eleven-v3:dialogue",
                                     input: "rachel: Hello!\nadam: Hi!",
                                     voice: "alloy",
                                     response_format: "mp3",
@@ -3232,7 +3236,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `openai/whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for `openai/whisper-large-v3`",
                 "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
-                "- `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
+                "- `x-ai/speech-to-text` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
                 "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -3254,7 +3258,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `elevenlabs/scribe-v2`, `grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `elevenlabs/scribe-v2`, `x-ai/speech-to-text`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",

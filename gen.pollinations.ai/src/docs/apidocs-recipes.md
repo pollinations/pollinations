@@ -164,7 +164,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -F "size=1024x1024"
 ```
 
-Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`bytedance/seedream-4`, `google/gemini-2.5-flash-image`, `black-forest-labs/flux.2-klein-4b`).
+Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`bytedance-seed/seedream-4.0`, `google/gemini-2.5-flash-image`, `black-forest-labs/flux.2-klein-4b`).
 
 **Upload arbitrary media** to the media store (a separate host: `media.pollinations.ai`). Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 

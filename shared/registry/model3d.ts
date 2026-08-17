@@ -1,7 +1,7 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_3D_MODEL = "trellis-2" as const;
+export const DEFAULT_3D_MODEL = "microsoft/trellis-2" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
 
@@ -10,10 +10,15 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 export const MODEL3D_SERVICES = {
-    "trellis-2": {
-        aliases: ["trellis-2-low", "trellis-2-medium", "trellis-2-high"],
+    "microsoft/trellis-2": {
+        aliases: [
+            "trellis-2-low",
+            "trellis-2-medium",
+            "trellis-2-high",
+            "trellis-2",
+        ],
         provider: "inferenceport",
-        brand: "Microsoft",
+        author: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,
@@ -47,10 +52,10 @@ export const MODEL3D_SERVICES = {
         maxReferenceImages: 1,
         resolutions: ["low", "medium", "high"],
     },
-    "hyper3d-rodin": {
-        aliases: ["rodin"],
+    "hyper3d/rodin-2.5": {
+        aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",
-        brand: "Deemos",
+        author: "Hyper3D",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,

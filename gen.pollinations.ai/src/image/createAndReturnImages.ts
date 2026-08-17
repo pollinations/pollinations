@@ -752,13 +752,13 @@ const generateImage = async (
             }
         }
 
-        case "bytedance/seedream-5-lite":
+        case "bytedance-seed/seedream-5-0-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "bytedance/seedream-5-pro":
+        case "bytedance-seed/seedream-5-0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "bytedance/seedream-4":
+        case "bytedance-seed/seedream-4.0":
             return await callSeedreamAPI(prompt, safeParams);
 
         case "bytedance-seed/seedream-4.5":
@@ -779,7 +779,7 @@ const generateImage = async (
         case "krea/krea-2-medium":
             return await callKreaImageAPI(prompt, safeParams);
 
-        case "PrunaAI/p-image":
+        case "prunaai/p-image":
             return await callPrunaImageAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image":
@@ -798,16 +798,16 @@ const generateImage = async (
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
-        case "PrunaAI/p-image-Edit":
+        case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
 
-        case "amazon.nova-canvas-v1:0":
+        case "amazon/nova-canvas-v1":
             return await callNovaCanvasAPI(prompt, safeParams);
 
-        case "wan-video/wan-2.7-image":
+        case "alibaba/wan-2.7-image":
             return await callWanImageAPI(prompt, safeParams, false);
 
-        case "wan-video/wan-2.7-image-pro":
+        case "alibaba/wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
         case "qwen/qwen-image":
@@ -816,18 +816,18 @@ const generateImage = async (
         case "qwen/qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
-        case "dreamshaper":
+        case "lykon/dreamshaper-8-lcm":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
-        case "black-forest-labs/FLUX.1-schnell":
+        case "black-forest-labs/flux.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");
 
-        case "zimage-fal":
+        case "tongyi-mai/z-image-turbo:fallback":
             return await callZImageFalAPI(prompt, safeParams);
 
         default:
-            // zimage is the only model that reaches the default branch
+            // Z-Image Turbo is the only model that reaches the default branch
             // (the model enum is closed and every other model is dispatched above)
             return await callSelfHostedServer(prompt, safeParams);
     }

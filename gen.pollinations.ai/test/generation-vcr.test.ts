@@ -622,7 +622,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
+        expect(response.headers.get("x-model-used")).toBe("perplexity/sonar");
         await response.text();
         await wait();
     }
@@ -1054,7 +1054,7 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
     await mocks.enable("tinybird", "replicate");
     const { key } = await createTestApiKey({
-        allowedModels: ["black-forest-labs/FLUX.1-schnell"],
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
         user: { tierBalance: 100 },
     });
 
@@ -1081,8 +1081,8 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
-        resolvedModelRequested: "black-forest-labs/FLUX.1-schnell",
-        modelUsed: "black-forest-labs/FLUX.1-schnell",
+        resolvedModelRequested: "black-forest-labs/flux.1-schnell",
+        modelUsed: "black-forest-labs/flux.1-schnell",
         modelProviderUsed: "vast",
         responseStatus: 503,
         fallbackUsed: false,
@@ -1240,7 +1240,9 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("dreamshaper");
+    expect(response.headers.get("x-model-used")).toBe(
+        "lykon/dreamshaper-8-lcm",
+    );
     await response.arrayBuffer();
     await wait();
 
@@ -1249,7 +1251,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
         eventType: "generate.image",
         // analytics keep the name the caller actually used
         modelRequested: "sana",
-        modelUsed: "dreamshaper",
+        modelUsed: "lykon/dreamshaper-8-lcm",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,

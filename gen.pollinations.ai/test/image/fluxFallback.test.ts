@@ -36,7 +36,7 @@ function makeKv() {
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 
 const fluxParams: ImageParams = {
-    model: "black-forest-labs/FLUX.1-schnell",
+    model: "black-forest-labs/flux.1-schnell",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -101,7 +101,7 @@ describe("Flux primary route", () => {
             true,
         );
         expect(result.trackingData?.actualModel).toBe(
-            "black-forest-labs/FLUX.1-schnell",
+            "black-forest-labs/flux.1-schnell",
         );
     });
 

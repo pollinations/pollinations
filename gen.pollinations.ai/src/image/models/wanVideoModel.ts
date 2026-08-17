@@ -105,7 +105,7 @@ function withSeed(
 const WAN_FAST_CONFIG: WanVariantConfig = {
     t2vModel: "wan-video/wan-2.2-t2v-fast",
     i2vModel: "wan-video/wan-2.2-i2v-fast",
-    trackingName: "wan-video/wan-2.2-fast",
+    trackingName: "alibaba/wan-2.2-fast",
     displayName: "Wan 2.2",
     resolveDuration: () => WAN_FAST_FIXED_SECONDS,
     buildInput(mode, prompt, safeParams, frames) {

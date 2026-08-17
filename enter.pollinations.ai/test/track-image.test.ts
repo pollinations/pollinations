@@ -23,11 +23,11 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
 
 test("Image models should calculate costs proportionally to token count", () => {
     const models: ModelName[] = [
-        "black-forest-labs/FLUX.1-schnell",
+        "black-forest-labs/flux.1-schnell",
         "google/gemini-2.5-flash-image",
         "black-forest-labs/flux.1-kontext-pro",
-        "Tongyi-MAI/Z-Image-Turbo",
-        "bytedance/seedream-4",
+        "tongyi-mai/z-image-turbo",
+        "bytedance-seed/seedream-4.0",
     ];
 
     for (const model of models) {
@@ -56,7 +56,7 @@ test("Models with API costs should have non-zero operational costs", () => {
     };
 
     // Flux has operational cost estimate
-    const fluxCost = calculateCost("black-forest-labs/FLUX.1-schnell", usage);
+    const fluxCost = calculateCost("black-forest-labs/flux.1-schnell", usage);
     expect(fluxCost.totalCost).toBeGreaterThan(0);
 
     // Nanobanana uses Vertex AI (paid API)
@@ -66,11 +66,11 @@ test("Models with API costs should have non-zero operational costs", () => {
 
 test("Cost should be non-negative for all models", () => {
     const models: ModelName[] = [
-        "black-forest-labs/FLUX.1-schnell",
+        "black-forest-labs/flux.1-schnell",
         "google/gemini-2.5-flash-image",
         "black-forest-labs/flux.1-kontext-pro",
-        "Tongyi-MAI/Z-Image-Turbo",
-        "bytedance/seedream-4",
+        "tongyi-mai/z-image-turbo",
+        "bytedance-seed/seedream-4.0",
     ];
     const usage: Usage = {
         completionImageTokens: 1,

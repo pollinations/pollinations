@@ -942,7 +942,7 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
-        model: "black-forest-labs/FLUX.1-schnell",
+        model: "black-forest-labs/flux.1-schnell",
         size: "1024x1024",
     },
     postText: {
@@ -954,7 +954,7 @@ const CURATED_BODIES: Record<string, Json> = {
         type: "secret",
         allowedModels: [
             "openai/gpt-5.4-nano",
-            "black-forest-labs/FLUX.1-schnell",
+            "black-forest-labs/flux.1-schnell",
         ],
         pollenBudget: 100,
     },

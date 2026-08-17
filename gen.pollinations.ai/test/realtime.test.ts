@@ -575,7 +575,7 @@ test.each([
             audio: {
                 input: {
                     transcription: {
-                        model: "scribe-realtime",
+                        model: "elevenlabs/scribe-v2-realtime",
                         prompt: "contexte",
                         languages: ["fr", "en"],
                     },
@@ -697,7 +697,7 @@ test("accepts compatible Scribe session updates after streaming starts", async (
             audio: {
                 input: {
                     transcription: {
-                        model: "scribe-realtime",
+                        model: "elevenlabs/scribe-v2-realtime",
                         prompt: "new context",
                     },
                 },
@@ -788,7 +788,9 @@ test.each([
     const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
     expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
     expect(telemetry.eventType).toBe("generate.realtime");
-    expect(telemetry.resolvedModelRequested).toBe("scribe-realtime");
+    expect(telemetry.resolvedModelRequested).toBe(
+        "elevenlabs/scribe-v2-realtime",
+    );
     expect(telemetry.modelProviderUsed).toBe("elevenlabs");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
     expect(telemetry.totalCost).toBeCloseTo(expectedCharge, 12);
@@ -1442,7 +1444,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
     expect(
-        publicBody.data.find((model) => model.id === "scribe-realtime"),
+        publicBody.data.find(
+            (model) => model.id === "elevenlabs/scribe-v2-realtime",
+        ),
     ).toMatchObject({
         supported_endpoints: ["/realtime", "/v1/realtime"],
     });
@@ -1451,7 +1455,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(richResponse.status).toBe(200);
     const richModels = (await richResponse.json()) as {
         name: string;
-        brand?: string;
+        author?: string;
         title?: string;
         description?: string;
         input_modalities?: string[];
@@ -1462,11 +1466,11 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         pricing?: Record<string, string>;
     }[];
     const scribeRealtime = richModels.find(
-        (model) => model.name === "scribe-realtime",
+        (model) => model.name === "elevenlabs/scribe-v2-realtime",
     );
     expect(scribeRealtime).toMatchObject({
-        aliases: [],
-        brand: "ElevenLabs",
+        aliases: ["scribe-realtime"],
+        author: "ElevenLabs",
         title: "Scribe v2 Realtime",
         input_modalities: ["audio"],
         output_modalities: ["text"],
@@ -1498,7 +1502,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         "openai/gpt-realtime-2.1-mini",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "scribe-realtime",
+        "elevenlabs/scribe-v2-realtime",
     );
 });
 

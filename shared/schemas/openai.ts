@@ -550,7 +550,7 @@ export const GetModelsResponseSchema = z
 const imageModelField = z
     .string()
     .optional()
-    .default("black-forest-labs/FLUX.1-schnell")
+    .default("black-forest-labs/flux.1-schnell")
     .meta({
         description: "The model to use for image generation",
     });

@@ -85,7 +85,7 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Price: High to low",
     },
     { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
-    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+    { value: "author", label: "Author", accessibleLabel: "Author: A to Z" },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -103,7 +103,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.author ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 

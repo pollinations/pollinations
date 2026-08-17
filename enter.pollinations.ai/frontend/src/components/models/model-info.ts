@@ -13,6 +13,7 @@ const BRAND_LOGOS: Record<string, string> = {
     ElevenLabs: "elevenlabs",
     Google: "google",
     Hexgrad: "hexgrad",
+    Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
     Krea: "krea",
@@ -58,7 +59,7 @@ export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
     if (model.community) return undefined;
-    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
+    const logoName = model.author ? BRAND_LOGOS[model.author] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 

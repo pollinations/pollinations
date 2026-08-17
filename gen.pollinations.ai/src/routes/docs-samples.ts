@@ -119,7 +119,7 @@ curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duratio
 
 response = requests.get(
     "https://gen.pollinations.ai/image/a cat in space",
-    params={"model": "black-forest-labs/FLUX.1-schnell"},
+    params={"model": "black-forest-labs/flux.1-schnell"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("image.jpg", "wb") as f:

@@ -68,11 +68,11 @@ export const simpleAudioQuerySchema = z.object({
     }),
     steps: z.coerce.number().int().min(1).max(100).optional().meta({
         description:
-            "Sampling steps (`fal-ai/stable-audio-3/medium` 1-100, `stable-audio-3` 4-8)",
+            "Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8)",
         example: "8",
     }),
     negative_prompt: z.string().optional().meta({
-        description: "Negative prompt for `stable-audio-3`",
+        description: "Negative prompt for `stability-ai/stable-audio-3`",
         example: "distortion, vocals",
     }),
     instrumental: z

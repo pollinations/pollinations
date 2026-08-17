@@ -234,7 +234,7 @@ describe("FFmpeg", () => {
 
     test("rejects keys that cannot cover the maximum container run", async () => {
         const { key } = await createTestApiKey({
-            pollenBudget: 0.001,
+            pollenBudget: 0.0005,
             user: { packBalance: 100 },
         });
         const fetchSpy = vi.spyOn(globalThis, "fetch");

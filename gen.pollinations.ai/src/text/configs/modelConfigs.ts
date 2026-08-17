@@ -283,7 +283,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
         }),
 
-    // -- RunInfra (Qwen) ------------------------------------------------------
+    // -- RunInfra -------------------------------------------------------------
+    "nemotron-3-5-lightning-30b": () =>
+        createRunInfraModelConfig({
+            model: "nemotron-3-5-lightning-30b",
+        }),
     "qwen3-8-27b": () =>
         createRunInfraModelConfig({
             model: "qwen3-8-27b",

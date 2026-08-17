@@ -1381,6 +1381,29 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nemotron-3.5-lightning": {
+        aliases: [],
+        provider: "runinfra",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-08-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // RunInfra nemotron-3-5-lightning-30b rates after 2026-08-18 promotion.
+            promptTextTokens: perMillion(0.05),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "NVIDIA Nemotron 3.5 Lightning",
+        description:
+            "Fast open-weight reasoning for high-volume tasks and structured generation",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",

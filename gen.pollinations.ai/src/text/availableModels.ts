@@ -391,6 +391,10 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "nemotron-3.5-lightning",
+        config: portkeyConfig["nemotron-3-5-lightning-30b"],
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,

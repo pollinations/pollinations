@@ -1157,6 +1157,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
+  "nemotron-3.5-lightning": {
+    "cost": {
+      "completionTextTokens": 0.00000015,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00000015,
+      "promptTextTokens": 0.00000005,
+    },
+  },
   "nova": {
     "cost": {
       "completionTextTokens": 0.00000275,

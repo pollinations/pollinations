@@ -1269,7 +1269,9 @@ fixtureTest(
 
         expect(postResponse.status).toBe(200);
         expect(postResponse.headers.get("content-type")).toBe("audio/wav");
-        expect(postResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(postResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("4");
@@ -1293,7 +1295,9 @@ fixtureTest(
         );
 
         expect(getResponse.status).toBe(200);
-        expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(getResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
         await getResponse.arrayBuffer();
         await waitOnExecutionContext(getContext);
@@ -1446,7 +1450,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("lyria-3-clip");
+        expect(response.headers.get("x-model-used")).toBe(
+            "google/lyria-3-clip-preview",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
@@ -1550,8 +1556,10 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
         input_modalities?: string[];
         output_modalities?: string[];
     }[];
-    const model = models.find((candidate) => candidate.name === "lyria-3-clip");
-    expect(model?.aliases).toEqual(["lyria", "lyria-3"]);
+    const model = models.find(
+        (candidate) => candidate.name === "google/lyria-3-clip-preview",
+    );
+    expect(model?.aliases).toEqual(["lyria", "lyria-3", "lyria-3-clip"]);
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });
@@ -1985,7 +1993,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // text-to-audio bills 1 output audio unit ($0.0376 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2083,7 +2091,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // audio-to-audio bills 1 output unit + 1 input unit
         // ($0.0376 + $0.0041 = $0.0417 per generation).
@@ -2112,7 +2120,7 @@ it("lists stable-audio-3-medium in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-medium",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3-medium",
     );
     expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
@@ -2198,7 +2206,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
@@ -2303,7 +2311,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         // a2a bills the same flat fee as text-to-audio ($0.26 = 1 unit).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2332,7 +2340,7 @@ it("lists stable-audio-3-large in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-large",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3",
     );
     expect(model?.aliases).toContain("stable-audio-3");
     expect(model?.input_modalities).toEqual(["text", "audio"]);

@@ -20,6 +20,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    hasPollinationsTools,
     type InputModality,
     isAlpha,
     isNewModel,
@@ -30,6 +31,7 @@ import {
     ModelId,
     ModelRow,
     PerPollenEstimate,
+    PollinationsToolsCapability,
 } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
 import {
@@ -188,6 +190,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
+    const pollinationsTools = hasPollinationsTools(model);
     const publicModelName = displayName || model.name;
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
@@ -274,6 +277,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             capabilities={capabilities}
                             modalityLabel={modalityLabel}
                             capabilityLabel={capabilityLabel}
+                            pollinationsTools={pollinationsTools}
                         />
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <PerPollenEstimate model={model} />
@@ -342,6 +346,7 @@ type MobileMetadataBadgesProps = {
     capabilities: DisplayCapability[];
     modalityLabel: string;
     capabilityLabel: string;
+    pollinationsTools: boolean;
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
@@ -349,8 +354,13 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     capabilities,
     modalityLabel,
     capabilityLabel,
+    pollinationsTools,
 }) => {
-    if (inputModalities.length === 0 && capabilities.length === 0) {
+    if (
+        inputModalities.length === 0 &&
+        capabilities.length === 0 &&
+        !pollinationsTools
+    ) {
         return null;
     }
 
@@ -379,9 +389,10 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
-            {inputModalities.length > 0 && capabilities.length > 0 && (
-                <span className="h-3.5 w-px bg-current opacity-30" />
-            )}
+            {inputModalities.length > 0 &&
+                (capabilities.length > 0 || pollinationsTools) && (
+                    <span className="h-3.5 w-px bg-current opacity-30" />
+                )}
             {capabilities.length > 0 && (
                 <Tooltip
                     triggerAs="span"
@@ -402,6 +413,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
+            {pollinationsTools && <PollinationsToolsCapability />}
         </div>
     );
 };

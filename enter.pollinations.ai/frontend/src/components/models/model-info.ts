@@ -119,6 +119,9 @@ const hasSearch = (model: ModelPrice): boolean =>
 const hasCodeExecution = (model: ModelPrice): boolean =>
     hasCapability(model, "code_execution");
 
+export const hasPollinationsTools = (model: ModelPrice): boolean =>
+    hasCapability(model, "pollinations_models");
+
 /**
  * Check if a model is "new" (added within the last 7 days).
  * Uses the `addedDate` field, which is set once on creation and never updated.

@@ -1,6 +1,5 @@
 import {
     Alert,
-    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -10,6 +9,7 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     Input,
+    McpIcon,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -487,15 +487,15 @@ export const Models: FC = () => {
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">
-                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <McpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>agent pricing</strong> — shown rates are
-                                for the agent&apos;s base model. An agent may
-                                make several model calls per request, including
-                                Pollinations tools for generating text, images,
-                                video, audio, 3D, or embeddings. Each call is
-                                billed separately at the selected model&apos;s
-                                listed price.
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model, which runs
+                                with the agent&apos;s saved instructions. Agents
+                                marked <strong>Tools</strong> can also call
+                                Pollinations models through the built-in MCP
+                                connection. Each generation is billed separately
+                                at the selected model&apos;s listed rate.
                             </span>
                         </p>
                     )}

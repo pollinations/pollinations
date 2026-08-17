@@ -3,6 +3,7 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    McpIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
@@ -21,6 +22,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    hasPollinationsTools,
     isAlpha,
     isNewModel,
     isPaidOnly,
@@ -150,6 +152,31 @@ export const PerPollenEstimate: FC<{
     );
 };
 
+export const PollinationsToolsCapability: FC = () => (
+    <Tooltip
+        triggerAs="span"
+        content={
+            <span className="flex max-w-xs flex-col gap-0.5 text-left">
+                <strong className="font-semibold text-theme-text-strong">
+                    Pollinations tools
+                </strong>
+                <span className="text-theme-text-muted">
+                    This agent can call Pollinations models through its built-in
+                    MCP connection. Generation calls are billed separately.
+                </span>
+            </span>
+        }
+        ariaLabel="Pollinations tools. This agent can call Pollinations models through its built-in MCP connection."
+        tapEnabled
+        displayContents
+    >
+        <span className="inline-flex items-center gap-1 whitespace-nowrap text-theme-text-soft">
+            <McpIcon className="h-4 w-4" />
+            <span className="text-xs font-medium">Tools</span>
+        </span>
+    </Tooltip>
+);
+
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     const modelDescription = getModelDescriptionWithoutName(model);
 
@@ -177,6 +204,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
+    const pollinationsTools = hasPollinationsTools(model);
     const publicModelName = modelDisplayName || model.name;
     const titleTooltip = getModelTitleTooltipContent(model);
     const showNew = isNewModel(model);
@@ -274,7 +302,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
-                            capabilities.length > 0) && (
+                            capabilities.length > 0 ||
+                            pollinationsTools) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
                                     {inputModalities.length > 0 && (
@@ -305,7 +334,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                         </Tooltip>
                                     )}
                                     {inputModalities.length > 0 &&
-                                        capabilities.length > 0 && (
+                                        (capabilities.length > 0 ||
+                                            pollinationsTools) && (
                                             <span className="h-3.5 w-px bg-current opacity-30" />
                                         )}
                                     {capabilities.length > 0 && (
@@ -331,6 +361,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 })}
                                             </span>
                                         </Tooltip>
+                                    )}
+                                    {pollinationsTools && (
+                                        <PollinationsToolsCapability />
                                     )}
                                 </div>
                             </div>

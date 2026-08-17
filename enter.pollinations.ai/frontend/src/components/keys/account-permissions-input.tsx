@@ -1,12 +1,10 @@
 import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
 import { ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
-import {
-    getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
-    type ModelCategoryModel,
+import { useMemo, useState } from "react";
+import type {
+    ModelCategoryGroup,
+    ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { PERMISSION_UI_THEME } from "./permission-ui.ts";
@@ -28,6 +26,12 @@ type AccountPermissionsInputProps = {
     showApiName?: boolean;
     /** Whether the Models section starts expanded. Always collapsible. */
     modelsInitiallyExpanded?: boolean;
+    /**
+     * The models on offer. The owning screen supplies these so that whatever
+     * else it renders from the same list — the authorize screen summarises the
+     * grant above this picker — cannot describe a different set of models.
+     */
+    modelCategories: ModelCategoryGroup[];
 };
 
 export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
@@ -62,6 +66,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     visiblePermissions,
     showApiName = true,
     modelsInitiallyExpanded = false,
+    modelCategories,
 }) => {
     const { row: rowTheme } = PERMISSION_UI_THEME;
     const permissionOptions =
@@ -71,9 +76,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                   visiblePermissions.includes(p.id),
               );
     const isUnrestricted = allowedModels === null;
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;
@@ -89,24 +91,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
             onChange([...currentPermissions, permissionId]);
         }
     };
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setModelCategories([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const allModelIds = useMemo(
         () =>

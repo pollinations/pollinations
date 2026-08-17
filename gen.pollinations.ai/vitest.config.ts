@@ -33,6 +33,7 @@ const genAliases = [
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",
+    "routes/ffmpeg.ts",
     "routes/generation-executor.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",

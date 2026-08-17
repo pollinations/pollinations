@@ -56,6 +56,7 @@ interface MyModel {
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
+    paidOnly: boolean;
     fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
@@ -99,6 +100,7 @@ export function modelBody(
         ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
+        ["paidOnly", "paidOnly"],
     ] as const;
 
     for (const [optionKey, bodyKey] of fields) {
@@ -184,7 +186,11 @@ function printModels(models: MyModel[]) {
                     ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
                     : "-",
             inputs: model.inputModalities?.join(", ") || "-",
-            visibility: model.visibility,
+            // Shares the visibility cell: which balances a model accepts only
+            // matters alongside whether it is listed at all.
+            visibility: model.paidOnly
+                ? `${model.visibility} (paid only)`
+                : model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             fallbacks: model.fallbackModelIds?.join(", ") || "-",
@@ -235,6 +241,11 @@ const create = addPriceOptions(
             "Model visibility: private (default) or public",
         )
         .option(
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen (default)")
+        .option(
             "--fallback-models <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
@@ -282,6 +293,11 @@ const update = addPriceOptions(
             "--visibility <visibility>",
             "Model visibility: private or public",
         )
+        .option(
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen")
         .option(
             "--fallback-models <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",

@@ -29,6 +29,18 @@ describe("modelBody", () => {
         });
     });
 
+    it("sends the paid-only choice only when the flag is given", () => {
+        expect(modelBody({ visibility: "public" }, false)).toEqual({
+            visibility: "public",
+        });
+        expect(modelBody({ paidOnly: true }, false)).toEqual({
+            paidOnly: true,
+        });
+        expect(modelBody({ paidOnly: false }, false)).toEqual({
+            paidOnly: false,
+        });
+    });
+
     it("keeps modality out of updates while allowing image pricing changes", () => {
         expect(
             modelBody(

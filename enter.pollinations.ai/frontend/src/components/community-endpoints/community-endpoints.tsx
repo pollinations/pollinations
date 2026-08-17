@@ -300,12 +300,11 @@ export function CommunityEndpoints({
     const privateModelGuidance = (
         <>
             Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Enter
-            the upstream model ID manually, then test the saved model by calling
-            its model ID. Public publishing is allowlist-only. To request
-            publishing access for models, agents, or both, submit a{" "}
-            {publisherAccessRequestLink}. You can register and test private
-            models without approval. For questions, ask in{" "}
+            <strong>/models</strong> is authenticated with your API key. Public
+            publishing is allowlist-only. To request publishing access for
+            models, agents, or both, submit a {publisherAccessRequestLink}. You
+            can register, probe, and test private models without approval. For
+            questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 showIcon={false}

@@ -304,8 +304,8 @@ export function CommunityEndpoints({
             the upstream model ID manually, then test the saved model by calling
             its model ID. Public publishing is allowlist-only. To request
             publishing access for models, agents, or both, submit a{" "}
-            {publisherAccessRequestLink}. You can register and test private or
-            app-scoped models without approval. For questions, ask in{" "}
+            {publisherAccessRequestLink}. You can register and test private
+            models without approval. For questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 showIcon={false}
@@ -454,10 +454,10 @@ export function CommunityEndpoints({
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Private and app-scoped agents do not need
-                                approval. To publish agents for everyone in{" "}
-                                <strong>/models</strong>, submit a{" "}
-                                {publisherAccessRequestLink} for agents or both.
+                                Private agents do not need approval. To publish
+                                agents for everyone in <strong>/models</strong>,
+                                submit a {publisherAccessRequestLink} for agents
+                                or both.
                             </span>
                         </p>
                     )}

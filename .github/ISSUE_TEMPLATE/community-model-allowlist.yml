@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form to request account-level access to publish community models, managed agents, or both in the Pollinations model catalog. It does **not** register or submit a specific model or agent. Private and app-scoped deployments can be registered without approval.
+        Use this form to request account-level access to publish community models, managed agents, or both in the Pollinations model catalog. It does **not** register or submit a specific model or agent. Private deployments can be registered without approval.
 
         Submit this form from the same GitHub account you use to sign in at [enter.pollinations.ai](https://enter.pollinations.ai).
 

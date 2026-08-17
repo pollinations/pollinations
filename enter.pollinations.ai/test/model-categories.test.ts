@@ -18,6 +18,12 @@ const catalog = [
         category: "image" as const,
         community: true,
     },
+    {
+        name: "community-agent",
+        category: "text" as const,
+        community: true,
+        agent: true,
+    },
 ];
 
 describe("model categories", () => {
@@ -56,6 +62,12 @@ describe("model categories", () => {
                 modality: "images",
                 models: ["community-image"],
             },
+            {
+                category: "community-agent",
+                label: "Community Agents",
+                modality: "text",
+                models: ["community-agent"],
+            },
         ]);
     });
 
@@ -69,6 +81,9 @@ describe("model categories", () => {
             computeCategoryModalities(["community-image"], categories),
         ).toEqual(["images"]);
         expect(
+            computeCategoryModalities(["community-agent"], categories),
+        ).toEqual(["text"]);
+        expect(
             computeCategoryModalities(
                 ["official-text", "community-text", "community-image"],
                 categories,
@@ -80,18 +95,68 @@ describe("model categories", () => {
         ]);
     });
 
-    it("accepts both community category URLs", () => {
-        expect(validateModelSearch({ category: "community-text" })).toEqual({
-            category: "community-text",
+    it("uses a separate community scope with text and image categories", () => {
+        expect(validateModelSearch({ scope: "community" })).toEqual({
+            scope: "community",
+            category: undefined,
             q: undefined,
             sort: undefined,
-            dir: undefined,
         });
-        expect(validateModelSearch({ category: "community-image" })).toEqual({
-            category: "community-image",
+        expect(
+            validateModelSearch({ scope: "community", category: "image" }),
+        ).toEqual({
+            scope: "community",
+            category: "image",
             q: undefined,
             sort: undefined,
-            dir: undefined,
         });
+        expect(
+            validateModelSearch({ scope: "community", category: "agent" }),
+        ).toEqual({
+            scope: "community",
+            category: "agent",
+            q: undefined,
+            sort: undefined,
+        });
+        expect(
+            validateModelSearch({ scope: "community", category: "video" }),
+        ).toEqual({
+            scope: "community",
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+        expect(validateModelSearch({ category: "agent" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+    });
+
+    it("accepts model sort options and ignores obsolete values", () => {
+        expect(validateModelSearch({ sort: "brand" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: "brand",
+        });
+        expect(validateModelSearch({ sort: "recommended" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+        expect(validateModelSearch({ sort: "newest" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+    });
+
+    it("trims model search queries and drops whitespace-only values", () => {
+        expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
+        expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
     });
 });

@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
+    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
@@ -69,7 +70,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message = endpointBodyMessage(body);
+    const message = communityEndpointErrorDetail(body);
     const prefix =
         status === 401
             ? "Endpoint responded 401 after we sent Authorization"
@@ -77,24 +78,6 @@ function endpointErrorMessage(status: number, body: unknown): string {
               ? `Endpoint responded ${status} with a redirect, which is not supported`
               : `Endpoint responded ${status}`;
     return message ? `${prefix}: ${message}` : prefix;
-}
-
-function endpointBodyMessage(body: unknown): string | null {
-    if (!body || typeof body !== "object") return null;
-    if (
-        "error" in body &&
-        body.error &&
-        typeof body.error === "object" &&
-        "message" in body.error &&
-        typeof body.error.message === "string"
-    ) {
-        return body.error.message;
-    }
-    if ("error" in body && typeof body.error === "string") return body.error;
-    if ("message" in body && typeof body.message === "string") {
-        return body.message;
-    }
-    return null;
 }
 
 export async function listCommunityEndpointModels({

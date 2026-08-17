@@ -1,7 +1,7 @@
 /**
  * Shared OpenAI-compatible transcription-response formatter.
  *
- * Providers (ElevenLabs Scribe, AssemblyAI) each normalize their upstream
+ * Providers (ElevenLabs Scribe, AssemblyAI, xAI) each normalize their upstream
  * payload into the seconds-based `NormalizedTranscript` intermediate below
  * — keeping their own grouping and unit conversion — then call
  * `buildTranscriptionResponse` to emit the four response branches

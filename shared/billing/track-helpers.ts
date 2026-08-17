@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { parseMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
     atomicCreditUserBalance,
@@ -47,20 +48,6 @@ interface DeductionParams {
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
-}
-
-function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
 }
 
 export async function resolveDevMarkup(

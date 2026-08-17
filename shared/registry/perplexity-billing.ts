@@ -119,6 +119,11 @@ function createPerplexitySearchBilling(
                 kind: "search_request",
                 unit: "request",
                 unitCost,
+                publicPricing: {
+                    label: "Search",
+                    quantity: 1_000,
+                    unit: "requests",
+                },
                 countUnits: () => 1,
                 resolveUnitCost: (output, model) =>
                     resolvePerplexityRequestCost({
@@ -142,6 +147,17 @@ export const PERPLEXITY_SONAR_BILLING: BillingRules = {
             kind: "search_request",
             unit: "request",
             unitCost: 5 / 1000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "requests",
+                option: {
+                    group: "search_context",
+                    value: "low",
+                    label: "Low search context",
+                    default: true,
+                },
+            },
             countUnits: (_output, input) =>
                 input?.searchContextSize === "high" ? 0 : 1,
             resolveUnitCost: (output, model) =>
@@ -160,6 +176,16 @@ export const PERPLEXITY_SONAR_BILLING: BillingRules = {
             kind: "search_request",
             unit: "request",
             unitCost: 12 / 1000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "requests",
+                option: {
+                    group: "search_context",
+                    value: "high",
+                    label: "High search context",
+                },
+            },
             countUnits: (_output, input) =>
                 input?.searchContextSize === "high" ? 1 : 0,
             resolveUnitCost: (output, model) =>

@@ -71,6 +71,10 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import {
+    type GenerationCacheVariables,
+    hashGenerationCacheIdentity,
+} from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
@@ -102,6 +106,7 @@ type ResponseTrackingData = {
     /** False only on a call that was moved on from; the outcome row leaves it true. */
     isFinal?: boolean;
     modelUsed?: string;
+    modelProviderUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -118,6 +123,9 @@ type ResponseTrackingData = {
     // observational).
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
+    // A failure the response status cannot show. Replaces the status-derived
+    // error data when the settlement row is emitted.
+    errorTracking?: ErrorData;
 };
 
 export type TrackVariables = {
@@ -125,6 +133,7 @@ export type TrackVariables = {
         modelRequested: string | null;
         resolvedModelRequested: string;
         streamRequested: boolean;
+        detachedExecutionTracked?: boolean;
         overrideResponseTracking: (response: Response) => void;
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
@@ -146,7 +155,8 @@ export type TrackEnv = {
         BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
-        ModelVariables;
+        ModelVariables &
+        GenerationCacheVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -164,24 +174,7 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-            | Record<string, unknown>
-            | undefined;
-        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
-        const userTracking: UserData = {
-            userId: c.var.auth.user?.id,
-            userTier: c.var.auth.user?.tier,
-            apiKeyId: c.var.auth.apiKey?.id,
-            apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
-            apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: byopClientKeyId
-                ? "redirect-auth"
-                : (apiKeyMetadata?.createdVia as string | undefined),
-            apiKeyClientId: byopClientKeyId ?? undefined,
-            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-            apiKeyCreatedForUserId:
-                c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        } satisfies UserData;
+        const userTracking = requestIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
@@ -201,6 +194,19 @@ export const track = (eventType: EventType) =>
                 c.var.balance.balanceCheckResult?.selectedMeterSlug,
             balances: c.var.balance.balanceCheckResult?.balances || {},
         });
+        let cacheKeyPromise: Promise<string | undefined> | undefined;
+        const cacheKeyForTracking = () => {
+            if (!cacheKeyPromise) {
+                const cache = c.var.generationCache;
+                cacheKeyPromise = cache
+                    ? hashGenerationCacheIdentity(
+                          cache.adapter.storage,
+                          cache.key,
+                      )
+                    : Promise.resolve(undefined);
+            }
+            return cacheKeyPromise;
+        };
 
         /**
          * The one place a generation row is built and sent.
@@ -233,6 +239,7 @@ export const track = (eventType: EventType) =>
                 endTime: row.endTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
+                cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
@@ -262,14 +269,19 @@ export const track = (eventType: EventType) =>
 
         await next();
 
+        // Detached execution already tracked the provider failure. The outer
+        // caller only receives that captured result and must not emit it again.
+        if (c.var.track.detachedExecutionTracked) return;
+
         c.executionCtx.waitUntil(
             (async () => {
                 const userId = userTracking.userId;
                 if (!userId) return;
 
-                const terminalAttemptModel = failedCalls.find(
+                const terminalAttempt = failedCalls.find(
                     (call) => call.terminal,
-                )?.candidate.id;
+                );
+                const terminalAttemptModel = terminalAttempt?.candidate.id;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -278,7 +290,7 @@ export const track = (eventType: EventType) =>
                 // describes the body that usage extraction parses.
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
-                    : c.res.clone();
+                    : responseForTracking(c.res);
                 // What a rescue changes: the generation's cost, and which owner
                 // earns the reward. Not the price — the caller is charged the
                 // listing they asked for either way.
@@ -306,6 +318,9 @@ export const track = (eventType: EventType) =>
                                 model !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
+                            modelProviderUsed:
+                                call.candidate.definition?.provider ??
+                                requestTracking.modelProvider,
                         },
                         errorTracking: collectErrorData(
                             status,
@@ -320,7 +335,8 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition,
+                    servedEntry?.definition ??
+                        terminalAttempt?.candidate.definition,
                     terminalAttemptModel ?? servedEntry?.id,
                     pricingInput,
                 );
@@ -358,7 +374,7 @@ export const track = (eventType: EventType) =>
                         userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId,
+                        byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
@@ -419,10 +435,9 @@ export const track = (eventType: EventType) =>
                     markup,
                     communityModelReward,
                     billedPrice,
-                    errorTracking: collectErrorData(
-                        response.status,
-                        c.get("error"),
-                    ),
+                    errorTracking:
+                        responseTracking.errorTracking ??
+                        collectErrorData(response.status, c.get("error")),
                 });
 
                 log.trace(
@@ -553,6 +568,15 @@ function withFinalResponseHeaders(
     });
 }
 
+/** Avoid cloning binary streams that tracking never reads. */
+function responseForTracking(response: Response): Response {
+    const contentType = response.headers.get("content-type") || "";
+    const readsBody =
+        contentType.includes("text/event-stream") ||
+        contentType.includes("application/json");
+    return readsBody ? response.clone() : new Response(null, response);
+}
+
 export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -566,6 +590,8 @@ export async function trackResponse(
     // The model this row is actually about. Defaults to the one asked for,
     // which is right until a fallback moves the request to a different id.
     const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
+    const modelProviderUsed =
+        servedModelDefinition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
@@ -575,6 +601,7 @@ export async function trackResponse(
         cacheHit,
         isBilledUsage: false,
         fallbackUsed,
+        modelProviderUsed,
         ...extra,
     });
 
@@ -657,9 +684,19 @@ export async function trackResponse(
                 contentFilterResults,
             };
         }
+        // Nothing was charged and nothing could be. Mark the row so a billable
+        // text generation with no charge stays queryable instead of passing
+        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
             modelUsed: modelCalled,
+            errorTracking:
+                eventType === "generate.text"
+                    ? {
+                          errorResponseCode: "usage_missing",
+                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
+                      }
+                    : undefined,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -691,6 +728,7 @@ export async function trackResponse(
         priceDefinition,
         costVariant,
         modelUsed: modelUsage.model,
+        modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
@@ -787,7 +825,15 @@ async function* asyncIteratorStream<T>(
     }
 }
 
-type UserData = {
+/**
+ * Who made the request, in the shape the event carries it.
+ *
+ * Every path that emits a generation row builds this the same way, so a new
+ * identity column is added here once rather than in each emitter. Realtime
+ * settles from a socket rather than a response and so keeps its own event
+ * builder; it spreads this verbatim.
+ */
+export type UserData = {
     userId?: string;
     userTier?: string;
     apiKeyId?: string;
@@ -798,6 +844,28 @@ type UserData = {
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
 };
+
+export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+    const apiKeyMetadata = auth.apiKey?.metadata as
+        | Record<string, unknown>
+        | undefined;
+    const byopClientKeyId = auth.apiKey?.byopClientKeyId;
+    return {
+        userId: auth.user?.id,
+        userTier: auth.user?.tier,
+        apiKeyId: auth.apiKey?.id,
+        apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
+        apiKeyName: auth.apiKey?.name,
+        // A BYOP key is created by the redirect flow, whatever its metadata
+        // says it was created via.
+        apiKeyCreatedVia: byopClientKeyId
+            ? "redirect-auth"
+            : (apiKeyMetadata?.createdVia as string | undefined),
+        apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
+        apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
+    };
+}
 
 type BalanceData = {
     selectedMeterId?: string;
@@ -815,6 +883,7 @@ type TrackingEventInput = {
     eventType: EventType;
     ipSubnet?: string;
     ipHash?: string;
+    cacheKey?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -856,6 +925,7 @@ function createTrackingEvent({
     eventType,
     ipSubnet,
     ipHash,
+    cacheKey,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -878,13 +948,20 @@ function createTrackingEvent({
         ipSubnet,
         ipHash,
 
+        ...(cacheKey && {
+            cacheHit: responseTracking.cacheHit,
+            cacheType: responseTracking.cacheHit ? "EXACT" : "MISS",
+            cacheKey,
+        }),
+
         ...userTracking,
         ...requestTracking.referrerData,
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed: requestTracking.modelProvider,
+        modelProviderUsed:
+            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
         isFinal: responseTracking.isFinal ?? true,

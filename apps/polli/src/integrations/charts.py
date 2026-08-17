@@ -23,6 +23,7 @@ import json
 import logging
 from typing import Any
 
+from ..discord.media import render_table_image
 from .chart_renderer import (
     CHARTS_AVAILABLE,
     get_executor,
@@ -31,8 +32,6 @@ from .chart_renderer import (
 from .chart_renderer import (
     SUPPORTED_TYPES as CHART_TYPES,
 )
-from ..discord.media import render_table_image
-
 from .diagrams import detect_diagram_type, render_mermaid_safe
 
 logger = logging.getLogger(__name__)
@@ -327,13 +326,3 @@ async def render_visual(
         logger.info("Unknown type '%s' and not valid Mermaid: %s", type, error)
 
     return _shape_help(chart_type, data)
-
-
-# =============================================================================
-# Backward-compat alias for the old tool name.
-# =============================================================================
-
-
-async def data_visualization(data: str = "", **kwargs) -> dict:
-    """Legacy alias — accepted for back-compat. Routes through the normal dispatch."""
-    return await render_visual(data=data, **kwargs)

@@ -2,7 +2,27 @@ import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels } from "./registry.ts";
+import { getModels, resolveModelName } from "./registry.ts";
+
+export function canonicalizeModelPermissionIds(
+    modelIds: readonly string[],
+): string[] {
+    const seen = new Set<string>();
+    const canonicalIds: string[] = [];
+    for (const modelId of modelIds) {
+        let canonicalId = modelId;
+        try {
+            canonicalId = resolveModelName(modelId);
+        } catch {
+            // Preserve unknown and community model IDs.
+        }
+        if (!seen.has(canonicalId)) {
+            seen.add(canonicalId);
+            canonicalIds.push(canonicalId);
+        }
+    }
+    return canonicalIds;
+}
 
 export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,

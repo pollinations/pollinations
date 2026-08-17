@@ -9,10 +9,31 @@ import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
+const DASHBOARD_DATA_STALE_TIME = 30_000;
+let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
+    null;
+let dashboardSessionExpiresAt = 0;
+
+function getDashboardSession() {
+    if (!dashboardSessionPromise || Date.now() >= dashboardSessionExpiresAt) {
+        dashboardSessionExpiresAt = Date.now() + DASHBOARD_DATA_STALE_TIME;
+        dashboardSessionPromise = authClient.getSession().catch((error) => {
+            dashboardSessionPromise = null;
+            throw error;
+        });
+    }
+    return dashboardSessionPromise;
+}
+
 export const Route = createFileRoute("/_dashboard")({
+    staleTime: DASHBOARD_DATA_STALE_TIME,
     beforeLoad: async () => {
-        const result = await authClient.getSession();
-        if (result.error) throw new Error("Authentication failed.");
+        const result = await getDashboardSession();
+        if (result.error) {
+            dashboardSessionPromise = null;
+            dashboardSessionExpiresAt = 0;
+            throw new Error("Authentication failed.");
+        }
         return { user: result.data?.user ?? null };
     },
     loader: async ({ context }) => {

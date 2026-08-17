@@ -217,7 +217,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/v1/audio/dialogue"],
     },
     "eleven-voice-changer": {
         aliases: ["voice-changer", "speech-to-speech"],
@@ -267,7 +266,9 @@ export const AUDIO_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs Music v2: billed per second of output audio.
+            // ElevenLabs Music v2: reference ingestion and generated output
+            // are each billed at $0.15/minute.
+            promptAudioSeconds: 0.0025,
             // Measured empirically (ffprobe-verified, 10s & 30s clips): 15.05 credits/sec.
             // Scale plan $0.166/1k credits => 15.05 * 0.166/1000 ≈ $0.0025/sec ($0.15/min).
             completionAudioSeconds: 0.0025,
@@ -327,6 +328,7 @@ export const AUDIO_SERVICES = {
         description: "Accurate, affordable speech-to-text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
@@ -344,6 +346,26 @@ export const AUDIO_SERVICES = {
         description: "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "grok-transcribe": {
+        aliases: [],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST speech-to-text: $0.10/hour.
+            promptAudioSeconds: 0.1 / 3600,
+        },
+        title: "Grok Transcribe",
+        description:
+            "Fast multilingual speech recognition with word timestamps, speaker labels, and text formatting",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],
@@ -360,6 +382,7 @@ export const AUDIO_SERVICES = {
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "universal-3.5-pro": {
         aliases: [
@@ -386,6 +409,7 @@ export const AUDIO_SERVICES = {
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],

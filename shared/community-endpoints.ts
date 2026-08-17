@@ -27,6 +27,8 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
 export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
+export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -280,7 +282,7 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
-export type CommunityEndpointRuntime = {
+type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
     modelId: string;
@@ -289,15 +291,20 @@ export type CommunityEndpointRuntime = {
     // communityEndpointTitle() rather than using this directly.
     title: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
+    // Where the gateway sends the request, and the model name it asks for.
+    // Both variants resolve these when the row is read, so routing never has
+    // to know which kind it is holding.
     baseUrl: string;
     upstreamModel: string;
-    bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
+    // Exact gateway-side cap per Pollinations user. Null delegates capacity
+    // limits to the upstream, whose 429 then remains a model failure.
+    perUserRpm: number | null;
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbackModelIds: string[];
@@ -305,14 +312,54 @@ export type CommunityEndpointRuntime = {
     disabledReason: string | null;
 } & CommunityEndpointPrices;
 
+/** A third-party OpenAI-compatible server the owner registered. */
+export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "external";
+    bearerTokenCiphertext: string;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
+};
+
+/** A managed prompt agent, run by Enter's own agent runtime. */
+export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "agent";
+    agentId: string;
+};
+
+export type CommunityEndpointRuntime =
+    | ExternalCommunityEndpointRuntime
+    | AgentCommunityEndpointRuntime;
+
+/**
+ * Whether calls to this endpoint spend the caller's balance downstream.
+ *
+ * Managed agents always do: they call their base model and tools on the
+ * caller's behalf. External endpoints only do so when an admin granted it.
+ * Both are barred from the same places — fallback targets, and being called
+ * by another run token — so the two cases share one name.
+ */
+export function isDelegatingEndpoint(
+    endpoint: CommunityEndpointRuntime,
+): boolean {
+    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+}
+
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    addedDate?: number;
     title?: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
+
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -344,6 +391,24 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
     return token;
+}
+
+export function communityEndpointErrorDetail(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
+        "error" in body &&
+        body.error &&
+        typeof body.error === "object" &&
+        "message" in body.error &&
+        typeof body.error.message === "string"
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
 }
 
 export function isCommunityEndpointOwnerAllowed(
@@ -378,6 +443,18 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     url.search = "";
     url.hash = "";
     return url.toString().replace(/\/+$/, "");
+}
+
+export function normalizeCommunityProviderUrl(value: string): string {
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:") {
+        throw new Error("Provider URL must use https");
+    }
+    if (url.username || url.password) {
+        throw new Error("Provider URL cannot include credentials");
+    }
+    url.hash = "";
+    return url.toString();
 }
 
 export function normalizeCommunityAssetUrl(
@@ -488,14 +565,17 @@ export function communityModelDefinition(
         endpoint.inputModalities,
         modality,
     );
+    const providerName = endpoint.providerName?.trim();
+    const providerUrl = endpoint.providerUrl?.trim();
     return {
         aliases,
         provider: "community",
-        brand: "Community",
+        brand: providerName || "Community",
+        brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
-        addedDate: 0,
+        addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,

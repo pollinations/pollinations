@@ -31,6 +31,12 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -118,6 +124,11 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint?.kind === "agent" && {
+            cacheScope: `agent:${entry.communityEndpoint.agentId}`,
+        }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,
         }),
@@ -192,15 +203,17 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // An API key's model allowlist scopes what the key may be served, not
-        // just what it may ask for. Drop the targets that are off the list: the
-        // request still runs against the rest, but a scoped key can never be
-        // served — or billed for — a model it would get a 403 for if it called
-        // it directly.
+        // Hidden registry fallbacks are provider implementations of the public
+        // model the caller selected, so they inherit that model's permission.
+        // Visible and community targets remain independently scoped: a key can
+        // never be served — or billed for — a model it could not call directly.
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) => allowedModels.includes(entry.id),
+                (entry) =>
+                    (entry.definition.hidden === true &&
+                        !entry.communityEndpoint) ||
+                    allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);

@@ -836,6 +836,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             const endpoint = await db.query.communityEndpoint.findFirst({
+                with: { agent: true },
                 where: and(
                     eq(schema.communityEndpoint.id, c.req.param("id")),
                     eq(schema.communityEndpoint.ownerUserId, user.id),

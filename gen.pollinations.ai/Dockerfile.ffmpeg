@@ -1,9 +1,7 @@
-FROM debian:bookworm-slim
+FROM alpine:3.24
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg coreutils ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 ffmpeg \
+RUN apk add --no-cache ffmpeg coreutils ca-certificates \
+    && adduser -D -u 10001 ffmpeg \
     && mkdir -p /work \
     && chown ffmpeg:ffmpeg /work
 

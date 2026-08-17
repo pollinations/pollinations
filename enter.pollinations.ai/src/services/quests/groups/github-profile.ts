@@ -8,11 +8,12 @@ import { eq } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
+    QuestEvaluation,
     QuestEvaluationContext,
+    QuestProgress,
     QuestUser,
-    RewardProposal,
 } from "../types.ts";
-import { questToCard } from "../types.ts";
+import { questToCard, toQuestProgress } from "../types.ts";
 
 /**
  * GitHub profile quests fetch the current user's linked GitHub profile, then
@@ -21,7 +22,6 @@ import { questToCard } from "../types.ts";
 
 const log = getLogger(["enter", "quest", "github-profile"]);
 
-const GITHUB_ACCOUNT_AGE_DAYS = 730;
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const REPO_OWNER = "pollinations";
@@ -176,7 +176,7 @@ function accountAgeDays(createdAt: Date | null, now: Date): number {
     return Math.floor((now.getTime() - createdAt.getTime()) / MS_PER_DAY);
 }
 
-const establishedGitHubAccountQuest: QuestDefinition = {
+const establishedGitHubAccountQuest = {
     id: "github_established",
     title: "Senior dev",
     description:
@@ -185,7 +185,8 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     scope: "perSubject",
     rewardAmount: 3,
     balanceBucket: "tier",
-};
+    goal: { target: 730, unit: "days" },
+} satisfies QuestDefinition;
 
 const publicRepoStarsQuest: QuestDefinition = {
     id: "github_stars",
@@ -212,10 +213,10 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
         rewardableQuests(QUESTS).map((quest) => quest.id),
     );
@@ -224,7 +225,7 @@ export async function findRewardProposalsForUser(
             "GITHUB_PROFILE_SKIPPED: userId={userId} reason=no_rewardable_quests",
             { userId: user.id },
         );
-        return [];
+        return { proposals: [] };
     }
 
     if (user.githubId === null) {
@@ -234,7 +235,7 @@ export async function findRewardProposalsForUser(
                 userId: user.id,
             },
         );
-        return [];
+        return { proposals: [] };
     }
 
     if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
@@ -253,23 +254,32 @@ export async function findRewardProposalsForUser(
         }
     }
 
-    if (rewardableQuestIds.size === 0) return [];
+    if (rewardableQuestIds.size === 0) {
+        return { proposals: [] };
+    }
 
     const now = new Date();
-    const proposals: RewardProposal[] = [];
+    const proposals: QuestEvaluation["proposals"] = [];
+    const progress: QuestProgress[] = [];
     const profile = await fetchGitHubProfile(ctx.env, user.githubId);
     if (!profile) {
         log.info(
             "GITHUB_PROFILE_NO_ACTIVITY: userId={userId} githubId={githubId}",
             { userId: user.id, githubId: user.githubId },
         );
-        return proposals;
+        return { proposals, progress };
     }
 
     if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
         const ageDays = accountAgeDays(profile.createdAt, now);
         const qualifies =
-            profile.createdAt !== null && ageDays >= GITHUB_ACCOUNT_AGE_DAYS;
+            profile.createdAt !== null &&
+            ageDays >= establishedGitHubAccountQuest.goal.target;
+        if (profile.createdAt !== null) {
+            progress.push(
+                toQuestProgress(establishedGitHubAccountQuest, ageDays),
+            );
+        }
         log.info(
             "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
             {
@@ -277,7 +287,7 @@ export async function findRewardProposalsForUser(
                 githubId: user.githubId,
                 createdAt: profile.createdAt?.toISOString() ?? null,
                 ageDays,
-                thresholdDays: GITHUB_ACCOUNT_AGE_DAYS,
+                thresholdDays: establishedGitHubAccountQuest.goal.target,
                 qualifies,
             },
         );
@@ -318,5 +328,5 @@ export async function findRewardProposalsForUser(
         }
     }
 
-    return proposals;
+    return { proposals, progress };
 }

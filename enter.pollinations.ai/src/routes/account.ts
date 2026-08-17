@@ -4,6 +4,10 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import {
+    getAvailableBalance,
+    getUserBalance,
+} from "@shared/billing/balance.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -663,9 +667,11 @@ const profileResponseSchema = z.object({
 const accountBalanceSchema = z.object({
     total: z
         .number()
-        .describe("Quest Pollen + paid Pollen remaining on the account"),
-    tier: z.number().describe("Quest Pollen remaining"),
-    paid: z.number().describe("Paid Pollen remaining"),
+        .describe(
+            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+        ),
+    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    paid: z.number().describe("Paid Pollen remaining, never below 0"),
 });
 
 const balanceResponseSchema = z.object({
@@ -971,19 +977,19 @@ export const accountRoutes = new Hono<Env>()
                 | { total: number; tier: number; paid: number }
                 | undefined;
             if (canViewAccount) {
-                const db = drizzle(c.env.DB);
-                const users = await db
-                    .select({
-                        tierBalance: userTable.tierBalance,
-                        packBalance: userTable.packBalance,
-                    })
-                    .from(userTable)
-                    .where(eq(userTable.id, user.id))
-                    .limit(1);
-
-                const tier = users[0]?.tierBalance ?? 0;
-                const paid = users[0]?.packBalance ?? 0;
-                accountBalance = { total: tier + paid, tier, paid };
+                // Same helper the billing path uses, so a bucket that has gone
+                // negative is clamped here exactly as it is when spending is
+                // authorized — a raw tier + pack sum would under-report the
+                // Pollen the account can actually spend.
+                const balances = await getUserBalance(
+                    drizzle(c.env.DB),
+                    user.id,
+                );
+                accountBalance = {
+                    total: getAvailableBalance(balances),
+                    tier: Math.max(0, balances.tierBalance),
+                    paid: Math.max(0, balances.packBalance),
+                };
             }
 
             // Budgeted keys keep seeing their remaining budget in `balance`.

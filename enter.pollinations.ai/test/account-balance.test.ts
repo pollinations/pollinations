@@ -181,4 +181,28 @@ describe("GET /api/account/balance", () => {
         expect(body.balance).toBe(0);
         expect(body.accountBalance).toBeUndefined();
     });
+    // A pack balance can go negative after a settlement overshoots. Spending
+    // still draws on Quest Pollen in that state, so the reported total must
+    // not be reduced by the overdraft.
+    test("an overdrawn pack balance does not eat the reported total", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const userId = await sessionUserId(sessionToken);
+        const db = drizzle(env.DB);
+        await db
+            .update(userTable)
+            .set({ tierBalance: 10, packBalance: -5 })
+            .where(eq(userTable.id, userId));
+
+        const res = await getBalance({
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        });
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({
+            balance: 10,
+            accountBalance: { total: 10, tier: 10, paid: 0 },
+        });
+    });
 });

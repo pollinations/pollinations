@@ -1161,13 +1161,13 @@ fixtureTest(
                 input: "Hello",
                 voice: "unknown_voice",
                 response_format: "mp3",
-                message: "Invalid voice for csm-1b",
+                message: "Invalid voice for sesame/csm-1b",
             },
             {
                 input: "Hello",
                 voice: "conversational_a",
                 response_format: "aac",
-                message: "Unsupported response_format for csm-1b",
+                message: "Unsupported response_format for sesame/csm-1b",
             },
         ];
 

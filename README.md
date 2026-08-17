@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-16** – **🎨 Image edits keep their shape** Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-16** – **🤖 Agents show their work** Managed-agent responses now expose tool names, parameters, outputs, and failures in streaming and non-streaming Open WebUI-compatible blocks. Debugging the robot is marginally less mystical.
+- **2026-08-16** – **🎯 Bonus Pollen rewards** Campaign rewards can now be claimed through Quests and appear under Bonus rewards, while contributor grants land through the same quest flow.
+- **2026-08-16** – **📱 NeuralCanvas on Android** A native Kotlin/Jetpack Compose app turns text prompts into images with the Pollinations image API. [Try it](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) <!-- app -->
 - **2026-08-14** – **🎯 Starred models stay starred** The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature.
 - **2026-08-14** – **🎵 Scribe joins the live hive** Plug ElevenLabs Scribe live transcription into OpenAI Realtime-compatible clients via `/realtime` or `/v1/realtime`, with partial transcripts, VAD, and language controls.
 - **2026-08-14** – **🎨 Grok gets a new canvas** `x-ai/grok-imagine-image-2.0` can generate and edit 1K or 2K images with up to three reference images through the usual image routes.
 - **2026-08-14** – **🎬 Two new seeds, faster films** Generate video with `seedance-2.0-mini` for 4–10 second 480p/720p clips, `seedance-2.0-fast` for quick shots, or `minimax-h3` for five-second videos with synchronized audio.
 - **2026-08-14** – **🤖 A glimmer and a very large Qwen arrive** `muse-glimmer` brings vision, tools, reasoning, and 131K context; `qwen3.8-2.4t-a95b` adds a 262K-context option for long, tool-using work.
 - **2026-08-14** – **🔗 Speech takes the short route** Every speech model, including multi-voice `eleven-dialogue`, now works through the compact `/audio/{text}` endpoint as well as `/v1/audio/speech`.
-- **2026-08-14** – **✨ Words become wireframes** FSChart turns plain-language prompts into browser-based 3D models and function plots. [Try it](https://fastnow.github.io/fschart_pollinations) <!-- app -->
-- **2026-08-13** – **🎨 Qwen Image 3** Generate 1K/2K images or edit with up to three reference images using paid `qwen-image-3`. More eyes, fewer tabs. [Image API](https://gen.pollinations.ai/image/{prompt})
-- **2026-08-13** – **🚀 Seedance 2.5 video** Generate four-second 480p or 720p clips with optional audio and first/last-frame guidance through `seedance-2.5`. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-13** – **🎵 Live transcription** `scribe-realtime` streams partial and final transcripts over WebSockets, with VAD, timestamps, language controls, and seven audio formats. [API Docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

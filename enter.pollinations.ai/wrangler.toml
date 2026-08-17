@@ -235,13 +235,21 @@ D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
-PLN_ENTER_TOKEN = "test-admin-token"
+# isInternalRequest() rejects tokens shorter than 32 characters, so a shorter
+# placeholder 401s every internal route instead of exercising it.
+PLN_ENTER_TOKEN = "test-admin-token-at-least-32-characters"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
+# Placeholders, not credentials. The Stripe tests run against the mock in
+# test/mocks/stripe.ts and never reach Stripe; the SDK only refuses to
+# construct without a key, and the webhook tests sign with the same value the
+# route verifies.
+STRIPE_SECRET_KEY = "sk_test_not_a_real_key_workers_test_only"
+STRIPE_WEBHOOK_SECRET = "whsec_not_a_real_secret_workers_test_only"
 BETTER_AUTH_URL = "http://localhost:3000"
 AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"

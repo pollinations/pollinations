@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
+    mergeCatalogModels,
 } from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
@@ -68,6 +69,47 @@ describe("model categories", () => {
                 modality: "text",
                 models: ["community-agent"],
             },
+        ]);
+    });
+
+    it("keeps the catalog entry when an extra repeats a listed model", () => {
+        // The extras projection carries five fields; the catalog entry for the
+        // same id carries pricing and the agent flag it cannot reconstruct. If
+        // the extra won, a caller's own public model would lose both.
+        const merged = mergeCatalogModels(
+            [
+                {
+                    name: "community-agent",
+                    category: "text" as const,
+                    community: true,
+                    agent: true,
+                    pricing: { promptTextTokens: "1" },
+                },
+            ],
+            [
+                {
+                    name: "community-agent",
+                    category: "text" as const,
+                    community: true,
+                    agent: false,
+                },
+                {
+                    name: "own-private",
+                    category: "text" as const,
+                    community: true,
+                },
+            ],
+        );
+
+        expect(merged).toEqual([
+            {
+                name: "community-agent",
+                category: "text",
+                community: true,
+                agent: true,
+                pricing: { promptTextTokens: "1" },
+            },
+            { name: "own-private", category: "text", community: true },
         ]);
     });
 

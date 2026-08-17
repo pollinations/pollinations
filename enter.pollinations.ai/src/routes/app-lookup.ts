@@ -2,9 +2,14 @@ import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
+import {
+    communityEndpointTitle,
+    communityModelId,
+    endpointDelegatesGeneration,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
@@ -31,7 +36,57 @@ async function resolveAttribution(
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
+        appModels: await resolveAppModels(db, user),
     };
+}
+
+/**
+ * The app owner's "app"-visibility models, which keys minted through this app
+ * can call. The consent screen needs them to name what it is granting: they are
+ * listed only for keys the app has already issued, and at consent time the user
+ * holds no such key yet, so without this an app-scoped `models=` request
+ * renders as "no models enabled".
+ *
+ * Safe on an unauthenticated route because "app" scopes who a model reaches
+ * rather than conferring secrecy, and because this returns only what the app is
+ * asking the user to approve — ids and titles, no upstream URL, price, or
+ * token.
+ */
+async function resolveAppModels(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    owner: typeof schema.user.$inferSelect | undefined,
+) {
+    const ownerGithubUsername = owner?.githubUsername;
+    if (!ownerGithubUsername) return [];
+    const rows = await db
+        .select({
+            name: schema.communityEndpoint.name,
+            title: schema.communityEndpoint.title,
+            description: schema.communityEndpoint.description,
+            modality: schema.communityEndpoint.modality,
+            agentId: schema.communityEndpoint.agentId,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
+        })
+        .from(schema.communityEndpoint)
+        .where(
+            and(
+                eq(schema.communityEndpoint.ownerUserId, owner.id),
+                eq(schema.communityEndpoint.visibility, "app"),
+                isNull(schema.communityEndpoint.disabledAt),
+            ),
+        );
+    return rows.map((row) => ({
+        name: communityModelId(ownerGithubUsername, row.name),
+        title: communityEndpointTitle({
+            modelId: row.name,
+            title: row.title,
+            description: row.description,
+        }),
+        category:
+            row.modality === "image" ? ("image" as const) : ("text" as const),
+        community: true as const,
+        agent: endpointDelegatesGeneration(row),
+    }));
 }
 
 /**

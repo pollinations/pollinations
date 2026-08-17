@@ -233,9 +233,10 @@ const modelsListHandler = (
     ] as const;
 
 async function getVisibleModelEntries(c: Context<Env>) {
-    return (await getGenerationModelRegistry(c.env)).visibleEntries(
-        c.var.auth?.user?.id,
-    );
+    return (await getGenerationModelRegistry(c.env)).visibleEntries({
+        callerUserId: c.var.auth?.user?.id,
+        appOwnerUserId: c.var.auth?.apiKey?.byopClientUserId,
+    });
 }
 
 async function getVisibleModelEntriesForEventType(
@@ -288,7 +289,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the caller\'s own private and app community models are included, along with app models owned by the app that issued the key; models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
             responses: {
                 200: {
                     description: "Success",
@@ -355,7 +356,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the caller's own private and app community models are included, along with app models owned by the app that issued the key; models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -459,7 +460,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the caller's own private and app community models are included, along with app models owned by the app that issued the key; models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",

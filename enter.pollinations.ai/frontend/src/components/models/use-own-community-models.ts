@@ -7,7 +7,8 @@ import type { ApiModelInfo } from "./model-catalog.ts";
  * omits, in catalog form, so pickers can offer them.
  *
  * Public ones are dropped because the catalog already lists them, with pricing
- * and capabilities this five-field projection cannot reconstruct.
+ * and capabilities this five-field projection cannot reconstruct. The rest —
+ * private and "app"-visibility — reach the picker only from here.
  *
  * Returns an empty list until loaded, and on failure, so a picker degrades to
  * the public catalog rather than blocking.

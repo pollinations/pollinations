@@ -18,6 +18,7 @@ import {
     communityEndpointPricesForModality,
     communityEndpointTitle,
     communityModelId,
+    endpointDelegatesGeneration,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -140,8 +141,8 @@ function enforceCommunityEndpointInputModalities(
     });
 }
 
-// Community fallback targets are restricted to public community models or
-// private models owned by the same developer.
+// Community fallback targets are restricted to public community models, or
+// models of any visibility owned by the same developer.
 // Pointing a community model at a Pollinations-operated model is deliberately
 // out of scope: static registry prices can be function-valued/dynamic, so the
 // "same or lower price" comparison is not well-defined against them.
@@ -163,17 +164,6 @@ type FallbackPrimary = {
 };
 
 /**
- * Whether a stored row generates through something else — always for an agent,
- * and for an external endpoint that was granted delegation.
- */
-function rowDelegatesGeneration(row: {
-    agentId: string | null;
-    delegatesGeneration: boolean;
-}): boolean {
-    return row.agentId !== null || row.delegatesGeneration;
-}
-
-/**
  * Why `target` may not serve as a fallback for `primary`, or null when it may.
  *
  * The candidate list the dashboard offers and the validation the write path
@@ -192,11 +182,11 @@ function fallbackTargetRejection(
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
-    if (rowDelegatesGeneration(target)) {
+    if (endpointDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
-        target.visibility === "private" &&
+        target.visibility !== "public" &&
         target.ownerUserId !== primary.ownerUserId
     ) {
         return `Fallback target ${modelId} must be public or owned by you`;
@@ -299,7 +289,7 @@ async function resolveFallbackModelIds(
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+        '"private": callable by the owner, listed for the owner, and always free. "app": also callable by API keys issued through apps owned by the same account, listed for exactly those keys, and priced like public models. "public": callable by anyone and listed in the model catalog; requires an allowlisted account. Managed agent listings are always free.',
     );
 const PerUserRpmSchema = z
     .number()
@@ -554,8 +544,9 @@ function normalizeInputProviderUrl(value: string): string {
     }
 }
 
-// Anyone may register private endpoints for their own use and probe their own
-// upstream. Publishing requires an allowlisted account.
+// Anyone may register private and app-scoped endpoints and probe their own
+// upstream. Public listing and the provider profile require an allowlisted
+// account.
 async function requireCommunityEndpointPublishAccess(
     db: Db,
     userId: string,
@@ -568,7 +559,7 @@ async function requireCommunityEndpointPublishAccess(
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
             message:
-                "Community model publishing requires approval. Models can stay private for your own use.",
+                "Public community model publishing requires approval. Models can stay private, or app-scoped to your own apps, without it.",
         });
     }
 }
@@ -614,7 +605,7 @@ function toResponse(
         ),
         baseUrl,
         agentId: row.agentId,
-        delegatesGeneration: rowDelegatesGeneration(row),
+        delegatesGeneration: endpointDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,
@@ -697,8 +688,9 @@ function throwEndpointTestError(error: unknown): never {
 
 type EndpointProbeKind = "models" | "test";
 
-// Publishing is allowlist-gated. Pricing is independent: public endpoints may
-// be free or owner-priced.
+// Only public listing is allowlist-gated. "app" is open to every account, and
+// pricing is independent of the gate: app and public endpoints may be free or
+// owner-priced.
 async function enforcePublishingAccess(
     db: Db,
     userId: string,
@@ -745,7 +737,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Models",
             description:
-                "List private and public community models owned by the authenticated account. API keys require `account:keys`.",
+                "List community models owned by the authenticated account, at any visibility. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Registered community models",
@@ -930,7 +922,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a community text or image model. Private is the default; see `visibility`. App and public models may be free or priced, and public additionally requires an allowlisted account. Managed agent listings are always free. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -976,7 +968,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities,
             );
             const prices =
-                agent || input.visibility !== "public"
+                agent || input.visibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPricesForModality(
                           input,
@@ -1137,7 +1129,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account. Changing visibility to private clears owner-set prices. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -1273,8 +1265,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            // A private model is owner-only, so owner-declared public pricing
-            // does not apply; making a published model private clears prices.
+            // A private model is owner-only, so owner-declared pricing does not
+            // apply; moving a listed model back to private clears its prices.
+            // App and public models keep them; agent listings never have any.
             const effectivePrices =
                 endpoint.agentId !== null || effectiveVisibility === "private"
                     ? communityEndpointPrices({})

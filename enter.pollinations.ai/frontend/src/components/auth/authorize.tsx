@@ -24,7 +24,7 @@ import {
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
@@ -34,6 +34,7 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
@@ -49,6 +50,13 @@ type Attribution = {
     appName?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
+    /**
+     * The app's own "app"-visibility models. They are absent from the public
+     * catalog, so the consent screen has to learn them from the app it is
+     * authorizing or it would show "no models enabled" while still scoping the
+     * minted key to them.
+     */
+    appModels?: ApiModelInfo[];
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
@@ -113,10 +121,15 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    // The minted key is the signed-in user's, so it reaches their own private
-    // models just as their dashboard keys do — but the anonymous catalog omits
-    // them, so the consent screen has to learn them separately.
-    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
+    // Everything the minted key could call that the public catalog omits: the
+    // app's own app-scoped models, and the user's own — the key is theirs, so
+    // it reaches their private models just as their dashboard keys do.
+    const ownModels = useOwnCommunityModels(!!user);
+    const grantableModels = useMemo(
+        () => [...(attribution?.appModels ?? []), ...ownModels],
+        [attribution, ownModels],
+    );
+    const modelCategories = useModelCategories(grantableModels);
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,

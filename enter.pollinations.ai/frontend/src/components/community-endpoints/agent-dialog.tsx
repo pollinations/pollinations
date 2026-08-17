@@ -113,7 +113,9 @@ export function AgentDialog({
         ? "Save Agent"
         : form.visibility === "public"
           ? "Publish Agent"
-          : "Add Private Agent";
+          : form.visibility === "app"
+            ? "Add App Agent"
+            : "Add Private Agent";
 
     return (
         <Dialog

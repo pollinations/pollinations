@@ -1,4 +1,8 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    type CommunityModelAccess,
+    canAccessCommunityModel,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -72,7 +76,7 @@ export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
     env: CloudflareBindings,
-    callerUserId?: string,
+    access: CommunityModelAccess,
     supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
@@ -83,15 +87,11 @@ export async function resolveModelDefinition(
         });
     }
 
-    // A private community endpoint is owner-only: to everyone else it doesn't
-    // exist. Reuse the same "invalid model" response as an unknown name so
-    // private models aren't discoverable by probing.
+    // Private endpoints exist only for their owner; app endpoints also exist
+    // for keys issued through that owner's apps. Reuse the same "invalid model"
+    // response as an unknown name so neither is discoverable by probing.
     const community = entry.communityEndpoint;
-    if (
-        community &&
-        community.visibility !== "public" &&
-        community.ownerUserId !== callerUserId
-    ) {
+    if (community && !canAccessCommunityModel(community, access)) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -193,14 +193,17 @@ export function resolveModel(
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
         // auth() runs before resolveModel on the authenticated generation
-        // routes, so the caller identity is available to gate private
-        // endpoints. If it isn't (unauthenticated path), callerUserId is
-        // undefined and a private endpoint fails closed — never exposed.
+        // routes, so caller and app-issuer identity are both available to gate
+        // non-public endpoints. On an unauthenticated path both are undefined
+        // and access fails closed — never exposed.
         const resolved = await resolveModelDefinition(
             model,
             eventType,
             c.env,
-            c.var.auth?.user?.id,
+            {
+                callerUserId: c.var.auth?.user?.id,
+                appOwnerUserId: c.var.auth?.apiKey?.byopClientUserId,
+            },
             options?.supportedEndpoint,
         );
         // Hidden registry fallbacks are provider implementations of the public

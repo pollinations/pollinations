@@ -264,11 +264,11 @@ export function CommunityEndpointDialog({
         }
     }
 
-    // Pricing is only meaningful when the model is (or is being made) public —
-    // keyed off the LIVE form value so flipping Visibility to Public in place
-    // reveals the test + pricing section immediately. Private models carry no
-    // pricing (owner is the only caller).
-    const isShared = form.visibility === "public";
+    // Pricing is only meaningful once the model leaves private — keyed off the
+    // LIVE form value so flipping Visibility to App or Public in place reveals
+    // the test + pricing section immediately. Private models carry no pricing
+    // (owner is the only caller).
+    const isShared = form.visibility !== "private";
     const returnedFields = isShared
         ? returnedPriceFields(testState, form.modality, form.imagePricing)
         : [];
@@ -290,14 +290,14 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
-    // First-time publishing of an external endpoint re-observes its billed
-    // buckets, so it needs a successful test. A model already saved as public
-    // has server-validated pricing, so re-editing it (e.g. a price or
-    // description tweak) does not force another test. Private models defer
+    // First-time pricing of an external endpoint re-observes its billed
+    // buckets, so it needs a successful test. A model already saved at a priced
+    // visibility has server-validated pricing, so re-editing it (e.g. a price
+    // or description tweak) does not force another test. Private models defer
     // pricing entirely. External endpoints always need a token to be callable
     // at all.
-    const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    const needsTest = isShared && !alreadyPublic;
+    const alreadyPriced = isEdit && endpoint?.visibility !== "private";
+    const needsTest = isShared && !alreadyPriced;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
     const saveRequirementMet = needsTest
@@ -561,7 +561,7 @@ export function CommunityEndpointDialog({
                     {isShared && (
                         <FieldStack
                             label="Fallback models"
-                            helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                            helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another community model of the same modality — public, or one of yours — priced at or below this one.`}
                             alignLabelRow
                         >
                             <div className="flex flex-col gap-2">
@@ -663,9 +663,11 @@ export function CommunityEndpointDialog({
                             ? "Saving…"
                             : isEdit
                               ? "Save Model"
-                              : isShared
+                              : form.visibility === "public"
                                 ? "Publish Model"
-                                : "Add Private Model"}
+                                : form.visibility === "app"
+                                  ? "Add App Model"
+                                  : "Add Private Model"}
                     </Button>
                 </div>
             </form>

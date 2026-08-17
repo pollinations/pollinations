@@ -2,6 +2,7 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
@@ -9,10 +10,12 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
-import type { ModelListingFormState } from "./types.ts";
+import { genDocsUrl } from "../../config.ts";
+import { type ModelListingFormState, VISIBILITY_LABELS } from "./types.ts";
 
 type ListingTextField =
     | "name"
@@ -50,8 +53,6 @@ export function ModelListingFields({
             ),
         );
     }
-
-    const isPublic = form.visibility === "public";
 
     return (
         <>
@@ -154,37 +155,60 @@ export function ModelListingFields({
             <FieldStack
                 label="Visibility"
                 helper={
-                    isPublic
-                        ? isAgent
-                            ? "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
-                            : "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
-                        : canPublish
-                          ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                          : "Private: callable only by you. Publishing publicly requires approval."
+                    form.visibility === "private" ? (
+                        "Private: callable by you, and listed in model lists authenticated with your API key."
+                    ) : form.visibility === "app" ? (
+                        <>
+                            App: callable by you and by any API key issued
+                            through one of your apps, and listed for exactly
+                            those keys.{" "}
+                            {isAgent
+                                ? "Calls use the caller's Pollinations balance and API-key permissions."
+                                : "Anyone who authorizes through one of your apps can call it — set prices below, or leave them at 0 for free."}{" "}
+                            <InlineLink href={genDocsUrl("#tag/byop")}>
+                                How apps issue keys
+                            </InlineLink>
+                        </>
+                    ) : isAgent ? (
+                        "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
+                    ) : (
+                        "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
+                    )
                 }
                 alignLabelRow
             >
                 <ButtonGroup aria-label="Model visibility">
-                    <TabButton
-                        active={!isPublic}
-                        onClick={() => onChange("visibility", "private")}
-                        size="sm"
-                        className="min-w-24 gap-1.5"
-                    >
-                        {!isPublic && <CheckIcon className="h-3.5 w-3.5" />}
-                        Private
-                    </TabButton>
-                    <TabButton
-                        active={isPublic}
-                        disabled={!canPublish}
-                        onClick={() => onChange("visibility", "public")}
-                        size="sm"
-                        className="min-w-24 gap-1.5"
-                    >
-                        {isPublic && <CheckIcon className="h-3.5 w-3.5" />}
-                        Public
-                    </TabButton>
+                    {COMMUNITY_ENDPOINT_VISIBILITIES.map((visibility) => {
+                        const active = form.visibility === visibility;
+                        return (
+                            <TabButton
+                                key={visibility}
+                                active={active}
+                                // Only public listing needs approval; private
+                                // and app are open to every account.
+                                disabled={
+                                    visibility === "public" && !canPublish
+                                }
+                                onClick={() =>
+                                    onChange("visibility", visibility)
+                                }
+                                size="sm"
+                                className="min-w-24 gap-1.5"
+                            >
+                                {active && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
+                                {VISIBILITY_LABELS[visibility]}
+                            </TabButton>
+                        );
+                    })}
                 </ButtonGroup>
+                {!canPublish && (
+                    <p className="text-sm text-theme-text-muted">
+                        Listing publicly requires approval. Private and app
+                        models need none.
+                    </p>
+                )}
             </FieldStack>
 
             {!isAgent && (

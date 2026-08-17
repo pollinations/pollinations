@@ -63,8 +63,9 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setAccountPermissions,
     } = value;
     // A dashboard key belongs to the account, so it can call that account's own
-    // private models. Offer them here too, or a key already scoped to one shows
-    // up as granting nothing and loses the grant on the next edit.
+    // private and app models. Offer them here too, or a key could be granted
+    // one through the authorize flow and then never be edited without it
+    // vanishing from the picker.
     const modelCategories = useModelCategories(useOwnCommunityModels());
 
     return (

@@ -273,11 +273,26 @@ export function normalizeCommunityEndpointInputModalities(
     return normalized.length ? [...normalized] : ["text"];
 }
 
-// Access/visibility of a registered endpoint. Private is the default; choosing
-// public on create or update is allowlist-gated.
-//   private → owner-only callable, shown only to the owner, no owner-set price
-//   public  → anyone callable, listed in the model catalog, priced
-export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
+// Access/visibility of a registered endpoint. Private is the default; only
+// public is allowlist-gated on create or update.
+//   private → callable by the owner, listed for the owner, price forced to 0
+//   app     → callable by the owner and by any key minted through one of the
+//             owner's publishable app keys, and listed for exactly those
+//             callers. Open to every account, and owner-priced for external
+//             endpoints.
+//   public  → callable by anyone, listed in the model catalog, priced,
+//             allowlist-gated
+// "app" scopes who a model is listed and billed for; it does not keep the
+// model secret. The attribution it tests (byopClientKeyId) is verified but
+// caller-chosen: any account can mint itself a key attributed to a published
+// pk_, so treat "app" as reach, never as an access-control boundary.
+// Agents are never priced at any visibility: they spend the caller's balance on
+// Pollinations models downstream rather than charging for themselves.
+export const COMMUNITY_ENDPOINT_VISIBILITIES = [
+    "private",
+    "app",
+    "public",
+] as const;
 
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
@@ -342,6 +357,54 @@ export function isDelegatingEndpoint(
     endpoint: CommunityEndpointRuntime,
 ): boolean {
     return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+}
+
+/**
+ * isDelegatingEndpoint() for a stored row or its API representation, where the
+ * two kinds are not yet split into a union and `agentId` stands in for `kind`.
+ *
+ * Kept beside the runtime version so the rule reads the same everywhere: the
+ * catalog labels these models "agent", and a surface that recomputes the test
+ * by hand drifts from that label the moment an external endpoint is granted
+ * delegation.
+ */
+export function endpointDelegatesGeneration(endpoint: {
+    agentId: string | null;
+    delegatesGeneration: boolean;
+}): boolean {
+    return endpoint.agentId !== null || endpoint.delegatesGeneration;
+}
+
+/** Who is asking, as far as community model access is concerned. */
+export type CommunityModelAccess = {
+    /** The authenticated Pollinations user, if any. */
+    callerUserId?: string;
+    /** Owner of the app whose publishable key issued the caller's key. */
+    appOwnerUserId?: string | null;
+};
+
+/**
+ * Whether `access` may see and call `endpoint`.
+ *
+ * Public is everyone's. Private and app are the owner's; app additionally
+ * reaches keys minted through that owner's apps, which is what lets a developer
+ * ship a model inside their app without publishing it to the catalog. Both
+ * identity terms are truth-checked so an unauthenticated caller — every field
+ * undefined — can never match an owner id.
+ */
+export function canAccessCommunityModel(
+    endpoint: { visibility: CommunityEndpointVisibility; ownerUserId: string },
+    access: CommunityModelAccess,
+): boolean {
+    if (endpoint.visibility === "public") return true;
+    if (access.callerUserId && endpoint.ownerUserId === access.callerUserId) {
+        return true;
+    }
+    return (
+        endpoint.visibility === "app" &&
+        !!access.appOwnerUserId &&
+        endpoint.ownerUserId === access.appOwnerUserId
+    );
 }
 
 export type CommunityModelDefinitionInput = {
@@ -515,8 +578,9 @@ export function communityPriceDefinition(
         imagePricing,
     )) {
         const price = endpoint[field.key];
-        // Zero is an intentional rate here (private models, unpriced usage
-        // buckets), not a missing one: keep it explicit so billing charges 0
+        // Zero is an intentional rate here (private models, agents at any
+        // visibility, unpriced usage buckets), not a missing one: keep it
+        // explicit so billing charges 0
         // instead of warning about a missing conversion rate on every call.
         if (Number.isFinite(price) && price >= 0) {
             pricing[field.usageType] = price;

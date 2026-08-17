@@ -3738,7 +3738,7 @@ fixtureTest(
         );
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
-            baseModel: "openai-fast",
+            baseModel: "openai/gpt-5-nano",
             mcpServers: ["pollinations"],
         };
         const createAgentResponse = await fetchEnterApi(
@@ -3762,7 +3762,7 @@ fixtureTest(
         };
         expect(agent).toMatchObject({
             systemPrompt: "You are a terse SQL tutor.",
-            baseModel: "openai-fast",
+            baseModel: "openai/gpt-5-nano",
             mcpServers: ["pollinations"],
         });
         expect(agent).not.toHaveProperty("apiKeyId");

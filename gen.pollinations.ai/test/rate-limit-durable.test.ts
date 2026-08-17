@@ -30,7 +30,6 @@ function createApp() {
                     id: "publishable-key",
                     metadata: { keyType: "publishable" },
                 } as never,
-                requireAuthorization: async () => {},
                 requireUser: () => ({ id: "user-1", tier: "seed" }) as never,
                 requireModelAccess: () => {},
             });

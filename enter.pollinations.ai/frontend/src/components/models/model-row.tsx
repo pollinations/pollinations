@@ -291,6 +291,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                             }
                                             ariaLabel={modalityLabel}
                                             tapEnabled
+                                            displayContents
                                         >
                                             <span className="inline-flex items-center gap-2">
                                                 {inputModalities.map((key) => {
@@ -319,6 +320,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                             }
                                             ariaLabel={capabilityLabel}
                                             tapEnabled
+                                            displayContents
                                         >
                                             <span className="inline-flex items-center gap-2 text-theme-text-soft">
                                                 {capabilities.map((key) => {

@@ -13,7 +13,7 @@ import { checkBalance } from "@/utils/generation-access.ts";
 export const FFMPEG_MODEL = "ffmpeg";
 export const BASIC_CONTAINER_COST_PER_SECOND =
     0.25 * 0.00002 + 1 * 0.0000025 + 4 * 0.00000007;
-const MAX_RUN_SECONDS = 120;
+const MAX_RUN_SECONDS = 110;
 const MAX_SOURCE_BYTES = 100 * 1024 * 1024;
 const FFMPEG_RUNTIME_HEADER = "x-ffmpeg-runtime-ms";
 
@@ -126,6 +126,8 @@ export async function runFfmpeg(c: Context<Env>) {
     if (!c.env.FFMPEG) {
         throw new HTTPException(503, { message: "FFmpeg is unavailable" });
     }
+    const startedAt = Date.now();
+    const deadlineMs = startedAt + MAX_RUN_SECONDS * 1000;
 
     const sourceResponse = await fetch(input.source, { redirect: "manual" });
     if (sourceResponse.status >= 300 && sourceResponse.status < 400) {
@@ -148,13 +150,13 @@ export async function runFfmpeg(c: Context<Env>) {
         c.env.FFMPEG,
         `ffmpeg-${crypto.randomUUID()}`,
     );
-    const startedAt = Date.now();
     let result: Awaited<ReturnType<FfmpegContainer["run"]>>;
     try {
         result = await container.run(
             sourceResponse.body,
             input.args,
             input.outputExtension,
+            deadlineMs,
         );
     } catch (error) {
         await container.destroy().catch(() => undefined);

@@ -1,7 +1,6 @@
 import { Container } from "@cloudflare/containers";
 
 const WORK_DIR = "/work";
-const MAX_RUN_MS = 120_000;
 const MAX_ERROR_LENGTH = 8_000;
 const MAX_OUTPUT_BYTES = 100 * 1024 * 1024;
 
@@ -64,11 +63,19 @@ export class FfmpegContainer extends Container {
         input: ReadableStream<Uint8Array>,
         args: string[],
         outputExtension: string,
+        deadlineMs: number,
     ): Promise<FfmpegResult> {
         const runtime = this.ctx.container as ContainerRuntime | undefined;
         if (!runtime) throw new Error("Container runtime is unavailable");
         if (!runtime.running) {
             await this.start({ enableInternet: false });
+        }
+        const remainingMs = deadlineMs - Date.now();
+        if (remainingMs <= 0) {
+            return {
+                ok: false,
+                stderr: "FFmpeg startup exceeded its deadline",
+            };
         }
 
         const outputPath = `${WORK_DIR}/output.${outputExtension}`;
@@ -87,7 +94,7 @@ export class FfmpegContainer extends Container {
             ],
             { stdin: input, stdout: "ignore" },
         );
-        const timer = setTimeout(() => process.kill(9), MAX_RUN_MS);
+        const timer = setTimeout(() => process.kill(9), remainingMs);
         const [exitCode, stderr] = await Promise.all([
             process.exitCode,
             decodeStream(process.stderr),

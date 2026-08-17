@@ -17,6 +17,7 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import { questCouponRoutes } from "./quest-coupons.ts";
 
 // Bumped to v26: established GitHub, app_paid_request, and app_users_10 are
 // available; Early Adopter and app_pollen_10 are visible as coming soon.
@@ -51,6 +52,7 @@ const rewardSchema = z.object({
     balanceBucket: z.string(),
     earnedAt: z.string(),
     claimedAt: z.string().nullable(),
+    url: z.string().nullable().optional(),
 });
 
 const questRewardsResponseSchema = z.object({
@@ -202,6 +204,7 @@ export const questsRoutes = new Hono<Env>()
                     balanceBucket: rewardsTable.balanceBucket,
                     earnedAt: rewardsTable.earnedAt,
                     claimedAt: rewardsTable.claimedAt,
+                    url: rewardsTable.url,
                 })
                 .from(rewardsTable)
                 .where(eq(rewardsTable.userId, user.id))
@@ -217,6 +220,7 @@ export const questsRoutes = new Hono<Env>()
                 claimedAt: row.claimedAt
                     ? formatRewardTimestamp(row.claimedAt)
                     : null,
+                url: row.url,
             }));
 
             return c.json({ rewards });
@@ -281,7 +285,8 @@ export const questsRoutes = new Hono<Env>()
                 },
             });
         },
-    );
+    )
+    .route("/coupons", questCouponRoutes);
 
 async function readCached(
     kv: KVNamespace,

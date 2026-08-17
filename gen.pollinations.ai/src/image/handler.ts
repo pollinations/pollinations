@@ -38,12 +38,21 @@ import {
     contentPolicyMessage,
     firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
-import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
+import {
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+
+const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
+const EDIT_DIMENSION_STEP = 16;
+const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -474,6 +483,45 @@ async function generateVideoResult(
     );
 }
 
+/**
+ * Edit requests that omit `size` should preserve the source image's aspect
+ * ratio instead of silently defaulting to the model's square default (e.g.
+ * 1024x1024). Downloads the first reference image, reads its actual
+ * dimensions, and overrides the params. Explicit size requests and video
+ * models are untouched; any failure falls back to the model default.
+ */
+export async function resolveEditDimensionsForImage(
+    safeParams: RuntimeImageParams,
+): Promise<RuntimeImageParams> {
+    if (safeParams.dimensionsExplicit) return safeParams;
+    const imageUrls = safeParams.image;
+    if (!imageUrls?.length) return safeParams;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(
+            imageUrls[0],
+            AbortSignal.timeout(EDIT_IMAGE_PROBE_TIMEOUT_MS),
+        );
+        const source = readImageDimensions(buffer, mimeType);
+        if (!source) return safeParams;
+
+        const targetLongEdge = Math.max(safeParams.width, safeParams.height);
+        const scale = targetLongEdge / Math.max(source.width, source.height);
+        const normalizeSide = (side: number) =>
+            Math.max(
+                MIN_EDIT_DIMENSION,
+                Math.round((side * scale) / EDIT_DIMENSION_STEP) *
+                    EDIT_DIMENSION_STEP,
+            );
+        return {
+            ...safeParams,
+            width: normalizeSide(source.width),
+            height: normalizeSide(source.height),
+        };
+    } catch {
+        // Keep the model default if the source image cannot be read.
+        return safeParams;
+    }
+}
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -481,7 +529,13 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    const parsedParams = parseImageParams(c, body);
+    const definition = c.var.model.definition;
+    const safeParams =
+        definition.category === "image" &&
+        definition.inputModalities?.includes("image")
+            ? await resolveEditDimensionsForImage(parsedParams)
+            : parsedParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,

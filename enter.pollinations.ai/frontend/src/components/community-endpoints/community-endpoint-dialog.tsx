@@ -560,6 +560,52 @@ export function CommunityEndpointDialog({
                     )}
                     {isShared && (
                         <FieldStack
+                            label="Balance"
+                            helper={
+                                form.paidOnly
+                                    ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                    : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Accepted balance">
+                                <TabButton
+                                    active={!form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: false,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {!form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Any Pollen
+                                </TabButton>
+                                <TabButton
+                                    active={form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: true,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Paid only
+                                </TabButton>
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
+                    {isShared && (
+                        <FieldStack
                             label="Fallback models"
                             helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
                             alignLabelRow

@@ -302,6 +302,8 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    // Owner-set: callers may only spend Paid Pollen on this model.
+    paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
@@ -354,6 +356,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -580,7 +583,7 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
-        paidOnly: false,
+        paidOnly: endpoint.paidOnly ?? false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a

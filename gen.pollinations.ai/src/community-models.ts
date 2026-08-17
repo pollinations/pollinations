@@ -82,6 +82,7 @@ export async function getCommunityModelRegistryEntries(
             endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            paidOnly: schema.communityEndpoint.paidOnly,
             perUserRpm: schema.communityEndpoint.perUserRpm,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
@@ -129,6 +130,7 @@ export async function getCommunityModelRegistryEntries(
             ),
             inputModalities: row.inputModalities,
             visibility: row.visibility,
+            paidOnly: row.paidOnly,
             perUserRpm: row.perUserRpm,
             fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,

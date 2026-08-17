@@ -55,6 +55,8 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    // Owner-set: callers may only spend Paid Pollen on this model.
+    paidOnly: boolean;
     perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
@@ -113,6 +115,9 @@ export type EndpointFormState = ModelListingFormState & {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Callers may only spend Paid Pollen. For pay-as-you-go upstreams, where
+    // Quest Pollen covering the price leaves the owner paying for inference.
+    paidOnly: boolean;
     // Public community model ids, tried in the order listed.
     fallbackModelIds: string[];
 } & EndpointFormPrices;
@@ -131,6 +136,7 @@ export type EndpointPayload = ModelListingPayload & {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
+    paidOnly: boolean;
     fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
@@ -179,6 +185,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    paidOnly: false,
     fallbackModelIds: [],
     ...emptyPriceForm,
 };
@@ -273,6 +280,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        paidOnly: endpoint.paidOnly,
         fallbackModelIds: endpoint.fallbackModelIds ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -411,6 +419,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
+        paidOnly: form.paidOnly,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbackModelIds:

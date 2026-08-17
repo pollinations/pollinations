@@ -253,6 +253,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
+  // Owner-set: callers may only spend Paid Pollen here. For pay-as-you-go
+  // upstreams, where Quest Pollen covering the price leaves the owner paying
+  // the inference cost with no paid revenue behind it.
+  paidOnly: integer("paid_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   perUserRpm: real("per_user_rpm"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),

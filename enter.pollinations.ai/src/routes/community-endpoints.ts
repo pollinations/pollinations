@@ -301,6 +301,11 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const PaidOnlySchema = z
+    .boolean()
+    .describe(
+        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
+    );
 const PerUserRpmSchema = z
     .number()
     .finite()
@@ -352,6 +357,7 @@ const CreateEndpointSchema = z
         imagePricing: ImagePricingSchema.optional().default("request"),
         inputModalities: InputModalitiesSchema.optional().default(["text"]),
         visibility: VisibilitySchema.optional().default("private"),
+        paidOnly: PaidOnlySchema.optional().default(false),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
         ...UpdatePriceFieldsSchema,
@@ -421,6 +427,7 @@ const UpdateEndpointSchema = z.object({
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
+    paidOnly: PaidOnlySchema.optional(),
     perUserRpm: PerUserRpmSchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
@@ -460,6 +467,7 @@ const CommunityEndpointResponseSchema = z.object({
     delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
+    paidOnly: z.boolean(),
     perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
@@ -617,6 +625,7 @@ function toResponse(
         delegatesGeneration: rowDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
+        paidOnly: row.paidOnly,
         perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
@@ -1023,6 +1032,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           ),
                     visibility: input.visibility,
+                    paidOnly: input.paidOnly,
                     perUserRpm: agent ? null : (input.perUserRpm ?? null),
                     fallbackModelIds,
                     ...prices,
@@ -1235,6 +1245,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.paidOnly !== undefined) {
+                update.paidOnly = input.paidOnly;
             }
             if (endpoint.agentId !== null) {
                 update.perUserRpm = null;

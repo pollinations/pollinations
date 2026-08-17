@@ -506,6 +506,27 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("carries the owner's paid-only choice onto the model definition", () => {
+        const prices = communityEndpointPrices({ promptTextPrice: 0.1 });
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                ...prices,
+            }).paidOnly,
+        ).toBe(false);
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                paidOnly: true,
+                ...prices,
+            }).paidOnly,
+        ).toBe(true);
+    });
+
     it("prefers a stored title over the description", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
@@ -761,6 +782,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 fallbackModelIds: [],
                 disabledAt: null,
@@ -949,6 +971,7 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            paidOnly: false,
             perUserRpm: null,
             delegatesGeneration: false,
             fallbackModelIds: [],
@@ -1013,6 +1036,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 delegatesGeneration: true,
                 disabledAt: null,
@@ -3244,6 +3268,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
+            paidOnly: false,
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
@@ -3278,6 +3303,7 @@ fixtureTest(
                         title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
+                        paidOnly: true,
                         promptTextPrice: 0.00001,
                         completionTextPrice: 0.00002,
                     }),
@@ -3289,6 +3315,7 @@ fixtureTest(
             title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
             disabled: true,

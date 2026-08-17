@@ -171,6 +171,8 @@ Test before creating. The probe reports the pricing mode it detected and the inp
 
 Two billing modes: `--image-pricing request` charges `--completion-image-price` per generated image, while `--image-pricing tokens` bills returned token usage per 1M through `--prompt-text-price`, `--prompt-image-price`, and `--completion-image-price`.
 
+Prices only apply to `--visibility public` models. A private model is owner-only and always free, so every price flag above is stored as `0` until you publish — and making a published model private clears its prices again.
+
 `--modality` is fixed at creation — `update` cannot change it.
 
 ### Manage agents

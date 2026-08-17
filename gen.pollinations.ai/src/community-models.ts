@@ -3,8 +3,8 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    isDelegatingEndpoint,
     normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointListingType,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -72,7 +72,6 @@ export async function getCommunityModelRegistryEntries(
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
-            listingType: schema.communityEndpoint.listingType,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
             inputModalities: schema.communityEndpoint.inputModalities,
@@ -173,11 +172,7 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
-                    agent:
-                        communityEndpoint.kind === "agent" ||
-                        normalizeCommunityEndpointListingType(
-                            row.listingType,
-                        ) === "agent",
+                    agent: isDelegatingEndpoint(communityEndpoint),
                     perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,

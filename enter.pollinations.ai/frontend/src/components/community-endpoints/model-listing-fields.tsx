@@ -26,7 +26,6 @@ export function ModelListingFields({
     modality,
     canPublish,
     isAgent,
-    showInputModalities = !isAgent,
     required = true,
     onChange,
     onInputModalitiesChange,
@@ -35,7 +34,6 @@ export function ModelListingFields({
     modality: CommunityEndpointModality;
     canPublish: boolean;
     isAgent: boolean;
-    showInputModalities?: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
@@ -57,7 +55,7 @@ export function ModelListingFields({
 
     return (
         <>
-            {showInputModalities && (
+            {!isAgent && (
                 <FieldStack
                     label="Accepted inputs"
                     helper="Select every input type supported by this model. At least one is required."

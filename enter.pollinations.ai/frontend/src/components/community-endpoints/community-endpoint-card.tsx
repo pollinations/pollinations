@@ -64,7 +64,7 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.listingType === "agent" && (
+                        {endpoint.agentId && (
                             <Chip intent="news" size="sm">
                                 Agent
                             </Chip>
@@ -92,16 +92,8 @@ export function CommunityEndpointCard({
                     </Button>
                     <IconButton
                         intent="info"
-                        title={
-                            endpoint.listingType === "agent"
-                                ? "Edit agent"
-                                : "Edit model"
-                        }
-                        tooltip={
-                            endpoint.listingType === "agent"
-                                ? "Edit agent"
-                                : "Edit model"
-                        }
+                        title={endpoint.agentId ? "Edit agent" : "Edit model"}
+                        tooltip={endpoint.agentId ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -109,8 +101,8 @@ export function CommunityEndpointCard({
                     </IconButton>
                     <IconButton
                         intent="danger"
-                        title={`Delete ${endpoint.listingType}`}
-                        tooltip={`Delete ${endpoint.listingType}`}
+                        title="Delete model"
+                        tooltip="Delete model"
                         tooltipAlign="center"
                         onClick={onDelete}
                     >

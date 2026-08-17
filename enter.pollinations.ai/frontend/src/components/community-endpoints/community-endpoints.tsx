@@ -44,6 +44,9 @@ type CommunityEndpointsProps = {
     fallbackOptions: FallbackModelOption[];
 };
 
+const PUBLISHER_ACCESS_REQUEST_URL =
+    "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml";
+
 export function CommunityEndpoints({
     onChange,
     canPublish,
@@ -288,22 +291,21 @@ export function CommunityEndpoints({
         }
     }
 
+    const publisherAccessRequestLink = (
+        <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL} showIcon={false}>
+            publisher access request
+        </InlineLink>
+    );
+
     const privateModelGuidance = (
         <>
             Private models are callable only by you and shown only when{" "}
             <strong>/models</strong> is authenticated with your API key. App
             models add every API key issued through one of your apps, with your
             own pricing, and need no approval. Only public listing is
-            allowlist-only. To request publishing access for your account,
-            submit a{" "}
-            <InlineLink
-                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
-                showIcon={false}
-            >
-                community model publisher allowlist request
-            </InlineLink>{" "}
-            form. You can register and test private and app models without
-            approval. For questions, ask in{" "}
+            allowlist-only. To request publishing access for models, agents, or
+            both, submit a {publisherAccessRequestLink}. You can register and
+            test private and app models without approval. For questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 showIcon={false}
@@ -448,6 +450,17 @@ export function CommunityEndpoints({
                             agentEndpoints.map(renderEndpointCard)
                         )}
                     </div>
+                    {!isLoading && !canPublish && (
+                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Private agents do not need approval. To publish
+                                agents for everyone in <strong>/models</strong>,
+                                submit a {publisherAccessRequestLink} for agents
+                                or both.
+                            </span>
+                        </p>
+                    )}
                 </Section>
 
                 <Section

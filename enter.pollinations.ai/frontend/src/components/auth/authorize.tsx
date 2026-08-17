@@ -36,6 +36,7 @@ import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -112,7 +113,10 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    const modelCategories = useModelCategories();
+    // The minted key is the signed-in user's, so it reaches their own private
+    // models just as their dashboard keys do — but the anonymous catalog omits
+    // them, so the consent screen has to learn them separately.
+    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,

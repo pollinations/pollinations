@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
     type CreateChatCompletionRequest,
     type CreateChatCompletionResponse,
@@ -35,13 +34,11 @@ export const textBodyLimit = bodyLimit({
 });
 
 export const simpleAudioQuerySchema = z.object({
-    voice: z
-        .enum(AUDIO_VOICES as unknown as [string, ...string[]])
-        .default("alloy")
-        .meta({
-            description: "Voice to use for speech generation (TTS only)",
-            example: "nova",
-        }),
+    voice: z.string().min(1).default("alloy").meta({
+        description:
+            "Voice preset or custom provider voice ID. Dialogue voices come from labels in the text.",
+        example: "nova",
+    }),
     response_format: z
         .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
         .default("mp3")
@@ -52,7 +49,7 @@ export const simpleAudioQuerySchema = z.object({
         }),
     model: z.string().optional().meta({
         description:
-            "Audio model: TTS (default) or a music-generation model such as lyria-3-clip",
+            "Audio model for speech, dialogue, music, or sound-effect generation",
         example: "tts-1",
     }),
     duration: z
@@ -120,6 +117,8 @@ export const simpleAudioQuerySchema = z.object({
     }),
     safe: SafeSchema,
 });
+
+export type SimpleAudioQuery = z.infer<typeof simpleAudioQuerySchema>;
 
 export async function generateImageVideo(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };

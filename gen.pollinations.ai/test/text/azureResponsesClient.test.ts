@@ -207,7 +207,10 @@ describe("callAzureResponses", () => {
                 },
             ],
         });
-        expect(bodies[1].reasoning).toEqual({ effort: "none" });
+        expect(bodies[1].reasoning).toEqual({
+            effort: "none",
+            summary: "auto",
+        });
     });
 
     it("maps output, tool calls, finish reason, and every billable usage field", async () => {

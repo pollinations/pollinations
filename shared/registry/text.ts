@@ -1848,6 +1848,30 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "qwen3.8-2.4t-a95b": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-08-14").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 2.4T A95B",
+        description:
+            "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "qwen3.8-max": {
         aliases: [],
         provider: "openrouter",

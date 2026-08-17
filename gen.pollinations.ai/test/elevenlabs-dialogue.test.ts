@@ -101,8 +101,24 @@ describe("ElevenLabs Text to Dialogue", () => {
     });
 });
 
+workerTest("advertises the simple route for every speech model", async () => {
+    const response = await fetchGen("https://gen.pollinations.ai/v1/models");
+    expect(response.status).toBe(200);
+
+    const models = (await response.json()) as {
+        data: { supported_endpoints?: string[] }[];
+    };
+    const speechModels = models.data.filter((model) =>
+        model.supported_endpoints?.includes("/v1/audio/speech"),
+    );
+    expect(speechModels.length).toBeGreaterThan(0);
+    for (const model of speechModels) {
+        expect(model.supported_endpoints).toContain("/audio/{text}");
+    }
+});
+
 workerTest(
-    "translates labelled speech input into ElevenLabs dialogue turns",
+    "translates labelled input through both speech routes",
     async ({ paidApiKey }) => {
         const realFetch = globalThis.fetch.bind(globalThis);
         const fetchMock = vi
@@ -129,8 +145,9 @@ workerTest(
                 }
                 return realFetch(input, init);
             });
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
+
+        const dialogue = "nova: Hello.\ngeorge: Hi!";
+        const requests = [
             new Request("https://gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
                 headers: {
@@ -139,44 +156,60 @@ workerTest(
                 },
                 body: JSON.stringify({
                     model: "eleven-dialogue",
-                    input: "nova: Hello.\ngeorge: Hi!",
+                    input: dialogue,
                     voice: "alloy",
                     response_format: "mp3",
                     seed: 42,
                     safe: false,
                 }),
             }),
-            withInlineGenerationCoordinator({
-                ...env,
-                ELEVENLABS_API_KEY: "test-eleven-key",
-            } as unknown as CloudflareBindings),
-            ctx,
-        );
-
-        expect(response.status).toBe(200);
-        const dialogueCall = fetchMock.mock.calls.find(([input]) =>
-            String(input).startsWith(
-                "https://api.elevenlabs.io/v1/text-to-dialogue",
+            new Request(
+                `https://gen.pollinations.ai/audio/${encodeURIComponent(dialogue)}?model=dialogue&response_format=mp3&seed=42&safe=false`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
             ),
-        );
-        expect(dialogueCall).toBeDefined();
-        const upstreamRequest = new Request(
-            dialogueCall?.[0] as RequestInfo,
-            dialogueCall?.[1],
-        );
-        await expect(upstreamRequest.json()).resolves.toEqual({
-            inputs: [
-                { text: "Hello.", voice_id: "MF3mGyEYCl7XYWbV9V6O" },
-                { text: "Hi!", voice_id: "JBFqnCBsd6RMkjVDRZzb" },
-            ],
-            model_id: "eleven_v3",
-            seed: 42,
-        });
-        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "9",
-        );
-        expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
-        await waitOnExecutionContext(ctx);
+        ];
+
+        for (const request of requests) {
+            const previousCallCount = fetchMock.mock.calls.length;
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                request,
+                withInlineGenerationCoordinator({
+                    ...env,
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings),
+                ctx,
+            );
+
+            expect(response.status).toBe(200);
+            const dialogueCall = fetchMock.mock.calls
+                .slice(previousCallCount)
+                .find(([input]) =>
+                    String(input).startsWith(
+                        "https://api.elevenlabs.io/v1/text-to-dialogue",
+                    ),
+                );
+            expect(dialogueCall).toBeDefined();
+            const upstreamRequest = new Request(
+                dialogueCall?.[0] as RequestInfo,
+                dialogueCall?.[1],
+            );
+            await expect(upstreamRequest.json()).resolves.toEqual({
+                inputs: [
+                    { text: "Hello.", voice_id: "MF3mGyEYCl7XYWbV9V6O" },
+                    { text: "Hi!", voice_id: "JBFqnCBsd6RMkjVDRZzb" },
+                ],
+                model_id: "eleven_v3",
+                seed: 42,
+            });
+            expect(
+                response.headers.get("x-usage-completion-audio-tokens"),
+            ).toBe("9");
+            expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(
+                0,
+            );
+            await waitOnExecutionContext(ctx);
+        }
     },
 );
 

@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
+import { useModelCategories } from "../models/use-model-categories.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
@@ -60,6 +61,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setExpiryDays,
         setAccountPermissions,
     } = value;
+    const modelCategories = useModelCategories();
 
     return (
         <div className="space-y-6">
@@ -84,6 +86,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 allowedModels={permissions.allowedModels}
                 onModelsChange={setAllowedModels}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
+                modelCategories={modelCategories}
             />
         </div>
     );

@@ -137,6 +137,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-2.4t-a95b",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

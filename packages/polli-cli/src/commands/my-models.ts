@@ -21,7 +21,6 @@ const PRICE_FLAGS = [
         "Completion reasoning token price",
     ],
     ["--completion-audio-price <number>", "Completion audio token price"],
-    ["--completion-image-price <number>", "Price per generated image"],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -33,7 +32,6 @@ const PRICE_OPTION_KEYS = [
     "completionTextPrice",
     "completionReasoningPrice",
     "completionAudioPrice",
-    "completionImagePrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -44,9 +42,6 @@ interface MyModel {
     name: string;
     title: string;
     description: string | null;
-    modality: "text" | "image";
-    imagePricing: "request" | "tokens";
-    inputModalities: string[];
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
@@ -78,10 +73,7 @@ function readPriceOptions(opts: Record<string, unknown>) {
     return prices;
 }
 
-export function modelBody(
-    opts: Record<string, unknown>,
-    includeRequired: boolean,
-) {
+function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     const body: Record<string, unknown> = {
         ...readPriceOptions(opts),
     };
@@ -90,6 +82,7 @@ export function modelBody(
         ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -103,20 +96,6 @@ export function modelBody(
             fail("--visibility must be 'private' or 'public'");
         }
         body.visibility = opts.visibility;
-    }
-
-    if (opts.modality !== undefined) {
-        if (opts.modality !== "text" && opts.modality !== "image") {
-            fail("--modality must be 'text' or 'image'");
-        }
-        body.modality = opts.modality;
-    }
-
-    if (opts.imagePricing !== undefined) {
-        if (opts.imagePricing !== "request" && opts.imagePricing !== "tokens") {
-            fail("--image-pricing must be 'request' or 'tokens'");
-        }
-        body.imagePricing = opts.imagePricing;
     }
 
     // An empty string clears the list, which is why this checks for the flag
@@ -136,12 +115,21 @@ export function modelBody(
     }
 
     if (includeRequired) {
-        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title"]) {
             if (!body[required]) {
                 fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
             }
+        }
+        const modeCount = [body.baseUrl, body.agentId].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            fail("Provide exactly one of --base-url or --agent-id");
+        }
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            fail("--bearer-token is required with --base-url");
         }
     }
 
@@ -158,10 +146,6 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
-            modality: model.modality,
-            image_pricing:
-                model.modality === "image" ? model.imagePricing : "-",
-            inputs: model.inputModalities?.join(", ") || "-",
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
@@ -172,9 +156,6 @@ function printModels(models: MyModel[]) {
             "id",
             "model",
             "title",
-            "modality",
-            "image_pricing",
-            "inputs",
             "visibility",
             "upstream",
             "base_url",
@@ -204,15 +185,10 @@ const create = addPriceOptions(
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
-        .option("--modality <type>", "Model modality: text or image", "text")
-        .option(
-            "--image-pricing <mode>",
-            "Image billing mode: request or tokens",
-            "request",
-        )
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
@@ -253,10 +229,6 @@ const update = addPriceOptions(
         .option("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
-        .option(
-            "--image-pricing <mode>",
-            "Image billing mode: request or tokens",
-        )
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
@@ -345,12 +317,8 @@ const test = new Command("test")
     .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
     .requiredOption("--model <model>", "Upstream model id")
-    .option("--modality <type>", "Model modality: text or image", "text")
     .action(async (opts) => {
         const key = requireKey();
-        if (opts.modality !== "text" && opts.modality !== "image") {
-            fail("--modality must be 'text' or 'image'");
-        }
         try {
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
@@ -361,7 +329,6 @@ const test = new Command("test")
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
                         model: opts.model,
-                        modality: opts.modality,
                     },
                 },
             );
@@ -372,7 +339,7 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community models")
+    .description("Manage private and published community text models")
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

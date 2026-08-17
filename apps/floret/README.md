@@ -29,6 +29,35 @@ docker run -p 8000:8000 --env-file .env floret
 
 The container needs no baked-in secrets. Hosted calls pass a short-lived agent run token via `Authorization: Bearer ag_…`; `OPENAI_API_KEY` is available only for local/dev use when `POLLI_ALLOW_OPERATOR_KEY=true`.
 
+## API
+
+```bash
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "floret",
+    "messages": [{"role": "user", "content": "Create a narrated launch concept"}],
+    "stream": true,
+    "routing": {
+      "text": "auto",
+      "web_search": "gemini-search",
+      "image_generation": "flux",
+      "image_editing": "nanobanana",
+      "video": "wan-fast",
+      "audio": "openai-audio"
+    }
+  }'
+```
+
+Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token; Floret's direct endpoint rejects user keys.
+
+- Every field is optional.
+- Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.
+- Explicit selections override any tool model proposed by the brain.
+- `audio` is TTS/audio generation, not transcription.
+- Invalid/incompatible IDs return 422 before work begins.
+
 ## Configuration
 
 See `.env.example`. Settings are read via `pydantic-settings`; most are `POLLI_`-prefixed (`POLLI_BRAIN_MODEL`, `POLLI_MAX_CONCURRENCY`, ...), while `OPENAI_API_KEY`/`OPENAI_BASE_URL` follow the OpenAI SDK's own convention.

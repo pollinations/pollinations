@@ -1,5 +1,6 @@
 import {
     BookIcon,
+    BugIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -23,7 +24,6 @@ import {
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 import type {
     ComponentType,
     CSSProperties,
@@ -39,6 +39,7 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
+import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -104,14 +105,14 @@ const brandLinks: readonly BrandLink[] = [
         label: "Pollinations on GitHub",
         icon: <GitHubIcon className="h-full w-full" />,
         text: "github",
-        count: "4.4k",
+        count: "5k",
     },
     {
         href: "https://discord.gg/pollinations-ai-885844321461485618",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
-        count: "18k",
+        count: "19k",
     },
 ];
 
@@ -123,16 +124,16 @@ const footerLinks: readonly FooterLink[] = [
 
 const accountMenuLinks: readonly AccountMenuLink[] = [
     {
-        href: "https://discord.com/channels/885844321461485618/1432378056126894343",
-        label: "#pollen-beta",
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Get Help",
         icon: <DiscordIcon className="h-full w-full" />,
-        ariaLabel: "#pollen-beta Discord channel",
+        ariaLabel: "Get help in the Discord community chat",
     },
     {
         href: "https://github.com/pollinations/pollinations/issues",
-        label: "Report an issue",
-        icon: <GitHubIcon className="h-full w-full" />,
-        ariaLabel: "Report an issue on GitHub",
+        label: "Report a Bug",
+        icon: <BugIcon className="h-full w-full" />,
+        ariaLabel: "Report a bug on GitHub",
     },
 ];
 
@@ -423,7 +424,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "quests" && (
+                        {item.id === "my-models" && (
                             <Chip
                                 intent="neutral"
                                 size="sm"

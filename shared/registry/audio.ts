@@ -217,7 +217,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/v1/audio/speech"],
     },
     "eleven-voice-changer": {
         aliases: ["voice-changer", "speech-to-speech"],

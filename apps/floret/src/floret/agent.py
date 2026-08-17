@@ -5,12 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from typing import Any
+from typing import Any, cast
 
 from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
+from floret.routing import RoutingPreferences
 from floret.toolset import TOOL_SCHEMAS, dispatch, parse_args
 
 logger = logging.getLogger(__name__)
@@ -51,19 +53,22 @@ async def run_agent_events(
     *,
     model: str | None = None,
     max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
 ):
     """Run the tool-calling loop, yielding progress events as they happen.
 
     Yields {"type": "tool_start", "name"} per tool call, then exactly one
     {"type": "final", "text", "artifacts", "iterations"}.
     """
-    model = model or settings.brain_model
+    routing = routing or RoutingPreferences()
+    model = routing.text or model or settings.brain_model
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
+    system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
-        {"role": "system", "content": build_system_prompt()},
+        {"role": "system", "content": system_prompt},
         *messages,
     ]
     artifacts: list[dict[str, Any]] = []
@@ -74,12 +79,12 @@ async def run_agent_events(
     for iteration in range(max_iters):
         completion = await client.chat.completions.create(
             model=model,
-            messages=convo,
-            tools=TOOL_SCHEMAS,
+            messages=cast(list[ChatCompletionMessageParam], convo),
+            tools=cast(list[ChatCompletionToolParam], TOOL_SCHEMAS),
             tool_choice="auto",
         )
         msg = completion.choices[0].message
-        tool_calls = msg.tool_calls or []
+        tool_calls = cast(list[Any], msg.tool_calls or [])
 
         # Record the assistant turn (with any tool_calls) verbatim.
         assistant_entry: dict[str, Any] = {
@@ -144,7 +149,7 @@ async def run_agent_events(
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                result = await dispatch(name, parse_args(raw_args))
+                result = await dispatch(name, parse_args(raw_args), routing)
             return call_id, result
 
         keys = ["{}:{}".format(*_tool_call_fields(tc)[1:]) for tc in tool_calls]
@@ -186,7 +191,10 @@ async def run_agent_events(
             "content": "Iteration limit reached. Write your final answer now using what you have.",
         }
     )
-    final = await client.chat.completions.create(model=model, messages=convo)
+    final = await client.chat.completions.create(
+        model=model,
+        messages=cast(list[ChatCompletionMessageParam], convo),
+    )
     yield {
         "type": "final",
         "text": final.choices[0].message.content or "",
@@ -200,12 +208,15 @@ async def run_agent(
     *,
     model: str | None = None,
     max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
 ) -> dict[str, Any]:
     """Run the tool-calling loop over `messages` (OpenAI chat format).
 
     Returns {"text", "artifacts", "iterations"}.
     """
-    async for event in run_agent_events(messages, model=model, max_iters=max_iters):
+    async for event in run_agent_events(
+        messages, model=model, max_iters=max_iters, routing=routing
+    ):
         if event["type"] == "final":
             return {
                 "text": event["text"],

@@ -25,6 +25,31 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways for developers to earn Pollen",
+        description:
+            "Earn Quest Pollen when people use your apps or through your GitHub history.",
+        details: [
+            "Earn 15 Pollen for your first external Paid Pollen request and 15 Pollen when your apps reach ten external users.",
+            "GitHub accounts that are at least two years old can earn 3 Pollen.",
+            "Visit the [Quests tab](/quests) to see the new rewards and upcoming quests.",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
+            "Create an agent from [My Agents & Models](/my-models).",
+        ],
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",

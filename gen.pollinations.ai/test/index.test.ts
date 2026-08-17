@@ -1110,7 +1110,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("csm-1b");
+        expect(response.headers.get("x-model-used")).toBe("sesame/csm-1b");
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "9",
         );

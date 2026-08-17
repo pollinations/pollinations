@@ -71,11 +71,11 @@ import {
 } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import worker from "./index.ts";
+import { resolveModelDefinition } from "./middleware/model.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "./model-registry.ts";
-import { resolveModelDefinition } from "./middleware/model.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);

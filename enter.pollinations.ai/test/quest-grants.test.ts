@@ -42,6 +42,7 @@ test("admin grant records one claimable reward per user and campaign", async ({
     expect(grant.status).toBe(200);
     expect(await grant.json()).toEqual({
         campaignId: request.campaignId,
+        balanceBucket: "tier",
         matched: 1,
         recorded: 1,
         missing: ["missing-user"],
@@ -87,6 +88,68 @@ test("admin grant records one claimable reward per user and campaign", async ({
             },
         ],
     });
+});
+
+test("a pack grant credits paid pollen when claimed", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const [user] = await db
+        .select({
+            id: schema.user.id,
+            githubUsername: schema.user.githubUsername,
+            packBalance: schema.user.packBalance,
+        })
+        .from(schema.user)
+        .limit(1);
+
+    const grant = await SELF.fetch(`${baseUrl}/admin/quest-grants`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            campaignId: "paid-bonus-2026-08",
+            title: "Paid pollen bonus",
+            pollenAmount: 5,
+            balanceBucket: "pack",
+            githubUsernames: [user?.githubUsername ?? ""],
+        }),
+    });
+    expect(grant.status).toBe(200);
+    expect(await grant.json()).toMatchObject({
+        balanceBucket: "pack",
+        recorded: 1,
+    });
+
+    const [reward] = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "grant:paid-bonus-2026-08"));
+    expect(reward).toMatchObject({ balanceBucket: "pack", claimedAt: null });
+
+    const claim = await SELF.fetch(
+        `${baseUrl}/quests/rewards/${reward?.id}/claim`,
+        {
+            method: "POST",
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
+    expect(claim.status).toBe(200);
+    expect(await claim.json()).toMatchObject({
+        claimed: true,
+        newBalance: (user?.packBalance ?? 0) + 5,
+    });
+
+    const [credited] = await db
+        .select({
+            tierBalance: schema.user.tierBalance,
+            packBalance: schema.user.packBalance,
+        })
+        .from(schema.user)
+        .where(eq(schema.user.id, user?.id ?? ""));
+    expect(credited?.packBalance).toBe((user?.packBalance ?? 0) + 5);
 });
 
 test("admin grant rejects requests without the admin token", async () => {

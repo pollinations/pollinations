@@ -499,9 +499,10 @@ export const Models: FC = () => {
                                     <strong>Tools</strong>
                                 </span>{" "}
                                 capability can also call Pollinations models
-                                through the built-in MCP connection. Each
-                                generation is billed separately at the selected
-                                model&apos;s listed rate.
+                                through the built-in MCP connection. Each tool
+                                call is billed separately at the selected
+                                model&apos;s listed rate, and one agent request
+                                may make multiple tool calls.
                             </span>
                         </p>
                     )}

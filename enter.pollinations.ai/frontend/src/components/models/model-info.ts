@@ -81,13 +81,18 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
     return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
 };
 
-export type DisplayCapability = "reasoning" | "web_search" | "code_execution";
+export type DisplayCapability =
+    | "agent"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
 
 export const getModelCapabilities = (
     model: ModelPrice,
 ): DisplayCapability[] => {
     const keys: DisplayCapability[] = [];
 
+    if (model.agent) keys.push("agent");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
@@ -98,6 +103,7 @@ export const getModelCapabilities = (
 export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
+    if (model.agent) labels.push("Agent");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");

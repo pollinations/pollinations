@@ -6,6 +6,7 @@ import {
     cn,
     Dropdown,
     DropdownItem,
+    McpIcon,
     SearchIcon,
     Tooltip,
 } from "@pollinations/ui";
@@ -381,12 +382,55 @@ const PricingAdjustmentRows: FC<{
         );
     });
 
+const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
+    <div
+        className={cn(
+            "grid items-center gap-x-1.5 py-0.5",
+            align === "left"
+                ? "grid-cols-[6.5rem_9ch_max-content]"
+                : "grid-cols-[1fr_6.5rem_9ch_max-content]",
+        )}
+    >
+        {align === "right" && <span aria-hidden="true" />}
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span className="flex max-w-xs flex-col gap-0.5 text-left">
+                    <strong className="font-semibold text-theme-text-strong">
+                        Pollinations tools
+                    </strong>
+                    <span className="text-theme-text-muted">
+                        This agent can call Pollinations models through MCP.
+                        Each tool call is billed separately at the selected
+                        model&apos;s listed rate. One agent request may make
+                        multiple tool calls.
+                    </span>
+                </span>
+            }
+            ariaLabel="Pollinations tools. Usage-based. Each tool call is billed separately at the selected model's listed rate."
+            tapEnabled
+            displayContents
+        >
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
+                <McpIcon className="h-3.5 w-3.5 shrink-0" />
+                Tools
+            </span>
+        </Tooltip>
+        <span className="col-span-2 whitespace-nowrap text-xs font-normal text-theme-text-muted">
+            Usage-based
+        </span>
+    </div>
+);
+
 export const ModelPricingLedger: FC<{
     pricing: ModelPricingSelection;
     className?: string;
     align?: "left" | "right";
-}> = ({ pricing, className, align = "right" }) => {
-    if (!pricing.prices.length && !pricing.adjustments.length) return null;
+    hasTools?: boolean;
+}> = ({ pricing, className, align = "right", hasTools = false }) => {
+    if (!pricing.prices.length && !pricing.adjustments.length && !hasTools) {
+        return null;
+    }
 
     const cachedBasePrice = pricing.prices.find(
         (price) =>
@@ -586,6 +630,7 @@ export const ModelPricingLedger: FC<{
                     {renderRateRows(outputRateRows)}
                 </div>
             )}
+            {hasTools && <ToolsPricingRow align={align} />}
             {requestBasedAdjustments.length > 0 && (
                 <div className="mt-1 border-t border-dashed border-divider pt-1">
                     <PricingAdjustmentRows

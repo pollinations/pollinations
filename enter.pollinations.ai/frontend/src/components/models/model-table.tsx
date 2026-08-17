@@ -31,7 +31,6 @@ import {
     ModelId,
     ModelRow,
     PerPollenEstimate,
-    PollinationsToolsCapability,
 } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
 import {
@@ -277,7 +276,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             capabilities={capabilities}
                             modalityLabel={modalityLabel}
                             capabilityLabel={capabilityLabel}
-                            pollinationsTools={pollinationsTools}
                         />
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <PerPollenEstimate model={model} />
@@ -333,6 +331,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             pricing={pricing}
                             className="w-full"
                             align="left"
+                            hasTools={pollinationsTools}
                         />
                     </div>
                 </div>
@@ -346,7 +345,6 @@ type MobileMetadataBadgesProps = {
     capabilities: DisplayCapability[];
     modalityLabel: string;
     capabilityLabel: string;
-    pollinationsTools: boolean;
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
@@ -354,13 +352,8 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     capabilities,
     modalityLabel,
     capabilityLabel,
-    pollinationsTools,
 }) => {
-    if (
-        inputModalities.length === 0 &&
-        capabilities.length === 0 &&
-        !pollinationsTools
-    ) {
+    if (inputModalities.length === 0 && capabilities.length === 0) {
         return null;
     }
 
@@ -389,10 +382,9 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
-            {inputModalities.length > 0 &&
-                (capabilities.length > 0 || pollinationsTools) && (
-                    <span className="h-3.5 w-px bg-current opacity-30" />
-                )}
+            {inputModalities.length > 0 && capabilities.length > 0 && (
+                <span className="h-3.5 w-px bg-current opacity-30" />
+            )}
             {capabilities.length > 0 && (
                 <Tooltip
                     triggerAs="span"
@@ -413,7 +405,6 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
-            {pollinationsTools && <PollinationsToolsCapability />}
         </div>
     );
 };

@@ -40,6 +40,7 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
 
 /** Capability glyphs (reasoning/web search/code execution). */
 export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
+    agent: BotIcon,
     reasoning: ReasoningIcon,
     web_search: SearchIcon,
     code_execution: CodeIcon,

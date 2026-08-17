@@ -50,6 +50,9 @@ interface MyModel {
     modality: "text" | "image";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
+    // How a publisher confirms an image model registered as edit-capable:
+    // /account/my-models/test detects these from generation and edit probes.
+    inputModalities: string[];
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
@@ -81,7 +84,10 @@ function readPriceOptions(opts: Record<string, unknown>) {
     return prices;
 }
 
-function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
+export function modelBody(
+    opts: Record<string, unknown>,
+    includeRequired: boolean,
+) {
     const body: Record<string, unknown> = {
         ...readPriceOptions(opts),
     };
@@ -168,13 +174,14 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
-            modality: model.modality ?? "text",
-            image_pricing:
-                model.modality === "image" ? (model.imagePricing ?? "-") : "-",
+            modality: model.modality,
+            // Price and billing mode read as one unit, so they share a cell
+            // rather than widening an already wide table by two columns.
             image_price:
                 model.modality === "image"
-                    ? String(model.completionImagePrice)
+                    ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
                     : "-",
+            inputs: model.inputModalities?.join(", ") || "-",
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
@@ -186,8 +193,8 @@ function printModels(models: MyModel[]) {
             "model",
             "title",
             "modality",
-            "image_pricing",
             "image_price",
+            "inputs",
             "visibility",
             "upstream",
             "base_url",
@@ -281,6 +288,8 @@ const update = addPriceOptions(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
         )
+        // No --modality here on purpose: UpdateEndpointSchema has no modality
+        // field, so a registered model's family is fixed at creation.
         .option(
             "--image-pricing <mode>",
             "Image billing: request (per image) or tokens",
@@ -364,14 +373,14 @@ const test = new Command("test")
     .option("--modality <modality>", "Model family: text (default) or image")
     .action(async (opts) => {
         const key = requireKey();
+        if (
+            opts.modality !== undefined &&
+            opts.modality !== "text" &&
+            opts.modality !== "image"
+        ) {
+            fail("--modality must be 'text' or 'image'");
+        }
         try {
-            if (
-                opts.modality !== undefined &&
-                opts.modality !== "text" &&
-                opts.modality !== "image"
-            ) {
-                fail("--modality must be 'text' or 'image'");
-            }
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
                 {

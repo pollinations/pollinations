@@ -1,0 +1,37 @@
+{
+  "pr_number": 13484,
+  "title": "Add Meadows to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13484",
+  "merged_at": "2026-08-17T10:14:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Meadows](https://meadowy.roboticrobot.xyz) to chat\n- Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a\n\nFixes #13483",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A meadow for every model",
+    "blurb": "Meadows has joined the garden: one small playground for trying text, images, video, and audio without assembling a tool shed first. Polli approves of any place where curious people can poke several models at once.",
+    "summary": "Added Meadows to the app registry, providing a single Pollinations-powered playground where users can choose and test text, image, video, and audio models through chat.",
+    "impact": "Users can now open Meadows to compare and experiment with Pollinations models across all four media types from one simple interface.",
+    "keywords": [
+      "Meadows",
+      "playground",
+      "chat",
+      "text",
+      "images",
+      "video",
+      "audio"
+    ],
+    "visual_concept": "Depict Meadows as a cozy garden playground with four small retro stations for text chat, image pixels, a film reel/video screen, and audio waveforms. Polli, wearing tiny gardener headphones, warmly guides the monitor robot between the stations while code-plants and meadow flowers grow around the shared terminal, representing one place to explore every model type.",
+    "image_prompt": "A cozy pixel art meadow playground with four tiny retro terminals showing a chat bubble, a pixel landscape, a film reel, and gentle audio waveforms, all linked by blooming code-plants and prominently glowing lime green (#ecf874) garden paths. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny gardener headphones and helps a cute CRT-monitor robot explore the stations. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13484.jpg",
+    "prompt": "A cozy pixel art meadow playground with four tiny retro terminals showing a chat bubble, a pixel landscape, a film reel, and gentle audio waveforms, all linked by blooming code-plants and prominently glowing lime green (#ecf874) garden paths. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny gardener headphones and helps a cute CRT-monitor robot explore the stations. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-17T10:15:15.919943+00:00",
+  "app_name": "Meadows",
+  "app_url": "https://meadowy.roboticrobot.xyz"
+}

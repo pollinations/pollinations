@@ -18,14 +18,25 @@ describe("MIDIjourney agent registry", () => {
         expect(definition.cost).toBe(baseDefinition.cost);
         expect(definition.costVariants).toBe(baseDefinition.costVariants);
 
+        expect(definition).toMatchObject({
+            provider: "azure",
+            category: "text",
+            priceMultiplier: 0.5,
+            agent: true,
+            baseModel: "gpt-5.6-sol",
+        });
+        expect(definition.inputModalities).toBeUndefined();
+        expect(definition.outputModalities).toBeUndefined();
+        expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+
         expect(info).toMatchObject({
             name: "midijourney",
             aliases: [],
             brand: "Pollinations",
             agent: true,
             base_model: "gpt-5.6-sol",
-            capabilities: ["tool_calling", "reasoning"],
-            context_length: 1050000,
             pricing: {
                 currency: "pollen",
                 promptTextTokens: "0.0000025",
@@ -34,6 +45,8 @@ describe("MIDIjourney agent registry", () => {
                 completionTextTokens: "0.000015",
             },
         });
+        expect(info.capabilities).toEqual([]);
+        expect(info.context_length).toBeUndefined();
         expect(info.brand_url).toBeUndefined();
     });
 });

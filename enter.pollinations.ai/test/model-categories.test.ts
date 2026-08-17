@@ -128,7 +128,7 @@ describe("model categories", () => {
         });
         expect(validateModelSearch({ category: "agent" })).toEqual({
             scope: undefined,
-            category: undefined,
+            category: "agent",
             q: undefined,
             sort: undefined,
         });

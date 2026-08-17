@@ -1,0 +1,34 @@
+{
+  "pr_number": 13504,
+  "title": "fix: offer an account's own private models in the permission picker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13504",
+  "merged_at": "2026-08-17T18:52:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `useOwnCommunityModels`, so the key permission picker and the OAuth consent screen list the account's own non-public community models alongside the public catalog\n- `getVisibleModelIdsForUser` already lets a key call its owner's own models at any visibility; only the picker's *anonymous* catalog fetch hid them, so such a grant rendered as empty and was silently dropped on the next edit\n- Exposes `delegatesGeneration` on the community endpoint response as a derived flag (true for agents too), so clients read the answer rather than recombining `agentId` and the stored column\n- Split out of #13464 — no dependency on app visibility\n\nVerified: `biome check` clean, `tsc --noEmit` clean in enter + gen, enter model/community tests pass (18).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Private flowers stay picked",
+    "blurb": "Your own private community models now show up where permissions are granted, rather than quietly vanishing from the basket on the next edit. The hive can also ask whether a model delegates generation and receive a proper yes or no.",
+    "summary": "The key permission picker and OAuth consent screen now include an account's own non-public community models, preserving grants that were already valid but previously rendered empty and were dropped on later edits; the community endpoint now also returns a derived delegatesGeneration flag.",
+    "impact": "Creators can reliably grant API keys and OAuth apps access to their own private or otherwise non-public models, while clients can read delegatesGeneration directly instead of reconstructing it from agentId and stored fields.",
+    "keywords": [
+      "community-models",
+      "private-models",
+      "oauth",
+      "api-keys",
+      "permissions",
+      "delegatesGeneration"
+    ],
+    "visual_concept": "Depict Polli tending a cozy private garden behind a small picket gate, where labeled code-flowers represent an account's non-public community models being correctly added to a permission clipboard. A helpful CRT monitor robot can hold the clipboard and show a clear pixel checkmark for delegation, making the formerly hidden-but-authorized models visibly included.",
+    "image_prompt": "A cozy pixel art garden scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf while carefully placing private code-flowers from a little gated garden onto a glowing permission clipboard; a cute chunky CRT monitor robot beside her displays a pixel checkmark labeled \"DELEGATES\". Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel mint, lavender, peach, and warm cream gradient background, chunky retro sprites, warm lighting, subtle CRT glow, code-vines and flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13504.jpg",
+    "prompt": "A cozy pixel art garden scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf while carefully placing private code-flowers from a little gated garden onto a glowing permission clipboard; a cute chunky CRT monitor robot beside her displays a pixel checkmark labeled \"DELEGATES\". Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel mint, lavender, peach, and warm cream gradient background, chunky retro sprites, warm lighting, subtle CRT glow, code-vines and flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-17T18:53:26.417730+00:00"
+}

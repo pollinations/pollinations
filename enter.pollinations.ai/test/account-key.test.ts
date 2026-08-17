@@ -67,6 +67,7 @@ test(
         const runToken = await signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: parent?.apiKey.id as string,
+            parentRequestId: crypto.randomUUID(),
             runId: crypto.randomUUID(),
         });
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {

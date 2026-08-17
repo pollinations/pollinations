@@ -12,7 +12,7 @@ export type AgentRunClaims = {
     // The request_id of the call that minted this token, so its generations can
     // be grouped. Signed rather than sent as a header: headers are
     // client-settable and request_id is keyed on elsewhere (#12889).
-    parentRequestId?: string;
+    parentRequestId: string;
     runId: string;
     managedAgentId?: string;
     issuedAt: number;
@@ -28,7 +28,7 @@ function signingKey(secret: string): Uint8Array {
 export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
-    parentRequestId?: string;
+    parentRequestId: string;
     runId: string;
     managedAgentId?: string;
     expiresIn?: number;
@@ -42,9 +42,7 @@ export async function signAgentRunToken(opts: {
 
     const token = await new SignJWT({
         version: 1,
-        ...(opts.parentRequestId
-            ? { parentRequestId: opts.parentRequestId }
-            : {}),
+        parentRequestId: opts.parentRequestId,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
@@ -91,12 +89,11 @@ export async function verifyAgentRunToken(
         !payload.jti ||
         typeof payload.iat !== "number" ||
         typeof payload.exp !== "number" ||
+        typeof payload.parentRequestId !== "string" ||
+        !payload.parentRequestId ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
-                !payload.managedAgentId)) ||
-        (payload.parentRequestId !== undefined &&
-            (typeof payload.parentRequestId !== "string" ||
-                !payload.parentRequestId))
+                !payload.managedAgentId))
     ) {
         throw new Error("Invalid agent run token claims");
     }
@@ -104,9 +101,7 @@ export async function verifyAgentRunToken(
     return {
         parentApiKeyId: payload.sub,
         runId: payload.jti,
-        ...(typeof payload.parentRequestId === "string"
-            ? { parentRequestId: payload.parentRequestId }
-            : {}),
+        parentRequestId: payload.parentRequestId,
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),

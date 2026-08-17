@@ -47,6 +47,7 @@ async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId,
+        parentRequestId: crypto.randomUUID(),
         managedAgentId,
         runId: crypto.randomUUID(),
     });

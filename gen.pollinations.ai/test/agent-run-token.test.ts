@@ -63,6 +63,7 @@ async function runTokenFor(parentApiKeyId: string, managedAgentId?: string) {
     return signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId,
+        parentRequestId: crypto.randomUUID(),
         managedAgentId,
         runId: crypto.randomUUID(),
     });
@@ -122,29 +123,19 @@ test("preserves the managed agent scope", async () => {
     });
 });
 
-test("surfaces the parent request id, and stays valid without one", async () => {
+test("surfaces the parent request id", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
 
-    const tagged = await signAgentRunToken({
+    const token = await signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: parent.id,
         parentRequestId: "req-abc",
         runId: crypto.randomUUID(),
     });
-    const taggedBody = await (
-        await probe(authProbe, "https://gen.pollinations.ai/", tagged)
+    const body = await (
+        await probe(authProbe, "https://gen.pollinations.ai/", token)
     ).json();
-    expect(taggedBody).toMatchObject({
-        agentRun: { parentRequestId: "req-abc" },
-    });
-
-    // Tokens minted before this claim are still in flight at deploy (30 min
-    // TTL): they must keep authenticating, just untagged.
-    const untagged = await runTokenFor(parent.id);
-    const untaggedBody = (await (
-        await probe(authProbe, "https://gen.pollinations.ai/", untagged)
-    ).json()) as { agentRun: { parentRequestId?: string } };
-    expect(untaggedBody.agentRun.parentRequestId).toBeUndefined();
+    expect(body).toMatchObject({ agentRun: { parentRequestId: "req-abc" } });
 });
 
 test("agent run tokens can call community models but cannot recurse into agent models", async () => {
@@ -251,6 +242,7 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
     const token = await signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: "parent-key-id",
+        parentRequestId: "parent-request-id",
         runId: "run-id",
         expiresIn: 30,
         now: 1_000,
@@ -272,6 +264,7 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
         signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: "parent-key-id",
+            parentRequestId: "parent-request-id",
             runId: "run-id",
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),

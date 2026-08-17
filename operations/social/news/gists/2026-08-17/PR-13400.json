@@ -1,0 +1,33 @@
+{
+  "pr_number": 13400,
+  "title": "fix: add missing space between model name and description in toggle confirmation dialog",
+  "author": "MarcosFRG",
+  "url": "https://github.com/pollinations/pollinations/pull/13400",
+  "merged_at": "2026-08-17T23:57:19Z",
+  "labels": [],
+  "pr_body_excerpt": "## What\r\nFixes a missing space in the community endpoint toggle confirmation dialog where the model ID and the status description ran together (`modelId?It will…` → `modelId? It will…`).\r\n\r\n## Where\r\n`enter.pollinations.ai/frontend/src/components/community-endpoints/community-endpoint-toggle-confirmation.tsx`\r\n\r\n## How\r\nAdded `{\" \"}`.\r\n\r\n## Why\r\nPure rendering bug — the `?` literal was glued to the `{endpoint?.disabled` conditional expression with no whitespace, so the description text appeared immediately after the question mark with no separation.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A Little Room to Breathe",
+    "blurb": "The community model toggle dialog has regained one carefully cultivated pixel of whitespace. Questions and their explanations are on speaking terms again.",
+    "summary": "Fixed the community endpoint toggle confirmation dialog so a space appears between the model ID question mark and its enabled/disabled status description.",
+    "impact": "Users toggling community endpoints now see readable confirmation text such as `modelId? It will…` instead of the description running into the question mark.",
+    "keywords": [
+      "community-endpoints",
+      "frontend",
+      "ui",
+      "bug-fix",
+      "model-toggle"
+    ],
+    "visual_concept": "Depict Polli as a careful typesetter wearing tiny librarian glasses, placing a single glowing pixel-space between a model ID label and a speech bubble in a cozy terminal garden. A small code-plant and a confirmation dialog make the UI context clear; the visual metaphor is that one tiny space restores readability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, gently placing one glowing pixel of space between a retro confirmation dialog reading `model-id? It will...` and a lime green (#ecf874) terminal label. Code-plants bloom around the monitor in a warm cream, mint, and lavender garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13400.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, gently placing one glowing pixel of space between a retro confirmation dialog reading `model-id? It will...` and a lime green (#ecf874) terminal label. Code-plants bloom around the monitor in a warm cream, mint, and lavender garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-17T23:58:20.205672+00:00"
+}

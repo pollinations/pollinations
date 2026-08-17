@@ -163,6 +163,17 @@ polli my-models delete <id>
 ```
 `my-models` manages owned community text and image models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
 
+### Register an image my-model
+```bash
+polli my-models test --modality image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --model image-v1
+polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --input-modalities text,image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model image-v1
+```
+Test before creating. The probe reports the pricing mode it detected and the input modalities it found, including whether the endpoint accepts image edits; pass those back as `--input-modalities text,image` to advertise edit support. `polli my-models list` shows them in the `inputs` column.
+
+Two billing modes: `--image-pricing request` charges `--completion-image-price` per generated image, while `--image-pricing tokens` bills returned token usage per 1M through `--prompt-text-price`, `--prompt-image-price`, and `--completion-image-price`.
+
+`--modality` is fixed at creation — `update` cannot change it.
+
 ### Manage agents
 
 ```bash

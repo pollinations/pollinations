@@ -1,0 +1,34 @@
+{
+  "pr_number": 13508,
+  "title": "refactor: one key-type predicate for the list and the edit dialog",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13508",
+  "merged_at": "2026-08-17T20:44:25Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #13078, which extracted the publishable/app-key predicates into `key-type.ts` but only migrated the edit dialog — `api-key-list.tsx` kept its own copies, and the two disagreed on whitespace-only redirect URIs.\n\n- `api-key-list.tsx` imports the shared predicates instead of redeclaring them\n- The card's redirect-URI reader is the shared one too, so a non-string entry in `metadata.redirectUris` can no longer reach the UI as a rendered URI\n- `readInitialRedirectUris` → `readRedirectUris`; it is no longer specific to the dialog's initial state\n- Test file moves to `key-type.test.ts` and pins the frontend reader against `getRedirectUris` in `shared/auth/api-key-metadata.ts`, so the UI and the OAuth allowlist check cannot drift apart\n\n**No behaviour change for any key that can exist.** The old list predicate trimmed, `key-type.ts` does not — they only differ on a whitespace-only URI, which `validateRedirectUriFormat` (`shared/auth/api-key-creation.ts:70`) rejects at write time, so it is unreachable in stored metadata.\n\nTest: `cd enter.pollinations.ai && npx vitest run test/key-type.test.ts`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One key garden, one ruler",
+    "blurb": "The key list and edit dialog now consult the same little field guide. Redirect URIs get one shared reading, so the UI and OAuth gatekeeper keep growing in the same direction.",
+    "summary": "Consolidated publishable/app-key predicates and redirect-URI reading in the Enter frontend, with tests that pin the UI reader to shared/auth/api-key-metadata.ts getRedirectUris behavior.",
+    "impact": "API-key cards and the edit dialog now interpret redirect URI metadata consistently, including safely ignoring non-string entries before they can be rendered.",
+    "keywords": [
+      "api-keys",
+      "oauth",
+      "redirect-uris",
+      "frontend",
+      "validation",
+      "enter"
+    ],
+    "visual_concept": "Depict a cozy API-key garden where Polli uses one shared measuring ruler to inspect matching redirect-URI vines on an API-key card and an edit-dialog terminal, while a small CRT robot happily compares them against the same field guide. Use tidy labeled pathways to convey one canonical predicate and safe metadata handling.",
+    "image_prompt": "A cozy pixel-art garden workbench where Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, tiny smile, and rounded translucent light-blue wings, wears tiny librarian glasses and holds one ruler over matching redirect-URI vines growing from an API-key card and a retro edit-dialog monitor; a cheerful chunky CRT robot compares both to the same open field guide. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, code-flowers and tidy vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"ONE READER\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13508.jpg",
+    "prompt": "A cozy pixel-art garden workbench where Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, tiny smile, and rounded translucent light-blue wings, wears tiny librarian glasses and holds one ruler over matching redirect-URI vines growing from an API-key card and a retro edit-dialog monitor; a cheerful chunky CRT robot compares both to the same open field guide. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, code-flowers and tidy vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"ONE READER\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-17T20:45:39.889417+00:00"
+}

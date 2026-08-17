@@ -53,7 +53,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -2141,7 +2141,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "lets a non-allowlisted user register a private model but blocks publishing tools",
+    "lets a non-allowlisted user probe an upstream and register a private model but blocks publishing",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -2162,6 +2162,40 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        // The probes are open to every account, so they reach the upstream
+        // instead of being refused: stub it and assert on what comes back.
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === "https://api.example.com/v1/models") {
+                    return Response.json({
+                        data: [{ id: "gpt-4.1-mini" }, { id: "gpt-4o" }],
+                    });
+                }
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    return Response.json({
+                        id: "chatcmpl_probe",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "OK" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 1,
+                            total_tokens: 4,
+                        },
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
         for (const probe of [
             {
                 path: "models",
@@ -2193,8 +2227,18 @@ fixtureTest(
                     },
                 ),
             );
-            expect(probeResponse.status).toBe(403);
+            expect(probeResponse.status).toBe(200);
+            const probeBody = (await probeResponse.json()) as {
+                data?: string[];
+                ok?: boolean;
+            };
+            if (probe.path === "models") {
+                expect(probeBody.data).toEqual(["gpt-4.1-mini", "gpt-4o"]);
+            } else {
+                expect(probeBody.ok).toBe(true);
+            }
         }
+        vi.unstubAllGlobals();
 
         const directPublishResponse = await fetchEnterApi(
             enterApi,
@@ -3739,17 +3783,7 @@ fixtureTest(
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
-            pollinationsTools: true,
-            mcpServers: [
-                {
-                    name: "docs",
-                    url: "https://mcp.example.com/rpc",
-                    headers: {
-                        Authorization: "Bearer mcp-secret",
-                        "X-Team": "pollinations",
-                    },
-                },
-            ],
+            mcpServers: ["pollinations"],
         };
         const createAgentResponse = await fetchEnterApi(
             enterApi,
@@ -3768,45 +3802,23 @@ fixtureTest(
             id: string;
             systemPrompt: string;
             baseModel: string;
-            mcpServers: typeof promptAgent.mcpServers;
+            mcpServers: string[];
         };
         expect(agent).toMatchObject({
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
-            pollinationsTools: true,
-            mcpServers: [
-                {
-                    name: "docs",
-                    headers: {
-                        Authorization: null,
-                        "X-Team": null,
-                    },
-                },
-            ],
+            mcpServers: ["pollinations"],
         });
         expect(agent).not.toHaveProperty("apiKeyId");
         expect(agent).not.toHaveProperty("apiKeyCiphertext");
         expect(agent).not.toHaveProperty("bearerTokenCiphertext");
-        expect(agent).not.toHaveProperty("mcpHeadersCiphertext");
         expect(agent).not.toHaveProperty("baseUrl");
         const [storedAgent] = await db
             .select()
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
         expect(storedAgent.id).toBe(agent.id);
-        expect(storedAgent.config).not.toContain("mcp-secret");
-        expect(storedAgent.mcpHeadersCiphertext).not.toContain("mcp-secret");
-        await expect(
-            decryptSecret(
-                storedAgent.mcpHeadersCiphertext ?? "",
-                env.BETTER_AUTH_SECRET,
-            ).then(JSON.parse),
-        ).resolves.toEqual({
-            docs: {
-                Authorization: "Bearer mcp-secret",
-                "X-Team": "pollinations",
-            },
-        });
+        expect(JSON.parse(storedAgent.config)).toEqual(promptAgent);
         const partialUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -3833,15 +3845,6 @@ fixtureTest(
                 body: JSON.stringify({
                     ...promptAgent,
                     systemPrompt: "You are an editable SQL tutor.",
-                    mcpServers: [
-                        {
-                            ...promptAgent.mcpServers[0],
-                            headers: {
-                                Authorization: null,
-                                "X-Team": null,
-                            },
-                        },
-                    ],
                 }),
             }),
             enterEnv,
@@ -3850,119 +3853,15 @@ fixtureTest(
         await expect(updateAgentResponse.json()).resolves.toMatchObject({
             id: agent.id,
             systemPrompt: "You are an editable SQL tutor.",
-            pollinationsTools: true,
-            mcpServers: [
-                {
-                    name: "docs",
-                    url: "https://mcp.example.com/rpc",
-                    headers: {
-                        Authorization: null,
-                        "X-Team": null,
-                    },
-                },
-            ],
+            mcpServers: ["pollinations"],
         });
         const [agentAfterPromptUpdate] = await db
             .select()
             .from(agentTable)
             .where(eq(agentTable.id, agent.id));
-        await expect(
-            decryptSecret(
-                agentAfterPromptUpdate.mcpHeadersCiphertext ?? "",
-                env.BETTER_AUTH_SECRET,
-            ).then(JSON.parse),
-        ).resolves.toEqual({
-            docs: {
-                Authorization: "Bearer mcp-secret",
-                "X-Team": "pollinations",
-            },
-        });
-
-        const reuseHeadersAtNewUrlResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    systemPrompt: "You are an editable SQL tutor.",
-                    baseModel: promptAgent.baseModel,
-                    pollinationsTools: true,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://other.example.com/rpc",
-                            headers: { Authorization: null },
-                        },
-                    ],
-                }),
-            }),
-            enterEnv,
-        );
-        expect(reuseHeadersAtNewUrlResponse.status).toBe(200);
-        const [agentAfterUrlUpdate] = await db
-            .select()
-            .from(agentTable)
-            .where(eq(agentTable.id, agent.id));
-        await expect(
-            decryptSecret(
-                agentAfterUrlUpdate.mcpHeadersCiphertext ?? "",
-                env.BETTER_AUTH_SECRET,
-            ).then(JSON.parse),
-        ).resolves.toEqual({
-            docs: { Authorization: "Bearer mcp-secret" },
-        });
-
-        const updateHeadersResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    systemPrompt: "You are an editable SQL tutor.",
-                    baseModel: promptAgent.baseModel,
-                    pollinationsTools: true,
-                    mcpServers: [
-                        {
-                            name: "docs",
-                            url: "https://mcp.example.com/rpc",
-                            headers: {
-                                Authorization: null,
-                                "X-New": "new-secret",
-                            },
-                        },
-                    ],
-                }),
-            }),
-            enterEnv,
-        );
-        expect(updateHeadersResponse.status).toBe(200);
-        await expect(updateHeadersResponse.json()).resolves.toMatchObject({
-            mcpServers: [
-                {
-                    headers: { Authorization: null, "X-New": null },
-                },
-            ],
-        });
-        const [agentAfterHeaderUpdate] = await db
-            .select()
-            .from(agentTable)
-            .where(eq(agentTable.id, agent.id));
-        await expect(
-            decryptSecret(
-                agentAfterHeaderUpdate.mcpHeadersCiphertext ?? "",
-                env.BETTER_AUTH_SECRET,
-            ).then(JSON.parse),
-        ).resolves.toEqual({
-            docs: {
-                Authorization: "Bearer mcp-secret",
-                "X-New": "new-secret",
-            },
+        expect(JSON.parse(agentAfterPromptUpdate.config)).toEqual({
+            ...promptAgent,
+            systemPrompt: "You are an editable SQL tutor.",
         });
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -4097,7 +3996,7 @@ fixtureTest(
         if (!registryEntry) throw new Error("Agent listing was not registered");
         expect(registryEntry.agentConfig).toEqual({
             baseModel: promptAgent.baseModel,
-            pollinationsTools: true,
+            mcpServers: ["pollinations"],
         });
         expect(registryEntry.definition.cost).toMatchObject({
             promptTextTokens: 0,
@@ -4562,7 +4461,6 @@ fixtureTest(
                 kind: "prompt",
                 systemPrompt: "Use the available tools.",
                 baseModel: "openai",
-                pollinationsTools: false,
                 mcpServers: [],
             }),
             createdAt: new Date(),

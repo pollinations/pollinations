@@ -203,7 +203,6 @@ export const agent = sqliteTable("agent", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   config: text("config").notNull(),
-  mcpHeadersCiphertext: text("mcp_headers_ciphertext"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),

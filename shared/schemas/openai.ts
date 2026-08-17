@@ -558,9 +558,15 @@ const imageNField = z
     .optional()
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
-const imageSizeField = z.string().optional().default("1024x1024").meta({
+const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-});
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -664,7 +670,7 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
         resolution: imageResolutionField,
         safe: SafeSchema,

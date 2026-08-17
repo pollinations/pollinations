@@ -292,9 +292,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             for direct API requests. Use Pollinations Auth
                             (BYOP), where users sign in and spend their own
                             Pollen.{" "}
-                            <InlineLink
-                                href={genDocsUrl("#tag/bring-your-own-pollen")}
-                            >
+                            <InlineLink href={genDocsUrl("#tag/byop")}>
                                 Read the migration guide
                             </InlineLink>
                             .
@@ -385,11 +383,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/bring-your-own-pollen",
-                                    )}
-                                >
+                                <InlineLink href={genDocsUrl("#tag/byop")}>
                                     Read the guide
                                 </InlineLink>
                             </span>

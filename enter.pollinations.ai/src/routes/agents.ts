@@ -1,6 +1,5 @@
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -10,14 +9,9 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    McpServerResponseSchema,
-    type PromptAgentConfig,
-    type PromptAgentInput,
+    BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
-    type PromptAgentMcpHeaders,
-    PromptAgentSchema,
     parsePromptAgentConfig,
-    parsePromptAgentMcpHeaders,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
@@ -28,8 +22,7 @@ const AgentResponseSchema = z.object({
     id: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
-    pollinationsTools: z.boolean(),
-    mcpServers: z.array(McpServerResponseSchema),
+    mcpServers: z.array(BuiltinMcpServerIdSchema),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -47,93 +40,9 @@ function toResponse(row: AgentRow) {
     return {
         id: row.id,
         ...config,
-        mcpServers: config.mcpServers.map((server) => ({
-            name: server.name,
-            url: server.url,
-            headers: Object.fromEntries(
-                server.headers.map((name) => [name, null]),
-            ),
-        })),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
-}
-
-function savedHeaderValue(
-    headers: Record<string, string> | undefined,
-    name: string,
-): string | undefined {
-    const normalizedName = name.toLowerCase();
-    return Object.entries(headers ?? {}).find(
-        ([savedName]) => savedName.toLowerCase() === normalizedName,
-    )?.[1];
-}
-
-function resolveMcpServers(
-    servers: PromptAgentInput["mcpServers"],
-    currentServers: PromptAgentConfig["mcpServers"] = [],
-    currentHeaders: PromptAgentMcpHeaders = {},
-): {
-    mcpServers: PromptAgentConfig["mcpServers"];
-    mcpHeaders: PromptAgentMcpHeaders;
-} {
-    const mcpHeaders: PromptAgentMcpHeaders = {};
-    const mcpServers = servers.map((server, index) => {
-        const currentServer =
-            currentServers.find(
-                (candidate) => candidate.name === server.name,
-            ) ??
-            currentServers.find((candidate) => candidate.url === server.url) ??
-            currentServers[index];
-        const headers: Record<string, string> = {};
-        for (const [name, value] of Object.entries(server.headers)) {
-            const resolved =
-                value ??
-                savedHeaderValue(
-                    currentServer
-                        ? currentHeaders[currentServer.name]
-                        : undefined,
-                    name,
-                );
-            if (resolved === undefined) {
-                throw new HTTPException(400, {
-                    message: `MCP header "${name}" for server "${server.name}" needs a value`,
-                });
-            }
-            headers[name] = resolved;
-        }
-        if (Object.keys(headers).length > 0) {
-            mcpHeaders[server.name] = headers;
-        }
-        return {
-            name: server.name,
-            url: server.url,
-            headers: Object.keys(headers),
-        };
-    });
-    return { mcpServers, mcpHeaders };
-}
-
-async function encryptedMcpHeaders(
-    headers: PromptAgentMcpHeaders,
-    secret: string,
-): Promise<string | null> {
-    if (Object.keys(headers).length === 0) return null;
-    return encryptSecret(JSON.stringify(headers), secret);
-}
-
-async function storedMcpHeaders(
-    row: AgentRow,
-    secret: string,
-): Promise<PromptAgentMcpHeaders> {
-    if (!row.mcpHeadersCiphertext) return {};
-    const headers = parsePromptAgentMcpHeaders(
-        await decryptSecret(row.mcpHeadersCiphertext, secret),
-    );
-    if (!headers) {
-        throw new Error(`Agent ${row.id} has invalid MCP header credentials`);
-    }
-    return headers;
 }
 
 async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
@@ -220,7 +129,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create Agent",
             description:
-                "Create an editable prompt agent. MCP header values are encrypted and never returned. The agent can later be registered separately as a community model. API keys require `account:keys`.",
+                "Create an editable prompt agent with optional access to Pollinations tools. The agent can later be registered separately as a community model. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -242,20 +151,12 @@ export const agentsRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = crypto.randomUUID();
-            const { mcpServers, mcpHeaders } = resolveMcpServers(
-                input.mcpServers,
-            );
-            const config = PromptAgentSchema.parse({ ...input, mcpServers });
             const [row] = await db
                 .insert(schema.agent)
                 .values({
                     id,
                     ownerUserId: user.id,
-                    config: serializePromptAgentConfig(config),
-                    mcpHeadersCiphertext: await encryptedMcpHeaders(
-                        mcpHeaders,
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
+                    config: serializePromptAgentConfig(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -269,7 +170,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update Agent",
             description:
-                "Replace an agent configuration. Null MCP header values keep the saved value in the same server row. Omitted tools and servers are removed. Existing community model registration is unchanged. API keys require `account:keys`.",
+                "Replace an agent configuration. Existing community model registration is unchanged. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -292,34 +193,13 @@ export const agentsRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
-            const existing = await requireOwnedAgent(db, id, user.id);
-            const currentConfig = parsePromptAgentConfig(existing.config);
-            if (!currentConfig) {
-                throw new Error(
-                    `Agent ${existing.id} has invalid configuration`,
-                );
-            }
-            const resolvedMcp = resolveMcpServers(
-                input.mcpServers,
-                currentConfig.mcpServers,
-                await storedMcpHeaders(existing, c.env.BETTER_AUTH_SECRET),
-            );
-            const config = PromptAgentSchema.parse({
-                ...input,
-                mcpServers: resolvedMcp.mcpServers,
-            });
-            const serializedConfig = serializePromptAgentConfig(config);
-            const update: Partial<typeof schema.agent.$inferInsert> = {
-                config: serializedConfig,
-                mcpHeadersCiphertext: await encryptedMcpHeaders(
-                    resolvedMcp.mcpHeaders,
-                    c.env.BETTER_AUTH_SECRET,
-                ),
-                updatedAt: new Date(),
-            };
+            await requireOwnedAgent(db, id, user.id);
             const [row] = await db
                 .update(schema.agent)
-                .set(update)
+                .set({
+                    config: serializePromptAgentConfig(input),
+                    updatedAt: new Date(),
+                })
                 .where(
                     and(
                         eq(schema.agent.id, id),

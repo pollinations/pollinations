@@ -10,55 +10,29 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type McpHeaderRow = {
-    id: string;
-    name: string;
-    value: string;
-    saved: boolean;
-};
-
-export type McpServerRow = {
-    id: string;
-    name: string;
-    url: string;
-    headers: McpHeaderRow[];
-};
-
 export type ManagedAgent = {
     id: string;
     systemPrompt: string;
     baseModel: string;
-    pollinationsTools: boolean;
-    mcpServers: {
-        name: string;
-        url: string;
-        headers: Record<string, null>;
-    }[];
+    mcpServers: "pollinations"[];
     createdAt: string;
     updatedAt: string;
 };
 
 type AgentFields = Pick<
     ManagedAgent,
-    "systemPrompt" | "baseModel" | "pollinationsTools"
+    "systemPrompt" | "baseModel" | "mcpServers"
 >;
 
-export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
+export type AgentFormState = AgentFields;
 
-export type AgentPayload = AgentFields & {
-    mcpServers: {
-        name: string;
-        url: string;
-        headers: Record<string, string | null>;
-    }[];
-};
+export type AgentPayload = AgentFields;
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -212,7 +186,6 @@ export const emptyForm: EndpointFormState = {
 export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
-    pollinationsTools: false,
     mcpServers: [],
 };
 
@@ -399,90 +372,6 @@ export function observedUsageValue(
         : null;
 }
 
-// Mirrors the backend McpServerSchema name pattern (lowercase alphanumeric with
-// _ or -, max 40 chars) so client and server reject the same names.
-export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
-export const MCP_HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,128}$/;
-
-export function isValidMcpRow(row: McpServerRow): boolean {
-    const name = row.name.trim();
-    const url = row.url.trim();
-    const nonEmptyHeaders = row.headers.filter(
-        (header) => header.name.trim() || header.value,
-    );
-    if (!name && !url && nonEmptyHeaders.length === 0) return true;
-    try {
-        normalizeCommunityEndpointBaseUrl(url);
-    } catch {
-        return false;
-    }
-    if (!MCP_SERVER_NAME_PATTERN.test(name)) return false;
-
-    const headerNames = new Set<string>();
-    for (const header of nonEmptyHeaders) {
-        const headerName = header.name.trim();
-        if (
-            !MCP_HEADER_NAME_PATTERN.test(headerName) ||
-            (!header.saved && !header.value) ||
-            header.value.includes("\r") ||
-            header.value.includes("\n")
-        ) {
-            return false;
-        }
-        const normalized = headerName.toLowerCase();
-        if (headerNames.has(normalized)) return false;
-        headerNames.add(normalized);
-    }
-    return nonEmptyHeaders.length <= 16;
-}
-
-// Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
-// the backend McpServerSchema so the API rejects the same inputs.
-function mcpServersToPayload(rows: McpServerRow[]): AgentPayload["mcpServers"] {
-    const servers: AgentPayload["mcpServers"] = [];
-    for (const row of rows) {
-        const name = row.name.trim();
-        const url = row.url.trim();
-        if (!name && !url) continue;
-        if (!MCP_SERVER_NAME_PATTERN.test(name)) {
-            throw new Error(
-                `MCP server name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
-            );
-        }
-        if (!url) {
-            throw new Error(`MCP server "${name}" needs a URL`);
-        }
-        const headers: Record<string, string | null> = {};
-        for (const header of row.headers) {
-            const headerName = header.name.trim();
-            if (!headerName && !header.value) continue;
-            if (!MCP_HEADER_NAME_PATTERN.test(headerName)) {
-                throw new Error(
-                    `MCP server "${name}" has an invalid header name`,
-                );
-            }
-            if (!header.saved && !header.value) {
-                throw new Error(
-                    `MCP header "${headerName}" for server "${name}" needs a value`,
-                );
-            }
-            headers[headerName] = header.value || null;
-        }
-        try {
-            servers.push({
-                name,
-                url: normalizeCommunityEndpointBaseUrl(url),
-                headers,
-            });
-        } catch {
-            throw new Error(
-                `MCP server "${name}" must use HTTPS and target a public host`,
-            );
-        }
-    }
-    return servers;
-}
-
 export function toAgentPayload(form: AgentFormState): AgentPayload {
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
@@ -492,21 +381,10 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     if (!baseModel) {
         throw new Error("Base model is required for a prompt agent");
     }
-    const mcpServers = mcpServersToPayload(form.mcpServers);
-    const names = new Set(form.pollinationsTools ? ["pollinations"] : []);
-    for (const server of mcpServers) {
-        if (names.has(server.name)) {
-            throw new Error(
-                `MCP server name "${server.name}" is already in use`,
-            );
-        }
-        names.add(server.name);
-    }
     return {
         systemPrompt,
         baseModel,
-        pollinationsTools: form.pollinationsTools,
-        mcpServers,
+        mcpServers: form.mcpServers,
     };
 }
 

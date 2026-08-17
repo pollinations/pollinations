@@ -1,0 +1,33 @@
+{
+  "pr_number": 13505,
+  "title": "docs(polli-cli): note that prices only apply to public models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13505",
+  "merged_at": "2026-08-17T21:54:07Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #13386.\n\nThe image-model example documents `--completion-image-price 0.01` on a `create` that defaults to `--visibility private`. On that path `community-endpoints.ts` replaces every price with `communityEndpointPrices({})` — all zeros — so anyone copying the example gets a silently free model.\n\n- Adds one line stating prices only apply to public models, and that making a published model private clears them again.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Prices need daylight",
+    "blurb": "A small note now keeps model prices from wandering into the private garden, where they politely become zero. Copy-paste economics, clarified.",
+    "summary": "Updated the polli-cli image-model creation example to state that --completion-image-price 0.01 applies only to public models, while private visibility resets published-model prices to zero.",
+    "impact": "Developers configuring image models can now see that pricing requires public visibility and avoid expecting private models to retain completion prices.",
+    "keywords": [
+      "polli-cli",
+      "documentation",
+      "image-models",
+      "pricing",
+      "visibility"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper with a tiny accountant visor, placing a price-tag flower into a sunny public-model garden while a shaded private pot has a clear zero-price label; code-plants and a small CLI terminal establish the developer context.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, tending two code-plants beside a retro CLI terminal: a sunny public garden has a \"0.01\" pixel price-tag flower, while a shaded private pot shows \"0\". Prominent lime green (#ecf874) foliage with warm cream, mint, and lavender pastel gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font text reads \"PUBLIC PRICES\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13505.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, tending two code-plants beside a retro CLI terminal: a sunny public garden has a \"0.01\" pixel price-tag flower, while a shaded private pot shows \"0\". Prominent lime green (#ecf874) foliage with warm cream, mint, and lavender pastel gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font text reads \"PUBLIC PRICES\"."
+  },
+  "generated_at": "2026-08-17T21:55:22.239695+00:00"
+}

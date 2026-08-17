@@ -20,6 +20,7 @@ import {
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
+    isFreeCommunityEndpoint,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
@@ -1296,6 +1297,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         prices: effectivePrices,
                     },
                 );
+            }
+            if (
+                endpoint.delegatesGeneration &&
+                !isFreeCommunityEndpoint(effectivePrices)
+            ) {
+                throw new HTTPException(400, {
+                    message: "Delegating endpoint listings must be free",
+                });
+            }
+            const effectiveFallbackModelIds =
+                input.fallbackModelIds !== undefined
+                    ? (update.fallbackModelIds ?? [])
+                    : (endpoint.fallbackModelIds ?? []);
+            if (
+                endpoint.delegatesGeneration &&
+                effectiveFallbackModelIds.length > 0
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Delegating endpoint listings do not support fallback models",
+                });
             }
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price

@@ -2364,6 +2364,101 @@ fixtureTest(
 );
 
 fixtureTest(
+    "keeps delegating endpoint listings free and without fallbacks on update",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const endpointId = `endpoint-${crypto.randomUUID()}`;
+        const fallbackName = `fallback-${crypto.randomUUID().slice(0, 8)}`;
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_saved_token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await db.insert(communityEndpointTable).values([
+            {
+                id: endpointId,
+                ownerUserId,
+                visibility: "public",
+                name: `delegating-${crypto.randomUUID().slice(0, 8)}`,
+                baseUrl: "https://agent.example.com/v1",
+                upstreamModel: "agent",
+                bearerTokenCiphertext,
+                delegatesGeneration: true,
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: fallbackName,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "fallback",
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const update = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${endpointId}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: cookie,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        const unrelatedUpdate = await update({ description: "Still priced" });
+        expect(unrelatedUpdate.status).toBe(400);
+        expect(await unrelatedUpdate.text()).toContain(
+            "Delegating endpoint listings must be free",
+        );
+
+        const repair = await update({
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
+        expect(repair.status).toBe(200);
+
+        const fallbackUpdate = await update({
+            fallbackModelIds: [
+                communityModelId(ownerGithubUsername, fallbackName),
+            ],
+        });
+        expect(fallbackUpdate.status).toBe(400);
+        expect(await fallbackUpdate.text()).toContain(
+            "Delegating endpoint listings do not support fallback models",
+        );
+    },
+);
+
+fixtureTest(
     "registers a Pollinations-compatible endpoint through Enter API and uses it through gen",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

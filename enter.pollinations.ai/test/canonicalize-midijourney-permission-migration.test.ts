@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import migrationSql from "../drizzle/0050_canonicalize_midijourney_permission.sql?raw";
 
 describe("canonicalize MIDIjourney permission migration", () => {
-    it("replaces the alias, preserves other data, and is idempotent", async () => {
+    it("adds the canonical ID, preserves existing values, and is idempotent", async () => {
         await env.DB.prepare(`
             CREATE TABLE midijourney_permission_apikey (
                 id TEXT PRIMARY KEY,
@@ -38,6 +38,12 @@ describe("canonicalize MIDIjourney permission migration", () => {
             `),
             env.DB.prepare(`
                 INSERT INTO midijourney_permission_apikey VALUES
+                    ('unrelated-duplicates', json_object(
+                        'models', json_array('midijourney-large', 'flux', 'flux')
+                    ))
+            `),
+            env.DB.prepare(`
+                INSERT INTO midijourney_permission_apikey VALUES
                     ('unrelated', json_object('models', json_array('flux')))
             `),
             env.DB.prepare(`
@@ -56,7 +62,13 @@ describe("canonicalize MIDIjourney permission migration", () => {
         const rows = await env.DB.prepare(`
             SELECT id, permissions
             FROM midijourney_permission_apikey
-            WHERE id IN ('alias-only', 'duplicate', 'unrelated', 'invalid')
+            WHERE id IN (
+                'alias-only',
+                'duplicate',
+                'unrelated-duplicates',
+                'unrelated',
+                'invalid'
+            )
             ORDER BY id
         `).all<{ id: string; permissions: string }>();
         const permissions = Object.fromEntries(
@@ -64,11 +76,14 @@ describe("canonicalize MIDIjourney permission migration", () => {
         );
 
         expect(JSON.parse(permissions["alias-only"])).toEqual({
-            models: ["midijourney", "flux"],
+            models: ["midijourney-large", "midijourney", "flux"],
             note: "keep",
         });
         expect(JSON.parse(permissions.duplicate)).toEqual({
-            models: ["midijourney", "openai"],
+            models: ["midijourney", "midijourney-large", "openai"],
+        });
+        expect(JSON.parse(permissions["unrelated-duplicates"])).toEqual({
+            models: ["midijourney-large", "midijourney", "flux", "flux"],
         });
         expect(JSON.parse(permissions.unrelated)).toEqual({ models: ["flux"] });
         expect(permissions.invalid).toBe('{"models":["midijourney-large"]');

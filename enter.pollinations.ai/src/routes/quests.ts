@@ -36,6 +36,12 @@ const questCatalogItemSchema = z.object({
     state: z.enum(["available", "completed", "coming_soon"]),
     rewardAmount: z.number(),
     balanceBucket: z.enum(["tier", "pack"]),
+    goal: z
+        .object({
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        })
+        .optional(),
     url: z.string().nullable(),
 });
 
@@ -62,6 +68,14 @@ const questCheckResponseSchema = z.object({
     success: z.boolean(),
     recorded: z.number(),
     rewardIds: z.array(z.string()),
+    progress: z.array(
+        z.object({
+            questId: z.string(),
+            current: z.number(),
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        }),
+    ),
 });
 
 const claimRewardResponseSchema = z.object({

@@ -4,10 +4,11 @@ import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
+    toQuestProgress,
 } from "../types.ts";
 
 const log = getLogger(["enter", "quests", "app-growth"]);
@@ -57,7 +58,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const tenAppUsersQuest: QuestDefinition = {
+const tenAppUsersQuest = {
     id: "app_users_10",
     title: "Your app is gaining users",
     description:
@@ -66,7 +67,8 @@ const tenAppUsersQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 15,
     balanceBucket: "tier",
-};
+    goal: { target: 10, unit: "users" },
+} satisfies QuestDefinition;
 
 const tenPollenAppUsageQuest: QuestDefinition = {
     id: "app_pollen_10",
@@ -106,10 +108,10 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
         rewardableQuests(QUESTS).map((quest) => quest.id),
     );
@@ -120,7 +122,7 @@ export async function findRewardProposalsForUser(
                 userId: user.id,
             },
         );
-        return [];
+        return { proposals: [] };
     }
 
     const usageQuestIds = [
@@ -152,7 +154,7 @@ export async function findRewardProposalsForUser(
             ? [{ quest: firstPaidSpendInAppQuest, userId: user.id }]
             : []),
         ...(appReach &&
-        appReach.externalUsers >= 10 &&
+        appReach.externalUsers >= tenAppUsersQuest.goal.target &&
         rewardableQuestIds.has(tenAppUsersQuest.id)
             ? [{ quest: tenAppUsersQuest, userId: user.id }]
             : []),
@@ -178,7 +180,12 @@ export async function findRewardProposalsForUser(
             questIds: proposals.map((p) => p.quest.id),
         },
     );
-    return proposals;
+    return {
+        proposals,
+        progress: [
+            toQuestProgress(tenAppUsersQuest, appReach?.externalUsers ?? 0),
+        ],
+    };
 }
 
 async function loadAppUsage(

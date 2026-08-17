@@ -304,8 +304,9 @@ export function CommunityEndpoints({
             models add every API key issued through one of your apps, with your
             own pricing, and need no approval. Only public listing is
             allowlist-only. To request publishing access for models, agents, or
-            both, submit a {publisherAccessRequestLink}. You can register and
-            test private and app models without approval. For questions, ask in{" "}
+            both, submit a {publisherAccessRequestLink}. You can register,
+            probe, and test private and app models without approval. For
+            questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 showIcon={false}

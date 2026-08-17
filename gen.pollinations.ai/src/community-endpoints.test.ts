@@ -75,6 +75,7 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "./model-registry.ts";
+import { resolveModelDefinition } from "./middleware/model.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
@@ -4571,6 +4572,25 @@ fixtureTest(
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
         expect(fallbackIds(id("managed-primary"))).toBeUndefined();
+
+        expect(
+            (
+                await resolveModelDefinition(
+                    id("delegating-target"),
+                    "generate.text",
+                    env,
+                )
+            ).cacheScope,
+        ).toMatch(/^agent:/);
+        expect(
+            (
+                await resolveModelDefinition(
+                    id("valid-target"),
+                    "generate.text",
+                    env,
+                )
+            ).cacheScope,
+        ).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.

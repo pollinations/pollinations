@@ -45,7 +45,7 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
         id: "keys",
         label: "Account Admin",
         shortLabel: "Admin",
-        tooltip: "keys and my-models",
+        tooltip: "keys, agents, and models",
     },
 ];
 

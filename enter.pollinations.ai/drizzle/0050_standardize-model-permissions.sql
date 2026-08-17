@@ -1,4 +1,4 @@
--- Promote the 128 canonical model IDs introduced by this release in stored
+-- Promote the 135 canonical model IDs introduced by this release in stored
 -- API-key allowlists. The preceding 0046 migration canonicalized all known
 -- aliases at rest, and write paths now canonicalize recognized IDs, so this
 -- migration only rewrites the canonical IDs from the pre-rename registry.
@@ -3452,6 +3452,39 @@ SET permissions = json_set(
             FROM (
                 SELECT
                     CASE
+                        WHEN model.type = 'text' AND model.value = 'qwen3.8-2.4t-a95b'
+                            THEN 'qwen/qwen3.8-2.4t-a95b'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"qwen3.8-2.4t-a95b"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'qwen3.8-2.4t-a95b'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
                         WHEN model.type = 'text' AND model.value = 'qwen3.8-max'
                             THEN 'qwen/qwen3.8-max'
                         ELSE model.value
@@ -4231,5 +4264,203 @@ WHERE CASE
         SELECT 1
         FROM json_each(permissions, '$.models') AS model
         WHERE model.type = 'text' AND model.value = 'zimage'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'elevenflash'
+                            THEN 'elevenlabs/eleven-flash-v2.5'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"elevenflash"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'elevenflash'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'elevenlabs'
+                            THEN 'elevenlabs/eleven-v3'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"elevenlabs"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'elevenlabs'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'elevenmusic'
+                            THEN 'elevenlabs/music-v2'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"elevenmusic"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'elevenmusic'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'kokoro'
+                            THEN 'hexgrad/kokoro-82m'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"kokoro"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'kokoro'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'scribe'
+                            THEN 'elevenlabs/scribe-v2'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"scribe"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'scribe'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id)
+        FROM (
+            SELECT model_id
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'whisper'
+                            THEN 'openai/whisper-large-v3'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+            ORDER BY MIN(position)
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"whisper"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'whisper'
     )
 END;

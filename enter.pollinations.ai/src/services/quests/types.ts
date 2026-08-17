@@ -32,14 +32,24 @@ export type QuestGroup = {
 export type RewardProposal = {
     quest: QuestDefinition;
     userId: string;
+    idempotencySubject?: string;
 };
 
 export function toReward(proposal: RewardProposal): RecordRewardInput {
     const { quest, userId } = proposal;
-    const idempotencyKey =
-        quest.scope === "once"
-            ? `quest:${quest.id}`
-            : `quest:${quest.id}:user:${userId}`;
+    let idempotencyKey: string;
+    if (quest.scope === "once") {
+        idempotencyKey = `quest:${quest.id}`;
+    } else if (quest.scope === "perSubject") {
+        if (!proposal.idempotencySubject) {
+            throw new Error(
+                `Quest ${quest.id} requires an idempotency subject`,
+            );
+        }
+        idempotencyKey = `quest:${quest.id}:${proposal.idempotencySubject}`;
+    } else {
+        idempotencyKey = `quest:${quest.id}:user:${userId}`;
+    }
     return {
         idempotencyKey,
         userId,

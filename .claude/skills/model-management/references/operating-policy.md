@@ -31,7 +31,9 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 
 - Pollinations-operated GPUs require a separately proven popularity, utilization, reliability, and margin case. Being open-weight is not enough.
 - Prefer provider APIs for niche or uncertain-demand models.
-- Media should normally finish and be returned within **120 seconds** because Pollinations does not have a durable asynchronous completion path for users.
+- Media requests may run for up to **300 seconds** through the durable generation coordinator. Internally polling an asynchronous provider is allowed behind the synchronous public request contract.
+- Verify identical-request disconnect/rejoin, one upstream execution, completed R2 cache retrieval, and once-only wallet and Tinybird settlement.
+- A route expected to exceed 300 seconds requires a separately approved asynchronous public contract.
 - Do not add slow 3D, video, audio, or specialist media merely for catalog breadth. Test repeated real generations and the slow tail, not one successful request.
 
 ## Public catalog contract

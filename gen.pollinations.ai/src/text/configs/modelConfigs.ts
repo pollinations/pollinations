@@ -277,6 +277,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
         }),
+    "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+        }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on

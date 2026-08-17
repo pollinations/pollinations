@@ -4,7 +4,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0048_standardize-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0050_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
     ...migrationSql.matchAll(
@@ -54,14 +54,14 @@ async function runMigrationForTest(): Promise<void> {
 
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID with bounded statements", async () => {
-        expect(modelMappings).toHaveLength(128);
+        expect(modelMappings).toHaveLength(135);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
-            128,
+            135,
         );
         expect(
             new Set(modelMappings.map(([, canonical]) => canonical)).size,
-        ).toBe(128);
-        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(128);
+        ).toBe(135);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(135);
         for (const [retiredId, canonicalId] of modelMappings) {
             expect(resolveModelName(retiredId)).toBe(canonicalId);
             expect(getRegistryModelDefinition(canonicalId).aliases).toContain(

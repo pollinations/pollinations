@@ -82,6 +82,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -114,12 +115,21 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (includeRequired) {
-        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title"]) {
             if (!body[required]) {
                 fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
             }
+        }
+        const modeCount = [body.baseUrl, body.agentId].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            fail("Provide exactly one of --base-url or --agent-id");
+        }
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            fail("--bearer-token is required with --base-url");
         }
     }
 
@@ -175,9 +185,10 @@ const create = addPriceOptions(
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",

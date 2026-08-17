@@ -12,6 +12,7 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
+import { generateCacheKey } from "@/utils/text-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -113,6 +114,35 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it("partitions managed-agent cache keys by caller API key", async () => {
+        const request = new Request(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            chatInit({
+                model: "owner/agent",
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        );
+        const body = await request.clone().text();
+        const first = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-one",
+        );
+        const sameCaller = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-one",
+        );
+        const otherCaller = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-two",
+        );
+
+        expect(sameCaller).toBe(first);
+        expect(otherCaller).not.toBe(first);
+    });
+
     it("serves cached responses before auth while misses still require auth", async () => {
         let originHits = 0;
         const app = new Hono<TestEnv>()

@@ -186,7 +186,7 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
         typeof options.reasoning_effort === "string" &&
         REASONING_EFFORTS.has(options.reasoning_effort)
     ) {
-        body.reasoning = { effort: options.reasoning_effort };
+        body.reasoning = { effort: options.reasoning_effort, summary: "auto" };
     }
     if (Array.isArray(options.tools) && options.tools.length) {
         body.tools = options.tools.flatMap((raw) => {

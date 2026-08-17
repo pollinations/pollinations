@@ -522,6 +522,10 @@ const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
@@ -558,9 +562,15 @@ const imageNField = z
     .optional()
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
-const imageSizeField = z.string().optional().default("1024x1024").meta({
+const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-});
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -664,7 +674,7 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
         resolution: imageResolutionField,
         safe: SafeSchema,

@@ -42,6 +42,7 @@ type QuestReward = {
     balanceBucket: string;
     earnedAt: string;
     claimedAt: string | null;
+    url?: string | null;
 };
 
 type QuestOverviewProps = Record<string, never>;
@@ -118,6 +119,13 @@ const CATEGORIES: CategoryMeta[] = [
 
 function issueNumberFromId(id: string): number | null {
     const match = /^github:issue:(\d+)$/.exec(id);
+    return match ? Number(match[1]) : null;
+}
+
+function githubNumberFromUrl(url: string | null | undefined): number | null {
+    const match = url?.match(
+        /github\.com\/[^/]+\/[^/]+\/(?:issues|pull)\/(\d+)/,
+    );
     return match ? Number(match[1]) : null;
 }
 
@@ -784,6 +792,29 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
 
+    // Rewards created by a maintainer or another non-catalog source still need
+    // their own claim control. This is deliberately derived from the ledger —
+    // no synthetic catalog entry or special balance path.
+    const bonusRewardCards = useMemo(() => {
+        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
+        return state.rewards
+            .filter(
+                (reward) =>
+                    reward.questId == null || !catalogIds.has(reward.questId),
+            )
+            .map<QuestCard>((reward) => ({
+                key: reward.id,
+                rewardId: reward.id,
+                title: reward.title,
+                url: reward.url ?? undefined,
+                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                reward: reward.pollenAmount,
+                balanceBucket: reward.balanceBucket,
+                status: reward.claimedAt ? "claimed" : "claimable",
+                earnedAmount: reward.pollenAmount,
+            }));
+    }, [state.catalog, state.rewards]);
+
     // Logged-out totals for the summary cards: across every available quest
     // shown (coming_soon excluded), how many there are and the pollen on offer,
     // split per bucket so the preview shows a paid card exactly when (and only
@@ -1063,6 +1094,39 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             )}
 
             <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
+                {bonusRewardCards.length > 0 && (
+                    <Section
+                        title="Bonus rewards"
+                        framed
+                        panelClassName="flex flex-col gap-2"
+                        action={
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                className="tabular-nums"
+                            >
+                                {
+                                    bonusRewardCards.filter(
+                                        (card) => card.status === "claimed",
+                                    ).length
+                                }{" "}
+                                / {bonusRewardCards.length}
+                            </Chip>
+                        }
+                    >
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={
+                                    state.claimingRewardId === card.rewardId
+                                }
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </Section>
+                )}
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
                     if (cards.length === 0) return null;

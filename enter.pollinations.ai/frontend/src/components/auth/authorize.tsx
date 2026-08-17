@@ -2,7 +2,9 @@ import {
     Button,
     Collapsible,
     cn,
+    ExternalLinkIcon,
     MailIcon,
+    ScrollArea,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -586,6 +588,7 @@ export function Authorize() {
                     : { labelledBy: "authorize-dialog-title" }
             }
             tone={error ? "error" : undefined}
+            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
@@ -628,7 +631,7 @@ export function Authorize() {
                 </div>
             </AuthModalHeader>
 
-            <div className="px-6 py-2 space-y-4">
+            <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
                 {error ? (
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
@@ -695,8 +698,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Manage API keys and My Models when
-                                            enabled.
+                                            Manage API keys, agents, and models
+                                            when enabled.
                                         </span>
                                     </li>
                                 )}
@@ -717,7 +720,7 @@ export function Authorize() {
                                     ) : (
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span>Generate</span>
-                                            <div className="flex items-center gap-1 flex-nowrap">
+                                            <div className="flex flex-wrap items-center gap-1">
                                                 {modalities.map((m) => (
                                                     <ModalityChip
                                                         key={m}
@@ -798,16 +801,22 @@ export function Authorize() {
                         </Collapsible>
                     </div>
                 )}
-            </div>
+            </ScrollArea>
 
-            <div className="flex items-center justify-between p-6 pt-4">
+            <div className="flex shrink-0 items-center justify-between border-t border-divider p-6 pt-4">
                 <a
                     href="https://pollinations.ai/terms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
+                    aria-label="Terms & Conditions"
+                    className="inline-flex items-center gap-1 text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
                 >
-                    Terms & Conditions
+                    <span className="sm:hidden">Terms</span>
+                    <span className="hidden sm:inline">Terms & Conditions</span>
+                    <ExternalLinkIcon
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 shrink-0 opacity-65"
+                    />
                 </a>
                 <div className="flex gap-2">
                     <Button

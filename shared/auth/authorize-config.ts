@@ -26,34 +26,37 @@ const SECONDS_PER_DAY = 24 * 60 * 60;
 const MAX_EXPIRY_DAYS = 365;
 
 /**
- * Key creation takes a positive whole number of seconds, but the expiry field
- * accepts 0 and fractional days. Anything that can't become a positive integer
- * means "no expiry" — same as leaving the field empty, and same as what the
- * edit dialog already does with 0 days.
+ * The expiry field is in days and accepts fractions, but key creation takes
+ * whole seconds (`z.number().int().positive()`), so a fraction that lands
+ * mid-second used to 400. Rounding is the whole fix.
  *
- * A fractional day still rounds to at least one second rather than collapsing
- * to "never", so a small number stays a short expiry.
+ * Nothing here rescues a non-positive value: an empty field means no expiry,
+ * and 0 or a negative stays invalid so the server rejects it rather than the
+ * UI quietly turning it into a key that never expires.
  */
 export function expiryDaysToExpiresIn(
     expiryDays: number | null | undefined,
 ): number | undefined {
     if (expiryDays == null) return undefined;
-    if (!Number.isFinite(expiryDays) || expiryDays <= 0) return undefined;
-    return Math.max(1, Math.round(expiryDays * SECONDS_PER_DAY));
+    return Math.round(expiryDays * SECONDS_PER_DAY);
 }
 
 /**
  * The consent screen's expiry comes from the caller's own query string, so a
  * third-party app must not be able to steer it. Only a positive, finite value
  * inside the server's 365-day ceiling is honoured; anything else falls back to
- * the default rather than to "never", so a hostile `?expiry=0` cannot mint a
- * permanent key or block the flow on the server's positive-integer check.
+ * the default, so a hostile `?expiry=0` can neither mint a permanent key nor
+ * dead-end the flow on the server's positive-integer check.
  */
 export function sanitizeConsentExpiryDays(
     expiry: number | null | undefined,
 ): number {
-    if (expiry == null) return DEFAULT_CONSENT_EXPIRY_DAYS;
-    if (!Number.isFinite(expiry) || expiry <= 0 || expiry > MAX_EXPIRY_DAYS) {
+    if (
+        expiry == null ||
+        !Number.isFinite(expiry) ||
+        expiry <= 0 ||
+        expiry > MAX_EXPIRY_DAYS
+    ) {
         return DEFAULT_CONSENT_EXPIRY_DAYS;
     }
     return expiry;

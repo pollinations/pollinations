@@ -109,23 +109,30 @@ describe("expiryDaysToExpiresIn", () => {
         expect(expiryDaysToExpiresIn(0.5)).toBe(43200);
     });
 
-    it("means no expiry when the field is empty", () => {
+    it("means no expiry only when the field is empty", () => {
         expect(expiryDaysToExpiresIn(null)).toBeUndefined();
         expect(expiryDaysToExpiresIn(undefined)).toBeUndefined();
     });
 
-    it("means no expiry for values that can't be positive whole seconds", () => {
-        expect(expiryDaysToExpiresIn(0)).toBeUndefined();
-        expect(expiryDaysToExpiresIn(-7)).toBeUndefined();
-        expect(expiryDaysToExpiresIn(Number.NaN)).toBeUndefined();
+    it("keeps every fractional day the field accepts", () => {
+        expect(expiryDaysToExpiresIn(0.25)).toBe(21600);
+        expect(expiryDaysToExpiresIn(0.1)).toBe(8640);
+        expect(expiryDaysToExpiresIn(1.5)).toBe(129600);
+        expect(expiryDaysToExpiresIn(30.5)).toBe(2635200);
     });
 
-    it("rounds fractional days to whole seconds", () => {
-        expect(expiryDaysToExpiresIn(0.00001)).toBe(1);
+    // The bug: a fraction that doesn't land on a whole second failed the
+    // server's .int() check, so the request 400'd instead of creating a key.
+    it("rounds a mid-second fraction to whole seconds", () => {
+        expect(expiryDaysToExpiresIn(0.123456)).toBe(10667);
+        expect(expiryDaysToExpiresIn(0.0001)).toBe(9);
     });
 
-    it("keeps a tiny expiry short instead of collapsing it to never", () => {
-        expect(expiryDaysToExpiresIn(0.0000001)).toBe(1);
+    // Left invalid on purpose. The server already rejects these, and turning
+    // them into "no expiry" here would hand back a key that never expires.
+    it("leaves a non-positive expiry for the server to reject", () => {
+        expect(expiryDaysToExpiresIn(0)).toBe(0);
+        expect(expiryDaysToExpiresIn(-7)).toBe(-604800);
     });
 });
 

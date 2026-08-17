@@ -234,10 +234,9 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                             <li>Published media listings and tags</li>
                         </ul>
                         <p>
-                            You will not be able to create another account with
-                            the same GitHub identity. We retain a limited
-                            internal account identifier and reward records to
-                            prevent duplicate quest payouts.
+                            We retain only your immutable GitHub user ID with
+                            records of rewards already issued to prevent
+                            duplicate quest payouts.
                         </p>
                         <p>
                             Cached copies of uploaded and generated media may

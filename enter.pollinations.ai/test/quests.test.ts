@@ -684,7 +684,11 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
     await checkQuestsForUser(env, user.id);
 
     const rewards = await db
-        .select({ questId: schema.rewards.questId })
+        .select({
+            questId: schema.rewards.questId,
+            idempotencyKey: schema.rewards.idempotencyKey,
+            githubId: schema.rewards.githubId,
+        })
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
@@ -692,6 +696,14 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
     expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
     expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
+    expect(
+        rewards.find(
+            (reward) => reward.questId === TOP_UP_100_SINCE_LAUNCH_QUEST_ID,
+        ),
+    ).toMatchObject({
+        idempotencyKey: `quest:${TOP_UP_100_SINCE_LAUNCH_QUEST_ID}:github:${user.githubId}`,
+        githubId: user.githubId,
+    });
 });
 
 test("top-up quests ignore paid checkout pollen before quest launch", async ({
@@ -1363,17 +1375,18 @@ test("quest check records elixpo intern easter egg once", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
+    const targetGithubId = 161_109_909;
     await db
         .update(schema.user)
         .set({
-            githubId: 161_109_909,
+            githubId: targetGithubId,
             githubUsername: "elixpo",
         })
         .where(eq(schema.user.id, user.id));
 
     mocks.github.state.user = {
         ...mocks.github.state.user,
-        id: 161_109_909,
+        id: targetGithubId,
         login: "elixpo",
         name: "elixpo",
         avatar_url: "https://avatars.githubusercontent.com/u/161109909?v=4",
@@ -1399,7 +1412,7 @@ test("quest check records elixpo intern easter egg once", async ({
 
     expect(rewards).toHaveLength(1);
     expect(rewards[0]).toMatchObject({
-        idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
+        idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:github:${targetGithubId}`,
         pollenAmount: 100,
         balanceBucket: "tier",
     });

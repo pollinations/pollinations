@@ -53,7 +53,9 @@ export async function checkQuestsForUser(
         QUEST_GROUPS.map((group) => findGroupRewardProposals(ctx, group, user)),
     );
     const proposals = sourceResults.flatMap((entry) => entry.proposals);
-    const rewardInputs = proposals.map(toReward);
+    const rewardInputs = proposals.map((proposal) =>
+        toReward(proposal, user.githubId),
+    );
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
         {

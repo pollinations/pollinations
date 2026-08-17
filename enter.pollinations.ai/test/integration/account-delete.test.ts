@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { recordRewards } from "@shared/billing/rewards.ts";
 import {
     account as accountTable,
     agent as agentTable,
@@ -18,7 +19,7 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("POST /api/auth/delete-user", () => {
-    test("minimizes the account, revokes access, and preserves reward protection", async ({
+    test("deletes the account while preserving GitHub-scoped reward protection", async ({
         apiKey,
         mocks,
         sessionToken,
@@ -28,6 +29,7 @@ describe("POST /api/auth/delete-user", () => {
             .select({ id: userTable.id, githubId: userTable.githubId })
             .from(userTable);
         if (!user) throw new Error("Expected test user");
+        if (user.githubId === null) throw new Error("Expected GitHub identity");
 
         await db.insert(mediaItemTable).values({
             id: "test-media-item",
@@ -57,7 +59,8 @@ describe("POST /api/auth/delete-user", () => {
         });
         await db.insert(rewardsTable).values({
             id: "test-reward",
-            idempotencyKey: `quest:first_api_key:user:${user.id}`,
+            idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
+            githubId: user.githubId,
             userId: user.id,
             questId: "first_api_key",
             title: "Create your first API key",
@@ -93,24 +96,7 @@ describe("POST /api/auth/delete-user", () => {
             message: "User deleted",
         });
 
-        const users = await db.select().from(userTable);
-        expect(users).toHaveLength(1);
-        expect(users[0]).toMatchObject({
-            id: user.id,
-            githubId: user.githubId,
-            name: "Deleted account",
-            emailVerified: false,
-            image: null,
-            banned: true,
-            banReason: "account_deleted",
-            banExpires: null,
-            githubUsername: null,
-            tierBalance: 0,
-            packBalance: 0,
-            stripeCustomerId: null,
-            autoTopUpEnabled: false,
-        });
-        expect(users[0]?.email).toBe(`deleted-${user.id}@pollinations.invalid`);
+        expect(await db.select().from(userTable)).toHaveLength(0);
         expect(await db.select().from(sessionTable)).toHaveLength(0);
         expect(await db.select().from(accountTable)).toHaveLength(0);
         expect(await db.select().from(apiKeyTable)).toHaveLength(0);
@@ -118,10 +104,18 @@ describe("POST /api/auth/delete-user", () => {
         expect(await db.select().from(communityEndpointTable)).toHaveLength(0);
         expect(await db.select().from(mediaItemTable)).toHaveLength(0);
         expect(await db.select().from(mediaTagTable)).toHaveLength(0);
-        expect(await db.select().from(rewardsTable)).toHaveLength(1);
         expect(await db.select().from(stripeCheckoutCreditsTable)).toHaveLength(
-            1,
+            0,
         );
+
+        const retainedRewards = await db.select().from(rewardsTable);
+        expect(retainedRewards).toHaveLength(1);
+        expect(retainedRewards[0]).toMatchObject({
+            id: "test-reward",
+            githubId: user.githubId,
+            userId: null,
+            idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
+        });
 
         const keyResponse = await SELF.fetch(
             "http://localhost:3000/api/account/profile",
@@ -129,8 +123,8 @@ describe("POST /api/auth/delete-user", () => {
         );
         expect(keyResponse.status).toBe(401);
 
-        // A later sign-in with the same immutable GitHub identity must not
-        // create a fresh Pollinations user and reopen per-user quest rewards.
+        // A later sign-in with the same GitHub identity creates a fresh account,
+        // but the retained idempotency key prevents the quest from paying twice.
         await mocks.enable("github", "tinybird");
         const signupResponse = await SELF.fetch(
             "http://localhost:3000/api/auth/sign-in/social",
@@ -163,10 +157,32 @@ describe("POST /api/auth/delete-user", () => {
         });
 
         expect(callbackResponse.status).toBe(302);
-        expect(callbackResponse.headers.get("Location")).toContain("error=");
-        expect(callbackResponse.headers.get("Set-Cookie") ?? "").not.toContain(
+        expect(callbackResponse.headers.get("Location") ?? "").not.toContain(
+            "error=",
+        );
+        expect(callbackResponse.headers.get("Set-Cookie") ?? "").toContain(
             "better-auth.session_token=",
         );
-        expect(await db.select().from(userTable)).toHaveLength(1);
+
+        const replacementUsers = await db.select().from(userTable);
+        expect(replacementUsers).toHaveLength(1);
+        const replacementUser = replacementUsers[0];
+        if (!replacementUser) throw new Error("Expected replacement user");
+        expect(replacementUser.id).not.toBe(user.id);
+        expect(replacementUser.githubId).toBe(user.githubId);
+
+        const duplicate = await recordRewards(db, [
+            {
+                idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
+                githubId: user.githubId,
+                userId: replacementUser.id,
+                questId: "first_api_key",
+                title: "Create your first API key",
+                amount: 0.25,
+                bucket: "tier",
+            },
+        ]);
+        expect(duplicate.recorded).toBe(0);
+        expect(await db.select().from(rewardsTable)).toHaveLength(1);
     });
 });

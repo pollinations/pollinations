@@ -28,7 +28,7 @@ Provide accurate registration/billing details and keep credentials secure. Secre
 
 When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and Pollen spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain a minimized internal account identifier, linked GitHub ID, and reward ledger records to prevent recreation of the deleted account and duplicate quest payouts. You cannot create another account with the same GitHub identity after deletion.
+When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain the linked GitHub user ID with reward ledger records to prevent duplicate quest payouts. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
 Third-party app developers are responsible for their own apps, claims, user interfaces, and end-user relationships. Unless we say otherwise, third-party apps are not operated by us. Betas/experiments are provided "as is".
 

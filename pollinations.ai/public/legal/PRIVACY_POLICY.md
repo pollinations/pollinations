@@ -64,7 +64,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 ## 9) Retention
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified within 30 days.
-* **Deleted-account and reward-protection records:** a minimized internal account identifier, immutable linked GitHub ID, and reward ledger records are retained while needed to prevent the same identity from recreating a deleted account or receiving the same one-time reward more than once. We review this retention while the account and reward programmes remain available.
+* **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
 * **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
@@ -74,7 +74,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
 * **Backups:** encrypted, rolling 30-90 days.
 
-**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified within 30 days except for the minimized deleted-account, reward-protection, billing, usage, fraud-prevention, and legal records described above. A deleted account cannot be recreated using the same linked GitHub identity.
+**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
 ## 10) Your Rights (GDPR)
 

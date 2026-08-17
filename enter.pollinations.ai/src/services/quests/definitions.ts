@@ -22,8 +22,9 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 
 /**
  * Completion scope — drives the idempotency key shape (see toReward):
- *   - "perUser" — each user earns it independently. Key includes the userId
- *                 (`quest:${id}:user:${userId}`), so every user can complete it.
+ *   - "perUser" — each GitHub identity earns it independently. Key includes the
+ *                 immutable GitHub user ID (`quest:${id}:github:${githubId}`).
+ *                 Legacy/internal users without one fall back to the user ID.
  *   - "perSubject" — each external identity earns it independently. Key includes
  *                    the proposal subject (`quest:${id}:${subject}`).
  *   - "once"    — one reward total, whoever triggers it. Key omits the userId

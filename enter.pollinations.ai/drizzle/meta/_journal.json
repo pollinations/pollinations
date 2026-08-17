@@ -351,6 +351,13 @@
       "when": 1786889023916,
       "tag": "0049_stormy_franklin_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1786925164832,
+      "tag": "0050_elite_sleepwalker",
+      "breakpoints": true
     }
   ]
 }

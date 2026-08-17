@@ -14,6 +14,8 @@ export interface RecordRewardInput {
      */
     idempotencyKey: string;
     userId: string;
+    /** Immutable GitHub identity for per-person reward deduplication. */
+    githubId?: number | null;
     amount: number;
     /** Which balance bucket to credit on claim. */
     bucket: Bucket;
@@ -72,6 +74,7 @@ export async function recordRewards(
             id: crypto.randomUUID(),
             idempotencyKey: input.idempotencyKey,
             userId: input.userId,
+            githubId: input.githubId ?? null,
             questId: input.questId ?? null,
             title: input.title,
             url: input.url ?? null,

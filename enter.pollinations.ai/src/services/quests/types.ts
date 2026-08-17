@@ -35,7 +35,10 @@ export type RewardProposal = {
     idempotencySubject?: string;
 };
 
-export function toReward(proposal: RewardProposal): RecordRewardInput {
+export function toReward(
+    proposal: RewardProposal,
+    githubId: number | null,
+): RecordRewardInput {
     const { quest, userId } = proposal;
     let idempotencyKey: string;
     if (quest.scope === "once") {
@@ -48,10 +51,16 @@ export function toReward(proposal: RewardProposal): RecordRewardInput {
         }
         idempotencyKey = `quest:${quest.id}:${proposal.idempotencySubject}`;
     } else {
-        idempotencyKey = `quest:${quest.id}:user:${userId}`;
+        // GitHub OAuth users always have githubId. Keep the user-id fallback
+        // for legacy/internal rows that predate the GitHub field.
+        idempotencyKey =
+            githubId === null
+                ? `quest:${quest.id}:user:${userId}`
+                : `quest:${quest.id}:github:${githubId}`;
     }
     return {
         idempotencyKey,
+        githubId,
         userId,
         questId: quest.id,
         title: quest.title,

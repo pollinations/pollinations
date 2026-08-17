@@ -35,7 +35,7 @@ async function mintDelegatedToken(
     endpoint: CommunityEndpointRuntime,
     parentApiKeyId: string | undefined,
     secret: string,
-    parentRequestId?: string,
+    parentRequestId: string,
 ): Promise<string | undefined> {
     if (!isDelegatingEndpoint(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
@@ -65,8 +65,8 @@ export async function communityEndpointGatewayContext(
     secret: string,
     portkeyGatewayUrl: string,
     userApiKey: string,
+    parentRequestId: string,
     parentApiKeyId?: string,
-    parentRequestId?: string,
 ): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(

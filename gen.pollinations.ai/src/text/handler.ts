@@ -134,8 +134,8 @@ function gatewayContext(
         c.env.BETTER_AUTH_SECRET,
         c.env.PORTKEY_GATEWAY_URL,
         c.var.auth?.apiKey?.rawKey || "",
-        c.var.auth?.apiKey?.id,
         c.get("requestId"),
+        c.var.auth?.apiKey?.id,
     );
 }
 

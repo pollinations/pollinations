@@ -975,6 +975,7 @@ describe("community endpoint helpers", () => {
             secret,
             "https://portkey.test",
             "sk_user_key",
+            "parent-request-id",
         );
 
         expect(context).toMatchObject({
@@ -1039,8 +1040,8 @@ describe("community endpoint helpers", () => {
                 secret,
                 "https://portkey.test",
                 "sk_user_key",
-                parentApiKeyId,
                 parentRequestId,
+                parentApiKeyId,
             );
         }
 

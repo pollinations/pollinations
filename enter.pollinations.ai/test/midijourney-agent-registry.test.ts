@@ -17,19 +17,23 @@ describe("MIDIjourney agent registry", () => {
 
         expect(definition.cost).toBe(baseDefinition.cost);
         expect(definition.costVariants).toBe(baseDefinition.costVariants);
+        expect(definition.provider).toBe(baseDefinition.provider);
+        expect(definition.category).toBe(baseDefinition.category);
+        expect(definition.priceMultiplier).toBe(baseDefinition.priceMultiplier);
+        expect(definition.inputModalities).toBe(baseDefinition.inputModalities);
+        expect(definition.outputModalities).toBe(
+            baseDefinition.outputModalities,
+        );
+        expect(definition.tools).toBe(baseDefinition.tools);
+        expect(definition.reasoning).toBe(baseDefinition.reasoning);
+        expect(definition.contextLength).toBe(baseDefinition.contextLength);
 
         expect(definition).toMatchObject({
-            provider: "azure",
-            category: "text",
-            priceMultiplier: 0.5,
+            brand: "Pollinations",
+            title: "MIDI Journey",
             agent: true,
             baseModel: "gpt-5.6-sol",
         });
-        expect(definition.inputModalities).toBeUndefined();
-        expect(definition.outputModalities).toBeUndefined();
-        expect(definition.tools).toBeUndefined();
-        expect(definition.reasoning).toBeUndefined();
-        expect(definition.contextLength).toBeUndefined();
 
         expect(info).toMatchObject({
             name: "midijourney",
@@ -37,6 +41,8 @@ describe("MIDIjourney agent registry", () => {
             brand: "Pollinations",
             agent: true,
             base_model: "gpt-5.6-sol",
+            capabilities: ["tool_calling", "reasoning"],
+            context_length: 1050000,
             pricing: {
                 currency: "pollen",
                 promptTextTokens: "0.0000025",
@@ -45,8 +51,7 @@ describe("MIDIjourney agent registry", () => {
                 completionTextTokens: "0.000015",
             },
         });
-        expect(info.capabilities).toEqual([]);
-        expect(info.context_length).toBeUndefined();
+        expect(info).not.toHaveProperty("is_specialized");
         expect(info.brand_url).toBeUndefined();
     });
 });

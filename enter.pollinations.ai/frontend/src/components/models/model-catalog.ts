@@ -58,7 +58,6 @@ export type ApiModelInfo = {
     reasoning?: boolean;
     context_length?: number;
     voices?: string[];
-    is_specialized?: boolean;
     paid_only?: boolean;
     alpha?: boolean;
     flat_rate?: boolean;

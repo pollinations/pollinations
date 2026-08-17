@@ -1,10 +1,10 @@
 /**
- * Prompt agents, as the model catalog sees them.
+ * Managed prompt agents, as the model catalog sees them.
  *
- * Both built-in and managed community agents inherit the capabilities of the
- * base model they wrap. Managed agents also inherit its price because their
- * nested base-model call is what bills the user; built-in agents retain their
- * own registry price because Gen bills their request directly.
+ * Agents are community models whose upstream is Enter's own agent runtime, so
+ * everything the catalog needs to know about them lives here rather than in
+ * the generic registry: where their runtime is, what their stored config
+ * means, and how they present the metadata of the base model they wrap.
  */
 import type { ModelCapability } from "@shared/registry/model-info.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
@@ -58,13 +58,18 @@ export function parseAgentCatalogConfig(
 function applyBaseModelMetadata(
     entry: GenerationModelEntry,
     baseEntry: GenerationModelEntry | undefined,
-    baseModel: string,
-    agentCapabilities: ModelCapability[],
-    inheritPricing: boolean,
 ): void {
+    const config = entry.agentConfig;
+    if (!config) return;
+    const agentCapabilities: ModelCapability[] = config.mcpServers.includes(
+        "pollinations",
+    )
+        ? ["pollinations_models"]
+        : [];
+
     entry.info = {
         ...entry.info,
-        base_model: baseModel,
+        base_model: config.baseModel,
         capabilities: [...entry.info.capabilities, ...agentCapabilities],
     };
     if (
@@ -78,49 +83,32 @@ function applyBaseModelMetadata(
     const base = baseEntry.info;
     entry.info = {
         ...entry.info,
-        ...(inheritPricing && {
-            pricing: base.pricing,
-            pricing_variants: base.pricing_variants,
-            pricing_default_label: base.pricing_default_label,
-            pricing_adjustments: base.pricing_adjustments,
-            paid_only: base.paid_only,
-        }),
+        pricing: base.pricing,
+        pricing_variants: base.pricing_variants,
+        pricing_default_label: base.pricing_default_label,
+        pricing_adjustments: base.pricing_adjustments,
         input_modalities: base.input_modalities,
         output_modalities: base.output_modalities,
         capabilities: [...base.capabilities, ...agentCapabilities],
         tools: base.tools,
         reasoning: base.reasoning,
         context_length: base.context_length,
-        max_reference_images: base.max_reference_images,
-        max_reference_videos: base.max_reference_videos,
+        paid_only: base.paid_only,
     };
 }
 
 /**
- * Present each agent with the capabilities of its base model. Managed agents
- * also inherit the base price because that nested call performs their billing.
+ * Present each agent listing with the capabilities and prices of the base
+ * model it wraps, so callers see what they are actually charged for.
  */
 export function applyAgentMetadata(
     entries: GenerationModelEntry[],
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const config = entry.agentConfig;
-        const baseModel =
-            config?.baseModel ??
-            (entry.info.agent ? entry.info.base_model : undefined);
+        const baseModel = entry.agentConfig?.baseModel;
         if (baseModel) {
-            const agentCapabilities: ModelCapability[] =
-                config?.mcpServers.includes("pollinations")
-                    ? ["pollinations_models"]
-                    : [];
-            applyBaseModelMetadata(
-                entry,
-                byIdOrAlias.get(baseModel),
-                baseModel,
-                agentCapabilities,
-                config !== undefined,
-            );
+            applyBaseModelMetadata(entry, byIdOrAlias.get(baseModel));
         }
     }
 }

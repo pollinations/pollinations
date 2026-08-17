@@ -19,7 +19,7 @@ import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import {
     isAppKey,
     isPublishableKey,
-    readInitialRedirectUris,
+    readRedirectUris,
     shouldPostKeyMetadata,
 } from "./key-type.ts";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -48,7 +48,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const initialRedirectUris = readRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);

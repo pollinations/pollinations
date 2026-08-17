@@ -1,6 +1,12 @@
 import type { ApiKey } from "./types.ts";
 
-export function readInitialRedirectUris(
+/**
+ * Mirrors getRedirectUris in shared/auth/api-key-metadata.ts, the reader the
+ * OAuth allowlist check uses. Keep the two in step: a URI the UI counts but
+ * the server ignores (or the reverse) means a key is grouped and gated as
+ * something the server does not agree it is.
+ */
+export function readRedirectUris(
     metadata: Record<string, unknown> | null | undefined,
 ): string[] {
     const list = metadata?.redirectUris;
@@ -17,7 +23,7 @@ export function isPublishableKey(apiKey: ApiKey): boolean {
 export function isAppKey(apiKey: ApiKey): boolean {
     return (
         isPublishableKey(apiKey) &&
-        (readInitialRedirectUris(apiKey.metadata).length > 0 ||
+        (readRedirectUris(apiKey.metadata).length > 0 ||
             apiKey.metadata?.earningsEnabled === true)
     );
 }
@@ -30,7 +36,7 @@ export function shouldPostKeyMetadata(
     next: { redirectUris: string[]; earningsEnabled: boolean },
 ): boolean {
     if (!isPublishableKey(apiKey)) return false;
-    const initialUris = readInitialRedirectUris(apiKey.metadata);
+    const initialUris = readRedirectUris(apiKey.metadata);
     return (
         next.redirectUris.length !== initialUris.length ||
         next.redirectUris.some((v, i) => v !== initialUris[i]) ||

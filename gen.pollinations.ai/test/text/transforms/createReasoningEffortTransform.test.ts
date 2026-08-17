@@ -102,6 +102,23 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
+        ["minimal", "none"],
+        ["none", "none"],
+        ["low", "low"],
+        ["medium", "medium"],
+        ["high", "xhigh"],
+        ["xhigh", "xhigh"],
+        ["max", "xhigh"],
+    ])("maps %s to RunInfra reasoning_effort=%s", async (input, expected) => {
+        const transform = findModelByName("qwen3.8-27b")?.transform;
+        if (!transform) throw new Error("qwen3.8-27b transform missing");
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: input,
+        });
+        expect(options.reasoning_effort).toBe(expected);
+    });
+
+    it.each([
         "minimax-m2.7",
         "step-3.5-flash",
         "step-flash",

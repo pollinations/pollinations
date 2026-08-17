@@ -21,6 +21,24 @@ import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
+// RunInfra accepts none/low/medium/xhigh but not minimal/high/max labels.
+const runInfraThinking: TransformFn = (messages, options) => {
+    const effort =
+        typeof options.reasoning_effort === "string"
+            ? options.reasoning_effort.toLowerCase()
+            : undefined;
+    return {
+        messages,
+        options: {
+            ...options,
+            ...(effort === "minimal"
+                ? { reasoning_effort: "none" }
+                : effort === "high" || effort === "max"
+                  ? { reasoning_effort: "xhigh" }
+                  : {}),
+        },
+    };
+};
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
@@ -127,6 +145,11 @@ const models: ModelDefinition[] = [
         name: "qwen3.8-2.4t-a95b",
         config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
         transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
+        name: "qwen3.8-27b",
+        config: portkeyConfig["qwen3-8-27b"],
+        transform: runInfraThinking,
     },
     {
         name: "qwen3.8-max",

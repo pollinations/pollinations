@@ -98,6 +98,16 @@ export function createDeepInfraModelConfig(
     );
 }
 
+export function createRunInfraModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.runinfra.ai/v1",
+        process.env.RUNINFRA_API_KEY,
+        overrides,
+    );
+}
+
 export function createOpenRouterModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

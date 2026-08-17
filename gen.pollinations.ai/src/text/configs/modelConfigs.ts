@@ -8,6 +8,7 @@ import {
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityModelConfig,
+    createRunInfraModelConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -280,6 +281,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+        }),
+
+    // -- RunInfra (Qwen) ------------------------------------------------------
+    "qwen3-8-27b": () =>
+        createRunInfraModelConfig({
+            model: "qwen3-8-27b",
         }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------

@@ -152,6 +152,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Qwen3.8 27B directly to RunInfra without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-27b",
+        });
+
+        expect(result.options.model).toBe("qwen3-8-27b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.runinfra.ai/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

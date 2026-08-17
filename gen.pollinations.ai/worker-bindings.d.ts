@@ -71,6 +71,7 @@ interface CloudflareBindings {
     OPENROUTER_API_KEY: string;
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
+    RUNINFRA_API_KEY: string;
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;

@@ -1872,6 +1872,30 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "qwen3.8-27b": {
+        aliases: [],
+        provider: "runinfra",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-08-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // RunInfra qwen3-8-27b rates (2026-08-17).
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.4),
+        },
+        title: "Qwen3.8 27B",
+        description:
+            "Dense open-weight reasoning for coding, tool use, and structured generation",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "qwen3.8-max": {
         aliases: [],
         provider: "openrouter",

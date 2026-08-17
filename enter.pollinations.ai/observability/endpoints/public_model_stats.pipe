@@ -2,32 +2,13 @@ DESCRIPTION >
     Public model usage statistics for the last 7 days including today.
     Returns aggregated stats per model including request counts, average costs, and response times.
     Only includes models with at least 3 successful priced requests for reliable averages.
-    Agents are priced per run: their own row is free, so the cost of calling one
-    is the sum of the generations its run token paid for.
 
 TOKEN tinybird_read_public READ
 
-NODE model_stats
-SQL >
-    SELECT
-        resolved_model_requested as model,
-        count() as request_count,
-        round(avgIf(total_price, response_status >= 200 AND response_status < 300 AND total_price > 0), 6) as avg_cost_usd,
-        round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
-        countIf(response_status >= 200 AND response_status < 300) as success_count,
-        countIf(response_status >= 200 AND response_status < 300 AND total_price > 0) as priced_success_count,
-        countIf(response_status >= 400) as error_count
-    FROM generation_event_v2
-    WHERE start_time >= now() - INTERVAL 7 DAY
-    AND is_final  -- one row per request; attempts counted separately
-    AND resolved_model_requested != 'undefined'
-    GROUP BY model
-    HAVING priced_success_count >= 3
-
 NODE agent_run_steps
 SQL >
-    -- The model steps and tool calls one agent call paid for, tagged with the
-    -- request_id of the call that minted their run token.
+    -- What one agent call spent: the model steps and tool calls its run token
+    -- paid for, tagged with the request_id of the call that minted it.
     SELECT
         parent_request_id as run_id,
         sum(total_price) as run_price
@@ -37,46 +18,35 @@ SQL >
     AND parent_request_id != ''
     GROUP BY run_id
 
-NODE agent_runs
+NODE priced_calls
 SQL >
-    -- The agent's own row names the model and carries the status; its steps
-    -- carry the price. Joining them prices one run the way a model call is
-    -- priced, so both shapes aggregate identically below.
+    -- An agent's own row is free, so its price is what its steps cost. Nothing
+    -- joins for an ordinary call and run_price is 0, leaving total_price.
     SELECT
-        parent.resolved_model_requested as model,
-        steps.run_price as run_price,
-        parent.response_status as response_status,
-        parent.response_time as response_time
-    FROM generation_event_v2 as parent
-    INNER JOIN agent_run_steps as steps ON parent.request_id = steps.run_id
-    WHERE parent.start_time >= now() - INTERVAL 7 DAY
-    AND parent.is_final
-
-NODE agent_stats
-SQL >
-    SELECT
-        model,
-        count() as request_count,
-        round(avgIf(run_price, response_status >= 200 AND response_status < 300 AND run_price > 0), 6) as avg_cost_usd,
-        round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
-        countIf(response_status >= 200 AND response_status < 300) as success_count,
-        countIf(response_status >= 200 AND response_status < 300 AND run_price > 0) as priced_success_count,
-        countIf(response_status >= 400) as error_count
-    FROM agent_runs
-    WHERE model != 'undefined'
-    GROUP BY model
-    HAVING priced_success_count >= 3
+        calls.resolved_model_requested as model,
+        calls.total_price + steps.run_price as price,
+        calls.response_status as response_status,
+        calls.response_time as response_time
+    FROM generation_event_v2 as calls
+    LEFT JOIN agent_run_steps as steps ON calls.request_id = steps.run_id
+    WHERE calls.start_time >= now() - INTERVAL 7 DAY
+    AND calls.is_final  -- one row per request; attempts counted separately
+    AND calls.resolved_model_requested != 'undefined'
 
 NODE public_model_stats_node
 SQL >
     %
-    -- An agent has no priced row of its own, so it never reaches model_stats;
-    -- the two branches cannot name the same model.
-    SELECT * FROM (
-        SELECT * FROM model_stats
-        UNION ALL
-        SELECT * FROM agent_stats
-    )
+    SELECT
+        model,
+        count() as request_count,
+        round(avgIf(price, response_status >= 200 AND response_status < 300 AND price > 0), 6) as avg_cost_usd,
+        round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
+        countIf(response_status >= 200 AND response_status < 300) as success_count,
+        countIf(response_status >= 200 AND response_status < 300 AND price > 0) as priced_success_count,
+        countIf(response_status >= 400) as error_count
+    FROM priced_calls
+    GROUP BY model
+    HAVING priced_success_count >= 3
     ORDER BY request_count DESC
     LIMIT {{Int32(limit, 50)}}
 

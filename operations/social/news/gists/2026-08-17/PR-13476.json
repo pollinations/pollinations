@@ -1,0 +1,34 @@
+{
+  "pr_number": 13476,
+  "title": "fix: add missing test-env placeholders so the enter suite can run locally",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13476",
+  "merged_at": "2026-08-17T01:40:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Three values the test env was missing (or had too short) made **63 of 781** enter tests fail on a dev machine. All placeholders — no real credentials.\n\n- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — absent. The Stripe tests use the mock in `test/mocks/stripe.ts` and never reach Stripe, but the SDK refuses to construct with an undefined key (`src/utils/stripe.ts:7`), so every route 500'd.\n- `PLN_ENTER_TOKEN` — was 16 chars; `isInternalRequest()` requires ≥32 (`src/routes/stripe.ts:327`), so `/auto-top-up/trigger` 401'd on all 11 of its tests.\n\nAll three go in `[env.test.vars]`, alongside the existing test placeholders. The `.dev.vars.test` shadow stays as-is — it deliberately keeps decrypted secrets out of tests so `TINYBIRD_INGEST_URL` can't point at live staging.\n\n### Result\n\n`enter` full suite: **63 failed → 5 failed** (775 passed). `test/integration/stripe.test.ts` goes 58 failed → **66/66 passing**.\n\nThe remaining 5 have a different cause and are tracked in #13475:\n- `test/integration/account-keys.test.ts` — 3\n- `test/account-key.test.ts` — 1\n- `test/docs-redirect.test.ts` — 1\n\nAddresses #13475\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The test hive wakes up",
+    "blurb": "A few harmless dummy keys were enough to stop the local enter suite from mistaking itself for production. The Stripe test garden is buzzing again.",
+    "summary": "Added placeholder STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, and a 32-character PLN_ENTER_TOKEN to enter.pollinations.ai's test environment, reducing local enter-suite failures from 63 to 5 and restoring all 66 Stripe integration tests.",
+    "impact": "Contributors can now run the enter test suite locally with mocked Stripe routes initializing correctly and auto-top-up trigger tests authenticating as intended.",
+    "keywords": [
+      "enter",
+      "testing",
+      "stripe",
+      "wrangler",
+      "local-development",
+      "environment"
+    ],
+    "visual_concept": "A cozy local test garden where Polli uses a tiny tool belt to fit three clearly fake key-shaped placeholders into a retro terminal's env-var slots. The CRT monitor robot happily displays '66/66' while small code-plants bloom nearby, representing the repaired Stripe integration suite.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, inserting three harmless key-shaped test placeholders into a retro terminal glowing lime green (#ecf874); a cheerful chunky CRT monitor robot shows \"66/66\" in simple pixel text while code-plants bloom from nearby pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13476.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, inserting three harmless key-shaped test placeholders into a retro terminal glowing lime green (#ecf874); a cheerful chunky CRT monitor robot shows \"66/66\" in simple pixel text while code-plants bloom from nearby pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T01:41:53.432484+00:00"
+}

@@ -445,6 +445,8 @@ const CommunityEndpointResponseSchema = z.object({
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
+    // Derived, not the stored column: true for every agent as well. Clients get
+    // the answer rather than the two columns it is computed from.
     delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
@@ -603,7 +605,7 @@ function toResponse(
         ),
         baseUrl,
         agentId: row.agentId,
-        delegatesGeneration: row.delegatesGeneration,
+        delegatesGeneration: endpointDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,

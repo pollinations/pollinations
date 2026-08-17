@@ -1,16 +1,14 @@
-import { endpointDelegatesGeneration } from "@shared/community-endpoints.ts";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { ApiModelInfo } from "./model-catalog.ts";
 
 /**
- * The signed-in account's own community models, in catalog form, so pickers can
- * offer the ones the anonymous catalog omits.
+ * The signed-in account's own community models that the anonymous catalog
+ * omits, in catalog form, so pickers can offer them.
  *
- * This list only decides what is offered. What a key may actually call is
- * decided at call time by gen (canAccessCommunityModel), so nothing here needs
- * to restate the access rule — public models are left in and simply lose the
- * merge to their richer catalog entry.
+ * Public ones are dropped because the catalog already lists them, with pricing
+ * and capabilities this five-field projection cannot reconstruct. The rest —
+ * private and "app"-visibility — reach the picker only from here.
  *
  * Returns an empty list until loaded, and on failure, so a picker degrades to
  * the public catalog rather than blocking.
@@ -30,7 +28,11 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                 if (cancelled) return;
                 setModels(
                     data
-                        .filter((model) => !model.disabled)
+                        .filter(
+                            (model) =>
+                                !model.disabled &&
+                                model.visibility !== "public",
+                        )
                         .map((model) => ({
                             name: model.modelId,
                             title: model.title,
@@ -39,7 +41,7 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                                     ? ("image" as const)
                                     : ("text" as const),
                             community: true,
-                            agent: endpointDelegatesGeneration(model),
+                            agent: model.delegatesGeneration,
                         })),
                 );
             } catch {

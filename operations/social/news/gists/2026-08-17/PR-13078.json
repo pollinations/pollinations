@@ -1,0 +1,34 @@
+{
+  "pr_number": 13078,
+  "title": "fix: let publishable keys edit redirect URIs and earnings settings",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/13078",
+  "merged_at": "2026-08-17T20:18:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- `EditApiKeyDialog` gated both the redirect-URI/earnings section and the metadata POST on `isAppKey`, which requires a key to *already* have a redirect URI or earnings enabled. A plain publishable key could therefore never get its first one: the section was hidden, and edits were silently dropped on save.\n- Both gates now use `isPublishableKey`, so the save gate can no longer be narrower than what the user is shown.\n- Moved the metadata POST ahead of `onUpdate()`. `onUpdate` ends in `router.invalidate()`, so the list refetched before the metadata write landed and the dialog closed onto a stale card.\n- Moved the shared key predicates into `key-type.ts`; their logic is unchanged.\n\nNotes:\n\n- Visible UX change: every publishable key now shows the redirect-URI/earnings section, and saving a first redirect URI moves the card from the \"API keys\" group to \"App keys\".\n- The POST-before-`onUpdate` ordering has no automated guard — `enter.pollinations.ai` runs the Workers vitest pool with no DOM environment, so `handleSave` can't be rendered. It carries an inline comment; the gating logic it depends on is unit-tested.\n\nTest: `cd enter.pollinations.ai && npx vitest run test/edit-api-key-dialog.test.ts` — 6 passed.\n\nFixes #10983\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "App keys can sprout",
+    "blurb": "Plain publishable keys can finally grow their first redirect URI or earnings setting. The garden gate was checking whether the flower had already bloomed.",
+    "summary": "Fixed the API-key edit dialog so every publishable key can set its first redirect URI or earnings option, with metadata saved before the key list refreshes.",
+    "impact": "Users can now turn a publishable key into an app key by saving its first redirect URI, and the updated card immediately moves from “API keys” to “App keys.”",
+    "keywords": [
+      "api-keys",
+      "publishable-keys",
+      "redirect-uri",
+      "earnings",
+      "frontend",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict a previously plain key growing into an app-key flower after Polli adds its first redirect-URI tag. A cozy key garden visually shows the key moving from an “API KEYS” planter to an “APP KEYS” planter, while a small retro terminal confirms the save landed before the garden refreshes.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf as she attaches a “REDIRECT URI” tag to a plain pixel key that blooms into a flower and moves from an “API KEYS” planter to an “APP KEYS” planter; a friendly CRT terminal glows beside code-plants and displays “SAVED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13078.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf as she attaches a “REDIRECT URI” tag to a plain pixel key that blooms into a flower and moves from an “API KEYS” planter to an “APP KEYS” planter; a friendly CRT terminal glows beside code-plants and displays “SAVED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T20:20:00.428202+00:00"
+}

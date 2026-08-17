@@ -307,13 +307,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.4-mini"],
+        config: portkeyConfig["gpt-5.6-sol"],
         transform: createMessageTransform(midijourneyPrompt),
-    },
-    {
-        name: "midijourney-large",
-        config: portkeyConfig["gpt-5.5"],
-        transform: createMessageTransform(midijourneyPrompt),
+        useResponsesApi: true,
     },
     {
         name: "perplexity-fast",

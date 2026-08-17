@@ -30,7 +30,7 @@ describe("long-context cost variants", () => {
     it.each([
         ["gpt-5.4", 272_000],
         ["openai-large", 272_000],
-        ["midijourney-large", 272_000],
+        ["midijourney", 272_000],
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],

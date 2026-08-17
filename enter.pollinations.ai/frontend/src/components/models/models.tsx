@@ -47,6 +47,7 @@ import { useModelStats } from "./use-model-stats.ts";
 const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
+    "agent",
     "image",
     "video",
     "3d",
@@ -64,7 +65,7 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
-    pollinations: "Official",
+    pollinations: "Pollinations",
     community: "Community",
 };
 
@@ -282,9 +283,7 @@ export const Models: FC = () => {
                           previous.category === "agent"
                             ? previous.category
                             : undefined
-                        : previous.category === "agent"
-                          ? undefined
-                          : previous.category,
+                        : previous.category,
             }),
         });
     };

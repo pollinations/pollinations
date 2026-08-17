@@ -1,3 +1,4 @@
+import { AGENT_SERVICES } from "./agents";
 import {
     defineCostVariants,
     longContextAbove,
@@ -895,64 +896,6 @@ export const TEXT_SERVICES = {
         search: true,
         contextLength: 1048576,
         isSpecialized: false,
-    },
-    "midijourney": {
-        aliases: [],
-        provider: "azure",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 0.75,
-        cost: {
-            promptTextTokens: perMillion(0.75),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(4.5),
-        },
-        title: "MIDIjourney",
-        description: "Turns your musical ideas into playable MIDI notation",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
-    "midijourney-large": {
-        aliases: [],
-        provider: "azure",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            completionTextTokens: perMillion(30.0),
-        },
-        // Uses the same Azure GPT-5.5 deployment as openai-large.
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    completionTextTokens: perMillion(45.0),
-                },
-            },
-            longContextAbove(272_000),
-            {
-                long_context: {
-                    label: "Long context (>272K)",
-                    description:
-                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
-                },
-            },
-            "≤272K context",
-        ),
-        title: "MIDIjourney Large",
-        description:
-            "Composes richer, more detailed MIDI arrangements; costs more per piece",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
     },
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
@@ -2095,4 +2038,5 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
+    ...AGENT_SERVICES,
 } as const satisfies Record<string, ModelDefinition>;

@@ -175,7 +175,8 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         brand_url: service.brandUrl,
         community: options.community || undefined,
-        agent: options.agent || undefined,
+        agent: service.agent || options.agent || undefined,
+        base_model: service.baseModel,
         per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:

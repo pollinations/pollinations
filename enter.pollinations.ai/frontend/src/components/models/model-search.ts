@@ -54,11 +54,10 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope === "community"
-                ? category === "text" ||
-                  category === "image" ||
-                  category === "agent"
-                : category !== "agent")
+            (scope !== "community" ||
+                category === "text" ||
+                category === "image" ||
+                category === "agent")
                 ? category
                 : undefined,
         q: query || undefined,

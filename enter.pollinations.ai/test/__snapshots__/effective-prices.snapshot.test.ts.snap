@@ -938,33 +938,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "midijourney": {
     "cost": {
-      "completionTextTokens": 0.0000045,
-      "promptCachedTokens": 0.000000075,
-      "promptTextTokens": 0.00000075,
-    },
-    "price": {
-      "completionTextTokens": 0.000003375,
-      "promptCachedTokens": 0.00000005625,
-      "promptTextTokens": 0.0000005625,
-    },
-  },
-  "midijourney-large": {
-    "cost": {
       "completionTextTokens": 0.00003,
+      "promptCacheWriteTokens": 0.00000625,
       "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000005,
     },
     "costVariants": {
       "long_context": {
         "completionTextTokens": 0.000045,
+        "promptCacheWriteTokens": 0.0000125,
         "promptCachedTokens": 0.000001,
         "promptTextTokens": 0.00001,
       },
     },
     "price": {
-      "completionTextTokens": 0.00003,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000005,
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.000003125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.0000025,
     },
   },
   "mimo-v2.5": {

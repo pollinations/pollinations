@@ -97,7 +97,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "cohere/command-a-plus-05-2026",
+        name: "cohere/command-a-plus",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },
     {
@@ -160,18 +160,18 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "mistralai/mistral-small-3.2-24b-instruct",
+        name: "mistralai/mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
         transform: pipe(stripCacheControl, stripReasoning),
     },
     {
-        name: "mistralai/mistral-small-2603",
+        name: "mistralai/mistral-small-4",
         config: portkeyConfig["mistral-small-2603"],
         transform: stripCacheControl,
     },
     {
-        name: "deepseek/deepseek-v4-flash-0731",
+        name: "deepseek/deepseek-v4-flash",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4-flash-0731"
         ],
@@ -186,7 +186,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-31b-it"],
     },
     {
-        name: "deepseek/deepseek-v4-pro-0813",
+        name: "deepseek/deepseek-v4-pro",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
         transform: fireworksThinking,
     },
@@ -363,7 +363,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },
     {
-        name: "nvidia/nemotron-3-ultra-550b-a55b",
+        name: "nvidia/nemotron-3-ultra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
     },
@@ -440,7 +440,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-2512",
+        name: "mistralai/mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,

@@ -149,8 +149,12 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "bytedance-seed/seedream-5-0-lite": {
-        aliases: ["seedream5", "bytedance/seedream-5-lite"],
+    "bytedance/seedream-5.0-lite": {
+        aliases: [
+            "seedream5",
+            "bytedance/seedream-5-lite",
+            "bytedance-seed/seedream-5-0-lite",
+        ],
         provider: "replicate",
         author: "ByteDance",
         category: "image",
@@ -167,12 +171,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "bytedance-seed/seedream-5-0-pro": {
+    "bytedance/seedream-5.0-pro": {
         aliases: [
             "seedream-5-pro",
             "seedream-pro-5",
             "seedream5-pro",
             "bytedance/seedream-5-pro",
+            "bytedance-seed/seedream-5-0-pro",
         ],
         provider: "replicate",
         author: "ByteDance",
@@ -189,8 +194,12 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "bytedance-seed/seedream-4.0": {
-        aliases: ["seedream", "bytedance/seedream-4"],
+    "bytedance/seedream-4.0": {
+        aliases: [
+            "seedream",
+            "bytedance/seedream-4",
+            "bytedance-seed/seedream-4.0",
+        ],
         provider: "replicate",
         author: "ByteDance",
         category: "image",
@@ -206,8 +215,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "bytedance-seed/seedream-4.5": {
-        aliases: ["seedream-pro"],
+    "bytedance/seedream-4.5": {
+        aliases: ["seedream-pro", "bytedance-seed/seedream-4.5"],
         provider: "openrouter",
         author: "ByteDance",
         category: "image",

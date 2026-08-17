@@ -752,16 +752,16 @@ const generateImage = async (
             }
         }
 
-        case "bytedance-seed/seedream-5-0-lite":
+        case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "bytedance-seed/seedream-5-0-pro":
+        case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "bytedance-seed/seedream-4.0":
+        case "bytedance/seedream-4.0":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "bytedance-seed/seedream-4.5":
+        case "bytedance/seedream-4.5":
             return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-ai/ideogram-v4-turbo":

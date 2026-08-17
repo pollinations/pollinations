@@ -694,7 +694,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         const result = await callOpenRouterSeedreamProAPI("test prompt", {
             ...baseParams,
-            model: "bytedance-seed/seedream-4.5",
+            model: "bytedance/seedream-4.5",
             width: 2048,
             height: 2048,
         });
@@ -721,7 +721,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         });
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
-            actualModel: "bytedance-seed/seedream-4.5",
+            actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -739,7 +739,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         await callOpenRouterSeedreamProAPI("wide prompt", {
             ...baseParams,
-            model: "bytedance-seed/seedream-4.5",
+            model: "bytedance/seedream-4.5",
             width: 4096,
             height: 2304,
             aspectRatio: "16:9",
@@ -761,7 +761,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         await callOpenRouterSeedreamProAPI("edit prompt", {
             ...baseParams,
-            model: "bytedance-seed/seedream-4.5",
+            model: "bytedance/seedream-4.5",
             image: [WIDE_REFERENCE_IMAGE_URL, REFERENCE_IMAGE_URL],
         });
 
@@ -787,7 +787,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         );
         const params = {
             ...baseParams,
-            model: "bytedance-seed/seedream-4.5",
+            model: "bytedance/seedream-4.5",
         } satisfies ImageParams;
 
         await expect(

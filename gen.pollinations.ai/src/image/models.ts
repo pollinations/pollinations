@@ -8,9 +8,9 @@ const DEFAULT_IMAGE_SIDE_LENGTH = 1024;
 export const IMAGE_DEFAULT_SIDE_LENGTHS: Partial<
     Record<ImageModelName, number>
 > = {
-    "bytedance-seed/seedream-5-0-lite": 2048,
-    "bytedance-seed/seedream-5-0-pro": 2048,
-    "bytedance-seed/seedream-4.5": 2048,
+    "bytedance/seedream-5.0-lite": 2048,
+    "bytedance/seedream-5.0-pro": 2048,
+    "bytedance/seedream-4.5": 2048,
     "ideogram-ai/ideogram-v4-turbo": 2048,
     "ideogram-ai/ideogram-v4-balanced": 2048,
     "ideogram-ai/ideogram-v4-quality": 2048,

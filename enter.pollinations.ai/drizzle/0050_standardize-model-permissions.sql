@@ -277,7 +277,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'command-a-plus'
-                            THEN 'cohere/command-a-plus-05-2026'
+                            THEN 'cohere/command-a-plus'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -341,7 +341,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'deepseek'
-                            THEN 'deepseek/deepseek-v4-flash-0731'
+                            THEN 'deepseek/deepseek-v4-flash'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -373,7 +373,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'deepseek-pro'
-                            THEN 'deepseek/deepseek-v4-pro-0813'
+                            THEN 'deepseek/deepseek-v4-pro'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2549,7 +2549,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'mistral'
-                            THEN 'mistralai/mistral-small-2603'
+                            THEN 'mistralai/mistral-small-4'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2581,7 +2581,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'mistral-large'
-                            THEN 'mistralai/mistral-large-2512'
+                            THEN 'mistralai/mistral-large-3'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2613,7 +2613,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'mistral-small-3.2'
-                            THEN 'mistralai/mistral-small-3.2-24b-instruct'
+                            THEN 'mistralai/mistral-small-3.2'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2837,7 +2837,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'nemotron'
-                            THEN 'nvidia/nemotron-3-ultra-550b-a55b'
+                            THEN 'nvidia/nemotron-3-ultra'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -4149,7 +4149,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'seedream'
-                            THEN 'bytedance-seed/seedream-4.0'
+                            THEN 'bytedance/seedream-4.0'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -4181,7 +4181,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'seedream-pro'
-                            THEN 'bytedance-seed/seedream-4.5'
+                            THEN 'bytedance/seedream-4.5'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -4213,7 +4213,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'seedream5'
-                            THEN 'bytedance-seed/seedream-5-0-lite'
+                            THEN 'bytedance/seedream-5.0-lite'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -4245,7 +4245,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'seedream5-pro'
-                            THEN 'bytedance-seed/seedream-5-0-pro'
+                            THEN 'bytedance/seedream-5.0-pro'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position

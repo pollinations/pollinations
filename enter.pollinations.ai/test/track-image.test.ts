@@ -27,7 +27,7 @@ test("Image models should calculate costs proportionally to token count", () => 
         "google/gemini-2.5-flash-image",
         "black-forest-labs/flux.1-kontext-pro",
         "tongyi-mai/z-image-turbo",
-        "bytedance-seed/seedream-4.0",
+        "bytedance/seedream-4.0",
     ];
 
     for (const model of models) {
@@ -70,7 +70,7 @@ test("Cost should be non-negative for all models", () => {
         "google/gemini-2.5-flash-image",
         "black-forest-labs/flux.1-kontext-pro",
         "tongyi-mai/z-image-turbo",
-        "bytedance-seed/seedream-4.0",
+        "bytedance/seedream-4.0",
     ];
     const usage: Usage = {
         completionImageTokens: 1,

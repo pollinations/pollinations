@@ -151,9 +151,7 @@ test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition(
-        "bytedance-seed/seedream-5-0-pro",
-    );
+    const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
@@ -177,17 +175,17 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedProviders = {
-        "deepseek/deepseek-v4-flash-0731": "fireworks",
-        "deepseek/deepseek-v4-pro-0813": "fireworks",
+        "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
-        "deepseek/deepseek-v4-flash-0731": undefined,
-        "deepseek/deepseek-v4-pro-0813": undefined,
+        "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
     for (const model of [
-        "deepseek/deepseek-v4-flash-0731",
-        "deepseek/deepseek-v4-pro-0813",
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4-pro",
     ] as const) {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);

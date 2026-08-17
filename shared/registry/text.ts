@@ -371,12 +371,13 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "cohere/command-a-plus-05-2026": {
+    "cohere/command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
             "command-a-plus-05-2026",
+            "cohere/command-a-plus-05-2026",
         ],
         provider: "azure",
         author: "Cohere",
@@ -417,12 +418,13 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mistralai/mistral-small-3.2-24b-instruct": {
+    "mistralai/mistral-small-3.2": {
         aliases: [
             "mistral-small-3.1",
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
             "mistral-small-3.2",
+            "mistralai/mistral-small-3.2-24b-instruct",
         ],
         provider: "openrouter",
         author: "Mistral",
@@ -444,13 +446,14 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistralai/mistral-small-2603": {
+    "mistralai/mistral-small-4": {
         aliases: [
             "mistral-4",
             "mistral-small",
             "mistral-small-4",
             "mistral-small-2603",
             "mistral",
+            "mistralai/mistral-small-2603",
         ],
         provider: "openrouter",
         author: "Mistral",
@@ -678,7 +681,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "deepseek/deepseek-v4-flash-0731": {
+    "deepseek/deepseek-v4-flash": {
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
@@ -686,6 +689,7 @@ export const TEXT_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
             "deepseek",
+            "deepseek/deepseek-v4-flash-0731",
         ],
         provider: "fireworks",
         author: "DeepSeek",
@@ -759,12 +763,12 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "deepseek/deepseek-v4-pro-0813": {
+    "deepseek/deepseek-v4-pro": {
         aliases: [
             "deepseek-v4-pro-0813",
             "deepseek-v4-pro",
             "deepseek-pro",
-            "deepseek/deepseek-v4-pro",
+            "deepseek/deepseek-v4-pro-0813",
         ],
         provider: "fireworks",
         author: "DeepSeek",
@@ -1408,12 +1412,13 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "nvidia/nemotron-3-ultra-550b-a55b": {
+    "nvidia/nemotron-3-ultra": {
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
+            "nvidia/nemotron-3-ultra-550b-a55b",
         ],
         provider: "deepinfra",
         author: "NVIDIA",
@@ -1801,8 +1806,12 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mistralai/mistral-large-2512": {
-        aliases: ["mistral-large-3", "mistral-large"],
+    "mistralai/mistral-large-3": {
+        aliases: [
+            "mistral-large-3",
+            "mistral-large",
+            "mistralai/mistral-large-2512",
+        ],
         provider: "azure",
         author: "Mistral",
         category: "text",

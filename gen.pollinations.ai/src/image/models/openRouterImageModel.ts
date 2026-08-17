@@ -399,7 +399,7 @@ export async function callOpenRouterSeedreamProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "bytedance-seed/seedream-4.5",
+            actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

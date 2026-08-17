@@ -97,7 +97,7 @@ describe("resolveModelConfig", () => {
 
     it("routes Nemotron directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra-550b-a55b",
+            model: "nvidia/nemotron-3-ultra",
         });
 
         expect(result.options.model).toBe(
@@ -225,7 +225,7 @@ describe("resolveModelConfig", () => {
 
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, {
-            model: "deepseek/deepseek-v4-flash-0731",
+            model: "deepseek/deepseek-v4-flash",
         });
 
         expect(result.options.model).toBe(

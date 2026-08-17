@@ -240,38 +240,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.005,
     },
   },
-  "bytedance-seed/seedream-4.0": {
-    "cost": {
-      "completionImageTokens": 0.03,
-    },
-    "price": {
-      "completionImageTokens": 0.03,
-    },
-  },
-  "bytedance-seed/seedream-4.5": {
-    "cost": {
-      "completionImageTokens": 0.04,
-    },
-    "price": {
-      "completionImageTokens": 0.04,
-    },
-  },
-  "bytedance-seed/seedream-5-0-lite": {
-    "cost": {
-      "completionImageTokens": 0.035,
-    },
-    "price": {
-      "completionImageTokens": 0.035,
-    },
-  },
-  "bytedance-seed/seedream-5-0-pro": {
-    "cost": {
-      "completionImageTokens": 0.09,
-    },
-    "price": {
-      "completionImageTokens": 0.09,
-    },
-  },
   "bytedance/seedance-1-pro-fast": {
     "cost": {
       "completionVideoSeconds": 0.025,
@@ -330,7 +298,39 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1028,
     },
   },
-  "cohere/command-a-plus-05-2026": {
+  "bytedance/seedream-4.0": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
+  "bytedance/seedream-4.5": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.04,
+    },
+  },
+  "bytedance/seedream-5.0-lite": {
+    "cost": {
+      "completionImageTokens": 0.035,
+    },
+    "price": {
+      "completionImageTokens": 0.035,
+    },
+  },
+  "bytedance/seedream-5.0-pro": {
+    "cost": {
+      "completionImageTokens": 0.09,
+    },
+    "price": {
+      "completionImageTokens": 0.09,
+    },
+  },
+  "cohere/command-a-plus": {
     "cost": {
       "completionTextTokens": 0.0000032,
       "promptTextTokens": 0.0000008,
@@ -350,7 +350,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
-  "deepseek/deepseek-v4-flash-0731": {
+  "deepseek/deepseek-v4-flash": {
     "cost": {
       "completionTextTokens": 0.00000028,
       "promptCachedTokens": 0.000000028,
@@ -362,7 +362,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000014,
     },
   },
-  "deepseek/deepseek-v4-pro-0813": {
+  "deepseek/deepseek-v4-pro": {
     "cost": {
       "completionTextTokens": 0.00000396,
       "promptCachedTokens": 0.000000044,
@@ -889,7 +889,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
-  "mistralai/mistral-large-2512": {
+  "mistralai/mistral-large-3": {
     "cost": {
       "completionTextTokens": 0.0000015,
       "promptCachedTokens": 0.00000005,
@@ -901,26 +901,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistralai/mistral-small-2603": {
+  "mistralai/mistral-small-3.2": {
     "cost": {
-      "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.000000015,
-      "promptTextTokens": 0.00000015,
+      "completionTextTokens": 0.0000002,
+      "promptTextTokens": 0.000000075,
     },
     "price": {
-      "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.000000015,
-      "promptTextTokens": 0.00000015,
+      "completionTextTokens": 0.0000002,
+      "promptTextTokens": 0.000000075,
     },
   },
-  "mistralai/mistral-small-3.2-24b-instruct": {
+  "mistralai/mistral-small-4": {
     "cost": {
-      "completionTextTokens": 0.0000002,
-      "promptTextTokens": 0.000000075,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.0000002,
-      "promptTextTokens": 0.000000075,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "moonshotai/kimi-k2.6": {
@@ -959,7 +959,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
-  "nvidia/nemotron-3-ultra-550b-a55b": {
+  "nvidia/nemotron-3-ultra": {
     "cost": {
       "completionTextTokens": 0.0000022,
       "promptCachedTokens": 0.0000001,

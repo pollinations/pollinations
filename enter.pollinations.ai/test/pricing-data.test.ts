@@ -545,14 +545,13 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
         getCostDefinition("stepfun/step-3.5-flash").promptTextTokens,
     ).toBeCloseTo(0.0000001, 12);
     expect(
-        getCostDefinition("mistralai/mistral-small-2603").promptCachedTokens,
+        getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
     ).toBeCloseTo(0.000000015, 12);
     expect(
         getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
     ).toBeCloseTo(0.00000007, 12);
     expect(
-        getCostDefinition("mistralai/mistral-small-3.2-24b-instruct")
-            .promptCachedTokens,
+        getCostDefinition("mistralai/mistral-small-3.2").promptCachedTokens,
     ).toBeUndefined();
     expect(
         getCostDefinition("stepfun/step-3.5-flash").promptCachedTokens,

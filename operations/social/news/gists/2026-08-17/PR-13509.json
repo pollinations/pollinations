@@ -1,0 +1,34 @@
+{
+  "pr_number": 13509,
+  "title": "feat: grant paid pollen through quest rewards",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13509",
+  "merged_at": "2026-08-17T21:00:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `balanceBucket` (`tier` | `pack`, default `tier`) to the admin quest-grant request, so a bonus can pay paid Pollen\n- Echoes the granted bucket in the response, so an operator can confirm which balance a money-moving grant hit\n- No other change needed: the reward ledger stores the bucket, `claimReward()` already credits `pack_balance`, and `rewardIconKind()` already renders pack rewards with the paid icon\n- Paid Pollen is the only bucket paid-only requests can spend, which is what a contributor bonus in `pack` actually unlocks\n\nChecks:\n- `npx vitest run test/quest-grants.test.ts test/quests.test.ts` — 33 passed, including a new pack grant → claim → `pack_balance` credit\n- `npx biome check` clean; `tsc --noEmit` clean for Worker code",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Quest rewards found a wallet",
+    "blurb": "Contributor bonuses can now arrive as Paid Pollen, not just tier balance. The quest garden has learned which little jar to fill.",
+    "summary": "Admin quest grants now accept a `balanceBucket` of `tier` or `pack` (defaulting to `tier`), letting contributor bonuses credit Paid Pollen through the existing reward claim flow.",
+    "impact": "Contributors can receive `pack`-bucket rewards that credit `pack_balance`, giving them Paid Pollen for requests that specifically spend that balance, while operators can verify the granted bucket in the response.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "rewards",
+      "paid-pollen",
+      "contributions",
+      "wallet"
+    ],
+    "visual_concept": "A cozy quest-reward station with a quest board and two labeled pollen jars: a regular tier jar and a special Paid Pollen pack jar. Polli, wearing a tiny accountant visor, carefully places a reward token into the paid jar while a friendly CRT robot confirms the selected bucket on its screen; small code-plants and flowers make the accounting corner feel like a garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor as she places a quest reward token into a glowing Paid Pollen jar beside a tier jar; a cute chunky CRT monitor robot displays \"PACK REWARD\" while code-plants, flowers, and a quest board grow around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13509.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor as she places a quest reward token into a glowing Paid Pollen jar beside a tier jar; a cute chunky CRT monitor robot displays \"PACK REWARD\" while code-plants, flowers, and a quest board grow around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T21:01:52.911862+00:00"
+}

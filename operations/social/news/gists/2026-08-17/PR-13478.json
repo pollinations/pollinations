@@ -1,0 +1,33 @@
+{
+  "pr_number": 13478,
+  "title": "refactor: simplify quest reward grants",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13478",
+  "merged_at": "2026-08-17T01:33:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the public coupon-code entry, redemption route, KV registry, and coupon tests\n- Keeps the authenticated admin grant endpoint and campaign-based accounting\n- Keeps non-catalog grants visible as claimable Bonus rewards through the existing quest claim flow\n- Reduces the follow-up by 330 lines\n\nChecks:\n- `npx biome check`\n- `npx tsc --noEmit`\n- `npm run build:frontend`\n- `npx vitest run test/quest-grants.test.ts test/quests.test.ts --reporter=dot` (32 tests)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Bonus rewards, one garden",
+    "blurb": "Quest rewards have one less side path to wander down. Admin grants now surface as claimable Bonus rewards right in the familiar quest flow.",
+    "summary": "Removed the public coupon-code redemption system and its KV registry while retaining authenticated admin grants and campaign accounting, with non-catalog grants continuing to appear as claimable Bonus rewards in quests.",
+    "impact": "People receiving an admin-issued reward can claim it through the existing quest interface instead of using a separate public coupon redemption route.",
+    "keywords": [
+      "quests",
+      "rewards",
+      "bonus-rewards",
+      "admin-grants",
+      "cleanup"
+    ],
+    "visual_concept": "Depict quest rewards as seed packets being organized into one cozy garden path: Polli, wearing a tiny gardener hat, places a glowing Bonus reward card into a quest board while an old coupon booth is peacefully packed away. Include flowers and code-plants to show the simplified reward flow, with the familiar quest board as the central object.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears a tiny gardener hat and pins a glowing \"BONUS\" reward card onto a wooden quest board beside blooming code-plants; a small old coupon booth is neatly folded away in the background. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13478.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears a tiny gardener hat and pins a glowing \"BONUS\" reward card onto a wooden quest board beside blooming code-plants; a small old coupon booth is neatly folded away in the background. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-17T01:34:22.805461+00:00"
+}

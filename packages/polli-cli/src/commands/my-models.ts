@@ -21,6 +21,10 @@ const PRICE_FLAGS = [
         "Completion reasoning token price",
     ],
     ["--completion-audio-price <number>", "Completion audio token price"],
+    [
+        "--completion-image-price <number>",
+        "Generated-image price (per image when --image-pricing request; per token when tokens)",
+    ],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -32,6 +36,7 @@ const PRICE_OPTION_KEYS = [
     "completionTextPrice",
     "completionReasoningPrice",
     "completionAudioPrice",
+    "completionImagePrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -42,6 +47,9 @@ interface MyModel {
     name: string;
     title: string;
     description: string | null;
+    modality: "text" | "image";
+    imagePricing: "request" | "tokens";
+    completionImagePrice?: number;
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
@@ -98,6 +106,20 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
+    if (opts.modality !== undefined) {
+        if (opts.modality !== "text" && opts.modality !== "image") {
+            fail("--modality must be 'text' or 'image'");
+        }
+        body.modality = opts.modality;
+    }
+
+    if (opts.imagePricing !== undefined) {
+        if (opts.imagePricing !== "request" && opts.imagePricing !== "tokens") {
+            fail("--image-pricing must be 'request' or 'tokens'");
+        }
+        body.imagePricing = opts.imagePricing;
+    }
+
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
     if (opts.fallbackModels !== undefined) {
@@ -146,6 +168,12 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
+            modality: model.modality ?? "text",
+            image_pricing: model.imagePricing ?? "-",
+            image_price:
+                model.completionImagePrice == null
+                    ? "-"
+                    : String(model.completionImagePrice),
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
@@ -156,6 +184,9 @@ function printModels(models: MyModel[]) {
             "id",
             "model",
             "title",
+            "modality",
+            "image_pricing",
+            "image_price",
             "visibility",
             "upstream",
             "base_url",
@@ -200,6 +231,14 @@ const create = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--modality <modality>",
+            "Model family: text (default) or image",
+        )
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image, default) or tokens",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -240,6 +279,10 @@ const update = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image) or tokens",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();
@@ -317,9 +360,17 @@ const test = new Command("test")
     .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
     .requiredOption("--model <model>", "Upstream model id")
+    .option("--modality <modality>", "Model family: text (default) or image")
     .action(async (opts) => {
         const key = requireKey();
         try {
+            if (
+                opts.modality !== undefined &&
+                opts.modality !== "text" &&
+                opts.modality !== "image"
+            ) {
+                fail("--modality must be 'text' or 'image'");
+            }
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
                 {
@@ -329,6 +380,9 @@ const test = new Command("test")
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
                         model: opts.model,
+                        ...(opts.modality !== undefined && {
+                            modality: opts.modality,
+                        }),
                     },
                 },
             );
@@ -339,7 +393,7 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community text models")
+    .description("Manage private and published community text and image models")
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

@@ -167,12 +167,13 @@ export const PollinationsToolsCapability: FC = () => (
             </span>
         }
         ariaLabel="Pollinations tools. This agent can call Pollinations models through its built-in MCP connection."
+        className="self-center leading-none"
         tapEnabled
         displayContents
     >
-        <span className="inline-flex items-center gap-1 whitespace-nowrap text-theme-text-soft">
-            <McpIcon className="h-4 w-4" />
-            <span className="text-xs font-medium">Tools</span>
+        <span className="inline-flex h-4 items-center gap-1 whitespace-nowrap leading-none text-theme-text-soft">
+            <McpIcon className="h-4 w-4 shrink-0" />
+            <span className="text-xs font-medium leading-none">Tools</span>
         </span>
     </Tooltip>
 );

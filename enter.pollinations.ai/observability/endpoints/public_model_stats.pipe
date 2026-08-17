@@ -1,7 +1,8 @@
 DESCRIPTION >
     Public model usage statistics for the last 7 days including today.
     Returns aggregated stats per model including request counts, average costs, and response times.
-    Only includes models with at least 3 successful priced requests for reliable averages.
+    Only includes models with at least 3 successful priced requests from at least 2 distinct
+    callers, for reliable averages and to keep owner-only models off a public endpoint.
 
 TOKEN tinybird_read_public READ
 
@@ -24,6 +25,7 @@ SQL >
     -- joins for an ordinary call and run_price is 0, leaving total_price.
     SELECT
         calls.resolved_model_requested as model,
+        calls.user_id as user_id,
         calls.total_price + ifNull(steps.run_price, 0) as price,
         calls.response_status as response_status,
         calls.response_time as response_time
@@ -46,7 +48,16 @@ SQL >
         countIf(response_status >= 400) as error_count
     FROM priced_calls
     GROUP BY model
+    -- Two callers, not just three calls: an average over one person is not a
+    -- reliable average, and a private community model is owner-only callable
+    -- (gen middleware/model.ts), so it can never reach two. That keeps a
+    -- model nobody published off a public endpoint without this table having
+    -- to carry a visibility column. It does not retract a model that was
+    -- public and went private: its earlier callers stay in the 7-day window.
+    -- uniqIf, because user_id DEFAULTs to 'undefined' and that sentinel would
+    -- otherwise count as the second caller.
     HAVING priced_success_count >= 3
+        AND uniqIf(user_id, user_id != 'undefined') >= 2
     ORDER BY request_count DESC
     LIMIT {{Int32(limit, 50)}}
 

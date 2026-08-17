@@ -218,8 +218,8 @@ export function MailIcon(props: IconProps) {
 export function McpIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <rect x="2" y="7" width="8" height="10" rx="1.5" />
-            <rect x="14" y="7" width="8" height="10" rx="1.5" />
+            <rect x="2" y="4" width="8" height="16" rx="1.5" />
+            <rect x="14" y="4" width="8" height="16" rx="1.5" />
             <path d="M10 12h4" />
         </svg>
     );

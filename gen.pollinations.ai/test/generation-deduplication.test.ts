@@ -91,7 +91,6 @@ function createApp(
             c.set("auth", {
                 user: { id: "user-1", tier: "seed" } as never,
                 apiKey: { id: "key-1", rawKey: "pk-secret" },
-                requireAuthorization: async () => {},
                 requireUser: () => ({ id: "user-1", tier: "seed" }) as never,
                 requireModelAccess: () => {},
             });
@@ -274,7 +273,6 @@ describe("generation request deduplication", () => {
                 c.set("auth", {
                     user: { id: "user-1", tier: "seed" } as never,
                     apiKey: { id: "key-1", rawKey: "pk-secret" },
-                    requireAuthorization: async () => {},
                     requireUser: () =>
                         ({ id: "user-1", tier: "seed" }) as never,
                     requireModelAccess: () => {},

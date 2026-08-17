@@ -73,7 +73,7 @@ export async function requireGenerationAccess(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
-    await vars.auth.requireAuthorization();
+    vars.auth.requireUser();
     vars.auth.requireModelAccess();
     await checkBalance(vars, env);
 }

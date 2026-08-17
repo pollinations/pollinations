@@ -249,3 +249,4 @@ Fixes #issue
 
 - Use "Fixes #issue" or "Addresses #issue" in PRs.
 - Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).
+- For publisher-allowlist PRs prompted by an access-request issue, add the requester as a `Co-authored-by` contributor using their numeric GitHub ID.

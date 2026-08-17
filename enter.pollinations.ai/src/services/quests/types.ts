@@ -3,6 +3,7 @@ import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     type QuestDefinition,
+    type QuestGoal,
     type QuestState,
     questState,
 } from "./definitions.ts";
@@ -23,10 +24,10 @@ export type QuestUser = {
 export type QuestGroup = {
     id: string;
     listQuestCards(ctx: QuestEvaluationContext): Promise<QuestCard[]>;
-    findRewardProposalsForUser(
+    evaluateUser(
         ctx: QuestEvaluationContext,
         user: QuestUser,
-    ): Promise<RewardProposal[]>;
+    ): Promise<QuestEvaluation>;
 };
 
 export type RewardProposal = {
@@ -34,6 +35,23 @@ export type RewardProposal = {
     userId: string;
     idempotencySubject?: string;
 };
+
+export type QuestProgress = QuestGoal & {
+    questId: string;
+    current: number;
+};
+
+export type QuestEvaluation = {
+    proposals: RewardProposal[];
+    progress?: QuestProgress[];
+};
+
+export function toQuestProgress(
+    quest: QuestDefinition & { goal: QuestGoal },
+    current: number,
+): QuestProgress {
+    return { questId: quest.id, current, ...quest.goal };
+}
 
 export function toReward(proposal: RewardProposal): RecordRewardInput {
     const { quest, userId } = proposal;

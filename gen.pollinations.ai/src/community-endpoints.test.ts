@@ -2141,7 +2141,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "lets a non-allowlisted user register a private model but blocks publishing tools",
+    "lets a non-allowlisted user probe an upstream and register a private model but blocks publishing",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -2162,6 +2162,40 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        // The probes are open to every account, so they reach the upstream
+        // instead of being refused: stub it and assert on what comes back.
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === "https://api.example.com/v1/models") {
+                    return Response.json({
+                        data: [{ id: "gpt-4.1-mini" }, { id: "gpt-4o" }],
+                    });
+                }
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    return Response.json({
+                        id: "chatcmpl_probe",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "OK" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 1,
+                            total_tokens: 4,
+                        },
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
         for (const probe of [
             {
                 path: "models",
@@ -2193,8 +2227,18 @@ fixtureTest(
                     },
                 ),
             );
-            expect(probeResponse.status).toBe(403);
+            expect(probeResponse.status).toBe(200);
+            const probeBody = (await probeResponse.json()) as {
+                data?: string[];
+                ok?: boolean;
+            };
+            if (probe.path === "models") {
+                expect(probeBody.data).toEqual(["gpt-4.1-mini", "gpt-4o"]);
+            } else {
+                expect(probeBody.ok).toBe(true);
+            }
         }
+        vi.unstubAllGlobals();
 
         const directPublishResponse = await fetchEnterApi(
             enterApi,

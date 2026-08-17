@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-16",
+  "period_start": "2026-08-16",
+  "period_end": "2026-08-16",
+  "generated_at": "2026-08-17T06:18:52.226372+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-16/images/reddit.jpg"
+    }
+  ],
+  "title": "14 merges: image edits, agents, and quests",
+  "text": "14 PRs merged today, mostly removing friction rather than adding another dashboard.\n\nImage edits now preserve the source aspect ratio when `size` is omitted (#13459). This was a small default with surprisingly large consequences: edits should stop turning a portrait into an accidental banner.\n\nThe agent UI got a cleanup pass: simpler model listings and descriptions (#13442, #13445), less noisy form labels (#13463), responsive cards (#13454), pricing shown only where it belongs (#13455, #13460), and OAuth authorize actions that remain visible on short screens (#13456). Managed agents now expose tool calls (#13465), which makes debugging the \"why did it do that?\" portion less archaeological.\n\nInfrastructure and housekeeping: MCP clients now follow server redirects (#13457); NeuralCanvas was added to image models (#13449); community, consent, help, and operator details were clarified (#13453, #13472).\n\nQuests also gained reward campaigns (#13470). It is still alpha, so expect the mechanics and available rewards to move as we learn where the sharp edges are.\n\nCode and merged PRs: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs\n\nIf an agent flow, image-edit edge case, or MCP server behaves differently after these changes, an issue with the request and expected result is useful."
+}

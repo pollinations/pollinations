@@ -5,6 +5,7 @@ import {
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
+    sanitizeConsentExpiryDays,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
 
@@ -121,6 +122,52 @@ describe("expiryDaysToExpiresIn", () => {
 
     it("rounds fractional days to whole seconds", () => {
         expect(expiryDaysToExpiresIn(0.00001)).toBe(1);
+    });
+
+    it("keeps a tiny expiry short instead of collapsing it to never", () => {
+        expect(expiryDaysToExpiresIn(0.0000001)).toBe(1);
+    });
+});
+
+describe("sanitizeConsentExpiryDays", () => {
+    it("honours a positive expiry the caller asked for", () => {
+        expect(sanitizeConsentExpiryDays(30)).toBe(30);
+        expect(sanitizeConsentExpiryDays(0.5)).toBe(0.5);
+        expect(sanitizeConsentExpiryDays(365)).toBe(365);
+    });
+
+    it("falls back to the default when nothing was asked for", () => {
+        expect(sanitizeConsentExpiryDays(null)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS,
+        );
+        expect(sanitizeConsentExpiryDays(undefined)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS,
+        );
+    });
+
+    // A third party controls this value through ?expiry= on the consent URL.
+    // Falling back to "never" would let it mint a permanent key while the
+    // screen displayed the most restrictive value possible.
+    it("falls back to the default for values a caller could abuse", () => {
+        expect(sanitizeConsentExpiryDays(0)).toBe(DEFAULT_CONSENT_EXPIRY_DAYS);
+        expect(sanitizeConsentExpiryDays(-7)).toBe(DEFAULT_CONSENT_EXPIRY_DAYS);
+        expect(sanitizeConsentExpiryDays(Number.NaN)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS,
+        );
+        expect(sanitizeConsentExpiryDays(Number.POSITIVE_INFINITY)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS,
+        );
+        expect(sanitizeConsentExpiryDays(366)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS,
+        );
+    });
+
+    it("never turns a consent expiry into no expiry", () => {
+        for (const expiry of [0, -7, Number.NaN, 366]) {
+            expect(
+                expiryDaysToExpiresIn(sanitizeConsentExpiryDays(expiry)),
+            ).toBe(DEFAULT_CONSENT_EXPIRY_DAYS * 24 * 60 * 60);
+        }
     });
 });
 

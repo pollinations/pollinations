@@ -23,19 +23,40 @@ export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
+const MAX_EXPIRY_DAYS = 365;
 
 /**
  * Key creation takes a positive whole number of seconds, but the expiry field
  * accepts 0 and fractional days. Anything that can't become a positive integer
  * means "no expiry" — same as leaving the field empty, and same as what the
  * edit dialog already does with 0 days.
+ *
+ * A fractional day still rounds to at least one second rather than collapsing
+ * to "never", so a small number stays a short expiry.
  */
 export function expiryDaysToExpiresIn(
     expiryDays: number | null | undefined,
 ): number | undefined {
     if (expiryDays == null) return undefined;
-    const expiresIn = Math.round(expiryDays * SECONDS_PER_DAY);
-    return expiresIn > 0 ? expiresIn : undefined;
+    if (!Number.isFinite(expiryDays) || expiryDays <= 0) return undefined;
+    return Math.max(1, Math.round(expiryDays * SECONDS_PER_DAY));
+}
+
+/**
+ * The consent screen's expiry comes from the caller's own query string, so a
+ * third-party app must not be able to steer it. Only a positive, finite value
+ * inside the server's 365-day ceiling is honoured; anything else falls back to
+ * the default rather than to "never", so a hostile `?expiry=0` cannot mint a
+ * permanent key or block the flow on the server's positive-integer check.
+ */
+export function sanitizeConsentExpiryDays(
+    expiry: number | null | undefined,
+): number {
+    if (expiry == null) return DEFAULT_CONSENT_EXPIRY_DAYS;
+    if (!Number.isFinite(expiry) || expiry <= 0 || expiry > MAX_EXPIRY_DAYS) {
+        return DEFAULT_CONSENT_EXPIRY_DAYS;
+    }
+    return expiry;
 }
 
 /**
@@ -86,7 +107,7 @@ export function getAuthorizeInitialPermissions({
     return {
         allowedModels: models,
         pollenBudget: budget ?? DEFAULT_CONSENT_BUDGET,
-        expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
+        expiryDays: sanitizeConsentExpiryDays(expiry),
         accountPermissions: sanitizeAuthorizeAccountPermissions(permissions),
     };
 }

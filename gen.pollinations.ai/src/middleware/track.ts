@@ -332,8 +332,9 @@ export const track = (eventType: EventType) =>
                             isBilledUsage: false,
                             isFinal: false,
                             fallbackUsed:
+                                call.candidate.isFallback === true ||
                                 model !==
-                                requestTracking.resolvedModelRequested,
+                                    requestTracking.resolvedModelRequested,
                             modelUsed: model,
                             modelProviderUsed:
                                 call.candidate.definition?.provider ??
@@ -348,11 +349,13 @@ export const track = (eventType: EventType) =>
                     });
                 }
                 const servedEntry = c.var.servedModelEntry;
+                const servedDefinition = c.var.servedModelDefinition;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition ??
+                    servedDefinition ??
+                        servedEntry?.definition ??
                         terminalAttempt?.candidate.definition,
                     terminalAttemptModel ?? servedEntry?.id,
                     pricingInput,

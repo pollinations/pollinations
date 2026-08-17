@@ -46,6 +46,8 @@ export type ModelVariables = {
      * caller pays does not — that stays the listing they asked for.
      */
     servedModelEntry?: GenerationModelEntry;
+    /** Serving provider route definition when the public model id is unchanged. */
+    servedModelDefinition?: ModelDefinition;
     formData?: FormData;
 };
 
@@ -203,17 +205,13 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Hidden registry fallbacks are provider implementations of the public
-        // model the caller selected, so they inherit that model's permission.
-        // Visible and community targets remain independently scoped: a key can
-        // never be served — or billed for — a model it could not call directly.
+        // Provider routes are part of the selected model and never enter this
+        // list. Distinct registry/community fallback models remain independently
+        // scoped: a key cannot be served a model it could not call directly.
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) =>
-                    (entry.definition.hidden === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                (entry) => allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);

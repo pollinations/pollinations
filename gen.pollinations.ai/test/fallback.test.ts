@@ -1,5 +1,9 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getModels,
+    type ModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -66,6 +70,62 @@ function communityEntry(
 }
 
 describe("registry fallback linking", () => {
+    it("keeps the retired Fal id as an alias, not a model", () => {
+        expect(resolveModelName("zimage-fal")).toBe("zimage");
+        expect(getModels()).not.toContain("zimage-fal");
+    });
+
+    it("keeps provider routes on the public model identity", () => {
+        const primary = registryEntry("primary", ["other-model"], 4);
+        primary.definition.fallbackRoutes = [
+            {
+                id: "backup-provider",
+                provider: "backup",
+                cost: { completionTextTokens: 2 },
+            },
+        ];
+        const otherModel = registryEntry("other-model", [], 1);
+        primary.fallbackEntries = [otherModel];
+
+        const candidates = fallbackCandidates({
+            resolved: primary.id,
+            definition: primary.definition,
+            fallbackEntries: primary.fallbackEntries,
+        });
+
+        expect(
+            candidates.map(({ id, routeId, definition, isFallback }) => ({
+                id,
+                routeId,
+                provider: definition?.provider,
+                cost: definition?.cost,
+                isFallback,
+            })),
+        ).toEqual([
+            {
+                id: "primary",
+                routeId: undefined,
+                provider: "test",
+                cost: { completionTextTokens: 4 },
+                isFallback: undefined,
+            },
+            {
+                id: "primary",
+                routeId: "backup-provider",
+                provider: "backup",
+                cost: { completionTextTokens: 2 },
+                isFallback: true,
+            },
+            {
+                id: "other-model",
+                routeId: undefined,
+                provider: "test",
+                cost: { completionTextTokens: 1 },
+                isFallback: true,
+            },
+        ]);
+    });
+
     it("uses registry declarations without applying community price rules", () => {
         const primary = registryEntry("primary", ["target-alias", "target"]);
         const target = registryEntry("target", ["primary"], 10);

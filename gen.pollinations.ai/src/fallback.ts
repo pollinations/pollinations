@@ -177,13 +177,38 @@ export function isRetryableFallbackError(
  * seam below does not depend on how any one handler reaches its provider.
  */
 export type FallbackCandidate = {
+    /** Public canonical model id. Provider routes keep the primary model id. */
     id: string;
+    /** Internal route selector; never accepted as a public model id. */
+    routeId?: string;
+    isFallback?: boolean;
     /** Always present alongside `communityEndpoint`: it is what prices it. */
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
     /** Serving registry entry. Absent on the model the caller asked for. */
     entry?: GenerationModelEntry;
 };
+
+function definitionForProviderRoute(
+    model: ModelDefinition,
+    route: NonNullable<ModelDefinition["fallbackRoutes"]>[number],
+): ModelDefinition {
+    return {
+        ...model,
+        provider: route.provider,
+        cost: route.cost,
+        billing: route.billing,
+        // Serving cost belongs to the selected route. Public price still comes
+        // from the model the caller requested, so public cost variants and
+        // billing rules must not leak into the route's provider cost.
+        costVariants: undefined,
+        costVariantMetadata: undefined,
+        defaultCostVariantLabel: undefined,
+        selectCostVariant: undefined,
+        fallbacks: undefined,
+        fallbackRoutes: undefined,
+    };
+}
 
 type PrimaryModel = {
     resolved: string;
@@ -209,9 +234,24 @@ export function fallbackCandidates(
             communityEndpoint: model?.communityEndpoint,
         },
     ];
+    const primaryDefinition = model?.definition;
+    if (primaryDefinition) {
+        for (const route of primaryDefinition.fallbackRoutes ?? []) {
+            candidates.push({
+                id: model?.resolved ?? "",
+                routeId: route.id,
+                isFallback: true,
+                definition: definitionForProviderRoute(
+                    primaryDefinition,
+                    route,
+                ),
+            });
+        }
+    }
     for (const entry of model?.fallbackEntries ?? []) {
         candidates.push({
             id: entry.id,
+            isFallback: true,
             definition: entry.definition,
             communityEndpoint: entry.communityEndpoint,
             entry,

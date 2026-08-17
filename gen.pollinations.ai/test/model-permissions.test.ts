@@ -69,6 +69,20 @@ test("canonicalizes aliases in new model permissions", async () => {
     expect(body.map((model) => model.name)).toEqual(["nanobanana-2"]);
 });
 
+test("canonicalizes the retired Z-Image Fal id in new permissions", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["zimage-fal"],
+        user: { packBalance: 100 },
+    });
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { name: string }[];
+    expect(body.map((model) => model.name)).toEqual(["zimage"]);
+});
+
 test("empty model permissions deny access and return an empty catalog", async () => {
     const { key } = await createTestApiKey({
         allowedModels: [],

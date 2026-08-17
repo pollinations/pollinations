@@ -28,6 +28,7 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 - Registry provider means configured primary route.
 - Selected/used provider means the backend that actually served a request.
 - For a fallback request, verify attempt attribution, selected provider, actual provider cost, and user price under the approved fallback economics.
+- For a same-model provider route, verify that provider cost follows the serving route while identity, permissions, and user price remain on the public model.
 - Provider-managed routing may obscure the physical backend; document the observable identity rather than inventing one.
 
 ## Cache behavior

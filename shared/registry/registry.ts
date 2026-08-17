@@ -143,13 +143,26 @@ export type BillingAdjustment = {
     price: number;
 };
 
+/**
+ * An internal provider route for the same public model. Routes have their own
+ * provider cost but never their own model identity, permissions, or user price.
+ */
+export type ProviderRouteDefinition = {
+    id: string;
+    provider: string;
+    cost: CostDefinition;
+    billing?: BillingRules;
+};
+
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
-    /** Ordered model ids to try when this model's upstream fails. */
+    /** Ordered distinct model ids to try when this model's upstream fails. */
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */
     fallbackOnStatusCodes?: number[];
+    /** Ordered internal provider routes to try before falling back to another model. */
+    fallbackRoutes?: ProviderRouteDefinition[];
     brand: string;
     category: Category;
     cost: CostDefinition;

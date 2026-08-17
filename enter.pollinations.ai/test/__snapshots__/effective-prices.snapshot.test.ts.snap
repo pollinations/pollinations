@@ -1819,13 +1819,5 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.004,
     },
   },
-  "zimage-fal": {
-    "cost": {
-      "completionImageTokens": 0,
-    },
-    "price": {
-      "completionImageTokens": 0,
-    },
-  },
 }
 `;

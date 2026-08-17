@@ -24,6 +24,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Default to **no Pollinations fallback** for new routes.
 - Add or change a fallback only with explicit confirmation of the exact pair and proof of model identity, capabilities, parameters, permissions, billing, provider attribution, and economics.
 - Use the shared generic fallback system when an already-approved production pair needs migration; do not build a model-specific retry layer.
+- Distinguish model fallback from provider-route fallback. A different model remains a separate registry entry; another provider serving the same model belongs in `fallbackRoutes` on the canonical entry and must never create a second model ID or permission.
 - Provider-managed fallback is distinct from Pollinations fallback. Preserve the provider default unless its tradeoffs require a product decision, and disclose those tradeoffs before editing.
 - Never add a more expensive fallback when users are billed from the cheaper primary quote unless the economics are explicitly accepted.
 

@@ -43,7 +43,8 @@ for Fal while still bounding worst-case queue growth.
 Deploy the gen fallback before enabling this queue limit on production workers.
 After updating a worker, verify local saturation returns 503, normal generation
 still succeeds, and production telemetry attributes any overflow to
-`zimage-fal`. Only then drain and destroy a redundant Vast connector.
+model `zimage` with provider `fal` and `fallback_used=true`. Only then drain
+and destroy a redundant Vast connector.
 
 The setup defaults to `HEARTBEAT_ENABLED=false`, which prevents registry
 registration but does not isolate a connector in the shared named tunnel.

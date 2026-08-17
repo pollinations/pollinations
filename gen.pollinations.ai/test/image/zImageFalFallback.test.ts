@@ -3,7 +3,10 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest } from "@shared/test/fixtures/index.ts";
+import {
+    test as baseTest,
+    createTestApiKey,
+} from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
     teardownFetchMock,
@@ -89,9 +92,12 @@ async function fetchWorker(path: string, init: RequestInit) {
 }
 
 test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
-    paidApiKey,
     mocks,
 }) => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["zimage"],
+        user: { packBalance: 100 },
+    });
     const existing = await env.KV.list({ prefix: "image:server:test:zimage:" });
     await Promise.all(existing.keys.map((key) => env.KV.delete(key.name)));
 
@@ -111,13 +117,13 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
 
     const { response, wait } = await fetchWorker(
         "/image/a%20red%20apple?model=zimage&width=1024&height=1024&seed=42",
-        { headers: { authorization: `Bearer ${paidApiKey}` } },
+        { headers: { authorization: `Bearer ${key}` } },
     );
 
     const failureBody =
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("zimage-fal");
+    expect(response.headers.get("x-model-used")).toBe("zimage");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
     expect(mocks.fal.state.falRequests).toEqual([
@@ -144,7 +150,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage-fal",
+        modelUsed: "zimage",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,

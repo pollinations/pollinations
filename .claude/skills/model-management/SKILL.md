@@ -106,6 +106,7 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 ### 4. Implement the smallest complete change
 
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
+- Represent an automatic provider fallback for the same model as an internal provider route on the canonical registry entry, never as another public or hidden model. Provider routes may override serving provider cost and billing mechanics, but inherit the model's identity, permissions, capabilities, access, and user price.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
 - Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.

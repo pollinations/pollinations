@@ -1,6 +1,7 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -30,6 +31,7 @@ import {
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
+import { callZImageFalAPI } from "./models/zImageFalModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -418,6 +420,7 @@ async function generateMediaWithFallback(
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
     servedEntry?: GenerationModelEntry;
+    servedDefinition?: ModelDefinition;
     servedIndex: number;
 }> {
     const { result, candidate, index } = await withModelFallback(
@@ -442,23 +445,27 @@ async function generateMediaWithFallback(
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
-            const hiddenFallback = attempt.entry?.definition.hidden === true;
+            if (attempt.routeId) {
+                if (attempt.id !== "zimage" || attempt.routeId !== "fal") {
+                    throw new Error(
+                        `Unsupported provider route: ${attempt.id}/${attempt.routeId}`,
+                    );
+                }
+                const generated = await callZImageFalAPI(prompt, {
+                    ...safeParams,
+                    model: "zimage",
+                });
+                assertNonEmptyMedia(generated.buffer, "Fal image provider");
+                return { result: generated, params: safeParams };
+            }
             const generated = await generateImageResult(
                 c,
                 prompt,
                 params,
-                (hiddenFallback
-                    ? safeParams.model
-                    : params.model) as ImageParams["model"],
+                params.model as ImageParams["model"],
             );
             assertNonEmptyMedia(generated.buffer, "Image provider");
-            // Hidden static fallbacks are internal routes for the same public
-            // service. Keep their id out of filenames and EXIF metadata while
-            // servedEntry still carries their provider and cost to tracking.
-            return {
-                result: generated,
-                params: hiddenFallback ? safeParams : params,
-            };
+            return { result: generated, params };
         },
         c.var.track?.failedCalls,
         (attempt) =>
@@ -467,6 +474,7 @@ async function generateMediaWithFallback(
     return {
         ...result,
         servedEntry: candidate.entry,
+        ...(candidate.routeId && { servedDefinition: candidate.definition }),
         servedIndex: index,
     };
 }
@@ -544,7 +552,7 @@ export async function generateImageOrVideoResponse(
     });
 
     try {
-        const { result, params, servedEntry, servedIndex } =
+        const { result, params, servedEntry, servedDefinition, servedIndex } =
             await generateMediaWithFallback(c, originalPrompt, safeParams);
         const headers = mediaHeaders(
             originalPrompt,
@@ -553,6 +561,9 @@ export async function generateImageOrVideoResponse(
             result.mimeType || detectMimeType(result.buffer),
         );
         if (servedEntry) c.set("servedModelEntry", servedEntry);
+        if (servedDefinition) {
+            c.set("servedModelDefinition", servedDefinition);
+        }
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

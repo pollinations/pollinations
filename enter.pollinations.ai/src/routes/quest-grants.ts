@@ -19,6 +19,8 @@ const grantRewardsSchema = z.object({
         .regex(/^[a-z0-9][a-z0-9_-]{0,99}$/),
     title: z.string().trim().min(1).max(200),
     pollenAmount: z.number().positive().max(MAX_REWARD_AMOUNT),
+    // "pack" grants paid pollen, the only bucket paid-only requests can spend.
+    balanceBucket: z.enum(["tier", "pack"]).default("tier"),
     sourceUrl: z
         .url()
         .refine((value) =>
@@ -68,7 +70,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
                 idempotencyKey: `quest:${questId}:user:${user.id}`,
                 userId: user.id,
                 amount: input.pollenAmount,
-                bucket: "tier",
+                bucket: input.balanceBucket,
                 questId,
                 title: input.title,
                 url: input.sourceUrl,
@@ -77,6 +79,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
 
         return c.json({
             campaignId: input.campaignId,
+            balanceBucket: input.balanceBucket,
             matched: matched.length,
             recorded: result.recorded,
             missing: requested.filter((login) => !usersByLogin.has(login)),

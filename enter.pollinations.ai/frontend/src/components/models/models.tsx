@@ -10,7 +10,6 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     Input,
-    McpIcon,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -491,18 +490,8 @@ export const Models: FC = () => {
                             <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 <strong>agent pricing</strong> — listed rates
-                                are for the agent&apos;s base model, which runs
-                                with the agent&apos;s saved instructions. Agents
-                                with the{" "}
-                                <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle text-theme-text-soft">
-                                    <McpIcon className="h-3.5 w-3.5 shrink-0" />
-                                    <strong>Tools</strong>
-                                </span>{" "}
-                                capability can also call Pollinations models
-                                through the built-in MCP connection. Each tool
-                                call is billed separately at the selected
-                                model&apos;s listed rate, and one agent request
-                                may make multiple tool calls.
+                                are for the agent&apos;s base model running its
+                                saved instructions.
                             </span>
                         </p>
                     )}

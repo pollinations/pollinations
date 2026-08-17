@@ -381,6 +381,10 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
     <div className="grid col-span-full grid-cols-subgrid items-baseline py-0.5">
         {align === "right" && <span aria-hidden="true" />}
         <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
+            <McpIcon className="h-3.5 w-3.5 shrink-0" />
+            Tools
+        </span>
+        <span className="col-span-2 whitespace-nowrap">
             <Tooltip
                 triggerAs="span"
                 content={
@@ -400,14 +404,10 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
                 tapEnabled
                 displayContents
             >
-                <span className="inline-flex items-center gap-1.5">
-                    <McpIcon className="h-3.5 w-3.5 shrink-0" />
-                    Tools
+                <span className="text-sm font-semibold tabular-nums text-theme-text-strong">
+                    Usage-based
                 </span>
             </Tooltip>
-        </span>
-        <span className="col-span-2 whitespace-nowrap text-xs font-normal text-theme-text-muted">
-            Usage-based
         </span>
     </div>
 );

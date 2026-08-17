@@ -1332,10 +1332,6 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    await c.var.auth.requireAuthorization({
-        message:
-            "Realtime WebSocket requires a Pollinations API key in the Authorization header or key query parameter.",
-    });
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;

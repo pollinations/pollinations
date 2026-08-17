@@ -1,13 +1,5 @@
+import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
-
-const SECONDS_PER_DAY = 24 * 60 * 60;
-
-export function expiryDaysToExpiresIn(
-    expiryDays: number | null | undefined,
-): number | undefined {
-    if (expiryDays == null) return undefined;
-    return expiryDays * SECONDS_PER_DAY;
-}
 
 type Permissions = {
     allowedModels?: string[] | null;

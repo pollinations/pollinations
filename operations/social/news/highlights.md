@@ -1,3 +1,7 @@
+- **2026-08-16** – **🎨 Image edits keep their shape** Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-16** – **🤖 Agents show their work** Managed-agent responses now expose tool names, parameters, outputs, and failures in streaming and non-streaming Open WebUI-compatible blocks. Debugging the robot is marginally less mystical.
+- **2026-08-16** – **🎯 Bonus Pollen rewards** Campaign rewards can now be claimed through Quests and appear under Bonus rewards, while contributor grants land through the same quest flow.
+- **2026-08-16** – **📱 NeuralCanvas on Android** A native Kotlin/Jetpack Compose app turns text prompts into images with the Pollinations image API. [Try it](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) <!-- app -->
 - **2026-08-14** – **🎯 Starred models stay starred** The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature.
 - **2026-08-14** – **🎵 Scribe joins the live hive** Plug ElevenLabs Scribe live transcription into OpenAI Realtime-compatible clients via `/realtime` or `/v1/realtime`, with partial transcripts, VAD, and language controls.
 - **2026-08-14** – **🎨 Grok gets a new canvas** `x-ai/grok-imagine-image-2.0` can generate and edit 1K or 2K images with up to three reference images through the usual image routes.

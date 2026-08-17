@@ -809,7 +809,7 @@ fixtureTest(
             "nosniff",
         );
         expect(getResponse.headers.get("x-model-used")).toBe(
-            "recraft-v4.1-vector",
+            "recraft/recraft-v4.1-vector",
         );
         expect(getResponse.headers.get("x-usage-completion-image-tokens")).toBe(
             "1",

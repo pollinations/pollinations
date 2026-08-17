@@ -660,11 +660,24 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const accountBalanceSchema = z.object({
+    total: z
+        .number()
+        .describe("Quest Pollen + paid Pollen remaining on the account"),
+    tier: z.number().describe("Quest Pollen remaining"),
+    paid: z.number().describe("Paid Pollen remaining"),
+});
+
 const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
+            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+        ),
+    accountBalance: accountBalanceSchema
+        .optional()
+        .describe(
+            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
         ),
 });
 
@@ -922,7 +935,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires the read-only `account:usage` permission.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -943,34 +956,43 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const keyBudget = apiKey?.pollenBalance ?? null;
+            const canViewAccount = hasAccountPermission(apiKey, "usage");
 
-            // Keys with a budget always see their own budget — no scope needed.
-            if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
-            }
-
-            // Beyond that, reading account balance requires usage or admin.
-            if (!hasAccountPermission(apiKey, "usage")) {
+            // Unbudgeted keys cannot see any balance without account:usage.
+            if (keyBudget == null && !canViewAccount) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
                 });
             }
 
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            let accountBalance:
+                | { total: number; tier: number; paid: number }
+                | undefined;
+            if (canViewAccount) {
+                const db = drizzle(c.env.DB);
+                const users = await db
+                    .select({
+                        tierBalance: userTable.tierBalance,
+                        packBalance: userTable.packBalance,
+                    })
+                    .from(userTable)
+                    .where(eq(userTable.id, user.id))
+                    .limit(1);
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
+                const tier = users[0]?.tierBalance ?? 0;
+                const paid = users[0]?.packBalance ?? 0;
+                accountBalance = { total: tier + paid, tier, paid };
+            }
 
-            return c.json({ balance: tierBalance + packBalance });
+            // Budgeted keys keep seeing their remaining budget in `balance`.
+            const balance =
+                keyBudget != null ? keyBudget : (accountBalance?.total ?? 0);
+
+            return c.json(
+                accountBalance ? { balance, accountBalance } : { balance },
+            );
         },
     )
     .get(

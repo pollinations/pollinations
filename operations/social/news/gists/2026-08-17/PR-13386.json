@@ -1,0 +1,34 @@
+{
+  "pr_number": 13386,
+  "title": "docs(polli-cli): document registering an image my-model",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/13386",
+  "merged_at": "2026-08-17T18:45:31Z",
+  "labels": [],
+  "pr_body_excerpt": "Documents how to register a community **image** model from the CLI.\n\n- `test --modality image` before `create`, and what the probe reports back\n- how `--input-modalities text,image` advertises image-edit support, surfaced in the `inputs` column\n- the two billing modes: `request` (per generated image) vs `tokens` (per 1M, verified against `COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS`)\n- `--modality` is fixed at creation\n\nReduced to the docs. The `my-models.ts` flags land in #13491; the generic `polli api` pass-through is a separate product decision tracked in #13385.\n\nCo-authored-by: @Circuit-Overtime\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Image models find their paperwork",
+    "blurb": "The Polli CLI guide now walks community image-model gardeners through registration before the pixels start blooming. It also explains the small but important choices hiding behind modality, inputs, and billing.",
+    "summary": "Documented registering a community image model with Polli CLI, including `test --modality image` probing, `--input-modalities text,image` image-edit advertising, request-versus-token billing, and the creation-time-fixed `--modality` setting.",
+    "impact": "Community model builders can now verify an image backend before creation, expose image-edit support through the `inputs` column, and select billing with the relevant image pricing fields in view.",
+    "keywords": [
+      "polli-cli",
+      "documentation",
+      "community-models",
+      "image-models",
+      "billing",
+      "image-editing"
+    ],
+    "visual_concept": "A cozy CLI registration desk in a garden shed: Polli checks a glowing image-model seed packet with a clipboard while a retro terminal displays a successful image probe, and two labeled jars represent per-request and per-token billing. A small code-plant has both text and image leaves, representing advertised image-edit inputs.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and checks a glowing image-model seed packet beside a retro terminal reading \"IMAGE TEST OK\"; nearby, a code-plant grows text and picture-shaped leaves beside little jars marked \"REQUEST\" and \"TOKENS.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13386.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and checks a glowing image-model seed packet beside a retro terminal reading \"IMAGE TEST OK\"; nearby, a code-plant grows text and picture-shaped leaves beside little jars marked \"REQUEST\" and \"TOKENS.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T18:48:41.224188+00:00"
+}

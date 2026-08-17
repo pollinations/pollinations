@@ -1,0 +1,67 @@
+{
+  "date": "2026-08-16",
+  "period_start": "2026-08-16",
+  "period_end": "2026-08-16",
+  "title": "Image edits now keep the shape of the original",
+  "summary": "A busy garden day: composition-preserving image edits, inspectable agent tool calls, cleaner agent UX, and new ways for Quest rewards to land.\n\nImage edit requests without an explicit size now derive a safe, 16px-aligned output size from the source image, so portrait, landscape, and wide edits keep their composition instead of quietly becoming squares. The app directory also gained NeuralCanvas, a native Kotlin and Jetpack Compose Android image generator built on the Pollinations image API.\n\nManaged agents now return Open WebUI-compatible records for tool calls, parameters, outputs, and failures in both streaming and completed responses. MCP connections also follow ordinary redirects, which is useful because URLs, like houses, occasionally move without telling the integration.\n\nAgent model listings, cards, pricing guidance, and creation forms were consolidated around shared tooltips, compact descriptions, stable mobile layouts, and category-specific legends. Long model IDs now truncate cleanly, pricing context stays where it is useful, and the community-agent form has less ceremonial labeling.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 13442,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13445,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13449,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13453,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13454,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13455,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13456,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13457,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13459,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13460,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13463,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13465,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13470,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13472,
+      "date": "2026-08-16"
+    }
+  ],
+  "generated_at": "2026-08-17T06:18:52.226372+00:00"
+}

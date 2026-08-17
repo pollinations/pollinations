@@ -23,7 +23,7 @@ const PRICE_FLAGS = [
     ["--completion-audio-price <number>", "Completion audio token price"],
     [
         "--completion-image-price <number>",
-        "Generated-image price (per image when --image-pricing request; per token when tokens)",
+        "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
     ],
 ] as const;
 
@@ -49,7 +49,7 @@ interface MyModel {
     description: string | null;
     modality: "text" | "image";
     imagePricing: "request" | "tokens";
-    completionImagePrice?: number;
+    completionImagePrice: number;
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
@@ -169,11 +169,12 @@ function printModels(models: MyModel[]) {
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
             modality: model.modality ?? "text",
-            image_pricing: model.imagePricing ?? "-",
+            image_pricing:
+                model.modality === "image" ? (model.imagePricing ?? "-") : "-",
             image_price:
-                model.completionImagePrice == null
-                    ? "-"
-                    : String(model.completionImagePrice),
+                model.modality === "image"
+                    ? String(model.completionImagePrice)
+                    : "-",
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,

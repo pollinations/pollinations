@@ -272,6 +272,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 username={githubUsername}
                 avatarUrl={githubAvatarUrl ?? ""}
                 onSignOut={onSignOut}
+                onNavigate={closeDrawer}
                 links={accountMenuLinks}
                 className="w-full justify-start"
             />
@@ -602,6 +603,7 @@ type AccountMenuButtonProps = {
     username: string;
     avatarUrl: string;
     onSignOut?: () => void;
+    onNavigate?: () => void;
     links?: readonly AccountMenuLink[];
     className?: string;
 };
@@ -610,6 +612,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     username,
     avatarUrl,
     onSignOut,
+    onNavigate,
     links = [],
     className,
 }) => (
@@ -650,7 +653,10 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 )}
                 <Link
                     to="/account"
-                    onClick={close}
+                    onClick={() => {
+                        close();
+                        onNavigate?.();
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     <AccountIcon

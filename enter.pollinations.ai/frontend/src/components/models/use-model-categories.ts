@@ -6,13 +6,18 @@ import {
 } from "./model-categories.ts";
 
 /**
- * The public model catalog, grouped into categories.
+ * The public model catalog, plus any models the caller supplies that the
+ * catalog omits — the signed-in user's own non-public ones — grouped into
+ * categories. Callers pass only models the catalog leaves out, so the two
+ * sources never describe the same model twice.
  *
  * The consent screen and the permission picker have to agree on this list: one
  * renders the summary of what is being granted and the other renders the
  * checkboxes, so a divergence would describe two different grants.
  */
-export function useModelCategories(): ModelCategoryGroup[] {
+export function useModelCategories(
+    extraModels?: ApiModelInfo[],
+): ModelCategoryGroup[] {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
 
     useEffect(() => {
@@ -32,7 +37,11 @@ export function useModelCategories(): ModelCategoryGroup[] {
     }, []);
 
     return useMemo(
-        () => getModelCategoriesFromCatalog(catalogModels),
-        [catalogModels],
+        () =>
+            getModelCategoriesFromCatalog([
+                ...catalogModels,
+                ...(extraModels ?? []),
+            ]),
+        [catalogModels, extraModels],
     );
 }

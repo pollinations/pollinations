@@ -123,6 +123,8 @@ const footerLinks: readonly FooterLink[] = [
     { label: "Refunds", href: "https://pollinations.ai/refunds" },
 ];
 
+const signedOutFooterLinks: readonly FooterLink[] = [];
+
 const accountMenuLinks: readonly AccountMenuLink[] = [
     {
         href: "https://discord.com/channels/885844321461485618/1432378056126894343",
@@ -296,6 +298,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            footerLinks={accountArea ? signedOutFooterLinks : footerLinks}
             onNavigate={closeDrawer}
         />
     );
@@ -326,7 +329,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[min(16rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -387,6 +390,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    footerLinks: readonly FooterLink[];
     onNavigate: () => void;
 };
 
@@ -397,6 +401,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    footerLinks,
     onNavigate,
 }) => (
     <aside

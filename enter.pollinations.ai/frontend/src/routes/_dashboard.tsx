@@ -151,7 +151,11 @@ export function SignedOutAccountArea() {
                 <GitHubIcon className="h-4 w-4 shrink-0" />
                 {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
             </Button>
-            <Text size="micro" tone="muted" className="px-2 text-center">
+            <Text
+                size="micro"
+                tone="muted"
+                className="px-1 text-center text-[10px] leading-[1.35]"
+            >
                 By continuing, you agree to the{" "}
                 <InlineLink
                     href="https://pollinations.ai/terms"

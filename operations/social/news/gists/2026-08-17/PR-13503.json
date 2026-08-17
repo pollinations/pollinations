@@ -1,0 +1,34 @@
+{
+  "pr_number": 13503,
+  "title": "feat(account): add accountBalance breakdown without changing balance",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13503",
+  "merged_at": "2026-08-17T22:19:27Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #11160\n\n`GET /account/balance` still returns the same `balance` number:\n\n- budgeted key → remaining key budget\n- session / unbudgeted key with `account:usage` → account total\n- unbudgeted key without `account:usage` → 403\n\nWhen the caller can view account usage, the response now also includes `accountBalance: { total, tier, paid }`. Budgeted keys without that permission do **not** get the split, so a child key cannot read the owner wallet.\n\nAlso documented existing `GET /account/key/usage` as key-scoped vs account-wide `/account/usage`.\n\n**Verify**\n- `npx vitest run test/account-balance.test.ts` — 6/6\n- session + breakdown\n- budgeted key, no leak\n- budgeted key + `account:usage` keeps `balance` as the key budget\n- unbudgeted + usage\n- unbudgeted without usage → 403\n- publishable zero-budget key does not leak `accountBalance`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wallets, now with compartments",
+    "blurb": "The balance endpoint learned to show its work. Account owners can now see total, tier, and paid Pollen separately, while child keys remain politely unable to peek into the hive wallet.",
+    "summary": "GET /account/balance now adds accountBalance { total, tier, paid } for callers with account:usage permission while preserving the existing balance value as a budgeted key's remaining key budget or an unbudgeted account total.",
+    "impact": "Account owners and authorized apps can inspect the wallet breakdown without changing existing balance behavior, and budgeted or zero-budget child keys still cannot access the owner account balance.",
+    "keywords": [
+      "account",
+      "balance",
+      "account-usage",
+      "api",
+      "sdk",
+      "permissions"
+    ],
+    "visual_concept": "Depict the account wallet as a cozy three-compartment seed pouch labeled Total, Tier, and Paid, with Polli carefully reading the sections through a tiny accountant's monocle. A smaller child-key padlock sits beside it, clearly separated from the owner wallet, while code-plants and flowers establish that permissions keep the garden's boundaries intact.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant monocle, inspecting a lime green (#ecf874) three-compartment Pollen wallet labeled in simple pixel text: 'TOTAL', 'TIER', and 'PAID'; a small locked child-key token rests safely beside it among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a gentle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13503.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant monocle, inspecting a lime green (#ecf874) three-compartment Pollen wallet labeled in simple pixel text: 'TOTAL', 'TIER', and 'PAID'; a small locked child-key token rests safely beside it among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a gentle CRT glow."
+  },
+  "generated_at": "2026-08-17T22:20:35.393670+00:00"
+}

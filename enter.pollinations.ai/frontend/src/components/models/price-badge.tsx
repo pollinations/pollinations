@@ -418,8 +418,14 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
                 </span>
             </Tooltip>
         </span>
-        <span className="col-span-2 whitespace-nowrap text-xs font-normal text-theme-text-muted">
+        <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
             Usage-based
+        </span>
+        <span
+            aria-hidden="true"
+            className="invisible whitespace-nowrap text-xs font-normal"
+        >
+            /M tokens
         </span>
     </div>
 );

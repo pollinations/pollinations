@@ -10,6 +10,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { GPT_5_6_SOL_COST, GPT_5_6_SOL_COST_VARIANTS } from "./openai-pricing";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -221,31 +222,8 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.5,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
-        },
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    promptCacheWriteTokens: perMillion(12.5),
-                    completionTextTokens: perMillion(45.0),
-                },
-            },
-            longContextAbove(272_000),
-            {
-                long_context: {
-                    label: "Long context (>272K)",
-                    description:
-                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
-                },
-            },
-            "≤272K context",
-        ),
+        cost: GPT_5_6_SOL_COST,
+        ...GPT_5_6_SOL_COST_VARIANTS,
         title: "GPT-5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
         inputModalities: ["text", "image"],
@@ -897,6 +875,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    ...AGENT_SERVICES,
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         provider: "bedrock",
@@ -2038,5 +2017,4 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
-    ...AGENT_SERVICES,
 } as const satisfies Record<string, ModelDefinition>;

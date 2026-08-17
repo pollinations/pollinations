@@ -10,7 +10,11 @@ describe("MIDIjourney agent registry", () => {
         expect(resolveModelName("midijourney-large")).toBe("midijourney");
 
         const definition = getRegistryModelDefinition("midijourney");
+        const baseDefinition = getRegistryModelDefinition("gpt-5.6-sol");
         const info = modelInfoFromDefinition("midijourney", definition);
+
+        expect(definition.cost).toBe(baseDefinition.cost);
+        expect(definition.costVariants).toBe(baseDefinition.costVariants);
 
         expect(info).toMatchObject({
             name: "midijourney",
@@ -18,7 +22,8 @@ describe("MIDIjourney agent registry", () => {
             brand: "Pollinations",
             agent: true,
             base_model: "gpt-5.6-sol",
-            capabilities: ["tool_calling"],
+            capabilities: ["tool_calling", "reasoning"],
+            context_length: 1050000,
             pricing: {
                 currency: "pollen",
                 promptTextTokens: "0.0000025",

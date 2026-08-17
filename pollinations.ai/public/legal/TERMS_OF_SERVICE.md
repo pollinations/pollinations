@@ -10,6 +10,8 @@ _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effect
 
 Pollinations.ai ("Pollinations", "we", "us") is a service operated by Myceli.AI OÜ, the legal service provider and contracting party. We operate commercial, hosted services (dashboard & APIs) built on the open-source Pollinations codebase. We handle billing and support; the open-source software remains under its repository licences.
 
+By accessing or using the Service, you agree to these Terms. If you do not agree, do not use the Service.
+
 **Legal operator:**
 
 - Myceli.AI OÜ

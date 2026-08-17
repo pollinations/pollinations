@@ -63,7 +63,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 ## 9) Retention
 
-* **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified within 30 days.
+* **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
 * **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
@@ -72,9 +72,9 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 * **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
-* **Backups:** encrypted, rolling 30-90 days.
+* **Backups:** encrypted, rolling 30-90 days. Data deleted from active systems may remain in restricted backup copies until those copies expire through the normal backup rotation.
 
-**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
+**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified from active systems within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. Residual backup copies expire through the backup schedule described above. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
 ## 10) Your Rights (GDPR)
 

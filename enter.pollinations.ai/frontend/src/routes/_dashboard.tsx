@@ -1,4 +1,4 @@
-import { Button, GitHubIcon } from "@pollinations/ui";
+import { Button, GitHubIcon, InlineLink, Text } from "@pollinations/ui";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
@@ -151,6 +151,23 @@ export function SignedOutAccountArea() {
                 <GitHubIcon className="h-4 w-4 shrink-0" />
                 {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
             </Button>
+            <Text size="micro" tone="muted" className="px-2 text-center">
+                By continuing, you agree to the{" "}
+                <InlineLink
+                    href="https://pollinations.ai/terms"
+                    showIcon={false}
+                >
+                    Terms of Service
+                </InlineLink>{" "}
+                and acknowledge the{" "}
+                <InlineLink
+                    href="https://pollinations.ai/privacy"
+                    showIcon={false}
+                >
+                    Privacy Policy
+                </InlineLink>
+                .
+            </Text>
             {error && (
                 <p className="px-2 text-xs text-intent-danger-text">{error}</p>
             )}

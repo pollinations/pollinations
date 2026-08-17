@@ -16,6 +16,8 @@ describe("community endpoint per-user RPM input", () => {
             toEndpointPayload({ ...emptyForm, perUserRpm: "12" }).perUserRpm,
         ).toBe(12);
         expect(toEndpointPayload(emptyForm).perUserRpm).toBeNull();
+        expect(toEndpointPayload(emptyForm).listingType).toBe("model");
+        expect(toEndpointPayload(emptyForm, "agent").listingType).toBe("agent");
     });
 
     it("accepts positive whole and fractional rates", () => {
@@ -65,6 +67,7 @@ describe("community endpoint per-user RPM input", () => {
             ["text", "image"],
         );
         expect(payload).toMatchObject({
+            listingType: "agent",
             modality: "text",
             inputModalities: ["text", "image"],
             perUserRpm: null,

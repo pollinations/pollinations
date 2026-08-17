@@ -14,6 +14,7 @@ import {
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_LISTING_TYPES = ["model", "agent"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -43,6 +44,15 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export type CommunityEndpointListingType =
+    (typeof COMMUNITY_ENDPOINT_LISTING_TYPES)[number];
+
+export function normalizeCommunityEndpointListingType(
+    value: string | null | undefined,
+): CommunityEndpointListingType {
+    return value === "agent" ? "agent" : "model";
+}
 
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,

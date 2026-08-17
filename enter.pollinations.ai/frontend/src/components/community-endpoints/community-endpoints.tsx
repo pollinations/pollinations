@@ -70,6 +70,8 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
+    const [endpointAgentCreateOpen, setEndpointAgentCreateOpen] =
+        useState(false);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
@@ -322,6 +324,8 @@ export function CommunityEndpoints({
     for (const endpoint of endpoints) {
         if (endpoint.agentId) {
             endpointByAgentId.set(endpoint.agentId, endpoint);
+        }
+        if (endpoint.listingType === "agent") {
             agentEndpoints.push(endpoint);
         } else {
             modelEndpoints.push(endpoint);
@@ -413,21 +417,41 @@ export function CommunityEndpoints({
                     title="Agents"
                     framed
                     action={
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <CommunityEndpointDialog
+                                listingType="agent"
+                                open={endpointAgentCreateOpen}
+                                onOpenChange={setEndpointAgentCreateOpen}
+                                onSubmit={handleCreate}
+                                canPublish={canPublish}
+                                fallbackOptions={fallbackOptions}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        intent="info"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <BotIcon className="h-4 w-4" />
+                                        Add Endpoint Agent
+                                    </Button>
+                                }
+                            />
+                            <AgentDialog
+                                open={agentCreateOpen}
+                                onOpenChange={setAgentCreateOpen}
+                                onSubmit={handleCreateAgent}
+                                canPublish={canPublish}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <BotIcon className="h-4 w-4" />
+                                        Add Prompt Agent
+                                    </Button>
+                                }
+                            />
+                        </div>
                     }
                 >
                     <div className="flex flex-col gap-3">
@@ -442,8 +466,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build a prompt agent or connect an
+                                    OpenAI-compatible agent endpoint.
                                 </p>
                             </Surface>
                         ) : (

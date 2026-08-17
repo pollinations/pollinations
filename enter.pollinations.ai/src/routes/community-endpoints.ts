@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
+    COMMUNITY_ENDPOINT_LISTING_TYPES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
@@ -9,6 +10,7 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
     type CommunityEndpointImagePricing,
+    type CommunityEndpointListingType,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
@@ -30,6 +32,7 @@ import {
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointListingType,
     normalizeCommunityEndpointModality,
     normalizeCommunityProviderUrl,
     parseCommunityModelId,
@@ -66,6 +69,11 @@ const ImagePricingSchema = z
         'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
     );
 const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
+const ListingTypeSchema = z
+    .enum(COMMUNITY_ENDPOINT_LISTING_TYPES)
+    .describe(
+        'Catalog classification. "model" and "agent" may both use an external endpoint; managed prompt agents always use "agent".',
+    );
 const InputModalitiesSchema = z
     .array(InputModalitySchema)
     .min(1)
@@ -337,6 +345,7 @@ const CreateEndpointSchema = z
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
         agentId: z.string().uuid().optional(),
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        listingType: ListingTypeSchema.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
         inputModalities: InputModalitiesSchema.optional().default(["text"]),
@@ -350,15 +359,22 @@ const CreateEndpointSchema = z
     // brings its own. Validating each shape once keeps the two sets of rules
     // readable and stops them being restated per field.
     .superRefine((input, context) => {
-        const isAgent = input.agentId !== undefined;
-        if (isAgent === (input.baseUrl !== undefined)) {
+        const isManagedAgent = input.agentId !== undefined;
+        if (isManagedAgent === (input.baseUrl !== undefined)) {
             context.addIssue({
                 code: "custom",
                 message: "Provide exactly one of baseUrl or agentId",
             });
             return;
         }
-        if (!isAgent) {
+        if (input.listingType === "agent" && input.modality !== "text") {
+            context.addIssue({
+                code: "custom",
+                path: ["modality"],
+                message: "Agent listings must use text modality",
+            });
+        }
+        if (!isManagedAgent) {
             if (!input.bearerToken) {
                 context.addIssue({
                     code: "custom",
@@ -368,6 +384,13 @@ const CreateEndpointSchema = z
                 });
             }
             return;
+        }
+        if (input.listingType === "model") {
+            context.addIssue({
+                code: "custom",
+                path: ["listingType"],
+                message: "Managed prompt agents must use agent listing type",
+            });
         }
         const agentRejections = [
             {
@@ -409,6 +432,7 @@ const UpdateEndpointSchema = z.object({
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+    listingType: ListingTypeSchema.optional(),
     visibility: VisibilitySchema.optional(),
     perUserRpm: PerUserRpmSchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
@@ -439,6 +463,7 @@ const CommunityEndpointResponseSchema = z.object({
     name: z.string(),
     title: z.string(),
     description: z.string().nullable(),
+    listingType: ListingTypeSchema,
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
     inputModalities: z.array(InputModalitySchema),
@@ -592,6 +617,10 @@ function toResponse(
             description: row.description,
         }),
         description: row.description,
+        listingType:
+            row.agentId !== null
+                ? "agent"
+                : normalizeCommunityEndpointListingType(row.listingType),
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
         inputModalities: normalizeCommunityEndpointInputModalities(
@@ -915,7 +944,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community model or agent listing backed by an external endpoint, or register a managed prompt agent by id. Private is the default. Public listings require an allowlisted account and may be free or priced, except managed prompt agents, which are always free. API keys require `account:keys`. Upstream bearer tokens are encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -948,6 +977,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       user.id,
                   )
                 : null;
+            const listingType: CommunityEndpointListingType = agent
+                ? "agent"
+                : (input.listingType ?? "model");
             if (agent && hasNonZeroPrice(input)) {
                 throw new HTTPException(400, {
                     message: "Managed agent listings must be free",
@@ -991,6 +1023,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
+                    listingType,
                     modality,
                     imagePricing,
                     inputModalities: input.inputModalities,
@@ -1126,7 +1159,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model or agent listing owned by the authenticated account. External text endpoints may switch listing type without changing their execution target. Changing visibility to public requires an allowlisted account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -1157,6 +1190,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            const effectiveListingType = normalizeCommunityEndpointListingType(
+                input.listingType ?? endpoint.listingType,
+            );
+            if (effectiveListingType === "agent" && modality !== "text") {
+                throw new HTTPException(400, {
+                    message: "Agent listings must use text modality",
+                });
+            }
             if (
                 endpoint.agentId !== null &&
                 (input.baseUrl !== undefined || input.bearerToken !== undefined)
@@ -1164,6 +1205,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 throw new HTTPException(400, {
                     message:
                         "Update managed agent configuration through the agents API",
+                });
+            }
+            if (
+                endpoint.agentId !== null &&
+                input.listingType !== undefined &&
+                input.listingType !== "agent"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed prompt agents must use agent listing type",
                 });
             }
             if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
@@ -1209,6 +1260,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
+            }
+            if (input.listingType !== undefined) {
+                update.listingType = input.listingType;
             }
             if (input.baseUrl !== undefined) {
                 update.baseUrl = normalizeInputBaseUrl(input.baseUrl);

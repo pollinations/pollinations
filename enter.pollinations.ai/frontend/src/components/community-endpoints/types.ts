@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
+    type CommunityEndpointListingType,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
@@ -46,6 +47,7 @@ export type CommunityEndpoint = {
     // Always populated by the API, which falls back for un-backfilled rows.
     title: string;
     description: string | null;
+    listingType: CommunityEndpointListingType;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[];
@@ -127,6 +129,7 @@ type ModelListingPayload = {
 };
 
 export type EndpointPayload = ModelListingPayload & {
+    listingType: CommunityEndpointListingType;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
@@ -136,6 +139,7 @@ export type EndpointPayload = ModelListingPayload & {
 
 export type AgentListingPayload = ModelListingPayload & {
     agentId: string;
+    listingType: "agent";
     modality: "text";
 };
 
@@ -402,11 +406,15 @@ function listingFieldsToPayload(form: ModelListingFormState) {
     };
 }
 
-export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+export function toEndpointPayload(
+    form: EndpointFormState,
+    listingType: CommunityEndpointListingType = "model",
+): EndpointPayload {
     const modality = form.modality;
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     return {
         ...listingFieldsToPayload(form),
+        listingType,
         modality,
         imagePricing,
         baseUrl: form.baseUrl.trim(),
@@ -431,6 +439,7 @@ export function toAgentListingPayload(
         visibility: form.visibility,
         perUserRpm: null,
         modality: "text",
+        listingType: "agent",
     };
 }
 

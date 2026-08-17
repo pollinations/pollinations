@@ -224,6 +224,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // Required on create, so only the pre-existing backlog is null.
   title: text("title"),
   description: text("description"),
+  // Product classification is independent from the execution target below:
+  // both models and agents may be backed by an external endpoint, while
+  // managed prompt agents resolve through agentId.
+  listingType: text("listing_type", { enum: ["model", "agent"] })
+    .default("model")
+    .notNull(),
   modality: text("modality").default("text").notNull(),
   // Image endpoints only: "request" bills the fixed per-image price once per
   // generation; "tokens" bills provider-returned image token usage. Detected

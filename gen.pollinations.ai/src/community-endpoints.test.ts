@@ -3704,6 +3704,38 @@ fixtureTest(
 
         const neither = await register({});
         expect(neither.status).toBe(400);
+
+        const externalAgentResponse = await register({
+            baseUrl: "https://agent.example.com/v1",
+            listingType: "agent",
+        });
+        expect(externalAgentResponse.status).toBe(200);
+        const externalAgent = (await externalAgentResponse.json()) as {
+            modelId: string;
+            listingType: string;
+            agentId: string | null;
+        };
+        expect(externalAgent).toMatchObject({
+            listingType: "agent",
+            agentId: null,
+        });
+        const externalAgentEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === externalAgent.modelId);
+        expect(externalAgentEntry?.info.agent).toBe(true);
+        expect(externalAgentEntry?.communityEndpoint).toMatchObject({
+            kind: "external",
+            delegatesGeneration: false,
+        });
+
+        const externalModelResponse = await register({
+            baseUrl: "https://model.example.com/v1",
+        });
+        expect(externalModelResponse.status).toBe(200);
+        await expect(externalModelResponse.json()).resolves.toMatchObject({
+            listingType: "model",
+            agentId: null,
+        });
     },
 );
 
@@ -3883,10 +3915,28 @@ fixtureTest(
             modelId: string;
             agentId: string | null;
             baseUrl: string;
+            listingType: string;
         };
         expect(registration.id).not.toBe(agent.id);
         expect(registration.agentId).toBe(agent.id);
         expect(registration.baseUrl).toBe(enterEnv.AGENT_RUNTIME_BASE_URL);
+        expect(registration.listingType).toBe("agent");
+        const modelTypeUpdateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `https://enter.test/api/account/my-models/${registration.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({ listingType: "model" }),
+                },
+            ),
+            enterEnv,
+        );
+        expect(modelTypeUpdateResponse.status).toBe(400);
         const paidUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(

@@ -75,7 +75,7 @@ const formatAdjustmentUnit = ({
     const quantityLabel = compactNumber
         .format(quantity)
         .replace(/^1(?=[A-Z])/, "");
-    if (kind === "search_request") return `${quantityLabel} requests`;
+    if (kind === "search_request") return `${quantityLabel} req`;
     if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
     if (kind === "cache_storage") {
         return `${quantityLabel} tokens`;
@@ -358,12 +358,7 @@ const PricingAdjustmentRows: FC<{
         return (
             <div
                 key={adjustment.name}
-                className={cn(
-                    "grid items-baseline gap-x-1.5 py-0.5",
-                    align === "left"
-                        ? "grid-cols-[6.5rem_9ch_max-content]"
-                        : "grid-cols-[1fr_6.5rem_9ch_max-content]",
-                )}
+                className="grid col-span-full grid-cols-subgrid items-baseline py-0.5"
             >
                 {align === "right" && <span aria-hidden="true" />}
                 <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
@@ -383,14 +378,7 @@ const PricingAdjustmentRows: FC<{
     });
 
 const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
-    <div
-        className={cn(
-            "grid items-baseline gap-x-1.5 py-0.5",
-            align === "left"
-                ? "grid-cols-[6.5rem_9ch_max-content]"
-                : "grid-cols-[1fr_6.5rem_9ch_max-content]",
-        )}
-    >
+    <div className="grid col-span-full grid-cols-subgrid items-baseline py-0.5">
         {align === "right" && <span aria-hidden="true" />}
         <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
             <Tooltip
@@ -418,14 +406,8 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
                 </span>
             </Tooltip>
         </span>
-        <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+        <span className="col-span-2 whitespace-nowrap text-xs font-normal text-theme-text-muted">
             Usage-based
-        </span>
-        <span
-            aria-hidden="true"
-            className="invisible whitespace-nowrap text-xs font-normal"
-        >
-            /M tokens
         </span>
     </div>
 );
@@ -591,12 +573,7 @@ export const ModelPricingLedger: FC<{
             return (
                 <div
                     key={row.key}
-                    className={cn(
-                        "grid items-baseline gap-x-1.5 py-0.5",
-                        align === "left"
-                            ? "grid-cols-[6.5rem_9ch_max-content]"
-                            : "grid-cols-[1fr_6.5rem_9ch_max-content]",
-                    )}
+                    className="grid col-span-full grid-cols-subgrid items-baseline py-0.5"
                 >
                     {align === "right" && <span aria-hidden="true" />}
                     <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
@@ -614,18 +591,21 @@ export const ModelPricingLedger: FC<{
     return (
         <div
             className={cn(
-                "flex w-full min-w-0 max-w-full flex-col gap-1",
+                "grid w-full min-w-0 max-w-full gap-x-1.5",
+                align === "left"
+                    ? "grid-cols-[6.5rem_9ch_max-content]"
+                    : "grid-cols-[1fr_6.5rem_9ch_max-content]",
                 className,
             )}
         >
             {inputRateRows.length > 0 && (
-                <div className="flex flex-col">
+                <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(inputRateRows)}
                 </div>
             )}
             {(cacheRateRows.length > 0 ||
                 standaloneTokenAdjustments.length > 0) && (
-                <div className="flex flex-col">
+                <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(cacheRateRows)}
                     <PricingAdjustmentRows
                         adjustments={standaloneTokenAdjustments}
@@ -634,12 +614,19 @@ export const ModelPricingLedger: FC<{
                 </div>
             )}
             {outputRateRows.length > 0 && (
-                <div className="flex flex-col">
+                <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(outputRateRows)}
                 </div>
             )}
             {(hasTools || requestBasedAdjustments.length > 0) && (
-                <div className="mt-1 border-t border-dashed border-divider pt-1">
+                <div className="mt-1 grid col-span-full grid-cols-subgrid">
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            "col-end-[-1] mb-1 border-t border-dashed border-divider",
+                            align === "right" ? "col-start-2" : "col-start-1",
+                        )}
+                    />
                     <PricingAdjustmentRows
                         adjustments={requestBasedAdjustments}
                         align={align}

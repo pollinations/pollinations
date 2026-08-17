@@ -1,0 +1,34 @@
+{
+  "pr_number": 13371,
+  "title": "fix: distinguish invalid api keys from missing credentials in 401s",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13371",
+  "merged_at": "2026-08-17T00:04:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- A request with an expired, revoked, or deleted API key returned the same 401 message as a request with no credentials at all (\"Authentication required. Please provide an API key…\"), which misreads as an auth-plumbing bug instead of a dead key.\n- gen's auth middleware now notes when a key was extracted from the request but failed authentication, and `requireAuthorization`/`requireUser` return 401 \"Invalid API key. The provided key was not recognized; it may be expired, revoked, or mistyped.\" with a pointer to https://enter.pollinations.ai/keys.\n- The invalid-key message also takes precedence over route-specific \"please provide a key\" messages (realtime), since those are written for the no-credentials case.\n- Adds a worker test asserting the invalid-key 401 body; existing 401 (no credentials), 402 (paidOnly balance), and 403 (permissions/banned) behavior is unchanged.\n\nContext: a deleted testing key surfaced as \"paidOnly models return 401 while openai works\" — the non-paid models were only succeeding via pre-auth text-cache hits, and the generic 401 message hid that the key itself no longer existed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The key knows it is dead",
+    "blurb": "Dead keys now say so. The hive stopped sending developers on a scenic tour of their authentication plumbing when the real problem was a revoked, expired, deleted, or mistyped key.",
+    "summary": "Gen authentication now distinguishes an invalid extracted API key from missing credentials, returning a 401 that says the key was not recognized and links to https://enter.pollinations.ai/keys while preserving existing no-credential 401, paid-only 402, and permission 403 behavior.",
+    "impact": "Developers with expired, revoked, deleted, or mistyped keys will get an actionable invalid-key 401 instead of a generic request-for-credentials message, including on realtime routes.",
+    "keywords": [
+      "authentication",
+      "api-keys",
+      "401",
+      "gen-api",
+      "error-messages",
+      "realtime"
+    ],
+    "visual_concept": "Depict Polli as a careful little key gardener examining two keys at a cozy terminal: one healthy lime-green key accepted by a glowing lock, and one faded key clearly labeled invalid. A small CRT monitor robot can point helpfully toward a pixel sign reading “/keys,” while code-plants and flowers make the authentication diagnosis feel clear rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, inspecting a faded invalid API key beside a glowing lime green (#ecf874) terminal lock; a cheerful CRT monitor robot points to a small pixel sign reading “/keys.” Code-plants and flowers grow around the desk in a warm cream, mint, and lavender room, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13371.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, inspecting a faded invalid API key beside a glowing lime green (#ecf874) terminal lock; a cheerful CRT monitor robot points to a small pixel sign reading “/keys.” Code-plants and flowers grow around the desk in a warm cream, mint, and lavender room, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T00:05:08.342062+00:00"
+}

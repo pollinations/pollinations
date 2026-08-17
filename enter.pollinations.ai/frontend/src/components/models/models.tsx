@@ -1,5 +1,6 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -487,15 +488,20 @@ export const Models: FC = () => {
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">
-                            <McpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 <strong>agent pricing</strong> — listed rates
                                 are for the agent&apos;s base model, which runs
                                 with the agent&apos;s saved instructions. Agents
-                                marked <strong>Tools</strong> can also call
-                                Pollinations models through the built-in MCP
-                                connection. Each generation is billed separately
-                                at the selected model&apos;s listed rate.
+                                with the{" "}
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+                                    <McpIcon className="h-3.5 w-3.5 shrink-0" />
+                                    <strong>Tools</strong>
+                                </span>{" "}
+                                capability can also call Pollinations models
+                                through the built-in MCP connection. Each
+                                generation is billed separately at the selected
+                                model&apos;s listed rate.
                             </span>
                         </p>
                     )}

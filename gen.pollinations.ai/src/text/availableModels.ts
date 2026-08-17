@@ -1,6 +1,6 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
+import { midijourneyAgentTransform } from "./agents/midijourney.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
-import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
@@ -10,7 +10,6 @@ import {
     createGeminiToolsTransform,
     stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
-import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
@@ -308,7 +307,7 @@ const models: ModelDefinition[] = [
     {
         name: "midijourney",
         config: portkeyConfig["gpt-5.6-sol"],
-        transform: createMessageTransform(midijourneyPrompt),
+        transform: midijourneyAgentTransform,
         useResponsesApi: true,
     },
     {

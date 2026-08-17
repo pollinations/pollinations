@@ -901,7 +901,7 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should canonicalize model aliases while preserving unknown permissions", async ({
+        test("should canonicalize known aliases while preserving unknown permissions", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
@@ -929,7 +929,6 @@ describe("API Key Management", () => {
             expect(listed?.permissions?.models).toEqual([
                 "flux",
                 "nanobanana-2",
-                "midijourney",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -939,7 +938,7 @@ describe("API Key Management", () => {
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
                 "nanobanana-2",
-                "midijourney",
+                "midijourney-large",
                 "retired-model",
             ]);
         });

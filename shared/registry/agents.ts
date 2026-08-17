@@ -4,7 +4,7 @@ import type { ModelDefinition } from "./registry";
 /** Pollinations-owned prompt agents served directly by Gen. */
 export const AGENT_SERVICES = {
     midijourney: {
-        aliases: ["midijourney-large"],
+        aliases: [],
         provider: "azure",
         brand: "Pollinations",
         category: "text",

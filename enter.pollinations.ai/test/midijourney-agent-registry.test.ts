@@ -6,8 +6,10 @@ import {
 } from "../../shared/registry/registry.ts";
 
 describe("MIDIjourney agent registry", () => {
-    it("publishes one Pollinations agent and keeps the former large ID as an alias", () => {
-        expect(resolveModelName("midijourney-large")).toBe("midijourney");
+    it("publishes one canonical Pollinations agent without a legacy alias", () => {
+        expect(() => resolveModelName("midijourney-large")).toThrow(
+            'Invalid model or alias: "midijourney-large"',
+        );
 
         const definition = getRegistryModelDefinition("midijourney");
         const baseDefinition = getRegistryModelDefinition("gpt-5.6-sol");
@@ -18,7 +20,7 @@ describe("MIDIjourney agent registry", () => {
 
         expect(info).toMatchObject({
             name: "midijourney",
-            aliases: ["midijourney-large"],
+            aliases: [],
             brand: "Pollinations",
             agent: true,
             base_model: "gpt-5.6-sol",

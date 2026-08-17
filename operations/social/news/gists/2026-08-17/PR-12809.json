@@ -1,0 +1,33 @@
+{
+  "pr_number": 12809,
+  "title": "fix: round a fractional key expiry to whole seconds",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/12809",
+  "merged_at": "2026-08-17T21:47:34Z",
+  "labels": [],
+  "pr_body_excerpt": "The expiry field takes days and allows fractions (`step=\"any\"`), but key creation takes whole seconds — `expiresIn: z.number().int().positive()`. A fraction landing mid-second failed the `.int()` check, so `0.123456` days (10,666.4s) 400'd with `\"JSON body validation failed\"` instead of creating a key.\n\n**The fix is `Math.round`.** That's the whole thing.\n\n- `expiryDaysToExpiresIn` moves to `shared/auth/authorize-config.ts` so it can be unit-tested — importing it from `frontend/src/lib` drags in `apiClient`, which needs `window`\n- Rounds days to whole seconds\n- An empty field stays the only thing meaning \"no expiry\"; `0`, negatives and over-cap values stay invalid and the server rejects them, which the dialogs already surface via `setError`\n\nVerified: every fractional value the field accepts (`0.5`, `0.25`, `0.1`, `1.5`, `30.5`) converts identically to before — only mid-second fractions change, from a 400 to a working key.\n\nAddresses #10743",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more fractional pollen",
+    "blurb": "API key expiry dates now tolerate the tiny fractions humans naturally type. Mid-second math has been gently rounded into something the key server can use.",
+    "summary": "API key creation now rounds fractional expiry-day values to whole seconds, so values such as 0.123456 days create a key instead of failing JSON validation.",
+    "impact": "Users can set any valid fractional expiry value accepted by the API key dialog, while empty expiry still means no expiry and invalid zero, negative, or over-cap values remain rejected.",
+    "keywords": [
+      "api keys",
+      "expiry",
+      "validation",
+      "authentication",
+      "bug fix"
+    ],
+    "visual_concept": "Depict Polli carefully rounding a tiny clock's fractional second hand into a neat whole-second tick beside a freshly sprouted API key plant. A cozy key-creation terminal and small calendar show that fractional-day expiry settings now grow into working keys.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny watchmaker monocle, gently rounding a clock hand to a whole-second tick while an API key sprouts from a lime green (#ecf874) flower pot beside a retro terminal. Small flowers and code-vines surround the scene, with soft pastel cream and lavender gradients, warm lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; pixel-font text: \"ROUND\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-12809.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny watchmaker monocle, gently rounding a clock hand to a whole-second tick while an API key sprouts from a lime green (#ecf874) flower pot beside a retro terminal. Small flowers and code-vines surround the scene, with soft pastel cream and lavender gradients, warm lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; pixel-font text: \"ROUND\"."
+  },
+  "generated_at": "2026-08-17T21:48:37.628867+00:00"
+}

@@ -34,12 +34,8 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
-import {
-    computeCategoryModalities,
-    getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
-} from "../models/model-categories.ts";
+import { computeCategoryModalities } from "../models/model-categories.ts";
+import { useModelCategories } from "../models/use-model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -102,9 +98,6 @@ export function Authorize() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -119,6 +112,7 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
+    const modelCategories = useModelCategories();
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,
@@ -147,24 +141,6 @@ export function Authorize() {
 
     const isMobile = window.innerWidth < 768;
     useScrollLock(!isMobile);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setModelCategories([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
@@ -797,6 +773,7 @@ export function Authorize() {
                                 visiblePermissions={visibleOptionalPermissions}
                                 showApiName={false}
                                 modelsInitiallyExpanded
+                                modelCategories={modelCategories}
                             />
                         </Collapsible>
                     </div>

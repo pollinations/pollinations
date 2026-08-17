@@ -44,15 +44,3 @@ export function calculatePerPollen(model: ModelPrice): string {
     if (model.free) return "∞";
     return "—";
 }
-
-/** Coarse unit noun per model type, used in generation estimate tooltips. */
-export const unitLabels: Record<string, string> = {
-    text: "responses",
-    image: "images",
-    video: "videos",
-    "3d": "3D models",
-    audio: "responses",
-    realtime: "sessions",
-    community: "responses",
-    embedding: "embeddings",
-};

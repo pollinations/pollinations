@@ -67,7 +67,6 @@ function createTestApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
@@ -183,7 +182,6 @@ function createWrongContentTypeApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: trackingUser,
-            requireAuthorization: async () => {},
             requireUser: () => trackingUser,
             requireModelAccess: () => {},
         });
@@ -223,7 +221,6 @@ function createSseStreamApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => user,
             requireModelAccess: () => {},
         });
@@ -297,7 +294,6 @@ function createHeaderApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: user ?? undefined,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");

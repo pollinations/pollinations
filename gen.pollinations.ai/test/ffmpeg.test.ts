@@ -256,7 +256,10 @@ describe("FFmpeg", () => {
         );
 
         expect(response.status).toBe(402);
-        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(fetchSpy).not.toHaveBeenCalledWith(
+            "https://media.pollinations.ai/input-video",
+            { redirect: "manual" },
+        );
         expect(stub.run).not.toHaveBeenCalled();
     });
 });

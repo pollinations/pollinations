@@ -1,0 +1,35 @@
+{
+  "pr_number": 13469,
+  "title": "feat: redesign models catalog UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13469",
+  "merged_at": "2026-08-17T11:52:32Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Redesigns desktop and mobile model cards with stable identity, metadata, access, and pricing layouts.\n- Normalizes cache, request, and unit pricing labels with aligned values and responsive positioning.\n- Adds touch-friendly shared tooltips, explicit mobile disclosure controls, and accessible copy interactions.\n- Adds semantic New and Free chip intents and community model-type icons.\n- Clarifies agent base-model and Pollinations tools pricing guidance.\n\n## Validation\n\n- `npx tsc --noEmit` in `enter.pollinations.ai`\n- `npm run typecheck` and `npm run build` in `packages/ui`\n- Browser verification across official/community, desktop/mobile, tooltip, copy, and disclosure states\n- Staging: https://staging.enter.pollinations.ai/models",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model garden got labels",
+    "blurb": "The models catalog got a careful repotting: clearer cards, tidier prices, and fewer tiny details escaping into the mulch. It now works properly with thumbs, tooltips, and the ancient human ritual of copying text.",
+    "summary": "Redesigned the enter.pollinations.ai models catalog across desktop and mobile with stable model metadata, aligned cache/request/unit pricing, New and Free chips, community model-type icons, touch-friendly tooltips, copy controls, and mobile disclosure actions.",
+    "impact": "Developers can compare official and community models, understand access and pricing guidance, reveal details on mobile, and copy model information with a clearer and more accessible catalog layout.",
+    "keywords": [
+      "models",
+      "catalog",
+      "pricing",
+      "mobile",
+      "accessibility",
+      "tooltips",
+      "UI"
+    ],
+    "visual_concept": "A cozy model catalog greenhouse: neatly labeled code-plants represent different AI models, with clear price tags, Free and New seed packets, and small community flower icons. Polli acts as the observant garden keeper, using a tiny magnifying glass to inspect tidy labels while a friendly CRT monitor robot presents an easy-to-read catalog card; a large touch-friendly sign and a copyable note symbolize mobile disclosure, tooltips, and copy interactions.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and tending a greenhouse catalog of neatly labeled code-plants; each plant has clear pixel price tags and little \"NEW\" and \"FREE\" seed chips, while a cute chunky CRT monitor robot holds a readable model card beside her. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel mint, lavender, peach, and warm cream gradient background, dark purple (#110518) details, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13469.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and tending a greenhouse catalog of neatly labeled code-plants; each plant has clear pixel price tags and little \"NEW\" and \"FREE\" seed chips, while a cute chunky CRT monitor robot holds a readable model card beside her. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel mint, lavender, peach, and warm cream gradient background, dark purple (#110518) details, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-17T11:53:34.618483+00:00"
+}

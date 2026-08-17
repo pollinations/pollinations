@@ -539,11 +539,6 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
     },
     "get /account/balance": {
         balance: 42.5,
-        accountBalance: {
-            total: 42.5,
-            tier: 12.5,
-            paid: 30,
-        },
     },
     "get /account/profile": {
         githubUsername: "janedeveloper",

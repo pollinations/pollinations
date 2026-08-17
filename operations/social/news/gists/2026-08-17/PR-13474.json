@@ -1,0 +1,33 @@
+{
+  "pr_number": 13474,
+  "title": "feat: expand publisher access request",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13474",
+  "merged_at": "2026-08-17T01:00:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a required one-or-both selector for public community models and managed agents.\n- Generalizes the existing access form while keeping its stable issue-template URL.\n- Links the Agents section to the same publisher-access request flow.\n- Documents co-author attribution for applicants in future allowlist PRs.\n\nChecks:\n- `biome check --write enter.pollinations.ai/frontend/src/components/community-endpoints/community-endpoints.tsx`\n- Parsed the issue-form YAML with Ruby\n- `git diff --check`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One form, more pollen",
+    "blurb": "The publisher gate grew a second door. Community model publishers and managed-agent builders now meet at the same pleasantly boring form.",
+    "summary": "Generalized the stable community publisher-access issue form so applicants can request access for public community models, managed agents, or both, and linked the Agents section to that flow.",
+    "impact": "Builders can now use one clear request path to publish community models and managed agents, while future allowlist PRs can credit applicant co-authors.",
+    "keywords": [
+      "publisher-access",
+      "community-models",
+      "managed-agents",
+      "allowlist",
+      "agents"
+    ],
+    "visual_concept": "Depict Polli as a friendly garden steward holding a clipboard beside one cozy gateway that splits into two clearly labeled paths: a code-flower garden for public community models and a small retro robot workshop for managed agents. The shared request form is the central object, with the Monitor Robot eagerly pointing at both paths and vines connecting them to show a unified application flow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener's clipboard, welcoming a Monitor Robot through one shared lime green (#ecf874) publisher-access gate that branches toward code-flowers labeled \"MODELS\" and a tiny managed-agent robot workshop labeled \"AGENTS\". Warm cream, mint, lavender, and peach pastel gradients, sprouting vines and flower pots, chunky retro sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-17/PR-13474.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener's clipboard, welcoming a Monitor Robot through one shared lime green (#ecf874) publisher-access gate that branches toward code-flowers labeled \"MODELS\" and a tiny managed-agent robot workshop labeled \"AGENTS\". Warm cream, mint, lavender, and peach pastel gradients, sprouting vines and flower pots, chunky retro sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-17T01:01:02.171653+00:00"
+}

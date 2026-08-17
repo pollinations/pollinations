@@ -148,12 +148,13 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- The FORWARD_QUERY below is a defaulted-column addition, which #10763 already
--- established needs no forward query: it measured the copy at ~30 GiB / 422M
--- rows per deploy and confirmed `deploy --check` reports a metadata-only ALTER
--- without one. It is here only because the check failed anyway on CLI 4.5.1 and
--- 4.6.14. Re-run `deployment create --check` without it on the next CLI bump
--- and drop it — and until then, mirror every new column into its 95-name list.
+-- The FORWARD_QUERY below is needed even though this column has a DEFAULT, and
+-- #10763 is not a precedent for dropping it: that removed a forward query from
+-- `generation_event`, which no materialization reads, so Tinybird could ALTER
+-- it in place. This table is the source of nine materialized pipes, so the
+-- check fails without one (CLI 4.5.1 and 4.6.14) and each deployment recreates
+-- the table instead. Two obligations follow: mirror every new column into the
+-- 95-name list below, and re-check after the materializations are retired.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

@@ -14,6 +14,8 @@ import {
     openaiImageUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { MAX_IMAGE_SIZE } from "@/userImage.ts";
+import { readResponseBytes } from "@/utils/response-bytes.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
@@ -26,7 +28,6 @@ import {
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const REQUEST_TIMEOUT_MS = 120_000;
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 export async function callCommunityImageEndpoint(
     endpoint: CommunityEndpointRuntime,
@@ -258,45 +259,14 @@ async function fetchImageBuffer(
             url,
         );
     }
-    const contentLength = Number(response.headers.get("content-length"));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
-        throw new HttpError("Community image is larger than 20 MB", 502);
-    }
-    return readImageBuffer(response);
-}
-
-async function readImageBuffer(response: Response): Promise<Buffer> {
-    const reader = response.body?.getReader();
-    if (!reader) {
-        const buffer = Buffer.from(await response.arrayBuffer());
-        if (buffer.byteLength > MAX_IMAGE_BYTES) {
-            throw new HttpError("Community image is larger than 20 MB", 502);
-        }
-        return buffer;
-    }
-
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.byteLength;
-            if (total > MAX_IMAGE_BYTES) {
-                await reader.cancel();
-                throw new HttpError(
-                    "Community image is larger than 20 MB",
-                    502,
-                );
-            }
-            chunks.push(value);
-        }
-    } finally {
-        reader.releaseLock();
-    }
-    return Buffer.concat(
-        chunks.map((chunk) => Buffer.from(chunk)),
-        total,
+    // Content-length precheck and the running byte cap both live in
+    // readResponseBytes, which every other media download in this Worker uses.
+    return Buffer.from(
+        await readResponseBytes(
+            response,
+            MAX_IMAGE_SIZE,
+            () => new HttpError("Community image is larger than 20 MB", 502),
+        ),
     );
 }
 

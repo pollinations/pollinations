@@ -26,6 +26,12 @@ export async function callCommunityTranscriptionEndpoint(
     options: CommunityTranscriptionOptions,
     secret: string,
 ): Promise<Response> {
+    // Managed agents are text-only, so a transcription endpoint is always external.
+    if (endpoint.kind !== "external") {
+        throw new Error(
+            `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,

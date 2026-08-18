@@ -1016,6 +1016,7 @@ describe("community endpoint helpers", () => {
 
         async function transcriptionEndpoint(): Promise<CommunityEndpointRuntime> {
             return {
+                kind: "external",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/whisper",

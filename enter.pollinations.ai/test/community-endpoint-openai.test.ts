@@ -313,7 +313,7 @@ describe("community endpoint OpenAI service", () => {
             );
             const formData = await request.formData();
             expect(formData.get("model")).toBe("whisper-1");
-            expect(formData.get("response_format")).toBe("json");
+            expect(formData.get("response_format")).toBe("verbose_json");
             const file = formData.get("file");
             expect(file).toBeInstanceOf(File);
             expect((file as File).type).toBe("audio/wav");
@@ -362,7 +362,7 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).resolves.toEqual({
-            usage: { seconds: 3 },
+            usage: { duration: 3 },
             billableUsage: { promptAudioSeconds: 3 },
         });
     });
@@ -396,7 +396,45 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "whisper-1",
             }),
-        ).rejects.toThrow("did not report audio duration");
+        ).rejects.toThrow("did not report the audio duration");
+    });
+
+    it("accepts an empty transcript, which is what silence transcribes to", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "", duration: 0.1 })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toMatchObject({
+            usage: { duration: 0.1 },
+            billableUsage: { promptAudioSeconds: 0.1 },
+        });
+    });
+
+    it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "unsupported response_format" } },
+                    { status: 400 },
+                ),
+            ),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-4o-transcribe",
+            }),
+        ).rejects.toThrow("response_format=verbose_json");
     });
 
     it("rejects transcription responses without text", async () => {

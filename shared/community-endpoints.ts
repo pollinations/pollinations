@@ -179,8 +179,9 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     label: "Prompt audio",
     priceUnit: "second",
     // Paths are relative to the stored usage object, same as the chat fields
-    // ("prompt_tokens", not "usage.prompt_tokens").
-    rawUsagePaths: ["duration", "seconds"],
+    // ("prompt_tokens", not "usage.prompt_tokens"). The probe normalizes every
+    // upstream duration shape to `duration`, so that is the only key here.
+    rawUsagePaths: ["duration"],
 } as const;
 
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
@@ -219,8 +220,7 @@ export function communityEndpointPriceFieldsForModality(
 
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
@@ -310,21 +310,16 @@ export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
     endpointModality: CommunityEndpointModality,
 ): ModelInputModality[] {
-    // Text prompts drive every community modality today: text models take
-    // text, image models take a text prompt. Transcription endpoints take
-    // audio, so an un-declared set must default there — not to text.
-    if (!value?.length) {
-        return [
-            ...(endpointModality === "transcription"
-                ? COMMUNITY_ENDPOINT_INPUT_MODALITIES.transcription
-                : (["text"] as const)),
-        ];
-    }
-    const declared = new Set(value);
-    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
-        endpointModality
-    ].filter((modality) => declared.has(modality));
-    return normalized.length ? [...normalized] : ["text"];
+    // Both empty cases — nothing declared, and a declared set that shares
+    // nothing with this modality — fall back to the modality's own first
+    // input: text for text and image endpoints, audio for transcription.
+    // Falling back to a bare "text" would hand a transcription endpoint the
+    // one input it cannot accept, which the write path then rejects with a
+    // 400 naming an input the owner never chose.
+    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[endpointModality];
+    const declared = new Set(value ?? []);
+    const normalized = permitted.filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : [permitted[0]];
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing

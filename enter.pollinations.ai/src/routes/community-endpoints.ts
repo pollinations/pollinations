@@ -356,7 +356,9 @@ const CreateEndpointSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
-        inputModalities: InputModalitiesSchema.optional().default(["text"]),
+        // No blanket default: what an omitted set means depends on the
+        // modality, so it is resolved in the handler once modality is known.
+        inputModalities: InputModalitiesSchema.optional(),
         visibility: VisibilitySchema.optional().default("private"),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -977,10 +979,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = agent ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
-            enforceCommunityEndpointInputModalities(
-                modality,
-                input.inputModalities,
-            );
+            // An omitted set follows the modality — audio for transcription,
+            // text otherwise. An explicit set is validated rather than
+            // silently rewritten, so a wrong declaration still gets a 400.
+            const inputModalities =
+                input.inputModalities ??
+                normalizeCommunityEndpointInputModalities(undefined, modality);
+            enforceCommunityEndpointInputModalities(modality, inputModalities);
             const prices =
                 agent || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -1014,7 +1019,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality,
                     imagePricing,
-                    inputModalities: input.inputModalities,
+                    inputModalities,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),

@@ -67,13 +67,13 @@ export async function callCommunityTranscriptionEndpoint(
     if (options.language) upstreamFormData.append("language", options.language);
     if (options.prompt) upstreamFormData.append("prompt", options.prompt);
     // Pin the upstream format instead of forwarding the caller's, the way
-    // whisper/grok/scribe do. json is the only format every OpenAI-compatible
-    // model supports (gpt-4o-transcribe rejects everything else), and it is the
-    // exact shape the registration probe proved this endpoint meters — text,
-    // srt and vtt carry no usage object at all, so forwarding them would ask
-    // for a body that cannot be billed. The caller's format is served from the
-    // parsed result below.
-    upstreamFormData.append("response_format", "json");
+    // whisper/grok/scribe do, and pin the same one our own whisper backend
+    // asks for. Community endpoints are self-hosted whisper servers, which
+    // report the audio duration only in verbose_json — plain json gives back a
+    // bare { text } with nothing to meter, and text/srt/vtt carry no usage at
+    // all. This is the exact shape the registration probe proved this endpoint
+    // meters. The caller's format is served from the parsed result below.
+    upstreamFormData.append("response_format", "verbose_json");
     if (options.temperature !== undefined) {
         upstreamFormData.append("temperature", String(options.temperature));
     }
@@ -96,6 +96,15 @@ export async function callCommunityTranscriptionEndpoint(
             message:
                 "Community transcription endpoint timed out or could not connect",
             cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    // Endpoints that only speak plain json (gpt-4o-transcribe and friends)
+    // reject verbose_json outright. Say so instead of surfacing a bare
+    // upstream 400, so the owner knows what their endpoint has to support.
+    if (response.status === 400) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: `Community transcription endpoint '${endpoint.modelId}' rejected response_format=verbose_json. Pollinations requests verbose_json because it reports the audio duration that transcription is billed on; models that only support plain json cannot be used yet.`,
             requestUrl: new URL(upstreamUrl),
         });
     }
@@ -138,7 +147,7 @@ function parseCommunityTranscription(bodyText: string): {
     if (duration === null) {
         throw new UpstreamError(502 as ContentfulStatusCode, {
             message:
-                "Community transcription endpoint did not report audio duration",
+                "Community transcription endpoint did not report the audio duration (expected verbose_json's top-level duration, or usage.seconds) that transcription is billed on",
         });
     }
     const record = parsed as Record<string, unknown>;

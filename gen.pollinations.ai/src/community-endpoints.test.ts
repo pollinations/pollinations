@@ -1067,7 +1067,7 @@ describe("community endpoint helpers", () => {
                 expect(formData.get("model")).toBe("whisper-1");
                 expect(formData.get("file")).toBeInstanceOf(File);
                 expect(formData.get("language")).toBe("en");
-                expect(formData.get("response_format")).toBe("json");
+                expect(formData.get("response_format")).toBe("verbose_json");
 
                 return Response.json({
                     text: "Hello world",
@@ -1136,6 +1136,26 @@ describe("community endpoint helpers", () => {
             ).toBe("8.25");
         });
 
+        it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "unsupported response_format" } },
+                        { status: 400 },
+                    ),
+                ),
+            );
+
+            const call = callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            await expect(call).rejects.toThrow("response_format=verbose_json");
+            await expect(call).rejects.toMatchObject({ status: 502 });
+        });
+
         it("fails rather than billing zero when the upstream reports no duration", async () => {
             vi.stubGlobal(
                 "fetch",
@@ -1151,12 +1171,13 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("asks upstream for json even when the caller wants text, then formats down", async () => {
+        it("asks upstream for verbose_json even when the caller wants text, then formats down", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const formData = await new Request(input, init).formData();
                 // text carries no usage object, so requesting it upstream would
-                // make the request unbillable. json is what the probe verified.
-                expect(formData.get("response_format")).toBe("json");
+                // make the request unbillable. verbose_json is what the probe
+                // verified, and where whisper reports the duration.
+                expect(formData.get("response_format")).toBe("verbose_json");
                 return Response.json({
                     text: "Hello world",
                     usage: { seconds: 4 },
@@ -1179,7 +1200,7 @@ describe("community endpoint helpers", () => {
             ).toBe("4");
         });
 
-        it("serves verbose_json from the metered json body", async () => {
+        it("serves verbose_json from the metered upstream body", async () => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async () =>
@@ -1221,10 +1242,10 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it("defaults response_format to json, the shape the probe verified", async () => {
+        it("asks upstream for verbose_json, the shape the probe verified", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const formData = await new Request(input, init).formData();
-                expect(formData.get("response_format")).toBe("json");
+                expect(formData.get("response_format")).toBe("verbose_json");
                 return Response.json({ text: "Hello", usage: { seconds: 2 } });
             });
             vi.stubGlobal("fetch", fetchMock);
@@ -3503,6 +3524,30 @@ fixtureTest(
             }),
         );
         expect(unsupportedInputResponse.status).toBe(400);
+
+        // Omitting inputModalities must follow the modality, not fall back to
+        // text — a text default would make transcription endpoints impossible
+        // to register without naming "audio" explicitly.
+        const defaultedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-defaulted`,
+                    inputModalities: undefined,
+                }),
+            }),
+        );
+        expect(defaultedInputResponse.status).toBe(200);
+        expect(await defaultedInputResponse.json()).toMatchObject({
+            modality: "transcription",
+            inputModalities: ["audio"],
+        });
 
         const registerResponse = await fetchEnterApi(
             enterApi,

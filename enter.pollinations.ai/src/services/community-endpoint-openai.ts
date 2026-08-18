@@ -227,25 +227,41 @@ export async function testCommunityTranscriptionEndpoint({
     }
     const formData = new FormData();
     formData.append("model", model);
-    formData.append("response_format", "json");
+    // Same format the request path pins, so what the probe proves is what
+    // callers actually get. See callCommunityTranscriptionEndpoint.
+    formData.append("response_format", "verbose_json");
     formData.append(
         "file",
         new Blob([new Uint8Array(sampleBytes)], { type: "audio/wav" }),
         "sample.wav",
     );
 
-    const body = await fetchJson(communityAudioTranscriptionsUrl(baseUrl), {
-        method: "POST",
-        headers: authorizationHeaders(bearerToken),
-        body: formData,
-    });
+    let body: unknown;
+    try {
+        body = await fetchJson(communityAudioTranscriptionsUrl(baseUrl), {
+            method: "POST",
+            headers: authorizationHeaders(bearerToken),
+            body: formData,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // A plain-json-only endpoint rejects verbose_json outright. Name the
+        // requirement rather than leaving the owner staring at a bare 400.
+        throw new Error(
+            message.includes("responded 400")
+                ? `${message}. Pollinations requests response_format=verbose_json because that is where the audio duration transcription is billed on is reported; models that only support plain json cannot be registered yet.`
+                : message,
+        );
+    }
 
+    // Shape check only. The sample is a fraction of a second of silence, so a
+    // correct engine may well transcribe it to "" — requiring non-empty text
+    // would reject the honest endpoints and keep the hallucinating ones.
     if (
         !body ||
         typeof body !== "object" ||
         !("text" in body) ||
-        typeof body.text !== "string" ||
-        body.text.length === 0
+        typeof body.text !== "string"
     ) {
         throw new Error("Endpoint did not return OpenAI transcription text");
     }
@@ -256,19 +272,16 @@ export async function testCommunityTranscriptionEndpoint({
     const promptAudioSeconds = communityTranscriptionSeconds(body);
     if (promptAudioSeconds === null) {
         throw new Error(
-            "Endpoint did not report audio duration (usage.duration, usage.seconds, or duration), which is required to bill transcription",
+            "Endpoint did not report the audio duration (expected verbose_json's top-level duration, or usage.seconds), which is required to bill transcription",
         );
     }
-    // The stored usage is the evidence the pricing UI marks the prompt-audio
-    // row against. whisper's verbose_json reports duration at the top level
-    // rather than under usage, so fall back to the seconds we billed.
-    const usage: CommunityEndpointUsage | undefined =
-        body && typeof body === "object" && "usage" in body
-            ? (body as { usage?: CommunityEndpointUsage }).usage
-            : undefined;
 
     return {
-        usage: usage ? { ...usage } : { duration: promptAudioSeconds },
+        // The pricing UI marks the prompt-audio row against a usage key named
+        // in that field's rawUsagePaths, and the duration is the only thing
+        // billed here — so report it directly rather than echoing an upstream
+        // usage object that may not carry it.
+        usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
     };
 }

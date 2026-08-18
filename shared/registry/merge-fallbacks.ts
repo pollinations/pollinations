@@ -19,8 +19,17 @@ export type FallbackDefinition = Partial<
     id: string;
 };
 
-/** Fallback routes, keyed by the model they serve and tried in order. */
-export type FallbackMap = Record<string, readonly FallbackDefinition[]>;
+/**
+ * Fallback targets, keyed by the model they serve and tried in order.
+ *
+ * A string names an existing top-level model; an object defines an internal
+ * route that exists only as a fallback. Both live in the same ordered list, so
+ * the try-order is readable in one place.
+ */
+export type FallbackMap = Record<
+    string,
+    readonly (string | FallbackDefinition)[]
+>;
 
 /**
  * Merges fallback routes into a service catalog: every parent gains the
@@ -35,7 +44,11 @@ export function mergeFallbacks<
 >(
     base: TBase,
     fallbacks: TFallbacks,
-): TBase & Record<TFallbacks[keyof TFallbacks][number]["id"], ModelDefinition> {
+): TBase &
+    Record<
+        Extract<TFallbacks[keyof TFallbacks][number], FallbackDefinition>["id"],
+        ModelDefinition
+    > {
     const merged: Record<string, ModelDefinition> = {};
     for (const [parentId, parent] of Object.entries(base)) {
         const routes = (fallbacks as FallbackMap)[parentId];
@@ -43,14 +56,20 @@ export function mergeFallbacks<
             merged[parentId] = parent;
             continue;
         }
-        merged[parentId] = { ...parent, fallbacks: routes.map((r) => r.id) };
+        merged[parentId] = {
+            ...parent,
+            fallbacks: routes.map((r) => (typeof r === "string" ? r : r.id)),
+        };
         const {
             aliases: _aliases,
             fallbacks: _fallbacks,
             fallbackOnStatusCodes: _statusCodes,
             ...inherited
         } = parent;
-        for (const { id, ...overrides } of routes) {
+        for (const route of routes) {
+            // A string target is an existing model; only objects define one.
+            if (typeof route === "string") continue;
+            const { id, ...overrides } = route;
             merged[id] = {
                 ...inherited,
                 ...overrides,
@@ -60,5 +79,11 @@ export function mergeFallbacks<
         }
     }
     return merged as TBase &
-        Record<TFallbacks[keyof TFallbacks][number]["id"], ModelDefinition>;
+        Record<
+            Extract<
+                TFallbacks[keyof TFallbacks][number],
+                FallbackDefinition
+            >["id"],
+            ModelDefinition
+        >;
 }

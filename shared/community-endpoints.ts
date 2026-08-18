@@ -39,6 +39,12 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// How long we wait on a self-hosted community endpoint before giving up. Kept
+// generous because these are hobby GPUs, and in line with the text providers
+// (Portkey and Azure both use 290s). Workers impose no wall-clock limit of
+// their own, so without this a hung endpoint would hang until the caller
+// disconnects.
+export const COMMUNITY_ENDPOINT_TIMEOUT_MS = 300_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =

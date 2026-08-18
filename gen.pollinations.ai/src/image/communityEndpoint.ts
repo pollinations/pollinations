@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
@@ -25,7 +26,6 @@ import {
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 
-const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 export async function callCommunityImageEndpoint(
@@ -106,7 +106,7 @@ async function imageEditFormData(
     for (const [index, imageUrl] of safeParams.image.entries()) {
         const { buffer, mimeType } = await downloadUserImage(
             imageUrl,
-            AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         );
         const extension = mimeType.split("/")[1];
         formData.append(
@@ -186,7 +186,7 @@ async function fetchWithTimeout(
         return await fetch(input, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new HttpError(

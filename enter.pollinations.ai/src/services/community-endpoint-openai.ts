@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
     communityEndpointErrorDetail,
@@ -34,7 +35,6 @@ export type CommunityEndpointTestResult = {
     inputModalities?: ModelInputModality[];
 };
 
-const REQUEST_TIMEOUT_MS = 90_000;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
@@ -56,7 +56,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         response = await fetch(url, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
@@ -287,7 +287,7 @@ async function fetchImageBytes(
     try {
         response = await fetch(url, {
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch {
         throw new Error("Endpoint image URL timed out or could not connect");

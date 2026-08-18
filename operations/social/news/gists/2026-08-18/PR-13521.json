@@ -1,0 +1,34 @@
+{
+  "pr_number": 13521,
+  "title": "refactor: move image fallback routes into their own registry",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13521",
+  "merged_at": "2026-08-18T20:15:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `shared/registry/image-fallbacks.ts`: fallback routes keyed by the public model they serve, then by the id each route is registered under — the same key-is-the-id shape as the catalogs they merge into. A route states only its **difference** from its parent (`provider`, `cost`, `billing`)\n- Adds `shared/registry/merge-fallbacks.ts`: `mergeFallbacks()` inherits the rest of the parent, stamps `hidden: true`, clears `aliases`, blocks chaining, injects the parent's `fallbacks` list, and inserts each route directly after its parent\n- Fallback ids stay hand-declared (`zimage-fal`), not generated: the id is stored in API-key `permissions.models`, so a rename would need a D1 migration\n- Types enforce it: a route keyed to a model that doesn't exist fails to compile, and `aliases`/`fallbacks`/`hidden` are `Omit`ed from the route type so they can't be set by hand\n- Alternative to the closed #13498, which removed the model identity and needed a permission migration\n\nVerified: the merged registry is value-identical to `main` — all 47 entries deep-compared (functions included) with identical key order, 0 diffs, and the enter effective-prices snapshot passes unmodified. Plus gen + enter typechecks, biome, gen fallback/zimage-fal/model-permissions tests, enter pricing/aliases tests. No file outside `shared/registry/` changes.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fallbacks found their shelf",
+    "blurb": "Image fallback routes now live in their own little registry, where they can inherit what they need without pretending to be entirely new flowers. The merged catalog remains exactly the same; the garden labels are just less tangled.",
+    "summary": "Moved image fallback routes into typed `image-fallbacks.ts` and added `mergeFallbacks()`, which inherits parent model settings while preserving all 47 merged registry entries, ordering, permissions-sensitive fallback IDs, and effective prices unchanged.",
+    "impact": "Developers get a safer, compile-checked way to define image fallbacks—routes stay next to their parent models in the merged registry without manually duplicating provider, billing, aliases, or visibility fields.",
+    "keywords": [
+      "image-models",
+      "fallbacks",
+      "registry",
+      "typesafety",
+      "permissions",
+      "refactor"
+    ],
+    "visual_concept": "A cozy library-garden registry shelf organizes parent image-model seed packets with their smaller fallback packets placed directly beside them. Polli acts as a careful librarian, filing a clearly labeled fallback card beneath its parent while code-plants grow from the shelves, representing inherited configuration and unchanged model identity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files a small \"zimage-fal\" card directly beneath its larger parent model card on a garden-library shelf; lime green (#ecf874) code-plants and tiny pastel flowers sprout between neatly ordered registry folders. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13521.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files a small \"zimage-fal\" card directly beneath its larger parent model card on a garden-library shelf; lime green (#ecf874) code-plants and tiny pastel flowers sprout between neatly ordered registry folders. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-18T20:17:05.598664+00:00"
+}

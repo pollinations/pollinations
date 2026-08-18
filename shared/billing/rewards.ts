@@ -3,6 +3,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import { rewards, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
+import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export const MAX_REWARD_AMOUNT = 10_000;
 
@@ -149,7 +150,7 @@ export async function claimReward(
         db
             .update(userTable)
             .set({
-                [`${row.balanceBucket}Balance`]: sql`COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}`,
+                [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
             })
             .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
             .returning({ newBalance: bucketColumn }),

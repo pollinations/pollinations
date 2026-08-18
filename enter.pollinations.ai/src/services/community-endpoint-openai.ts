@@ -254,14 +254,14 @@ export async function testCommunityTranscriptionEndpoint({
         );
     }
 
-    // Shape check only. The sample is a fraction of a second of silence, so a
-    // correct engine may well transcribe it to "" — requiring non-empty text
-    // would reject the honest endpoints and keep the hallucinating ones.
+    // The sample is real speech, so a working endpoint returns something. We
+    // never check what — the wording varies by model and language.
     if (
         !body ||
         typeof body !== "object" ||
         !("text" in body) ||
-        typeof body.text !== "string"
+        typeof body.text !== "string" ||
+        body.text.trim().length === 0
     ) {
         throw new Error("Endpoint did not return OpenAI transcription text");
     }

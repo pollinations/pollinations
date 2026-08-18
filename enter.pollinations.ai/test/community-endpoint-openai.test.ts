@@ -317,13 +317,15 @@ describe("community endpoint OpenAI service", () => {
             const file = formData.get("file");
             expect(file).toBeInstanceOf(File);
             expect((file as File).type).toBe("audio/wav");
-            // The sample must be a structurally valid WAV: 44-byte RIFF/WAVE
-            // header + 1600 bytes of PCM silence (0.1s at 8 kHz mono 16-bit).
+            // A structurally valid WAV carrying actual speech: 44-byte
+            // RIFF/WAVE header + ~0.9s of PCM at 8 kHz mono 16-bit. The
+            // non-silence assertion is the point — probing with silence would
+            // reject endpoints that legitimately report no duration for it.
             const wav = new Uint8Array(await (file as File).arrayBuffer());
-            expect(wav.length).toBe(1644);
+            expect(wav.length).toBe(14518);
             expect(new TextDecoder().decode(wav.subarray(0, 4))).toBe("RIFF");
             expect(new TextDecoder().decode(wav.subarray(8, 12))).toBe("WAVE");
-            expect(wav.subarray(44).every((byte) => byte === 0)).toBe(true);
+            expect(wav.subarray(44).some((byte) => byte !== 0)).toBe(true);
             return Response.json({
                 text: "Hello",
                 usage: { duration: 0.5 },
@@ -399,10 +401,10 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow("did not report the audio duration");
     });
 
-    it("accepts an empty transcript, which is what silence transcribes to", async () => {
+    it("rejects an empty transcript, since the sample is real speech", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => Response.json({ text: "", duration: 0.1 })),
+            vi.fn(async () => Response.json({ text: "   ", duration: 0.9 })),
         );
 
         await expect(
@@ -411,10 +413,7 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "whisper-1",
             }),
-        ).resolves.toMatchObject({
-            usage: { duration: 0.1 },
-            billableUsage: { promptAudioSeconds: 0.1 },
-        });
+        ).rejects.toThrow("did not return OpenAI transcription text");
     });
 
     it("explains the verbose_json requirement when the endpoint rejects it", async () => {

@@ -1,4 +1,5 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
+import { IMAGE_FALLBACK_SERVICES } from "./image-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -370,45 +371,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "zimage-fal": {
-        aliases: [],
-        provider: "fal",
-        brand: "Alibaba",
-        category: "image",
-        addedDate: new Date("2026-08-10").getTime(),
-        paidOnly: true,
-        hidden: true,
-        priceMultiplier: 1,
-        // Fal bills $0.005 per output megapixel. The token line stays at zero;
-        // the adjustment below records the exact provider cost while the
-        // caller keeps the public zimage flat price when this serves as fallback.
-        cost: {
-            completionImageTokens: 0,
-        },
-        billing: {
-            adjustments: [
-                {
-                    id: "fal.zimage.output_megapixels.v1",
-                    description: "Fal output image megapixels",
-                    kind: "image",
-                    unit: "megapixel",
-                    unitCost: 0.005,
-                    publicPricing: {
-                        label: "Output megapixels",
-                        quantity: 1,
-                        unit: "megapixel",
-                    },
-                    countUnits: (_output, input) =>
-                        Math.max(0, input?.megapixels ?? 0),
-                },
-            ],
-        },
-        title: "Z-Image Turbo",
-        description:
-            "Instant, budget-friendly images with crisp upscaled output",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
+    // Fallback-only routes (hidden, never selected directly) live in
+    // image-fallbacks.ts. Spread here so they stay part of IMAGE_SERVICES.
+    ...IMAGE_FALLBACK_SERVICES,
     "veo": {
         aliases: [
             "veo-3.1-fast",

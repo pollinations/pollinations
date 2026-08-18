@@ -2664,3 +2664,46 @@ body.polli-ui-shell #root {
         min-height: 14rem;
     }
 }
+
+.play-chat-shell {
+    min-height: 38rem;
+}
+
+.play-chat-transcript {
+    height: min(58dvh, 42rem);
+    min-height: 24rem;
+    overscroll-behavior: contain;
+}
+
+.play-chat-message {
+    width: fit-content;
+    max-width: min(46rem, 88%);
+    overflow-wrap: anywhere;
+}
+
+.play-chat-message pre,
+.play-chat-message table {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.play-chat-media {
+    width: 100%;
+    max-height: 34rem;
+    object-fit: contain;
+}
+
+@media (max-width: 639px) {
+    .play-chat-shell {
+        min-height: 32rem;
+    }
+
+    .play-chat-transcript {
+        height: 54dvh;
+        min-height: 20rem;
+    }
+
+    .play-chat-message {
+        max-width: 96%;
+    }
+}

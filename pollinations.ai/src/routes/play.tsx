@@ -3,13 +3,21 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
+import { ButtonGroup, TabButton } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
+import { Chat } from "../ui/play/Chat";
 import { Playground } from "../ui/play/Playground";
 import { ActionButton, Hero, PageHeader } from "../ui/site/kit";
 
+type PlaySearch = {
+    view?: "playground";
+};
+
 export const Route = createFileRoute("/play")({
+    validateSearch: (search: Record<string, unknown>): PlaySearch =>
+        search.view === "playground" ? { view: "playground" } : {},
     component: PlayPage,
 });
 
@@ -23,7 +31,14 @@ export const Route = createFileRoute("/play")({
 function ConnectAction() {
     const { isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
-    return isHydrated && isLoggedIn ? (
+    if (!isHydrated) {
+        return (
+            <ActionButton as="button" disabled aria-label="Loading account">
+                Checking…
+            </ActionButton>
+        );
+    }
+    return isLoggedIn ? (
         <AppUserMenu dashboardHref={ENTER_URL} />
     ) : (
         <ActionButton as="button" onClick={() => login()}>
@@ -46,6 +61,10 @@ function ConnectAction() {
  * designed for dark yet.
  */
 function PlayPage() {
+    const { view } = Route.useSearch();
+    const navigate = Route.useNavigate();
+    const activeView = view === "playground" ? "playground" : "chat";
+
     return (
         <PolliProvider
             appKey={POLLI_APP_KEY}
@@ -59,9 +78,9 @@ function PlayPage() {
                     title="Try it out."
                     subtitle={
                         <>
-                            Pick a model, type a prompt, see what comes back —
-                            nothing to install. Sign in and it runs on your own
-                            Pollen, through{" "}
+                            Chat naturally and let Floret route the work, or
+                            open the Playground for direct model controls. Sign
+                            in and it runs on your own Pollen, through{" "}
                             <strong>
                                 the same endpoints your app will call
                             </strong>
@@ -73,7 +92,52 @@ function PlayPage() {
                     <ConnectAction />
                 </div>
             </Hero>
-            <Playground />
+            <ButtonGroup role="tablist" aria-label="Play modes">
+                <TabButton
+                    id="play-chat-tab"
+                    role="tab"
+                    active={activeView === "chat"}
+                    aria-selected={activeView === "chat"}
+                    aria-controls="play-chat-panel"
+                    onClick={() =>
+                        navigate({ search: {}, replace: true })
+                    }
+                >
+                    Chat
+                </TabButton>
+                <TabButton
+                    id="play-playground-tab"
+                    role="tab"
+                    active={activeView === "playground"}
+                    aria-selected={activeView === "playground"}
+                    aria-controls="play-playground-panel"
+                    onClick={() =>
+                        navigate({
+                            search: { view: "playground" },
+                            replace: true,
+                        })
+                    }
+                >
+                    Playground
+                </TabButton>
+            </ButtonGroup>
+            {activeView === "chat" ? (
+                <div
+                    id="play-chat-panel"
+                    role="tabpanel"
+                    aria-labelledby="play-chat-tab"
+                >
+                    <Chat />
+                </div>
+            ) : (
+                <div
+                    id="play-playground-panel"
+                    role="tabpanel"
+                    aria-labelledby="play-playground-tab"
+                >
+                    <Playground />
+                </div>
+            )}
         </PolliProvider>
     );
 }

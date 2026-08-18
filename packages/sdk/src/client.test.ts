@@ -435,6 +435,82 @@ describe("Pollinations seed handling", () => {
     });
 });
 
+describe("Pollinations chat routing", () => {
+    it("serializes per-capability routing for chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: false,
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+    });
+
+    it("serializes partial routing for streaming chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n',
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        for await (const _chunk of client.chatStream(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "floret",
+                routing: { video: "veo" },
+            },
+        )) {
+            // Consume the stream.
+        }
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: true,
+            routing: { video: "veo" },
+        });
+    });
+
+    it("omits routing when no override is provided", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
+    });
+});
+
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();

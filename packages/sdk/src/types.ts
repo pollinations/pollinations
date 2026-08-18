@@ -254,10 +254,29 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability =
+    (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */

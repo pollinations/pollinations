@@ -827,6 +827,7 @@ export class Pollinations {
         return this.stripUndefined({
             messages,
             model: options.model,
+            routing: options.routing,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,

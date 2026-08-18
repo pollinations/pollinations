@@ -59,6 +59,22 @@ describe("whisper through the shared transcription formatter", () => {
         expect(body.segments).toHaveLength(2);
     });
 
+    it("reports the audio length but bills the rounded seconds", async () => {
+        // OVH answers duration 0.904625 and usage.seconds 1 for the same
+        // file. duration is the input audio; usage is what we charged.
+        const rounded: NormalizedTranscript = {
+            ...WHISPER,
+            duration: 0.904625,
+            billedSeconds: 1,
+        };
+        const body = (await format(rounded, "verbose_json").json()) as {
+            duration: number;
+            usage: { seconds: number };
+        };
+        expect(body.duration).toBe(0.904625);
+        expect(body.usage.seconds).toBe(1);
+    });
+
     it("keeps a placeholder segment when the provider reports none", async () => {
         const noSegments: NormalizedTranscript = { ...WHISPER, segments: [] };
         const body = (await format(noSegments, "verbose_json").json()) as {

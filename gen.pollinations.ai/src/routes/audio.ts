@@ -2828,10 +2828,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             normalized: {
                 text: whisper.text,
                 language: whisper.language || undefined,
-                // The billed seconds are the input-audio duration, which is
-                // what OpenAI's top-level duration means; keeping them one
-                // number makes body and usage headers agree.
-                duration: billedSeconds,
+                // OVH rounds usage.seconds up to whole seconds, so it is
+                // not the audio length: a 0.9s file reports duration 0.904625
+                // and bills 1. Report the real length and charge the rounded
+                // one, which is what this route did before it shared the
+                // formatter.
+                duration: whisper.duration ?? billedSeconds,
+                billedSeconds,
                 words: whisper.words ?? [],
                 segments: whisper.segments ?? [],
                 // OVH is not asked to diarize, so diarized_json is rejected
@@ -3390,6 +3393,7 @@ export function parsePositiveInt(
 interface WhisperVerboseJson {
     text: string;
     language?: string;
+    duration?: number;
     usage?: { seconds?: number };
     words?: NormalizedWord[];
     segments?: NormalizedSegment[];

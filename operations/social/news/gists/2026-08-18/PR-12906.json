@@ -1,0 +1,34 @@
+{
+  "pr_number": 12906,
+  "title": "docs: clarify static browser PKCE clients",
+  "author": "q8paradise",
+  "url": "https://github.com/pollinations/pollinations/pull/12906",
+  "merged_at": "2026-08-18T00:18:18Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Clarifies that PKCE-enabled static/public browser clients can exchange the authorization code directly, instead of implying every integration needs a server.\n- Adds a browser `fetch` example that validates `state`, requires the saved verifier, removes callback parameters, discovers the token endpoint, and reuses the exact registered redirect URI.\n- Documents memory-first/session-only token handling and warns against `localStorage`, URLs, analytics, and logs.\n- Links both server-backed and browser-only in-repo references.\n\n## Verification\n\n- Confirmed discovery advertises S256 and token authentication method `none`; the live token endpoint's CORS preflight allows browser POSTs.\n- Checked `enter.pollinations.ai/src/routes/oauth.ts`, `src/routes/well-known.ts`, `src/index.ts`, `apps/oauth-client-demo`, and `apps/oauth-test`.\n- Checked all open PR file overlaps; none covers this static-client guidance.\n- Ran `git diff --check`, Node syntax validation for the new snippet, Markdown fence/link checks, directory checks, and an added-line secret scan. No packages, builds, or test suites were run.\n\n## Security\n\nThe example fails closed on missing/mismatched state or verifier, removes transient OAuth data, and avoids persistent/callback-URL token exposure.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Browsers can bring their own pollen",
+    "blurb": "Static browser apps can now follow a clearly marked PKCE trail from authorization code to token, no server-shaped scarecrow required. The guide also keeps those fresh tokens out of URLs, logs, and the localStorage compost heap.",
+    "summary": "Updated BRING_YOUR_OWN_POLLEN.md with a browser-only PKCE flow showing direct authorization-code exchange via fetch, state and verifier validation, OIDC token-endpoint discovery, and the exact registered redirect URI.",
+    "impact": "Developers building static public browser clients now have a secure in-repo reference for exchanging codes directly while keeping tokens memory-first or session-only instead of exposing them in localStorage, callback URLs, analytics, or logs.",
+    "keywords": [
+      "oauth",
+      "pkce",
+      "browser",
+      "static-clients",
+      "security",
+      "documentation"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses and holding a verifier key, guides a friendly browser-window character along a garden path from an authorization-code flower to a token jar. A small retro terminal map marks “S256,” while a locked localStorage crate and discarded URL scraps sit safely off to the side; code-plants and the lime-green route make the flow feel clear and safe.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, guiding a friendly retro browser window along a lime green (#ecf874) garden path from an “AUTH CODE” flower to a secure token jar, with a tiny terminal sign reading “S256.” Code-plants bloom nearby and a locked localStorage crate sits off to the side; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-12906.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, guiding a friendly retro browser window along a lime green (#ecf874) garden path from an “AUTH CODE” flower to a secure token jar, with a tiny terminal sign reading “S256.” Code-plants bloom nearby and a locked localStorage crate sits off to the side; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel outlines."
+  },
+  "generated_at": "2026-08-18T00:19:19.589237+00:00"
+}

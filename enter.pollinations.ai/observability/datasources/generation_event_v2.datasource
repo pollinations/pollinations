@@ -148,12 +148,13 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- Adding a column here does not patch the existing table. Nine pipes
--- materialize from this one, so Tinybird builds a new table and copies the old
--- rows into it. FORWARD_QUERY is that copy, and it carries only the columns it
--- names -- hence the long list below, with '' for this new one.
+-- Adding a column here does not patch the existing table: Tinybird calls it an
+-- incompatible change, builds a new table, and copies the old rows in through
+-- FORWARD_QUERY below. That copy carries only the columns it names -- hence the
+-- long list, with '' for this new one.
 --
 -- Add every new column to that list too, or it is dropped on the next deploy.
+-- `tb deployment create --check` fails with the exact query it wants; paste it.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

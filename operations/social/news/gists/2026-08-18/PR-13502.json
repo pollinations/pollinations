@@ -1,0 +1,34 @@
+{
+  "pr_number": 13502,
+  "title": "docs: reframe pk_ keys as legacy, recommend App Keys for browsers",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13502",
+  "merged_at": "2026-08-18T00:38:41Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #11315\n\nDocs and dashboard copy were still mixing three stories: Scalar said `pk_` was beta, recipes said raw `pk_` was safe to embed, and the dashboard said deprecated / mint via CLI.\n\nNow:\n\n- `sk_` = server-only\n- App Key (`pk_` + redirect URIs) = BYOP client path\n- raw `pk_` = legacy, 1 pollen/IP/hour, do not mint for new browser code\n\n`APIDOCS.md` is left to the regen workflow after deploy, per repo rules.\n\nDid not change key-creation behavior.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys find their proper garden",
+    "blurb": "The key map is less mysterious now: server keys stay indoors, App Keys take the browser path, and raw pk_ keys get a clearly marked legacy trail.",
+    "summary": "Updated dashboard and authentication documentation to define sk_ keys as server-only, App Keys (pk_ plus redirect URIs) as the browser BYOP path, and raw pk_ keys as legacy keys limited to 1 Pollen per IP per hour.",
+    "impact": "Developers embedding Pollinations in browser apps now get a consistent recommendation to use App Keys with redirect URIs instead of minting new raw pk_ keys.",
+    "keywords": [
+      "authentication",
+      "app-keys",
+      "pk-keys",
+      "browser",
+      "dashboard",
+      "documentation"
+    ],
+    "visual_concept": "Depict a cozy key garden with three clearly labeled paths: a sheltered server house for sk_, a bright browser window reached by an App Key with redirect-arrow signposts, and a small legacy raw pk_ trail marked with a gentle one-pollen-per-hour sign. Polli, wearing a tiny librarian scarf and carrying a map, guides the Monitor Robot toward the safe browser path while code-plants and flowers grow around the signposts.",
+    "image_prompt": "A cozy pixel-art key garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny librarian scarf and points a map toward an \"APP KEY\" browser window with redirect-arrow signposts; nearby, a cozy server shed marked \"sk_\" and a gently labeled \"legacy pk_\" path sit among flowers and code-plants, while a cheerful CRT-monitor robot follows along. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13502.jpg",
+    "prompt": "A cozy pixel-art key garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny librarian scarf and points a map toward an \"APP KEY\" browser window with redirect-arrow signposts; nearby, a cozy server shed marked \"sk_\" and a gently labeled \"legacy pk_\" path sit among flowers and code-plants, while a cheerful CRT-monitor robot follows along. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-18T00:39:53.094808+00:00"
+}

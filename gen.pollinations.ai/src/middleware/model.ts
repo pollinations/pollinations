@@ -126,8 +126,10 @@ export async function resolveModelDefinition(
         }),
         // An agent run executes tools and spends the caller's balance, so its
         // answer belongs to that caller and must never be replayed to another.
+        // An agent on its owner's server has no agent id, so the listing names
+        // the scope instead.
         ...(entry.communityEndpoint?.kind === "agent" && {
-            cacheScope: `agent:${entry.communityEndpoint.agentId}`,
+            cacheScope: `agent:${entry.communityEndpoint.agentId ?? entry.id}`,
         }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,

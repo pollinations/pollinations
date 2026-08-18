@@ -1613,7 +1613,9 @@ export const accountRoutes = new Hono<Env>()
                                             name: z
                                                 .string()
                                                 .nullable()
-                                                .describe("Display name of the BYOP app."),
+                                                .describe(
+                                                    "Display name of the BYOP app.",
+                                                ),
                                             appUser: z
                                                 .string()
                                                 .nullable()

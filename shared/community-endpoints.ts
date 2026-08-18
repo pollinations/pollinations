@@ -537,14 +537,6 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
-// Only JSON shapes can carry the duration these endpoints are billed on, so
-// text/srt/vtt are rejected before we do the work rather than transcribed for
-// free.
-export const COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS = [
-    "json",
-    "verbose_json",
-] as const;
-
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *

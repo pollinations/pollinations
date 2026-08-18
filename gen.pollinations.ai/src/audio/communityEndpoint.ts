@@ -1,5 +1,4 @@
 import {
-    COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS,
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
     communityTranscriptionSeconds,
@@ -34,19 +33,12 @@ export async function callCommunityTranscriptionEndpoint(
             `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
         );
     }
-    // These endpoints bill on the duration they report, which only the JSON
-    // shapes carry. Reject the others up front instead of transcribing for
-    // free.
-    if (
-        options.responseFormat &&
-        !(
-            COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS as readonly string[]
-        ).includes(options.responseFormat)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Community transcription endpoints support response_format ${COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS.join(" or ")}, got '${options.responseFormat}'`,
-        });
-    }
+    // When the caller asks for nothing we send json rather than letting the
+    // endpoint pick: json is OpenAI's default anyway, and it is the exact shape
+    // the registration probe proved this endpoint meters. Anything the caller
+    // does ask for is forwarded as-is — the endpoint owns which formats it
+    // supports, and its errors reach the caller unchanged.
+    const responseFormat = options.responseFormat ?? "json";
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
@@ -62,9 +54,7 @@ export async function callCommunityTranscriptionEndpoint(
     upstreamFormData.append("model", endpoint.upstreamModel);
     if (options.language) upstreamFormData.append("language", options.language);
     if (options.prompt) upstreamFormData.append("prompt", options.prompt);
-    if (options.responseFormat) {
-        upstreamFormData.append("response_format", options.responseFormat);
-    }
+    upstreamFormData.append("response_format", responseFormat);
     if (options.temperature !== undefined) {
         upstreamFormData.append("temperature", String(options.temperature));
     }

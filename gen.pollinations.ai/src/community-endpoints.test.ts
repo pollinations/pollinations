@@ -1149,20 +1149,43 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("rejects non-JSON response formats, which cannot carry a duration", async () => {
-            const fetchMock = vi.fn();
+        it("forwards the caller's response_format and fails if it cannot be metered", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                expect(formData.get("response_format")).toBe("text");
+                return new Response("Hello world", {
+                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                });
+            });
             vi.stubGlobal("fetch", fetchMock);
 
+            // The format is the caller's business, not ours — but a body we
+            // cannot meter is an error, never a free transcription.
             await expect(
                 callCommunityTranscriptionEndpoint(
                     await transcriptionEndpoint(),
                     { file: audioFile, responseFormat: "text" },
                     secret,
                 ),
-            ).rejects.toMatchObject({ status: 400 });
-            // Rejected before any upstream work is done, so nothing is
-            // transcribed for free.
-            expect(fetchMock).not.toHaveBeenCalled();
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("defaults response_format to json, the shape the probe verified", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                expect(formData.get("response_format")).toBe("json");
+                return Response.json({ text: "Hello", usage: { seconds: 2 } });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("2");
         });
 
         it("propagates upstream transcription failures", async () => {

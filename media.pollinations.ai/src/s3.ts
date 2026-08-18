@@ -369,7 +369,7 @@ export function createS3Router(
     // Hono mounts this router at /s3, so requests to /s3/ arrive as path ""
     // or "/" here. We handle both.
     // -------------------------------------------------------------------------
-    async function handleList(c: Parameters<Parameters<typeof s3.get>[1]>[0]): Promise<Response> {
+    async function handleList(c: any): Promise<Response> {
         const auth = await requireAuth(c.req.raw, "read");
         if (auth instanceof Response) return auth;
 
@@ -394,11 +394,11 @@ export function createS3Router(
         });
 
         const isTruncated = result.truncated;
-        const nextToken = isTruncated ? (result as R2Objects).cursor : undefined;
+        const nextToken = isTruncated ? (result as any).cursor : undefined;
 
         // Strip the userId/ prefix from the keys returned to the client.
         const userPrefix = `${auth.userId}/`;
-        const contents = result.objects.map((obj) => {
+        const contents = result.objects.map((obj: any) => {
             const clientKey = obj.key.startsWith(userPrefix)
                 ? obj.key.slice(userPrefix.length)
                 : obj.key;
@@ -419,7 +419,7 @@ export function createS3Router(
                 el("KeyCount", result.objects.length) +
                 el("IsTruncated", String(isTruncated)) +
                 (nextToken ? el("NextContinuationToken", nextToken) : "") +
-                contents.map((c) => `<Contents>${c}</Contents>`).join(""),
+                contents.map((c: any) => `<Contents>${c}</Contents>`).join(""),
         );
 
         return new Response(body, {

@@ -1,10 +1,11 @@
 import { Buffer } from "node:buffer";
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
-    normalizeCommunityAssetUrl,
+    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -14,20 +15,15 @@ import {
     openaiImageUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
-import { MAX_IMAGE_SIZE } from "@/userImage.ts";
-import { readResponseBytes } from "@/utils/response-bytes.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
 import {
-    base64ToBuffer,
     bufferToUint8Array,
     downloadUserImage,
 } from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
-
-const REQUEST_TIMEOUT_MS = 120_000;
 
 export async function callCommunityImageEndpoint(
     endpoint: CommunityEndpointRuntime,
@@ -67,15 +63,19 @@ export async function callCommunityImageEndpoint(
               }),
     );
 
-    const buffer = await firstImageBuffer(body, endpoint.baseUrl);
-    if (!detectImageMimeType(buffer)) {
+    const bytes = await firstCommunityImageBytes(
+        body,
+        endpoint.baseUrl,
+        endpointError,
+    );
+    if (!bytes || !detectImageMimeType(bytes)) {
         throw new HttpError(
             "Community image endpoint did not return a supported image",
             502,
         );
     }
     return {
-        buffer,
+        buffer: Buffer.from(bytes),
         isMature: false,
         isChild: false,
         trackingData: {
@@ -107,7 +107,7 @@ async function imageEditFormData(
     for (const [index, imageUrl] of safeParams.image.entries()) {
         const { buffer, mimeType } = await downloadUserImage(
             imageUrl,
-            AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         );
         const extension = mimeType.split("/")[1];
         formData.append(
@@ -187,7 +187,7 @@ async function fetchWithTimeout(
         return await fetch(input, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new HttpError(
@@ -199,75 +199,8 @@ async function fetchWithTimeout(
     }
 }
 
-async function firstImageBuffer(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Buffer> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        throw new HttpError(
-            "Community image endpoint did not return OpenAI image data",
-            502,
-        );
-    }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
-        if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
-        ) {
-            return base64ToBuffer(image.b64_json);
-        }
-        if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
-        ) {
-            return fetchImageBuffer(image.url, endpointBaseUrl);
-        }
-    }
-    throw new HttpError(
-        "Community image endpoint did not return base64 or URL image data",
-        502,
-    );
-}
-
-async function fetchImageBuffer(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Buffer> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new HttpError(
-            "Community image endpoint returned an unsafe image URL",
-            502,
-        );
-    }
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) {
-        throw new HttpError(
-            `Community image URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
-    }
-    // Content-length precheck and the running byte cap both live in
-    // readResponseBytes, which every other media download in this Worker uses.
-    return Buffer.from(
-        await readResponseBytes(
-            response,
-            MAX_IMAGE_SIZE,
-            () => new HttpError("Community image is larger than 20 MB", 502),
-        ),
-    );
+function endpointError(message: string): HttpError {
+    return new HttpError(`Community image endpoint ${message}`, 502);
 }
 
 function parseJson(text: string): unknown {

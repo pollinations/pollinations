@@ -10,6 +10,7 @@ import {
     OPENAI_CHAT_USAGE_TYPES,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
+import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
@@ -39,6 +40,13 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
+// How long we wait on a community endpoint before giving up. Generous because
+// these are self-hosted hobby GPUs that cold-start, and in line with the text
+// providers (Portkey and Azure both use 290s). Workers impose no wall-clock
+// limit of their own, so without this a hung endpoint would hold the request
+// open until the caller disconnects.
+export const COMMUNITY_ENDPOINT_TIMEOUT_MS = 300_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
@@ -476,6 +484,94 @@ export function normalizeCommunityAssetUrl(
     }
     url.hash = "";
     return url.toString();
+}
+
+/**
+ * Pull the first usable image out of an OpenAI images response: inline base64
+ * when present, otherwise the URL it points at, fetched under the shared
+ * timeout and size cap.
+ *
+ * Returns null when the body carries no usable image, so each caller can
+ * phrase that in its own words. Failures while fetching a URL throw via
+ * `fail`, whose messages are worded to follow the caller's own subject —
+ * "<subject> returned an unsafe image URL".
+ */
+export async function firstCommunityImageBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+    fail: (message: string) => Error,
+): Promise<Uint8Array | null> {
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data)
+    ) {
+        return null;
+    }
+    for (const image of body.data) {
+        if (!image || typeof image !== "object") continue;
+        if (
+            "b64_json" in image &&
+            typeof image.b64_json === "string" &&
+            image.b64_json.length > 0
+        ) {
+            return decodeCommunityImageBase64(image.b64_json);
+        }
+        if (
+            "url" in image &&
+            typeof image.url === "string" &&
+            image.url.length > 0
+        ) {
+            return fetchCommunityImageBytes(image.url, endpointBaseUrl, fail);
+        }
+    }
+    return null;
+}
+
+async function fetchCommunityImageBytes(
+    value: string,
+    endpointBaseUrl: string,
+    fail: (message: string) => Error,
+): Promise<Uint8Array> {
+    let url: string;
+    try {
+        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
+    } catch {
+        throw fail("returned an unsafe image URL");
+    }
+    let response: Response;
+    try {
+        // The URL is validated against https + the private-host blocklist
+        // above; following redirects would let the endpoint bounce us to an
+        // unvalidated destination.
+        response = await fetch(url, {
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw fail("returned an image URL that timed out or could not connect");
+    }
+    if (!response.ok) {
+        throw fail(`returned an image URL that responded ${response.status}`);
+    }
+    return readResponseBytes(response, MAX_COMMUNITY_IMAGE_BYTES, () =>
+        fail("returned an image larger than 20 MB"),
+    );
+}
+
+function decodeCommunityImageBase64(value: string): Uint8Array | null {
+    try {
+        const encoded = value
+            .replace(/^data:[^,]+,/, "")
+            .replace(/\s/g, "")
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+        const decoded = atob(encoded);
+        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+    } catch {
+        return null;
+    }
 }
 
 export function communityChatCompletionsUrl(baseUrl: string): string {

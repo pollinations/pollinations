@@ -1609,6 +1609,32 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
                                         ),
+                                    byopApp: z
+                                        .object({
+                                            keyId: z
+                                                .string()
+                                                .describe(
+                                                    "Public app key / client id",
+                                                ),
+                                            name: z
+                                                .string()
+                                                .nullable()
+                                                .describe("App name"),
+                                            user: z
+                                                .object({
+                                                    id: z
+                                                        .string()
+                                                        .describe(
+                                                            "App user identity",
+                                                        ),
+                                                })
+                                                .nullable()
+                                                .describe("App user identity"),
+                                        })
+                                        .nullable()
+                                        .describe(
+                                            "BYOP app attribution for keys minted through BYOP, or null for non-BYOP keys.",
+                                        ),
                                 }),
                             ),
                         },
@@ -1702,6 +1728,15 @@ export const accountRoutes = new Hono<Env>()
                 // params — so user and BYOP app ids cannot be spoofed.
                 userId: c.var.auth.user?.id ?? null,
                 byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopApp: apiKey.byopClientKeyId
+                    ? {
+                          keyId: apiKey.byopClientKeyId,
+                          name: apiKey.byopClientName ?? null,
+                          user: apiKey.byopClientUserId
+                              ? { id: apiKey.byopClientUserId }
+                              : null,
+                      }
+                    : null,
             });
         },
     )

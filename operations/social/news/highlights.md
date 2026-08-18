@@ -1,3 +1,8 @@
+- **2026-08-17** – **✨ The model garden got labels** The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)
+- **2026-08-17** – **🎨 Image models get a CLI key** Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support.
+- **2026-08-17** – **💡 Every hive gets a probe** Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now.
+- **2026-08-17** – **🎯 Quest bars grow leaves** Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age.
+- **2026-08-17** – **🌟 A meadow for every model** Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz) <!-- app -->
 - **2026-08-16** – **🎨 Image edits keep their shape** Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-16** – **🤖 Agents show their work** Managed-agent responses now expose tool names, parameters, outputs, and failures in streaming and non-streaming Open WebUI-compatible blocks. Debugging the robot is marginally less mystical.
 - **2026-08-16** – **🎯 Bonus Pollen rewards** Campaign rewards can now be claimed through Quests and appear under Bonus rewards, while contributor grants land through the same quest flow.

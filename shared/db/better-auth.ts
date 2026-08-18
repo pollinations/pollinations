@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
   sqliteTable,
@@ -36,6 +37,9 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  // Public branding shared by every community model owned by this account.
+  communityProviderName: text("community_provider_name"),
+  communityProviderUrl: text("community_provider_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -193,6 +197,23 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+export const agent = sqliteTable("agent", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  config: text("config").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_agent_owner_user_id").on(table.ownerUserId),
+]);
+
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -210,18 +231,29 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
     .notNull(),
-  // Set only after the registration probe successfully calls /images/edits.
-  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+  // Legacy rollout column. Runtime capability is derived only from
+  // inputModalities; remove this in a follow-up after all workers run 0042 code.
+  legacySupportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
     .default(false)
     .notNull(),
-  baseUrl: text("base_url").notNull(),
+  // Null for rows created before this column existed; read paths default to text.
+  inputModalities: text("input_modalities", { mode: "json" }).$type<
+    ModelInputModality[]
+  >(),
+  // External models keep their target here. Managed agents resolve their
+  // target through agentId so the agent can outlive its community listing.
+  baseUrl: text("base_url"),
+  agentId: text("agent_id").references(() => agent.id, {
+    onDelete: "restrict",
+  }),
   upstreamModel: text("upstream_model").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext"),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
+  perUserRpm: real("per_user_rpm"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
@@ -237,6 +269,13 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // Ordered community model ids ("<github_username>/<name>") tried, one after
+  // the other, when this endpoint's upstream fails. The owner declares the
+  // whole list, so no other owner's choice can change where this model's
+  // traffic goes.
+  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
+    string[]
+  >(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),
@@ -253,6 +292,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     table.ownerUserId,
     table.name,
   ),
+  uniqueIndex("idx_community_endpoint_agent_id").on(table.agentId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -262,6 +302,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  agents: many(agent),
   communityEndpoints: many(communityEndpoint),
 }));
 
@@ -311,6 +352,18 @@ export const communityEndpointRelations = relations(communityEndpoint, ({ one })
     fields: [communityEndpoint.ownerUserId],
     references: [user.id],
   }),
+  agent: one(agent, {
+    fields: [communityEndpoint.agentId],
+    references: [agent.id],
+  }),
+}));
+
+export const agentRelations = relations(agent, ({ one }) => ({
+  owner: one(user, {
+    fields: [agent.ownerUserId],
+    references: [user.id],
+  }),
+  communityEndpoint: one(communityEndpoint),
 }));
 
 // Device Authorization Grant (RFC 8628) table

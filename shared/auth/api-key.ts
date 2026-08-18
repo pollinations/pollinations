@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
@@ -10,7 +10,7 @@ import {
     type AgentRunClaims,
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
-import { parseMetadata } from "./api-key-creation.ts";
+import { parseMetadata } from "./api-key-metadata.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -109,10 +109,6 @@ type VerifyApiKeyResponse = {
     valid: boolean;
     key?: {
         id?: unknown;
-        name?: unknown;
-        userId?: unknown;
-        permissions?: unknown;
-        metadata?: unknown;
     } | null;
 };
 
@@ -236,54 +232,11 @@ export async function authenticateApiKeyRequest(opts: {
     const key = keyResult.key;
     const keyId = typeof key.id === "string" ? key.id : undefined;
     if (!keyId) return null;
-
-    const db = drizzle(opts.env.DB, { schema });
-    const userId = typeof key.userId === "string" ? key.userId : undefined;
-    const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const [apiKeyExtra, userData] = await Promise.all([
-        db
-            .select({
-                pollenBalance: schema.apikey.pollenBalance,
-                byopClientKeyId: schema.apikey.byopClientKeyId,
-                byopClientName: byopClientKey.name,
-                byopClientUserId: byopClientKey.userId,
-            })
-            .from(schema.apikey)
-            .leftJoin(
-                byopClientKey,
-                eq(byopClientKey.id, schema.apikey.byopClientKeyId),
-            )
-            .where(eq(schema.apikey.id, keyId))
-            .get(),
-        userId
-            ? db
-                  .select()
-                  .from(schema.user)
-                  .where(eq(schema.user.id, userId))
-                  .get()
-            : null,
-    ]);
-
-    if (userData) {
-        assertNotBanned(userData);
-    }
-    assertStagingAccess(opts.env, userData);
-
-    return {
-        user: userData ?? undefined,
-        apiKey: {
-            id: keyId,
-            name: typeof key.name === "string" ? key.name : undefined,
-            permissions: normalizePermissions(key.permissions),
-            metadata: normalizeMetadata(key.metadata),
-            pollenBalance: apiKeyExtra?.pollenBalance ?? null,
-            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
-            byopClientName: apiKeyExtra?.byopClientName ?? null,
-            byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
-            rawKey: rawApiKey,
-        },
+    return loadActiveApiKeyAuthResult({
+        apiKeyId: keyId,
         rawApiKey,
-    };
+        env: opts.env,
+    });
 }
 
 async function authenticateAgentRunToken(
@@ -333,21 +286,15 @@ async function loadActiveApiKeyAuthResult(opts: {
 }): Promise<ApiKeyAuthResult | null> {
     const db = drizzle(opts.env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const apiKeyData = await db
+    const row = await db
         .select({
-            id: schema.apikey.id,
-            name: schema.apikey.name,
-            userId: schema.apikey.userId,
-            enabled: schema.apikey.enabled,
-            expiresAt: schema.apikey.expiresAt,
-            permissions: schema.apikey.permissions,
-            metadata: schema.apikey.metadata,
-            pollenBalance: schema.apikey.pollenBalance,
-            byopClientKeyId: schema.apikey.byopClientKeyId,
+            apiKey: getTableColumns(schema.apikey),
+            user: getTableColumns(schema.user),
             byopClientName: byopClientKey.name,
             byopClientUserId: byopClientKey.userId,
         })
         .from(schema.apikey)
+        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.userId))
         .leftJoin(
             byopClientKey,
             eq(byopClientKey.id, schema.apikey.byopClientKeyId),
@@ -356,36 +303,29 @@ async function loadActiveApiKeyAuthResult(opts: {
         .get();
 
     if (
-        !apiKeyData ||
-        apiKeyData.enabled === false ||
-        (apiKeyData.expiresAt && apiKeyData.expiresAt <= new Date())
+        !row ||
+        row.apiKey.enabled === false ||
+        (row.apiKey.expiresAt && row.apiKey.expiresAt <= new Date())
     ) {
         return null;
     }
 
-    const userData = await db
-        .select()
-        .from(schema.user)
-        .where(eq(schema.user.id, apiKeyData.userId))
-        .get();
-    if (!userData) return null;
-
-    assertNotBanned(userData);
-    assertStagingAccess(opts.env, userData);
+    assertNotBanned(row.user);
+    assertStagingAccess(opts.env, row.user);
 
     return {
-        user: userData,
+        user: row.user,
         apiKey: {
-            id: apiKeyData.id,
-            name: apiKeyData.name ?? undefined,
+            id: row.apiKey.id,
+            name: row.apiKey.name ?? undefined,
             permissions: normalizePermissions(
-                parseMetadata(apiKeyData.permissions),
+                parseMetadata(row.apiKey.permissions),
             ),
-            metadata: normalizeMetadata(parseMetadata(apiKeyData.metadata)),
-            pollenBalance: apiKeyData.pollenBalance ?? null,
-            byopClientKeyId: apiKeyData.byopClientKeyId ?? null,
-            byopClientName: apiKeyData.byopClientName ?? null,
-            byopClientUserId: apiKeyData.byopClientUserId ?? null,
+            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            pollenBalance: row.apiKey.pollenBalance ?? null,
+            byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
+            byopClientName: row.byopClientName ?? null,
+            byopClientUserId: row.byopClientUserId ?? null,
             rawKey: opts.rawApiKey,
         },
         rawApiKey: opts.rawApiKey,

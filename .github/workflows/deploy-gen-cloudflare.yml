@@ -6,6 +6,7 @@ on:
       - production
     paths:
       - 'gen.pollinations.ai/**'
+      - 'packages/mcp/**'
       - 'shared/**'
       - 'package.json'
       - 'package-lock.json'
@@ -15,6 +16,7 @@ on:
 concurrency:
   group: pollinations-cloudflare-production
   cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy:

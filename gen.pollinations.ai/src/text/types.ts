@@ -2,6 +2,8 @@
  * Shared types for the text generation service.
  */
 
+import type { UpstreamHeaders } from "@shared/error.ts";
+
 /** OpenAI-style chat message. */
 export interface ChatMessage {
     role: string;
@@ -33,12 +35,16 @@ export interface TransformOptions {
     response_format?: { type: string; [key: string]: unknown };
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     modalities?: string[];
     audio?: Record<string, unknown>;
     normalizeFinishReasonAtTokenLimit?: boolean;
@@ -93,10 +99,16 @@ export interface ServiceError extends Error {
     upstreamStatus?: number;
     requestUrl?: URL;
     code?: number | string;
+    /**
+     * Stable, machine-readable error code (mirrors `UpstreamError.errorCode`),
+     * propagated into the response envelope by the text error funnel.
+     */
+    errorCode?: string;
     details?: unknown;
     model?: string;
     provider?: string;
     response?: { data?: unknown };
+    upstreamHeaders?: UpstreamHeaders;
 }
 
 export type TextVariables = {
@@ -118,9 +130,13 @@ export interface RequestData {
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;
@@ -138,4 +154,5 @@ export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
     defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
+    fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

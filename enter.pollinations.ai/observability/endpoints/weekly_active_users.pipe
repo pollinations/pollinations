@@ -18,6 +18,10 @@ SQL >
         sum(total_price) AS total_revenue
     FROM generation_event_v2
     WHERE
+        -- One row per request: a fallback attempt is part of a request, not
+        -- another one, and it carries no user, price or tokens of its own.
+        is_final
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

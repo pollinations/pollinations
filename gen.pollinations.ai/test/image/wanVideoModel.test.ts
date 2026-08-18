@@ -3,7 +3,6 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callWanAPI,
     callWanFastAPI,
-    callWanPro1080pAPI,
     callWanProAPI,
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -127,21 +126,21 @@ describe("wanVideoModel billing usage", () => {
         });
     });
 
-    it("wan-pro-1080p locks to 1080p and bills as wan-pro-1080p", async () => {
+    it("wan-pro passes an explicit 1080p resolution", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
 
-        const result = await callWanPro1080pAPI("a calm ocean at sunrise", {
+        const result = await callWanProAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-pro-1080p",
+            resolution: "1080p",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
         expect(calls[0].input.resolution).toBe("1080p");
         expect(calls[0].cancelAfter).toBe("15m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro-1080p",
+            actualModel: "wan-pro",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -205,14 +204,14 @@ describe("wanVideoModel image-to-video routing", () => {
         expect(calls[0].input.first_frame as string).toMatch(EXPECTED_DATA_URI);
     });
 
-    it("wan-pro-1080p i2v keeps the Wan 2.7 deadline", async () => {
+    it("wan-pro 1080p i2v keeps the Wan 2.7 deadline", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
 
-        await callWanPro1080pAPI("a cat walking", {
+        await callWanProAPI("a cat walking", {
             ...baseParams,
-            model: "wan-pro-1080p",
+            resolution: "1080p",
             image: [INPUT_IMAGE_URL],
         });
 

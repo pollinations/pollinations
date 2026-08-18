@@ -29,11 +29,11 @@ export const EMBEDDING_SERVICES = {
     },
     "openai-3-small": {
         aliases: ["embedding-small"],
-        provider: "openai",
+        provider: "azure",
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
@@ -46,11 +46,11 @@ export const EMBEDDING_SERVICES = {
     },
     "openai-3-large": {
         aliases: ["embedding-large"],
-        provider: "openai",
+        provider: "azure",
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.13),
         },

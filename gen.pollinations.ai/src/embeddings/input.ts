@@ -1,6 +1,8 @@
+import { UpstreamError } from "@shared/error.ts";
 import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
+import { UserImageError } from "@/userImage.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
 import type {
     ContentPart,
@@ -92,6 +94,16 @@ async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
         const { base64, mimeType } = await downloadImageAsBase64(url);
         return { inlineData: { mimeType, data: base64 } };
     } catch (error) {
+        // Carries the code through, the way the image and text funnels do —
+        // an HTTPException would flatten it back to a generic BAD_REQUEST.
+        if (error instanceof UserImageError) {
+            throw new UpstreamError(400, {
+                message: error.message,
+                errorCode: error.errorCode,
+                requestUrl: error.requestUrl,
+                upstreamStatus: error.upstreamStatus,
+            });
+        }
         if (error instanceof HttpError) badRequest(error.message);
         throw error;
     }

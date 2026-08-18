@@ -81,7 +81,7 @@ export interface InsertUploadParams {
 export async function insertUploadCatalogItem(
     db: CatalogDb,
     params: InsertUploadParams,
-): Promise<string> {
+): Promise<void> {
     // One atomic batch: the item row and its tags land together or not at
     // all — a tagless catalog row would be invisible (galleries are
     // tag-scoped) yet undeletable by its owner via unpublish.
@@ -101,8 +101,6 @@ export async function insertUploadCatalogItem(
             })),
         ),
     ]);
-
-    return params.id;
 }
 
 /**

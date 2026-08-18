@@ -45,7 +45,7 @@ export async function callAzureFluxKontext(
     }
 
     // Check if we need to use the edits endpoint instead of generations
-    const isEditMode = safeParams.image && safeParams.image.length > 0;
+    const isEditMode = safeParams.image.length > 0;
 
     // Add the appropriate endpoint path and API version
     let endpoint: string;
@@ -85,20 +85,8 @@ export async function callAzureFluxKontext(
 
         // Handle images based on their type
         try {
-            // Convert to array if it's a string (backward compatible)
-            const imageUrls = Array.isArray(safeParams.image)
-                ? safeParams.image
-                : [safeParams.image];
-
-            if (imageUrls.length === 0) {
-                throw new HttpError(
-                    "Image URL is required for Flux Kontext edit mode but was not provided",
-                    400,
-                );
-            }
-
             // Process the first image (Flux Kontext typically uses single image)
-            const imageUrl = imageUrls[0];
+            const imageUrl = safeParams.image[0];
             logCloudflare(`Fetching image from URL: ${imageUrl}`);
 
             const { buffer, mimeType } = await downloadUserImage(imageUrl);

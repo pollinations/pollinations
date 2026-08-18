@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
+    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
@@ -8,7 +9,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
@@ -29,8 +30,8 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
     /** Image tests only: billing mode detected from the probe response. */
     imagePricing?: CommunityEndpointImagePricing;
-    /** Image tests only: whether a valid /images/edits response was observed. */
-    supportsImageEdits?: boolean;
+    /** Image tests only: input types detected by the generation/edit probes. */
+    inputModalities?: ModelInputModality[];
 };
 
 const REQUEST_TIMEOUT_MS = 90_000;
@@ -69,7 +70,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message = endpointBodyMessage(body);
+    const message = communityEndpointErrorDetail(body);
     const prefix =
         status === 401
             ? "Endpoint responded 401 after we sent Authorization"
@@ -77,24 +78,6 @@ function endpointErrorMessage(status: number, body: unknown): string {
               ? `Endpoint responded ${status} with a redirect, which is not supported`
               : `Endpoint responded ${status}`;
     return message ? `${prefix}: ${message}` : prefix;
-}
-
-function endpointBodyMessage(body: unknown): string | null {
-    if (!body || typeof body !== "object") return null;
-    if (
-        "error" in body &&
-        body.error &&
-        typeof body.error === "object" &&
-        "message" in body.error &&
-        typeof body.error.message === "string"
-    ) {
-        return body.error.message;
-    }
-    if ("error" in body && typeof body.error === "string") return body.error;
-    if ("message" in body && typeof body.message === "string") {
-        return body.message;
-    }
-    return null;
 }
 
 export async function listCommunityEndpointModels({
@@ -199,11 +182,14 @@ export async function testCommunityImageEndpoint({
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
     }
-    const supportsImageEdits = await testCommunityImageEdits(
+    const supportsImageInput = await testCommunityImageEdits(
         { baseUrl, bearerToken, model },
         imageBytes,
         imageMimeType,
     );
+    const inputModalities: ModelInputModality[] = supportsImageInput
+        ? ["text", "image"]
+        : ["text"];
 
     // Endpoints that return valid OpenAI image token usage are billed
     // per token ("tokens"); everything else falls back to a fixed price
@@ -214,14 +200,14 @@ export async function testCommunityImageEndpoint({
             usage: { ...openaiUsage },
             billableUsage: openaiImageUsageToUsage(openaiUsage),
             imagePricing: "tokens",
-            supportsImageEdits,
+            inputModalities,
         };
     }
     return {
         usage: { images: 1 },
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
-        supportsImageEdits,
+        inputModalities,
     };
 }
 

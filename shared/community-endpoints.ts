@@ -1,5 +1,10 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelDefinition,
+    type ModelInputModality,
+    type PriceDefinition,
+} from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
@@ -22,6 +27,8 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
 export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
+export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -36,6 +43,14 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
+    text: MODEL_INPUT_MODALITIES,
+    image: ["text", "image"],
+} as const satisfies Record<
+    CommunityEndpointModality,
+    readonly ModelInputModality[]
+>;
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -209,6 +224,31 @@ export function communityEndpointPricesForModality(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * Bounds how much latency one request can spend failing before it gives up:
+ * every extra target is another upstream timeout the caller waits through.
+ * Enforced on write and re-applied when the generation registry links entries.
+ */
+export const MAX_FALLBACK_TARGETS = 3;
+
+/**
+ * True when `target` costs no more than `primary` on every price field.
+ *
+ * The caller is charged the primary's price whichever endpoint serves, so this
+ * bounds the PAYOUT rather than the invoice: a rescuer is paid on their own
+ * listing, and this rule is what guarantees that stays at or below what was
+ * charged. It also stops an owner routing traffic to a pricier model whose
+ * owner would then earn more than the caller was quoted.
+ */
+export function isCommunityFallbackPricingAllowed(
+    primary: CommunityEndpointPrices,
+    target: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => target[field.key] <= primary[field.key],
+    );
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -221,6 +261,18 @@ export function normalizeCommunityEndpointImagePricing(
     return value === "tokens" ? "tokens" : "request";
 }
 
+export function normalizeCommunityEndpointInputModalities(
+    value: readonly ModelInputModality[] | null | undefined,
+    endpointModality: CommunityEndpointModality,
+): ModelInputModality[] {
+    if (!value?.length) return ["text"];
+    const declared = new Set(value);
+    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+        endpointModality
+    ].filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : ["text"];
+}
+
 // Access/visibility of a registered endpoint. Private is the default; choosing
 // public on create or update is allowlist-gated.
 //   private → owner-only callable, shown only to the owner, no owner-set price
@@ -230,7 +282,7 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
-export type CommunityEndpointRuntime = {
+type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
     modelId: string;
@@ -239,27 +291,75 @@ export type CommunityEndpointRuntime = {
     // communityEndpointTitle() rather than using this directly.
     title: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    supportsImageEdits: boolean;
+    inputModalities: ModelInputModality[] | null;
+    // Where the gateway sends the request, and the model name it asks for.
+    // Both variants resolve these when the row is read, so routing never has
+    // to know which kind it is holding.
     baseUrl: string;
     upstreamModel: string;
-    bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
+    // Exact gateway-side cap per Pollinations user. Null delegates capacity
+    // limits to the upstream, whose 429 then remains a model failure.
+    perUserRpm: number | null;
+    // Community model ids tried in order when this endpoint's upstream fails.
+    // A target's own list is never followed: the owner declares the full order.
+    fallbackModelIds: string[];
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;
 
+/** A third-party OpenAI-compatible server the owner registered. */
+export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "external";
+    bearerTokenCiphertext: string;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
+};
+
+/** A managed prompt agent, run by Enter's own agent runtime. */
+export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "agent";
+    agentId: string;
+};
+
+export type CommunityEndpointRuntime =
+    | ExternalCommunityEndpointRuntime
+    | AgentCommunityEndpointRuntime;
+
+/**
+ * Whether calls to this endpoint spend the caller's balance downstream.
+ *
+ * Managed agents always do: they call their base model and tools on the
+ * caller's behalf. External endpoints only do so when an admin granted it.
+ * Both are barred from the same places — fallback targets, and being called
+ * by another run token — so the two cases share one name.
+ */
+export function isDelegatingEndpoint(
+    endpoint: CommunityEndpointRuntime,
+): boolean {
+    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+}
+
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    addedDate?: number;
     title?: string | null;
     description: string | null;
+    providerName?: string | null;
+    providerUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
-    supportsImageEdits?: boolean;
+    inputModalities?: ModelInputModality[] | null;
 } & CommunityEndpointPrices;
+
+export type CommunityProviderProfile = {
+    name: string | null;
+    url: string | null;
+};
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -291,6 +391,24 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
     return token;
+}
+
+export function communityEndpointErrorDetail(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
+        "error" in body &&
+        body.error &&
+        typeof body.error === "object" &&
+        "message" in body.error &&
+        typeof body.error.message === "string"
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
 }
 
 export function isCommunityEndpointOwnerAllowed(
@@ -325,6 +443,18 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     url.search = "";
     url.hash = "";
     return url.toString().replace(/\/+$/, "");
+}
+
+export function normalizeCommunityProviderUrl(value: string): string {
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:") {
+        throw new Error("Provider URL must use https");
+    }
+    if (url.username || url.password) {
+        throw new Error("Provider URL cannot include credentials");
+    }
+    url.hash = "";
+    return url.toString();
 }
 
 export function normalizeCommunityAssetUrl(
@@ -431,20 +561,24 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
+    const inputModalities = normalizeCommunityEndpointInputModalities(
+        endpoint.inputModalities,
+        modality,
+    );
+    const providerName = endpoint.providerName?.trim();
+    const providerUrl = endpoint.providerUrl?.trim();
     return {
         aliases,
         provider: "community",
-        brand: "Community",
+        brand: providerName || "Community",
+        brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
-        addedDate: 0,
+        addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities:
-            isImage && endpoint.supportsImageEdits
-                ? ["text", "image"]
-                : ["text"],
+        inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

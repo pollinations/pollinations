@@ -30,6 +30,7 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
+        AND is_final  -- one row per request; attempts counted separately
     GROUP BY week
     ORDER BY week ASC
 

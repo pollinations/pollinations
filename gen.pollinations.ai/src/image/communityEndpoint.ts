@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import {
     type CommunityEndpointRuntime,
+    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     normalizeCommunityAssetUrl,
@@ -33,6 +34,12 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
+    // Managed agents are text-only, so an image endpoint is always external.
+    if (endpoint.kind !== "external") {
+        throw new Error(
+            `Community image endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
@@ -302,26 +309,8 @@ function parseJson(text: string): unknown {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message = endpointBodyMessage(body);
+    const message = communityEndpointErrorDetail(body);
     return message
         ? `Community image endpoint responded ${status}: ${message}`
         : `Community image endpoint responded ${status}`;
-}
-
-function endpointBodyMessage(body: unknown): string | null {
-    if (!body || typeof body !== "object") return null;
-    if (
-        "error" in body &&
-        body.error &&
-        typeof body.error === "object" &&
-        "message" in body.error &&
-        typeof body.error.message === "string"
-    ) {
-        return body.error.message;
-    }
-    if ("error" in body && typeof body.error === "string") return body.error;
-    if ("message" in body && typeof body.message === "string") {
-        return body.message;
-    }
-    return null;
 }

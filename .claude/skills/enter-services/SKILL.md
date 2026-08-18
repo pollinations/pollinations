@@ -90,8 +90,7 @@ ssh enter-services
 cd /home/ubuntu/pollinations
 git pull origin production
 cd text.pollinations.ai && npm install
-cd ../image.pollinations.ai && npm install
-sudo systemctl restart text-pollinations.service image-pollinations.service
+sudo systemctl restart text-pollinations.service
 ```
 
 ---
@@ -114,20 +113,14 @@ cd pollinations
 # 4. Run setup script
 bash enter.pollinations.ai/scripts/setup-services.sh /home/ubuntu/pollinations
 
-# 5. From your LOCAL machine - decrypt and copy env files
-cd /path/to/pollinations
-sops --output-type dotenv -d gen.pollinations.ai/secrets/prod.vars.json > /tmp/image.env
-scp /tmp/image.env enter-services-staging:/home/ubuntu/pollinations/image.pollinations.ai/.env
-rm /tmp/image.env
-
-# 6. Restart services
-ssh enter-services-staging "sudo systemctl restart text-pollinations.service image-pollinations.service"
+# 5. Restart the text service
+ssh enter-services-staging "sudo systemctl restart text-pollinations.service"
 ```
 
 ## Update Staging
 
 ```bash
-ssh enter-services-staging "cd /home/ubuntu/pollinations && git pull && cd text.pollinations.ai && npm install && cd ../image.pollinations.ai && npm install && sudo systemctl restart text-pollinations.service image-pollinations.service"
+ssh enter-services-staging "cd /home/ubuntu/pollinations && git pull && cd text.pollinations.ai && npm install && sudo systemctl restart text-pollinations.service"
 ```
 
 ---
@@ -150,7 +143,6 @@ npm run deploy:staging
 
 - **Service definitions**: `/etc/systemd/system/`
 - **Text service**: `/home/ubuntu/pollinations/text.pollinations.ai/`
-- **Image service**: `/home/ubuntu/pollinations/image.pollinations.ai/`
 
 ---
 

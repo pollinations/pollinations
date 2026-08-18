@@ -3,6 +3,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    isDelegatingEndpoint,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
@@ -11,9 +12,18 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import type {
+    ModelDefinition,
+    ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import {
+    type AgentCatalogConfig,
+    type AgentCatalogEnv,
+    agentRuntimeBaseUrl,
+    parseAgentCatalogConfig,
+} from "./agent-catalog.ts";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
     "/v1/chat/completions",
@@ -25,11 +35,11 @@ export function communityTextSupportedEndpoints(): string[] {
 }
 
 export function communityImageSupportedEndpoints(
-    supportsImageEdits = false,
+    inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {
     return [
         "/v1/images/generations",
-        ...(supportsImageEdits ? ["/v1/images/edits"] : []),
+        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
         "/image/{prompt}",
     ];
 }
@@ -40,11 +50,16 @@ export type CommunityModelRegistryEntry = {
     info: ModelInfo;
     definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
 };
 
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB"> &
+    AgentCatalogEnv;
+
 export async function getCommunityModelRegistryEntries(
-    dbBinding: CloudflareBindings["DB"] | undefined,
+    env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
+    const dbBinding = env.DB;
     if (!dbBinding) return [];
     const db = drizzle(dbBinding, { schema });
     const rows = await db
@@ -52,17 +67,22 @@ export async function getCommunityModelRegistryEntries(
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
             ownerGithubUsername: schema.user.githubUsername,
+            providerName: schema.user.communityProviderName,
+            providerUrl: schema.user.communityProviderUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
-            supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
-            baseUrl: schema.communityEndpoint.baseUrl,
+            inputModalities: schema.communityEndpoint.inputModalities,
+            agentId: schema.communityEndpoint.agentId,
+            agentConfig: schema.agent.config,
+            endpointBaseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
-            bearerTokenCiphertext:
+            endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            perUserRpm: schema.communityEndpoint.perUserRpm,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
@@ -75,50 +95,93 @@ export async function getCommunityModelRegistryEntries(
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
+            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
+            createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
+        .leftJoin(
+            schema.agent,
+            eq(schema.communityEndpoint.agentId, schema.agent.id),
+        )
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        const communityEndpoint: CommunityEndpointRuntime = {
+        const shared = {
             id: row.id,
             ownerUserId: row.ownerUserId,
             modelId,
             name: row.name,
             title: row.title,
             description: row.description,
+            providerName: row.providerName,
+            providerUrl: row.providerUrl,
             modality: normalizeCommunityEndpointModality(row.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
             ),
-            supportsImageEdits: row.supportsImageEdits,
-            baseUrl: row.baseUrl,
-            upstreamModel: row.upstreamModel,
-            bearerTokenCiphertext: row.bearerTokenCiphertext,
+            inputModalities: row.inputModalities,
             visibility: row.visibility,
-            delegatesGeneration: row.delegatesGeneration,
+            perUserRpm: row.perUserRpm,
+            fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        const definition = communityModelDefinition(communityEndpoint);
+        // A row is one kind or the other: an agent resolves its target from the
+        // agent runtime, an external endpoint from its own stored target and
+        // credential. Anything missing the fields its kind requires is not
+        // routable, so it is dropped from the catalog rather than carried as a
+        // half-populated entry.
+        let communityEndpoint: CommunityEndpointRuntime;
+        if (row.agentId !== null) {
+            communityEndpoint = {
+                ...shared,
+                kind: "agent",
+                baseUrl: agentRuntimeBaseUrl(env),
+                upstreamModel: row.agentId,
+                agentId: row.agentId,
+            };
+        } else {
+            if (!row.endpointBaseUrl || !row.endpointBearerTokenCiphertext) {
+                return [];
+            }
+            communityEndpoint = {
+                ...shared,
+                kind: "external",
+                baseUrl: row.endpointBaseUrl,
+                upstreamModel: row.upstreamModel,
+                bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
+                delegatesGeneration: row.delegatesGeneration,
+            };
+        }
+        const definition = communityModelDefinition({
+            ...communityEndpoint,
+            addedDate: row.createdAt.getTime(),
+        });
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
+                    agent: isDelegatingEndpoint(communityEndpoint),
+                    perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,
+                agentConfig:
+                    communityEndpoint.kind === "agent"
+                        ? (parseAgentCatalogConfig(row.agentConfig) ??
+                          undefined)
+                        : undefined,
             },
         ];
     });

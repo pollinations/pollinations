@@ -2,8 +2,8 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printResult,
     printSuccess,
     printTable,
@@ -21,6 +21,10 @@ const PRICE_FLAGS = [
         "Completion reasoning token price",
     ],
     ["--completion-audio-price <number>", "Completion audio token price"],
+    [
+        "--completion-image-price <number>",
+        "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
+    ],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -32,6 +36,7 @@ const PRICE_OPTION_KEYS = [
     "completionTextPrice",
     "completionReasoningPrice",
     "completionAudioPrice",
+    "completionImagePrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -42,9 +47,16 @@ interface MyModel {
     name: string;
     title: string;
     description: string | null;
+    modality: "text" | "image";
+    imagePricing: "request" | "tokens";
+    completionImagePrice: number;
+    // How a publisher confirms an image model registered as edit-capable:
+    // /account/my-models/test detects these from generation and edit probes.
+    inputModalities: string[];
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
+    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -63,17 +75,19 @@ function readPriceOptions(opts: Record<string, unknown>) {
         if (opts[key] === undefined) continue;
         const value = Number(opts[key]);
         if (!Number.isFinite(value) || value < 0) {
-            printError(
+            fail(
                 `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} must be a non-negative number`,
             );
-            process.exit(1);
         }
         prices[key] = value;
     }
     return prices;
 }
 
-function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
+export function modelBody(
+    opts: Record<string, unknown>,
+    includeRequired: boolean,
+) {
     const body: Record<string, unknown> = {
         ...readPriceOptions(opts),
     };
@@ -82,6 +96,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -92,20 +107,59 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
 
     if (opts.visibility !== undefined) {
         if (opts.visibility !== "private" && opts.visibility !== "public") {
-            printError("--visibility must be 'private' or 'public'");
-            process.exit(1);
+            fail("--visibility must be 'private' or 'public'");
         }
         body.visibility = opts.visibility;
     }
 
+    // Create only. UpdateEndpointSchema has no modality — a model's family
+    // is fixed at registration, so update must not send this field.
+    if (includeRequired && opts.modality !== undefined) {
+        if (opts.modality !== "text" && opts.modality !== "image") {
+            fail("--modality must be 'text' or 'image'");
+        }
+        body.modality = opts.modality;
+    }
+
+    if (opts.imagePricing !== undefined) {
+        if (opts.imagePricing !== "request" && opts.imagePricing !== "tokens") {
+            fail("--image-pricing must be 'request' or 'tokens'");
+        }
+        body.imagePricing = opts.imagePricing;
+    }
+
+    // An empty string clears the list, which is why this checks for the flag
+    // being present rather than for a truthy value.
+    if (opts.fallbackModels !== undefined) {
+        body.fallbackModelIds = String(opts.fallbackModels)
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
+    }
+
+    if (opts.inputModalities !== undefined) {
+        body.inputModalities = String(opts.inputModalities)
+            .split(",")
+            .map((modality) => modality.trim())
+            .filter((modality) => modality.length > 0);
+    }
+
     if (includeRequired) {
-        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title"]) {
             if (!body[required]) {
-                printError(
+                fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
-                process.exit(1);
             }
+        }
+        const modeCount = [body.baseUrl, body.agentId].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            fail("Provide exactly one of --base-url or --agent-id");
+        }
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            fail("--bearer-token is required with --base-url");
         }
     }
 
@@ -122,18 +176,31 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
+            modality: model.modality,
+            // Price and billing mode read as one unit, so they share a cell
+            // rather than widening an already wide table by two columns.
+            image_price:
+                model.modality === "image"
+                    ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
+                    : "-",
+            inputs: model.inputModalities?.join(", ") || "-",
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
+            fallbacks: model.fallbackModelIds?.join(", ") || "-",
             description: model.description ?? "-",
         })),
         [
             "id",
             "model",
             "title",
+            "modality",
+            "image_price",
+            "inputs",
             "visibility",
             "upstream",
             "base_url",
+            "fallbacks",
             "description",
         ],
     );
@@ -149,10 +216,7 @@ const list = new Command("list")
             });
             printModels(res.data ?? []);
         } catch (err) {
-            printError(
-                `Failed to list my models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to list my models", err);
         }
     });
 
@@ -162,12 +226,29 @@ const create = addPriceOptions(
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--modality <modality>",
+            "Model family: text (default) or image",
+        )
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image, default) or tokens",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -183,10 +264,7 @@ const create = addPriceOptions(
             printModels([created]);
         }
     } catch (err) {
-        printError(
-            `Failed to create model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to create model", err);
     }
 });
 
@@ -203,6 +281,20 @@ const update = addPriceOptions(
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
+        )
+        .option(
+            "--fallback-models <ids>",
+            "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
+        )
+        .option(
+            "--input-modalities <types>",
+            "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        // No --modality here on purpose: UpdateEndpointSchema has no modality
+        // field, so a registered model's family is fixed at creation.
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image) or tokens",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();
@@ -221,10 +313,7 @@ const update = addPriceOptions(
             printModels([updated]);
         }
     } catch (err) {
-        printError(
-            `Failed to update model: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        process.exit(1);
+        fail("Failed to update model", err);
     }
 });
 
@@ -244,10 +333,7 @@ const remove = new Command("delete")
             printSuccess(`Model deleted: ${id}`);
             if (getOutputMode() === "json") printResult({ id });
         } catch (err) {
-            printError(
-                `Failed to delete model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to delete model", err);
         }
     });
 
@@ -277,10 +363,7 @@ const models = new Command("models")
                     ["model"],
                 );
         } catch (err) {
-            printError(
-                `Failed to fetch upstream models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch upstream models", err);
         }
     });
 
@@ -289,8 +372,16 @@ const test = new Command("test")
     .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
     .requiredOption("--model <model>", "Upstream model id")
+    .option("--modality <modality>", "Model family: text (default) or image")
     .action(async (opts) => {
         const key = requireKey();
+        if (
+            opts.modality !== undefined &&
+            opts.modality !== "text" &&
+            opts.modality !== "image"
+        ) {
+            fail("--modality must be 'text' or 'image'");
+        }
         try {
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
@@ -301,20 +392,20 @@ const test = new Command("test")
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
                         model: opts.model,
+                        ...(opts.modality !== undefined && {
+                            modality: opts.modality,
+                        }),
                     },
                 },
             );
             printResult(res);
         } catch (err) {
-            printError(
-                `Failed to test model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to test model", err);
         }
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community text models")
+    .description("Manage private and published community text and image models")
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

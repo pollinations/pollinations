@@ -2776,7 +2776,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        validateWhisperResponseFormat(responseFormat);
+        assertTranscriptionResponseFormat(
+            responseFormat,
+            "whisper model",
+            WHISPER_RESPONSE_FORMATS,
+        );
 
         const whisperFormData = new FormData();
         const filename =
@@ -3383,21 +3387,6 @@ const WHISPER_RESPONSE_FORMATS = [
     "vtt",
 ] as const;
 
-type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
-
-function validateWhisperResponseFormat(responseFormat: string | null): void {
-    if (
-        responseFormat &&
-        !WHISPER_RESPONSE_FORMATS.includes(
-            responseFormat as WhisperResponseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
-        });
-    }
-}
-
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
@@ -3441,7 +3430,11 @@ export function formatWhisperResponse(
     usageHeaders: Record<string, string>,
     billedSeconds: number,
 ): Response {
-    validateWhisperResponseFormat(responseFormat);
+    assertTranscriptionResponseFormat(
+        responseFormat,
+        "whisper model",
+        WHISPER_RESPONSE_FORMATS,
+    );
     // OVH reports a bare { seconds }; re-emit it in OpenAI's duration shape so
     // whisper matches what buildTranscriptionResponse gives the other models.
     const usage = { type: "duration" as const, seconds: billedSeconds };

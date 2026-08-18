@@ -691,6 +691,13 @@ export interface KeyInfo {
     };
     pollenBudget?: number | null;
     rateLimitEnabled?: boolean;
+    userId?: string | null;
+    byopClientKeyId?: string | null;
+    byopApp?: {
+        keyId: string;
+        name: string | null;
+        user: { id: string } | null;
+    } | null;
 }
 
 /** Detailed key record returned by GET /account/keys (list) */

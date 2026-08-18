@@ -1,0 +1,33 @@
+{
+  "pr_number": 13517,
+  "title": "refactor: drop the dead conditional visibility write on update",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13517",
+  "merged_at": "2026-08-18T01:38:34Z",
+  "labels": [],
+  "pr_body_excerpt": "Found while reviewing #13514. Independent of it — pre-existing code.\n\nThe my-models update handler set `update.visibility` conditionally, then overwrote it unconditionally 70 lines further down:\n\n```ts\nconst effectiveVisibility = input.visibility ?? endpoint.visibility;\n// ...\nupdate.visibility = effectiveVisibility;\n```\n\nThat second write subsumes the first — when `input.visibility` is set the two write the same value, and when it is not, the conditional never fired. The persisted row is identical either way.\n\nThe one thing that could have made the first write load-bearing: `update` is spread into `communityEndpointPricesForModality({ ...endpoint, ...update }, ...)` in between. It isn't — that function takes `source: Partial<CommunityEndpointPrices>` (`shared/community-endpoints.ts:210`) and only indexes `source[field.key]` for keys in `COMMUNITY_ENDPOINT_PRICE_FIELDS`. Visibility is never read. Nothing else between the two writes reads it either, and the unconditional write sits immediately before the DB update, with only `enforcePublishingAccess` in between (which throws rather than falling through).\n\n−3 lines, no behaviour change. The comment on the surviving write already explains why it is unconditional.\n\nTests: gen `community-endpoints` (57), enter `community-endpoint-openai` + `-price-input` + `-rpm-input` (18). `tsc --noEmit` clean, biome clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less ghost write",
+    "blurb": "A visibility assignment was doing the same job twice, seventy lines apart. The spare bee has been gently escorted out of the handler.",
+    "summary": "Removed a redundant conditional `update.visibility` assignment in the my-models update handler; the existing unconditional write before the database update already preserves identical visibility behavior.",
+    "impact": "Community endpoint updates keep the same visibility behavior with a smaller, clearer handler and no extra state mutation.",
+    "keywords": [
+      "community-endpoints",
+      "my-models",
+      "visibility",
+      "refactor",
+      "enter"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy code garden, spotting and removing one duplicate visibility-tag leaf while the matching remaining leaf sits beside a retro terminal; this represents eliminating a dead write without changing the resulting endpoint state.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue wings, and a tiny gardener tool belt, carefully pruning one duplicate \"visibility\" label from a code-plant while a retro terminal keeps one matching label glowing. Lime green (#ecf874) appears prominently among warm cream, mint, and lavender garden colors, with pixel flowers and soft CRT glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13517.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, blue wings, and a tiny gardener tool belt, carefully pruning one duplicate \"visibility\" label from a code-plant while a retro terminal keeps one matching label glowing. Lime green (#ecf874) appears prominently among warm cream, mint, and lavender garden colors, with pixel flowers and soft CRT glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-18T01:39:37.866974+00:00"
+}

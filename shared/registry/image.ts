@@ -355,9 +355,9 @@ const IMAGE_BASE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         provider: "vast",
-        // Routes live in image-fallbacks.ts. Fal is capacity insurance only:
-        // do not move provider errors or bad requests away from the
-        // Pollinations-operated Vast pool.
+        // Routes live in image-fallbacks.ts. Narrower than the default
+        // status list: only a 503 (no capacity) overflows to Fal, so every
+        // other Vast failure surfaces instead of being served elsewhere.
         fallbackOnStatusCodes: [503],
         brand: "Alibaba",
         category: "image",

@@ -100,6 +100,14 @@ async function getOnlyUser() {
     return user;
 }
 
+/** Distinct GitHub id per fixture account — github_id is unique. */
+function hashGithubId(seed: string): number {
+    let hash = 0;
+    for (const char of seed)
+        hash = (hash * 31 + char.charCodeAt(0)) % 1_000_000;
+    return 1_000_000 + hash;
+}
+
 async function seedByopConnections(
     ownerUserId: string,
     count: number,
@@ -114,10 +122,11 @@ async function seedByopConnections(
     const appKeyId = `${prefix}-app-key`;
 
     await db.insert(schema.user).values(
-        userIds.map((id) => ({
+        userIds.map((id, index) => ({
             id,
             name: id,
             email: `${id}@example.com`,
+            githubId: hashGithubId(`${prefix}-${index}`),
             createdAt: now,
             updatedAt: now,
         })),
@@ -687,7 +696,6 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         .select({
             questId: schema.rewards.questId,
             idempotencyKey: schema.rewards.idempotencyKey,
-            githubId: schema.rewards.githubId,
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
@@ -702,7 +710,6 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         ),
     ).toMatchObject({
         idempotencyKey: `quest:${TOP_UP_100_SINCE_LAUNCH_QUEST_ID}:github:${user.githubId}`,
-        githubId: user.githubId,
     });
 });
 
@@ -924,8 +931,8 @@ test("D1 quest check only records the requested user", async ({
         image: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        githubId: null,
-        githubUsername: null,
+        githubId: hashGithubId("api-key-window-user"),
+        githubUsername: "api-key-window-user",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -1260,46 +1267,24 @@ test("github established-account quest records once per GitHub identity", async 
     ).toBe(false);
 });
 
-test("github established-account quest rejects duplicate GitHub identities", async ({
-    mocks,
+test("a GitHub identity cannot be attached to a second account", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
-    mocks.github.state.user.created_at = "2020-01-01T00:00:00.000Z";
-    await mocks.enable("github", "tinybird");
 
-    await db.insert(schema.user).values({
-        id: "duplicate-github-user",
-        name: "Duplicate GitHub User",
-        email: "duplicate-github-user@example.com",
-        emailVerified: false,
-        image: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        githubId: user.githubId,
-        githubUsername: user.githubUsername,
-        tierBalance: 0,
-        packBalance: 0,
-    });
-
-    await checkQuestsForUser(env, user.id);
-    mocks.github.state.requests = [];
-    const duplicate = await checkQuestsForUser(env, "duplicate-github-user");
-
-    const establishedRows = await db
-        .select({ userId: schema.rewards.userId })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toEqual([{ userId: user.id }]);
-    expect(duplicate.recorded).toBe(0);
-    expect(
-        mocks.github.state.requests.some(
-            (request) =>
-                request.path === `/user/${user.githubId}` ||
-                request.path.startsWith("/users/"),
-        ),
-    ).toBe(false);
+    await expect(
+        db.insert(schema.user).values({
+            id: "duplicate-github-user",
+            name: "Duplicate GitHub User",
+            email: "duplicate-github-user@example.com",
+            emailVerified: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            githubId: user.githubId,
+            githubUsername: user.githubUsername,
+        }),
+    ).rejects.toThrow();
 });
 
 test("github established-account quest waits until the threshold", async ({

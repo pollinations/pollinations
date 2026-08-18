@@ -24,14 +24,11 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
  * Completion scope — drives the idempotency key shape (see toReward):
  *   - "perUser" — each GitHub identity earns it independently. Key includes the
  *                 immutable GitHub user ID (`quest:${id}:github:${githubId}`).
- *                 Legacy/internal users without one fall back to the user ID.
- *   - "perSubject" — each external identity earns it independently. Key includes
- *                    the proposal subject (`quest:${id}:${subject}`).
  *   - "once"    — one reward total, whoever triggers it. Key omits the userId
  *                 (`quest:${id}`), so it can only ever be recorded once. Used by
  *                 issue bounties: one issue, one reward, regardless of assignee.
  */
-export type QuestScope = "perUser" | "perSubject" | "once";
+export type QuestScope = "perUser" | "once";
 
 /**
  * Quest board state. A BOARD flag, not a per-user status:

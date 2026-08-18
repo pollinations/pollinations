@@ -1,4 +1,8 @@
-import { MAX_REWARD_AMOUNT, recordRewards } from "@shared/billing/rewards.ts";
+import {
+    MAX_REWARD_AMOUNT,
+    recordRewards,
+    rewardKey,
+} from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { inArray, sql } from "drizzle-orm";
@@ -41,6 +45,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const users = await db
             .select({
                 id: schema.user.id,
+                githubId: schema.user.githubId,
                 githubUsername: schema.user.githubUsername,
             })
             .from(schema.user)
@@ -65,7 +70,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const result = await recordRewards(
             db,
             matched.map((user) => ({
-                idempotencyKey: `quest:${questId}:user:${user.id}`,
+                idempotencyKey: rewardKey(questId, user.githubId),
                 userId: user.id,
                 amount: input.pollenAmount,
                 bucket: "tier",

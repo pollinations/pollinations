@@ -16,7 +16,7 @@ import {
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -858,53 +858,53 @@ export const accountRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB, { schema });
-            const githubId = user.githubId ?? null;
-            const priorIdentityRewards =
-                githubId === null
-                    ? Promise.resolve([])
-                    : db
-                          .select({ questId: rewardsTable.questId })
-                          .from(rewardsTable)
-                          .where(
-                              and(
-                                  eq(rewardsTable.githubId, githubId),
-                                  isNull(rewardsTable.userId),
-                              ),
-                          );
+            const cards = await listQuestCards({ db, env: c.env });
+            // This account's rewards, plus any left behind by a previous
+            // account with the same GitHub identity: the key carries the
+            // identity, so those rows are still findable once the account is
+            // gone and the reward's user_id has been nulled out.
+            const rewardRows = await db
+                .select({
+                    id: rewardsTable.id,
+                    userId: rewardsTable.userId,
+                    questId: rewardsTable.questId,
+                    title: rewardsTable.title,
+                    pollenAmount: rewardsTable.pollenAmount,
+                    balanceBucket: rewardsTable.balanceBucket,
+                    earnedAt: rewardsTable.earnedAt,
+                    claimedAt: rewardsTable.claimedAt,
+                })
+                .from(rewardsTable)
+                .where(
+                    or(
+                        eq(rewardsTable.userId, user.id),
+                        and(
+                            isNull(rewardsTable.userId),
+                            like(
+                                rewardsTable.idempotencyKey,
+                                `%:github:${user.githubId}`,
+                            ),
+                        ),
+                    ),
+                )
+                .orderBy(desc(rewardsTable.earnedAt));
 
-            const [cards, rewardRows, priorIdentityRewardRows] =
-                await Promise.all([
-                    listQuestCards({ db, env: c.env }),
-                    db
-                        .select({
-                            id: rewardsTable.id,
-                            questId: rewardsTable.questId,
-                            title: rewardsTable.title,
-                            pollenAmount: rewardsTable.pollenAmount,
-                            balanceBucket: rewardsTable.balanceBucket,
-                            earnedAt: rewardsTable.earnedAt,
-                            claimedAt: rewardsTable.claimedAt,
-                        })
-                        .from(rewardsTable)
-                        .where(eq(rewardsTable.userId, user.id))
-                        .orderBy(desc(rewardsTable.earnedAt)),
-                    priorIdentityRewards,
-                ]);
-
+            const earnedQuestIds = new Set(
+                rewardRows.map((reward) => reward.questId),
+            );
             const rewardsByQuestId = new Map<
                 string,
                 (typeof rewardRows)[number]
             >();
             for (const reward of rewardRows) {
-                if (reward.questId && !rewardsByQuestId.has(reward.questId)) {
+                if (
+                    reward.userId === user.id &&
+                    reward.questId &&
+                    !rewardsByQuestId.has(reward.questId)
+                ) {
                     rewardsByQuestId.set(reward.questId, reward);
                 }
             }
-            const priorIdentityQuestIds = new Set(
-                priorIdentityRewardRows.flatMap((reward) =>
-                    reward.questId ? [reward.questId] : [],
-                ),
-            );
 
             const quests = cards.map((card) => {
                 const reward = rewardsByQuestId.get(card.id) ?? null;
@@ -913,7 +913,7 @@ export const accountRoutes = new Hono<Env>()
                         ? "coming_soon"
                         : card.state === "completed" ||
                             reward ||
-                            priorIdentityQuestIds.has(card.id)
+                            earnedQuestIds.has(card.id)
                           ? "completed"
                           : "open";
 

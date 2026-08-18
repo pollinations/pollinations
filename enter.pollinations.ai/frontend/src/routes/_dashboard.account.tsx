@@ -1,7 +1,6 @@
 import {
     Alert,
     Button,
-    Chip,
     CopyButton,
     Dialog,
     FieldStack,
@@ -119,23 +118,6 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <Section title="Connected accounts" framed>
-                <Surface variant="card" className="flex items-center gap-3">
-                    <GitHubIcon className="h-6 w-6 shrink-0 text-theme-text-strong" />
-                    <div className="min-w-0 flex-1">
-                        <Text tone="strong" weight="semibold">
-                            GitHub
-                        </Text>
-                        <Text size="sm" tone="muted" className="truncate">
-                            {githubUsername ? `@${githubUsername}` : user.email}
-                        </Text>
-                    </div>
-                    <Chip intent="neutral" size="sm">
-                        Connected
-                    </Chip>
-                </Surface>
-            </Section>
-
             <Section title="Danger zone" framed>
                 <div>
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -198,12 +180,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
 
         const result = await authClient.deleteUser();
         if (result.error) {
-            const message = result.error.message || "Account deletion failed.";
-            setError(
-                result.error.code === "SESSION_EXPIRED"
-                    ? "For security, sign out and sign in again before deleting your account."
-                    : message,
-            );
+            setError(result.error.message || "Account deletion failed.");
             setIsDeleting(false);
             return;
         }
@@ -252,7 +229,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                         <>
                             Type{" "}
                             <span className="font-mono font-semibold text-intent-danger-text">
-                                DELETE
+                                {DELETE_CONFIRMATION}
                             </span>{" "}
                             to confirm
                         </>

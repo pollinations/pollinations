@@ -60,7 +60,6 @@ describe("POST /api/auth/delete-user", () => {
         await db.insert(rewardsTable).values({
             id: "test-reward",
             idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
-            githubId: user.githubId,
             userId: user.id,
             questId: "first_api_key",
             title: "Create your first API key",
@@ -112,7 +111,6 @@ describe("POST /api/auth/delete-user", () => {
         expect(retainedRewards).toHaveLength(1);
         expect(retainedRewards[0]).toMatchObject({
             id: "test-reward",
-            githubId: user.githubId,
             userId: null,
             idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
         });
@@ -174,7 +172,6 @@ describe("POST /api/auth/delete-user", () => {
         const duplicate = await recordRewards(db, [
             {
                 idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
-                githubId: user.githubId,
                 userId: replacementUser.id,
                 questId: "first_api_key",
                 title: "Create your first API key",

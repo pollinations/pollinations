@@ -1,4 +1,4 @@
-import type { RecordRewardInput } from "@shared/billing/rewards.ts";
+import { type RecordRewardInput, rewardKey } from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
@@ -32,7 +32,6 @@ export type QuestGroup = {
 export type RewardProposal = {
     quest: QuestDefinition;
     userId: string;
-    idempotencySubject?: string;
 };
 
 export function toReward(
@@ -40,27 +39,11 @@ export function toReward(
     githubId: number | null,
 ): RecordRewardInput {
     const { quest, userId } = proposal;
-    let idempotencyKey: string;
-    if (quest.scope === "once") {
-        idempotencyKey = `quest:${quest.id}`;
-    } else if (quest.scope === "perSubject") {
-        if (!proposal.idempotencySubject) {
-            throw new Error(
-                `Quest ${quest.id} requires an idempotency subject`,
-            );
-        }
-        idempotencyKey = `quest:${quest.id}:${proposal.idempotencySubject}`;
-    } else {
-        // GitHub OAuth users always have githubId. Keep the user-id fallback
-        // for legacy/internal rows that predate the GitHub field.
-        idempotencyKey =
-            githubId === null
-                ? `quest:${quest.id}:user:${userId}`
-                : `quest:${quest.id}:github:${githubId}`;
-    }
     return {
-        idempotencyKey,
-        githubId,
+        idempotencyKey:
+            quest.scope === "once"
+                ? `quest:${quest.id}`
+                : rewardKey(quest.id, githubId),
         userId,
         questId: quest.id,
         title: quest.title,

@@ -2,6 +2,7 @@ import {
     claimReward,
     MAX_REWARD_AMOUNT,
     recordRewards,
+    rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards } from "@shared/db/better-auth.ts";
@@ -77,7 +78,7 @@ export const questCouponRoutes = new Hono<Env>().post(
         }
 
         const db = drizzle(c.env.DB, { schema });
-        const idempotencyKey = `quest:${coupon.questId}:user:${user.id}`;
+        const idempotencyKey = rewardKey(coupon.questId, user.githubId);
         const recorded = await recordRewards(db, [
             {
                 idempotencyKey,

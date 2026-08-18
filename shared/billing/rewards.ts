@@ -6,16 +6,26 @@ import type { Bucket } from "./deduction.ts";
 
 export const MAX_REWARD_AMOUNT = 10_000;
 
+/**
+ * Idempotency key for a reward one person can earn once. Keyed on the GitHub
+ * id, which outlives the account row, so a deleted-and-recreated account
+ * cannot earn it again.
+ */
+export function rewardKey(questId: string, githubId: number | null): string {
+    if (githubId === null) {
+        throw new Error(`Reward ${questId} requires a GitHub identity`);
+    }
+    return `quest:${questId}:github:${githubId}`;
+}
+
 export interface RecordRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical reward so retries
      * never create duplicates; encodes the quest's completion scope, e.g.
-     * "quest:{issue}" or "quest:{questId}:user:{userId}".
+     * "quest:{issue}" or rewardKey().
      */
     idempotencyKey: string;
     userId: string;
-    /** Immutable GitHub identity for per-person reward deduplication. */
-    githubId?: number | null;
     amount: number;
     /** Which balance bucket to credit on claim. */
     bucket: Bucket;
@@ -74,7 +84,6 @@ export async function recordRewards(
             id: crypto.randomUUID(),
             idempotencyKey: input.idempotencyKey,
             userId: input.userId,
-            githubId: input.githubId ?? null,
             questId: input.questId ?? null,
             title: input.title,
             url: input.url ?? null,

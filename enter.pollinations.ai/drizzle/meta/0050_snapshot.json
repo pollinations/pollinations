@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "97cb1a52-0f58-459f-b41c-fcbcea3dc6a8",
+  "id": "1af30701-c671-4690-9f10-598ba61993c4",
   "prevId": "ea149a3f-fe5c-496c-a615-45c2da883f7b",
   "tables": {
     "account": {
@@ -957,13 +957,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "github_id": {
-          "name": "github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -1034,13 +1027,6 @@
           "name": "idx_rewards_user_id",
           "columns": [
             "user_id"
-          ],
-          "isUnique": false
-        },
-        "idx_rewards_github_id": {
-          "name": "idx_rewards_github_id",
-          "columns": [
-            "github_id"
           ],
           "isUnique": false
         }
@@ -1616,12 +1602,12 @@
           ],
           "isUnique": false
         },
-        "idx_user_github_id": {
-          "name": "idx_user_github_id",
+        "user_github_id_unique": {
+          "name": "user_github_id_unique",
           "columns": [
             "github_id"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {},

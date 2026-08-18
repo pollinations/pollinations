@@ -328,6 +328,9 @@ function buildAssemblyAiTranscriptResponse(opts: {
             language: transcript.language_code || undefined,
             duration,
             words: toNormalizedWords(transcript.words),
+            // AssemblyAI reports words and utterances, not segments;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: toNormalizedDiarizedSegments(
                 transcript.utterances,
             ),

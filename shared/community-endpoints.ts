@@ -15,7 +15,11 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_MODALITIES = [
+    "text",
+    "image",
+    "transcription",
+] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -41,6 +45,12 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
+// this ceiling is written per minute and divided down: $0.012/min is ~2x
+// OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model
+// (scribe, $0.00367/min). Keep the division visible — a bare 0.006 here reads
+// like OpenAI's per-minute rate but would bill 60x that per second.
+export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.012 / 60;
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
@@ -56,6 +66,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
@@ -159,24 +170,48 @@ const COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS = [
     },
 ] as const;
 
+// Transcription endpoints bill audio input duration in seconds against the
+// same prompt audio price column, mirroring the first-party whisper/scribe
+// models (cost keyed on promptAudioSeconds at a per-second rate).
+const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
+    key: "promptAudioPrice",
+    usageType: "promptAudioSeconds",
+    label: "Prompt audio",
+    priceUnit: "second",
+    // Paths are relative to the stored usage object, same as the chat fields
+    // ("prompt_tokens", not "usage.prompt_tokens"). The probe normalizes every
+    // upstream duration shape to `duration`, so that is the only key here.
+    rawUsagePaths: ["duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
+    COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
     COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-        (field) => field.usageType !== "completionImageTokens",
+        (field) =>
+            field.usageType !== "completionImageTokens" &&
+            field.usageType !== "promptAudioSeconds",
     );
 
 const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
+    if (modality === "transcription") {
+        return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
+    }
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
         ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
@@ -261,6 +296,7 @@ export function isCommunityFallbackPricingAllowed(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
+    if (value === "transcription") return "transcription";
     return value === "image" ? "image" : "text";
 }
 
@@ -274,12 +310,16 @@ export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
     endpointModality: CommunityEndpointModality,
 ): ModelInputModality[] {
-    if (!value?.length) return ["text"];
-    const declared = new Set(value);
-    const normalized = COMMUNITY_ENDPOINT_INPUT_MODALITIES[
-        endpointModality
-    ].filter((modality) => declared.has(modality));
-    return normalized.length ? [...normalized] : ["text"];
+    // Both empty cases — nothing declared, and a declared set that shares
+    // nothing with this modality — fall back to the modality's own first
+    // input: text for text and image endpoints, audio for transcription.
+    // Falling back to a bare "text" would hand a transcription endpoint the
+    // one input it cannot accept, which the write path then rejects with a
+    // 400 naming an input the owner never chose.
+    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[endpointModality];
+    const declared = new Set(value ?? []);
+    const normalized = permitted.filter((modality) => declared.has(modality));
+    return normalized.length ? [...normalized] : [permitted[0]];
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -529,7 +569,7 @@ export async function firstCommunityImageBytes(
             typeof image.b64_json === "string" &&
             image.b64_json.length > 0
         ) {
-            return decodeCommunityImageBase64(image.b64_json);
+            return decodeCommunityBase64(image.b64_json);
         }
         if (
             "url" in image &&
@@ -584,7 +624,7 @@ async function fetchCommunityImageBytes(
     );
 }
 
-function decodeCommunityImageBase64(value: string): Uint8Array | null {
+export function decodeCommunityBase64(value: string): Uint8Array | null {
     try {
         const encoded = value
             .replace(/^data:[^,]+,/, "")
@@ -610,12 +650,42 @@ export function communityImageEditsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
 }
 
+export function communityAudioTranscriptionsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
+}
+
+/**
+ * Audio duration reported by an OpenAI-compatible transcription response.
+ *
+ * The three shapes in the wild: gpt-4o-transcribe reports `usage.seconds`,
+ * whisper-style servers report `usage.duration`, and stock whisper
+ * `verbose_json` puts `duration` at the top level. Returns null when none of
+ * them carry a usable number — callers decide what that means, and both the
+ * registration probe and the request path treat it as a failure so an endpoint
+ * that cannot be metered is never billed at zero.
+ */
+export function communityTranscriptionSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const usage =
+        record.usage && typeof record.usage === "object"
+            ? (record.usage as Record<string, unknown>)
+            : undefined;
+    for (const value of [usage?.duration, usage?.seconds, record.duration]) {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return null;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
         "/chat/completions",
         "/images/generations",
         "/images/edits",
+        "/audio/transcriptions",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -678,6 +748,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
@@ -692,7 +763,7 @@ export function communityModelDefinition(
         provider: "community",
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : "text",
+        category: isImage ? "image" : isTranscription ? "audio" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
@@ -700,6 +771,9 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
+        ...(isTranscription
+            ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
+            : {}),
         paidOnly: false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the

@@ -39,6 +39,7 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -47,6 +48,7 @@ import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
+    assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
 } from "./transcription-response.ts";
@@ -859,15 +861,7 @@ export async function transcribeWithXai(opts: {
             message: "xAI transcription service is not configured",
         });
     }
-    if (
-        !["json", "text", "verbose_json", "diarized_json"].includes(
-            responseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for grok-transcribe: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(responseFormat, "grok-transcribe");
 
     const formData = new FormData();
     if (language) {
@@ -917,6 +911,9 @@ export async function transcribeWithXai(opts: {
                     start: word.start,
                     end: word.end,
                 })) ?? [],
+            // xAI reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupXaiWordsBySpeaker(transcript.words),
         },
         responseFormat,
@@ -982,17 +979,7 @@ export async function transcribeWithElevenLabs(opts: {
         });
     }
 
-    // Validate response format
-    if (
-        responseFormat &&
-        !["json", "text", "verbose_json", "diarized_json"].includes(
-            responseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(responseFormat, "scribe model");
 
     log.info("ElevenLabs transcription: format={format}, size={size}", {
         format: responseFormat,
@@ -1065,13 +1052,19 @@ export async function transcribeWithElevenLabs(opts: {
         normalized: {
             text: elevenLabsData.text,
             language: elevenLabsData.language_code,
-            duration: transcriptDuration,
+            // OpenAI's duration is the input audio, not the speech span: the
+            // last word ends at 3.4s in a 10s file, and a silent file has no
+            // words at all. That is also the seconds we bill.
+            duration: meteredInputSeconds,
             words:
                 elevenLabsData.words?.map((w) => ({
                     word: w.text,
                     start: w.start,
                     end: w.end,
                 })) ?? [],
+            // Scribe reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupScribeUtterances(elevenLabsData.words),
         },
         responseFormat,
@@ -2732,6 +2725,19 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     }
 
     const result = await withAudioFallback(c, async (candidate) => {
+        if (candidate.communityEndpoint) {
+            return callCommunityTranscriptionEndpoint(
+                candidate.communityEndpoint,
+                {
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                },
+                c.env.BETTER_AUTH_SECRET,
+            );
+        }
         if (candidate.id === "grok-transcribe") {
             return transcribeWithXai({
                 file,
@@ -2776,7 +2782,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        validateWhisperResponseFormat(responseFormat);
+        assertTranscriptionResponseFormat(
+            responseFormat,
+            "whisper model",
+            WHISPER_RESPONSE_FORMATS,
+        );
 
         const whisperFormData = new FormData();
         const filename =
@@ -2806,11 +2816,17 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
+        const billedSeconds = extractWhisperUsage(whisper, log);
         const usageHeaders = buildUsageHeaders(
             candidate.id,
-            createAudioSecondsUsage(extractWhisperUsage(whisper, log)),
+            createAudioSecondsUsage(billedSeconds),
         );
-        return formatWhisperResponse(whisper, responseFormat, usageHeaders);
+        return formatWhisperResponse(
+            whisper,
+            responseFormat,
+            usageHeaders,
+            billedSeconds,
+        );
     });
     c.var.track.overrideResponseTracking(result.clone());
     return result;
@@ -3377,21 +3393,6 @@ const WHISPER_RESPONSE_FORMATS = [
     "vtt",
 ] as const;
 
-type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
-
-function validateWhisperResponseFormat(responseFormat: string | null): void {
-    if (
-        responseFormat &&
-        !WHISPER_RESPONSE_FORMATS.includes(
-            responseFormat as WhisperResponseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
-        });
-    }
-}
-
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
@@ -3433,8 +3434,16 @@ export function formatWhisperResponse(
     json: WhisperVerboseJson,
     responseFormat: string | null,
     usageHeaders: Record<string, string>,
+    billedSeconds: number,
 ): Response {
-    validateWhisperResponseFormat(responseFormat);
+    assertTranscriptionResponseFormat(
+        responseFormat,
+        "whisper model",
+        WHISPER_RESPONSE_FORMATS,
+    );
+    // OVH reports a bare { seconds }; re-emit it in OpenAI's duration shape so
+    // whisper matches what buildTranscriptionResponse gives the other models.
+    const usage = { type: "duration" as const, seconds: billedSeconds };
 
     if (responseFormat === "text") {
         return new Response(json.text, {
@@ -3455,10 +3464,10 @@ export function formatWhisperResponse(
     }
 
     if (responseFormat === "verbose_json") {
-        const { usage: _usage, ...rest } = json;
-        return Response.json(rest, { headers: usageHeaders });
+        const { usage: _ovhUsage, ...rest } = json;
+        return Response.json({ ...rest, usage }, { headers: usageHeaders });
     }
 
     // Default: json
-    return Response.json({ text: json.text }, { headers: usageHeaders });
+    return Response.json({ text: json.text, usage }, { headers: usageHeaders });
 }

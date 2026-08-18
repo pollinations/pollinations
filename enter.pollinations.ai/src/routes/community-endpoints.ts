@@ -24,6 +24,7 @@ import {
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -53,6 +54,7 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { agentRuntimeBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
@@ -60,7 +62,7 @@ import { requireAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -115,13 +117,17 @@ function enforceCommunityEndpointPriceLimits(
         const maxPrice =
             field.priceUnit === "image"
                 ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+                : field.priceUnit === "second"
+                  ? MAX_COMMUNITY_PRICE_PER_SECOND
+                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
         if (price === undefined || price <= maxPrice) continue;
 
         const limit =
             field.priceUnit === "image"
                 ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+                : field.priceUnit === "second"
+                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
+                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
         throw new HTTPException(400, {
             message: `${field.label} price must not exceed ${limit}`,
         });
@@ -360,7 +366,9 @@ const CreateEndpointSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
-        inputModalities: InputModalitiesSchema.optional().default(["text"]),
+        // No blanket default: what an omitted set means depends on the
+        // modality, so it is resolved in the handler once modality is known.
+        inputModalities: InputModalitiesSchema.optional(),
         visibility: VisibilitySchema.optional().default("private"),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -983,10 +991,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = kind === "agent" ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
-            enforceCommunityEndpointInputModalities(
-                modality,
-                input.inputModalities,
-            );
+            // An omitted set follows the modality — audio for transcription,
+            // text otherwise. An explicit set is validated rather than
+            // silently rewritten, so a wrong declaration still gets a 400.
+            const inputModalities =
+                input.inputModalities ??
+                normalizeCommunityEndpointInputModalities(undefined, modality);
+            enforceCommunityEndpointInputModalities(modality, inputModalities);
             const prices =
                 kind === "agent" || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -1020,7 +1031,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality,
                     imagePricing,
-                    inputModalities: input.inputModalities,
+                    inputModalities,
                     kind,
                     // A prompt agent is reached through its agent row; every
                     // other listing, agent or not, brings its own target.
@@ -1133,7 +1144,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : await testCommunityEndpoint(input);
+                        : input.modality === "transcription"
+                          ? await testCommunityTranscriptionEndpoint(input)
+                          : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -1141,7 +1154,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : "Endpoint responded with usage",
+                            : input.modality === "transcription"
+                              ? "Endpoint responded with transcription text"
+                              : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

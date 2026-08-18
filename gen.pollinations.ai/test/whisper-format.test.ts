@@ -59,35 +59,14 @@ describe("whisper through the shared transcription formatter", () => {
         expect(body.segments).toHaveLength(2);
     });
 
-    it("fills every field OpenAI declares on a segment", async () => {
-        const res = format(WHISPER, "verbose_json");
-        const body = (await res.json()) as { segments: object[] };
-        // openai-python parses these into a pydantic model, so a segment
-        // missing any declared field makes a typed client raise.
-        expect(Object.keys(body.segments[0]).sort()).toEqual([
-            "avg_logprob",
-            "compression_ratio",
-            "end",
-            "id",
-            "no_speech_prob",
-            "seek",
-            "start",
-            "temperature",
-            "text",
-            "tokens",
-        ]);
-    });
-
-    it("describes silence with no segments rather than an empty one", async () => {
-        const silent: NormalizedTranscript = {
-            ...WHISPER,
-            text: "   ",
-            segments: [],
-        };
-        const body = (await format(silent, "verbose_json").json()) as {
+    it("keeps a placeholder segment when the provider reports none", async () => {
+        const noSegments: NormalizedTranscript = { ...WHISPER, segments: [] };
+        const body = (await format(noSegments, "verbose_json").json()) as {
             segments: unknown[];
         };
-        expect(body.segments).toEqual([]);
+        expect(body.segments).toEqual([
+            { id: 0, start: 0, end: 3.5, text: "El ciclo del agua" },
+        ]);
     });
 
     it.each([

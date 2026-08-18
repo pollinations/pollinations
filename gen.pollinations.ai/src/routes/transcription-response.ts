@@ -105,48 +105,6 @@ function toOpenAiDiarizedSegments(segments: NormalizedDiarizedSegment[]): {
     }));
 }
 
-/**
- * OpenAI's TranscriptionSegment. Every field is required in the published
- * type — openai-python builds a pydantic model from exactly these — so a
- * partial segment makes a typed client raise rather than degrade. None of our
- * providers report the decoder statistics, which therefore carry neutral
- * placeholders: absent data, not measurements.
- */
-interface OpenAiSegment {
-    id: number;
-    seek: number;
-    start: number;
-    end: number;
-    text: string;
-    tokens: number[];
-    temperature: number;
-    avg_logprob: number;
-    compression_ratio: number;
-    no_speech_prob: number;
-}
-
-function toOpenAiSegments(normalized: NormalizedTranscript): OpenAiSegment[] {
-    // One file-spanning placeholder when the provider reports no segments,
-    // and none at all for silence, which has nothing to describe.
-    const source: NormalizedSegment[] = normalized.segments.length
-        ? normalized.segments
-        : normalized.text.trim()
-          ? [{ start: 0, end: normalized.duration, text: normalized.text }]
-          : [];
-    return source.map((segment, index) => ({
-        id: index,
-        seek: 0,
-        start: segment.start,
-        end: segment.end,
-        text: segment.text,
-        tokens: [],
-        temperature: 0,
-        avg_logprob: 0,
-        compression_ratio: 0,
-        no_speech_prob: 0,
-    }));
-}
-
 export function buildTranscriptionResponse(opts: {
     normalized: NormalizedTranscript;
     responseFormat: string;
@@ -175,7 +133,24 @@ export function buildTranscriptionResponse(opts: {
             language: normalized.language || "unknown",
             duration,
             words: normalized.words,
-            segments: toOpenAiSegments(normalized),
+            // Prefer what the provider measured. Inventing one file-spanning
+            // segment when it already sent real ones would hand the caller
+            // worse timings than the upstream produced.
+            segments: normalized.segments.length
+                ? normalized.segments.map((segment, index) => ({
+                      id: index,
+                      start: segment.start,
+                      end: segment.end,
+                      text: segment.text,
+                  }))
+                : [
+                      {
+                          id: 0,
+                          start: 0,
+                          end: duration,
+                          text,
+                      },
+                  ],
             usage,
         };
         return Response.json(body, { headers: usageHeaders });

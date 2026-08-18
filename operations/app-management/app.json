@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Kokoro Roto — Anime Art Generator",
+    "url": "https://geneberna.github.io/kokoro-roto-anime",
+    "description": "A free, no-signup web app to generate anime-style art with AI. Type an idea, pick a mood (dramatic, sad, epic, portrait), choose a format, and instantly create anime characters and scenes. Powered by ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "geneberna",
+    "githubUserId": "315551423",
+    "repositoryUrl": "https://github.com/geneberna/kokoro-roto-anime",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13549",
+    "approvedDate": "2026-08-18",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "AI Art & Image Generator",
     "url": "https://ai-image-generator-w-m5n8.bolt.host",
     "description": "AI Art & Image Generator utilizes the powerful Pollinations.ai API to transform your text prompts into high-quality digital art instantly. It’s designed to provide a fast and creative collaborative ex",

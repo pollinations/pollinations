@@ -1,5 +1,5 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
-import { IMAGE_FALLBACK_SERVICES } from "./image-fallbacks";
+import { withImageFallbacks } from "./image-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -7,7 +7,7 @@ export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
-export const IMAGE_SERVICES = {
+const IMAGE_BASE_SERVICES = {
     "krea": {
         aliases: ["krea-2"],
         provider: "fal",
@@ -354,9 +354,9 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         provider: "vast",
-        fallbacks: ["zimage-fal"],
-        // Fal is capacity insurance only: do not move provider errors or bad
-        // requests away from the Pollinations-operated Vast pool.
+        // Routes live in image-fallbacks.ts. Fal is capacity insurance only:
+        // do not move provider errors or bad requests away from the
+        // Pollinations-operated Vast pool.
         fallbackOnStatusCodes: [503],
         brand: "Alibaba",
         category: "image",
@@ -371,9 +371,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    // Fallback-only routes (hidden, never selected directly) live in
-    // image-fallbacks.ts. Spread here so they stay part of IMAGE_SERVICES.
-    ...IMAGE_FALLBACK_SERVICES,
     "veo": {
         aliases: [
             "veo-3.1-fast",
@@ -1157,6 +1154,8 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const IMAGE_SERVICES = withImageFallbacks(IMAGE_BASE_SERVICES);
 
 const isVideoService = (svc: {
     outputModalities?: readonly string[];

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-17",
+  "period_start": "2026-08-17",
+  "period_end": "2026-08-17",
+  "generated_at": "2026-08-18T06:14:31.289997+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Model catalog, key errors, and quest progress",
+  "text": "19 PRs merged today. The main theme was making the account and model-publishing edges less opaque.\n\nAPI-key behavior got several small but consequential fixes: fractional expiry is now rounded to whole seconds, 401s distinguish an invalid key from missing credentials, and publishable keys can edit redirect URIs and earnings settings. The key-type checks used by the list and edit dialog now share one predicate, because duplicate authorization logic is how two screens slowly develop different opinions about reality.\n\nModel builders got more of the workbench: the catalog UI was redesigned, publisher access requests expanded, every account can run upstream model probes and endpoint tests, and the permissions picker now includes an account’s own private models. `polli-cli` also documents image-model registration and exposes image modality flags in `my-models`.\n\nOn the Pollen side, quests now show progress, quest rewards can grant paid Pollen, and account balance has a breakdown without altering the existing balance field. Zero-cost models also work with a zero balance, which is exactly as exciting as it sounds, but necessary.\n\nMeadows was added to chat. README and CLI pricing notes were updated too.\n\nPRs: https://github.com/pollinations/pollinations/pulls\nCode/docs: https://github.com/pollinations/pollinations"
+}

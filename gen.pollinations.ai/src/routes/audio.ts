@@ -51,6 +51,9 @@ import {
     assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
+    type NormalizedSegment,
+    type NormalizedWord,
+    UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
@@ -2785,7 +2788,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         assertTranscriptionResponseFormat(
             responseFormat,
             "whisper model",
-            WHISPER_RESPONSE_FORMATS,
+            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
         );
 
         const whisperFormData = new FormData();
@@ -2821,12 +2824,24 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             candidate.id,
             createAudioSecondsUsage(billedSeconds),
         );
-        return formatWhisperResponse(
-            whisper,
-            responseFormat,
+        return buildTranscriptionResponse({
+            normalized: {
+                text: whisper.text,
+                language: whisper.language || undefined,
+                // OVH rounds usage.seconds up to a whole second, so this
+                // can exceed the audio length by under a second. Reporting
+                // the billed figure keeps duration, usage and the usage
+                // headers on one number.
+                duration: billedSeconds,
+                words: whisper.words ?? [],
+                segments: whisper.segments ?? [],
+                // OVH is not asked to diarize, so diarized_json is rejected
+                // by the undiarized format set rather than answered empty.
+                diarizedSegments: [],
+            },
+            responseFormat: responseFormat ?? "json",
             usageHeaders,
-            billedSeconds,
-        );
+        });
     });
     c.var.track.overrideResponseTracking(result.clone());
     return result;
@@ -3290,7 +3305,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Use `diarized_json` for OpenAI-compatible speaker segments on diarization-capable models.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",
@@ -3373,25 +3388,13 @@ export function parsePositiveInt(
     return n;
 }
 
-interface WhisperSegment {
-    start: number;
-    end: number;
-    text: string;
-}
-
 interface WhisperVerboseJson {
     text: string;
+    language?: string;
     usage?: { seconds?: number };
-    segments?: WhisperSegment[];
+    words?: NormalizedWord[];
+    segments?: NormalizedSegment[];
 }
-
-const WHISPER_RESPONSE_FORMATS = [
-    "json",
-    "text",
-    "verbose_json",
-    "srt",
-    "vtt",
-] as const;
 
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
@@ -3402,72 +3405,4 @@ function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     }
     log.debug("Whisper usage: {seconds}s", { seconds });
     return seconds;
-}
-
-/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
-function formatTimestamp(seconds: number, sep: "," | "."): string {
-    const ms = Math.round(seconds * 1000);
-    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
-    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
-    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
-    const msPart = String(ms % 1000).padStart(3, "0");
-    return `${h}:${m}:${s}${sep}${msPart}`;
-}
-
-function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
-    const sep = kind === "srt" ? "," : ".";
-    const cues = segments.map((seg, i) => {
-        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
-        const head = kind === "srt" ? `${i + 1}\n` : "";
-        return `${head}${time}\n${seg.text.trim()}`;
-    });
-    return kind === "vtt"
-        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
-        : `${cues.join("\n\n")}\n`;
-}
-
-/**
- * Reformat OVH's verbose_json into the caller's requested response_format.
- * Mirrors the ElevenLabs scribe path so behaviour is consistent across backends.
- */
-export function formatWhisperResponse(
-    json: WhisperVerboseJson,
-    responseFormat: string | null,
-    usageHeaders: Record<string, string>,
-    billedSeconds: number,
-): Response {
-    assertTranscriptionResponseFormat(
-        responseFormat,
-        "whisper model",
-        WHISPER_RESPONSE_FORMATS,
-    );
-    // OVH reports a bare { seconds }; re-emit it in OpenAI's duration shape so
-    // whisper matches what buildTranscriptionResponse gives the other models.
-    const usage = { type: "duration" as const, seconds: billedSeconds };
-
-    if (responseFormat === "text") {
-        return new Response(json.text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "srt" || responseFormat === "vtt") {
-        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        const { usage: _ovhUsage, ...rest } = json;
-        return Response.json({ ...rest, usage }, { headers: usageHeaders });
-    }
-
-    // Default: json
-    return Response.json({ text: json.text, usage }, { headers: usageHeaders });
 }

@@ -6,10 +6,22 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
+    assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
     type NormalizedWord,
+    TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
+
+/**
+ * AssemblyAI serves srt/vtt from its own rendered subtitle endpoint, so it
+ * supports the two formats the shared formatter cannot.
+ */
+const ASSEMBLYAI_RESPONSE_FORMATS = [
+    ...TRANSCRIPTION_RESPONSE_FORMATS,
+    "srt",
+    "vtt",
+] as const;
 
 const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
@@ -78,20 +90,11 @@ export async function transcribeWithAssemblyAi(opts: {
         });
     }
 
-    if (
-        ![
-            "json",
-            "text",
-            "verbose_json",
-            "srt",
-            "vtt",
-            "diarized_json",
-        ].includes(responseFormat)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(
+        responseFormat,
+        "AssemblyAI model",
+        ASSEMBLYAI_RESPONSE_FORMATS,
+    );
     if (
         temperature !== undefined &&
         (!Number.isFinite(temperature) || temperature < 0 || temperature > 1)

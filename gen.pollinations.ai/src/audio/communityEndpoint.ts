@@ -17,13 +17,8 @@ import {
     buildTranscriptionResponse,
     type NormalizedSegment,
     type NormalizedWord,
+    UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "../routes/transcription-response.ts";
-
-const COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS = [
-    "json",
-    "text",
-    "verbose_json",
-] as const;
 
 export type CommunityTranscriptionOptions = {
     file: File;
@@ -50,7 +45,7 @@ export async function callCommunityTranscriptionEndpoint(
     assertTranscriptionResponseFormat(
         responseFormat,
         endpoint.modelId,
-        COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS,
+        UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
     );
 
     const bearerToken = await decryptSecret(

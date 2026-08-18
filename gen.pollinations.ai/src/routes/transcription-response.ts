@@ -4,18 +4,18 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 /**
  * Shared OpenAI-compatible transcription-response formatter.
  *
- * Providers (ElevenLabs Scribe, AssemblyAI, xAI) each normalize their upstream
- * payload into the seconds-based `NormalizedTranscript` intermediate below
- * — keeping their own grouping and unit conversion — then call
- * `buildTranscriptionResponse` to emit the four response branches
- * (text / verbose_json / diarized_json / json) identically.
+ * Providers (whisper, ElevenLabs Scribe, AssemblyAI, xAI, community
+ * endpoints) each normalize their upstream payload into the seconds-based
+ * `NormalizedTranscript` intermediate below — keeping their own grouping and
+ * unit conversion — then call `buildTranscriptionResponse` to emit every
+ * response branch identically.
  */
 
 /**
- * The formats `buildTranscriptionResponse` can emit. `srt`/`vtt` are absent
- * because building cues needs per-segment timings, which the normalized
- * intermediate does not carry — providers that support them (whisper,
- * AssemblyAI) handle those formats themselves.
+ * The formats `buildTranscriptionResponse` can emit. srt/vtt are absent: cues
+ * need real segment boundaries and none of these providers report them, so a
+ * subtitle track here could only be invented. AssemblyAI serves those two
+ * formats from its own rendered subtitles instead.
  */
 export const TRANSCRIPTION_RESPONSE_FORMATS = [
     "json",
@@ -23,6 +23,15 @@ export const TRANSCRIPTION_RESPONSE_FORMATS = [
     "verbose_json",
     "diarized_json",
 ] as const;
+
+/**
+ * For providers we never ask to diarize. diarized_json needs real speaker
+ * segments, so offering it would mean answering with an empty list.
+ */
+export const UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS =
+    TRANSCRIPTION_RESPONSE_FORMATS.filter(
+        (format) => format !== "diarized_json",
+    );
 
 /**
  * No-op when the caller did not ask for a format; the default is json.

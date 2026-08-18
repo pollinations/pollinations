@@ -1,0 +1,34 @@
+{
+  "pr_number": 13518,
+  "title": "refactor: one download path for community image endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13518",
+  "merged_at": "2026-08-18T02:40:36Z",
+  "labels": [],
+  "pr_body_excerpt": "The gen Worker and the enter registration probe each carried their own copy of \"pull the first image out of an OpenAI images response\" — same base64 branch, same URL branch, same 20 MB cap, drifted timeouts, and two different byte readers.\n\n- Hoists `firstCommunityImageBytes()` into `shared/community-endpoints.ts`.\n- Moves `HttpError` to `shared/http-error.ts` so both callers throw one class. It is a plain `Error` subclass with no gen-specific imports. enter loses nothing: `throwEndpointTestError` already flattens any `Error` into `HTTPException(400, {message})`, so the 502 is ignored there while gen's funnel keeps rendering it.\n- Moves `readResponseBytes()` to `shared/`. The enter probe now gets the streaming content-length + running-total cap instead of buffering the whole `arrayBuffer()` and checking afterwards.\n- Replaces both `REQUEST_TIMEOUT_MS` constants (gen 120s, enter 90s) with one `COMMUNITY_ENDPOINT_TIMEOUT_MS = 300s`, in line with the text providers — Portkey and Azure both use 290s.\n\nMost of the changed-file count is the `HttpError` move: 38 files are one-line import rewrites, 3 have real edits.\n\nBehaviour change worth noting: the enter registration probe now waits up to 300s instead of 90s, which helps cold-starting hobby GPUs but means a longer spinner in the dialog.\n\nSupersedes #13519.\n\nVerified locally: `tsc --noEmit` clean on both packages, `enter/test/community-endpoint-openai.test.ts` 8/8, `gen/src/community-endpoints.test.ts` 57/57, `gen/test/image` + transcription 270/270.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One path through the flowers",
+    "blurb": "Community image endpoints now share one careful little download path instead of maintaining two nearly identical ones in separate pots. Registration gives hobby GPUs up to 300 seconds to wake up and make their pixels.",
+    "summary": "Unified OpenAI-style community image response handling in shared code, including streamed 20 MB-capped downloads and a single 300-second timeout for both generation and enter endpoint registration probes.",
+    "impact": "Community endpoint registration can now wait up to 300 seconds for cold-starting hobby GPUs, while generation and registration use the same base64/URL image reader and size limits.",
+    "keywords": [
+      "community endpoints",
+      "image generation",
+      "endpoint registration",
+      "streaming",
+      "timeouts",
+      "shared code"
+    ],
+    "visual_concept": "Polli tends a cozy garden with two previously separate water pipes joining into one sturdy lime-green irrigation line feeding an image-producing code-plant. A patient retro terminal shows a softly glowing loading spinner while a sleepy little GPU server greenhouse wakes up; the single shared pipe represents unified image downloading and the longer registration timeout.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, connecting two small image-download pipes into one sturdy lime green (#ecf874) pipe that waters a blooming code-plant beside a sleepy GPU greenhouse and retro terminal with a gentle loading spinner. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13518.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, connecting two small image-download pipes into one sturdy lime green (#ecf874) pipe that waters a blooming code-plant beside a sleepy GPU greenhouse and retro terminal with a gentle loading spinner. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-08-18T02:41:40.698257+00:00"
+}

@@ -20,14 +20,3 @@ export function canCoverEstimatedCharge(
         balances.tierBalance >= threshold || balances.packBalance >= threshold
     );
 }
-
-export function selectDeductionBucket(
-    balances: UserBalance,
-    amount: number,
-    isPaidOnly = false,
-): BalanceBucket {
-    if (isPaidOnly) return "pack";
-    if (balances.tierBalance >= amount) return "tier";
-    if (balances.packBalance > 0) return "pack";
-    return "tier";
-}

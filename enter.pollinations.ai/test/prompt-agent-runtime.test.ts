@@ -373,7 +373,14 @@ describe("prompt-agent runtime", () => {
                 tool_call_counts: Record<string, number>;
             };
         };
-        expect(json.choices[0].message.content).toBe("checking done");
+        expect(json.choices[0].message.content).toBe(
+            "checking \n\n" +
+                '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">\n' +
+                "<summary>Tool Executed</summary>\n" +
+                "found\n" +
+                "</details>\n\n" +
+                "done",
+        );
         expect(json.choices[0].finish_reason).toBe("stop");
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
@@ -848,11 +855,16 @@ describe("prompt-agent runtime", () => {
             };
             content = json.choices[0].message.content;
         }
-        expect(content).toBe(
-            "Drawing\n\n" +
-                "![Generated image](<https://images.example/pirate.png>)\n\n" +
-                "Finished",
+        expect(content).toContain(
+            '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
         );
+        expect(content).toContain("[image output omitted");
+        expect(content).not.toContain("U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==");
+        expect(content).toContain(
+            "![Generated image](<https://images.example/pirate.png>)",
+        );
+        expect(content.startsWith("Drawing\n\n")).toBe(true);
+        expect(content.endsWith("Finished")).toBe(true);
     });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {
@@ -1071,7 +1083,18 @@ describe("prompt-agent runtime", () => {
             choices: { message: { content: string } }[];
             usage: { tool_call_counts: Record<string, number> };
         };
-        expect(json.choices[0].message.content).toBe("sorry, lookup failed");
+        expect(json.choices[0].message.content).toContain(
+            '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">',
+        );
+        expect(json.choices[0].message.content).toContain(
+            "<summary>Tool Failed</summary>",
+        );
+        expect(json.choices[0].message.content).toContain(
+            "MCP HTTP Transport Error",
+        );
+        expect(
+            json.choices[0].message.content.endsWith("sorry, lookup failed"),
+        ).toBe(true);
         // The (failed) tool call is still counted — the owner's tool ran.
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
     });

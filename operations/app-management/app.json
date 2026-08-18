@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "DiddyDiffusion",
+    "url": "https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html",
+    "description": "DiddyDiffusion is a tiny browser-based image playground powered by Pollinations. Visitors connect their own Pollinations account through BYOP, authorize a small short-lived budget, and generate images",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "umm-dev",
+    "githubUserId": "193289395",
+    "repositoryUrl": "https://github.com/umm-dev/DiddyDiffusion",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13513",
+    "approvedDate": "2026-08-18",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Meadows",
     "url": "https://meadowy.roboticrobot.xyz",

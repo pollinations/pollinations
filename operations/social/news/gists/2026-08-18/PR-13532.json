@@ -1,0 +1,35 @@
+{
+  "pr_number": 13532,
+  "title": "Add Intelligent Diagnostic Assessment to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13532",
+  "merged_at": "2026-08-18T03:56:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Intelligent Diagnostic Assessment](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) to learn\n- # 📊 Intelligent Diagnostic Assessment A revolutionary AI-powered tool to transform diagnostic educational assessment [![Powered by Pollinations.ai](https://img.shields.io/badge/Powered%20by-Pollinati\n\nFixes #13511",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A smarter pop quiz",
+    "blurb": "The learn garden has a new resident: an AI-powered diagnostic assessment that helps map what a student already knows before the lesson begins. Less guesswork, more useful next steps.",
+    "summary": "Added Intelligent Diagnostic Assessment to the learn app collection, giving educators and students an AI-powered tool for identifying learning needs before instruction.",
+    "impact": "Learners can now use the Intelligent Diagnostic Assessment to get a clearer starting-point evaluation and guide their next study steps.",
+    "keywords": [
+      "learn",
+      "education",
+      "diagnostic assessment",
+      "ai tools",
+      "community app"
+    ],
+    "visual_concept": "Depict Polli as a thoughtful teacher bee wearing tiny round glasses and holding a clipboard beside a cozy classroom terminal. The terminal displays a friendly diagnostic quiz with simple checkmarks and growing knowledge-plants; a few flowers bloom from completed answers to show assessment becoming a personalized learning path.",
+    "image_prompt": "Cozy pixel art classroom garden where the cute pollinations bee mascot, with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, tiny teacher glasses, and a clipboard, helps a student-facing retro computer run an intelligent diagnostic assessment; quiz checkmarks turn into small code-plants and blooming flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, retro gaming vibes, pixel-font text: 'START LEARNING', nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13532.jpg",
+    "prompt": "Cozy pixel art classroom garden where the cute pollinations bee mascot, with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, tiny teacher glasses, and a clipboard, helps a student-facing retro computer run an intelligent diagnostic assessment; quiz checkmarks turn into small code-plants and blooming flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, retro gaming vibes, pixel-font text: 'START LEARNING', nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-18T03:57:16.956760+00:00",
+  "app_name": "Intelligent Diagnostic Assessment",
+  "app_url": "https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica"
+}

@@ -1,10 +1,10 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
     AuthResult,
     ImageGenerationResult,
 } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "@shared/http-error.ts";
 import type { ImageParams } from "../params.ts";
 import { sanitizeString } from "../util.ts";
 import {

@@ -8,8 +8,8 @@
  * tools/scripts/rotation/rotate-genai-replicate.sh.
  */
 
-import { getImageEnv } from "../env.ts";
 import { HttpError } from "@shared/http-error.ts";
+import { getImageEnv } from "../env.ts";
 import { sleep } from "../util.ts";
 
 const API_BASE = "https://api.replicate.com/v1";

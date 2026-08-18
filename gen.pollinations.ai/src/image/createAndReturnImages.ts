@@ -1,10 +1,10 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import {
     fetchFromWeightedServer,
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {

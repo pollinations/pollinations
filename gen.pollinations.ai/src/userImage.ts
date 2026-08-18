@@ -1,7 +1,7 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { validateUserMediaUrl } from "./utils/user-media-url.ts";
 
 /**

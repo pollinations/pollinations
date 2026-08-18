@@ -1,6 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
-import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@shared/http-error.ts";
+import { HTTPException } from "hono/http-exception";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import { UserImageError } from "@/userImage.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";

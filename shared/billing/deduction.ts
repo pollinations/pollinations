@@ -111,7 +111,9 @@ export async function atomicCreditUserBalance(
     const column = BUCKET_COLUMNS[bucket];
     const rows = await db
         .update(userTable)
-        .set({ [`${bucket}Balance`]: sql`ROUND(COALESCE(${column}, 0) + ${amount}, ${POLLEN_BILLING_PRECISION})` })
+        .set({
+            [`${bucket}Balance`]: sql`ROUND(COALESCE(${column}, 0) + ${amount}, ${POLLEN_BILLING_PRECISION})`,
+        })
         .where(sql`${userTable.id} = ${userId}`)
         .returning({ newBalance: column });
 

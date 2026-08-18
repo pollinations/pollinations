@@ -1,5 +1,6 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
-import { withImageFallbacks } from "./image-fallbacks";
+import { IMAGE_FALLBACKS } from "./image-fallbacks";
+import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -1155,7 +1156,10 @@ const IMAGE_BASE_SERVICES = {
     },
 } as const satisfies Record<string, ModelDefinition>;
 
-export const IMAGE_SERVICES = withImageFallbacks(IMAGE_BASE_SERVICES);
+export const IMAGE_SERVICES = mergeFallbacks(
+    IMAGE_BASE_SERVICES,
+    IMAGE_FALLBACKS,
+);
 
 const isVideoService = (svc: {
     outputModalities?: readonly string[];

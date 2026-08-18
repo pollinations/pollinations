@@ -1,0 +1,33 @@
+{
+  "pr_number": 13501,
+  "title": "fix(enter): drop duplicate redirectUri validation on metadata update",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13501",
+  "merged_at": "2026-08-18T00:02:31Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #11451\n\nThe metadata-update route validated `redirectUris` twice: Zod `UrlWithSchemeSchema` at the request boundary, then `validateRedirectUriFormat` again in the handler. Anything invalid never reached the second check.\n\nThis keeps the handler loop as the single check (same idiom as create) so the precise `HTTPException` message is what the client gets.\n\n**Verify**\n- `npx vitest run test/integration/api-keys.test.ts` — 36/36 pass\n- includes `rejects unsafe redirectUris during metadata updates` (still 400)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One gate, better signs",
+    "blurb": "Redirect URI checks now take the same path during API-key metadata updates as they do at creation. Fewer duplicate gates; clearer notes when a URL does not belong in the garden.",
+    "summary": "Removed duplicate redirectUris validation from the API-key metadata-update request boundary so the handler's existing validation returns the same precise HTTPException messages used during API-key creation.",
+    "impact": "Developers updating API-key metadata still get a 400 for unsafe redirectUris, now with the consistent, specific redirect URI format error from the shared handler check.",
+    "keywords": [
+      "api-keys",
+      "redirect-uris",
+      "validation",
+      "enter",
+      "error-handling"
+    ],
+    "visual_concept": "A cozy API-key garden gate has one clear signpost instead of two overlapping guards: Polli, wearing a tiny groundskeeper hat, tidies duplicate URL-check signs while a safe vine-shaped redirect path leads into a glowing terminal garden. The scene represents consistent validation and clearer client errors, with code-plants and a small 400 error note as supporting details.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny groundskeeper hat as she removes a duplicate sign from a garden gate labeled in simple pixel text “redirect URI”; one clear safe vine path leads to a retro terminal amid code-plants and flowers, with lime green (#ecf874) glowing prominently. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13501.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny groundskeeper hat as she removes a duplicate sign from a garden gate labeled in simple pixel text “redirect URI”; one clear safe vine path leads to a retro terminal amid code-plants and flowers, with lime green (#ecf874) glowing prominently. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-18T00:04:14.798025+00:00"
+}

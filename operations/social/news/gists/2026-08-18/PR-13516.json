@@ -1,0 +1,34 @@
+{
+  "pr_number": 13516,
+  "title": "refactor: drop the unreachable TS copy of the deduction ladder",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13516",
+  "merged_at": "2026-08-18T00:33:01Z",
+  "labels": [],
+  "pr_body_excerpt": "Dead code found while reviewing #13514. Independent of it — this predates the branch (arrived with #13320).\n\n- `selectDeductionBucket` was reachable only through `createBalanceCheckResult`'s optional `amount` argument. That function has exactly one call site repo-wide (`gen.pollinations.ai/src/utils/generation-access.ts:53`) and it passes two arguments, so `amount` is always `undefined` and the branch never ran.\n- It also duplicated the ladder `atomicDeductUserBalance` already encodes in SQL (`shared/billing/deduction.ts:34-39`) — paid-only → pack, tier covers → tier, pack > 0 → pack, else tier. That SQL is where the real deduction decision happens, so this was a second copy of a billing rule, free to drift from the one that runs.\n- `createBalanceCheckResult` keeps the branch that actually executes: paid-only pays from pack, otherwise tier when it holds anything. That value feeds the reported meter (`selectedMeterSlug`), not the charge.\n\nNo behaviour change — every input reaching the live call site picks the same bucket as before. −17 lines.\n\n`canCoverEstimatedCharge`, `getAvailableBalance`, and `payerBucketToMeter` all stay; each has live callers.\n\nTests: gen `byop-markup` + `tracking-observability` (53), `billing-deduction` + `community-endpoints` (63), enter `balance-check` (4). `tsc --noEmit` clean on gen and enter, biome clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One ladder, one hive",
+    "blurb": "The unreachable TypeScript copy of the billing deduction ladder has been composted. The SQL rule that actually handles deductions remains the single source of truth.",
+    "summary": "Removed the unreachable selectDeductionBucket path from shared billing code, leaving atomicDeductUserBalance's SQL deduction ladder as the sole implementation of pack-versus-tier selection.",
+    "impact": "Billing behavior and reported meters stay the same at the live call site, while the deduction rule now has one less copy available to drift.",
+    "keywords": [
+      "billing",
+      "deduction",
+      "dead-code",
+      "typescript",
+      "sql",
+      "refactor"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy code garden with one healthy, clearly labeled deduction ladder growing from a SQL planter, while she gently removes a faded duplicate ladder that leads nowhere. Small pack and tier jars sit beside the plant to represent the preserved billing buckets.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, pruning a faded duplicate code ladder that leads nowhere while one healthy SQL code-plant ladder grows from a lime green (#ecf874) planter beside small jars labeled PACK and TIER. Warm cream, mint, lavender, and peach garden shed background with subtle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13516.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, pruning a faded duplicate code ladder that leads nowhere while one healthy SQL code-plant ladder grows from a lime green (#ecf874) planter beside small jars labeled PACK and TIER. Warm cream, mint, lavender, and peach garden shed background with subtle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-18T00:34:06.581529+00:00"
+}

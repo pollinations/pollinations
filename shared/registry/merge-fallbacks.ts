@@ -36,6 +36,15 @@ type RouteIds<TFallbacks extends FallbackMap> =
     keyof TFallbacks[keyof TFallbacks] & string;
 
 /**
+ * The catalog as it comes out: routes added as models, and every parent
+ * carrying the `fallbacks` list the merge injected — which its own declaration
+ * in the catalog no longer has to state.
+ */
+type Merged<TBase, TFallbacks extends FallbackMap> = TBase &
+    Record<keyof TFallbacks, { fallbacks: string[] }> &
+    Record<RouteIds<TFallbacks>, ModelDefinition>;
+
+/**
  * Merges fallback routes into a service catalog: every parent gains the
  * `fallbacks` list naming its routes in order, and each route is expanded into
  * a full model definition placed directly after it, so ids and order match what
@@ -45,10 +54,7 @@ export function mergeFallbacks<
     TFallbacks extends FallbackMap,
     TBase extends Record<string, ModelDefinition> &
         Record<keyof TFallbacks, ModelDefinition>,
->(
-    base: TBase,
-    fallbacks: TFallbacks,
-): TBase & Record<RouteIds<TFallbacks>, ModelDefinition> {
+>(base: TBase, fallbacks: TFallbacks): Merged<TBase, TFallbacks> {
     const merged: Record<string, ModelDefinition> = {};
     for (const [parentId, parent] of Object.entries(base)) {
         const routes = (fallbacks as FallbackMap)[parentId];
@@ -75,5 +81,5 @@ export function mergeFallbacks<
             };
         }
     }
-    return merged as TBase & Record<RouteIds<TFallbacks>, ModelDefinition>;
+    return merged as Merged<TBase, TFallbacks>;
 }

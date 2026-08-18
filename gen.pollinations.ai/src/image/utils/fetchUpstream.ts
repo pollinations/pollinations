@@ -1,4 +1,4 @@
-import { HttpError } from "../httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 
 type FetchUpstreamOptions = RequestInit & {
     /**

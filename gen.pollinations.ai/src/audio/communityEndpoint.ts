@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
     communityTranscriptionSeconds,
@@ -11,8 +12,6 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-
-const REQUEST_TIMEOUT_MS = 300_000;
 
 export type CommunityTranscriptionOptions = {
     file: File;
@@ -70,7 +69,7 @@ export async function callCommunityTranscriptionEndpoint(
             },
             body: upstreamFormData,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new UpstreamError(502 as ContentfulStatusCode, {

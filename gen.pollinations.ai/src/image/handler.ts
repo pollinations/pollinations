@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
@@ -28,7 +29,6 @@ import {
     type VideoGenerationResult,
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
-import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
@@ -390,7 +390,6 @@ async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
-    metadataModel: ImageParams["model"] = safeParams.model as ImageParams["model"],
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
@@ -399,7 +398,6 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
-        metadataModel,
     );
 
     if (result.isChild && result.isMature) {
@@ -442,23 +440,9 @@ async function generateMediaWithFallback(
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
-            const hiddenFallback = attempt.entry?.definition.hidden === true;
-            const generated = await generateImageResult(
-                c,
-                prompt,
-                params,
-                (hiddenFallback
-                    ? safeParams.model
-                    : params.model) as ImageParams["model"],
-            );
+            const generated = await generateImageResult(c, prompt, params);
             assertNonEmptyMedia(generated.buffer, "Image provider");
-            // Hidden static fallbacks are internal routes for the same public
-            // service. Keep their id out of filenames and EXIF metadata while
-            // servedEntry still carries their provider and cost to tracking.
-            return {
-                result: generated,
-                params: hiddenFallback ? safeParams : params,
-            };
+            return { result: generated, params };
         },
         c.var.track?.failedCalls,
         (attempt) =>

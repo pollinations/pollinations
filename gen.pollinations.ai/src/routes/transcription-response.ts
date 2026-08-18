@@ -75,14 +75,8 @@ export interface NormalizedTranscript {
     text: string;
     /** ISO-639-1 language code, or undefined if unknown. */
     language?: string;
-    /** Duration of the input audio in seconds. */
+    /** Duration in seconds. */
     duration: number;
-    /**
-     * Seconds billed, when the provider meters something other than the audio
-     * length: OVH whisper rounds up to whole seconds, so a 0.9s file bills 1.
-     * Defaults to duration, which is what every other provider bills.
-     */
-    billedSeconds?: number;
     words: NormalizedWord[];
     /**
      * Timed segments as reported upstream, empty when the provider reports
@@ -118,13 +112,10 @@ export function buildTranscriptionResponse(opts: {
 }): Response {
     const { normalized, responseFormat, usageHeaders } = opts;
     const { text, duration } = normalized;
-    // duration is the input audio; usage.seconds is what we charged for it.
-    // They are the same number unless the provider meters differently, and
-    // usage.seconds is the one that has to match the usage headers.
-    const usage = {
-        type: "duration" as const,
-        seconds: normalized.billedSeconds ?? duration,
-    };
+    // OpenAI defines usage.seconds and the top-level duration as the same
+    // quantity — "duration of the input audio" — so they are one number here.
+    // That is also what we bill, so the body and the usage headers agree.
+    const usage = { type: "duration" as const, seconds: duration };
 
     if (responseFormat === "text") {
         return new Response(text, {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13553,
+  "title": "refactor: one transcription formatter, and no invented subtitles",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13553",
+  "merged_at": "2026-08-18T20:05:49Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #13416. whisper kept its own copy of the transcription response formatter and AssemblyAI a third format validator, so fixes landed in one of three places — #13552 is what that cost.\n\n**Src is net −58 lines. No behaviour is added; three copies become one.**\n\n- `formatWhisperResponse` deleted; whisper normalizes like every other provider\n- AssemblyAI's hand-rolled format check — an array plus a message listing the same six formats again, one edit from disagreeing — now goes through `assertTranscriptionResponseFormat`\n- whisper's and the community path's allowlists were byte-identical and separately maintained; both take the shared undiarized set\n\n**srt/vtt are removed rather than fixed.** OVH answers `segments: []` on every request, so `toSubtitles([])` emitted nothing — whisper `srt` returned 200 with a 1-byte body (verified against production). Deriving cues from word timings would have meant inventing cue length and break rules and shipping them as measurements. whisper, grok, scribe and community endpoints now return 400 naming what they do accept.\n\nAssemblyAI keeps both formats: it renders subtitles upstream and `fetchAssemblyAiSubtitles` retrieves them, which is real data. The OpenAPI description now says format support is model-dependent.\n\n**Also dropped:** whisper's raw-body passthrough, which carried `success: true`, `diarization: []` and those empty segments — no OpenAI fields among them.\n\nTwo things deliberately not done, both measured first:\n\n- Segment payloads are unchanged from main. An earlier revision padded them to OpenAI's ten declared fields, justified by `openai-python` rejecting a partial segment — it does not. The client parses with `construct_type`, which skips validation, so absent fields read back as `None`. Padding also asserted `avg_logprob: 0`, a perfect score, where `None` correctly means unknown.\n- `duration`, `usage.seconds` and the usage headers stay one number. OVH rounds `usage.seconds` up to a whole second (0.904625 → 1 ",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Subtitles require actual subtitles",
+    "blurb": "The transcription hive now shares one formatter instead of keeping three nearly identical ones in separate jars. Providers only offer subtitle formats when they have real subtitle cues to give you.",
+    "summary": "Unified Whisper, AssemblyAI, and community transcription response formatting, while Whisper, Grok, Scribe, and community endpoints now return a clear 400 for unsupported SRT/VTT instead of empty subtitle files; AssemblyAI continues serving upstream-rendered subtitles.",
+    "impact": "Developers get consistent transcription format validation and explicit model-dependent format support, avoiding Whisper's previous 200 response containing an effectively empty SRT body.",
+    "keywords": [
+      "transcription",
+      "whisper",
+      "assemblyai",
+      "audio-api",
+      "subtitles",
+      "formatting"
+    ],
+    "visual_concept": "A cozy transcription workshop where Polli tidies several duplicate formatter scrolls into one shared flowering folder, while a subtitle sign politely points unsupported providers toward plain text and JSON. A CRT monitor robot can hold a real AssemblyAI subtitle strip, making the distinction between genuine timed cues and invented captions visible.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop: Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, and rounded translucent light-blue wings, wears tiny librarian glasses while filing three duplicate transcription scrolls into one blooming code-folder; beside her, a helpful CRT monitor robot holds a neat real subtitle strip, while an empty subtitle tray has a small pixel sign reading “REAL CUES ONLY.” Lime green (#ecf874) is prominent across the glowing terminal and flower pots, with code-plants, soft mint-lavender-peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13553.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop: Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, and rounded translucent light-blue wings, wears tiny librarian glasses while filing three duplicate transcription scrolls into one blooming code-folder; beside her, a helpful CRT monitor robot holds a neat real subtitle strip, while an empty subtitle tray has a small pixel sign reading “REAL CUES ONLY.” Lime green (#ecf874) is prominent across the glowing terminal and flower pots, with code-plants, soft mint-lavender-peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-18T20:12:31.329115+00:00"
+}

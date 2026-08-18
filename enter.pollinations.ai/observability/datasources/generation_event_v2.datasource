@@ -148,13 +148,13 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- The FORWARD_QUERY below is needed even though this column has a DEFAULT, and
--- #10763 is not a precedent for dropping it: that removed a forward query from
--- the retired `generation_event`, a table nothing materializes from, so
--- Tinybird could ALTER it in place. This is the source of nine pipes, so the
--- check fails without one (CLI 4.5.1 and 4.6.14) and each deployment recreates
--- the table instead. Two obligations follow: mirror every new column into the
--- 95-name list below, and re-check after the materializations are retired.
+-- DEFAULT '' fills this column for rows ingested from here on. It does not
+-- fill it for the rows already in the table: nine pipes materialize from this
+-- one, so Tinybird rebuilds it rather than altering it in place, and a rebuild
+-- keeps only the columns FORWARD_QUERY names. That is what the long list below
+-- is, ending in an empty string for this column.
+--
+-- So: add every new column to that list too, or it is dropped on the next deploy.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

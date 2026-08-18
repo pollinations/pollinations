@@ -6,10 +6,10 @@ import type { ModelDefinition } from "./registry";
  *
  * Everything left out is inherited from that model, so the public identity a
  * caller sees — title, brand, modalities — can never drift from the model they
- * asked for. `provider` is required because it is what makes a route a route,
- * and it names the id the route is registered under. The remaining omitted
- * fields are owned by the merge: a route is always hidden, carries no aliases
- * of its own, and never chains further.
+ * asked for. `id` and `provider` are always stated: a route is a model like any
+ * other, dispatched by id and attributed to its provider. The omitted fields are
+ * owned by the merge — a route is always hidden, carries no aliases of its own,
+ * and never chains further.
  */
 export type FallbackDefinition = Partial<
     Omit<
@@ -20,7 +20,7 @@ export type FallbackDefinition = Partial<
         | "hidden"
         | "provider"
     >
-> & { provider: string };
+> & { id: string; provider: string };
 
 /**
  * Fallback targets, keyed by the model they serve and tried in order.
@@ -34,26 +34,11 @@ export type FallbackMap = Record<
     readonly (string | FallbackDefinition)[]
 >;
 
-/**
- * Ids are derived, never written: `<model>-<provider>-fallback-<n>`, numbered by
- * position in the list so two routes through the same provider stay distinct.
- * Reordering or repointing a route therefore renames it.
- */
-const routeId = (parentId: string, provider: string, index: number) =>
-    `${parentId}-${provider}-fallback-${index + 1}`;
-
-/** Position index to 1-based label. Also caps how many routes a model can declare. */
-type Ordinal = { "0": "1"; "1": "2"; "2": "3"; "3": "4"; "4": "5"; "5": "6" };
-type Slot<TTargets> = Extract<keyof TTargets, keyof Ordinal>;
-
 /** Ids contributed by parents that define routes, not just name existing models. */
-type RouteIds<TFallbacks extends FallbackMap> = {
-    [K in keyof TFallbacks & string]: {
-        [I in Slot<TFallbacks[K]>]: TFallbacks[K][I] extends FallbackDefinition
-            ? `${K}-${TFallbacks[K][I]["provider"]}-fallback-${Ordinal[I]}`
-            : never;
-    }[Slot<TFallbacks[K]>];
-}[keyof TFallbacks & string];
+type RouteIds<TFallbacks extends FallbackMap> = Extract<
+    TFallbacks[keyof TFallbacks][number],
+    FallbackDefinition
+>["id"];
 
 /**
  * Merges fallback targets into a service catalog: every parent gains the
@@ -78,10 +63,8 @@ export function mergeFallbacks<
         }
         merged[parentId] = {
             ...parent,
-            fallbacks: targets.map((target, index) =>
-                typeof target === "string"
-                    ? target
-                    : routeId(parentId, target.provider, index),
+            fallbacks: targets.map((target) =>
+                typeof target === "string" ? target : target.id,
             ),
         };
         const {
@@ -90,12 +73,13 @@ export function mergeFallbacks<
             fallbackOnStatusCodes: _statusCodes,
             ...inherited
         } = parent;
-        for (const [index, target] of targets.entries()) {
+        for (const target of targets) {
             // A string names an existing model; only objects define a route.
             if (typeof target === "string") continue;
-            merged[routeId(parentId, target.provider, index)] = {
+            const { id, ...overrides } = target;
+            merged[id] = {
                 ...inherited,
-                ...target,
+                ...overrides,
                 aliases: [],
                 hidden: true,
             };

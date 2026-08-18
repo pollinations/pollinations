@@ -1819,7 +1819,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.004,
     },
   },
-  "zimage-fal-fallback-1": {
+  "zimage-fal-fallback": {
     "cost": {
       "completionImageTokens": 0,
     },

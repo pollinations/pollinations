@@ -6,7 +6,7 @@ import fs from "node:fs";
 // gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
 // image probes run once per model every four hours and are always capped at
 // one generation. This keeps coverage current without spending or generating
-// media every 15 minutes.
+// media every 30 minutes.
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
@@ -166,7 +166,7 @@ function planRequestCounts(models, budget) {
 }
 
 // Basic billing-integrity sanity checks on a single probe response. These are
-// NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
+// NOT health/hide signals (CYCLE.md's 5xx/timeout rules own that) --
 // they flag "the numbers we're about to pay this owner on look implausible
 // for a short, cache-busted prompt", for a human to investigate. Thresholds are
 // deliberately loose (calibrated against real tokenizer variance seen across

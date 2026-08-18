@@ -152,6 +152,22 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-27b",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-27b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Chutes"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

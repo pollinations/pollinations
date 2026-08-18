@@ -129,6 +129,11 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
+        name: "qwen3.8-27b",
+        config: portkeyConfig["qwen/qwen3.8-27b"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },

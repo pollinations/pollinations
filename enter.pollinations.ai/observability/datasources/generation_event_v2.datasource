@@ -148,16 +148,17 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- Adding a column here now forces a full table rebuild. #10763 dropped a
--- FORWARD_QUERY in May precisely to avoid that, and every column added since
--- went through as a metadata-only ALTER -- but Tinybird no longer offers that
--- path. Checked against staging with a throwaway column: it rejects any new
--- column and prints the FORWARD_QUERY below, which copies the old rows in.
+-- Adding a column here needs the FORWARD_QUERY below: Tinybird rejects the
+-- deploy without one and prints the query to paste. The docs call a column add
+-- an automatic ALTER, and that does hold for our other datasources -- the same
+-- throwaway column on error_event deploys as "ALTER TABLE, no data movement".
+-- This table is the exception, and the visible difference is that it is the only
+-- one with materialized views (nine of them). So the forward query is a full
+-- copy of the table, not a metadata change: expect a long promotion.
 --
--- DELETE THIS BLOCK ONCE THE DEPLOY IS PROMOTED. It reads
--- defaultValueOfTypeName('String') AS parent_request_id, so leaving it in place
--- would blank out real parent_request_id values on the next rebuild.
--- `tb deployment create --check` reprints the query it wants when one is needed.
+-- DELETE THIS BLOCK ONCE PROMOTED. It reads defaultValueOfTypeName('String') AS
+-- parent_request_id, so a later rebuild with it still in place blanks the column
+-- for every existing row.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

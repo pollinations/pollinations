@@ -88,23 +88,13 @@ export function buildTranscriptionResponse(opts: {
     normalized: NormalizedTranscript;
     responseFormat: string;
     usageHeaders: Record<string, string>;
-    /**
-     * Audio seconds actually billed, when that differs from the transcript
-     * duration (scribe meters on input audio, not on the transcript). Defaults
-     * to the transcript duration, which is the same number for every other
-     * provider.
-     */
-    billedSeconds?: number;
 }): Response {
     const { normalized, responseFormat, usageHeaders } = opts;
     const { text, duration } = normalized;
-    // OpenAI reports duration-billed audio as usage.seconds with type
-    // "duration"; every JSON branch carries it so callers can reconcile the
-    // charge without reading the usage headers.
-    const usage = {
-        type: "duration" as const,
-        seconds: opts.billedSeconds ?? duration,
-    };
+    // OpenAI defines usage.seconds and the top-level duration as the same
+    // quantity — "duration of the input audio" — so they are one number here.
+    // That is also what we bill, so the body and the usage headers agree.
+    const usage = { type: "duration" as const, seconds: duration };
 
     if (responseFormat === "text") {
         return new Response(text, {

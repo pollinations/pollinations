@@ -1049,7 +1049,10 @@ export async function transcribeWithElevenLabs(opts: {
         normalized: {
             text: elevenLabsData.text,
             language: elevenLabsData.language_code,
-            duration: transcriptDuration,
+            // OpenAI's duration is the input audio, not the speech span: the
+            // last word ends at 3.4s in a 10s file, and a silent file has no
+            // words at all. That is also the seconds we bill.
+            duration: meteredInputSeconds,
             words:
                 elevenLabsData.words?.map((w) => ({
                     word: w.text,
@@ -1060,8 +1063,6 @@ export async function transcribeWithElevenLabs(opts: {
         },
         responseFormat,
         usageHeaders,
-        // Scribe meters input audio, which can differ from the transcript span.
-        billedSeconds: meteredInputSeconds,
     });
 }
 

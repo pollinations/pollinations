@@ -84,7 +84,10 @@ describe("transcribeWithElevenLabs", () => {
 
         await expect(response.json()).resolves.toMatchObject({
             task: "transcribe",
-            duration: 3.4,
+            // Input audio (audio_duration_secs), not the speech span: the last
+            // word ends at 3.4s. OpenAI defines duration and usage.seconds as
+            // the same quantity, and it is what we bill.
+            duration: 10,
             text: "hello there general kenobi",
             segments: [
                 {
@@ -104,9 +107,6 @@ describe("transcribeWithElevenLabs", () => {
                     end: 3.4,
                 },
             ],
-            // Scribe bills input audio (audio_duration_secs=10), not the
-            // transcript span (3.4), so usage.seconds must agree with the
-            // x-usage-prompt-audio-seconds header above.
             usage: {
                 type: "duration",
                 seconds: 10,

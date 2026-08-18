@@ -4,25 +4,31 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 /**
  * Shared OpenAI-compatible transcription-response formatter.
  *
- * Providers (ElevenLabs Scribe, AssemblyAI, xAI) each normalize their upstream
- * payload into the seconds-based `NormalizedTranscript` intermediate below
- * — keeping their own grouping and unit conversion — then call
- * `buildTranscriptionResponse` to emit the four response branches
- * (text / verbose_json / diarized_json / json) identically.
+ * Providers (whisper, ElevenLabs Scribe, AssemblyAI, xAI, community
+ * endpoints) each normalize their upstream payload into the seconds-based
+ * `NormalizedTranscript` intermediate below — keeping their own grouping and
+ * unit conversion — then call `buildTranscriptionResponse` to emit every
+ * response branch identically.
  */
 
-/**
- * The formats `buildTranscriptionResponse` can emit. `srt`/`vtt` are absent
- * because building cues needs per-segment timings, which the normalized
- * intermediate does not carry — providers that support them (whisper,
- * AssemblyAI) handle those formats themselves.
- */
+/** The formats `buildTranscriptionResponse` can emit. */
 export const TRANSCRIPTION_RESPONSE_FORMATS = [
     "json",
     "text",
     "verbose_json",
     "diarized_json",
+    "srt",
+    "vtt",
 ] as const;
+
+/**
+ * For providers we never ask to diarize. diarized_json needs real speaker
+ * segments, so offering it would mean answering with an empty list.
+ */
+export const UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS =
+    TRANSCRIPTION_RESPONSE_FORMATS.filter(
+        (format) => format !== "diarized_json",
+    );
 
 /**
  * No-op when the caller did not ask for a format; the default is json.
@@ -96,6 +102,107 @@ function toOpenAiDiarizedSegments(segments: NormalizedDiarizedSegment[]): {
     }));
 }
 
+/**
+ * OpenAI's TranscriptionSegment. Every field is required in the published
+ * type — openai-python builds a pydantic model from exactly these — so a
+ * partial segment makes a typed client raise rather than degrade. None of our
+ * providers report the decoder statistics, which therefore carry neutral
+ * placeholders: absent data, not measurements.
+ */
+interface OpenAiSegment {
+    id: number;
+    seek: number;
+    start: number;
+    end: number;
+    text: string;
+    tokens: number[];
+    temperature: number;
+    avg_logprob: number;
+    compression_ratio: number;
+    no_speech_prob: number;
+}
+
+/** Cue bounds for derived segments, following common subtitle practice. */
+const MAX_CUE_SECONDS = 7;
+const MAX_CUE_CHARS = 84;
+
+/**
+ * Group word timings into cues, breaking at sentence ends and capping length
+ * so an unpunctuated run still splits. Only used when the provider reports no
+ * segments of its own — OVH whisper answers `segments: []` even though it
+ * returns per-word timings, which is why asking it for subtitles used to
+ * produce an empty file.
+ */
+function deriveSegments(words: NormalizedWord[]): NormalizedSegment[] {
+    const segments: NormalizedSegment[] = [];
+    let start: number | null = null;
+    let parts: string[] = [];
+    words.forEach((word, index) => {
+        const token = word.word.trim();
+        if (!token) return;
+        if (start === null) start = word.start;
+        parts.push(token);
+        const text = parts.join(" ");
+        const isLast = index === words.length - 1;
+        const endsSentence = /[.!?。？！]["'\u201d\u2019)\]]?$/.test(token);
+        const isFull =
+            word.end - start >= MAX_CUE_SECONDS || text.length >= MAX_CUE_CHARS;
+        if (isLast || endsSentence || isFull) {
+            segments.push({ start, end: word.end, text });
+            start = null;
+            parts = [];
+        }
+    });
+    return segments;
+}
+
+function toOpenAiSegments(normalized: NormalizedTranscript): OpenAiSegment[] {
+    const timed = normalized.segments.length
+        ? normalized.segments
+        : deriveSegments(normalized.words);
+    // Nothing timed anywhere: one cue spanning the file, which is coarse but
+    // honest. Silence has no speech to caption, so it stays empty.
+    const source: NormalizedSegment[] = timed.length
+        ? timed
+        : normalized.text.trim()
+          ? [{ start: 0, end: normalized.duration, text: normalized.text }]
+          : [];
+    return source.map((segment, index) => ({
+        id: index,
+        seek: 0,
+        start: segment.start,
+        end: segment.end,
+        text: segment.text,
+        tokens: [],
+        temperature: 0,
+        avg_logprob: 0,
+        compression_ratio: 0,
+        no_speech_prob: 0,
+    }));
+}
+
+/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
+function formatTimestamp(seconds: number, sep: "," | "."): string {
+    const ms = Math.round(seconds * 1000);
+    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+    const msPart = String(ms % 1000).padStart(3, "0");
+    return `${h}:${m}:${s}${sep}${msPart}`;
+}
+
+function toSubtitles(segments: OpenAiSegment[], kind: "srt" | "vtt"): string {
+    const sep = kind === "srt" ? "," : ".";
+    const cues = segments.map((seg, i) => {
+        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
+        const head = kind === "srt" ? `${i + 1}\n` : "";
+        return `${head}${time}\n${seg.text.trim()}`;
+    });
+    return kind === "vtt"
+        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
+        : `${cues.join("\n\n")}\n`;
+}
+
 export function buildTranscriptionResponse(opts: {
     normalized: NormalizedTranscript;
     responseFormat: string;
@@ -124,24 +231,7 @@ export function buildTranscriptionResponse(opts: {
             language: normalized.language || "unknown",
             duration,
             words: normalized.words,
-            // Prefer what the provider measured. Inventing one file-spanning
-            // segment when it already sent real ones would hand the caller
-            // worse timings than the upstream produced.
-            segments: normalized.segments.length
-                ? normalized.segments.map((segment, index) => ({
-                      id: index,
-                      start: segment.start,
-                      end: segment.end,
-                      text: segment.text,
-                  }))
-                : [
-                      {
-                          id: 0,
-                          start: 0,
-                          end: duration,
-                          text,
-                      },
-                  ],
+            segments: toOpenAiSegments(normalized),
             usage,
         };
         return Response.json(body, { headers: usageHeaders });
@@ -157,6 +247,18 @@ export function buildTranscriptionResponse(opts: {
                 usage,
             },
             { headers: usageHeaders },
+        );
+    }
+
+    if (responseFormat === "srt" || responseFormat === "vtt") {
+        return new Response(
+            toSubtitles(toOpenAiSegments(normalized), responseFormat),
+            {
+                headers: {
+                    "Content-Type": "text/plain; charset=utf-8",
+                    ...usageHeaders,
+                },
+            },
         );
     }
 

@@ -127,6 +127,7 @@ function createCommunityEndpoint(
         description: null,
         kind: "external",
         delegatesGeneration: false,
+        toolCalling: false,
         modality: "text",
         imagePricing: "request",
         inputModalities: null,

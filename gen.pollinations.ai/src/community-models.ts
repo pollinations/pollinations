@@ -84,6 +84,7 @@ export async function getCommunityModelRegistryEntries(
             visibility: schema.communityEndpoint.visibility,
             perUserRpm: schema.communityEndpoint.perUserRpm,
             delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
+            toolCalling: schema.communityEndpoint.toolCalling,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -160,6 +161,7 @@ export async function getCommunityModelRegistryEntries(
                 upstreamModel: row.upstreamModel,
                 bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
                 delegatesGeneration: row.delegatesGeneration,
+                toolCalling: row.toolCalling,
             };
         }
         const definition = communityModelDefinition({

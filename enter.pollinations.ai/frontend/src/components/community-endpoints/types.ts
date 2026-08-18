@@ -58,6 +58,9 @@ export type CommunityEndpoint = {
     perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
+    // Text models only. Owner-declared: the upstream accepts an OpenAI-style
+    // `tools` parameter. Advertising metadata; gateway passthrough is unchanged.
+    toolCalling: boolean;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -104,6 +107,8 @@ export type ModelListingFormState = {
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     perUserRpm: string;
+    // Text (non-agent) endpoints only; see CommunityEndpoint.toolCalling.
+    toolCalling: boolean;
 };
 
 export type EndpointFormState = ModelListingFormState & {
@@ -132,6 +137,7 @@ export type EndpointPayload = ModelListingPayload & {
     baseUrl: string;
     upstreamModel: string;
     fallbackModelIds: string[];
+    toolCalling: boolean;
 } & CommunityEndpointPrices;
 
 export type AgentListingPayload = ModelListingPayload & {
@@ -170,6 +176,7 @@ const emptyListingForm: ModelListingFormState = {
     description: "",
     visibility: "private",
     perUserRpm: "",
+    toolCalling: false,
 };
 
 export const emptyForm: EndpointFormState = {
@@ -274,6 +281,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         fallbackModelIds: endpoint.fallbackModelIds ?? [],
+        toolCalling: endpoint.toolCalling,
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -302,6 +310,7 @@ export function agentListingToForm(
               description: endpoint.description ?? "",
               visibility: endpoint.visibility,
               perUserRpm: "",
+              toolCalling: false,
           }
         : { ...emptyListingForm };
 }
@@ -415,6 +424,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         // validated against a quoted price.
         fallbackModelIds:
             form.visibility === "public" ? form.fallbackModelIds : [],
+        toolCalling: modality === "text" ? form.toolCalling : false,
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }
@@ -458,6 +468,7 @@ export function nextFormState(
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbackModelIds: [],
+            toolCalling: modality === "text" ? current.toolCalling : false,
         };
     }
     const next = { ...current, [key]: value };

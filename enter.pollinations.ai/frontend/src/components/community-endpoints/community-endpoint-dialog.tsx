@@ -420,6 +420,12 @@ export function CommunityEndpointDialog({
                                 inputModalities,
                             }))
                         }
+                        onToolCallingChange={(toolCalling) =>
+                            setForm((current) => ({
+                                ...current,
+                                toolCalling,
+                            }))
+                        }
                     />
 
                     <div className="grid gap-4 sm:grid-cols-2">

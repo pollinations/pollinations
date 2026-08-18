@@ -318,6 +318,12 @@ export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     bearerTokenCiphertext: string;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
+    /**
+     * Owner-declared: whether the upstream accepts an OpenAI-style `tools`
+     * parameter. Agent-backed listings have no equivalent field — their
+     * capabilities are always inherited from their base model instead.
+     */
+    toolCalling: boolean;
 };
 
 /** A managed prompt agent, run by Enter's own agent runtime. */
@@ -354,6 +360,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    toolCalling?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -586,6 +593,7 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
+        ...(endpoint.toolCalling ? { tools: true } : {}),
     };
 }
 

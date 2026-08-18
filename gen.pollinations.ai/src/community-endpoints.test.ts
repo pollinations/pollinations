@@ -685,6 +685,33 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["text"]);
     });
 
+    it("advertises tool calling when the owner declares it", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            toolCalling: true,
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.tools).toBe(true);
+    });
+
+    it("omits tools when tool calling is not declared", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.tools).toBeUndefined();
+    });
+
     describe("fallback target pricing", () => {
         const uniformPrices = (price: number) =>
             communityEndpointPrices(
@@ -755,6 +782,7 @@ describe("community endpoint helpers", () => {
                 title: "GPT Image",
                 description: null,
                 delegatesGeneration: false,
+                toolCalling: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
@@ -951,6 +979,7 @@ describe("community endpoint helpers", () => {
             visibility: "public",
             perUserRpm: null,
             delegatesGeneration: false,
+            toolCalling: false,
             fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
@@ -1015,6 +1044,7 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 perUserRpm: null,
                 delegatesGeneration: true,
+                toolCalling: false,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],
@@ -3247,6 +3277,7 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
+            toolCalling: false,
             disabled: false,
             disabledReason: null,
             disabledAt: null,
@@ -3355,6 +3386,44 @@ fixtureTest(
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
             promptTextPrice: 1e-12,
+        });
+
+        const toolCallingOnResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ toolCalling: true }),
+                },
+            ),
+        );
+        expect(toolCallingOnResponse.status).toBe(200);
+        await expect(toolCallingOnResponse.json()).resolves.toMatchObject({
+            toolCalling: true,
+        });
+
+        const toolCallingOffResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ toolCalling: false }),
+                },
+            ),
+        );
+        expect(toolCallingOffResponse.status).toBe(200);
+        await expect(toolCallingOffResponse.json()).resolves.toMatchObject({
+            toolCalling: false,
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -3493,6 +3562,88 @@ fixtureTest(
         await expect(clearLimitResponse.json()).resolves.toMatchObject({
             perUserRpm: null,
         });
+    },
+);
+
+fixtureTest(
+    "rejects declaring tool calling on an image model or a managed agent",
+    async () => {
+        const ownerGithubUsername = `tools-${crypto.randomUUID().slice(0, 8)}`;
+        const { key, userId } = await createTestApiKey({
+            type: "publishable",
+            accountPermissions: ["keys"],
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: ownerGithubUsername,
+            },
+        });
+        const enterApi = await createEnterFrontendApi();
+
+        const imageResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "image-tools-test",
+                    title: "Image Tools Test",
+                    modality: "image",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-image-1",
+                    bearerToken: "sk_saved_token",
+                    toolCalling: true,
+                }),
+            }),
+        );
+        expect(imageResponse.status).toBe(400);
+        const imageBody = (await imageResponse.json()) as {
+            error?: { message?: string };
+        };
+        expect(imageBody.error?.message).toContain(
+            "only supported for text models",
+        );
+
+        const agentId = crypto.randomUUID();
+        await db.insert(agentTable).values({
+            id: agentId,
+            ownerUserId: userId,
+            config: JSON.stringify({
+                version: 1,
+                kind: "prompt",
+                systemPrompt: "You are helpful.",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const agentResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "agent-tools-test",
+                    title: "Agent Tools Test",
+                    agentId,
+                    toolCalling: true,
+                }),
+            }),
+        );
+        expect(agentResponse.status).toBe(400);
+        const agentBody = (await agentResponse.json()) as {
+            error?: { details?: { fieldErrors?: Record<string, string[]> } };
+        };
+        expect(agentBody.error?.details?.fieldErrors?.toolCalling).toEqual([
+            "Managed agent listings do not support declaring tool calling",
+        ]);
     },
 );
 

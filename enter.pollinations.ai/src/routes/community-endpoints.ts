@@ -72,6 +72,11 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
+const ToolCallingSchema = z
+    .boolean()
+    .describe(
+        "Text models only. Whether the upstream accepts an OpenAI-style `tools` parameter and returns tool calls. Advertising metadata: the gateway already passes `tools` through untouched regardless of this flag.",
+    );
 const PriceSchema = z
     .number()
     .finite()
@@ -137,6 +142,16 @@ function enforceCommunityEndpointInputModalities(
     if (!unsupported) return;
     throw new HTTPException(400, {
         message: `${unsupported} input is not supported for ${modality} models`,
+    });
+}
+
+function enforceCommunityEndpointToolCalling(
+    modality: CommunityEndpointModality,
+    toolCalling: boolean,
+): void {
+    if (!toolCalling || modality === "text") return;
+    throw new HTTPException(400, {
+        message: "toolCalling is only supported for text models",
     });
 }
 
@@ -354,6 +369,7 @@ const CreateEndpointSchema = z
         visibility: VisibilitySchema.optional().default("private"),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
+        toolCalling: ToolCallingSchema.optional().default(false),
         ...UpdatePriceFieldsSchema,
     })
     // A registration is one of two shapes: a managed agent, which resolves its
@@ -403,6 +419,12 @@ const CreateEndpointSchema = z
                 path: "perUserRpm",
                 message: "Managed agent listings do not support per-user RPM",
             },
+            {
+                invalid: input.toolCalling === true,
+                path: "toolCalling",
+                message:
+                    "Managed agent listings do not support declaring tool calling",
+            },
         ];
         for (const rejection of agentRejections) {
             if (!rejection.invalid) continue;
@@ -425,6 +447,7 @@ const UpdateEndpointSchema = z.object({
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
+    toolCalling: ToolCallingSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -462,6 +485,7 @@ const CommunityEndpointResponseSchema = z.object({
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
+    toolCalling: z.boolean(),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -619,6 +643,7 @@ function toResponse(
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
+        toolCalling: row.toolCalling,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -975,6 +1000,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 modality,
                 input.inputModalities,
             );
+            enforceCommunityEndpointToolCalling(modality, input.toolCalling);
             const prices =
                 agent || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -1009,6 +1035,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     imagePricing,
                     inputModalities: input.inputModalities,
+                    toolCalling: agent ? false : input.toolCalling,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -1198,10 +1225,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         "Managed agent listings do not support per-user RPM",
                 });
             }
+            if (endpoint.agentId !== null && input.toolCalling !== undefined) {
+                throw new HTTPException(400, {
+                    message:
+                        "Managed agent listings do not support declaring tool calling",
+                });
+            }
             if (input.inputModalities !== undefined) {
                 enforceCommunityEndpointInputModalities(
                     modality,
                     input.inputModalities,
+                );
+            }
+            if (input.toolCalling !== undefined) {
+                enforceCommunityEndpointToolCalling(
+                    modality,
+                    input.toolCalling,
                 );
             }
             await ensureModelNameAvailable(
@@ -1243,6 +1282,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;
+            }
+            if (input.toolCalling !== undefined) {
+                update.toolCalling = input.toolCalling;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();

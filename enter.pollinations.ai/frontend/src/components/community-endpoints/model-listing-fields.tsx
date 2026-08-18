@@ -29,6 +29,7 @@ export function ModelListingFields({
     required = true,
     onChange,
     onInputModalitiesChange,
+    onToolCallingChange,
 }: {
     form: ModelListingFormState;
     modality: CommunityEndpointModality;
@@ -37,6 +38,7 @@ export function ModelListingFields({
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
+    onToolCallingChange?: (value: boolean) => void;
 }) {
     function toggleInputModality(input: ModelInputModality): void {
         const selected = form.inputModalities.includes(input);
@@ -186,6 +188,39 @@ export function ModelListingFields({
                     </TabButton>
                 </ButtonGroup>
             </FieldStack>
+
+            {!isAgent && modality === "text" && (
+                <FieldStack
+                    label="Tool calling"
+                    helper="This model accepts an OpenAI-style tools parameter and returns tool calls."
+                    alignLabelRow
+                >
+                    <ButtonGroup aria-label="Tool calling support">
+                        <TabButton
+                            active={!form.toolCalling}
+                            onClick={() => onToolCallingChange?.(false)}
+                            size="sm"
+                            className="min-w-16 gap-1.5"
+                        >
+                            {!form.toolCalling && (
+                                <CheckIcon className="h-3.5 w-3.5" />
+                            )}
+                            Off
+                        </TabButton>
+                        <TabButton
+                            active={form.toolCalling}
+                            onClick={() => onToolCallingChange?.(true)}
+                            size="sm"
+                            className="min-w-16 gap-1.5"
+                        >
+                            {form.toolCalling && (
+                                <CheckIcon className="h-3.5 w-3.5" />
+                            )}
+                            On
+                        </TabButton>
+                    </ButtonGroup>
+                </FieldStack>
+            )}
 
             {!isAgent && (
                 <FieldStack

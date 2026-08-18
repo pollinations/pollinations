@@ -240,6 +240,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
+  // Owner-declared: whether the upstream accepts an OpenAI-style `tools`
+  // parameter. Advertising metadata only, text models only; the gateway
+  // already passes `tools` through untouched regardless of this flag.
+  toolCalling: integer("tool_calling", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   // External models keep their target here. Managed agents resolve their
   // target through agentId so the agent can outlive its community listing.
   baseUrl: text("base_url"),

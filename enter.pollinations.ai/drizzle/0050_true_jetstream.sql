@@ -1,0 +1,1 @@
+ALTER TABLE `community_endpoint` ADD `tool_calling` integer DEFAULT false NOT NULL;

@@ -78,93 +78,33 @@ describe("whisper through the shared transcription formatter", () => {
         ]);
     });
 
-    it("builds SRT cues from segments", async () => {
-        const res = format(WHISPER, "srt");
-        const srt = await res.text();
-        expect(res.headers.get("content-type")).toBe(
-            "text/plain; charset=utf-8",
-        );
-        expect(srt).toContain("1\n00:00:00,000 --> 00:00:01,500\nEl ciclo");
-        expect(srt).toContain("2\n00:00:01,500 --> 00:00:03,500\ndel agua");
-    });
-
-    it("builds VTT with a WEBVTT header and dot separators", async () => {
-        const res = format(WHISPER, "vtt");
-        const vtt = await res.text();
-        expect(vtt.startsWith("WEBVTT\n\n")).toBe(true);
-        expect(vtt).toContain("00:00:00.000 --> 00:00:01.500");
-    });
-
-    it("rejects unsupported Whisper response formats", () => {
-        expect(() =>
-            assertTranscriptionResponseFormat(
-                "diarized_json",
-                "whisper model",
-                UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-            ),
-        ).toThrow(
-            "Unsupported response_format for whisper model: diarized_json",
-        );
-    });
-});
-
-describe("subtitles when the provider reports no segments", () => {
-    // OVH answers segments: [] on every request while still returning word
-    // timings, which is why asking whisper for srt used to return an empty
-    // body (#13552).
-    const wordsOnly: NormalizedTranscript = {
-        text: "Hello world",
-        duration: 0.9,
-        words: [
-            { word: "Hello", start: 0, end: 0.26 },
-            { word: "world.", start: 0.26, end: 0.9 },
-        ],
-        segments: [],
-        diarizedSegments: [],
-    };
-
-    it("derives cues from word timings", async () => {
-        const srt = await format(wordsOnly, "srt").text();
-        expect(srt).toBe("1\n00:00:00,000 --> 00:00:00,900\nHello world.\n");
-    });
-
-    it("splits cues on sentence boundaries", async () => {
-        const twoSentences: NormalizedTranscript = {
-            ...wordsOnly,
-            text: "Hi there. Bye.",
-            duration: 4,
-            words: [
-                { word: "Hi", start: 0, end: 0.5 },
-                { word: "there.", start: 0.5, end: 1 },
-                { word: "Bye.", start: 3, end: 4 },
-            ],
-        };
-        const srt = await format(twoSentences, "srt").text();
-        expect(srt).toBe(
-            "1\n00:00:00,000 --> 00:00:01,000\nHi there.\n\n" +
-                "2\n00:00:03,000 --> 00:00:04,000\nBye.\n",
-        );
-    });
-
-    it("falls back to one file-spanning cue with neither segments nor words", async () => {
-        const bare: NormalizedTranscript = {
-            ...wordsOnly,
-            words: [],
-        };
-        const srt = await format(bare, "srt").text();
-        expect(srt).toBe("1\n00:00:00,000 --> 00:00:00,900\nHello world\n");
-    });
-
-    it("emits no cues for silence rather than an empty one", async () => {
+    it("describes silence with no segments rather than an empty one", async () => {
         const silent: NormalizedTranscript = {
-            ...wordsOnly,
+            ...WHISPER,
             text: "   ",
-            words: [],
+            segments: [],
         };
-        expect(await format(silent, "srt").text()).toBe("\n");
         const body = (await format(silent, "verbose_json").json()) as {
             segments: unknown[];
         };
         expect(body.segments).toEqual([]);
+    });
+
+    it.each([
+        "srt",
+        "vtt",
+        "diarized_json",
+    ])("rejects %s, which whisper cannot produce", (responseFormat) => {
+        // OVH answers segments: [] on every request, so subtitles could
+        // only be invented here; #13552 was that they came back empty.
+        expect(() =>
+            assertTranscriptionResponseFormat(
+                responseFormat,
+                "whisper model",
+                UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            ),
+        ).toThrow(
+            `Unsupported response_format for whisper model: ${responseFormat}`,
+        );
     });
 });

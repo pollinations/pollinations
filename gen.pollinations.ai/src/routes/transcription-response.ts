@@ -11,14 +11,17 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
  * response branch identically.
  */
 
-/** The formats `buildTranscriptionResponse` can emit. */
+/**
+ * The formats `buildTranscriptionResponse` can emit. srt/vtt are absent: cues
+ * need real segment boundaries and none of these providers report them, so a
+ * subtitle track here could only be invented. AssemblyAI serves those two
+ * formats from its own rendered subtitles instead.
+ */
 export const TRANSCRIPTION_RESPONSE_FORMATS = [
     "json",
     "text",
     "verbose_json",
     "diarized_json",
-    "srt",
-    "vtt",
 ] as const;
 
 /**
@@ -122,48 +125,11 @@ interface OpenAiSegment {
     no_speech_prob: number;
 }
 
-/** Cue bounds for derived segments, following common subtitle practice. */
-const MAX_CUE_SECONDS = 7;
-const MAX_CUE_CHARS = 84;
-
-/**
- * Group word timings into cues, breaking at sentence ends and capping length
- * so an unpunctuated run still splits. Only used when the provider reports no
- * segments of its own — OVH whisper answers `segments: []` even though it
- * returns per-word timings, which is why asking it for subtitles used to
- * produce an empty file.
- */
-function deriveSegments(words: NormalizedWord[]): NormalizedSegment[] {
-    const segments: NormalizedSegment[] = [];
-    let start: number | null = null;
-    let parts: string[] = [];
-    words.forEach((word, index) => {
-        const token = word.word.trim();
-        if (!token) return;
-        if (start === null) start = word.start;
-        parts.push(token);
-        const text = parts.join(" ");
-        const isLast = index === words.length - 1;
-        const endsSentence = /[.!?。？！]["'\u201d\u2019)\]]?$/.test(token);
-        const isFull =
-            word.end - start >= MAX_CUE_SECONDS || text.length >= MAX_CUE_CHARS;
-        if (isLast || endsSentence || isFull) {
-            segments.push({ start, end: word.end, text });
-            start = null;
-            parts = [];
-        }
-    });
-    return segments;
-}
-
 function toOpenAiSegments(normalized: NormalizedTranscript): OpenAiSegment[] {
-    const timed = normalized.segments.length
+    // One file-spanning placeholder when the provider reports no segments,
+    // and none at all for silence, which has nothing to describe.
+    const source: NormalizedSegment[] = normalized.segments.length
         ? normalized.segments
-        : deriveSegments(normalized.words);
-    // Nothing timed anywhere: one cue spanning the file, which is coarse but
-    // honest. Silence has no speech to caption, so it stays empty.
-    const source: NormalizedSegment[] = timed.length
-        ? timed
         : normalized.text.trim()
           ? [{ start: 0, end: normalized.duration, text: normalized.text }]
           : [];
@@ -179,28 +145,6 @@ function toOpenAiSegments(normalized: NormalizedTranscript): OpenAiSegment[] {
         compression_ratio: 0,
         no_speech_prob: 0,
     }));
-}
-
-/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
-function formatTimestamp(seconds: number, sep: "," | "."): string {
-    const ms = Math.round(seconds * 1000);
-    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
-    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
-    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
-    const msPart = String(ms % 1000).padStart(3, "0");
-    return `${h}:${m}:${s}${sep}${msPart}`;
-}
-
-function toSubtitles(segments: OpenAiSegment[], kind: "srt" | "vtt"): string {
-    const sep = kind === "srt" ? "," : ".";
-    const cues = segments.map((seg, i) => {
-        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
-        const head = kind === "srt" ? `${i + 1}\n` : "";
-        return `${head}${time}\n${seg.text.trim()}`;
-    });
-    return kind === "vtt"
-        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
-        : `${cues.join("\n\n")}\n`;
 }
 
 export function buildTranscriptionResponse(opts: {
@@ -247,18 +191,6 @@ export function buildTranscriptionResponse(opts: {
                 usage,
             },
             { headers: usageHeaders },
-        );
-    }
-
-    if (responseFormat === "srt" || responseFormat === "vtt") {
-        return new Response(
-            toSubtitles(toOpenAiSegments(normalized), responseFormat),
-            {
-                headers: {
-                    "Content-Type": "text/plain; charset=utf-8",
-                    ...usageHeaders,
-                },
-            },
         );
     }
 

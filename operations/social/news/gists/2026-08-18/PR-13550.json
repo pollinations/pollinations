@@ -1,0 +1,35 @@
+{
+  "pr_number": 13550,
+  "title": "Add Kokoro Roto — Anime Art Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13550",
+  "merged_at": "2026-08-18T18:10:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Kokoro Roto — Anime Art Generator](https://geneberna.github.io/kokoro-roto-anime) to image\n- A free, no-signup web app to generate anime-style art with AI. Type an idea, pick a mood (dramatic, sad, epic, portrait), choose a format, and instantly create anime characters and scenes. Powered by \n\nFixes #13549",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Anime blooms in the hive",
+    "blurb": "Kokoro Roto has landed in the image garden: a free, no-signup place to turn an idea and a mood into anime scenes. Pick dramatic, sad, epic, or portrait; the pixels handle the melodrama.",
+    "summary": "Added Kokoro Roto — Anime Art Generator to the image app directory, offering free no-signup AI anime generation with mood presets and format choices.",
+    "impact": "People browsing image apps can now find Kokoro Roto and quickly create anime characters or scenes from a prompt, mood, and chosen format.",
+    "keywords": [
+      "community-app",
+      "anime-art",
+      "image-generation",
+      "Kokoro-Roto",
+      "no-signup"
+    ],
+    "visual_concept": "Depict Kokoro Roto as a cozy anime-art studio inside the Pollinations garden: Polli, wearing a tiny painter's beret, helps a retro easel-monitor display a soft anime character portrait. Use floating mood cards labeled DRAMATIC, SAD, EPIC, and PORTRAIT, with flowers and code-plants growing around the workspace to represent an accessible community image app.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny painter's beret, hovering beside a retro easel-monitor that displays a gentle anime character portrait; pastel mood cards read “DRAMATIC,” “SAD,” “EPIC,” and “PORTRAIT,” surrounded by blooming code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13550.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny painter's beret, hovering beside a retro easel-monitor that displays a gentle anime character portrait; pastel mood cards read “DRAMATIC,” “SAD,” “EPIC,” and “PORTRAIT,” surrounded by blooming code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-18T18:14:08.989429+00:00",
+  "app_name": "Kokoro Roto — Anime Art Generator",
+  "app_url": "https://geneberna.github.io/kokoro-roto-anime"
+}

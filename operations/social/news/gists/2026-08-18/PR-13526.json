@@ -1,0 +1,34 @@
+{
+  "pr_number": 13526,
+  "title": "refactor: drop the hidden-fallback EXIF model mask",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13526",
+  "merged_at": "2026-08-18T03:03:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the `hiddenFallback` branch in `generateMediaWithFallback` and the now-dead `metadataModel` parameter it fed through `generateImageResult` → `createAndReturnImageCached`.\n- `metadataModel` reached only `prepareMetadata` → `writeExifMetadata` (EXIF `Make` + `UserComment`); generation itself always used the real `safeParams`. The returned `params` reached only `mediaHeaders`, where `x-model-used` comes from `trackingData.actualModel` (`zImageFalModel.ts:76` always sets `\"zimage-fal\"`). No change to headers, R2 cache key (URL-derived), dedup, cost, or price — cost still follows `servedModelEntry`, price still follows the requested model.\n- `hidden` means unlisted, not secret (`registry.ts:204`, `model-registry.ts:211-214`), and the current behaviour was inconsistent: a direct `?model=zimage-fal` request already wrote that id into EXIF, since `entry` is only populated on fallback candidates (`fallback.ts:202-220`).\n- The served id is public anyway via `x-model-used` / `x-fallback-target`, both persisted and replayed by the media cache; #13523 deliberately kept `x-model-used` naming the served model.\n- Added in #13006 for `flux-replicate`, which no longer exists; `zimage-fal` is the only remaining `hidden: true` entry. No test asserted the mask — `test/image/zImageFalFallback.test.ts`, `test/image/zImageFalModel.test.ts`, `test/fallback.test.ts` (21 passed) and all of `test/image` (265 passed) are unchanged and green, as is `npm run typecheck`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "No more model costumes",
+    "blurb": "The image pipeline stopped carrying a spare EXIF disguise for fallback models. Metadata now follows the same public served-model trail the headers already use.",
+    "summary": "Removed the dead hiddenFallback/metadataModel path so image EXIF metadata no longer uses a fallback-only model mask; generation, cache keys, costs, prices, and x-model-used headers remain unchanged.",
+    "impact": "Model metadata is now consistent between direct and fallback image requests, while existing generation behavior and cached responses continue as before.",
+    "keywords": [
+      "image-api",
+      "exif",
+      "metadata",
+      "fallbacks",
+      "zimage-fal",
+      "refactor"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy image-processing garden: an old unused mask is being placed in a compost bin while a retro camera prints a photo with a clear model label. The scene represents removing metadata-only indirection while preserving the real generation path and public headers.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files an old theatrical mask into a compost bin beside a retro camera printing a clearly labeled image. Lime green (#ecf874) code-plants and small flowers grow around a warm cream terminal showing simple pixel text: 'MODEL'; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13526.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she files an old theatrical mask into a compost bin beside a retro camera printing a clearly labeled image. Lime green (#ecf874) code-plants and small flowers grow around a warm cream terminal showing simple pixel text: 'MODEL'; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-18T03:04:53.544587+00:00"
+}

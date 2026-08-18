@@ -1,0 +1,34 @@
+{
+  "pr_number": 13416,
+  "title": "feat: support speech-to-text (transcription) modality for community models",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/13416",
+  "merged_at": "2026-08-18T19:16:30Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds a `transcription` modality to community endpoints (My Models): register an OpenAI-compatible upstream for `/v1/audio/transcriptions`.\n- Enter: `/test` probes the endpoint with a sample audio file and reports `billableUsage.promptAudioSeconds`.\n- Gen: `/v1/audio/transcriptions` proxies to the community upstream and attaches `x-usage-prompt-audio-seconds` + `x-model-used` usage headers.\n- Billing mirrors first-party whisper/scribe: billed against `promptAudioPrice` (shared `promptAudioPrice` column) per audio second; duration read from `usage.duration` or `usage.seconds`, missing duration bills zero.\n- Frontend: transcription option in the My Models dialog, base price key row, placeholders, fallback options.\n- `normalizeCommunityEndpointInputModalities` now defaults transcription endpoints to `[\"audio\"]` instead of `[\"text\"]`.\n\n## Tests\n- Enter service probe tests (4): duration/seconds/zero/no-text.\n- Gen unit tests (5): URL derivation, supported-endpoint restriction, definition/price, billing forwarding.\n- Gen integration test: register → probe → gen transcription call → usage headers → `/audio/models` + `/v1/models` listing.\n- `npx vitest run` on affected files green; typecheck green both services.\n\n## Related\nFixes #13225",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "My Models learned to listen",
+    "blurb": "Community models can now lend the hive an ear. Register an OpenAI-compatible transcription endpoint, test it with sample audio, and turn spoken buzzing into text through the usual API.",
+    "summary": "Added a `transcription` modality for My Models, letting community OpenAI-compatible endpoints serve `/v1/audio/transcriptions` with per-second `promptAudioPrice` billing and audio-usage headers.",
+    "impact": "Developers can register, test, list, and call community speech-to-text models alongside first-party Whisper and Scribe, with `x-usage-prompt-audio-seconds` and `x-model-used` returned for each transcription.",
+    "keywords": [
+      "community-models",
+      "speech-to-text",
+      "transcription",
+      "audio-api",
+      "billing",
+      "openai-compatible"
+    ],
+    "visual_concept": "Polli wears tiny studio headphones and listens to a retro microphone beside a cozy community-model terminal. Gentle sound waves become neat pixel text and sprout into little code-flowers, while the eager CRT Monitor Robot displays an `/v1/audio/transcriptions` card and a small per-second meter.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny studio headphones while listening beside a retro microphone; soft audio waveforms flow into a lime green (#ecf874) terminal showing simple pixel text, then bloom into small code-flowers. A friendly chunky CRT monitor robot holds a card reading '/v1/audio/transcriptions', with warm cream, mint, lavender, and peach pastel surroundings, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13416.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny studio headphones while listening beside a retro microphone; soft audio waveforms flow into a lime green (#ecf874) terminal showing simple pixel text, then bloom into small code-flowers. A friendly chunky CRT monitor robot holds a card reading '/v1/audio/transcriptions', with warm cream, mint, lavender, and peach pastel surroundings, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-18T19:17:35.054915+00:00"
+}

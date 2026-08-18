@@ -6,6 +6,7 @@ import {
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communityTranscriptionSeconds,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -250,23 +251,19 @@ export async function testCommunityTranscriptionEndpoint({
         throw new Error("Endpoint did not return OpenAI transcription text");
     }
 
-    // Duration is optional; when absent the endpoint is still usable, it just
-    // bills zero audio seconds (callers are never charged more than reported).
+    // The duration is what the endpoint is billed on, so one that cannot report
+    // it must not register — otherwise every request through it would be
+    // unbillable and the owner would earn nothing.
+    const promptAudioSeconds = communityTranscriptionSeconds(body);
+    if (promptAudioSeconds === null) {
+        throw new Error(
+            "Endpoint did not report audio duration (usage.duration, usage.seconds, or duration), which is required to bill transcription",
+        );
+    }
     const usage: CommunityEndpointUsage | undefined =
         body && typeof body === "object" && "usage" in body
             ? (body as { usage?: CommunityEndpointUsage }).usage
             : undefined;
-    const duration =
-        usage &&
-        (("duration" in usage &&
-            typeof usage.duration === "number" &&
-            usage.duration > 0 &&
-            usage.duration) ||
-            ("seconds" in usage &&
-                typeof usage.seconds === "number" &&
-                usage.seconds > 0 &&
-                usage.seconds));
-    const promptAudioSeconds = typeof duration === "number" ? duration : 0;
 
     return {
         usage: { ...usage } as CommunityEndpointUsage,

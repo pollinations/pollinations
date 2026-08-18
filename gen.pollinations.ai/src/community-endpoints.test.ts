@@ -1116,10 +1116,12 @@ describe("community endpoint helpers", () => {
             ).toBe("3");
         });
 
-        it("bills zero audio seconds when the upstream reports no duration", async () => {
+        it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
             vi.stubGlobal(
                 "fetch",
-                vi.fn(async () => Response.json({ text: "Hello" })),
+                vi.fn(async () =>
+                    Response.json({ text: "Hello", duration: 8.25 }),
+                ),
             );
 
             const response = await callCommunityTranscriptionEndpoint(
@@ -1129,34 +1131,38 @@ describe("community endpoint helpers", () => {
             );
             expect(
                 response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
-            ).toBeNull();
+            ).toBe("8.25");
         });
 
-        it("passes through non-JSON response formats with usage headers", async () => {
+        it("fails rather than billing zero when the upstream reports no duration", async () => {
             vi.stubGlobal(
                 "fetch",
-                vi.fn(
-                    async () =>
-                        new Response("Hello world", {
-                            headers: {
-                                "Content-Type": "text/plain; charset=utf-8",
-                            },
-                        }),
-                ),
+                vi.fn(async () => Response.json({ text: "Hello" })),
             );
 
-            const response = await callCommunityTranscriptionEndpoint(
-                await transcriptionEndpoint(),
-                { file: audioFile, responseFormat: "text" },
-                secret,
-            );
-            expect(await response.text()).toBe("Hello world");
-            expect(response.headers.get("content-type")).toContain(
-                "text/plain",
-            );
-            expect(
-                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
-            ).toBeNull();
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects non-JSON response formats, which cannot carry a duration", async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile, responseFormat: "text" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            // Rejected before any upstream work is done, so nothing is
+            // transcribed for free.
+            expect(fetchMock).not.toHaveBeenCalled();
         });
 
         it("propagates upstream transcription failures", async () => {

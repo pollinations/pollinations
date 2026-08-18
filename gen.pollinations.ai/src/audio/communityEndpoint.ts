@@ -1,6 +1,8 @@
 import {
+    COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS,
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
+    communityTranscriptionSeconds,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
@@ -31,6 +33,19 @@ export async function callCommunityTranscriptionEndpoint(
         throw new Error(
             `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
         );
+    }
+    // These endpoints bill on the duration they report, which only the JSON
+    // shapes carry. Reject the others up front instead of transcribing for
+    // free.
+    if (
+        options.responseFormat &&
+        !(
+            COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS as readonly string[]
+        ).includes(options.responseFormat)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Community transcription endpoints support response_format ${COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS.join(" or ")}, got '${options.responseFormat}'`,
+        });
     }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
@@ -99,37 +114,25 @@ export async function callCommunityTranscriptionEndpoint(
     });
 }
 
-// OpenAI-compatible transcription endpoints report audio duration as
-// usage.duration (OpenAI) or usage.seconds (whisper-style). A missing value
-// bills zero seconds — callers are never charged more than reported.
+// The duration is the meter, so an endpoint that does not report one is a
+// provider regression rather than a free request — the same stance every other
+// per-second path takes (getUploadedMusicDurationSeconds, extractWhisperUsage)
+// and the same stance the image path takes on missing token usage. The
+// registration probe rejects endpoints that cannot report, so reaching this is
+// a regression in an endpoint that could.
 function transcriptionDuration(bodyText: string): number {
     let parsed: unknown;
     try {
         parsed = JSON.parse(bodyText);
     } catch {
-        return 0;
+        parsed = null;
     }
-    if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        !("usage" in parsed) ||
-        !parsed.usage ||
-        typeof parsed.usage !== "object"
-    ) {
-        return 0;
-    }
-    const usage = parsed.usage as {
-        duration?: unknown;
-        seconds?: unknown;
-    };
-    const seconds =
-        typeof usage.duration === "number" ? usage.duration : usage.seconds;
-    if (
-        typeof seconds !== "number" ||
-        !Number.isFinite(seconds) ||
-        seconds < 0
-    ) {
-        return 0;
+    const seconds = communityTranscriptionSeconds(parsed);
+    if (seconds === null) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community transcription endpoint did not report audio duration",
+        });
     }
     return seconds;
 }

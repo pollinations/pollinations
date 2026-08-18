@@ -43,9 +43,12 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
-// Per-second audio (STT/TTS) prices are tiny compared to per-token rates; the
-// ceiling mirrors the priciest first-party model, not the per-token bound.
-export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.006;
+// Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
+// this ceiling is written per minute and divided down: $0.012/min is ~2x
+// OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model
+// (scribe, $0.00367/min). Keep the division visible — a bare 0.006 here reads
+// like OpenAI's per-minute rate but would bill 60x that per second.
+export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.012 / 60;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
@@ -532,6 +535,39 @@ export function communityImageEditsUrl(baseUrl: string): string {
 
 export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
+}
+
+// Only JSON shapes can carry the duration these endpoints are billed on, so
+// text/srt/vtt are rejected before we do the work rather than transcribed for
+// free.
+export const COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS = [
+    "json",
+    "verbose_json",
+] as const;
+
+/**
+ * Audio duration reported by an OpenAI-compatible transcription response.
+ *
+ * The three shapes in the wild: gpt-4o-transcribe reports `usage.seconds`,
+ * whisper-style servers report `usage.duration`, and stock whisper
+ * `verbose_json` puts `duration` at the top level. Returns null when none of
+ * them carry a usable number — callers decide what that means, and both the
+ * registration probe and the request path treat it as a failure so an endpoint
+ * that cannot be metered is never billed at zero.
+ */
+export function communityTranscriptionSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const usage =
+        record.usage && typeof record.usage === "object"
+            ? (record.usage as Record<string, unknown>)
+            : undefined;
+    for (const value of [usage?.duration, usage?.seconds, record.duration]) {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return null;
 }
 
 export function communityOpenAIBaseUrl(baseUrl: string): string {

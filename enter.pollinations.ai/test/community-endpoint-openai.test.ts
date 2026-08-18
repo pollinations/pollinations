@@ -367,7 +367,24 @@ describe("community endpoint OpenAI service", () => {
         });
     });
 
-    it("bills zero audio seconds when transcription upstreams omit duration", async () => {
+    it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "Hello", duration: 4.5 })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toMatchObject({
+            billableUsage: { promptAudioSeconds: 4.5 },
+        });
+    });
+
+    it("refuses to register a transcription endpoint that omits duration", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => Response.json({ text: "Hello" })),
@@ -379,10 +396,7 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "whisper-1",
             }),
-        ).resolves.toEqual({
-            usage: {},
-            billableUsage: { promptAudioSeconds: 0 },
-        });
+        ).rejects.toThrow("did not report audio duration");
     });
 
     it("rejects transcription responses without text", async () => {

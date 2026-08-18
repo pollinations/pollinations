@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "AI Art & Image Generator",
+    "url": "https://ai-image-generator-w-m5n8.bolt.host",
+    "description": "AI Art & Image Generator utilizes the powerful Pollinations.ai API to transform your text prompts into high-quality digital art instantly. It’s designed to provide a fast and creative collaborative ex",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "himasdiary1224-cyber",
+    "githubUserId": "318231001",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "Pasindu Rashmika",
+    "other": null,
+    "submittedDate": "2026-08-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13542",
+    "approvedDate": "2026-08-18",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "Intelligent Diagnostic Assessment",
     "url": "https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica",

@@ -1243,9 +1243,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();
-                update.disabledReason = input.active
-                    ? null
-                    : "Deactivated by owner";
+                update.disabledReason = input.active ? null : "Hidden by owner";
                 update.disabledBy = input.active ? null : "owner";
             }
             const storedImagePricing = normalizeCommunityEndpointImagePricing(

@@ -70,7 +70,7 @@ export type FallbackModelOption = {
 
 /**
  * Public community models from the model catalog, in dialog option form. The
- * catalog already excludes private and deactivated models, and the server
+ * catalog already excludes private and hidden models, and the server
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(

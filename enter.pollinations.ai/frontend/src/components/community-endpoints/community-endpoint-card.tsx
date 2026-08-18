@@ -87,8 +87,8 @@ export function CommunityEndpointCard({
                         {isToggling
                             ? "Saving…"
                             : endpoint.disabled
-                              ? "Reactivate"
-                              : "Deactivate"}
+                              ? "Relist"
+                              : "Hide"}
                     </Button>
                     <IconButton
                         intent="info"
@@ -114,10 +114,10 @@ export function CommunityEndpointCard({
             {endpoint.disabled && (
                 <Alert intent="danger" className="mt-3">
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model deactivated</span>
+                        <span className="font-semibold">Model hidden</span>
                         <span className="text-sm">
                             {endpoint.disabledReason ??
-                                "Deactivated due to repeated failures."}
+                                "Hidden due to repeated failures."}
                         </span>
                     </div>
                 </Alert>

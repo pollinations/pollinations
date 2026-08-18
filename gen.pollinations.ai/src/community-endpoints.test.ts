@@ -1841,7 +1841,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a deactivated community model from public model catalogs",
+    "excludes a hidden community model from public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -1855,7 +1855,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -2079,7 +2079,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects a direct chat completion against a deactivated community model",
+    "routes direct calls to a hidden community model",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -2097,7 +2097,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -2112,6 +2112,37 @@ fixtureTest(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isPortkeyChatCompletionsRequest(request)) {
+                return Response.json({
+                    id: "chatcmpl_hidden",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 1,
+                        total_tokens: 3,
+                    },
+                });
+            }
+
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
 
         for (const requestedModel of [modelId, legacyModelId]) {
             const response = await fetchGen(
@@ -2130,13 +2161,16 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(400);
-            const body = (await response.json()) as {
-                error?: { message?: string };
-            };
-            expect(body.error?.message).toContain("Invalid model or alias");
-            expect(body.error?.message).not.toContain("repeated upstream 500s");
+            expect(response.status).toBe(200);
+            await expect(response.json()).resolves.toMatchObject({
+                choices: [{ message: { content: "ok" } }],
+            });
         }
+
+        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
+            isPortkeyChatCompletionsRequest(new Request(input, init)),
+        );
+        expect(upstreamCalls).toHaveLength(2);
     },
 );
 

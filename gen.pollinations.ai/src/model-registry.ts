@@ -207,15 +207,7 @@ function buildRegistry(
     entries.sort(compareModelEntries);
 
     return {
-        resolve: (model) => {
-            const entry = byIdOrAlias.get(model) ?? null;
-            // Deactivated community models don't exist as far as callers are
-            // concerned — unlike static `hidden` models (intentionally
-            // unlisted but still callable), a disabled community endpoint is
-            // broken and must be unreachable everywhere, not just unlisted.
-            if (entry?.communityEndpoint?.disabledAt) return null;
-            return entry;
-        },
+        resolve: (model) => byIdOrAlias.get(model) ?? null,
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;

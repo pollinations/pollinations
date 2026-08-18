@@ -31,12 +31,17 @@ import type { RequestData, TransformOptions } from "./types.js";
  * carry a key to bill, since falling back to the saved bearer would quietly
  * move the cost of the agent's work onto the endpoint owner.
  */
-async function mintDelegatedToken(
-    endpoint: CommunityEndpointRuntime,
-    parentApiKeyId: string | undefined,
-    secret: string,
-    parentRequestId: string,
-): Promise<string | undefined> {
+async function mintDelegatedToken({
+    endpoint,
+    parentApiKeyId,
+    parentRequestId,
+    secret,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    parentApiKeyId: string | undefined;
+    parentRequestId: string;
+    secret: string;
+}): Promise<string | undefined> {
     if (!isDelegatingEndpoint(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
@@ -78,12 +83,12 @@ export async function communityEndpointGatewayContext({
     parentApiKeyId?: string;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
-    const runToken = await mintDelegatedToken(
+    const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
-        secret,
         parentRequestId,
-    );
+        secret,
+    });
     // A delegating endpoint is sent the run token instead of its saved bearer,
     // so it never receives a credential it could spend on the owner's account.
     // An agent has no saved bearer at all: mintDelegatedToken always returns a

@@ -36,7 +36,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -160,7 +163,7 @@ type FallbackPrimary = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
-    inputModalities?: readonly string[] | null;
+    inputModalities?: readonly ModelInputModality[] | null;
 };
 
 function fallbackTargetMissingMessage(modelId: string): string {

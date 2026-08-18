@@ -911,6 +911,9 @@ export async function transcribeWithXai(opts: {
                     start: word.start,
                     end: word.end,
                 })) ?? [],
+            // xAI reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupXaiWordsBySpeaker(transcript.words),
         },
         responseFormat,
@@ -1059,6 +1062,9 @@ export async function transcribeWithElevenLabs(opts: {
                     start: w.start,
                     end: w.end,
                 })) ?? [],
+            // Scribe reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupScribeUtterances(elevenLabsData.words),
         },
         responseFormat,

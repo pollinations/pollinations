@@ -1226,6 +1226,91 @@ describe("community endpoint helpers", () => {
             });
         });
 
+        it("serves the endpoint's own segments and words, not an invented one", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world. Goodbye.",
+                        language: "en",
+                        duration: 6,
+                        segments: [
+                            { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                            { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                        ],
+                        words: [
+                            { word: "Hello", start: 0, end: 0.6 },
+                            { word: "world.", start: 0.6, end: 2.5 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [
+                    { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                    { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                ],
+                words: [
+                    { word: "Hello", start: 0, end: 0.6 },
+                    { word: "world.", start: 0.6, end: 2.5 },
+                ],
+            });
+        });
+
+        it("falls back to one file-spanning segment when the endpoint reports none", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello world", duration: 6 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 6, text: "Hello world" }],
+                words: [],
+            });
+        });
+
+        it("skips upstream segments that are not fully timed", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        duration: 6,
+                        segments: [
+                            { start: 0, end: 2, text: "Hello" },
+                            { start: 2, text: "world" },
+                            { start: 4, end: 6 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 2, text: "Hello" }],
+            });
+        });
+
         it("rejects diarized_json rather than answering with empty segments", async () => {
             const fetchMock = vi.fn(async () =>
                 Response.json({ text: "Hello", usage: { seconds: 1 } }),

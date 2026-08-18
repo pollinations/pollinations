@@ -49,6 +49,12 @@ export interface NormalizedWord {
     end: number;
 }
 
+export interface NormalizedSegment {
+    start: number;
+    end: number;
+    text: string;
+}
+
 export interface NormalizedDiarizedSegment {
     start: number;
     end: number;
@@ -63,6 +69,12 @@ export interface NormalizedTranscript {
     /** Duration in seconds. */
     duration: number;
     words: NormalizedWord[];
+    /**
+     * Timed segments as reported upstream, empty when the provider reports
+     * none. verbose_json then falls back to a single segment spanning the
+     * whole file, which is a placeholder rather than a measurement.
+     */
+    segments: NormalizedSegment[];
     diarizedSegments: NormalizedDiarizedSegment[];
 }
 
@@ -112,14 +124,24 @@ export function buildTranscriptionResponse(opts: {
             language: normalized.language || "unknown",
             duration,
             words: normalized.words,
-            segments: [
-                {
-                    id: 0,
-                    start: 0,
-                    end: duration,
-                    text,
-                },
-            ],
+            // Prefer what the provider measured. Inventing one file-spanning
+            // segment when it already sent real ones would hand the caller
+            // worse timings than the upstream produced.
+            segments: normalized.segments.length
+                ? normalized.segments.map((segment, index) => ({
+                      id: index,
+                      start: segment.start,
+                      end: segment.end,
+                      text: segment.text,
+                  }))
+                : [
+                      {
+                          id: 0,
+                          start: 0,
+                          end: duration,
+                          text,
+                      },
+                  ],
             usage,
         };
         return Response.json(body, { headers: usageHeaders });

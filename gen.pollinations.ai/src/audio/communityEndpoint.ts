@@ -15,6 +15,8 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
     assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
+    type NormalizedSegment,
+    type NormalizedWord,
 } from "../routes/transcription-response.ts";
 
 const COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS = [
@@ -116,7 +118,11 @@ export async function callCommunityTranscriptionEndpoint(
             text: transcript.text,
             language: transcript.language,
             duration: transcript.duration,
-            words: [],
+            words: transcript.words,
+            segments: transcript.segments,
+            // We never ask the endpoint to diarize, so there are no speakers
+            // to report; diarized_json is rejected above rather than answered
+            // with an empty list.
             diarizedSegments: [],
         },
         responseFormat,
@@ -136,6 +142,8 @@ function parseCommunityTranscription(bodyText: string): {
     text: string;
     language?: string;
     duration: number;
+    words: NormalizedWord[];
+    segments: NormalizedSegment[];
 } {
     let parsed: unknown;
     try {
@@ -162,5 +170,44 @@ function parseCommunityTranscription(bodyText: string): {
         language:
             typeof record.language === "string" ? record.language : undefined,
         duration,
+        words: toTimedWords(record.words),
+        segments: toTimedSegments(record.segments),
     };
+}
+
+// verbose_json carries the endpoint's own timings alongside the duration we
+// bill on. Take them: a self-hosted whisper server measured these, we did not,
+// and dropping them makes the caller's verbose_json poorer than the upstream's.
+// Entries that are not fully timed are skipped rather than defaulted, so a
+// partial upstream degrades to fewer segments instead of wrong ones.
+function toTimedSegments(value: unknown): NormalizedSegment[] {
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((entry) => {
+        if (!entry || typeof entry !== "object") return [];
+        const { start, end, text } = entry as Record<string, unknown>;
+        if (
+            typeof start !== "number" ||
+            typeof end !== "number" ||
+            typeof text !== "string"
+        ) {
+            return [];
+        }
+        return [{ start, end, text }];
+    });
+}
+
+function toTimedWords(value: unknown): NormalizedWord[] {
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((entry) => {
+        if (!entry || typeof entry !== "object") return [];
+        const { start, end, word } = entry as Record<string, unknown>;
+        if (
+            typeof start !== "number" ||
+            typeof end !== "number" ||
+            typeof word !== "string"
+        ) {
+            return [];
+        }
+        return [{ word, start, end }];
+    });
 }

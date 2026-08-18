@@ -10,8 +10,10 @@ const MAX_CLOCK_SKEW_SECONDS = 5;
 export type AgentRunClaims = {
     parentApiKeyId: string;
     // The request_id of the call that minted this token, so its generations can
-    // be grouped. Signed rather than sent as a header: headers are
-    // client-settable and request_id is keyed on elsewhere (#12889).
+    // be grouped. The agent's steps arrive as separate requests, each minting
+    // its own id, and this token is the only thing that crosses that hop. Keep
+    // it in the signature: the agent holds the token, so a header carrying the
+    // same id would be a value the agent gets to choose.
     parentRequestId: string;
     runId: string;
     managedAgentId?: string;

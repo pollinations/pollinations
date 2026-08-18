@@ -6,10 +6,10 @@ import type { ModelDefinition } from "./registry";
  *
  * Everything left out is inherited from that model, so the public identity a
  * caller sees — title, brand, modalities — can never drift from the model they
- * asked for. `id` and `provider` are always stated: a route is a model like any
- * other, dispatched by id and attributed to its provider. The omitted fields are
- * owned by the merge — a route is always hidden, carries no aliases of its own,
- * and never chains further.
+ * asked for. `provider` is required because it is the one thing a route must
+ * not inherit: it is what makes the route a route, and what the spend is
+ * attributed to. The omitted fields are owned by the merge — a route is always
+ * hidden, carries no aliases of its own, and never chains further.
  */
 export type FallbackDefinition = Partial<
     Omit<
@@ -20,29 +20,24 @@ export type FallbackDefinition = Partial<
         | "hidden"
         | "provider"
     >
-> & { id: string; provider: string };
+> & { provider: string };
 
 /**
- * Fallback targets, keyed by the model they serve and tried in order.
- *
- * A string names an existing top-level model; an object defines an internal
- * route. Both live in the same ordered list, so the try-order is readable in
- * one place.
+ * Fallback routes, keyed by the model they serve and then by the id each route
+ * is registered under — the same key-is-the-id shape as the catalogs they merge
+ * into. Routes are tried in key order, ahead of any cross-model `fallbacks` the
+ * model declares itself, since a route still serves the model that was asked
+ * for.
  */
-export type FallbackMap = Record<
-    string,
-    readonly (string | FallbackDefinition)[]
->;
+export type FallbackMap = Record<string, Record<string, FallbackDefinition>>;
 
-/** Ids contributed by parents that define routes, not just name existing models. */
-type RouteIds<TFallbacks extends FallbackMap> = Extract<
-    TFallbacks[keyof TFallbacks][number],
-    FallbackDefinition
->["id"];
+/** The ids the merge adds to the catalog. */
+type RouteIds<TFallbacks extends FallbackMap> =
+    keyof TFallbacks[keyof TFallbacks] & string;
 
 /**
- * Merges fallback targets into a service catalog: every parent gains the
- * `fallbacks` list naming its targets in order, and each route is expanded into
+ * Merges fallback routes into a service catalog: every parent gains the
+ * `fallbacks` list naming its routes in order, and each route is expanded into
  * a full model definition placed directly after it, so ids and order match what
  * the catalog would look like if the routes were written out by hand.
  */
@@ -56,16 +51,14 @@ export function mergeFallbacks<
 ): TBase & Record<RouteIds<TFallbacks>, ModelDefinition> {
     const merged: Record<string, ModelDefinition> = {};
     for (const [parentId, parent] of Object.entries(base)) {
-        const targets = (fallbacks as FallbackMap)[parentId];
-        if (!targets) {
+        const routes = (fallbacks as FallbackMap)[parentId];
+        if (!routes) {
             merged[parentId] = parent;
             continue;
         }
         merged[parentId] = {
             ...parent,
-            fallbacks: targets.map((target) =>
-                typeof target === "string" ? target : target.id,
-            ),
+            fallbacks: [...Object.keys(routes), ...(parent.fallbacks ?? [])],
         };
         const {
             aliases: _aliases,
@@ -73,11 +66,8 @@ export function mergeFallbacks<
             fallbackOnStatusCodes: _statusCodes,
             ...inherited
         } = parent;
-        for (const target of targets) {
-            // A string names an existing model; only objects define a route.
-            if (typeof target === "string") continue;
-            const { id, ...overrides } = target;
-            merged[id] = {
+        for (const [routeId, overrides] of Object.entries(routes)) {
+            merged[routeId] = {
                 ...inherited,
                 ...overrides,
                 aliases: [],

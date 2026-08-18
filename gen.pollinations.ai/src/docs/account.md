@@ -9,8 +9,9 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/profile` | GitHub username, image, and community model access |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
-| `GET /account/usage` | Per-request usage history with costs |
+| `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
+| `GET /account/key/usage` | Usage history for the calling API key only |
 | `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
@@ -20,7 +21,16 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 
 ### GET /account/balance
 
-Returns remaining pollen. If the API key has a budget, returns key budget instead. Full account balance requires `account:usage`.
+`balance` is the amount visible to this caller and is kept stable for existing clients:
+
+- Budgeted API keys always get the key's remaining budget in `balance` (no extra scope).
+- Sessions and unbudgeted keys get the account total (Quest Pollen + paid) in `balance`. That path requires `account:usage` for API keys.
+
+When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see Quest Pollen vs paid Pollen. Budgeted keys without `account:usage` do **not** receive `accountBalance` — that would leak the owner's wallet.
+
+### GET /account/key/usage
+
+Usage history for the API key used in the request. No extra scope — a key can always read its own usage. For account-wide usage across all keys, use `GET /account/usage` with `account:usage`.
 
 ### GET /account/quests
 

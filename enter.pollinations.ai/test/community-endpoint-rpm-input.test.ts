@@ -33,10 +33,42 @@ describe("community endpoint per-user RPM input", () => {
                 mcpServers: ["pollinations"],
             }),
         ).toEqual({
+            kind: "prompt",
             systemPrompt: "Help",
             baseModel: "openai",
             mcpServers: ["pollinations"],
         });
+    });
+
+    it("serializes the endpoint-agent fields", () => {
+        expect(
+            toAgentPayload({
+                ...emptyAgentForm,
+                agentKind: "endpoint",
+                baseUrl: " https://api.example.com/v1 ",
+                upstreamModel: " my-agent ",
+            }),
+        ).toEqual({
+            kind: "endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "my-agent",
+        });
+    });
+
+    it("omits an unset upstream model so the listing name is sent", () => {
+        expect(
+            toAgentPayload({
+                ...emptyAgentForm,
+                agentKind: "endpoint",
+                baseUrl: "https://api.example.com/v1",
+            }),
+        ).not.toHaveProperty("upstreamModel");
+    });
+
+    it("requires an endpoint for an endpoint agent", () => {
+        expect(() =>
+            toAgentPayload({ ...emptyAgentForm, agentKind: "endpoint" }),
+        ).toThrow("Endpoint URL is required");
     });
 
     it("does not offer agent listings as fallback models", () => {

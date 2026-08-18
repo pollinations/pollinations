@@ -9,7 +9,7 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
-    type ExternalCommunityEndpointRuntime,
+    type ModelCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
@@ -116,8 +116,8 @@ function createTestApp(
 
 function createCommunityEndpoint(
     ownerUserId: string,
-    overrides: Partial<ExternalCommunityEndpointRuntime> = {},
-): ExternalCommunityEndpointRuntime {
+    overrides: Partial<ModelCommunityEndpointRuntime> = {},
+): ModelCommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
         ownerUserId,
@@ -125,8 +125,7 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
-        kind: "external",
-        delegatesGeneration: false,
+        kind: "model",
         modality: "text",
         imagePricing: "request",
         inputModalities: null,

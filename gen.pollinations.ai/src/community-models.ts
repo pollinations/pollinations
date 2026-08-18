@@ -75,6 +75,7 @@ export async function getCommunityModelRegistryEntries(
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
             inputModalities: schema.communityEndpoint.inputModalities,
+            kind: schema.communityEndpoint.kind,
             agentId: schema.communityEndpoint.agentId,
             agentConfig: schema.agent.config,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
@@ -83,7 +84,6 @@ export async function getCommunityModelRegistryEntries(
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
             perUserRpm: schema.communityEndpoint.perUserRpm,
-            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -135,18 +135,23 @@ export async function getCommunityModelRegistryEntries(
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
-        // A row is one kind or the other: an agent resolves its target from the
-        // agent runtime, an external endpoint from its own stored target and
-        // credential. Anything missing the fields its kind requires is not
-        // routable, so it is dropped from the catalog rather than carried as a
-        // half-populated entry.
+        // An agent resolves its target from the agent it points at — Enter's
+        // prompt runtime, selected by agent id — or, with no agent row, from
+        // its own stored target, which is the owner's own server. A model
+        // always brings its own target and credential. Anything missing the
+        // fields its kind requires is not routable, so it is dropped from the
+        // catalog rather than carried as a half-populated entry.
         let communityEndpoint: CommunityEndpointRuntime;
-        if (row.agentId !== null) {
+        if (row.kind === "agent") {
+            const baseUrl = row.agentId
+                ? agentRuntimeBaseUrl(env)
+                : row.endpointBaseUrl;
+            if (!baseUrl) return [];
             communityEndpoint = {
                 ...shared,
                 kind: "agent",
-                baseUrl: agentRuntimeBaseUrl(env),
-                upstreamModel: row.agentId,
+                baseUrl,
+                upstreamModel: row.agentId ?? row.upstreamModel,
                 agentId: row.agentId,
             };
         } else {
@@ -155,11 +160,10 @@ export async function getCommunityModelRegistryEntries(
             }
             communityEndpoint = {
                 ...shared,
-                kind: "external",
+                kind: "model",
                 baseUrl: row.endpointBaseUrl,
                 upstreamModel: row.upstreamModel,
                 bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
-                delegatesGeneration: row.delegatesGeneration,
             };
         }
         const definition = communityModelDefinition({
@@ -177,11 +181,11 @@ export async function getCommunityModelRegistryEntries(
                 }),
                 definition,
                 communityEndpoint,
-                agentConfig:
-                    communityEndpoint.kind === "agent"
-                        ? (parseAgentCatalogConfig(row.agentConfig) ??
-                          undefined)
-                        : undefined,
+                // Only a prompt agent wraps a base model, so only it has a
+                // catalog config to inherit metadata from.
+                agentConfig: row.agentId
+                    ? (parseAgentCatalogConfig(row.agentConfig) ?? undefined)
+                    : undefined,
             },
         ];
     });

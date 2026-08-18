@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
+    COMMUNITY_ENDPOINT_KINDS,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
@@ -9,6 +10,7 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
     type CommunityEndpointImagePricing,
+    type CommunityEndpointKind,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
@@ -163,14 +165,16 @@ type FallbackPrimary = {
 };
 
 /**
- * Whether a stored row generates through something else — always for an agent,
- * and for an external endpoint that was granted delegation.
+ * A prompt agent is an agent listing by construction, so `agentId` alone is
+ * enough to say so; `kind` carries the answer for every other listing.
  */
-function rowDelegatesGeneration(row: {
-    agentId: string | null;
-    delegatesGeneration: boolean;
-}): boolean {
-    return row.agentId !== null || row.delegatesGeneration;
+function listingKind(input: {
+    kind: CommunityEndpointKind;
+    agentId?: string;
+}): CommunityEndpointKind {
+    return input.agentId !== undefined || input.kind === "agent"
+        ? "agent"
+        : "model";
 }
 
 /**
@@ -192,7 +196,7 @@ function fallbackTargetRejection(
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
-    if (rowDelegatesGeneration(target)) {
+    if (target.kind === "agent") {
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
@@ -296,6 +300,11 @@ async function resolveFallbackModelIds(
     return resolved;
 }
 
+const KindSchema = z
+    .enum(COMMUNITY_ENDPOINT_KINDS)
+    .describe(
+        '"model": your server, called with the credential you store here. "agent": generates on the caller\'s behalf, so it is called with a short-lived agent run token billed to the caller and must be free.',
+    );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
@@ -346,6 +355,7 @@ const CreateEndpointSchema = z
     .object({
         ...EndpointFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        kind: KindSchema.optional().default("model"),
         agentId: z.string().uuid().optional(),
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
@@ -356,20 +366,20 @@ const CreateEndpointSchema = z
         fallbackModelIds: FallbackModelIdsSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
-    // A registration is one of two shapes: a managed agent, which resolves its
-    // target and credentials from the agent row, or an external endpoint, which
-    // brings its own. Validating each shape once keeps the two sets of rules
-    // readable and stops them being restated per field.
+    // Two independent choices, validated once each rather than restated per
+    // field: where the listing runs — a prompt agent resolves its target from
+    // the agent row, everything else brings its own base URL — and what it is
+    // to callers, which is what `kind` says.
     .superRefine((input, context) => {
-        const isAgent = input.agentId !== undefined;
-        if (isAgent === (input.baseUrl !== undefined)) {
+        const isPromptAgent = input.agentId !== undefined;
+        if (isPromptAgent === (input.baseUrl !== undefined)) {
             context.addIssue({
                 code: "custom",
                 message: "Provide exactly one of baseUrl or agentId",
             });
             return;
         }
-        if (!isAgent) {
+        if (listingKind(input) === "model") {
             if (!input.bearerToken) {
                 context.addIssue({
                     code: "custom",
@@ -384,24 +394,23 @@ const CreateEndpointSchema = z
             {
                 invalid: input.modality !== "text",
                 path: "modality",
-                message: "Managed agents must use text modality",
+                message: "Agents must use text modality",
             },
             {
                 invalid: input.bearerToken !== undefined,
                 path: "bearerToken",
                 message:
-                    "Managed agent credentials are configured on the agent",
+                    "Agents are called with an agent run token, not a stored credential",
             },
             {
                 invalid: Boolean(input.fallbackModelIds?.length),
                 path: "fallbackModelIds",
-                message:
-                    "Managed agent listings do not support fallback models",
+                message: "Agent listings do not support fallback models",
             },
             {
-                invalid: input.perUserRpm != null,
+                invalid: isPromptAgent && input.perUserRpm != null,
                 path: "perUserRpm",
-                message: "Managed agent listings do not support per-user RPM",
+                message: "Prompt agent listings do not support per-user RPM",
             },
         ];
         for (const rejection of agentRejections) {
@@ -454,10 +463,11 @@ const CommunityEndpointResponseSchema = z.object({
     imagePricing: ImagePricingSchema,
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
+    // What the listing is to callers. Agents spend the caller's balance and
+    // are free; models are called with the owner's own credential.
+    kind: KindSchema,
+    // Set only for a prompt agent, whose configuration lives on the agents API.
     agentId: z.string().nullable(),
-    // Derived, not the stored column: true for every agent as well. Clients get
-    // the answer rather than the two columns it is computed from.
-    delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
@@ -613,8 +623,8 @@ function toResponse(
             modality,
         ),
         baseUrl,
+        kind: row.kind,
         agentId: row.agentId,
-        delegatesGeneration: rowDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,
@@ -886,7 +896,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!endpoint) {
                 throw new HTTPException(404, { message: "Model not found" });
             }
-            if (endpoint.agentId !== null) return c.json({ data: [] });
+            // Agents delegate generation, so they take no fallback targets.
+            if (endpoint.kind === "agent") return c.json({ data: [] });
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -956,19 +967,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const agent = input.agentId
+            const promptAgent = input.agentId
                 ? await requireUnregisteredOwnedAgent(
                       db,
                       input.agentId,
                       user.id,
                   )
                 : null;
-            if (agent && hasNonZeroPrice(input)) {
+            const kind = listingKind(input);
+            if (kind === "agent" && hasNonZeroPrice(input)) {
                 throw new HTTPException(400, {
-                    message: "Managed agent listings must be free",
+                    message: "Agent listings must be free",
                 });
             }
-            const modality = agent ? "text" : input.modality;
+            const modality = kind === "agent" ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
             enforceCommunityEndpointInputModalities(
@@ -976,7 +988,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities,
             );
             const prices =
-                agent || input.visibility !== "public"
+                kind === "agent" || input.visibility !== "public"
                     ? communityEndpointPrices({})
                     : communityEndpointPricesForModality(
                           input,
@@ -1009,21 +1021,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     imagePricing,
                     inputModalities: input.inputModalities,
-                    baseUrl: agent
+                    kind,
+                    // A prompt agent is reached through its agent row; every
+                    // other listing, agent or not, brings its own target.
+                    baseUrl: promptAgent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
-                    agentId: agent?.id ?? null,
+                    agentId: promptAgent?.id ?? null,
                     upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: agent
-                        ? null
-                        : await encryptSecret(
-                              normalizeInputBearerToken(
-                                  input.bearerToken ?? "",
+                    // An agent is sent a run token instead, so it stores no
+                    // credential of its own.
+                    bearerTokenCiphertext:
+                        kind === "agent"
+                            ? null
+                            : await encryptSecret(
+                                  normalizeInputBearerToken(
+                                      input.bearerToken ?? "",
+                                  ),
+                                  c.env.BETTER_AUTH_SECRET,
                               ),
-                              c.env.BETTER_AUTH_SECRET,
-                          ),
                     visibility: input.visibility,
-                    perUserRpm: agent ? null : (input.perUserRpm ?? null),
+                    perUserRpm: promptAgent ? null : (input.perUserRpm ?? null),
                     fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
@@ -1168,24 +1186,26 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
-            if (
-                endpoint.agentId !== null &&
-                (input.baseUrl !== undefined || input.bearerToken !== undefined)
-            ) {
+            if (endpoint.agentId !== null && input.baseUrl !== undefined) {
                 throw new HTTPException(400, {
                     message:
-                        "Update managed agent configuration through the agents API",
+                        "Update prompt agent configuration through the agents API",
                 });
             }
-            if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
-                throw new HTTPException(400, {
-                    message: "Managed agent listings must be free",
-                });
-            }
-            if (endpoint.agentId !== null && input.fallbackModelIds?.length) {
+            if (endpoint.kind === "agent" && input.bearerToken !== undefined) {
                 throw new HTTPException(400, {
                     message:
-                        "Managed agent listings do not support fallback models",
+                        "Agents are called with an agent run token, not a stored credential",
+                });
+            }
+            if (endpoint.kind === "agent" && hasNonZeroPrice(input)) {
+                throw new HTTPException(400, {
+                    message: "Agent listings must be free",
+                });
+            }
+            if (endpoint.kind === "agent" && input.fallbackModelIds?.length) {
+                throw new HTTPException(400, {
+                    message: "Agent listings do not support fallback models",
                 });
             }
             if (
@@ -1195,7 +1215,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             ) {
                 throw new HTTPException(400, {
                     message:
-                        "Managed agent listings do not support per-user RPM",
+                        "Prompt agent listings do not support per-user RPM",
                 });
             }
             if (input.inputModalities !== undefined) {
@@ -1227,7 +1247,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined && endpoint.agentId === null) {
+            if (input.bearerToken !== undefined) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -1273,7 +1293,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // A private model is owner-only, so owner-declared public pricing
             // does not apply; making a published model private clears prices.
             const effectivePrices =
-                endpoint.agentId !== null || effectiveVisibility === "private"
+                endpoint.kind === "agent" || effectiveVisibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPricesForModality(
                           { ...endpoint, ...update },

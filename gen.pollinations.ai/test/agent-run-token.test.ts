@@ -31,11 +31,11 @@ const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
 );
 
 function communityProbe({
+    kind = "model",
     agentId = null,
-    delegatesGeneration = false,
 }: {
+    kind?: "model" | "agent";
     agentId?: string | null;
-    delegatesGeneration?: boolean;
 } = {}) {
     return new Hono<AuthEnv>()
         .use("*", auth())
@@ -43,13 +43,11 @@ function communityProbe({
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
-                communityEndpoint: (agentId
-                    ? { modelId: "Itachi-1824/polli", kind: "agent", agentId }
-                    : {
-                          modelId: "Itachi-1824/polli",
-                          kind: "external",
-                          delegatesGeneration,
-                      }) as unknown as CommunityEndpointRuntime,
+                communityEndpoint: {
+                    modelId: "Itachi-1824/polli",
+                    kind,
+                    agentId,
+                } as unknown as CommunityEndpointRuntime,
             });
             await next();
         })
@@ -134,18 +132,18 @@ test("agent run tokens can call community models but cannot recurse into agent m
     expect(communityResponse.status).toBe(200);
 
     const agentResponse = await probe(
-        communityProbe({ agentId: "managed-agent-id" }),
+        communityProbe({ kind: "agent", agentId: "managed-agent-id" }),
         "https://gen.pollinations.ai/",
         token,
     );
     expect(agentResponse.status).toBe(403);
 
-    const delegatedAgentResponse = await probe(
-        communityProbe({ delegatesGeneration: true }),
+    const endpointAgentResponse = await probe(
+        communityProbe({ kind: "agent" }),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(delegatedAgentResponse.status).toBe(403);
+    expect(endpointAgentResponse.status).toBe(403);
 });
 
 test("is rejected as a query parameter", async () => {

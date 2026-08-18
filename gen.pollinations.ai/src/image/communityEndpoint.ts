@@ -31,10 +31,11 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
-    // Managed agents are text-only, so an image endpoint is always external.
-    if (endpoint.kind !== "external") {
+    // Agent listings are text-only, so an image endpoint always carries its
+    // own credential.
+    if (endpoint.kind !== "model") {
         throw new Error(
-            `Community image endpoint '${endpoint.modelId}' is a managed agent`,
+            `Community image endpoint '${endpoint.modelId}' is an agent`,
         );
     }
     const bearerToken = await decryptSecret(

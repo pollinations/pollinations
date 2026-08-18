@@ -174,9 +174,23 @@ Two billing modes: `--image-pricing request` charges `--completion-image-price` 
 
 Prices only apply to `--visibility public` models. A private model is owner-only and always free, so every price flag above is stored as `0` until you publish — and making a published model private clears its prices again.
 
-`--modality` is fixed at creation — `update` cannot change it.
+`--modality` and `--kind` are fixed at creation — `update` cannot change them.
 
-### Manage agents
+### Agents
+
+An agent generates on the caller's behalf, so it is called with a short-lived agent run token billed to the caller instead of a stored bearer token, and must be free. There are two ways to run one, listed identically to callers:
+
+```bash
+# You run it: your own OpenAI-compatible server, no bearer token stored
+polli my-models create --kind agent --name my-agent --title "My Agent" \
+  --base-url https://api.example.com/v1
+
+# Pollinations runs it: a stored prompt over a base model
+polli agents create --config agent.json
+polli my-models create --name my-agent --title "My Agent" --agent-id <agent-id>
+```
+
+`--agent-id` implies `--kind agent`. Agent listings are text-only, take no fallback models, and reject every price flag.
 
 ```bash
 polli agents list
@@ -185,7 +199,7 @@ polli agents create --config agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
+The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration. Deleting a prompt agent deletes its listing too; an endpoint agent is deleted with `polli my-models delete <id>`.
 
 ### Manage API keys
 ```bash

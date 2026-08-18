@@ -197,6 +197,9 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+// A prompt agent: the system prompt, base model, and MCP servers Enter's own
+// agent runtime executes. Agents that run on their owner's server have no row
+// here — they are a community_endpoint of kind "agent" with its own base_url.
 export const agent = sqliteTable("agent", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -240,9 +243,18 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  // External models keep their target here. Managed agents resolve their
+  // What this listing is to the outside, and the only thing that decides
+  // whether a call is authorized with an agent run token that spends the
+  // caller's balance. Routing is separate: see agentId.
+  kind: text("kind", { enum: ["model", "agent"] })
+    .default("model")
+    .notNull(),
+  // Where the request goes. Null only for a prompt agent, which resolves its
   // target through agentId so the agent can outlive its community listing.
   baseUrl: text("base_url"),
+  // Set only for a prompt agent: the stored prompt configuration Enter's own
+  // runtime executes. Null means the listing is served by its own base_url,
+  // whether it is a plain model or an agent running on the owner's server.
   agentId: text("agent_id").references(() => agent.id, {
     onDelete: "restrict",
   }),
@@ -263,9 +275,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   completionImagePrice: real("completion_image_price").default(0).notNull(),
-  // Admin-only, off by default: it hands a third party spend authority over
-  // whoever called the model. See mintDelegatedToken in
-  // gen.pollinations.ai/src/text/communityEndpoint.ts.
+  // Superseded by kind = "agent", which says the same thing and is writable
+  // through the dashboard. Backfilled by 0050; drop once gen no longer reads
+  // it anywhere.
   delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
     .default(false)
     .notNull(),

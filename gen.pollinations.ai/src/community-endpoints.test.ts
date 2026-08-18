@@ -7,6 +7,7 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
+    type AgentCommunityEndpointRuntime,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
@@ -20,7 +21,6 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
-    type ExternalCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
@@ -29,6 +29,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    type ModelCommunityEndpointRuntime,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
@@ -747,14 +748,13 @@ describe("community endpoint helpers", () => {
             imagePricing: CommunityEndpointRuntime["imagePricing"],
         ): Promise<CommunityEndpointRuntime> {
             return {
-                kind: "external",
+                kind: "model",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
                 title: "GPT Image",
                 description: null,
-                delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
@@ -936,7 +936,7 @@ describe("community endpoint helpers", () => {
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
-            kind: "external",
+            kind: "model",
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
@@ -950,7 +950,6 @@ describe("community endpoint helpers", () => {
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             perUserRpm: null,
-            delegatesGeneration: false,
             fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
@@ -996,11 +995,8 @@ describe("community endpoint helpers", () => {
     describe("delegated agent endpoints", () => {
         const secret = "test-secret";
 
-        async function agentEndpoint(
-            overrides: Partial<ExternalCommunityEndpointRuntime> = {},
-        ): Promise<ExternalCommunityEndpointRuntime> {
-            return {
-                kind: "external",
+        const listing: Omit<AgentCommunityEndpointRuntime, "kind" | "agentId"> =
+            {
                 id: "agent-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/agent",
@@ -1014,16 +1010,27 @@ describe("community endpoint helpers", () => {
                 upstreamModel: "agent",
                 visibility: "public",
                 perUserRpm: null,
-                delegatesGeneration: true,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],
+                ...communityEndpointPrices({}),
+            };
+
+        /** An agent running on its owner's own server: no stored credential. */
+        function agentEndpoint(
+            overrides: Partial<AgentCommunityEndpointRuntime> = {},
+        ): AgentCommunityEndpointRuntime {
+            return { ...listing, kind: "agent", agentId: null, ...overrides };
+        }
+
+        async function modelEndpoint(): Promise<ModelCommunityEndpointRuntime> {
+            return {
+                ...listing,
+                kind: "model",
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
                 ),
-                ...communityEndpointPrices({}),
-                ...overrides,
             };
         }
 
@@ -1042,43 +1049,33 @@ describe("community endpoint helpers", () => {
             );
         }
 
-        it("authenticates as a run token, not the caller's or owner's key", async () => {
-            const endpoint = await agentEndpoint();
-            const context = await contextFor(endpoint, "parent-key-id");
+        it("authenticates as a run token, not the caller's key", async () => {
+            const context = await contextFor(agentEndpoint(), "parent-key-id");
 
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
             expect(token).not.toContain("sk_user_key");
-            // The owner's saved bearer is replaced, never sent alongside — the
-            // endpoint must not receive a credential it could spend as its own.
-            expect(token).not.toContain("sk_saved_token");
 
+            // An agent on the owner's own server is authorized to spend and
+            // nothing else: there is no Enter-run agent to scope it to.
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+            expect(claims).not.toHaveProperty("managedAgentId");
         });
 
-        it("sends the saved bearer when the endpoint is not flagged", async () => {
-            const endpoint = await agentEndpoint({
-                delegatesGeneration: false,
-            });
-            const context = await contextFor(endpoint, "parent-key-id");
+        it("sends the saved bearer when the listing is a model", async () => {
+            const context = await contextFor(
+                await modelEndpoint(),
+                "parent-key-id",
+            );
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
-        it("always scopes managed agents to their agent id", async () => {
-            const external = await agentEndpoint();
-            const {
-                bearerTokenCiphertext: _token,
-                delegatesGeneration: _delegates,
-                kind: _kind,
-                ...base
-            } = external;
-            const endpoint: CommunityEndpointRuntime = {
-                ...base,
-                kind: "agent",
+        it("scopes a prompt agent to its agent id", async () => {
+            const endpoint = agentEndpoint({
                 agentId: "managed-agent-id",
                 upstreamModel: "managed-agent-id",
-            };
+            });
             const context = await contextFor(endpoint, "parent-key-id");
             const token = String(context.modelConfig?.authKey);
             const claims = await verifyAgentRunToken(token, secret);
@@ -1089,16 +1086,15 @@ describe("community endpoint helpers", () => {
         });
 
         it("refuses to delegate when there is no key to bill", async () => {
-            const endpoint = await agentEndpoint();
-            await expect(contextFor(endpoint, undefined)).rejects.toThrow(
-                "no API key to bill",
-            );
+            await expect(
+                contextFor(agentEndpoint(), undefined),
+            ).rejects.toThrow("no API key to bill");
         });
 
         it("refuses to delegate from an endpoint that charges a price", async () => {
-            const endpoint = await agentEndpoint({
-                ...communityEndpointPrices({ promptTextPrice: 0.1 }),
-            });
+            const endpoint = agentEndpoint(
+                communityEndpointPrices({ promptTextPrice: 0.1 }),
+            );
             await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
                 "is not free",
             );
@@ -4129,6 +4125,132 @@ fixtureTest(
     },
 );
 
+fixtureTest(
+    "registers an agent that runs on the owner's own server",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const enterEnv = {
+            ...env,
+            BETTER_AUTH_URL: "https://enter.test",
+            AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+        };
+        const enterApi = await createEnterFrontendApi();
+        const cookie = (await signedSessionCookie(sessionToken)).replace(
+            "better-auth.session_token",
+            "__Secure-better-auth.session_token",
+        );
+
+        async function register(body: Record<string, unknown>) {
+            return fetchEnterApi(
+                enterApi,
+                new Request("https://enter.test/api/account/my-models", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+        }
+
+        const listing = {
+            kind: "agent",
+            name: modelName,
+            title: "Self-hosted Agent",
+            baseUrl: "https://agent.example.com/v1",
+            visibility: "public",
+        };
+
+        // An agent spends the caller's balance, so it may not also charge a
+        // wrapper price, and it is never handed a credential of its own.
+        const pricedResponse = await register({
+            ...listing,
+            promptTextPrice: 0.00001,
+        });
+        expect(pricedResponse.status).toBe(400);
+        const bearerResponse = await register({
+            ...listing,
+            bearerToken: "sk_owner_token",
+        });
+        expect(bearerResponse.status).toBe(400);
+        expect(await bearerResponse.text()).toContain("agent run token");
+
+        const response = await register(listing);
+        expect(response.status).toBe(200);
+        const registration = (await response.json()) as {
+            id: string;
+            modelId: string;
+            kind: string;
+            agentId: string | null;
+            baseUrl: string;
+        };
+        expect(registration).toMatchObject({
+            kind: "agent",
+            agentId: null,
+            baseUrl: "https://agent.example.com/v1",
+        });
+
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === registration.modelId);
+        if (!registryEntry) throw new Error("Agent listing was not registered");
+        expect(registryEntry.communityEndpoint).toMatchObject({
+            kind: "agent",
+            agentId: null,
+            // Its own server, not the prompt runtime every managed agent uses.
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: modelName,
+        });
+        expect(registryEntry.communityEndpoint).not.toHaveProperty(
+            "bearerTokenCiphertext",
+        );
+        // Only prompt agents wrap a base model, so there is nothing to inherit.
+        expect(registryEntry.agentConfig).toBeUndefined();
+
+        const gatewayContext = await communityEndpointGatewayContext(
+            registryEntry.communityEndpoint,
+            registryEntry.definition,
+            { messages: [{ role: "user", content: "hello" }] },
+            env.BETTER_AUTH_SECRET,
+            env.PORTKEY_GATEWAY_URL,
+            "sk_user_key",
+            "caller-api-key-id",
+        );
+        const runToken = String(gatewayContext.modelConfig?.authKey);
+        expect(runToken).toMatch(/^ag_/);
+        const claims = await verifyAgentRunToken(
+            runToken,
+            env.BETTER_AUTH_SECRET,
+        );
+        expect(claims).toMatchObject({ parentApiKeyId: "caller-api-key-id" });
+        expect(claims).not.toHaveProperty("managedAgentId");
+
+        // The catalog labels both agent kinds identically.
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/models")
+        ).json()) as { name: string; community?: boolean; agent?: boolean }[];
+        expect(
+            models.find((model) => model.name === registration.modelId),
+        ).toMatchObject({ community: true, agent: true });
+    },
+);
+
 fixtureTest("validates community fallback targets on write", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
@@ -4222,10 +4344,9 @@ fixtureTest("validates community fallback targets on write", async () => {
             ownerUserId,
             visibility: "public",
             name: targetNames.delegating,
+            kind: "agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "delegating-upstream",
-            bearerTokenCiphertext,
-            delegatesGeneration: true,
             promptTextPrice: 0,
             completionTextPrice: 0,
             createdAt: new Date(),
@@ -4520,11 +4641,12 @@ fixtureTest(
                 fallbackModelIds: [id("delegating-target")],
             }),
             endpoint("delegating-target", {
-                delegatesGeneration: true,
+                kind: "agent",
                 promptTextPrice: 0,
                 completionTextPrice: 0,
             }),
             endpoint("managed-primary", {
+                kind: "agent",
                 baseUrl: null,
                 agentId: managedAgentId,
                 bearerTokenCiphertext: null,

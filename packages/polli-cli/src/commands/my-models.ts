@@ -47,6 +47,7 @@ interface MyModel {
     name: string;
     title: string;
     description: string | null;
+    kind: "model" | "agent";
     modality: "text" | "image";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
@@ -112,6 +113,16 @@ export function modelBody(
         body.visibility = opts.visibility;
     }
 
+    // Create only, like modality: what a listing is to callers is fixed at
+    // registration. "agent" is called with a run token billed to the caller,
+    // so it stores no bearer token and must be free.
+    if (includeRequired && opts.kind !== undefined) {
+        if (opts.kind !== "model" && opts.kind !== "agent") {
+            fail("--kind must be 'model' or 'agent'");
+        }
+        body.kind = opts.kind;
+    }
+
     // Create only. UpdateEndpointSchema has no modality — a model's family
     // is fixed at registration, so update must not send this field.
     if (includeRequired && opts.modality !== undefined) {
@@ -158,7 +169,8 @@ export function modelBody(
         if (modeCount !== 1) {
             fail("Provide exactly one of --base-url or --agent-id");
         }
-        if (body.baseUrl !== undefined && !body.bearerToken) {
+        const isAgent = body.kind === "agent" || body.agentId !== undefined;
+        if (body.baseUrl !== undefined && !isAgent && !body.bearerToken) {
             fail("--bearer-token is required with --base-url");
         }
     }
@@ -176,6 +188,7 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
+            kind: model.kind,
             modality: model.modality,
             // Price and billing mode read as one unit, so they share a cell
             // rather than widening an already wide table by two columns.
@@ -194,6 +207,7 @@ function printModels(models: MyModel[]) {
             "id",
             "model",
             "title",
+            "kind",
             "modality",
             "image_price",
             "inputs",
@@ -227,7 +241,11 @@ const create = addPriceOptions(
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--agent-id <id>", "Managed agent to register")
+        .option(
+            "--kind <kind>",
+            "Listing kind: model (default) or agent. An agent is called with an agent run token billed to the caller, stores no bearer token, and must be free",
+        )
+        .option("--agent-id <id>", "Prompt agent to register")
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(

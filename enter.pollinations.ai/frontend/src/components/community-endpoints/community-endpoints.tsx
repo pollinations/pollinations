@@ -29,6 +29,7 @@ import {
     type AgentPayload,
     type CommunityEndpoint,
     type CommunityProviderProfile,
+    type EndpointAgentListingPayload,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
@@ -70,10 +71,13 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
-    const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
-    const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
+    // Agent listings are edited and deleted as listings, whichever kind they
+    // are; the prompt row, when there is one, follows the listing.
+    const [editingAgent, setEditingAgent] = useState<CommunityEndpoint | null>(
         null,
     );
+    const [deletingAgent, setDeletingAgent] =
+        useState<CommunityEndpoint | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -113,8 +117,25 @@ export function CommunityEndpoints({
         payload: AgentPayload,
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
+        // An endpoint agent is only a listing: kind says it spends the
+        // caller's balance, and the listing itself carries the target.
+        if (payload.kind === "endpoint") {
+            const response = await apiClient.account["my-models"].$post({
+                json: {
+                    ...listing,
+                    kind: "agent",
+                    baseUrl: payload.baseUrl,
+                    upstreamModel: payload.upstreamModel,
+                },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            await loadEndpoints();
+            await onChange?.();
+            return;
+        }
+        const { kind: _kind, ...agentConfig } = payload;
         const response = await apiClient.account.agents.$post({
-            json: payload,
+            json: agentConfig,
         });
         if (!response.ok) throw new Error(await readError(response));
         const createdAgent = (await response.json()) as ManagedAgent;
@@ -136,20 +157,26 @@ export function CommunityEndpoints({
         payload: AgentPayload,
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
-        if (!editingAgent) return;
-        const endpoint = endpoints.find(
-            (candidate) => candidate.agentId === editingAgent.id,
-        );
-        if (!endpoint) throw new Error("Agent listing not found");
-        const response = await apiClient.account.agents[":id"].$patch({
-            param: { id: editingAgent.id },
-            json: payload,
-        });
-        if (!response.ok) throw new Error(await readError(response));
-        const listingPayload: AgentListingPayload = {
-            ...listing,
-            agentId: editingAgent.id,
-        };
+        const endpoint = editingAgent;
+        if (!endpoint) return;
+        let listingPayload: AgentListingPayload | EndpointAgentListingPayload;
+        if (payload.kind === "endpoint") {
+            listingPayload = {
+                ...listing,
+                baseUrl: payload.baseUrl,
+                upstreamModel: payload.upstreamModel,
+            };
+        } else {
+            if (!endpoint.agentId)
+                throw new Error("Agent configuration not found");
+            const { kind: _kind, ...agentConfig } = payload;
+            const response = await apiClient.account.agents[":id"].$patch({
+                param: { id: endpoint.agentId },
+                json: agentConfig,
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            listingPayload = { ...listing, agentId: endpoint.agentId };
+        }
         const listingResponse = await apiClient.account["my-models"][
             ":id"
         ].update.$post({
@@ -169,9 +196,15 @@ export function CommunityEndpoints({
         setDeletingAgent(null);
         setError(null);
         try {
-            const response = await apiClient.account.agents[":id"].$delete({
-                param: { id: target.id },
-            });
+            // Deleting a prompt agent takes its listing with it; an endpoint
+            // agent is the listing.
+            const response = target.agentId
+                ? await apiClient.account.agents[":id"].$delete({
+                      param: { id: target.agentId },
+                  })
+                : await apiClient.account["my-models"][":id"].$delete({
+                      param: { id: target.id },
+                  });
             if (!response.ok) throw new Error(await readError(response));
             await loadEndpoints();
             await onChange?.();
@@ -315,23 +348,16 @@ export function CommunityEndpoints({
         </>
     );
 
-    const endpointByAgentId = new Map<string, CommunityEndpoint>();
     const modelEndpoints: CommunityEndpoint[] = [];
     const agentEndpoints: CommunityEndpoint[] = [];
     for (const endpoint of endpoints) {
-        if (endpoint.agentId) {
-            endpointByAgentId.set(endpoint.agentId, endpoint);
-            agentEndpoints.push(endpoint);
-        } else {
-            modelEndpoints.push(endpoint);
-        }
+        if (endpoint.kind === "agent") agentEndpoints.push(endpoint);
+        else modelEndpoints.push(endpoint);
     }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
-        const agent = endpoint.agentId
-            ? agentById.get(endpoint.agentId)
-            : undefined;
+        const isAgent = endpoint.kind === "agent";
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
@@ -339,10 +365,10 @@ export function CommunityEndpoints({
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
                 onEdit={() =>
-                    agent ? setEditingAgent(agent) : setEditing(endpoint)
+                    isAgent ? setEditingAgent(endpoint) : setEditing(endpoint)
                 }
                 onDelete={() =>
-                    agent ? setDeletingAgent(agent) : setDeleting(endpoint)
+                    isAgent ? setDeletingAgent(endpoint) : setDeleting(endpoint)
                 }
             />
         );
@@ -441,8 +467,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build one from a system prompt, or list a
+                                    server you already run.
                                 </p>
                             </Surface>
                         ) : (
@@ -526,7 +552,7 @@ export function CommunityEndpoints({
                 </Section>
             </div>
 
-            {editing && !editing.agentId && (
+            {editing && editing.kind === "model" && (
                 <CommunityEndpointDialog
                     key={editing.id}
                     endpoint={editing}
@@ -545,12 +571,12 @@ export function CommunityEndpoints({
             />
             <AgentDialog
                 key={editingAgent?.id ?? "agent-edit-closed"}
-                agent={editingAgent ?? undefined}
-                endpoint={
-                    editingAgent
-                        ? endpointByAgentId.get(editingAgent.id)
+                agent={
+                    editingAgent?.agentId
+                        ? agentById.get(editingAgent.agentId)
                         : undefined
                 }
+                endpoint={editingAgent ?? undefined}
                 canPublish={canPublish}
                 open={!!editingAgent}
                 onOpenChange={(open) => !open && setEditingAgent(null)}

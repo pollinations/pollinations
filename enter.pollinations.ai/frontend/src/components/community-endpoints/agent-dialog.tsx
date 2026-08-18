@@ -1,9 +1,12 @@
 import {
     Alert,
     Button,
+    ButtonGroup,
     Dialog,
     DialogTitle,
+    FieldStack,
     ScrollArea,
+    TabButton,
 } from "@pollinations/ui";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -13,13 +16,16 @@ import {
     getModelPricesFromCatalog,
 } from "../models/model-catalog.ts";
 import { getModelInputModalities } from "../models/model-info.ts";
+import { EndpointAgentFields } from "./endpoint-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
     type AgentFormState,
+    type AgentKind,
     type AgentListingDetailsPayload,
     type AgentPayload,
     agentListingToForm,
+    agentToForm,
     type CommunityEndpoint,
     emptyAgentForm,
     type ManagedAgent,
@@ -27,6 +33,21 @@ import {
     toAgentListingPayload,
     toAgentPayload,
 } from "./types.ts";
+
+// Both run on an agent run token and list as one thing; the choice is only who
+// hosts the agent, so it is fixed once a listing exists.
+const AGENT_KINDS: { value: AgentKind; label: string; helper: string }[] = [
+    {
+        value: "prompt",
+        label: "Prompt",
+        helper: "Pollinations runs it: a system prompt over a base model, with optional tools.",
+    },
+    {
+        value: "endpoint",
+        label: "Endpoint",
+        helper: "You run it: your own OpenAI-compatible server, called with an agent run token.",
+    },
+];
 
 type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
@@ -62,12 +83,8 @@ export function AgentDialog({
     useEffect(() => {
         setForm({
             ...agentListingToForm(open ? endpoint : undefined),
-            ...(open && agent
-                ? {
-                      systemPrompt: agent.systemPrompt,
-                      baseModel: agent.baseModel,
-                      mcpServers: agent.mcpServers,
-                  }
+            ...(open && endpoint
+                ? agentToForm(endpoint, agent)
                 : emptyAgentForm),
         });
         setError(null);
@@ -86,9 +103,11 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            const inputModalities = await inheritedInputModalities(
-                form.baseModel,
-            );
+            // An endpoint agent wraps no base model, so it inherits nothing.
+            const inputModalities =
+                form.agentKind === "prompt"
+                    ? await inheritedInputModalities(form.baseModel)
+                    : (["text"] as const).slice();
             await onSubmit(
                 toAgentPayload(form),
                 toAgentListingPayload(form, inputModalities),
@@ -107,8 +126,9 @@ export function AgentDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
-        form.systemPrompt.trim() !== "" &&
-        form.baseModel.trim() !== "";
+        (form.agentKind === "endpoint"
+            ? form.baseUrl.trim() !== ""
+            : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "");
     const submitLabel = endpoint
         ? "Save Agent"
         : form.visibility === "public"
@@ -126,7 +146,7 @@ export function AgentDialog({
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
-                    {agent ? "Edit Agent" : "Add Agent"}
+                    {endpoint ? "Edit Agent" : "Add Agent"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     Configure and list an agent as a{" "}
@@ -158,12 +178,52 @@ export function AgentDialog({
                         }
                     />
 
-                    <div className="border-t border-divider pt-4">
-                        <PromptAgentFields
-                            form={form}
-                            disabled={isSubmitting}
-                            onChange={updateAgentForm}
-                        />
+                    <div className="space-y-4 border-t border-divider pt-4">
+                        <FieldStack
+                            label="Runs on"
+                            helper={
+                                AGENT_KINDS.find(
+                                    (kind) => kind.value === form.agentKind,
+                                )?.helper
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Agent kind">
+                                {AGENT_KINDS.map((kind) => (
+                                    <TabButton
+                                        key={kind.value}
+                                        active={form.agentKind === kind.value}
+                                        // Changing it would repoint a listing
+                                        // callers already use.
+                                        disabled={!!endpoint || isSubmitting}
+                                        onClick={() =>
+                                            updateAgentForm(
+                                                "agentKind",
+                                                kind.value,
+                                            )
+                                        }
+                                        size="sm"
+                                        className="min-w-24"
+                                    >
+                                        {kind.label}
+                                    </TabButton>
+                                ))}
+                            </ButtonGroup>
+                        </FieldStack>
+
+                        {form.agentKind === "endpoint" ? (
+                            <EndpointAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
+                        ) : (
+                            <PromptAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
+                        )}
                     </div>
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">

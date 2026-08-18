@@ -42,6 +42,11 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
+    // What the listing is to a caller comes from kind; whether it has its own
+    // target and limits comes from agentId, which is set only for a prompt
+    // agent Enter runs itself.
+    const isAgent = endpoint.kind === "agent";
+    const hasOwnTarget = endpoint.agentId === null;
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -64,7 +69,7 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.agentId && (
+                        {isAgent && (
                             <Chip intent="news" size="sm">
                                 Agent
                             </Chip>
@@ -92,8 +97,8 @@ export function CommunityEndpointCard({
                     </Button>
                     <IconButton
                         intent="info"
-                        title={endpoint.agentId ? "Edit agent" : "Edit model"}
-                        tooltip={endpoint.agentId ? "Edit agent" : "Edit model"}
+                        title={isAgent ? "Edit agent" : "Edit model"}
+                        tooltip={isAgent ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -130,7 +135,7 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {!endpoint.agentId && (
+                {hasOwnTarget && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -143,14 +148,14 @@ export function CommunityEndpointCard({
                     label="Modality"
                     value={endpoint.modality}
                 />
-                {!endpoint.agentId && (
+                {hasOwnTarget && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Upstream model"
                         value={endpoint.upstreamModel}
                     />
                 )}
-                {!endpoint.agentId && endpoint.perUserRpm !== null && (
+                {hasOwnTarget && endpoint.perUserRpm !== null && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Per-user limit"

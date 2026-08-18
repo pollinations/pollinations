@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
+    type CommunityEndpointKind,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
@@ -16,6 +17,7 @@ import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
+/** A stored prompt configuration, run by Pollinations. */
 export type ManagedAgent = {
     id: string;
     systemPrompt: string;
@@ -25,14 +27,26 @@ export type ManagedAgent = {
     updatedAt: string;
 };
 
-type AgentFields = Pick<
+type PromptAgentFields = Pick<
     ManagedAgent,
     "systemPrompt" | "baseModel" | "mcpServers"
 >;
 
-export type AgentFormState = AgentFields;
+/**
+ * The two ways to run an agent. Both list as one thing to callers and both are
+ * called with an agent run token; only where the request goes differs.
+ */
+export type AgentKind = "prompt" | "endpoint";
 
-export type AgentPayload = AgentFields;
+export type AgentFormState = PromptAgentFields & {
+    agentKind: AgentKind;
+    baseUrl: string;
+    upstreamModel: string;
+};
+
+export type AgentPayload =
+    | ({ kind: "prompt" } & PromptAgentFields)
+    | { kind: "endpoint"; baseUrl: string; upstreamModel?: string };
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -51,6 +65,9 @@ export type CommunityEndpoint = {
     inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
+    // "agent" listings spend the caller's balance and are always free.
+    kind: CommunityEndpointKind;
+    // Set only when Pollinations runs the agent from a stored prompt.
     agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -141,6 +158,12 @@ export type AgentListingPayload = ModelListingPayload & {
 
 export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
 
+/** An endpoint agent has no agent row, so its target rides on the listing. */
+export type EndpointAgentListingPayload = AgentListingDetailsPayload & {
+    baseUrl: string;
+    upstreamModel?: string;
+};
+
 export type CommunityEndpointUsage = Record<string, unknown>;
 
 export type CommunityEndpointTestResponse = {
@@ -184,9 +207,12 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const emptyAgentForm: AgentFormState = {
+    agentKind: "prompt",
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
+    baseUrl: "",
+    upstreamModel: "",
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -306,6 +332,31 @@ export function agentListingToForm(
         : { ...emptyListingForm };
 }
 
+/** The agent half of the edit form, for a listing of either agent kind. */
+export function agentToForm(
+    endpoint: CommunityEndpoint,
+    agent?: ManagedAgent,
+): AgentFormState {
+    return agent
+        ? {
+              ...emptyAgentForm,
+              agentKind: "prompt",
+              systemPrompt: agent.systemPrompt,
+              baseModel: agent.baseModel,
+              mcpServers: agent.mcpServers,
+          }
+        : {
+              ...emptyAgentForm,
+              agentKind: "endpoint",
+              baseUrl: endpoint.baseUrl,
+              // Shown only when it differs from the model id it defaults to.
+              upstreamModel:
+                  endpoint.upstreamModel === endpoint.name
+                      ? ""
+                      : endpoint.upstreamModel,
+          };
+}
+
 function formPricesToPayload(
     form: EndpointFormState,
     modality: CommunityEndpointModality,
@@ -373,6 +424,18 @@ export function observedUsageValue(
 }
 
 export function toAgentPayload(form: AgentFormState): AgentPayload {
+    if (form.agentKind === "endpoint") {
+        const baseUrl = form.baseUrl.trim();
+        if (!baseUrl) {
+            throw new Error("Endpoint URL is required for an endpoint agent");
+        }
+        const upstreamModel = form.upstreamModel.trim();
+        return {
+            kind: "endpoint",
+            baseUrl,
+            ...(upstreamModel ? { upstreamModel } : {}),
+        };
+    }
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");
@@ -382,6 +445,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         throw new Error("Base model is required for a prompt agent");
     }
     return {
+        kind: "prompt",
         systemPrompt,
         baseModel,
         mcpServers: form.mcpServers,

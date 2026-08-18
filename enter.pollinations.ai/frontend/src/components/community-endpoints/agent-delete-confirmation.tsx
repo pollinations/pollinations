@@ -1,12 +1,12 @@
 import { Button, Dialog } from "@pollinations/ui";
-import type { ManagedAgent } from "./types.ts";
+import type { CommunityEndpoint } from "./types.ts";
 
 export function AgentDeleteConfirmation({
     agent,
     onConfirm,
     onCancel,
 }: {
-    agent: ManagedAgent | null;
+    agent: CommunityEndpoint | null;
     onConfirm: () => void;
     onCancel: () => void;
 }) {

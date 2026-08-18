@@ -291,6 +291,15 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
+// What a listing is to the outside, and the only thing that decides how a call
+// to it is authorized:
+//   model → the owner's server, called with the owner's stored credential
+//   agent → generates on the caller's behalf, called with an agent run token
+// Where an agent actually runs is a separate, internal question; see agentId.
+export const COMMUNITY_ENDPOINT_KINDS = ["model", "agent"] as const;
+
+export type CommunityEndpointKind = (typeof COMMUNITY_ENDPOINT_KINDS)[number];
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -321,36 +330,40 @@ type CommunityEndpointRuntimeBase = {
     disabledReason: string | null;
 } & CommunityEndpointPrices;
 
-/** A third-party OpenAI-compatible server the owner registered. */
-export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    kind: "external";
+/** A plain model: the owner's own server, called with the owner's credential. */
+export type ModelCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "model";
     bearerTokenCiphertext: string;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
 };
 
-/** A managed prompt agent, run by Enter's own agent runtime. */
+/**
+ * An agent: called with an agent run token that spends the caller's balance.
+ *
+ * `agentId` names a stored prompt configuration when Enter's own runtime runs
+ * the agent, and is null when the owner runs it on their own server. That is
+ * the only difference between the two, and it is invisible from outside.
+ */
 export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     kind: "agent";
-    agentId: string;
+    agentId: string | null;
 };
 
 export type CommunityEndpointRuntime =
-    | ExternalCommunityEndpointRuntime
+    | ModelCommunityEndpointRuntime
     | AgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Managed agents always do: they call their base model and tools on the
- * caller's behalf. External endpoints only do so when an admin granted it.
- * Both are barred from the same places — fallback targets, and being called
- * by another run token — so the two cases share one name.
+ * Agents do, by definition: they call generation on the caller's behalf. That
+ * is what bars them from the same places — being a fallback target, and being
+ * called by another run token — and what earns them a run token in place of a
+ * stored credential.
  */
 export function isDelegatingEndpoint(
     endpoint: CommunityEndpointRuntime,
 ): boolean {
-    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+    return endpoint.kind === "agent";
 }
 
 export type CommunityModelDefinitionInput = {

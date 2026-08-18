@@ -1,0 +1,34 @@
+{
+  "pr_number": 13541,
+  "title": "feat(model-monitor): restore favorites and persistent filters",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13541",
+  "merged_at": "2026-08-18T10:34:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reverts #13506 and restores the final implementation from #12644.\n- Re-adds per-model favorites, the Favorites-only view, favorites-first sorting, and persisted scope/type filters.\n- Includes the earlier fixes that validate stored favorites and leave Favorites-only mode when the last favorite is removed.\n- Changes one file; the restored blob is byte-for-byte identical to the reviewed #12644 version.\n\nValidation:\n- `npx --yes @biomejs/biome@2.3.10 check operations/model-monitor/src/App.jsx`\n- `git diff --cached --check`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The favorites bloom again",
+    "blurb": "The model monitor got its little bookmarks back. Favorite models stay sorted up front, and the filters remember where you left them.",
+    "summary": "Restored the reviewed model-monitor implementation with per-model favorites, a Favorites-only view, favorites-first sorting, persisted scope/type filters, validation for stored favorites, and automatic exit from Favorites-only mode when its last model is removed.",
+    "impact": "Model-monitor users can again keep their preferred models at the top and return to the same scope and type filters between visits without getting stranded in an empty favorites view.",
+    "keywords": [
+      "model-monitor",
+      "favorites",
+      "filters",
+      "persistence",
+      "sorting",
+      "operations"
+    ],
+    "visual_concept": "A cozy model-monitor workspace where Polli organizes favorite model cards into a flowering garden, with heart-shaped bookmark markers and labeled filter knobs that remain set in place. A small CRT monitor robot happily points at a glowing Favorites shelf while persistent filter vines wrap gently around the terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, arranging heart-bookmarked model cards on a favorites-first shelf beside a retro CRT terminal with glowing saved filter dials. A cheerful monitor robot points at the Favorites row while code-plants and small flowers grow around the desk; prominent lime green (#ecf874), warm cream, mint and lavender pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-18/PR-13541.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, arranging heart-bookmarked model cards on a favorites-first shelf beside a retro CRT terminal with glowing saved filter dials. A cheerful monitor robot points at the Favorites row while code-plants and small flowers grow around the desk; prominent lime green (#ecf874), warm cream, mint and lavender pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-18T10:35:12.466606+00:00"
+}

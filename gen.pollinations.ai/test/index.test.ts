@@ -79,7 +79,38 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(401);
         await expect(response.json()).resolves.toMatchObject({
-            error: { code: "UNAUTHORIZED" },
+            error: {
+                code: "UNAUTHORIZED",
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("returns the same 401 message for an invalid API key", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/image/invalid-key-cache-miss?model=zimage",
+                {
+                    headers: {
+                        Authorization:
+                            "Bearer sk_notARealKey1234567890123456789",
+                    },
+                },
+            ),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "UNAUTHORIZED",
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+            },
         });
         await waitOnExecutionContext(ctx);
     });

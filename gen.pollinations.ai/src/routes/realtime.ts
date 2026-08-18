@@ -34,7 +34,11 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
+import {
+    reduceAdjustmentsToEventFields,
+    requestIdentity,
+    type UserData,
+} from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
@@ -80,15 +84,9 @@ type RealtimeCacheUsage = {
     imageTokens: number;
 };
 type RealtimeBillingContext = {
-    userId: string;
-    userTier?: string;
-    apiKeyId?: string;
-    apiKeyName?: string;
-    apiKeyType?: "secret" | "publishable";
-    apiKeyCreatedVia?: string;
-    apiKeyCreatedForApp?: string;
-    apiKeyCreatedForUserId?: string;
-    apiKeyClientId?: string;
+    // Spread verbatim into the event, so an identity column added to UserData
+    // reaches a realtime row without touching this file.
+    identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -719,15 +717,7 @@ function createRealtimeTrackingEvent(args: {
         eventType: "generate.realtime",
         ipSubnet: args.tracking.ipSubnet,
         ipHash: args.tracking.ipHash,
-        userId: args.tracking.userId,
-        userTier: args.tracking.userTier,
-        apiKeyId: args.tracking.apiKeyId,
-        apiKeyName: args.tracking.apiKeyName,
-        apiKeyType: args.tracking.apiKeyType,
-        apiKeyCreatedVia: args.tracking.apiKeyCreatedVia,
-        apiKeyCreatedForApp: args.tracking.apiKeyCreatedForApp,
-        apiKeyCreatedForUserId: args.tracking.apiKeyCreatedForUserId,
-        apiKeyClientId: args.tracking.apiKeyClientId,
+        ...args.tracking.identity,
         referrerUrl: args.tracking.referrerUrl,
         referrerDomain: args.tracking.referrerDomain,
         modelRequested: args.tracking.modelRequested,
@@ -782,8 +772,8 @@ async function settleRealtimeSession(
             db,
             isBilledUsage: true,
             totalPrice: price.totalPrice,
-            userId: tracking.userId,
-            apiKeyId: tracking.apiKeyId,
+            userId: tracking.identity.userId,
+            apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
@@ -795,7 +785,7 @@ async function settleRealtimeSession(
         tracking.rateLimitConsumed = true;
     }
 
-    const balances = await getUserBalance(db, tracking.userId);
+    const balances = await getUserBalance(db, tracking.identity.userId);
     await sendToTinybird(
         createRealtimeTrackingEvent({
             tracking,
@@ -1278,9 +1268,6 @@ async function createRealtimeBillingContext(
     c: Context<Env>,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
-    const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-        | Record<string, unknown>
-        | undefined;
     const rawIp = getRealClientIp(c);
     const clientIp =
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
@@ -1296,16 +1283,8 @@ async function createRealtimeBillingContext(
     }
 
     return {
-        userId: user.id,
-        userTier: user.tier,
-        apiKeyId: c.var.auth.apiKey?.id,
-        apiKeyName: c.var.auth.apiKey?.name,
-        apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",
-        apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-        apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-        apiKeyCreatedForUserId:
-            c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
+        // requireUser() above proves the id, which the optional field cannot.
+        identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
@@ -1332,10 +1311,6 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    await c.var.auth.requireAuthorization({
-        message:
-            "Realtime WebSocket requires a Pollinations API key in the Authorization header or key query parameter.",
-    });
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;

@@ -41,16 +41,16 @@ export default {
     async fetch(request) {
         const url = new URL(request.url);
 
-        if (url.pathname === "/" && request.method === "GET") {
+        if (url.pathname === "/health" && request.method === "GET") {
             return Response.json({
                 name: "pollinations-mcp",
                 transport: "streamable-http",
-                endpoint: "/mcp",
+                endpoint: "/",
                 stateless: true,
             });
         }
 
-        if (url.pathname !== "/mcp") {
+        if (url.pathname !== "/") {
             return new Response("Not found", { status: 404 });
         }
 

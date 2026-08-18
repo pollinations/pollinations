@@ -324,27 +324,28 @@ describe("docs routes", () => {
         expect(parsed.paths["/v1/chat/completions"]).toBeDefined();
     });
 
-    it("serves the guides index and individual guide pages", async () => {
+    it("redirects retired guide URLs to Scalar tag anchors", async () => {
         const ctx = createExecutionContext();
 
         const indexRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides"),
+            new Request("https://gen.pollinations.ai/docs/guides", {
+                redirect: "manual",
+            }),
             envWithEnterSchema({}),
             ctx,
         );
-        expect(indexRes.status).toBe(200);
-        const indexHtml = await indexRes.text();
-        expect(indexHtml).toContain("/docs/guides/byop");
-        expect(indexHtml).toContain("/docs/guides/cli");
-        expect(indexHtml).toContain("/docs/guides/mcp");
+        expect(indexRes.status).toBe(301);
+        expect(indexRes.headers.get("Location")).toBe("/docs");
 
-        const byopRes = await worker.fetch(
-            new Request("https://gen.pollinations.ai/docs/guides/byop"),
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/mcp", {
+                redirect: "manual",
+            }),
             envWithEnterSchema({}),
             ctx,
         );
-        expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("BYOP");
+        expect(mcpRes.status).toBe(301);
+        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),

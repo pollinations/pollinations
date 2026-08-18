@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "Intelligent Diagnostic Assessment",
+    "url": "https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica",
+    "description": "# 📊 Intelligent Diagnostic Assessment A revolutionary AI-powered tool to transform diagnostic educational assessment [![Powered by Pollinations.ai](https://img.shields.io/badge/Powered%20by-Pollinati",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "Juanrivera126",
+    "githubUserId": "17982932",
+    "repositoryUrl": "https://github.com/Juanrivera126/Intelligent-Diagnostic-Assessment",
+    "repositoryStars": null,
+    "discordUsername": "juanrivera126",
+    "other": null,
+    "submittedDate": "2026-08-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13511",
+    "approvedDate": "2026-08-18",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "DiddyDiffusion",
     "url": "https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html",

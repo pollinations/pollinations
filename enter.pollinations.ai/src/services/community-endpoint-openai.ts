@@ -1,11 +1,12 @@
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
-    normalizeCommunityAssetUrl,
+    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -34,9 +35,6 @@ export type CommunityEndpointTestResult = {
     inputModalities?: ModelInputModality[];
 };
 
-const REQUEST_TIMEOUT_MS = 90_000;
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
-
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
         Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
@@ -56,7 +54,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         response = await fetch(url, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
@@ -177,7 +175,7 @@ export async function testCommunityImageEndpoint({
         }),
     });
 
-    const imageBytes = await firstImageBytes(body, baseUrl);
+    const imageBytes = await firstCommunityImageBytes(body, baseUrl);
     const imageMimeType = imageBytes && detectImageMimeType(imageBytes);
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
@@ -234,88 +232,9 @@ async function testCommunityImageEdits(
             headers: authorizationHeaders(bearerToken),
             body: formData,
         });
-        const editedImage = await firstImageBytes(body, baseUrl);
+        const editedImage = await firstCommunityImageBytes(body, baseUrl);
         return Boolean(editedImage && detectImageMimeType(editedImage));
     } catch {
         return false;
-    }
-}
-
-async function firstImageBytes(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Uint8Array | null> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        return null;
-    }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
-        if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
-        ) {
-            return decodeBase64(image.b64_json);
-        }
-        if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
-        ) {
-            return fetchImageBytes(image.url, endpointBaseUrl);
-        }
-    }
-    return null;
-}
-
-async function fetchImageBytes(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Uint8Array> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new Error("Endpoint returned an unsafe image URL");
-    }
-    let response: Response;
-    try {
-        response = await fetch(url, {
-            redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        });
-    } catch {
-        throw new Error("Endpoint image URL timed out or could not connect");
-    }
-    if (!response.ok) {
-        throw new Error(`Endpoint image URL responded ${response.status}`);
-    }
-    const contentLength = Number(response.headers.get("content-length"));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
-        throw new Error("Endpoint image is larger than 20 MB");
-    }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > MAX_IMAGE_BYTES) {
-        throw new Error("Endpoint image is larger than 20 MB");
-    }
-    return bytes;
-}
-
-function decodeBase64(value: string): Uint8Array | null {
-    try {
-        const encoded = value
-            .replace(/^data:[^,]+,/, "")
-            .replace(/\s/g, "")
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
-        const decoded = atob(encoded);
-        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-    } catch {
-        return null;
     }
 }

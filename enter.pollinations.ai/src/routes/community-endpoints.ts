@@ -1243,9 +1243,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
-            if (input.visibility !== undefined) {
-                update.visibility = input.visibility;
-            }
             if (input.paidOnly !== undefined) {
                 update.paidOnly = input.paidOnly;
             }

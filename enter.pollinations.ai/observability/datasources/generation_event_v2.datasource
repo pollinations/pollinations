@@ -148,13 +148,16 @@ SCHEMA >
 -- one agent call's model steps and tool calls. The parent row is free, so a
 -- run costs the sum over its children.
 --
--- Adding a column here does not patch the existing table: Tinybird calls it an
--- incompatible change, builds a new table, and copies the old rows in through
--- FORWARD_QUERY below. That copy carries only the columns it names -- hence the
--- long list, with '' for this new one.
+-- Adding a column here now forces a full table rebuild. #10763 dropped a
+-- FORWARD_QUERY in May precisely to avoid that, and every column added since
+-- went through as a metadata-only ALTER -- but Tinybird no longer offers that
+-- path. Checked against staging with a throwaway column: it rejects any new
+-- column and prints the FORWARD_QUERY below, which copies the old rows in.
 --
--- Add every new column to that list too, or it is dropped on the next deploy.
--- `tb deployment create --check` fails with the exact query it wants; paste it.
+-- DELETE THIS BLOCK ONCE THE DEPLOY IS PROMOTED. It reads
+-- defaultValueOfTypeName('String') AS parent_request_id, so leaving it in place
+-- would blank out real parent_request_id values on the next rebuild.
+-- `tb deployment create --check` reprints the query it wants when one is needed.
 `parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"

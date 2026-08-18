@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { fetchUserImage } from "@/userImage.ts";
-import { HttpError } from "../httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return new Uint8Array(buffer);

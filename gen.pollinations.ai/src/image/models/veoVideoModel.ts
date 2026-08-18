@@ -1,7 +1,7 @@
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";

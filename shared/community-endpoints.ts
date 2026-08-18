@@ -1,4 +1,5 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import { HttpError } from "./http-error.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -492,14 +493,13 @@ export function normalizeCommunityAssetUrl(
  * timeout and size cap.
  *
  * Returns null when the body carries no usable image, so each caller can
- * phrase that in its own words. Failures while fetching a URL throw via
- * `fail`, whose messages are worded to follow the caller's own subject —
- * "<subject> returned an unsafe image URL".
+ * phrase that in its own words. A URL that is unsafe, unreachable, or oversized
+ * throws HttpError(502) — the gen funnel renders that status directly, and the
+ * enter probe flattens it to a 400 with the same message.
  */
 export async function firstCommunityImageBytes(
     body: unknown,
     endpointBaseUrl: string,
-    fail: (message: string) => Error,
 ): Promise<Uint8Array | null> {
     if (
         !body ||
@@ -523,7 +523,7 @@ export async function firstCommunityImageBytes(
             typeof image.url === "string" &&
             image.url.length > 0
         ) {
-            return fetchCommunityImageBytes(image.url, endpointBaseUrl, fail);
+            return fetchCommunityImageBytes(image.url, endpointBaseUrl);
         }
     }
     return null;
@@ -532,13 +532,12 @@ export async function firstCommunityImageBytes(
 async function fetchCommunityImageBytes(
     value: string,
     endpointBaseUrl: string,
-    fail: (message: string) => Error,
 ): Promise<Uint8Array> {
     let url: string;
     try {
         url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
     } catch {
-        throw fail("returned an unsafe image URL");
+        throw new HttpError("Endpoint returned an unsafe image URL", 502);
     }
     let response: Response;
     try {
@@ -549,14 +548,26 @@ async function fetchCommunityImageBytes(
             redirect: "manual",
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
-    } catch {
-        throw fail("returned an image URL that timed out or could not connect");
+    } catch (error) {
+        throw new HttpError(
+            "Endpoint image URL timed out or could not connect",
+            502,
+            { error: error instanceof Error ? error.message : String(error) },
+            url,
+        );
     }
     if (!response.ok) {
-        throw fail(`returned an image URL that responded ${response.status}`);
+        throw new HttpError(
+            `Endpoint image URL responded ${response.status}`,
+            502,
+            undefined,
+            url,
+        );
     }
-    return readResponseBytes(response, MAX_COMMUNITY_IMAGE_BYTES, () =>
-        fail("returned an image larger than 20 MB"),
+    return readResponseBytes(
+        response,
+        MAX_COMMUNITY_IMAGE_BYTES,
+        () => new HttpError("Endpoint image is larger than 20 MB", 502),
     );
 }
 

@@ -4,7 +4,7 @@ import {
     callGPTImage,
 } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
-import type { HttpError } from "../../src/image/httpError.ts";
+import type { HttpError } from "@shared/http-error.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const AZURE_KEY_ENV = {

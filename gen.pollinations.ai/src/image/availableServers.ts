@@ -1,6 +1,6 @@
 import debug from "debug";
 import { isNetworkFailure } from "../fallback.ts";
-import { HttpError } from "./httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 
 const logServer = debug("pollinations:server");
 

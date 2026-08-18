@@ -175,11 +175,7 @@ export async function testCommunityImageEndpoint({
         }),
     });
 
-    const imageBytes = await firstCommunityImageBytes(
-        body,
-        baseUrl,
-        endpointError,
-    );
+    const imageBytes = await firstCommunityImageBytes(body, baseUrl);
     const imageMimeType = imageBytes && detectImageMimeType(imageBytes);
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
@@ -236,17 +232,9 @@ async function testCommunityImageEdits(
             headers: authorizationHeaders(bearerToken),
             body: formData,
         });
-        const editedImage = await firstCommunityImageBytes(
-            body,
-            baseUrl,
-            endpointError,
-        );
+        const editedImage = await firstCommunityImageBytes(body, baseUrl);
         return Boolean(editedImage && detectImageMimeType(editedImage));
     } catch {
         return false;
     }
-}
-
-function endpointError(message: string): Error {
-    return new Error(`Endpoint ${message}`);
 }

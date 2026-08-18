@@ -11,7 +11,7 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
-import { HttpError } from "../src/image/httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 function registryEntry(

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HttpError } from "../../src/image/httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 import {
     downloadUserImage,
     readImageDimensions,

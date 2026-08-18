@@ -1,6 +1,6 @@
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { ImageParams } from "../params.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 

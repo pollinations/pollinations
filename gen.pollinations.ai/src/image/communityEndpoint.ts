@@ -8,6 +8,7 @@ import {
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -16,7 +17,6 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
-import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
 import {
     bufferToUint8Array,
@@ -63,11 +63,7 @@ export async function callCommunityImageEndpoint(
               }),
     );
 
-    const bytes = await firstCommunityImageBytes(
-        body,
-        endpoint.baseUrl,
-        endpointError,
-    );
+    const bytes = await firstCommunityImageBytes(body, endpoint.baseUrl);
     if (!bytes || !detectImageMimeType(bytes)) {
         throw new HttpError(
             "Community image endpoint did not return a supported image",
@@ -197,10 +193,6 @@ async function fetchWithTimeout(
             input,
         );
     }
-}
-
-function endpointError(message: string): HttpError {
-    return new HttpError(`Community image endpoint ${message}`, 502);
 }
 
 function parseJson(text: string): unknown {

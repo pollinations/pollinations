@@ -95,7 +95,8 @@ https://myapp.com/callback?code=oauth_code&state=random-csrf-token
 ```
 
 Validate `state`, then exchange the code at the token endpoint. Server-backed apps
-can make the exchange from their server:
+call it from their backend; static browser apps can call it directly, because PKCE
+replaces the client secret:
 
 ```bash
 curl -X POST https://enter.pollinations.ai/api/oauth/token \
@@ -108,60 +109,28 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 # → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
 
-Static public browser apps can exchange the code directly: PKCE protects the code,
-the token endpoint supports CORS, and discovery advertises client authentication
-method `none`. Read the token endpoint from discovery metadata instead of
-hardcoding it:
+The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+
+**Browser-only apps.** The same request works from `fetch`:
 
 ```javascript
-const redirectUri = 'https://myapp.com/callback'; // Exact registered URI
-const callback = new URL(window.location.href);
-const code = callback.searchParams.get('code');
-const returnedState = callback.searchParams.get('state');
-const expectedState = sessionStorage.getItem('pollinations_oauth_state');
-const codeVerifier = sessionStorage.getItem('pollinations_pkce_verifier');
-
-if (!code || !expectedState || returnedState !== expectedState || !codeVerifier) {
-  throw new Error('Invalid OAuth callback');
-}
-
-sessionStorage.removeItem('pollinations_oauth_state');
-sessionStorage.removeItem('pollinations_pkce_verifier');
-window.history.replaceState({}, '', redirectUri);
-
-const metadataResponse = await fetch(
-  'https://enter.pollinations.ai/.well-known/oauth-authorization-server'
-);
-if (!metadataResponse.ok) throw new Error('OAuth discovery failed');
-const metadata = await metadataResponse.json();
-
-const tokenResponse = await fetch(metadata.token_endpoint, {
+const res = await fetch('https://enter.pollinations.ai/api/oauth/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: new URLSearchParams({
     grant_type: 'authorization_code',
-    code,
+    code,                                        // From the callback URL
     client_id: 'pk_yourkey',
-    redirect_uri: redirectUri,
-    code_verifier: codeVerifier,
+    redirect_uri: 'https://myapp.com/callback',  // Exact registered URI
+    code_verifier,                               // The verifier you saved
   }),
 });
-const token = await tokenResponse.json();
-if (!tokenResponse.ok) {
-  throw new Error(token.error_description || token.error || 'Token exchange failed');
-}
-
-const accessToken = token.access_token;
+const { access_token } = await res.json();
 ```
 
-Keep `accessToken` in memory when possible. If a separate callback page must hand
-it back to the app within the same tab, `sessionStorage` is a reasonable
-session-only fallback; clear it on disconnect or expiry. Never put access tokens
-in `localStorage`, URLs, analytics, or logs.
-
-The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
-
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a URL, analytics, or logs.
 
 ### 3. Call Pollinations
 

@@ -1,3 +1,6 @@
+import { UpstreamError } from "@shared/error.ts";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+
 /**
  * Shared OpenAI-compatible transcription-response formatter.
  *
@@ -8,10 +11,48 @@
  * (text / verbose_json / diarized_json / json) identically.
  */
 
+/**
+ * The formats `buildTranscriptionResponse` can emit. `srt`/`vtt` are absent
+ * because building cues needs per-segment timings, which the normalized
+ * intermediate does not carry — providers that support them (whisper,
+ * AssemblyAI) handle those formats themselves.
+ */
+export const TRANSCRIPTION_RESPONSE_FORMATS = [
+    "json",
+    "text",
+    "verbose_json",
+    "diarized_json",
+] as const;
+
+/**
+ * No-op when the caller did not ask for a format; the default is json.
+ *
+ * `supported` narrows the set for providers that cannot fill every branch —
+ * `diarized_json` needs real speaker segments, so a provider that never
+ * requests diarization must reject it rather than answer with `segments: []`.
+ */
+export function assertTranscriptionResponseFormat(
+    responseFormat: string | null | undefined,
+    modelLabel: string,
+    supported: readonly string[] = TRANSCRIPTION_RESPONSE_FORMATS,
+): void {
+    if (responseFormat && !supported.includes(responseFormat)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for ${modelLabel}: ${responseFormat}. Supported: ${supported.join(", ")}`,
+        });
+    }
+}
+
 export interface NormalizedWord {
     word: string;
     start: number;
     end: number;
+}
+
+export interface NormalizedSegment {
+    start: number;
+    end: number;
+    text: string;
 }
 
 export interface NormalizedDiarizedSegment {
@@ -28,6 +69,12 @@ export interface NormalizedTranscript {
     /** Duration in seconds. */
     duration: number;
     words: NormalizedWord[];
+    /**
+     * Timed segments as reported upstream, empty when the provider reports
+     * none. verbose_json then falls back to a single segment spanning the
+     * whole file, which is a placeholder rather than a measurement.
+     */
+    segments: NormalizedSegment[];
     diarizedSegments: NormalizedDiarizedSegment[];
 }
 
@@ -56,6 +103,10 @@ export function buildTranscriptionResponse(opts: {
 }): Response {
     const { normalized, responseFormat, usageHeaders } = opts;
     const { text, duration } = normalized;
+    // OpenAI defines usage.seconds and the top-level duration as the same
+    // quantity — "duration of the input audio" — so they are one number here.
+    // That is also what we bill, so the body and the usage headers agree.
+    const usage = { type: "duration" as const, seconds: duration };
 
     if (responseFormat === "text") {
         return new Response(text, {
@@ -73,14 +124,25 @@ export function buildTranscriptionResponse(opts: {
             language: normalized.language || "unknown",
             duration,
             words: normalized.words,
-            segments: [
-                {
-                    id: 0,
-                    start: 0,
-                    end: duration,
-                    text,
-                },
-            ],
+            // Prefer what the provider measured. Inventing one file-spanning
+            // segment when it already sent real ones would hand the caller
+            // worse timings than the upstream produced.
+            segments: normalized.segments.length
+                ? normalized.segments.map((segment, index) => ({
+                      id: index,
+                      start: segment.start,
+                      end: segment.end,
+                      text: segment.text,
+                  }))
+                : [
+                      {
+                          id: 0,
+                          start: 0,
+                          end: duration,
+                          text,
+                      },
+                  ],
+            usage,
         };
         return Response.json(body, { headers: usageHeaders });
     }
@@ -92,15 +154,12 @@ export function buildTranscriptionResponse(opts: {
                 duration,
                 text,
                 segments: toOpenAiDiarizedSegments(normalized.diarizedSegments),
-                usage: {
-                    type: "duration",
-                    seconds: duration,
-                },
+                usage,
             },
             { headers: usageHeaders },
         );
     }
 
     // Default: json format
-    return Response.json({ text }, { headers: usageHeaders });
+    return Response.json({ text, usage }, { headers: usageHeaders });
 }

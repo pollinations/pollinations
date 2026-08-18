@@ -214,9 +214,28 @@ describe("isRetryableFallbackError", () => {
         expect(isRetryableFallbackError(textFailure(408))).toBe(true);
     });
 
+    it("fails over on upstream statuses no allowlist would have named", () => {
+        // Anthropic's overloaded signal, Cloudflare's edge failures, and the
+        // rarer 5xx a provider can emit: all mean the upstream, not the
+        // request.
+        expect(isRetryableFallbackError(new HttpError("overloaded", 529))).toBe(
+            true,
+        );
+        expect(isRetryableFallbackError(new HttpError("timeout", 524))).toBe(
+            true,
+        );
+        expect(isRetryableFallbackError(new HttpError("down", 521))).toBe(true);
+        expect(
+            isRetryableFallbackError(new HttpError("not implemented", 501)),
+        ).toBe(true);
+    });
+
     it("does not fail over on caller errors", () => {
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
         expect(isRetryableFallbackError(new HttpError("bad input", 422))).toBe(
+            false,
+        );
+        expect(isRetryableFallbackError(new HttpError("too large", 413))).toBe(
             false,
         );
     });

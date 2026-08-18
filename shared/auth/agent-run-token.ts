@@ -15,7 +15,6 @@ export type AgentRunClaims = {
     // it in the signature: the agent holds the token, so a header carrying the
     // same id would be a value the agent gets to choose.
     parentRequestId: string;
-    runId: string;
     managedAgentId?: string;
     issuedAt: number;
     expiresAt: number;
@@ -31,7 +30,6 @@ export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
     parentRequestId: string;
-    runId: string;
     managedAgentId?: string;
     expiresIn?: number;
     now?: number;
@@ -51,7 +49,7 @@ export async function signAgentRunToken(opts: {
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
         .setAudience(AGENT_RUN_TOKEN_AUDIENCE)
         .setSubject(opts.parentApiKeyId)
-        .setJti(opts.runId)
+        .setJti(crypto.randomUUID())
         .setIssuedAt(issuedAt)
         .setExpirationTime(issuedAt + expiresIn)
         .sign(signingKey(opts.secret));
@@ -87,8 +85,6 @@ export async function verifyAgentRunToken(
     if (
         typeof payload.sub !== "string" ||
         !payload.sub ||
-        typeof payload.jti !== "string" ||
-        !payload.jti ||
         typeof payload.iat !== "number" ||
         typeof payload.exp !== "number" ||
         typeof payload.parentRequestId !== "string" ||
@@ -102,7 +98,6 @@ export async function verifyAgentRunToken(
 
     return {
         parentApiKeyId: payload.sub,
-        runId: payload.jti,
         parentRequestId: payload.parentRequestId,
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }

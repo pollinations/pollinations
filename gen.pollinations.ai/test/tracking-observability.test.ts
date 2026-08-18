@@ -581,7 +581,6 @@ describe("tracking observability", () => {
             {
                 parentApiKeyId: "parent-key-id",
                 parentRequestId: "req-parent",
-                runId: "run-id",
                 issuedAt: 0,
                 expiresAt: 0,
             },

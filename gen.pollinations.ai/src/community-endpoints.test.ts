@@ -1077,8 +1077,8 @@ describe("community endpoint helpers", () => {
             expect(claims.parentRequestId).toBe("req-abc");
 
             // A delegating fallback mints one token per attempt, all under the
-            // same parent request. They share the grouping id and must not
-            // share a jti.
+            // same parent request. They share the grouping id and are still
+            // distinct tokens.
             const second = await contextFor(
                 endpoint,
                 "parent-key-id",
@@ -1089,7 +1089,9 @@ describe("community endpoint helpers", () => {
                 secret,
             );
             expect(secondClaims.parentRequestId).toBe("req-abc");
-            expect(secondClaims.runId).not.toBe(claims.runId);
+            expect(String(second.modelConfig?.authKey)).not.toBe(
+                String(context.modelConfig?.authKey),
+            );
         });
 
         it("sends the saved bearer when the endpoint is not flagged", async () => {

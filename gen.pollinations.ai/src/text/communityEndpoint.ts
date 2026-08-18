@@ -57,7 +57,6 @@ async function mintDelegatedToken({
         secret,
         parentApiKeyId,
         parentRequestId,
-        runId: crypto.randomUUID(),
         managedAgentId:
             endpoint.kind === "agent" ? endpoint.agentId : undefined,
     });

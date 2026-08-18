@@ -49,7 +49,6 @@ async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
         parentApiKeyId,
         parentRequestId: crypto.randomUUID(),
         managedAgentId,
-        runId: crypto.randomUUID(),
     });
 }
 

@@ -65,7 +65,6 @@ async function runTokenFor(parentApiKeyId: string, managedAgentId?: string) {
         parentApiKeyId,
         parentRequestId: crypto.randomUUID(),
         managedAgentId,
-        runId: crypto.randomUUID(),
     });
 }
 
@@ -130,7 +129,6 @@ test("surfaces the parent request id", async () => {
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: parent.id,
         parentRequestId: "req-abc",
-        runId: crypto.randomUUID(),
     });
     const body = await (
         await probe(authProbe, "https://gen.pollinations.ai/", token)
@@ -243,7 +241,6 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: "parent-key-id",
         parentRequestId: "parent-request-id",
-        runId: "run-id",
         expiresIn: 30,
         now: 1_000,
     });
@@ -265,7 +262,6 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: "parent-key-id",
             parentRequestId: "parent-request-id",
-            runId: "run-id",
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");

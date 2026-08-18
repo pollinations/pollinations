@@ -1,14 +1,14 @@
 import type { FallbackDefinition } from "./merge-fallbacks";
 
 /**
- * Fallback routes for the image catalog, keyed by the model they serve and
- * tried in order. Each route states only what differs from that model;
- * mergeFallbacks fills in the rest. See `FallbackDefinition`.
+ * Fallback targets for the image catalog, keyed by the model they serve and
+ * tried in order. A route states only what differs from that model and is
+ * registered as `<model>-<provider>-fallback-<n>`; mergeFallbacks fills in the
+ * rest. See `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
     zimage: [
         {
-            id: "zimage-fal",
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
             paidOnly: true,

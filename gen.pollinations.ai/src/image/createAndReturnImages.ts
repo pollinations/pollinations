@@ -822,7 +822,7 @@ const generateImage = async (
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
 
-        case "zimage-fal":
+        case "zimage-fal-fallback-1":
             return await callZImageFalAPI(prompt, safeParams);
 
         default:

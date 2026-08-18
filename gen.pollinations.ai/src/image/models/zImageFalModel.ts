@@ -73,7 +73,7 @@ export async function callZImageFalAPI(
         isMature: result.has_nsfw_concepts?.[0] ?? false,
         isChild: false,
         trackingData: {
-            actualModel: "zimage-fal",
+            actualModel: "zimage-fal-fallback-1",
             usage: { completionImageTokens: 1 },
         },
     };

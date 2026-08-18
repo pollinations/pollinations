@@ -4158,6 +4158,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
         priv: `private-${crypto.randomUUID().slice(0, 8)}`,
         otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
+        otherDisabled: `other-disabled-${crypto.randomUUID().slice(0, 8)}`,
         disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
         delegating: `delegating-${crypto.randomUUID().slice(0, 8)}`,
         image: `image-${crypto.randomUUID().slice(0, 8)}`,
@@ -4187,6 +4188,20 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0,
             completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: otherOwnerUserId,
+            visibility: "public",
+            name: targetNames.otherDisabled,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "other-disabled-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            disabledAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -4323,9 +4338,14 @@ fixtureTest("validates community fallback targets on write", async () => {
         communityModelId(otherOwnerGithubUsername, targetNames.otherPrivate),
     );
     expect(otherPrivateTarget.status).toBe(400);
-    expect(await otherPrivateTarget.text()).toContain(
-        "must be public or owned by you",
+    expect(await otherPrivateTarget.text()).toContain("does not exist");
+
+    const otherDisabledTarget = await createWithFallback(
+        `${primaryName}-other-disabled`,
+        communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
+    expect(otherDisabledTarget.status).toBe(400);
+    expect(await otherDisabledTarget.text()).toContain("does not exist");
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,

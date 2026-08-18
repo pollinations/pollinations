@@ -1083,9 +1083,11 @@ describe("community endpoint helpers", () => {
             );
 
             expect(response.status).toBe(200);
+            // The shared formatter re-emits the OpenAI json shape: the
+            // upstream's usage block is normalized to usage.seconds.
             expect(await response.json()).toEqual({
                 text: "Hello world",
-                usage: { duration: 12.5 },
+                usage: { type: "duration", seconds: 12.5 },
             });
             expect(response.headers.get(MODEL_USED_HEADER)).toBe(
                 "voodoohop/whisper",
@@ -1149,25 +1151,74 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("forwards the caller's response_format and fails if it cannot be metered", async () => {
+        it("asks upstream for json even when the caller wants text, then formats down", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const formData = await new Request(input, init).formData();
-                expect(formData.get("response_format")).toBe("text");
-                return new Response("Hello world", {
-                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                // text carries no usage object, so requesting it upstream would
+                // make the request unbillable. json is what the probe verified.
+                expect(formData.get("response_format")).toBe("json");
+                return Response.json({
+                    text: "Hello world",
+                    usage: { seconds: 4 },
                 });
             });
             vi.stubGlobal("fetch", fetchMock);
 
-            // The format is the caller's business, not ours — but a body we
-            // cannot meter is an error, never a free transcription.
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "text" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).toBe("Hello world");
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("4");
+        });
+
+        it("serves verbose_json from the metered json body", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        language: "en",
+                        usage: { seconds: 6 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                text: "Hello world",
+                task: "transcribe",
+                language: "en",
+                duration: 6,
+            });
+        });
+
+        it("rejects diarized_json rather than answering with empty segments", async () => {
+            const fetchMock = vi.fn(async () =>
+                Response.json({ text: "Hello", usage: { seconds: 1 } }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
             await expect(
                 callCommunityTranscriptionEndpoint(
                     await transcriptionEndpoint(),
-                    { file: audioFile, responseFormat: "text" },
+                    { file: audioFile, responseFormat: "diarized_json" },
                     secret,
                 ),
-            ).rejects.toMatchObject({ status: 502 });
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
         });
 
         it("defaults response_format to json, the shape the probe verified", async () => {

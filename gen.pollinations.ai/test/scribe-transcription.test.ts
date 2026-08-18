@@ -104,9 +104,12 @@ describe("transcribeWithElevenLabs", () => {
                     end: 3.4,
                 },
             ],
+            // Scribe bills input audio (audio_duration_secs=10), not the
+            // transcript span (3.4), so usage.seconds must agree with the
+            // x-usage-prompt-audio-seconds header above.
             usage: {
                 type: "duration",
-                seconds: 3.4,
+                seconds: 10,
             },
         });
     });
@@ -160,7 +163,10 @@ describe("transcribeWithElevenLabs", () => {
         });
 
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
-        await expect(response.json()).resolves.toEqual({ text: "" });
+        await expect(response.json()).resolves.toEqual({
+            text: "",
+            usage: { type: "duration", seconds: 10 },
+        });
     });
 
     it.each([

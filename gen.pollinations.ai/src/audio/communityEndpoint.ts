@@ -12,6 +12,16 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import {
+    assertTranscriptionResponseFormat,
+    buildTranscriptionResponse,
+} from "../routes/transcription-response.ts";
+
+const COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS = [
+    "json",
+    "text",
+    "verbose_json",
+] as const;
 
 export type CommunityTranscriptionOptions = {
     file: File;
@@ -32,12 +42,15 @@ export async function callCommunityTranscriptionEndpoint(
             `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
         );
     }
-    // When the caller asks for nothing we send json rather than letting the
-    // endpoint pick: json is OpenAI's default anyway, and it is the exact shape
-    // the registration probe proved this endpoint meters. Anything the caller
-    // does ask for is forwarded as-is — the endpoint owns which formats it
-    // supports, and its errors reach the caller unchanged.
     const responseFormat = options.responseFormat ?? "json";
+    // No diarized_json: we never ask the endpoint to diarize and plain json
+    // carries no speaker data, so that branch would answer with segments: [].
+    assertTranscriptionResponseFormat(
+        responseFormat,
+        endpoint.modelId,
+        COMMUNITY_TRANSCRIPTION_RESPONSE_FORMATS,
+    );
+
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
@@ -53,7 +66,14 @@ export async function callCommunityTranscriptionEndpoint(
     upstreamFormData.append("model", endpoint.upstreamModel);
     if (options.language) upstreamFormData.append("language", options.language);
     if (options.prompt) upstreamFormData.append("prompt", options.prompt);
-    upstreamFormData.append("response_format", responseFormat);
+    // Pin the upstream format instead of forwarding the caller's, the way
+    // whisper/grok/scribe do. json is the only format every OpenAI-compatible
+    // model supports (gpt-4o-transcribe rejects everything else), and it is the
+    // exact shape the registration probe proved this endpoint meters — text,
+    // srt and vtt carry no usage object at all, so forwarding them would ask
+    // for a body that cannot be billed. The caller's format is served from the
+    // parsed result below.
+    upstreamFormData.append("response_format", "json");
     if (options.temperature !== undefined) {
         upstreamFormData.append("temperature", String(options.temperature));
     }
@@ -81,47 +101,57 @@ export async function callCommunityTranscriptionEndpoint(
     }
     response = await ensureUpstreamOk(response, upstreamUrl);
 
-    const bodyText = await response.text();
-    const duration = transcriptionDuration(bodyText);
-    const usageHeaders = buildUsageHeaders(
-        endpoint.modelId,
-        createAudioSecondsUsage(duration),
-    );
-
-    return new Response(bodyText, {
-        status: response.status,
-        headers: {
-            ...(response.headers.get("content-type")
-                ? {
-                      "Content-Type": response.headers.get(
-                          "content-type",
-                      ) as string,
-                  }
-                : {}),
-            ...usageHeaders,
+    const transcript = parseCommunityTranscription(await response.text());
+    return buildTranscriptionResponse({
+        normalized: {
+            text: transcript.text,
+            language: transcript.language,
+            duration: transcript.duration,
+            words: [],
+            diarizedSegments: [],
         },
+        responseFormat,
+        usageHeaders: buildUsageHeaders(
+            endpoint.modelId,
+            createAudioSecondsUsage(transcript.duration),
+        ),
     });
 }
 
 // The duration is the meter, so an endpoint that does not report one is a
-// provider regression rather than a free request — the same stance every other
-// per-second path takes (getUploadedMusicDurationSeconds, extractWhisperUsage)
-// and the same stance the image path takes on missing token usage. The
-// registration probe rejects endpoints that cannot report, so reaching this is
-// a regression in an endpoint that could.
-function transcriptionDuration(bodyText: string): number {
+// provider regression rather than a free request — the stance whisper, grok
+// and scribe all take, and the one the image path takes on missing token
+// usage. The registration probe rejects endpoints that cannot report a
+// duration, so reaching this means an endpoint that could has stopped.
+function parseCommunityTranscription(bodyText: string): {
+    text: string;
+    language?: string;
+    duration: number;
+} {
     let parsed: unknown;
     try {
         parsed = JSON.parse(bodyText);
     } catch {
         parsed = null;
     }
-    const seconds = communityTranscriptionSeconds(parsed);
-    if (seconds === null) {
+    const duration = communityTranscriptionSeconds(parsed);
+    if (duration === null) {
         throw new UpstreamError(502 as ContentfulStatusCode, {
             message:
                 "Community transcription endpoint did not report audio duration",
         });
     }
-    return seconds;
+    const record = parsed as Record<string, unknown>;
+    if (typeof record.text !== "string") {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community transcription endpoint did not return transcription text",
+        });
+    }
+    return {
+        text: record.text,
+        language:
+            typeof record.language === "string" ? record.language : undefined,
+        duration,
+    };
 }

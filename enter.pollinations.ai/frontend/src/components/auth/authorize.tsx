@@ -2,7 +2,9 @@ import {
     Button,
     Collapsible,
     cn,
+    ExternalLinkIcon,
     MailIcon,
+    ScrollArea,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -32,12 +34,9 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
-import {
-    computeCategoryModalities,
-    getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
-} from "../models/model-categories.ts";
+import { computeCategoryModalities } from "../models/model-categories.ts";
+import { useModelCategories } from "../models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -100,9 +99,6 @@ export function Authorize() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -117,6 +113,10 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
+    // The minted key is the signed-in user's, so it reaches their own private
+    // models just as their dashboard keys do — but the anonymous catalog omits
+    // them, so the consent screen has to learn them separately.
+    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,
@@ -145,24 +145,6 @@ export function Authorize() {
 
     const isMobile = window.innerWidth < 768;
     useScrollLock(!isMobile);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setModelCategories([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
@@ -586,6 +568,7 @@ export function Authorize() {
                     : { labelledBy: "authorize-dialog-title" }
             }
             tone={error ? "error" : undefined}
+            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
@@ -628,7 +611,7 @@ export function Authorize() {
                 </div>
             </AuthModalHeader>
 
-            <div className="px-6 py-2 space-y-4">
+            <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
                 {error ? (
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
@@ -695,8 +678,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Manage API keys and My Models when
-                                            enabled.
+                                            Manage API keys, agents, and models
+                                            when enabled.
                                         </span>
                                     </li>
                                 )}
@@ -717,7 +700,7 @@ export function Authorize() {
                                     ) : (
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span>Generate</span>
-                                            <div className="flex items-center gap-1 flex-nowrap">
+                                            <div className="flex flex-wrap items-center gap-1">
                                                 {modalities.map((m) => (
                                                     <ModalityChip
                                                         key={m}
@@ -794,20 +777,27 @@ export function Authorize() {
                                 visiblePermissions={visibleOptionalPermissions}
                                 showApiName={false}
                                 modelsInitiallyExpanded
+                                modelCategories={modelCategories}
                             />
                         </Collapsible>
                     </div>
                 )}
-            </div>
+            </ScrollArea>
 
-            <div className="flex items-center justify-between p-6 pt-4">
+            <div className="flex shrink-0 items-center justify-between border-t border-divider p-6 pt-4">
                 <a
                     href="https://pollinations.ai/terms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
+                    aria-label="Terms & Conditions"
+                    className="inline-flex items-center gap-1 text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
                 >
-                    Terms & Conditions
+                    <span className="sm:hidden">Terms</span>
+                    <span className="hidden sm:inline">Terms & Conditions</span>
+                    <ExternalLinkIcon
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 shrink-0 opacity-65"
+                    />
                 </a>
                 <div className="flex gap-2">
                     <Button

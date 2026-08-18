@@ -1,6 +1,5 @@
-// Static CSS for the gen.pollinations.ai docs surface: the Pollinations
-// header bar, the Scalar API-reference overrides, and the standalone
-// guides pages. Pure presentation strings — no logic.
+// Static CSS for the gen.pollinations.ai Scalar docs surface. Pure
+// presentation strings — no logic.
 
 import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw";
 
@@ -77,10 +76,6 @@ body { padding-top: 48px; }
         backdrop-filter: none !important;
     }
 }
-`;
-
-export const POLLINATIONS_HEADER_STANDALONE_CSS = `
-body { padding-top: 48px; }
 `;
 
 export const API_REFERENCE_CUSTOM_CSS = `
@@ -198,73 +193,5 @@ export const API_REFERENCE_CUSTOM_CSS = `
     color: var(--polli-color-text-strong) !important;
     fill: currentColor !important;
     stroke: currentColor !important;
-}
-`;
-
-export const GUIDES_CSS = `
-:root { color-scheme: dark; }
-* { box-sizing: border-box; }
-html, body { overflow-x: hidden; }
-body {
-    font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: var(--polli-color-text-base);
-    background: var(--polli-color-app-bg);
-    margin: 0;
-}
-.wrap { max-width: 800px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
-h1, h2, h3, h4 { font-weight: 600; line-height: 1.3; margin: 2rem 0 .75rem; color: var(--polli-color-text-strong); }
-h1 { font-size: 1.875rem; margin-top: 1rem; }
-h2 { font-size: 1.375rem; padding-bottom: .375rem; border-bottom: 1px solid var(--polli-color-divider); }
-h3 { font-size: 1.125rem; }
-p, li, blockquote { overflow-wrap: anywhere; word-break: break-word; }
-p { margin: .75rem 0; }
-code {
-    background: var(--polli-color-surface-opaque); padding: 2px 5px; border-radius: 4px; color: var(--polli-color-text-strong);
-    font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    overflow-wrap: anywhere; word-break: break-word;
-}
-pre {
-    background: var(--polli-color-surface-opaque); color: var(--polli-color-text-strong); padding: 1rem; border-radius: 8px;
-    border: 1px solid var(--polli-color-divider); overflow-x: auto; font-size: 13px; line-height: 1.5;
-    max-width: 100%;
-}
-pre code {
-    background: transparent; color: inherit; padding: 0;
-    overflow-wrap: normal; word-break: normal; white-space: pre;
-}
-table {
-    display: block; max-width: 100%; width: max-content;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    border-collapse: collapse; margin: 1rem 0; font-size: .9rem;
-}
-th, td { padding: .5rem .75rem; border: 1px solid var(--polli-color-divider); text-align: left; vertical-align: top; }
-th { background: var(--polli-color-surface-opaque); font-weight: 600; color: var(--polli-color-text-strong); }
-a { color: var(--polli-color-text-soft); text-decoration-color: var(--polli-color-border); text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; word-break: break-word; }
-a:hover { color: var(--polli-color-text-strong); text-decoration-color: var(--polli-color-text-soft); }
-blockquote { border-left: 3px solid var(--polli-color-border); padding: .25rem 1rem; color: var(--polli-color-text-soft); margin: 1rem 0; background: var(--polli-color-bg-subtle); }
-ul, ol { padding-left: 1.5rem; }
-li { margin: .25rem 0; }
-hr { border: 0; border-top: 1px solid var(--polli-color-divider); margin: 2rem 0; }
-img { max-width: 100%; height: auto; }
-.guide-cards { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 1.5rem; }
-@media (min-width: 600px) { .guide-cards { grid-template-columns: 1fr 1fr; } }
-.guide-card {
-    display: block; padding: 1.25rem; border: 0; border-radius: 12px;
-    background: var(--polli-color-surface-opaque); color: var(--polli-color-text-strong); text-decoration: none; box-shadow: var(--polli-shadow-well); transition: background .15s, filter .15s;
-}
-.guide-card:hover { background: var(--polli-color-bg-pale); filter: brightness(1.03); }
-.guide-card h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .375rem; font-size: 1.05rem; color: var(--polli-color-text-strong); }
-.guide-card p { margin: 0; color: var(--polli-color-text-muted); font-size: .9rem; }
-.guide-title { display: flex; align-items: center; gap: .6rem; }
-.guide-card .ph-doc-icon,
-.guide-title .ph-doc-icon {
-    width: 1.1rem;
-    height: 1.1rem;
-    flex: 0 0 auto;
-    color: var(--polli-color-text-soft);
-}
-.guide-title .ph-doc-icon {
-    width: 1.35rem;
-    height: 1.35rem;
 }
 `;

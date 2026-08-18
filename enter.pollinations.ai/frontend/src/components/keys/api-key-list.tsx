@@ -270,10 +270,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </p>
                         )}
                         <p className="mt-1 text-sm">
-                            Raw publishable keys (<code>pk_</code>) are
-                            legacy for direct API requests. Use Pollinations
-                            Auth (BYOP), where users sign in and spend their
-                            own Pollen.{" "}
+                            Raw publishable keys (<code>pk_</code>) are legacy
+                            for direct API requests. Use Pollinations Auth
+                            (BYOP), where users sign in and spend their own
+                            Pollen.{" "}
                             <InlineLink href={genDocsUrl("#tag/byop")}>
                                 Read the migration guide
                             </InlineLink>

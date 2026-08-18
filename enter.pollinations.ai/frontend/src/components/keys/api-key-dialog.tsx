@@ -266,9 +266,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     {!simplified && !createdKey && (
                         <p className="text-xs text-theme-text-muted">
-                            Raw publishable keys (<code>pk_</code>) are
-                            legacy. For browsers, create an App Key on this
-                            dashboard and use{" "}
+                            Raw publishable keys (<code>pk_</code>) are legacy.
+                            For browsers, create an App Key on this dashboard
+                            and use{" "}
                             <InlineLink href={genDocsUrl("#tag/byop")}>
                                 BYOP
                             </InlineLink>

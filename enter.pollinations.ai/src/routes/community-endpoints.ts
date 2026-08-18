@@ -1233,9 +1233,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
-            if (input.visibility !== undefined) {
-                update.visibility = input.visibility;
-            }
             if (endpoint.agentId !== null) {
                 update.perUserRpm = null;
             } else if (input.perUserRpm !== undefined) {

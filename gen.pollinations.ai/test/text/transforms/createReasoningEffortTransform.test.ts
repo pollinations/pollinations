@@ -87,9 +87,11 @@ describe("reasoning_effort model wiring", () => {
         "deepseek",
         "qwen-large",
         "qwen3.7-flash",
+        "qwen3.8-27b",
         "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
+        "nemotron-3.5-lightning",
         "minimax",
         "muse-glimmer",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
@@ -102,6 +104,7 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
+        "glm-5.3",
         "minimax-m2.7",
         "step-3.5-flash",
         "step-flash",

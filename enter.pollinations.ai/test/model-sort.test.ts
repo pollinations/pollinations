@@ -33,6 +33,12 @@ describe("model sorting", () => {
             "free",
             "unknown",
         ]);
+        expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
+            "free",
+            "expensive",
+            "cheap",
+            "unknown",
+        ]);
 
         const tiedModels = [
             model("first", { addedDate: 10 }),
@@ -69,5 +75,8 @@ describe("model sorting", () => {
         expect(
             sortModels(namedModels, "brand").map(({ name }) => name),
         ).toEqual(["beta", "alpha", "zeta", "orphan"]);
+        expect(
+            sortModels(namedModels, "brand-desc").map(({ name }) => name),
+        ).toEqual(["alpha", "zeta", "beta", "orphan"]);
     });
 });

@@ -74,6 +74,7 @@ const SORT_OPTIONS: Array<{
     accessibleLabel: string;
 }> = [
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
         value: "price-low",
         label: "Price: Low",
@@ -92,8 +93,13 @@ const SORT_OPTIONS: Array<{
     },
     {
         value: "brand",
-        label: "Publisher",
+        label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
+    },
+    {
+        value: "brand-desc",
+        label: "Publisher: Z–A",
+        accessibleLabel: "Publisher: Z to A",
     },
 ];
 

@@ -1,0 +1,33 @@
+{
+  "pr_number": 13523,
+  "title": "fix(fallback): hide private-target oracles and leaky metadata",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13523",
+  "merged_at": "2026-08-19T19:15:31Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12890\n\nLeftovers from #12819 that were still true on main.\n\n## Changes\n\n1. **`fallbackTarget` leak.** Handler-level failover used `completion.fallbackTarget = ...`, which creates an enumerable property. Cached JSON then shipped `\"fallbackTarget\":\"config.targets[1]\"`. Now `attachFallbackTarget()` uses `Object.defineProperty(..., { enumerable: false })`, same as the Portkey-header path. The response header is unchanged.\n\n2. **Private-model existence oracle.** `GET/POST` fallback validation returned different 400s for \"no row\" vs \"row is private / deactivated\". Any authenticated user could probe another owner's private model. Other-owner private or deactivated targets now use the same `does not exist` message. Owners still get the precise `must be active` / `must be public or owned by you` errors for their own rows.\n\n3. **`delegatesGeneration`.** Already rejected in `fallbackTargetRejection` / `isUsableCommunityFallback`. Left as-is.\n\n4. **Edits failover.** Linking and write-path validation now refuse a generations-only image target when the primary supports `/v1/images/edits`.\n\n## Deliberately not changed\n\n- **`x-model-used` still names the served model.** Tracking and existing image fallback tests depend on that. Body vs header disagreement is called out in the issue as intentional for now.\n\n## Tests\n\n- `attachFallbackTarget` is non-enumerable; primary index is a no-op\n- other-owner private and other-owner disabled both 400 with `does not exist`\n- own disabled still `must be active`\n- edits-capable community image does not link a generations-only target\n\n`npx vitest run test/fallback.test.ts` — 20 passed  \n`npx vitest run src/community-endpoints.test.ts -t \"validates community fallback targets on write\"` — passed  \n`npx vitest run src/community-endpoints.test.ts -t \"links community fallback|retries a failed community image|tries every declared image\"` — passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fallbacks Mind Their Manners",
+    "blurb": "The fallback garden got better fences and tidier labels. Private model details stay private, while image-editing routes now pick companions that can actually do the job.",
+    "summary": "Fallback responses now keep `fallbackTarget` out of cached JSON, return one `does not exist` result for other users' private or deactivated models, and reject generations-only image fallbacks when an `/v1/images/edits` primary needs edit support.",
+    "impact": "Users get cleaner fallback payloads and more reliable image-edit failover, while private community-model details remain undiscoverable to other authenticated users.",
+    "keywords": [
+      "fallback",
+      "privacy",
+      "community-models",
+      "image-edits",
+      "api"
+    ],
+    "visual_concept": "Polli is a careful garden keeper placing a privacy cover over a labeled fallback plant shelf, while a CRT monitor robot checks that each backup watering can fits both a flower-generating plant and a more delicate image-editing plant. Small code-vines and clearly matched tools represent compatible failover targets without exposing private labels.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, carefully covering private labels on a lime green (#ecf874) fallback garden shelf while a friendly CRT-monitor robot compares two properly matched watering tools beside code-plants, flowers, and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"FALLBACK READY\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13523.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's hat, carefully covering private labels on a lime green (#ecf874) fallback garden shelf while a friendly CRT-monitor robot compares two properly matched watering tools beside code-plants, flowers, and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"FALLBACK READY\"."
+  },
+  "generated_at": "2026-08-19T19:16:47.310515+00:00"
+}

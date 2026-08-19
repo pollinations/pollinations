@@ -1052,6 +1052,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "whisper-1",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 fallbackModelIds: [],
                 disabledAt: null,

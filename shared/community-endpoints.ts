@@ -2,7 +2,6 @@ import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
 import {
     capabilityDefinitionFields,
-    MODEL_DEFINITION_CAPABILITIES,
     type ModelDefinitionCapability,
 } from "./registry/model-info.ts";
 import {
@@ -95,9 +94,23 @@ export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
  * per-field rule; there is nothing to disambiguate while every key shares one.
  */
 export type CommunityEndpointAdvertised = {
-    capabilities?: ModelDefinitionCapability[];
+    capabilities?: CommunityEndpointCapability[];
     contextLength?: number;
 };
+
+/**
+ * The capabilities an owner may declare: a subset of the registry vocabulary,
+ * listed in catalog order. `web_search` and `code_execution` are left out until
+ * an endpoint asks for them — no registry model sets `codeExecution` at all,
+ * and a search claim is one no caller can act on through a raw passthrough.
+ */
+export const COMMUNITY_ENDPOINT_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+] as const satisfies readonly ModelDefinitionCapability[];
+
+export type CommunityEndpointCapability =
+    (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
 
 /**
  * Declared metadata reduced to what this row can still advertise. Filtering on
@@ -114,8 +127,10 @@ export function normalizeCommunityEndpointAdvertised(
     const advertised: CommunityEndpointAdvertised = {};
     if (value.capabilities?.length) {
         const declared = new Set<string>(value.capabilities);
-        // Emitted in catalog order rather than the order they were declared.
-        const capabilities = MODEL_DEFINITION_CAPABILITIES.filter(
+        // Emitted in catalog order rather than the order they were declared,
+        // and filtered to what is still declarable, so a capability retired
+        // from the list stops being advertised by the rows that stored it.
+        const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
             (capability) => declared.has(capability),
         );
         if (capabilities.length) advertised.capabilities = capabilities;

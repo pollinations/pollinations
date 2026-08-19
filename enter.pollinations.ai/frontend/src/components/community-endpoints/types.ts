@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointAdvertised,
+    type CommunityEndpointCapability,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
@@ -15,7 +16,6 @@ import {
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
-import type { ModelDefinitionCapability } from "@shared/registry/model-info.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
@@ -112,7 +112,7 @@ export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
     // Flat while editing, nested into `advertised` on submit: contextLength is
     // held as a string so a half-typed value survives a render, like perUserRpm.
-    capabilities: ModelDefinitionCapability[];
+    capabilities: CommunityEndpointCapability[];
     contextLength: string;
     name: string;
     title: string;

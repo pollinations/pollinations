@@ -6,15 +6,13 @@ import {
     TabButton,
 } from "@pollinations/ui";
 import {
+    COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    type CommunityEndpointCapability,
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
-import {
-    MODEL_DEFINITION_CAPABILITIES,
-    type ModelDefinitionCapability,
-} from "@shared/registry/model-info.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { ModelListingFormState } from "./types.ts";
 
@@ -26,11 +24,9 @@ type ListingTextField =
     | "perUserRpm"
     | "contextLength";
 
-const CAPABILITY_LABEL: Record<ModelDefinitionCapability, string> = {
+const CAPABILITY_LABEL: Record<CommunityEndpointCapability, string> = {
     tool_calling: "Tool calling",
     reasoning: "Reasoning",
-    web_search: "Web search",
-    code_execution: "Code execution",
 };
 
 export function ModelListingFields({
@@ -50,7 +46,7 @@ export function ModelListingFields({
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
-    onCapabilitiesChange?: (value: ModelDefinitionCapability[]) => void;
+    onCapabilitiesChange?: (value: CommunityEndpointCapability[]) => void;
 }) {
     function toggleInputModality(input: ModelInputModality): void {
         const selected = form.inputModalities.includes(input);
@@ -65,12 +61,12 @@ export function ModelListingFields({
         );
     }
 
-    function toggleCapability(capability: ModelDefinitionCapability): void {
+    function toggleCapability(capability: CommunityEndpointCapability): void {
         const next = new Set(form.capabilities);
         if (next.has(capability)) next.delete(capability);
         else next.add(capability);
         onCapabilitiesChange?.(
-            MODEL_DEFINITION_CAPABILITIES.filter((value) => next.has(value)),
+            COMMUNITY_ENDPOINT_CAPABILITIES.filter((value) => next.has(value)),
         );
     }
 
@@ -220,7 +216,7 @@ export function ModelListingFields({
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Advertised capabilities">
-                        {MODEL_DEFINITION_CAPABILITIES.map((capability) => {
+                        {COMMUNITY_ENDPOINT_CAPABILITIES.map((capability) => {
                             const selected =
                                 form.capabilities.includes(capability);
                             return (
@@ -244,8 +240,8 @@ export function ModelListingFields({
 
             {!isAgent && canAdvertise && (
                 <FieldStack
-                    label="Context length"
-                    helper="Optional. Context window in tokens."
+                    label="Context length (optional)"
+                    helper="Context window in tokens. Leave blank to advertise none."
                     alignLabelRow
                 >
                     <Input

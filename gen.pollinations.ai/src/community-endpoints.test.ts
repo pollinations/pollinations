@@ -9,6 +9,7 @@ import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointCapability,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
@@ -761,6 +762,28 @@ describe("community endpoint helpers", () => {
         expect(definition.search).toBeUndefined();
         expect(definition.codeExecution).toBeUndefined();
         expect(definition.contextLength).toBeUndefined();
+    });
+
+    it("ignores a capability an owner may no longer declare", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            advertised: {
+                // Stored while web_search was declarable. Narrowing the list
+                // has to retire the claim, not leave it in the catalog.
+                capabilities: [
+                    "tool_calling",
+                    "web_search",
+                ] as CommunityEndpointCapability[],
+            },
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.tools).toBe(true);
+        expect(definition.search).toBeUndefined();
     });
 
     it("drops declarations the modality cannot advertise", () => {

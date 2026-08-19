@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
@@ -40,7 +41,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { MODEL_DEFINITION_CAPABILITIES } from "@shared/registry/model-info.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
@@ -78,13 +78,13 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
-// Owner-declared catalog metadata. One nested object rather than three
-// top-level fields, matching the single column it is stored in: advertising a
-// new kind of thing adds a key here and an entry in COMMUNITY_ADVERTISED_FIELDS.
+// Owner-declared catalog metadata. One nested object rather than a field per
+// claim, matching the single column it is stored in: advertising a new kind of
+// thing adds a key here, not a migration.
 const AdvertisedSchema = z
     .object({
         capabilities: z
-            .array(z.enum(MODEL_DEFINITION_CAPABILITIES))
+            .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
             .optional()
             .describe(
                 "Capabilities the model advertises in the catalog. Text models only.",

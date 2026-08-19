@@ -141,7 +141,7 @@ function githubNumberFromUrl(url: string | null | undefined): number | null {
 //  - coming_soon always renders in the receded (claimed) style.
 //  - Logged-out preview (previewAll) forces every row open.
 //  - Logged in: a current-account reward is claimed once banked, claimable
-//    until then. A previous-account identity marker is already earned without
+//    until then. A previous-account identity marker renders as claimed without
 //    exposing the old reward as claimable.
 function deriveCardStatus(
     comingSoon: boolean,
@@ -240,7 +240,6 @@ export type QuestCard = {
     status: QuestCardStatus;
     earnedAmount?: number | null;
     progress?: QuestProgress;
-    previouslyEarned?: boolean;
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
@@ -552,15 +551,6 @@ export function QuestRow({
             <SparkleIcon className="h-4 w-4 shrink-0" />
             Coming soon
         </Chip>
-    ) : card.previouslyEarned ? (
-        <Chip
-            intent="neutral"
-            size="lg"
-            className="gap-1.5 bg-transparent text-theme-text-muted"
-        >
-            <CheckIcon className="h-4 w-4 shrink-0" />
-            Already earned
-        </Chip>
     ) : (
         <Chip
             intent="neutral"
@@ -853,7 +843,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     reward,
                     previouslyEarned,
                 ),
-                previouslyEarned,
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 progress:
                     (reward || previouslyEarned) && quest.goal

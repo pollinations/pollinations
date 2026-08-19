@@ -57,11 +57,21 @@ function niceScale(values) {
 }
 
 /**
- * Weekly line chart. One measure family per chart — a second y-scale would
- * make the crossing point meaningless, so unrelated measures get their own
- * chart instead.
+ * Weekly line chart.
+ *
+ * Measures of different magnitude go on one axis by being indexed to 100 at the
+ * first week (`indexed`), never by growing a second y-scale: with two scales the
+ * lines cross wherever the axes are rescaled, so the crossing means nothing.
+ * Indexed, the shapes are genuinely comparable and the tooltip and end labels
+ * still carry the real numbers.
  */
-export function LineChart({ title, data, series, format = "number" }) {
+export function LineChart({
+    title,
+    data,
+    series,
+    format = "number",
+    indexed = false,
+}) {
     const [ref, width] = useElementWidth();
     const [hover, setHover] = useState(null);
 
@@ -69,11 +79,28 @@ export function LineChart({ title, data, series, format = "number" }) {
     const plotWidth = Math.max(width - PAD.left - PAD.right, 10);
     const plotHeight = HEIGHT - PAD.top - PAD.bottom;
 
+    const formatOf = (item) => item.format ?? format;
+
+    // One shared base week for every series — indexing each to its own first
+    // reading would compare growth measured from different starting points.
+    const baseIndex = points.findIndex((row) =>
+        series.every((item) => Number.isFinite(row[item.key])),
+    );
+    const baseRow = baseIndex === -1 ? null : points[baseIndex];
+
+    // What actually gets drawn: the raw value, or its percentage of the base
+    // week when the chart is indexed.
+    const plotted = (item, row) => {
+        const value = row[item.key];
+        if (!Number.isFinite(value)) return null;
+        if (!indexed) return value;
+        const base = baseRow?.[item.key];
+        return base ? (value / base) * 100 : null;
+    };
+
     const { lo, hi, ticks } = niceScale(
         points.flatMap((row) =>
-            series
-                .map((s) => row[s.key])
-                .filter((value) => Number.isFinite(value)),
+            series.map((item) => plotted(item, row)).filter(Number.isFinite),
         ),
     );
 
@@ -85,11 +112,11 @@ export function LineChart({ title, data, series, format = "number" }) {
     const yAt = (value) =>
         PAD.top + plotHeight - ((value - lo) / (hi - lo)) * plotHeight;
 
-    const pathFor = (key) => {
+    const pathFor = (item) => {
         let path = "";
         let pendingMove = true;
         points.forEach((row, index) => {
-            const value = row[key];
+            const value = plotted(item, row);
             if (!Number.isFinite(value)) {
                 pendingMove = true;
                 return;
@@ -102,11 +129,18 @@ export function LineChart({ title, data, series, format = "number" }) {
 
     // Last known value per series, nudged apart so the end labels never stack.
     const endLabels = series
-        .map((s, seriesIndex) => {
+        .map((item) => {
             for (let index = points.length - 1; index >= 0; index--) {
-                const value = points[index][s.key];
+                const value = plotted(item, points[index]);
                 if (Number.isFinite(value))
-                    return { key: s.key, seriesIndex, value, y: yAt(value) };
+                    return {
+                        key: item.key,
+                        label: formatValue(
+                            points[index][item.key],
+                            formatOf(item),
+                        ),
+                        y: yAt(value),
+                    };
             }
             return null;
         })
@@ -127,9 +161,9 @@ export function LineChart({ title, data, series, format = "number" }) {
 
             {series.length > 1 && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    {series.map((s, index) => (
+                    {series.map((item, index) => (
                         <span
-                            key={s.key}
+                            key={item.key}
                             className="inline-flex items-center gap-1.5"
                         >
                             <span
@@ -138,7 +172,7 @@ export function LineChart({ title, data, series, format = "number" }) {
                                 style={{ background: SERIES_COLORS[index] }}
                             />
                             <Text as="span" size="xs" tone="muted">
-                                {s.label}
+                                {item.label}
                             </Text>
                         </span>
                     ))}
@@ -151,7 +185,7 @@ export function LineChart({ title, data, series, format = "number" }) {
                         width={width}
                         height={HEIGHT}
                         role="img"
-                        aria-label={`${title}: ${series.map((s) => s.label).join(", ")} by week`}
+                        aria-label={`${title}: ${series.map((item) => item.label).join(", ")} by week`}
                         onPointerLeave={() => setHover(null)}
                         onPointerMove={(event) => {
                             const bounds =
@@ -184,12 +218,14 @@ export function LineChart({ title, data, series, format = "number" }) {
                                     textAnchor="end"
                                     className="fill-theme-text-muted text-[10px] tabular-nums"
                                 >
-                                    {formatValue(
-                                        tick,
-                                        format === "currency"
-                                            ? "currency"
-                                            : "compact",
-                                    )}
+                                    {indexed
+                                        ? Math.round(tick)
+                                        : formatValue(
+                                              tick,
+                                              format === "currency"
+                                                  ? "currency"
+                                                  : "compact",
+                                          )}
                                 </text>
                             </g>
                         ))}
@@ -220,10 +256,10 @@ export function LineChart({ title, data, series, format = "number" }) {
                             />
                         )}
 
-                        {series.map((s, index) => (
+                        {series.map((item, index) => (
                             <path
-                                key={s.key}
-                                d={pathFor(s.key)}
+                                key={item.key}
+                                d={pathFor(item)}
                                 fill="none"
                                 stroke={SERIES_COLORS[index]}
                                 strokeWidth={2}
@@ -232,13 +268,14 @@ export function LineChart({ title, data, series, format = "number" }) {
                             />
                         ))}
 
-                        {series.map((s, index) =>
-                            points.map((row, pointIndex) =>
-                                Number.isFinite(row[s.key]) ? (
+                        {series.map((item, index) =>
+                            points.map((row, pointIndex) => {
+                                const value = plotted(item, row);
+                                return Number.isFinite(value) ? (
                                     <circle
-                                        key={`${s.key}-${row.week}`}
+                                        key={`${item.key}-${row.week}`}
                                         cx={xAt(pointIndex)}
-                                        cy={yAt(row[s.key])}
+                                        cy={yAt(value)}
                                         r={hover === pointIndex ? 4 : 2.5}
                                         fill={SERIES_COLORS[index]}
                                         className="stroke-surface-opaque"
@@ -246,8 +283,8 @@ export function LineChart({ title, data, series, format = "number" }) {
                                             hover === pointIndex ? 2 : 0
                                         }
                                     />
-                                ) : null,
-                            ),
+                                ) : null;
+                            }),
                         )}
 
                         {endLabels.map((label) => (
@@ -257,7 +294,7 @@ export function LineChart({ title, data, series, format = "number" }) {
                                 y={label.y + 3}
                                 className="fill-theme-text-base text-[10px] font-semibold tabular-nums"
                             >
-                                {formatValue(label.value, format)}
+                                {label.label}
                             </text>
                         ))}
                     </svg>
@@ -269,16 +306,16 @@ export function LineChart({ title, data, series, format = "number" }) {
                         style={{
                             left: Math.min(
                                 Math.max(xAt(hover) - 60, 0),
-                                Math.max(width - 130, 0),
+                                Math.max(width - 140, 0),
                             ),
                         }}
                     >
                         <Text as="div" size="micro" tone="muted" weight="bold">
                             {weekLabel(points[hover].week)}
                         </Text>
-                        {series.map((s, index) => (
+                        {series.map((item, index) => (
                             <div
-                                key={s.key}
+                                key={item.key}
                                 className="flex items-center gap-1.5 whitespace-nowrap"
                             >
                                 <span
@@ -287,7 +324,7 @@ export function LineChart({ title, data, series, format = "number" }) {
                                     style={{ background: SERIES_COLORS[index] }}
                                 />
                                 <Text as="span" size="xs" tone="muted">
-                                    {s.label}
+                                    {item.label}
                                 </Text>
                                 <Text
                                     as="span"
@@ -296,7 +333,10 @@ export function LineChart({ title, data, series, format = "number" }) {
                                     weight="semibold"
                                     className="ml-auto tabular-nums"
                                 >
-                                    {formatValue(points[hover][s.key], format)}
+                                    {formatValue(
+                                        points[hover][item.key],
+                                        formatOf(item),
+                                    )}
                                 </Text>
                             </div>
                         ))}
@@ -304,10 +344,17 @@ export function LineChart({ title, data, series, format = "number" }) {
                 )}
             </div>
 
-            {lo > 0 && (
+            {indexed ? (
                 <Text as="p" size="micro" tone="muted">
-                    Axis starts at {formatValue(lo, format)}, not zero.
+                    Each series indexed to 100 at {weekLabel(baseRow?.week)}.
+                    Hover for actual values.
                 </Text>
+            ) : (
+                lo > 0 && (
+                    <Text as="p" size="micro" tone="muted">
+                        Axis starts at {formatValue(lo, format)}, not zero.
+                    </Text>
+                )
             )}
         </Surface>
     );

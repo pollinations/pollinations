@@ -252,16 +252,21 @@ export default function App() {
                         ]}
                     />
                     <LineChart
-                        title="Tokens used"
+                        title="Usage & revenue"
                         data={fullWeeks}
-                        series={[{ key: "tokens", label: "Tokens" }]}
-                        format="compact"
-                    />
-                    <LineChart
-                        title="Revenue"
-                        data={fullWeeks}
-                        series={[{ key: "revenue", label: "Revenue" }]}
-                        format="currency"
+                        series={[
+                            {
+                                key: "tokens",
+                                label: "Tokens",
+                                format: "compact",
+                            },
+                            {
+                                key: "revenue",
+                                label: "Revenue",
+                                format: "currency",
+                            },
+                        ]}
+                        indexed
                     />
                     <FunnelBars
                         title={`Conversion funnel · ${weekLabel(currentWeek?.week)}`}

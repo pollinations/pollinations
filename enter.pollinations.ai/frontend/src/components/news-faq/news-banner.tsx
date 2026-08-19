@@ -1,4 +1,5 @@
 import {
+    ArrowRightIcon,
     CheckIcon,
     Chip,
     CodeBlock,
@@ -218,17 +219,18 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                     Migration example
                 </div>
-                <div className="mt-2 flex flex-col items-start gap-4 rounded-lg bg-brand-dark p-3 sm:flex-row sm:items-end sm:p-4">
+                <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
                     <div className="flex flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-intent-warning-bg-light/70">
+                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
                             Current alias
                         </div>
                         <Chip intent="danger" size="lg" className="font-mono">
                             flux
                         </Chip>
                     </div>
+                    <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
                     <div className="flex min-w-0 flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-intent-warning-bg-light/70">
+                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
                             Canonical slug
                         </div>
                         <Chip

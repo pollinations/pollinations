@@ -141,6 +141,9 @@ describe("model categories", () => {
             q: undefined,
             sort: "brand",
         });
+        expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
+            "title-desc",
+        );
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             scope: undefined,
             category: undefined,

@@ -53,6 +53,8 @@ export function sortModels(
                 );
             case "title":
                 return compareText(getTitle(a), getTitle(b));
+            case "title-desc":
+                return compareText(getTitle(b), getTitle(a));
             case "brand":
                 return compareBrands(a, b);
         }

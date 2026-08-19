@@ -64,6 +64,9 @@ describe("model sorting", () => {
             sortModels(namedModels, "title").map(({ name }) => name),
         ).toEqual(["alpha", "beta", "orphan", "zeta"]);
         expect(
+            sortModels(namedModels, "title-desc").map(({ name }) => name),
+        ).toEqual(["zeta", "orphan", "beta", "alpha"]);
+        expect(
             sortModels(namedModels, "brand").map(({ name }) => name),
         ).toEqual(["beta", "alpha", "zeta", "orphan"]);
     });

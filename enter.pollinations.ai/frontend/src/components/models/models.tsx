@@ -84,8 +84,17 @@ const SORT_OPTIONS: Array<{
         label: "Price: High",
         accessibleLabel: "Highest price first",
     },
-    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
-    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
+    {
+        value: "title-desc",
+        label: "Name: Z–A",
+        accessibleLabel: "Name: Z to A",
+    },
+    {
+        value: "brand",
+        label: "Publisher",
+        accessibleLabel: "Publisher: A to Z",
+    },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {

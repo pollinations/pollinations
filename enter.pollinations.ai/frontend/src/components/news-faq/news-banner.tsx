@@ -178,10 +178,10 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         variant="card"
         className="scroll-mt-4 overflow-hidden p-0"
     >
-        <div className="bg-intent-danger-bg-light p-4 text-intent-danger-text sm:p-5">
+        <div className="bg-intent-warning-bg-light p-4 text-intent-warning-text sm:p-5">
             <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-opaque/70">
-                    <WarningIcon className="h-6 w-6" />
+                    <WarningIcon className="h-6 w-6 text-intent-danger-text" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

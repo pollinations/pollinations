@@ -113,6 +113,9 @@ export function useKpiData() {
                 textRequests: row.text_requests,
                 imageRequests: row.image_requests,
                 costUsd: row.cost_usd,
+                communityUserPct: row.community_user_pct,
+                communityRequestPct: row.community_request_pct,
+                communityAvailability: row.community_availability,
             }));
             mergeInto(weekMap, raw.revenue, (row) => ({
                 revenue: row.revenue,

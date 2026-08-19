@@ -1,6 +1,7 @@
 DESCRIPTION >
     Weekly usage statistics - tokens, requests, revenue breakdown by week.
-    Includes per-user averages for depth metrics.
+    Includes per-user averages for depth metrics, and the community-model share
+    of users and successful requests.
     Optimized: single-pass query with uniq() instead of uniqExact() for ~10x speed.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
@@ -21,7 +22,37 @@ SQL >
         sum(total_cost) AS cost_usd,
         uniq(user_id) AS active_users,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
-        if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
+        if(active_users > 0, total_requests / active_users, 0) AS requests_per_user,
+        -- Community models: endpoints registered by users, which the registry
+        -- gives provider 'community'. Managed agents are community endpoints
+        -- too, so their top-level runs are inside these numbers until the
+        -- is_agent attribution column exists.
+        uniqIf(user_id, model_provider_used = 'community') AS community_users,
+        countIf(response_status >= 200 AND response_status < 300) AS successful_requests,
+        countIf(
+            model_provider_used = 'community'
+            AND response_status >= 200 AND response_status < 300
+        ) AS community_successful_requests,
+        countIf(model_provider_used = 'community' AND response_status >= 500)
+            AS community_server_errors_5xx,
+        round(community_users * 100.0 / nullIf(active_users, 0), 1)
+            AS community_user_pct,
+        round(
+            community_successful_requests * 100.0
+            / nullIf(successful_requests, 0),
+            1
+        ) AS community_request_pct,
+        -- 2xx / (2xx + 5xx), matching weekly_health_stats: 4xx is the caller's
+        -- error (auth, balance, rate limit, bad input) and must not read as an
+        -- endpoint being down.
+        round(
+            community_successful_requests * 100.0
+            / nullIf(
+                community_successful_requests + community_server_errors_5xx,
+                0
+            ),
+            2
+        ) AS community_availability
     FROM generation_event_v2
     WHERE
         {% if defined(start_date) %}

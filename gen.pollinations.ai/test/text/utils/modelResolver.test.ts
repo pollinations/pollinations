@@ -96,6 +96,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nemotron-3.5-lightning",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "step-flash" });
 
@@ -150,6 +165,22 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-27b",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-27b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Chutes"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {

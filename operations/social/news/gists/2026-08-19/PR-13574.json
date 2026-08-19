@@ -1,0 +1,34 @@
+{
+  "pr_number": 13574,
+  "title": "feat: add Nemotron 3.5 Lightning via Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13574",
+  "merged_at": "2026-08-19T14:20:48Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds canonical `nemotron-3.5-lightning` with no aliases.\n- Routes directly to Fireworks `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b` with no fallback.\n- Declares the verified Fireworks rates: $0.05/M prompt, $0.01/M cached prompt, and $0.20/M completion tokens.\n- Keeps the service Quest-accessible (`paidOnly: false`), at multiplier `1`, with no Pollinations GPU.\n- Preserves existing `nemotron`, which remains the separate Nemotron 3 Ultra service.\n\n## Verification\n\n- Direct Fireworks: text, streaming, reasoning on/off, tools, JSON schema, prompt cache, errors, and 5/5 burst.\n- Local Pollinations E2E: `/v1/chat/completions`, `/text`, `/models`, `/v1/models`, streaming, tools and follow-up, JSON schema, parameters, cache annotations, output cache, Quest-only access, model permissions, errors, exact wallet billing, staging Tinybird billing, and 5/5 burst.\n- Gen: 83 focused tests and typecheck passed.\n- Enter: 83 pricing/variant/snapshot tests and production build passed.\n- Biome and `git diff --check` passed.\n\nAfter merge, run one paid production route, cache, wallet, Tinybird, and provider-activity reconciliation before considering the task complete.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A lightning bug joins",
+    "blurb": "Nemotron 3.5 Lightning has landed in the hive via Fireworks. It brings a quick new 30B route for chat, tools, reasoning, schemas, and the usual API weather.",
+    "summary": "Added the canonical `nemotron-3.5-lightning` model, routed directly to Fireworks' `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b` with Quest access, reasoning, streaming, tools, JSON schema, and prompt-cache support.",
+    "impact": "Developers can now call `nemotron-3.5-lightning` through `/v1/chat/completions` and `/text` at a 1× multiplier, while the existing `nemotron` route remains the separate Nemotron 3 Ultra service.",
+    "keywords": [
+      "nemotron-3.5-lightning",
+      "fireworks",
+      "text-api",
+      "reasoning",
+      "tool-calling",
+      "quest-access"
+    ],
+    "visual_concept": "A cozy garden-lab introduces a friendly lightning-themed model: Polli in tiny scientist goggles carefully plugs a glowing Fireworks-style lightning vial into a retro terminal labeled `nemotron-3.5-lightning`. The monitor robot eagerly watches chat bubbles, tool icons, a JSON scroll, and a small cache jar light up, while code-plants grow around the workstation.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny scientist goggles plugs a soft glowing lightning vial into a retro terminal labeled `nemotron-3.5-lightning`, while a cheerful CRT monitor robot watches JSON scrolls, tool symbols, and a cache jar sparkle beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `LIGHTNING`, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13574.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny scientist goggles plugs a soft glowing lightning vial into a retro terminal labeled `nemotron-3.5-lightning`, while a cheerful CRT monitor robot watches JSON scrolls, tool symbols, and a cache jar sparkle beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `LIGHTNING`, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-19T14:22:00.855605+00:00"
+}

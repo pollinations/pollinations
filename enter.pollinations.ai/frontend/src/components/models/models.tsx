@@ -356,10 +356,11 @@ export const Models: FC = () => {
                     title="Model IDs are getting clearer"
                     className="mb-4"
                 >
-                    Canonical model IDs are moving to the{" "}
-                    <code>publisher/model[:variant]</code> format. Existing
-                    aliases keep working, and model behavior and pricing stay
-                    the same. New integrations should use the canonical slugs.{" "}
+                    On September 1, 2026 at 14:00 UTC, canonical model IDs are
+                    moving to the <code>publisher/model[:variant]</code> format.
+                    Existing aliases keep working, and model behavior and
+                    pricing stay the same. New integrations should use the
+                    canonical slugs.{" "}
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
                         className="font-semibold underline hover:no-underline"

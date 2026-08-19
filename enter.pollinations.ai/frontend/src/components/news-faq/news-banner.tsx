@@ -28,11 +28,11 @@ const PINNED_NEWS: Highlight[] = [
     {
         anchor: "canonical-model-ids",
         date: "2026-08-19",
-        dateLabel: "Announcement",
+        dateLabel: "Merging Sep 1 · 14:00 UTC",
         emoji: "🌸",
         title: "Canonical model IDs are coming",
         description:
-            "We will standardize model IDs to the publisher/model[:variant] format across APIs, permissions, billing, docs, and dashboards.",
+            "On September 1, 2026 at 14:00 UTC, we will standardize model IDs to the publisher/model[:variant] format across APIs, permissions, billing, docs, and dashboards.",
         details: [
             "For example, flux will become black-forest-labs/flux.1-schnell.",
             "Existing aliases will keep current integrations working during the transition.",

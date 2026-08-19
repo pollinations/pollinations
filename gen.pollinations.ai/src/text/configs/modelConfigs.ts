@@ -149,6 +149,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "z-ai/glm-5.3": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3",
+            defaultOptions: {
+                provider: {
+                    only: ["z-ai/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "xiaomi/mimo-v2.5": () =>
         createOpenRouterModelConfig({
             model: "xiaomi/mimo-v2.5",

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13577,
+  "title": "fix: harden DreamShaper Vast deployment",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13577",
+  "merged_at": "2026-08-19T12:49:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces DreamShaper instance 46607014 with RTX 4070 instance 48108043, reducing the slot from $0.150/hr to $0.103/hr.\n- Uses the smaller NVIDIA CUDA runtime image with 30 GB storage and creates the workspace parent directory.\n- Stops the detached supervisor and all DreamShaper venv processes before restart, preventing orphaned Uvicorn workers from rebinding port 8766.\n- Updates the live fleet inventory, deployment runbook, capacity evidence, and total Vast burn.\n\nValidation: DreamShaper tests pass; shell syntax and diff checks pass; 60/60 requests passed at 200 RPM; post-cutover production served 58 requests with zero backend errors at 0.40s p95.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "DreamShaper gets a tidy hive",
+    "blurb": "DreamShaper moved into a leaner RTX 4070 nest, and the restart routine now sweeps out stray workers before they can reclaim the door. The bees tested the plumbing at 200 RPM. It held.",
+    "summary": "Hardened the DreamShaper Vast deployment by moving it to RTX 4070 instance 48108043, creating the workspace parent directory, and stopping detached supervisors plus DreamShaper venv processes before restart so orphaned Uvicorn workers cannot rebind port 8766.",
+    "impact": "DreamShaper production now has a cleaner restart path, with validation showing 60/60 requests passing at 200 RPM and a post-cutover 0.40s p95 with zero backend errors.",
+    "keywords": [
+      "DreamShaper",
+      "Vast",
+      "RTX 4070",
+      "GPU deployment",
+      "Uvicorn",
+      "reliability"
+    ],
+    "visual_concept": "Depict DreamShaper as a cozy GPU garden shed being carefully reset: Polli, wearing a tiny mechanic tool belt, tidies loose worker-process sprites away from a clearly labeled port 8766 while a friendly RTX 4070-powered retro server glows steadily. Include code-plants and a small status board showing a calm 60/60, making deployment reliability feel like tending a well-kept garden.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, black antennae, and a tiny mechanic tool belt, carefully sweeping mischievous little code-worker sprites away from a retro RTX 4070 server labeled \"8766\" while healthy code-plants grow beside it; a small CRT status panel reads \"60/60\" in dark purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and flowers."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13577.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, black antennae, and a tiny mechanic tool belt, carefully sweeping mischievous little code-worker sprites away from a retro RTX 4070 server labeled \"8766\" while healthy code-plants grow beside it; a small CRT status panel reads \"60/60\" in dark purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and flowers."
+  },
+  "generated_at": "2026-08-19T12:50:10.895923+00:00"
+}

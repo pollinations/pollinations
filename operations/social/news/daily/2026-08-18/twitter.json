@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-18",
+  "period_start": "2026-08-18",
+  "period_end": "2026-08-18",
+  "generated_at": "2026-08-19T06:15:06.065065+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-18/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 12 PRs today: browser apps now have a clearer BYOP path with App Keys; community models can transcribe audio; image directory gained DiddyDiffusion and more. Also unified transcription formatting, so subtitles stop being creatively inferred."
+}

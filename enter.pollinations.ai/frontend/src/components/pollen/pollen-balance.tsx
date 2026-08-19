@@ -334,7 +334,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                     </span>
                                 </span>
                             }
-                            displayContents
+                            triggerAs="span"
                         >
                             <ExternalLinkButton
                                 {...(paymentRestricted

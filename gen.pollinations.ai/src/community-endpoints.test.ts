@@ -10,6 +10,7 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
@@ -26,6 +27,7 @@ import {
     legacyCommunityModelId,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -52,7 +54,11 @@ import {
     getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+    USAGE_TYPE_HEADERS,
+} from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -65,8 +71,10 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
+import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
 import {
     communityImageSupportedEndpoints,
+    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
@@ -477,6 +485,23 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("derives the OpenAI-compatible audio transcription URL", () => {
+        expect(
+            communityAudioTranscriptionsUrl("https://api.example.com/v1"),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+        expect(
+            communityAudioTranscriptionsUrl(
+                "https://api.example.com/v1/audio/transcriptions",
+            ),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+    });
+
+    it("restricts community transcription models to the transcription endpoint", () => {
+        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+            "/v1/audio/transcriptions",
+        ]);
+    });
+
     it("normalizes public community provider URLs", () => {
         expect(
             normalizeCommunityProviderUrl(" https://example.com/models#top "),
@@ -683,6 +708,55 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("builds community transcription models billed per audio second", () => {
+        const modelId = "voodoohop/whisper";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Community transcription model",
+            modality: "transcription",
+            ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "audio",
+            inputModalities: ["audio"],
+            outputModalities: ["text"],
+            supportedEndpoints: ["/v1/audio/transcriptions"],
+            cost: { promptAudioSeconds: 0.0000445 },
+        });
+        expect(definition).not.toHaveProperty("flatRate");
+        expect(definition.cost).not.toHaveProperty("promptTextTokens");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { promptAudioSeconds: 60 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.0000445 * 60, 10);
+    });
+
+    it("keeps the transcription price as the only billed bucket for its modality", () => {
+        const definition = communityPriceDefinition(
+            communityEndpointPrices({ promptAudioPrice: 0.00002 }),
+            "transcription",
+        );
+        expect(definition).toEqual({ promptAudioSeconds: 0.00002 });
+    });
+
+    it("prices transcription audio in per-second units, not per 1M", () => {
+        const [field] =
+            communityEndpointPriceFieldsForModality("transcription");
+        expect(field).toMatchObject({
+            key: "promptAudioPrice",
+            usageType: "promptAudioSeconds",
+            priceUnit: "second",
+        });
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeGreaterThan(0);
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeLessThan(
+            MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+        );
     });
 
     describe("fallback target pricing", () => {
@@ -929,6 +1003,368 @@ describe("community endpoint helpers", () => {
                 message: expect.stringContaining(
                     "Image edits are not supported",
                 ),
+            });
+        });
+    });
+
+    describe("community transcription endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+
+        async function transcriptionEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                kind: "external",
+                id: "community-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/whisper",
+                name: "whisper",
+                title: "Whisper",
+                description: null,
+                delegatesGeneration: false,
+                modality: "transcription",
+                imagePricing: "request",
+                inputModalities: ["audio"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "whisper-1",
+                visibility: "public",
+                perUserRpm: null,
+                fallbackModelIds: [],
+                disabledAt: null,
+                disabledReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+            };
+        }
+
+        const audioFile = new File([new Uint8Array([1, 2, 3])], "sample.wav", {
+            type: "audio/wav",
+        });
+        const transcriptionOptions = {
+            file: audioFile,
+            language: "en",
+            responseFormat: "json",
+        };
+
+        it("forwards the file and bills the upstream-reported audio seconds", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/audio/transcriptions",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                expect(formData.get("language")).toBe("en");
+                expect(formData.get("response_format")).toBe("verbose_json");
+
+                return Response.json({
+                    text: "Hello world",
+                    usage: { duration: 12.5 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                transcriptionOptions,
+                secret,
+            );
+
+            expect(response.status).toBe(200);
+            // The shared formatter re-emits the OpenAI json shape: the
+            // upstream's usage block is normalized to usage.seconds.
+            expect(await response.json()).toEqual({
+                text: "Hello world",
+                usage: { type: "duration", seconds: 12.5 },
+            });
+            expect(response.headers.get(MODEL_USED_HEADER)).toBe(
+                "voodoohop/whisper",
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("12.5");
+        });
+
+        it("accepts whisper-style usage.seconds", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello",
+                        usage: { seconds: 3 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("3");
+        });
+
+        it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello", duration: 8.25 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("8.25");
+        });
+
+        it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "unsupported response_format" } },
+                        { status: 400 },
+                    ),
+                ),
+            );
+
+            const call = callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            await expect(call).rejects.toThrow("response_format=verbose_json");
+            await expect(call).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("fails rather than billing zero when the upstream reports no duration", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => Response.json({ text: "Hello" })),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("asks upstream for verbose_json even when the caller wants text, then formats down", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                // text carries no usage object, so requesting it upstream would
+                // make the request unbillable. verbose_json is what the probe
+                // verified, and where whisper reports the duration.
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({
+                    text: "Hello world",
+                    usage: { seconds: 4 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "text" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).toBe("Hello world");
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("4");
+        });
+
+        it("serves verbose_json from the metered upstream body", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        language: "en",
+                        usage: { seconds: 6 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                text: "Hello world",
+                task: "transcribe",
+                language: "en",
+                duration: 6,
+            });
+        });
+
+        it("serves the endpoint's own segments and words, not an invented one", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world. Goodbye.",
+                        language: "en",
+                        duration: 6,
+                        segments: [
+                            { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                            { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                        ],
+                        words: [
+                            { word: "Hello", start: 0, end: 0.6 },
+                            { word: "world.", start: 0.6, end: 2.5 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [
+                    { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                    { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                ],
+                words: [
+                    { word: "Hello", start: 0, end: 0.6 },
+                    { word: "world.", start: 0.6, end: 2.5 },
+                ],
+            });
+        });
+
+        it("falls back to one file-spanning segment when the endpoint reports none", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello world", duration: 6 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 6, text: "Hello world" }],
+                words: [],
+            });
+        });
+
+        it("skips upstream segments that are not fully timed", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        duration: 6,
+                        segments: [
+                            { start: 0, end: 2, text: "Hello" },
+                            { start: 2, text: "world" },
+                            { start: 4, end: 6 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 2, text: "Hello" }],
+            });
+        });
+
+        it("rejects diarized_json rather than answering with empty segments", async () => {
+            const fetchMock = vi.fn(async () =>
+                Response.json({ text: "Hello", usage: { seconds: 1 } }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile, responseFormat: "diarized_json" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it("asks upstream for verbose_json, the shape the probe verified", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({ text: "Hello", usage: { seconds: 2 } });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("2");
+        });
+
+        it("propagates upstream transcription failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "Audio file too long" } },
+                        { status: 413 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    transcriptionOptions,
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 413,
+                message: expect.stringContaining("Audio file too long"),
             });
         });
     });
@@ -3099,6 +3535,233 @@ fixtureTest(
             ),
         );
         expect(excessiveImagePriceResponse.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "registers an OpenAI-compatible transcription endpoint and bills it through transcription APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `stt-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const transcriptionUrl =
+            "https://api.example.com/v1/audio/transcriptions";
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === transcriptionUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_transcription_upstream",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                return Response.json({
+                    text: "ok",
+                    usage: { duration: 0.5 },
+                });
+            }
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Transcription Endpoint",
+            description: "OpenAI-compatible speech-to-text endpoint",
+            modality: "transcription",
+            inputModalities: ["audio"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            bearerToken: "Bearer sk_transcription_upstream",
+            promptAudioPrice: 0.0000445,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text"],
+                }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
+
+        // Omitting inputModalities must follow the modality, not fall back to
+        // text — a text default would make transcription endpoints impossible
+        // to register without naming "audio" explicitly.
+        const defaultedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-defaulted`,
+                    inputModalities: undefined,
+                }),
+            }),
+        );
+        expect(defaultedInputResponse.status).toBe(200);
+        expect(await defaultedInputResponse.json()).toMatchObject({
+            modality: "transcription",
+            inputModalities: ["audio"],
+        });
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            inputModalities: string[];
+            baseUrl: string;
+            upstreamModel: string;
+            promptAudioPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "transcription",
+            inputModalities: ["audio"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            promptAudioPrice: 0.0000445,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_transcription_upstream",
+                    model: registered.upstreamModel,
+                    modality: "transcription",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with transcription text",
+            usage: { duration: 0.5 },
+            billableUsage: { promptAudioSeconds: 0.5 },
+        });
+
+        const transcriptionFormData = new FormData();
+        transcriptionFormData.append("model", registered.modelId);
+        transcriptionFormData.append("response_format", "json");
+        transcriptionFormData.append(
+            "file",
+            new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }),
+            "sample.wav",
+        );
+        const transcriptionResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: transcriptionFormData,
+            }),
+        );
+        expect(transcriptionResponse.status).toBe(200);
+        await expect(transcriptionResponse.json()).resolves.toMatchObject({
+            text: "ok",
+        });
+        expect(transcriptionResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            transcriptionResponse.headers.get("x-usage-prompt-audio-seconds"),
+        ).toBe("0.5");
+
+        const openaiModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiModelsResponse.status).toBe(200);
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: {
+                id: string;
+                input_modalities?: string[];
+                supported_endpoints?: string[];
+            }[];
+        };
+        const listedModel = openaiModels.data.find(
+            (model) => model.id === registered.modelId,
+        );
+        expect(listedModel?.input_modalities).toEqual(["audio"]);
+        expect(listedModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+
+        const audioModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/audio/models",
+        );
+        expect(audioModelsResponse.status).toBe(200);
+        const audioModels = (await audioModelsResponse.json()) as {
+            name: string;
+            category?: string;
+            community?: boolean;
+            input_modalities?: string[];
+            supported_endpoints?: string[];
+            pricing?: Record<string, string>;
+        }[];
+        const listedAudioModel = audioModels.find(
+            (model) => model.name === registered.modelId,
+        );
+        expect(listedAudioModel).toMatchObject({
+            name: registered.modelId,
+            category: "audio",
+            community: true,
+            input_modalities: ["audio"],
+            pricing: { promptAudioSeconds: "0.0000445" },
+        });
+        expect(listedAudioModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input]) => new Request(input).url === transcriptionUrl,
+            ),
+        ).toHaveLength(2);
     },
 );
 

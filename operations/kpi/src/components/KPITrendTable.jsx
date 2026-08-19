@@ -10,153 +10,27 @@ import {
     TableRow,
     Text,
 } from "@pollinations/ui";
-import { useState } from "react";
 import {
     calcChange,
     currentWeekStart,
     formatValue,
     weekLabel,
 } from "../lib/format";
+import { KPIS, kpiValue, kpiView, kpiViewId } from "../lib/kpis";
 
-const KPIS = [
-    {
-        key: "registrations",
-        name: "New registrations",
-        category: "Acquisition",
-        tooltip:
-            "Count of new user accounts created during the week. Source: D1 database (user.created_at)",
-    },
-    {
-        key: "activations",
-        name: "Activated (D7)",
-        category: "Acquisition",
-        tooltip:
-            "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
-    },
-    {
-        key: "activationRate",
-        name: "D7 activation rate",
-        category: "Acquisition",
-        format: "percent",
-        calc: (w) => (w.activations / w.registrations) * 100,
-        tooltip:
-            "Activated users / new registrations × 100. What share of signups become real users within 7 days.",
-    },
-    {
-        key: "wau",
-        name: "WAU",
-        category: "Usage",
-        tooltip:
-            "Weekly active users: unique users with at least one API request this week. Source: Tinybird (generation_event_v2)",
-    },
-    {
-        key: "tokens",
-        category: "Usage",
-        format: "compact",
-        views: [
-            {
-                name: "Total tokens",
-                tooltip:
-                    "Sum of prompt + completion tokens consumed. Source: Tinybird (weekly_usage_stats)",
-            },
-            {
-                name: "Tokens/user",
-                calc: (w) => w.tokens / w.wau,
-                tooltip:
-                    "Total tokens / WAU. Usage depth — how much each active user consumes on average.",
-            },
-        ],
-    },
-    {
-        key: "revenue",
-        category: "Revenue",
-        format: "currency",
-        views: [
-            {
-                name: "Revenue",
-                tooltip:
-                    "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
-            },
-            {
-                name: "ARPA",
-                calc: (w) => w.revenue / w.wau,
-                tooltip:
-                    "Weekly revenue / WAU. Average revenue per active user — monetization efficiency.",
-            },
-        ],
-    },
-    {
-        key: "packPurchases",
-        category: "Revenue",
-        views: [
-            {
-                name: "Pack purchases",
-                tooltip:
-                    "Completed Pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
-            },
-            {
-                name: "Purchase rate",
-                format: "percent",
-                calc: (w) => (w.packPurchases / w.wau) * 100,
-                tooltip:
-                    "Pack purchases / WAU × 100. Share of active users who bought a pack this week.",
-            },
-        ],
-    },
-    {
-        key: "grossMargin",
-        name: "Gross margin",
-        category: "Efficiency",
-        format: "percent",
-        calc: (w) =>
-            w.revenue > 0
-                ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
-                : null,
-        tooltip:
-            "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
-    },
-    {
-        key: "availability",
-        name: "Service availability",
-        category: "Health",
-        format: "percent",
-        tooltip:
-            "(Total − 5xx) / total × 100. User errors (4xx) do not count as downtime.",
-    },
-    {
-        key: "byopUserPct",
-        name: "BYOP user %",
-        category: "Segments",
-        format: "percent",
-        tooltip:
-            "Share of active users from BYOP apps (app key attribution or hostname heuristic).",
-    },
-    {
-        key: "byopPollenPct",
-        name: "BYOP Pollen %",
-        category: "Segments",
-        format: "percent",
-        tooltip:
-            "Share of Pollen consumed by apps that bring their own Pollen.",
-    },
-    {
-        key: "appSubmissions",
-        name: "App submissions",
-        category: "Community",
-        tooltip:
-            "Issues opened this week with the APP-SUBMISSION label on pollinations/pollinations.",
-    },
-];
-
-function kpiValue(kpi, week) {
-    return kpi.calc ? kpi.calc(week) : week[kpi.key];
+/** Three rising bars — marks the row you can send to the explorer chart. */
+function ChartIcon() {
+    return (
+        <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
+            <title>Graph</title>
+            <rect x="1" y="7" width="2.5" height="4" fill="currentColor" />
+            <rect x="4.75" y="4" width="2.5" height="7" fill="currentColor" />
+            <rect x="8.5" y="1" width="2.5" height="10" fill="currentColor" />
+        </svg>
+    );
 }
 
-export function KPITrendTable({ weeklyData }) {
-    // Some rows are the same measure in another unit — tokens/user tracks total
-    // tokens at r = +0.996 while WAU stays flat — so they share one row and
-    // cycle on click instead of each taking a line of their own.
-    const [viewIndex, setViewIndex] = useState({});
+export function KPITrendTable({ weeklyData, viewIndex, onCycle, onGraph }) {
     const partialWeekStart = currentWeekStart();
     const partialWeek = weeklyData.find((w) => w.week === partialWeekStart);
     const fullWeeks = weeklyData.filter((w) => w.week !== partialWeekStart);
@@ -207,9 +81,7 @@ export function KPITrendTable({ weeklyData }) {
                         {KPIS.map((row) => {
                             const views = row.views;
                             const index = viewIndex[row.key] ?? 0;
-                            const kpi = views
-                                ? { ...row, ...views[index % views.length] }
-                                : row;
+                            const kpi = kpiView(row, index);
                             const change = calcChange(
                                 lastFull ? kpiValue(kpi, lastFull) : null,
                                 previousFull
@@ -231,13 +103,7 @@ export function KPITrendTable({ weeklyData }) {
                                                     type="button"
                                                     title={`Show ${views[(index + 1) % views.length].name}`}
                                                     onClick={() =>
-                                                        setViewIndex(
-                                                            (prev) => ({
-                                                                ...prev,
-                                                                [row.key]:
-                                                                    index + 1,
-                                                            }),
-                                                        )
+                                                        onCycle(row.key)
                                                     }
                                                     className="flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:text-theme-text-link"
                                                 >
@@ -250,6 +116,19 @@ export function KPITrendTable({ weeklyData }) {
                                                 kpi.name
                                             )}
                                             <InfoTip text={kpi.tooltip} />
+                                            <button
+                                                type="button"
+                                                aria-label={`Graph ${kpi.name}`}
+                                                title={`Graph ${kpi.name}`}
+                                                onClick={() =>
+                                                    onGraph(
+                                                        kpiViewId(row, index),
+                                                    )
+                                                }
+                                                className="ml-1 text-theme-text-muted hover:text-theme-text-link"
+                                            >
+                                                <ChartIcon />
+                                            </button>
                                         </span>
                                         <Text
                                             as="span"

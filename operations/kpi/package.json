@@ -7,6 +7,7 @@
         "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .dev.vars",
         "predev": "npm run build --prefix ../../packages/ui",
         "dev": "vite",
+        "test": "vitest run",
         "prebuild": "npm run build --prefix ../../packages/ui",
         "build": "vite build",
         "deploy": "npm run build && npx wrangler deploy",

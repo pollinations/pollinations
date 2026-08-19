@@ -129,6 +129,11 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
+        name: "qwen3.8-27b",
+        config: portkeyConfig["qwen/qwen3.8-27b"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
@@ -366,6 +371,13 @@ const models: ModelDefinition[] = [
         name: "nemotron",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "nemotron-3.5-lightning",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+        ],
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "mimo-v2.5",

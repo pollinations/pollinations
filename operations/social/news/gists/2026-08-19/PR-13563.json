@@ -1,0 +1,34 @@
+{
+  "pr_number": 13563,
+  "title": "feat: rebuild the KPI dashboard on @pollinations/ui",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13563",
+  "merged_at": "2026-08-19T09:33:17Z",
+  "labels": [],
+  "pr_body_excerpt": "Ports `operations/kpi` onto the shared design system and cleans out the stale parts. Verified locally against live Tinybird/GitHub data (`npm run dev`, Basic auth, light + dark + 420px).\n\n- Adds `@pollinations/ui` + React 19 — `AppHeader`, `Surface`, `StatCard`, `Table`, `Alert`, `InfoTip`, `ColorModeToggle` — matching `model-monitor` and `economics`. Drops `recharts`, `lucide-react`, `date-fns` and the local tailwind config.\n- Charts are inline SVG/CSS on theme tokens, so both modes are stepped rather than flipped. The dual-axis tokens+revenue chart is split in two; y-axes fit the data range (labelled when they don't start at zero); hover crosshair, legends, end-of-line labels.\n- Serves assets through the `[assets]` binding with `run_worker_first` instead of Workers Sites + `kv-asset-handler`; Basic auth still gates the SPA shell.\n- Removes unused worker endpoints, including `/api/kpi/all`, which self-fetched without the auth header and always 401'd.\n- Trims merged weekly data to 12 weeks — the pipes reach back different distances, so the trend table was rendering 46 mostly-empty columns.\n- README rewritten: it documented a manual `wrangler login` deploy (contradicting the CI path) and a `scripts/load-secrets.sh` that does not exist.\n\nNote: `DASHBOARD_PASSWORD` is still set by hand via `wrangler secret put` and is not in `secrets/env.json`. `wrangler secret bulk` does not delete unlisted secrets, so deploys keep it, but it is unrecoverable if lost.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The KPI garden got pruned",
+    "blurb": "The internal numbers garden has been replanted on the shared UI system. Fewer abandoned pipes, cleaner charts, and only twelve weeks of weeds to inspect.",
+    "summary": "Rebuilt the operations KPI dashboard on @pollinations/ui and React 19, replacing third-party charting with theme-aware inline SVG charts, serving assets through the Worker binding, and limiting merged weekly trends to 12 useful weeks.",
+    "impact": "Dashboard operators get a responsive light/dark KPI view with clearer dual-axis charts, working authenticated data flow, and trend tables without 46 mostly empty weekly columns.",
+    "keywords": [
+      "kpi-dashboard",
+      "pollinations-ui",
+      "react-19",
+      "charts",
+      "worker-assets",
+      "operations"
+    ],
+    "visual_concept": "A cozy internal analytics garden: Polli tends a tidy chart-bed while a CRT monitor robot proudly displays two separated trend graphs with readable axes. The old overgrown columns have been pruned into a neat 12-week row, representing the dashboard cleanup and shared design-system rebuild.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, tiny smile, light blue translucent wings, and a tiny gardener visor, pruning an overgrown spreadsheet garden into twelve neat chart-plants while a chunky CRT monitor robot displays clean split line graphs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code flowers and vines, subtle pixel-font text reading “12 WEEKS”, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13563.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, tiny smile, light blue translucent wings, and a tiny gardener visor, pruning an overgrown spreadsheet garden into twelve neat chart-plants while a chunky CRT monitor robot displays clean split line graphs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code flowers and vines, subtle pixel-font text reading “12 WEEKS”, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-08-19T09:34:13.789097+00:00"
+}

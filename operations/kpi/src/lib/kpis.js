@@ -1,3 +1,38 @@
+// Providers whose bills are currently covered by vendor credits rather than
+// cash. Maintained by hand: credit grants get signed and run out faster than a
+// dashboard deploy, and a generation event does not record how its bill is paid.
+export const CREDIT_FUNDED_PROVIDERS = new Set([
+    "azure",
+    "google",
+    "bedrock",
+    "aws",
+]);
+
+/**
+ * Modelled compute cost split into the part we pay cash for and the part
+ * credits cover. Weeks from before the pipe reported a provider breakdown have
+ * no split, so all of their cost counts as cash.
+ */
+export function costSplit(week) {
+    const total = week.costUsd || 0;
+    let credit = 0;
+    for (const [provider, cost] of Object.entries(week.costByProvider ?? {}))
+        if (CREDIT_FUNDED_PROVIDERS.has(provider)) credit += cost;
+    return { paid: total - credit, credit, total };
+}
+
+// Pollen revenue against compute cost: same traffic, same week, so the ratio is
+// a unit economic. Stripe cash is a different question — see coverage().
+const margin = (week, cost) =>
+    week.pollenRevenue > 0
+        ? ((week.pollenRevenue - cost) / week.pollenRevenue) * 100
+        : null;
+
+const coverage = (week, cost) =>
+    cost > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / cost) * 100
+        : null;
+
 // The KPI catalogue. Rows with `views` are the same measure in another
 // unit and cycle in place; the rest have a single definition.
 export const KPIS = [
@@ -89,15 +124,40 @@ export const KPIS = [
     },
     {
         key: "grossMargin",
-        name: "Gross margin",
         category: "Efficiency",
         format: "percent",
-        calc: (w) =>
-            w.revenue > 0
-                ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
-                : null,
-        tooltip:
-            "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
+        views: [
+            {
+                name: "Gross margin",
+                calc: (w) => margin(w, w.costUsd),
+                tooltip:
+                    "(Pollen revenue − compute cost) / Pollen revenue × 100. Pollen revenue is the USD value of Pollen actually spent this week — Quest and Paid buckets alike — so it covers the same traffic the cost does. Cost is modelled from the registry rate cards, not from invoices; self-hosted GPU is charged per request, so idle fleet capacity is not in it.",
+            },
+            {
+                name: "Gross margin · cash cost",
+                calc: (w) => margin(w, costSplit(w).paid),
+                tooltip: `Same margin with credit-funded providers taken out of the cost — what the week costs in cash today. Currently treated as credit-funded: ${[...CREDIT_FUNDED_PROVIDERS].join(", ")}. That list is maintained by hand in kpis.js; update it as grants are signed or run out.`,
+            },
+        ],
+    },
+    {
+        key: "cashCoverage",
+        category: "Efficiency",
+        format: "percent",
+        views: [
+            {
+                name: "Cash coverage",
+                calc: (w) => coverage(w, costSplit(w).paid),
+                tooltip:
+                    "Stripe pack revenue / cash compute cost × 100. Above 100%, the packs sold this week pay for the compute we are billed for in cash. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
+            },
+            {
+                name: "Cash coverage · all compute",
+                calc: (w) => coverage(w, w.costUsd),
+                tooltip:
+                    "Stripe pack revenue / total compute cost × 100 — the same ratio once vendor credits are gone and every provider is billed in cash.",
+            },
+        ],
     },
     {
         key: "availability",

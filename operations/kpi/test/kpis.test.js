@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { formatValue } from "../src/lib/format";
 import {
+    CREDIT_FUNDED_PROVIDERS,
+    costSplit,
     KPI_VIEWS,
     KPIS,
     kpiValue,
@@ -102,5 +104,83 @@ describe("explorer view list", () => {
 
     it("falls back to the first view for an unknown id", () => {
         expect(kpiViewById("nope:9").id).toBe(KPI_VIEWS[0].id);
+    });
+});
+
+const margin = KPIS.find((row) => row.key === "grossMargin");
+const coverage = KPIS.find((row) => row.key === "cashCoverage");
+
+// A real week from prod (2026-08-10), trimmed to the fields these rows read.
+const marginWeek = {
+    week: "2026-08-10",
+    pollenRevenue: 3469,
+    costUsd: 3740,
+    revenue: 2278,
+    costByProvider: {
+        azure: 844,
+        bedrock: 300,
+        google: 156,
+        openrouter: 637,
+        vast: 702,
+        replicate: 477,
+        fireworks: 293,
+    },
+};
+
+describe("cost split", () => {
+    it("puts credit-funded providers on the credit side and the rest on cash", () => {
+        const split = costSplit(marginWeek);
+        expect(split.credit).toBe(844 + 300 + 156);
+        expect(split.paid).toBe(3740 - 1300);
+        expect(split.paid + split.credit).toBe(split.total);
+    });
+
+    it("treats a week with no provider breakdown as all cash", () => {
+        expect(costSplit({ costUsd: 500 })).toEqual({
+            paid: 500,
+            credit: 0,
+            total: 500,
+        });
+    });
+});
+
+describe("gross margin row", () => {
+    it("measures Pollen revenue against cost, not Stripe cash", () => {
+        // Stripe cash that week was 2278 — using it would read −64%.
+        expect(kpiValue(kpiView(margin, 0), marginWeek)).toBeCloseTo(-7.81, 1);
+    });
+
+    it("is far better once credit-funded providers come out of the cost", () => {
+        expect(kpiValue(kpiView(margin, 1), marginWeek)).toBeCloseTo(29.66, 1);
+    });
+
+    it("names the credit-funded providers in the cash tooltip", () => {
+        const tooltip = kpiView(margin, 1).tooltip;
+        for (const provider of CREDIT_FUNDED_PROVIDERS)
+            expect(tooltip).toContain(provider);
+    });
+
+    it("blanks a week with no Pollen spent rather than reading zero", () => {
+        expect(kpiValue(kpiView(margin, 0), { pollenRevenue: 0 })).toBeNull();
+    });
+});
+
+describe("cash coverage row", () => {
+    it("compares Stripe cash against the compute we pay cash for", () => {
+        expect(kpiValue(kpiView(coverage, 0), marginWeek)).toBeCloseTo(
+            93.36,
+            1,
+        );
+    });
+
+    it("falls once credits are gone and every provider bills cash", () => {
+        expect(kpiValue(kpiView(coverage, 1), marginWeek)).toBeCloseTo(
+            60.91,
+            1,
+        );
+    });
+
+    it("blanks a week with no cost rather than dividing by zero", () => {
+        expect(kpiValue(kpiView(coverage, 0), { revenue: 100 })).toBeNull();
     });
 });

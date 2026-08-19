@@ -1,0 +1,33 @@
+{
+  "pr_number": 13582,
+  "title": "fix: pair gross margin against Pollen revenue, not Stripe cash",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13582",
+  "merged_at": "2026-08-19T14:50:27Z",
+  "labels": [],
+  "pr_body_excerpt": "Gross margin divided Stripe pack cash by all-traffic compute cost — mismatched on both population (most usage is Quest Pollen, no cash) and timing (packs are bought once, burned over later weeks). The row tracked purchase timing, not economics.\n\n- **Gross margin** = (Pollen revenue − compute cost) / Pollen revenue. Same traffic, same week. Reads −1.9% → −17.5% over the last six weeks, degrading steadily; the old row bounced −23% → −222%.\n- **Cash coverage** is the old ratio, correctly named: Stripe pack revenue ÷ the week's compute cost.\n\nBoth read fields the live pipe already returns — **no Tinybird change**.\n\nNot modelled, on purpose: vendor credits (would need a pipe change plus a hand-maintained list of live grants, and a wrong list reads as confident profit), salaries (engineering is R&D, not cost of delivery), Stripe fees.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger gets pollenated",
+    "blurb": "The KPI garden got two correctly labeled measuring sticks. One follows Pollen as it is used; the other keeps an eye on pack purchases.",
+    "summary": "Updated the KPI dashboard to calculate gross margin from same-week Pollen revenue and compute cost, while preserving the previous Stripe-pack-cash-to-compute-cost ratio as separately named cash coverage.",
+    "impact": "Internal operators can now distinguish usage-aligned gross margin from purchase-timing cash coverage without changing the live Tinybird data pipeline.",
+    "keywords": [
+      "kpi",
+      "gross-margin",
+      "pollen",
+      "compute-cost",
+      "analytics"
+    ],
+    "visual_concept": "A cozy garden accounting scene: Polli compares two clearly separate glowing pixel ledger columns, one marked Pollen and compute sprouts and the other marked pack coins and a calendar, showing that two useful measurements should not be mixed. A small CRT monitor robot helps hold the reports amid code-plants and flowers.",
+    "image_prompt": "Cozy pixel art scene in a warm garden office where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny accountant glasses while comparing two glowing ledger sheets: one with a Pollen flower and compute code-plant, one with a pack coin and calendar; a cheerful chunky CRT monitor robot holds the pages beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font labels \"POLLEN\" and \"CASH COVERAGE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13582.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden office where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny accountant glasses while comparing two glowing ledger sheets: one with a Pollen flower and compute code-plant, one with a pack coin and calendar; a cheerful chunky CRT monitor robot holds the pages beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font labels \"POLLEN\" and \"CASH COVERAGE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-19T14:51:44.165602+00:00"
+}

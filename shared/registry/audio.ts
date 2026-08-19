@@ -459,6 +459,24 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
+    "fish-audio-s2.1-pro": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Fish Audio",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Fish Audio S2.1 Pro",
+        description:
+            "Multilingual expressive speech with natural-language emotion and delivery control",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
         provider: "alibaba",

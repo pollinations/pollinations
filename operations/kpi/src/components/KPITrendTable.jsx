@@ -116,38 +116,6 @@ const KPIS = [
             "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
     },
     {
-        key: "perMTokens",
-        category: "Efficiency",
-        format: "currency",
-        views: [
-            {
-                name: "GM/1K requests",
-                calc: (w) =>
-                    ((w.revenue - (w.costUsd || 0)) / w.totalRequests) * 1e3,
-                tooltip:
-                    "(Revenue − COGS) / total requests × 1,000. Dollars of gross margin every thousand requests produces. Requests are the denominator that matches the numerator: COGS covers image and video work too, which produces no tokens.",
-            },
-            {
-                name: "GM/1M tokens",
-                calc: (w) => ((w.revenue - (w.costUsd || 0)) / w.tokens) * 1e6,
-                tooltip:
-                    "(Revenue − COGS) / total tokens × 1,000,000. Reads worse than it is: COGS covers every modality while tokens count text only, so a shift toward image traffic pushes this down without any change in unit economics. Prefer GM/1K requests.",
-            },
-            {
-                name: "Rev/1M tokens",
-                calc: (w) => (w.revenue / w.tokens) * 1e6,
-                tooltip:
-                    "Revenue / total tokens × 1,000,000. Rises when token volume falls, so read it against cost/1M tokens rather than on its own.",
-            },
-            {
-                name: "Cost/1M tokens",
-                calc: (w) => ((w.costUsd || 0) / w.tokens) * 1e6,
-                tooltip:
-                    "COGS / total tokens × 1,000,000. Compute cost per million tokens — rises when volume falls, because the GPU base is fixed.",
-            },
-        ],
-    },
-    {
         key: "availability",
         name: "Service availability",
         category: "Health",

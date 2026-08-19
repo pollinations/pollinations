@@ -1,0 +1,34 @@
+{
+  "pr_number": 13471,
+  "title": "feat: add account settings",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13471",
+  "merged_at": "2026-08-19T17:09:13Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds self-service account settings and deletion to the Enter dashboard.\n\nThis PR builds on the merged #13564, which introduced the GitHub-scoped quest reward keys and database migrations. This PR contains the account UI, deletion flow, legal copy, and integration coverage.\n\n- Adds an Account page with GitHub profile details, a copyable Pollinations ID, and a danger zone for account deletion.\n- Adds Account and Sign out actions with package UI icons, including closing the mobile drawer after navigation.\n- Uses Better Auth hard deletion for the account, sessions, credentials, balances, API keys, and user-owned resources.\n- Enforces a session created within the previous ten minutes before deletion.\n- Preserves only the orphaned GitHub-scoped reward idempotency records supplied by #13564, preventing a replacement account from receiving the same quest reward again. Replacement accounts see those quests in the normal claimed state without receiving a claimable reward or including the old pollen in their totals.\n- Adds concise Terms and Privacy acknowledgement at sign-in and aligns the legal text with active-system deletion, temporary cache retention, billing records, and backups.\n- Tests deletion cascades, reward retention, re-registration with the same GitHub identity, duplicate reward prevention, fresh-session enforcement, and the 50-Pollen purchase quest.\n\nAddresses #13547\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The exit has a door",
+    "blurb": "The Enter dashboard now has a proper account desk: your GitHub profile, a copyable Pollinations ID, and a clearly marked way to leave. Deletion clears the active hive while keeping quest receipts from mysteriously blooming twice.",
+    "summary": "Added a self-service Account page in Enter with GitHub profile details, a copyable Pollinations ID, sign-out controls, and a fresh-session-protected hard deletion flow that removes accounts, sessions, credentials, balances, API keys, and user-owned resources.",
+    "impact": "Users can now manage or permanently delete their Enter account themselves after signing in within the last ten minutes, while GitHub-scoped quest reward records safely prevent a replacement account from claiming the same reward twice.",
+    "keywords": [
+      "enter-dashboard",
+      "account-settings",
+      "account-deletion",
+      "better-auth",
+      "quests",
+      "privacy"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper at a cozy account-settings desk, holding a tiny key and clipboard beside a retro terminal showing a simple account card and Pollinations ID. A clearly labeled but gentle \"DELETE ACCOUNT\" garden gate leads out of the active garden, while a small preserved quest-receipt seed jar remains on a shelf to symbolize duplicate-reward protection; include soft flowers and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, carefully managing an account-settings desk beside a retro CRT terminal showing a simple profile card and pixel text \"ACCOUNT\"; a gentle garden gate labeled \"DELETE ACCOUNT\" sits nearby, with a small jar of quest-receipt seeds safely stored on a shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13471.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, carefully managing an account-settings desk beside a retro CRT terminal showing a simple profile card and pixel text \"ACCOUNT\"; a gentle garden gate labeled \"DELETE ACCOUNT\" sits nearby, with a small jar of quest-receipt seeds safely stored on a shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T17:10:25.644217+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13572,
+  "title": "feat: add GLM-5.3 via OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13572",
+  "merged_at": "2026-08-19T14:35:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only canonical `glm-5.3` without aliases or fallback.\n- Pins OpenRouter `z-ai/glm-5.3` to the sole Z.AI FP8 endpoint.\n- Keeps the Quest-accessible Fireworks `glm` service unchanged.\n- Adds resolver/reasoning coverage and the effective-price snapshot.\n\nValidation:\n- Direct provider: text, streaming, JSON, tools, reasoning, prompt cache, errors, and 10/10 burst.\n- Local E2E: all three text routes, catalogs, paid-only paths, wallet/cache/Tinybird billing, context boundary, errors, and 10/10 burst.\n- Gen/Enter focused suites and both typechecks passed.\n\nDraft gate: do not merge until the deployed OpenRouter account/key mapping is resolved. The current key serves paid inference, while OpenRouter's credits endpoint reports a zero balance.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A New GLM Lands",
+    "blurb": "The hive added a direct route to GLM-5.3 for paid inference. One model name, one Z.AI FP8 endpoint, and no mysterious detours through the garden.",
+    "summary": "Added the paid-only canonical `glm-5.3` model via OpenRouter's sole `z-ai/glm-5.3` FP8 endpoint, with reasoning support, effective pricing, and no aliases or fallback while leaving the Quest-accessible Fireworks `glm` service unchanged.",
+    "impact": "Paid API users can now request `glm-5.3` directly across text routes for streaming, JSON, tools, reasoning, and prompt caching, while existing Quest access to `glm` continues as before.",
+    "keywords": [
+      "glm-5.3",
+      "openrouter",
+      "z.ai",
+      "text-api",
+      "reasoning",
+      "paid-models"
+    ],
+    "visual_concept": "Depict a cozy garden delivery: Polli welcomes a newly labeled GLM-5.3 seedling arriving through a single, clearly marked OpenRouter pipe into a warm retro terminal. The single route represents the pinned Z.AI FP8 provider, while a separate established Fireworks flower labeled `glm` continues happily growing nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light-blue wings, and a tiny courier cap, carefully guiding a glowing `GLM-5.3` seedling through one labeled OpenRouter garden pipe into a retro terminal; an older `glm` code-flower blooms contentedly in a separate pot nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text `GLM-5.3`, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13572.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light-blue wings, and a tiny courier cap, carefully guiding a glowing `GLM-5.3` seedling through one labeled OpenRouter garden pipe into a retro terminal; an older `glm` code-flower blooms contentedly in a separate pot nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text `GLM-5.3`, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T14:36:39.330793+00:00"
+}

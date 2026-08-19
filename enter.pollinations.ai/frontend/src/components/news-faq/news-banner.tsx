@@ -269,17 +269,23 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 </div>
             </div>
 
-            <div className="mt-5 flex items-start gap-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
-                <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                <p>
-                    Existing aliases continue to work after the transition.
-                    Nothing else is changing.{" "}
-                    <InlineLink href={MODEL_SLUGS_SHEET_URL}>
-                        View the complete slug list
-                    </InlineLink>
-                    .
-                </p>
-            </div>
+            <ul className="mt-5 space-y-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
+                <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
+                    <span>
+                        Existing aliases continue to work after the transition.
+                    </span>
+                </li>
+                <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
+                    <span>
+                        <InlineLink href={MODEL_SLUGS_SHEET_URL}>
+                            View the complete slug list
+                        </InlineLink>{" "}
+                        to update your implementation before the transition.
+                    </span>
+                </li>
+            </ul>
         </div>
     </Surface>
 );

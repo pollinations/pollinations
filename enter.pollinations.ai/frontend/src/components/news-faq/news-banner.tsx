@@ -4,6 +4,7 @@ import {
     Chip,
     CodeBlock,
     cn,
+    InlineLink,
     Surface,
     WarningIcon,
 } from "@pollinations/ui";
@@ -13,6 +14,8 @@ const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
+const MODEL_SLUGS_SHEET_URL =
+    "https://docs.google.com/spreadsheets/d/1_niUVsqtSA_b3Ii1Cxz_MGcYDUqgum4gnYae78RAhwQ/edit?usp=sharing";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -176,7 +179,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         variant="card"
         className="scroll-mt-4 overflow-hidden p-0"
     >
-        <div className="bg-intent-warning-bg-light p-4 text-intent-warning-text sm:p-5">
+        <div className="bg-intent-danger-bg-light p-4 text-intent-danger-text sm:p-5">
             <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-opaque/70">
                     <WarningIcon className="h-6 w-6" />
@@ -247,8 +250,12 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             <div className="mt-5 flex items-start gap-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
                 <p>
-                    Existing aliases continue to work during the transition.
-                    Nothing else is changing.
+                    Existing aliases continue to work after the transition.
+                    Nothing else is changing.{" "}
+                    <InlineLink href={MODEL_SLUGS_SHEET_URL}>
+                        View the complete slug list
+                    </InlineLink>
+                    .
                 </p>
             </div>
         </div>

@@ -91,6 +91,7 @@ describe("reasoning_effort model wiring", () => {
         "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
+        "nemotron-3.5-lightning",
         "minimax",
         "muse-glimmer",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {

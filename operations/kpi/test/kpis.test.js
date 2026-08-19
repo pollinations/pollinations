@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { formatValue } from "../src/lib/format";
-import { KPIS, kpiValue, kpiView } from "../src/lib/kpis";
+import {
+    KPI_VIEWS,
+    KPIS,
+    kpiValue,
+    kpiView,
+    kpiViewById,
+    kpiViewId,
+} from "../src/lib/kpis";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
@@ -51,5 +58,49 @@ describe("community models row", () => {
             expect(kpiValue(view, before)).toBeUndefined();
             expect(formatValue(kpiValue(view, before), view.format)).toBe("—");
         }
+    });
+});
+
+describe("explorer view list", () => {
+    it("offers every view of every row, not one per row", () => {
+        const expected = KPIS.reduce(
+            (total, row) => total + (row.views?.length ?? 1),
+            0,
+        );
+        expect(KPI_VIEWS).toHaveLength(expected);
+        expect(KPI_VIEWS.length).toBeGreaterThan(KPIS.length);
+    });
+
+    it("gives each view a unique id that resolves back to it", () => {
+        const ids = KPI_VIEWS.map((view) => view.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        for (const view of KPI_VIEWS)
+            expect(kpiViewById(view.id).name).toBe(view.name);
+    });
+
+    it("lists all three community variants separately", () => {
+        const names = KPI_VIEWS.filter((view) =>
+            view.id.startsWith("communityModels:"),
+        ).map((view) => view.name);
+        expect(names).toEqual([
+            "Community models · users",
+            "Community models · requests",
+            "Community models · availability",
+        ]);
+    });
+
+    it("sends a cycled table row to the variant it is showing", () => {
+        // The table's graph button passes kpiViewId(row, index); index 2 on the
+        // community row must land on availability, not back on users.
+        expect(kpiViewById(kpiViewId(community, 2)).name).toBe(
+            "Community models · availability",
+        );
+        expect(kpiViewById(kpiViewId(community, 4)).name).toBe(
+            "Community models · requests",
+        );
+    });
+
+    it("falls back to the first view for an unknown id", () => {
+        expect(kpiViewById("nope:9").id).toBe(KPI_VIEWS[0].id);
     });
 });

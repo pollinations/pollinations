@@ -415,6 +415,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/muse-glimmer-30b",
         }),
+    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
     "meta/muse-spark-1.2": () =>

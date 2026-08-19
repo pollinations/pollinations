@@ -1,0 +1,34 @@
+{
+  "pr_number": 13581,
+  "title": "feat: improve model pricing layout",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13581",
+  "merged_at": "2026-08-19T15:09:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the seven-day requests-per-pollen estimate into the aligned pricing ledger with a distinct approximate-value badge.\n- Keeps variable-pricing selectors beside capabilities, standardizes unit columns, and adds complete sort directions for price, Name A–Z/Z–A, Publisher A–Z/Z–A, and Newest/Oldest.\n- Vertically centers desktop model details; mobile cards always show pricing and match the desktop label order; model rows switch solely at the established 42rem container breakpoint, including on touch devices.\n- Makes Community models visible locally: the migrated local D1 is empty, so development supplements local Gen models with the public community catalog while preserving local entries; staging and production are unchanged.\n- Validated with Biome, UI package type checks/build/tests (8), relevant Enter suites (47 tests), exact 671/672px breakpoint checks, and desktop/mobile/Community visual checks.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The price tags learned alignment",
+    "blurb": "The model garden got a tidier ledger: prices, capabilities, and pollen estimates now sit where wandering eyes can find them. Mobile gets the same useful details, because small screens deserve nice things too.",
+    "summary": "Reworked the Enter model catalog pricing layout with aligned unit columns, a distinct approximate seven-day requests-per-Pollen badge, nearby variable-pricing selectors, complete sorting options, and consistently detailed desktop and mobile model cards.",
+    "impact": "People browsing models can compare pricing, publishers, recency, capabilities, and estimated Pollen usage more quickly, with rows switching to mobile cards only at the established 42rem breakpoint.",
+    "keywords": [
+      "model catalog",
+      "pricing",
+      "pollen",
+      "model sorting",
+      "mobile UI",
+      "Enter"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden-market pricing ledger: neat rows of seed packets and flower pots labeled with model names, each with aligned Pollen price tags and small approximate-value badges. Polli, wearing tiny librarian glasses and holding a clipboard, carefully straightens the ledger while a friendly CRT monitor robot happily sorts cards by name, publisher, newest, and price; show a small phone beside the desktop terminal displaying the same tidy cards.",
+    "image_prompt": "A cozy pixel art garden-market workspace where the cute Polli bee mascot—with yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and tiny librarian glasses—straightens a neat model-pricing ledger of flower-pot cards with aligned Pollen tags and a small \"~7 DAYS\" pixel badge; a chunky CRT monitor robot sorts cards beside a phone showing matching mobile cards, with code-plants and flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13581.jpg",
+    "prompt": "A cozy pixel art garden-market workspace where the cute Polli bee mascot—with yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and tiny librarian glasses—straightens a neat model-pricing ledger of flower-pot cards with aligned Pollen tags and a small \"~7 DAYS\" pixel badge; a chunky CRT monitor robot sorts cards beside a phone showing matching mobile cards, with code-plants and flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T15:11:04.804858+00:00"
+}

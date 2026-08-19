@@ -154,7 +154,7 @@ export function SignedOutAccountArea() {
             <Text
                 size="micro"
                 tone="muted"
-                className="px-1 text-center text-[10px] leading-[1.35]"
+                className="px-1 text-center leading-[1.35]"
             >
                 By continuing, you agree to the{" "}
                 <InlineLink

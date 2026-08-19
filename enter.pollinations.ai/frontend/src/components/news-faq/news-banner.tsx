@@ -211,8 +211,8 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                             Publisher
                         </dt>
                         <dd className="text-theme-text-muted">
-                            The person or organization that trained and released
-                            the model—not necessarily the provider serving it.
+                            The person or organization that released the
+                            model—not necessarily the provider serving it.
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">

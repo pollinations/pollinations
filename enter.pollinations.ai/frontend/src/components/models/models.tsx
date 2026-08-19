@@ -37,6 +37,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
+import { ModelPriceNoticeBanner } from "./model-price-notice-banner.tsx";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -309,6 +310,7 @@ export const Models: FC<ModelsProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
+            {showCommunityEndpoints && <ModelPriceNoticeBanner />}
             <Section
                 title="Models"
                 framed

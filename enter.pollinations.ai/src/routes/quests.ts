@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -62,6 +62,7 @@ const rewardSchema = z.object({
 
 const questRewardsResponseSchema = z.object({
     rewards: z.array(rewardSchema),
+    previouslyEarnedQuestIds: z.array(z.string()),
 });
 
 const questCheckResponseSchema = z.object({
@@ -182,7 +183,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Quest Rewards",
             description:
-                "Returns earned quest rewards for the authenticated account, including claim state. API keys require the read-only `account:usage` permission.",
+                "Returns claimable and claimed rewards for the authenticated account, plus quest ids previously earned by the same linked GitHub identity. Previous-account rewards are status-only and cannot be claimed by the replacement account. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Quest rewards",
@@ -211,6 +212,7 @@ export const questsRoutes = new Hono<Env>()
             const rewardRows = await db
                 .select({
                     id: rewardsTable.id,
+                    userId: rewardsTable.userId,
                     questId: rewardsTable.questId,
                     title: rewardsTable.title,
                     pollenAmount: rewardsTable.pollenAmount,
@@ -220,23 +222,45 @@ export const questsRoutes = new Hono<Env>()
                     url: rewardsTable.url,
                 })
                 .from(rewardsTable)
-                .where(eq(rewardsTable.userId, user.id))
+                .where(
+                    user.githubId == null
+                        ? eq(rewardsTable.userId, user.id)
+                        : or(
+                              eq(rewardsTable.userId, user.id),
+                              and(
+                                  isNull(rewardsTable.userId),
+                                  like(
+                                      rewardsTable.idempotencyKey,
+                                      `%:github:${user.githubId}`,
+                                  ),
+                              ),
+                          ),
+                )
                 .orderBy(desc(rewardsTable.earnedAt));
 
-            const rewards = rewardRows.map((row) => ({
-                id: row.id,
-                questId: row.questId,
-                title: row.title,
-                pollenAmount: row.pollenAmount,
-                balanceBucket: row.balanceBucket,
-                earnedAt: formatRewardTimestamp(row.earnedAt),
-                claimedAt: row.claimedAt
-                    ? formatRewardTimestamp(row.claimedAt)
-                    : null,
-                url: row.url,
-            }));
+            const rewards = rewardRows
+                .filter((row) => row.userId === user.id)
+                .map((row) => ({
+                    id: row.id,
+                    questId: row.questId,
+                    title: row.title,
+                    pollenAmount: row.pollenAmount,
+                    balanceBucket: row.balanceBucket,
+                    earnedAt: formatRewardTimestamp(row.earnedAt),
+                    claimedAt: row.claimedAt
+                        ? formatRewardTimestamp(row.claimedAt)
+                        : null,
+                    url: row.url,
+                }));
+            const previouslyEarnedQuestIds = Array.from(
+                new Set(
+                    rewardRows.flatMap((row) =>
+                        row.userId === null && row.questId ? [row.questId] : [],
+                    ),
+                ),
+            );
 
-            return c.json({ rewards });
+            return c.json({ rewards, previouslyEarnedQuestIds });
         },
     )
     .post(

@@ -222,7 +222,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
                     <div className="flex flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            Current alias
+                            Current slug
                         </div>
                         <Chip intent="danger" size="lg" className="font-mono">
                             flux
@@ -231,7 +231,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                     <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
                     <div className="flex min-w-0 flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            Canonical slug
+                            New canonical slug
                         </div>
                         <Chip
                             intent="success"

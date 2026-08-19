@@ -811,7 +811,7 @@ export interface ModelInfo {
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    brand?: string;
+    author?: string;
     description?: string;
     aliases?: string[];
     community?: boolean;

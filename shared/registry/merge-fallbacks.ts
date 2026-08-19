@@ -5,20 +5,17 @@ import type { ModelDefinition } from "./registry";
  * in for.
  *
  * Everything left out is inherited from that model, so the public identity a
- * caller sees — title, brand, modalities — can never drift from the model they
+ * caller sees — title, author, modalities — can never drift from the model they
  * asked for. `provider` is required because it is the one thing a route must
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
- * hidden, carries no aliases of its own, and never chains further.
+ * hidden and never chains further. Aliases are route-owned because a canonical
+ * route rename must preserve its previous public ID.
  */
 export type FallbackDefinition = Partial<
     Omit<
         ModelDefinition,
-        | "aliases"
-        | "fallbacks"
-        | "fallbackOnStatusCodes"
-        | "hidden"
-        | "provider"
+        "fallbacks" | "fallbackOnStatusCodes" | "hidden" | "provider"
     >
 > & { provider: string };
 
@@ -76,7 +73,7 @@ export function mergeFallbacks<
             merged[routeId] = {
                 ...inherited,
                 ...overrides,
-                aliases: [],
+                aliases: [...(overrides.aliases ?? [])],
                 hidden: true,
             };
         }

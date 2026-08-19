@@ -129,7 +129,7 @@ export async function callQwenImage3API(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "qwen-image-3",
+            actualModel: "qwen/qwen-image-3",
             usage: {
                 ...(isEdit ? { promptImageTokens: imageUrls.length } : {}),
                 completionImageTokens: 1,

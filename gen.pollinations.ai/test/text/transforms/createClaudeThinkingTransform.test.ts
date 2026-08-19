@@ -124,7 +124,9 @@ describe("createClaudeThinkingTransform — adaptive mode with upstream default 
 
 describe("Claude thinking model wiring", () => {
     it("wires budget thinking on claude-fast", async () => {
-        const transform = findModelByName("claude-fast")?.transform;
+        const transform = findModelByName(
+            "anthropic/claude-haiku-4.5",
+        )?.transform;
         if (!transform) throw new Error("claude-fast transform missing");
         const { options } = await transform([{ role: "user", content: "hi" }], {
             reasoning_effort: "high",
@@ -136,11 +138,11 @@ describe("Claude thinking model wiring", () => {
     });
 
     it.each([
-        "claude",
-        "claude-opus-4.6",
-        "claude-large",
-        "claude-opus-4.7",
-        "claude-fable-5",
+        "anthropic/claude-sonnet-4.6",
+        "anthropic/claude-opus-4.6",
+        "anthropic/claude-opus-5",
+        "anthropic/claude-opus-4.7",
+        "anthropic/claude-fable-5",
     ])("wires adaptive thinking on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -152,7 +154,7 @@ describe("Claude thinking model wiring", () => {
     });
 
     it("keeps claude-large reasoning opt-in", async () => {
-        const transform = findModelByName("claude-large")?.transform;
+        const transform = findModelByName("anthropic/claude-opus-5")?.transform;
         if (!transform) throw new Error("claude-large transform missing");
         const { options } = await transform(
             [{ role: "user", content: "hi" }],

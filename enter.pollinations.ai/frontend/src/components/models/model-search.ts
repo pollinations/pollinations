@@ -22,8 +22,8 @@ export const MODEL_SORTS = [
     "price-high",
     "title",
     "title-desc",
-    "brand",
-    "brand-desc",
+    "author",
+    "author-desc",
 ] as const;
 export type ModelSort = (typeof MODEL_SORTS)[number];
 

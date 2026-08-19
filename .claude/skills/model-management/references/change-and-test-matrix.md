@@ -10,7 +10,7 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 | Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, provider-managed fallback |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
 | Canonical name or alias | Audit every registry plus model changes between production and `main`; count stored aliases in production and staging; when non-zero, merge the D1 migration before the registry rename and promote a revision containing both so D1 runs immediately before the Worker; verify all old-ID counts reach zero, API-key create/update writes aliases canonically while preserving unknown/community IDs, restricted keys retain access, catalogs display canonical permissions, and removed IDs return model-not-found when no alias was approved |
-| Description or brand | Catalog returns developer-facing copy without the title; brand mapping resolves to a real SVG; `addedDate` unchanged |
+| Description or author | Catalog returns developer-facing copy without the title; author mapping resolves to a real SVG; `addedDate` unchanged |
 | Input/output modality | Real sample proves the modality; unsupported inputs fail clearly; matching usage field is billed |
 | Image size/aspect/format | Every supported value returns the claimed dimensions/format; unsupported values are 4xx |
 | Video duration/resolution/fps/audio | Every supported combination needed by the public contract is verified with media inspection and exact billing |

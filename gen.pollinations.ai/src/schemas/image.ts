@@ -7,8 +7,8 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 const NOVA_REEL_MODELS = new Set([
-    "nova-reel",
-    ...IMAGE_SERVICES["nova-reel"].aliases,
+    "amazon/nova-reel-v1",
+    ...IMAGE_SERVICES["amazon/nova-reel-v1"].aliases,
 ]);
 
 const modelSchema = (defaultModel: string) =>
@@ -19,7 +19,7 @@ const modelSchema = (defaultModel: string) =>
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list.",
+                "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
 const GenerateImageRequestQueryParamsBaseSchema = z.object({
@@ -48,7 +48,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z

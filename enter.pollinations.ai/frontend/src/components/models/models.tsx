@@ -92,12 +92,12 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Name: Z to A",
     },
     {
-        value: "brand",
+        value: "author",
         label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
     },
     {
-        value: "brand-desc",
+        value: "author-desc",
         label: "Publisher: Z–A",
         accessibleLabel: "Publisher: Z to A",
     },
@@ -118,7 +118,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.author ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 

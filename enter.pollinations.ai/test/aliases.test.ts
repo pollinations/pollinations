@@ -1,5 +1,7 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
+import { REALTIME_SERVICES } from "@shared/registry/realtime";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
@@ -55,13 +57,32 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("gemini-search applies grounding cost on top of shared token rates", () => {
+test.for(
+    serviceAliasTestCases(EMBEDDING_SERVICES),
+)("Embedding service alias %s is resolved to %s", ([
+    alias,
+    shouldResolveTo,
+]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(REALTIME_SERVICES),
+)("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test("gemini-search resolves to the dedicated search variant", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage, {
+    const geminiFastCost = calculateCost("google/gemini-2.5-flash-lite", usage);
+    const canonicalSearchModel = resolveModelName("gemini-search");
+    expect(canonicalSearchModel).toBe("google/gemini-2.5-flash-lite:search");
+    const geminiSearchCost = calculateCost(canonicalSearchModel, usage, {
         choices: [
             {
                 groundingMetadata: {
@@ -99,39 +120,38 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     // cost × priceMultiplier. Assert the runtime aggregation honours that for a
     // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
-    const { priceMultiplier } = getRegistryModelDefinition("flux");
-    const cost = calculateCost("flux", usage);
-    const price = calculatePrice("flux", usage);
+    const model = "black-forest-labs/flux.1-schnell";
+    const { priceMultiplier } = getRegistryModelDefinition(model);
+    const cost = calculateCost(model, usage);
+    const price = calculatePrice(model, usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
 test("GPT-5.5 is available without paid-only gating", () => {
-    // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
-    // remains a back-compat alias. Resolve before the direct registry lookup.
-    const definition = getRegistryModelDefinition(resolveModelName("gpt-5.5"));
+    const definition = getRegistryModelDefinition("openai/gpt-5.5");
 
     expect(definition.paidOnly).toBeUndefined();
 });
 
 test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
     for (const model of [
-        "gpt-5.6-sol",
-        "gpt-5.6-terra",
-        "gpt-5.6-luna",
+        "openai/gpt-5.6-sol",
+        "openai/gpt-5.6-terra",
+        "openai/gpt-5.6-luna",
     ] as const) {
         const definition = getRegistryModelDefinition(model);
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
         expect(definition.priceMultiplier).toBe(
-            model === "gpt-5.6-luna" ? 0.2 : 0.5,
+            model === "openai/gpt-5.6-luna" ? 0.2 : 0.5,
         );
     }
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition("seedream5-pro");
+    const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
@@ -139,7 +159,10 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
 });
 
 test("Amazon Nova media models use the Bedrock registry provider", () => {
-    for (const model of ["nova-canvas", "nova-reel"] as const) {
+    for (const model of [
+        "amazon/nova-canvas-v1",
+        "amazon/nova-reel-v1",
+    ] as const) {
         expect(getRegistryModelDefinition(model).provider).toBe("bedrock");
     }
 });
@@ -152,15 +175,18 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedProviders = {
-        deepseek: "fireworks",
-        "deepseek-pro": "fireworks",
+        "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
-        deepseek: undefined,
-        "deepseek-pro": undefined,
+        "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
-    for (const model of ["deepseek", "deepseek-pro"] as const) {
+    for (const model of [
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4-pro",
+    ] as const) {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);

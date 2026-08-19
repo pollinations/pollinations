@@ -158,11 +158,11 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     await mocks.enable("tinybird", "replicate", "media");
 
     await generate(
-        "/image/billing-qwen-t2i?model=qwen-image&seed=101",
+        "/image/billing-qwen-t2i?model=qwen/qwen-image&seed=101",
         paidApiKey,
     );
     await generate(
-        `/image/billing-qwen-edit?model=qwen-image&seed=102&image=${encodeURIComponent(INPUT_IMAGE_URL)}`,
+        `/image/billing-qwen-edit?model=qwen/qwen-image&seed=102&image=${encodeURIComponent(INPUT_IMAGE_URL)}`,
         paidApiKey,
     );
 
@@ -173,8 +173,8 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     expect(mocks.tinybird.state.events).toHaveLength(2);
     const [textToImage, edit] = mocks.tinybird.state.events;
     expect(textToImage).toMatchObject({
-        modelRequested: "qwen-image",
-        modelUsed: "qwen-image",
+        modelRequested: "qwen/qwen-image",
+        modelUsed: "qwen/qwen-image",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.025,
         totalCost: 0.025,
@@ -182,8 +182,8 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     });
     expect(textToImage.costVariant).toBeUndefined();
     expect(edit).toMatchObject({
-        modelRequested: "qwen-image",
-        modelUsed: "qwen-image-edit",
+        modelRequested: "qwen/qwen-image",
+        modelUsed: "qwen/qwen-image",
         costVariant: "edit",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.03,
@@ -199,7 +199,7 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
     await mocks.enable("tinybird", "replicate", "media");
 
     await generate(
-        "/image/billing-pvideo?model=p-video&resolution=1080p&duration=5&seed=103",
+        "/image/billing-pvideo?model=prunaai/p-video&resolution=1080p&duration=5&seed=103",
         paidApiKey,
     );
 
@@ -210,8 +210,8 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
     });
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelRequested: "p-video",
-        modelUsed: "p-video",
+        modelRequested: "prunaai/p-video",
+        modelUsed: "prunaai/p-video",
         costVariant: "1080p",
         tokenCountCompletionVideoSeconds: 5,
         tokenPriceCompletionVideoSeconds: 0.04,
@@ -260,7 +260,7 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "grok-imagine-image-2.0",
-        modelUsed: "grok-imagine-image-2.0",
+        modelUsed: "x-ai/grok-imagine-image-2.0",
         costVariant: "low_2k",
         tokenCountPromptImage: 1,
         tokenPricePromptImage: 0.01,

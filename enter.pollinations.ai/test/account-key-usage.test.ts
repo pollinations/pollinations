@@ -19,7 +19,7 @@ describe("GET /api/account/key/usage", () => {
                 cursor_event_id: "event-1",
                 timestamp: "2026-04-14 12:10:00",
                 type: "generate.text",
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 api_key_id: myKeyId,
                 api_key: "my-key",
                 api_key_type: "secret",

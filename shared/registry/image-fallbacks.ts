@@ -7,8 +7,9 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
-    zimage: {
-        "zimage-fal": {
+    "tongyi-mai/z-image-turbo": {
+        "tongyi-mai/z-image-turbo:fallback": {
+            aliases: ["zimage-fal"],
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
             paidOnly: true,

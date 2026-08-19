@@ -111,7 +111,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`scribe-realtime\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
@@ -595,7 +595,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-2` supports text, image, audio, and video. `cohere-embed-v4` supports text and one image. OpenAI and Qwen embedding models are text-only.",
+                "**Models:** `google/gemini-embedding-2` supports text, image, audio, and video. `cohere/embed-v4.0` supports text and one image. OpenAI and Qwen embedding models are text-only.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
@@ -603,7 +603,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.",
                 "",
-                "**Gemini migration:** `gemini-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.",
+                "**Gemini migration:** `google/gemini-embedding-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.",
                 "",
                 "**Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.",
             ].join("\n"),
@@ -804,7 +804,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
@@ -842,7 +842,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model With JSON",
             description:
-                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
@@ -902,9 +902,9 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
+                "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -923,7 +923,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
+                        "Text or prompt to generate. Dialogue operation expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),

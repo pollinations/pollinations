@@ -2,8 +2,9 @@
  * Pruna image generation via DeepInfra and video generation via Replicate.
  *
  * DeepInfra hosts the exact PrunaAI/p-image and PrunaAI/p-image-Edit
- * checkpoints at the same prices as Replicate. p-video stays on Replicate and
- * uses one canonical model with request-selected resolution pricing.
+ * checkpoints behind the canonical prunaai/p-image and prunaai/p-image-edit
+ * IDs. p-video stays on Replicate and uses one canonical model with
+ * request-selected resolution pricing.
  */
 
 import { HttpError } from "@shared/http-error.ts";
@@ -26,8 +27,8 @@ const logError = debug("pollinations:pruna:error");
 const DEEPINFRA_INFERENCE_BASE = "https://api.deepinfra.com/v1/inference";
 const DEEPINFRA_TIMEOUT_MS = 120_000;
 const DEEPINFRA_IMAGE_MODELS = {
-    "p-image": "PrunaAI/p-image",
-    "p-image-edit": "PrunaAI/p-image-Edit",
+    "prunaai/p-image": "PrunaAI/p-image",
+    "prunaai/p-image-edit": "PrunaAI/p-image-Edit",
 } as const;
 
 // p-image-edit / p-video accept up to this many reference images.
@@ -216,7 +217,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    return generatePrunaImage("p-image", input);
+    return generatePrunaImage("prunaai/p-image", input);
 }
 
 // =============================================================================
@@ -253,7 +254,7 @@ export async function callPrunaImageEditAPI(
         images: `[${images.length} image references]`,
     });
 
-    return generatePrunaImage("p-image-edit", input);
+    return generatePrunaImage("prunaai/p-image-edit", input);
 }
 
 // =============================================================================
@@ -321,7 +322,7 @@ async function generatePrunaVideo(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: "p-video",
+            actualModel: "prunaai/p-video",
             usage: {
                 completionVideoSeconds: billedDuration,
             },

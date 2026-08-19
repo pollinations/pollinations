@@ -11,7 +11,7 @@ describe("CreateChatCompletionRequestSchema cache_control handling", () => {
     // parsed shape) would keep passing.
     it("preserves content-block cache_control through schema parsing", () => {
         const result = CreateChatCompletionRequestSchema.parse({
-            model: "gemini-fast",
+            model: "google/gemini-2.5-flash-lite",
             messages: [
                 {
                     role: "system",
@@ -37,7 +37,7 @@ describe("CreateChatCompletionRequestSchema cache_control handling", () => {
 
 describe("CreateChatCompletionRequestSchema seed handling", () => {
     const request = {
-        model: "qwen-vision-pro",
+        model: "qwen/qwen3-vl-235b-a22b-thinking",
         messages: [{ role: "user" as const, content: "hello" }],
     };
 

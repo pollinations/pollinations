@@ -14,7 +14,7 @@ export async function callRodinFalAPI(
     params: Model3dParams,
 ): Promise<Model3dGenerationResult> {
     const hasImages = params.image.length > 0;
-    if (!hasImages) requirePrompt(prompt, "hyper3d-rodin");
+    if (!hasImages) requirePrompt(prompt, "hyper3d/rodin-2.5");
 
     try {
         const seedInput =

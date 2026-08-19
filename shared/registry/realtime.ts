@@ -4,13 +4,13 @@ import {
 } from "./realtime-billing";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1" as const;
+export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 
 const OPENAI_REALTIME_BASE = {
     aliases: [],
     provider: "azure",
-    brand: "OpenAI",
+    author: "OpenAI",
     category: "realtime",
     priceMultiplier: 0.75,
     inputModalities: ["text", "audio", "image"],
@@ -31,6 +31,7 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["gpt-realtime-2.1"],
         addedDate: new Date("2026-07-16").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -39,8 +40,9 @@ export const REALTIME_SERVICES = {
             "Live voice conversations with instant replies and solid noise handling",
         contextLength: 32000,
     },
-    "gpt-realtime-2.1-mini": {
+    "openai/gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
         paidOnly: false,
         cost: {
@@ -69,8 +71,9 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
-    "gpt-realtime-2": {
+    "openai/gpt-realtime-2": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["gpt-realtime-2"],
         addedDate: new Date("2026-05-23").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -78,10 +81,10 @@ export const REALTIME_SERVICES = {
         description: "Live voice conversations with instant, reasoned replies",
         contextLength: 128000,
     },
-    "scribe-realtime": {
-        aliases: [],
+    "elevenlabs/scribe-v2-realtime": {
+        aliases: ["scribe-realtime"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        author: "ElevenLabs",
         category: "realtime",
         addedDate: new Date("2026-08-13").getTime(),
         paidOnly: true,

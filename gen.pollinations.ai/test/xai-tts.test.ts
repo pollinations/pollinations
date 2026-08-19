@@ -63,7 +63,7 @@ describe("generateXaiSpeech", () => {
             }),
         });
         expect(response.headers.get("content-type")).toBe(contentTypes[format]);
-        expect(response.headers.get("x-model-used")).toBe("grok-tts");
+        expect(response.headers.get("x-model-used")).toBe("x-ai/grok-tts");
         expect(response.headers.get("x-tts-voice")).toBe(voice);
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "6",

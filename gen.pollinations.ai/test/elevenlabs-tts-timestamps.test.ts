@@ -51,7 +51,7 @@ describe("ElevenLabs timestamped TTS", () => {
             .mockResolvedValue(Response.json(providerResponse));
 
         const response = await generateElevenLabsSpeechWithTimestamps({
-            modelName: "elevenflash",
+            modelName: "elevenlabs/eleven-flash-v2.5",
             text: "Hi",
             voice: "nova",
             responseFormat: "wav",
@@ -87,7 +87,7 @@ describe("ElevenLabs timestamped TTS", () => {
 
         await expect(
             generateElevenLabsSpeechWithTimestamps({
-                modelName: "elevenlabs",
+                modelName: "elevenlabs/eleven-v3",
                 text: "Hi",
                 voice: "nova",
                 responseFormat: "mp3",
@@ -103,7 +103,7 @@ describe("ElevenLabs timestamped TTS", () => {
             .mockResolvedValue(Response.json(providerResponse));
 
         await generateElevenLabsSpeechWithTimestamps({
-            modelName: "elevenlabs",
+            modelName: "elevenlabs/eleven-v3",
             text: "Hi",
             voice: "custom/voice?output_format=pcm_44100",
             responseFormat: "mp3",
@@ -133,7 +133,7 @@ workerTest(
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "elevenlabs",
+                    model: "elevenlabs/eleven-v3",
                     input: "Do not call the provider.",
                     response_format: "flac",
                 }),
@@ -154,11 +154,11 @@ workerTest(
 workerTest(
     "uses the shared fallback loop for audio",
     async ({ paidApiKey }) => {
-        const source = getRegistryModelDefinition("elevenlabs");
+        const source = getRegistryModelDefinition("elevenlabs/eleven-v3");
         const previousFallbacks = source.fallbacks;
         const fetchMock = vi.spyOn(globalThis, "fetch");
         try {
-            source.fallbacks = ["elevenflash"];
+            source.fallbacks = ["elevenlabs/eleven-flash-v2.5"];
             resetGenerationModelRegistryCache();
             const providerModels: string[] = [];
             fetchMock.mockImplementation(async (input, init) => {
@@ -193,7 +193,7 @@ workerTest(
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            model: "elevenlabs",
+                            model: "elevenlabs/eleven-v3",
                             input: "Fallback speech",
                         }),
                     },
@@ -209,7 +209,9 @@ workerTest(
             expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
                 "config.targets[1]",
             );
-            expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            expect(response.headers.get("x-model-used")).toBe(
+                "elevenlabs/eleven-flash-v2.5",
+            );
             await response.arrayBuffer();
             await waitOnExecutionContext(ctx);
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
@@ -222,9 +224,13 @@ workerTest(
 );
 
 for (const testCase of [
-    { model: "elevenlabs", format: "mp3", magic: "ID3" },
-    { model: "elevenflash", format: "wav", magic: "RIFF" },
-    { model: "eleven-multilingual-v2", format: "opus", magic: "OggS" },
+    { model: "elevenlabs/eleven-v3", format: "mp3", magic: "ID3" },
+    { model: "elevenlabs/eleven-flash-v2.5", format: "wav", magic: "RIFF" },
+    {
+        model: "elevenlabs/eleven-multilingual-v2",
+        format: "opus",
+        magic: "OggS",
+    },
 ] as const) {
     workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,

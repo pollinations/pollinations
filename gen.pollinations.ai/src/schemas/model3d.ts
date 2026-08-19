@@ -24,7 +24,8 @@ export const Generate3dRequestQueryParamsSchema = z.object({
                 "Model to use. See /3d/models for the full list and per-model input requirements.",
         }),
     resolution: z.enum(["low", "medium", "high"]).optional().meta({
-        description: "Output detail for `trellis-2`. Defaults to `low`.",
+        description:
+            "Output detail for `microsoft/trellis-2`. Defaults to `low`.",
     }),
     image: z
         .string()
@@ -53,7 +54,7 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         }),
     seed: z.coerce.number().int().optional().meta({
         description:
-            "Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
+            "Seed for varied generations. Passed through to models that support it (`hyper3d/rodin-2.5`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
     }),
     safe: SafeSchema,
 });
@@ -101,7 +102,7 @@ export const Generate3dRequestBodySchema = z
             .default("low")
             .meta({
                 description:
-                    "Output voxel-grid resolution for `trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more.",
+                    "Output voxel-grid resolution for `microsoft/trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more.",
             }),
         seed: z.number().int().optional().meta({
             description:

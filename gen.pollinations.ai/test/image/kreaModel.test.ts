@@ -13,7 +13,7 @@ const IMAGE_URL = "https://fal.media/krea-output.png";
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
-    model: "krea",
+    model: "krea/krea-2-medium",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -108,7 +108,7 @@ describe("callKreaImageAPI", () => {
         expect(result.buffer).toEqual(Buffer.from(PNG_BYTES));
         expect(result.mimeType).toBe("image/png");
         expect(result.trackingData).toEqual({
-            actualModel: "krea",
+            actualModel: "krea/krea-2-medium",
             usage: { completionImageTokens: 1 },
         });
     });

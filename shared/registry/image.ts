@@ -4,15 +4,15 @@ import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "zimage" as const;
+export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
-    "krea": {
-        aliases: ["krea-2"],
+    "krea/krea-2-medium": {
+        aliases: ["krea-2", "krea"],
         provider: "fal",
-        brand: "Krea",
+        author: "Krea",
         category: "image",
         addedDate: new Date("2026-08-01").getTime(),
         priceMultiplier: 1,
@@ -26,12 +26,12 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "dreamshaper": {
+    "lykon/dreamshaper-8-lcm": {
         // "sana" is kept as an alias so existing callers and the legacy image
         // proxy worker keep working unchanged.
-        aliases: ["sana"],
+        aliases: ["sana", "dreamshaper"],
         provider: "vast",
-        brand: "Lykon",
+        author: "Lykon",
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
@@ -44,10 +44,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "kontext": {
-        aliases: [],
+    "black-forest-labs/flux.1-kontext-pro": {
+        aliases: ["kontext"],
         provider: "azure",
-        brand: "Black Forest Labs",
+        author: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -61,10 +61,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
-    "nanobanana": {
-        aliases: [],
+    "google/gemini-2.5-flash-image": {
+        aliases: ["nanobanana"],
         provider: "openrouter",
-        brand: "Google",
+        author: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
@@ -83,10 +83,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
     },
-    "nanobanana-2": {
-        aliases: ["nanobanana2"],
+    "google/gemini-3.1-flash-image": {
+        aliases: ["nanobanana2", "nanobanana-2"],
         provider: "openrouter",
-        brand: "Google",
+        author: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
@@ -105,10 +105,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
-    "nanobanana-2-lite": {
-        aliases: ["nanobanana2lite", "nanobanana-lite"],
+    "google/gemini-3.1-flash-lite-image": {
+        aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
         provider: "openrouter",
-        brand: "Google",
+        author: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
@@ -127,10 +127,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
-    "nanobanana-pro": {
-        aliases: [],
+    "google/gemini-3-pro-image": {
+        aliases: ["nanobanana-pro"],
         provider: "openrouter",
-        brand: "Google",
+        author: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -151,10 +151,14 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "seedream5": {
-        aliases: [],
+    "bytedance/seedream-5.0-lite": {
+        aliases: [
+            "seedream5",
+            "bytedance/seedream-5-lite",
+            "bytedance-seed/seedream-5-0-lite",
+        ],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
@@ -169,10 +173,16 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "seedream5-pro": {
-        aliases: ["seedream-5-pro", "seedream-pro-5"],
+    "bytedance/seedream-5.0-pro": {
+        aliases: [
+            "seedream-5-pro",
+            "seedream-pro-5",
+            "seedream5-pro",
+            "bytedance/seedream-5-pro",
+            "bytedance-seed/seedream-5-0-pro",
+        ],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
@@ -186,10 +196,14 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "seedream": {
-        aliases: [],
+    "bytedance/seedream-4.0": {
+        aliases: [
+            "seedream",
+            "bytedance/seedream-4",
+            "bytedance-seed/seedream-4.0",
+        ],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -203,10 +217,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-pro": {
-        aliases: [],
+    "bytedance/seedream-4.5": {
+        aliases: ["seedream-pro", "bytedance-seed/seedream-4.5"],
         provider: "openrouter",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -226,10 +240,10 @@ const IMAGE_BASE_SERVICES = {
     // therefore independent of the resolution preset the handler picks, and all
     // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
     // flat per-image cost is correct regardless of aspect ratio / resolution.
-    "ideogram-v4-turbo": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-turbo": {
+        aliases: ["ideogram-v4-turbo"],
         provider: "replicate",
-        brand: "Ideogram",
+        author: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -242,10 +256,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-balanced": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-balanced": {
+        aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
-        brand: "Ideogram",
+        author: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -258,10 +272,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-quality": {
-        aliases: [],
+    "ideogram-ai/ideogram-v4-quality": {
+        aliases: ["ideogram-v4-quality"],
         provider: "replicate",
-        brand: "Ideogram",
+        author: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -275,10 +289,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini"],
+    "openai/gpt-image-1-mini": {
+        aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
         provider: "azure",
-        brand: "OpenAI",
+        author: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 0.75,
@@ -294,10 +308,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gptimage-large": {
-        aliases: ["gpt-image-1.5", "gpt-image-large"],
+    "openai/gpt-image-1.5": {
+        aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
         provider: "azure",
-        brand: "OpenAI",
+        author: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         priceMultiplier: 1,
@@ -316,10 +330,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gpt-image-2": {
-        aliases: [],
+    "openai/gpt-image-2": {
+        aliases: ["gpt-image-2"],
         provider: "azure",
-        brand: "OpenAI",
+        author: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
@@ -337,10 +351,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "flux": {
-        aliases: [],
+    "black-forest-labs/flux.1-schnell": {
+        aliases: ["flux", "black-forest-labs/FLUX.1-schnell"],
         provider: "vast",
-        brand: "Black Forest Labs",
+        author: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -352,14 +366,19 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "zimage": {
-        aliases: ["z-image", "z-image-turbo"],
+    "tongyi-mai/z-image-turbo": {
+        aliases: [
+            "z-image",
+            "z-image-turbo",
+            "zimage",
+            "Tongyi-MAI/Z-Image-Turbo",
+        ],
         provider: "vast",
         // Routes live in image-fallbacks.ts. Narrower than the default
         // status list: only a 503 (no capacity) overflows to Fal, so every
         // other Vast failure surfaces instead of being served elsewhere.
         fallbackOnStatusCodes: [503],
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
@@ -372,7 +391,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "veo": {
+    "google/veo-3.1-fast": {
         aliases: [
             "veo-3.1-fast",
             "veo-720p",
@@ -380,9 +399,10 @@ const IMAGE_BASE_SERVICES = {
             "veo-1080p",
             "veo-3.1-fast-1080p",
             "veo-1080",
+            "veo",
         ],
         provider: "google",
-        brand: "Google",
+        author: "Google",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
@@ -415,10 +435,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "seedance-pro": {
-        aliases: [],
+    "bytedance/seedance-1-pro-fast": {
+        aliases: ["seedance-pro"],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -460,10 +480,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "seedance-2.0": {
-        aliases: ["seedance-2"],
+    "bytedance/seedance-2.0": {
+        aliases: ["seedance-2", "seedance-2.0"],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
@@ -480,10 +500,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "seedance-2.0-mini": {
-        aliases: [],
+    "bytedance/seedance-2.0-mini": {
+        aliases: ["seedance-2.0-mini"],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -517,10 +537,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "seedance-2.0-fast": {
-        aliases: [],
+    "bytedance/seedance-2.0-fast": {
+        aliases: ["seedance-2.0-fast"],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -538,10 +558,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan": {
-        aliases: ["wan2.6", "wan-i2v"],
+    "alibaba/wan-2.6": {
+        aliases: ["wan2.6", "wan-i2v", "wan"],
         provider: "replicate",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
@@ -559,10 +579,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "wan-fast": {
-        aliases: ["wan2.2", "wan-2.2"],
+    "alibaba/wan-2.2-fast": {
+        aliases: ["wan2.2", "wan-2.2", "wan-fast", "wan-video/wan-2.2-fast"],
         provider: "replicate",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -580,16 +600,17 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-pro": {
+    "alibaba/wan-2.7": {
         aliases: [
             "wan2.7",
             "wan-2.7",
             "wan-pro-1080p",
             "wan2.7-1080p",
             "wan-pro-1080",
+            "wan-pro",
         ],
         provider: "replicate",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
@@ -635,10 +656,15 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-image": {
-        aliases: ["wan2.7-image", "wan-img"],
+    "alibaba/wan-2.7-image": {
+        aliases: [
+            "wan2.7-image",
+            "wan-img",
+            "wan-image",
+            "wan-video/wan-2.7-image",
+        ],
         provider: "replicate",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
@@ -654,10 +680,15 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "wan-image-pro": {
-        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+    "alibaba/wan-2.7-image-pro": {
+        aliases: [
+            "wan2.7-image-pro",
+            "wan-img-pro",
+            "wan-image-pro",
+            "wan-video/wan-2.7-image-pro",
+        ],
         provider: "replicate",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
@@ -674,15 +705,16 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image": {
+    "qwen/qwen-image": {
         aliases: [
             "qwen-image-plus",
             "qwen-image-2512",
             "qwen-image-edit",
             "qwen-image-edit-plus",
+            "qwen-image",
         ],
         provider: "replicate",
-        brand: "Qwen",
+        author: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
@@ -715,10 +747,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
-    "qwen-image-3": {
-        aliases: [],
+    "qwen/qwen-image-3": {
+        aliases: ["qwen-image-3"],
         provider: "fal",
-        brand: "Qwen",
+        author: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -754,10 +786,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
-    "grok-imagine": {
-        aliases: ["grok-imagine-image"],
+    "x-ai/grok-imagine-image": {
+        aliases: ["grok-imagine-image", "grok-imagine"],
         provider: "xai",
-        brand: "xAI",
+        author: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
         priceMultiplier: 1,
@@ -772,15 +804,16 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
-    "grok-imagine-pro": {
+    "x-ai/grok-imagine-image-quality": {
         aliases: [
             "grok-aurora",
             "aurora",
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
+            "grok-imagine-pro",
         ],
         provider: "openrouter",
-        brand: "xAI",
+        author: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -796,10 +829,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
-    "grok-imagine-image-2.0": {
-        aliases: [],
+    "x-ai/grok-imagine-image-2.0": {
+        aliases: ["grok-imagine-image-2.0"],
         provider: "openrouter",
-        brand: "xAI",
+        author: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -854,10 +887,15 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
-    "recraft-v4.1-vector": {
-        aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+    "recraft/recraft-v4.1-vector": {
+        aliases: [
+            "recraft-vector",
+            "recraft-svg",
+            "recraft-v4.1-svg",
+            "recraft-v4.1-vector",
+        ],
         provider: "openrouter",
-        brand: "Recraft",
+        author: "Recraft",
         category: "image",
         addedDate: new Date("2026-07-24").getTime(),
         priceMultiplier: 1,
@@ -872,10 +910,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
-    "grok-video-pro": {
-        aliases: ["grok-imagine-video"],
+    "x-ai/grok-imagine-video": {
+        aliases: ["grok-imagine-video", "grok-video-pro"],
         provider: "openrouter",
-        brand: "xAI",
+        author: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -891,10 +929,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "grok-imagine-video-1.5": {
-        aliases: [],
+    "x-ai/grok-imagine-video-1.5": {
+        aliases: ["grok-imagine-video-1.5"],
         provider: "openrouter",
-        brand: "xAI",
+        author: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
@@ -936,10 +974,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "seedance-2.5": {
-        aliases: [],
+    "bytedance/seedance-2.5": {
+        aliases: ["seedance-2.5"],
         provider: "replicate",
-        brand: "ByteDance",
+        author: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-09").getTime(),
         priceMultiplier: 1,
@@ -972,10 +1010,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "happyhorse-1.1": {
-        aliases: ["happyhorse", "happy-horse-1.1"],
+    "alibaba/happyhorse-1.1": {
+        aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
         provider: "openrouter",
-        brand: "Alibaba",
+        author: "Alibaba",
         category: "video",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
@@ -990,10 +1028,10 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
     },
-    "minimax-h3": {
-        aliases: [],
+    "minimax/minimax-h3": {
+        aliases: ["minimax-h3"],
         provider: "fal",
-        brand: "MiniMax",
+        author: "MiniMax",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -1029,10 +1067,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["audio_output"],
     },
-    "klein": {
-        aliases: ["flux-klein"],
+    "black-forest-labs/flux.2-klein-4b": {
+        aliases: ["flux-klein", "klein"],
         provider: "vast",
-        brand: "Black Forest Labs",
+        author: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
@@ -1045,10 +1083,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "p-image": {
-        aliases: ["pruna-image", "pruna"],
+    "prunaai/p-image": {
+        aliases: ["pruna-image", "pruna", "p-image", "PrunaAI/p-image"],
         provider: "deepinfra",
-        brand: "Pruna",
+        author: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1061,10 +1099,15 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "p-image-edit": {
-        aliases: ["pruna-edit", "pruna-image-edit"],
+    "prunaai/p-image-edit": {
+        aliases: [
+            "pruna-edit",
+            "pruna-image-edit",
+            "p-image-edit",
+            "PrunaAI/p-image-Edit",
+        ],
         provider: "deepinfra",
-        brand: "Pruna",
+        author: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1080,15 +1123,16 @@ const IMAGE_BASE_SERVICES = {
     },
     // Pruna p-video is one Replicate model priced per second by resolution:
     // 720p $0.02/s and 1080p $0.04/s in standard mode.
-    "p-video": {
+    "prunaai/p-video": {
         aliases: [
             "pruna-video",
             "p-video-720p",
             "p-video-1080p",
             "pruna-video-1080p",
+            "p-video",
         ],
         provider: "replicate",
-        brand: "Pruna",
+        author: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1120,10 +1164,14 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "nova-canvas": {
-        aliases: ["amazon-nova-canvas"],
+    "amazon/nova-canvas-v1": {
+        aliases: [
+            "amazon-nova-canvas",
+            "nova-canvas",
+            "amazon.nova-canvas-v1:0",
+        ],
         provider: "bedrock",
-        brand: "Amazon",
+        author: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1136,10 +1184,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
     },
-    "nova-reel": {
-        aliases: ["amazon-nova-reel"],
+    "amazon/nova-reel-v1": {
+        aliases: ["amazon-nova-reel", "nova-reel", "amazon.nova-reel-v1:1"],
         provider: "bedrock",
-        brand: "Amazon",
+        author: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,

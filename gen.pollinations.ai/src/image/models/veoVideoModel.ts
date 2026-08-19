@@ -219,7 +219,7 @@ const generateVeoVideo = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: {
                 completionVideoSeconds: durationSeconds,
                 ...(generateAudio

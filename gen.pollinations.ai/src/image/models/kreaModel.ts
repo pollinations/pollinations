@@ -173,7 +173,7 @@ export async function callKreaImageAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "krea",
+            actualModel: "krea/krea-2-medium",
             usage: { completionImageTokens: 1 },
         },
     };

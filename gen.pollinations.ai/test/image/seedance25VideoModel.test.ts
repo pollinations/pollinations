@@ -13,7 +13,7 @@ const IMAGE_URLS = [
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
-    model: "seedance-2.5",
+    model: "bytedance/seedance-2.5",
     width: 1024,
     height: 768,
     dimensionsExplicit: false,
@@ -101,7 +101,7 @@ describe("Seedance 2.5 via Replicate", () => {
             mimeType: "video/mp4",
             durationSeconds: 4,
             trackingData: {
-                actualModel: "seedance-2.5",
+                actualModel: "bytedance/seedance-2.5",
                 usage: { completionVideoSeconds: 4 },
             },
         });

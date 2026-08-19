@@ -748,7 +748,7 @@ export function communityModelDefinition(
     return {
         aliases,
         provider: "community",
-        brand: providerName || "Community",
+        author: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : isTranscription ? "audio" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),

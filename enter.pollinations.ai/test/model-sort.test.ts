@@ -58,11 +58,11 @@ describe("model sorting", () => {
         ).toEqual(["expensive", "cheap", "free", "unknown"]);
     });
 
-    it("sorts by display title or groups by brand and then title", () => {
+    it("sorts by display title or groups by author and then title", () => {
         const namedModels = [
-            model("zeta", { displayName: "Zulu", brand: "openai" }),
-            model("alpha", { displayName: "alpha", brand: "OpenAI" }),
-            model("beta", { displayName: "Beta", brand: "Anthropic" }),
+            model("zeta", { displayName: "Zulu", author: "openai" }),
+            model("alpha", { displayName: "alpha", author: "OpenAI" }),
+            model("beta", { displayName: "Beta", author: "Anthropic" }),
             model("orphan", { displayName: "Orphan" }),
         ];
 
@@ -73,10 +73,10 @@ describe("model sorting", () => {
             sortModels(namedModels, "title-desc").map(({ name }) => name),
         ).toEqual(["zeta", "orphan", "beta", "alpha"]);
         expect(
-            sortModels(namedModels, "brand").map(({ name }) => name),
+            sortModels(namedModels, "author").map(({ name }) => name),
         ).toEqual(["beta", "alpha", "zeta", "orphan"]);
         expect(
-            sortModels(namedModels, "brand-desc").map(({ name }) => name),
+            sortModels(namedModels, "author-desc").map(({ name }) => name),
         ).toEqual(["alpha", "zeta", "beta", "orphan"]);
     });
 });

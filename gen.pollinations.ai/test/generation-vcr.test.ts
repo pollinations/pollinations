@@ -191,7 +191,7 @@ async function fakePortkeyResponse(request: Request) {
         model?: string;
         stream?: boolean;
     };
-    const model = body.model || "openai-fast";
+    const model = body.model || "openai/gpt-5-nano";
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
     const reportedModel = prompt.includes("provider model mismatch")
@@ -326,7 +326,7 @@ async function fakePortkeyResponse(request: Request) {
     ];
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
-        model === "openai-audio" || prompt.includes("vcr audio text");
+        model === "openai/gpt-audio-mini" || prompt.includes("vcr audio text");
 
     if (isAudio) {
         return Response.json(
@@ -443,7 +443,7 @@ test("chat completions use local text generation with VCR-backed Portkey", async
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr chat json" }],
         }),
     });
@@ -464,7 +464,7 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         responseStatus: 200,
-        modelRequested: "openai-fast",
+        modelRequested: "openai/gpt-5-nano",
         tokenCountPromptText: 7,
         tokenCountCompletionText: 3,
         isBilledUsage: true,
@@ -500,13 +500,13 @@ test("canonical model headers preserve provider-reported payload models", async 
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("openai-fast");
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
     await expect(response.json()).resolves.toMatchObject({
         model: "provider-model-version",
     });
     await wait();
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai-fast",
+        modelUsed: "openai/gpt-5-nano",
     });
 
     const { response: streamResponse, wait: waitForStream } = await fetchWorker(
@@ -531,13 +531,15 @@ test("canonical model headers preserve provider-reported payload models", async 
     );
 
     expect(streamResponse.status).toBe(200);
-    expect(streamResponse.headers.get("x-model-used")).toBe("openai-fast");
+    expect(streamResponse.headers.get("x-model-used")).toBe(
+        "openai/gpt-5-nano",
+    );
     const streamBody = await streamResponse.text();
     expect(streamBody).toContain('"model":"provider-model-version"');
     expect(streamBody).not.toContain('"model":"openai-fast"');
     await waitForStream();
     expect(mocks.tinybird.state.events[1]).toMatchObject({
-        modelUsed: "openai-fast",
+        modelUsed: "openai/gpt-5-nano",
     });
 });
 
@@ -620,7 +622,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
+        expect(response.headers.get("x-model-used")).toBe("perplexity/sonar");
         await response.text();
         await wait();
     }
@@ -797,7 +799,7 @@ test("non-stream chat completions keep moderation telemetry in generation events
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr moderated text" }],
         }),
     });
@@ -812,7 +814,7 @@ test("non-stream chat completions keep moderation telemetry in generation events
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
-        modelRequested: "openai-fast",
+        modelRequested: "openai/gpt-5-nano",
         moderationPromptHateSeverity: "safe",
         moderationPromptSexualSeverity: "safe",
         moderationCompletionViolenceSeverity: "medium",
@@ -833,7 +835,7 @@ test("streaming chat completions replay through VCR", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             stream: true,
             messages: [{ role: "user", content: "vcr chat stream" }],
         }),
@@ -894,7 +896,7 @@ test("POST /text returns assistant content directly", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr post text" }],
         }),
     });
@@ -927,7 +929,7 @@ test("POST /text passes through empty assistant content", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "vcr empty text" }],
         }),
     });
@@ -959,7 +961,7 @@ test("POST /text streams direct content responses", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             stream: true,
             messages: [{ role: "user", content: "vcr post stream" }],
         }),
@@ -1052,7 +1054,7 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
     await mocks.enable("tinybird", "replicate");
     const { key } = await createTestApiKey({
-        allowedModels: ["flux"],
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
         user: { tierBalance: 100 },
     });
 
@@ -1079,8 +1081,8 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
-        resolvedModelRequested: "flux",
-        modelUsed: "flux",
+        resolvedModelRequested: "black-forest-labs/flux.1-schnell",
+        modelUsed: "black-forest-labs/flux.1-schnell",
         modelProviderUsed: "vast",
         responseStatus: 503,
         fallbackUsed: false,
@@ -1181,7 +1183,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "gpt-image-2",
+            model: "openai/gpt-image-2",
             prompt: "transparent",
             transparent: true,
         }),
@@ -1201,7 +1203,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
-        modelRequested: "gpt-image-2",
+        modelRequested: "openai/gpt-image-2",
         responseStatus: 400,
     });
 });
@@ -1238,7 +1240,9 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("dreamshaper");
+    expect(response.headers.get("x-model-used")).toBe(
+        "lykon/dreamshaper-8-lcm",
+    );
     await response.arrayBuffer();
     await wait();
 
@@ -1247,7 +1251,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
         eventType: "generate.image",
         // analytics keep the name the caller actually used
         modelRequested: "sana",
-        modelUsed: "dreamshaper",
+        modelUsed: "lykon/dreamshaper-8-lcm",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,

@@ -23,7 +23,7 @@ function registryEntry(
         aliases: [],
         provider: "test",
         fallbacks,
-        brand: "Test",
+        author: "Test",
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,

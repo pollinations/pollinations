@@ -276,14 +276,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
-                    {model.brandUrl && model.brand && (
+                    {model.brandUrl && model.author && (
                         <a
                             href={model.brandUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                         >
-                            {model.brand}
+                            {model.author}
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">

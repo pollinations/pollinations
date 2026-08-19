@@ -190,9 +190,14 @@ export function KPITrendTable({ weeklyData }) {
                                     {weekLabel(partialWeek?.week)}
                                 </Text>
                             </TableHeaderCell>
-                            <TableHeaderCell align="right">WoW</TableHeaderCell>
-                            {displayWeeks.map((week) => (
-                                <TableHeaderCell key={week.week} align="right">
+                            {displayWeeks.map((week, weekIndex) => (
+                                <TableHeaderCell
+                                    key={week.week}
+                                    align="right"
+                                    className={
+                                        weekIndex === 0 ? "min-w-24" : undefined
+                                    }
+                                >
                                     {weekLabel(week.week)}
                                 </TableHeaderCell>
                             ))}
@@ -266,16 +271,7 @@ export function KPITrendTable({ weeklyData }) {
                                             kpi.format,
                                         )}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={tone}
-                                    >
-                                        {change == null
-                                            ? "—"
-                                            : `${change > 0 ? "▲" : change < 0 ? "▼" : "→"} ${Math.round(change)}%`}
-                                    </TableCell>
-                                    {displayWeeks.map((week) => (
+                                    {displayWeeks.map((week, weekIndex) => (
                                         <TableCell
                                             key={week.week}
                                             align="right"
@@ -286,6 +282,23 @@ export function KPITrendTable({ weeklyData }) {
                                                 kpiValue(kpi, week),
                                                 kpi.format,
                                             )}
+                                            {weekIndex === 0 &&
+                                                change != null && (
+                                                    <span
+                                                        className={`ml-1.5 text-[10px] ${tone}`}
+                                                        title={`vs ${weekLabel(previousFull?.week)}`}
+                                                    >
+                                                        {change > 0
+                                                            ? "▲"
+                                                            : change < 0
+                                                              ? "▼"
+                                                              : "→"}
+                                                        {Math.round(
+                                                            Math.abs(change),
+                                                        )}
+                                                        %
+                                                    </span>
+                                                )}
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -295,8 +308,10 @@ export function KPITrendTable({ weeklyData }) {
                 </Table>
             </div>
             <Text as="p" size="micro" tone="muted">
-                Now = current partial week · WoW = last two full weeks ·{" "}
-                {displayWeeks.length} full weeks shown
+                Now = current partial week · the % on{" "}
+                {weekLabel(lastFull?.week)} is its change from{" "}
+                {weekLabel(previousFull?.week)} · {displayWeeks.length} full
+                weeks shown
             </Text>
         </Surface>
     );

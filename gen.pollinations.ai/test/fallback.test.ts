@@ -1,4 +1,5 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
@@ -12,7 +13,6 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
-import { HttpError } from "../src/image/httpError.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 function registryEntry(

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { formatValue } from "../src/lib/format";
-import { KPIS, kpiValue, kpiView } from "../src/lib/kpis";
+import {
+    KPI_VIEWS,
+    KPIS,
+    kpiValue,
+    kpiView,
+    kpiViewById,
+    kpiViewId,
+} from "../src/lib/kpis";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
@@ -51,5 +58,81 @@ describe("community models row", () => {
             expect(kpiValue(view, before)).toBeUndefined();
             expect(formatValue(kpiValue(view, before), view.format)).toBe("—");
         }
+    });
+});
+
+describe("explorer view list", () => {
+    it("offers every view of every row, not one per row", () => {
+        const expected = KPIS.reduce(
+            (total, row) => total + (row.views?.length ?? 1),
+            0,
+        );
+        expect(KPI_VIEWS).toHaveLength(expected);
+        expect(KPI_VIEWS.length).toBeGreaterThan(KPIS.length);
+    });
+
+    it("gives each view a unique id that resolves back to it", () => {
+        const ids = KPI_VIEWS.map((view) => view.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        for (const view of KPI_VIEWS)
+            expect(kpiViewById(view.id).name).toBe(view.name);
+    });
+
+    it("lists all three community variants separately", () => {
+        const names = KPI_VIEWS.filter((view) =>
+            view.id.startsWith("communityModels:"),
+        ).map((view) => view.name);
+        expect(names).toEqual([
+            "Community models · users",
+            "Community models · requests",
+            "Community models · availability",
+        ]);
+    });
+
+    it("sends a cycled table row to the variant it is showing", () => {
+        // The table's graph button passes kpiViewId(row, index); index 2 on the
+        // community row must land on availability, not back on users.
+        expect(kpiViewById(kpiViewId(community, 2)).name).toBe(
+            "Community models · availability",
+        );
+        expect(kpiViewById(kpiViewId(community, 4)).name).toBe(
+            "Community models · requests",
+        );
+    });
+
+    it("falls back to the first view for an unknown id", () => {
+        expect(kpiViewById("nope:9").id).toBe(KPI_VIEWS[0].id);
+    });
+});
+
+const margin = KPIS.find((row) => row.key === "grossMargin");
+const coverage = KPIS.find((row) => row.key === "cashCoverage");
+
+// A real week from prod (2026-08-10), trimmed to the fields these rows read.
+const marginWeek = {
+    week: "2026-08-10",
+    pollenRevenue: 3469,
+    costUsd: 3740,
+    revenue: 2278,
+};
+
+describe("gross margin row", () => {
+    it("measures Pollen revenue against cost, not Stripe cash", () => {
+        // Stripe cash that week was 2278 — using it would read −64%.
+        expect(kpiValue(margin, marginWeek)).toBeCloseTo(-7.81, 1);
+    });
+
+    it("blanks a week with no Pollen spent rather than reading zero", () => {
+        expect(kpiValue(margin, { pollenRevenue: 0, costUsd: 10 })).toBeNull();
+    });
+});
+
+describe("cash coverage row", () => {
+    it("compares Stripe cash against the week's compute cost", () => {
+        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
+    });
+
+    it("blanks a week with no cost rather than dividing by zero", () => {
+        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
     });
 });

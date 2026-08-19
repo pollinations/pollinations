@@ -1013,9 +1013,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // demand paid balance, which would only gate the owner out of
             // their own model.
             const paidOnly =
-                agent || input.visibility !== "public"
-                    ? false
-                    : input.paidOnly;
+                agent || input.visibility !== "public" ? false : input.paidOnly;
             enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const fallbackModelIds = input.fallbackModelIds
                 ? await resolveFallbackModelIds(db, input.fallbackModelIds, {

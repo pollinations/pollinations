@@ -292,8 +292,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <output className="mb-4 rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text">
                     <p className="font-bold">Payments restricted</p>
                     <p className="mt-1">
-                        We detected an unusually high number of failed payment
-                        attempts on this account. Purchases and automatic
+                        Your account was flagged due to an unusually high number
+                        of failed payment attempts. Purchases and automatic
                         top-ups have been disabled for fraud prevention. If you
                         believe this is a mistake, email{" "}
                         <CopyButton

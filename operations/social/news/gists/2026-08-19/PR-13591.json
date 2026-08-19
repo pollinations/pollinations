@@ -1,0 +1,34 @@
+{
+  "pr_number": 13591,
+  "title": "fix: polish pollen price and signed-out footer",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13591",
+  "merged_at": "2026-08-19T17:35:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes the price badge overflow by keeping the total inside the pill and rendering the fee beneath it.\n- Removes the extra mobile-only bottom padding below the Buy button while preserving desktop spacing.\n- Hides duplicate Terms, Privacy, and Refunds footer links for signed-out users.\n- Makes the consent copy inherit the GitHub sign-in font at the existing micro size.\n- Validated with Biome, the Enter frontend production build, and TypeScript.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The pill holds together",
+    "blurb": "The Pollen checkout got a small but satisfying sweep: totals now stay inside their little price pill, fees know where to stand, and the signed-out footer stopped repeating itself.",
+    "summary": "Polished the Enter checkout UI by keeping Pollen pack totals inside the price badge, placing fees beneath it, removing extra mobile Buy-button padding, and hiding duplicate signed-out footer links.",
+    "impact": "People buying Pollen will see a cleaner responsive checkout, with readable price badges, tighter mobile spacing, and one sensible set of Terms, Privacy, and Refunds links.",
+    "keywords": [
+      "pollen",
+      "checkout",
+      "pricing",
+      "responsive-ui",
+      "footer",
+      "enter"
+    ],
+    "visual_concept": "A cozy checkout counter in a garden shed: Polli carefully fits glowing Pollen coins into a tidy rounded price pill while a tiny fee label sits neatly below. A retro terminal shows a clean Buy button, with duplicate footer-link slips being tucked away among flowers and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny shopkeeper visor as she neatly places glowing Pollen coins inside a rounded price pill while a small fee label rests below; a retro checkout terminal and blooming code-plants sit nearby, with extra paper footer links tidily filed away. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13591.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny shopkeeper visor as she neatly places glowing Pollen coins inside a rounded price pill while a small fee label rests below; a retro checkout terminal and blooming code-plants sit nearby, with extra paper footer links tidily filed away. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T17:36:50.213251+00:00"
+}

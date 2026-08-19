@@ -17,6 +17,14 @@ export function AppIcon(props: IconProps) {
     );
 }
 
+export function ArrowRightIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

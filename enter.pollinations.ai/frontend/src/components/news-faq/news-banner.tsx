@@ -1,4 +1,12 @@
-import { Chip, CodeBlock, cn, Surface, WarningIcon } from "@pollinations/ui";
+import {
+    ArrowRightIcon,
+    CheckIcon,
+    Chip,
+    CodeBlock,
+    cn,
+    Surface,
+    WarningIcon,
+} from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -211,62 +219,42 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                     Migration example
                 </div>
-                <div className="mt-1.5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                    <div>
+                <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+                    <div className="flex flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
                             Current alias
                         </div>
-                        <CodeBlock
-                            code="flux"
-                            className="min-w-40"
-                            codeClassName="text-sm"
-                        />
+                        <Chip intent="neutral" size="lg" className="font-mono">
+                            flux
+                        </Chip>
                     </div>
                     <div
                         aria-hidden="true"
-                        className="self-center text-2xl font-semibold text-intent-warning-text rotate-90 sm:rotate-0"
+                        className="flex h-8 w-8 self-center shrink-0 items-center justify-center rounded-full bg-intent-warning-bg-light text-intent-warning-text sm:self-auto"
                     >
-                        →
+                        <ArrowRightIcon className="h-4 w-4 rotate-90 sm:rotate-0" />
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
                             Canonical slug
                         </div>
-                        <CodeBlock
-                            code="black-forest-labs/flux.1-schnell"
-                            codeClassName="text-sm"
-                        />
+                        <Chip
+                            intent="warning"
+                            size="lg"
+                            className="max-w-full font-mono"
+                        >
+                            black-forest-labs/flux.1-schnell
+                        </Chip>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-5 grid gap-3 border-t border-divider pt-4 text-sm sm:grid-cols-2">
-                <div className="rounded-lg bg-theme-bg-pale p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Chip intent="free" size="sm">
-                            Compatible
-                        </Chip>
-                        <strong className="text-theme-text-strong">
-                            Existing aliases continue to work
-                        </strong>
-                    </div>
-                    <p className="mt-1.5 text-theme-text-muted">
-                        Current integrations keep working during the transition.
-                    </p>
-                </div>
-                <div className="rounded-lg bg-theme-bg-pale p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Chip intent="neutral" size="sm">
-                            Unchanged
-                        </Chip>
-                        <strong className="text-theme-text-strong">
-                            Models work the same
-                        </strong>
-                    </div>
-                    <p className="mt-1.5 text-theme-text-muted">
-                        Behavior, routing, pricing, capabilities, and defaults.
-                    </p>
-                </div>
+            <div className="mt-5 flex items-start gap-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
+                <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
+                <p>
+                    Existing aliases continue to work during the transition.
+                    Nothing else is changing.
+                </p>
             </div>
         </div>
     </Surface>

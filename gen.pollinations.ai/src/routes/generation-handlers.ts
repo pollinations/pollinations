@@ -44,7 +44,7 @@ export const simpleAudioQuerySchema = z.object({
         .default("mp3")
         .meta({
             description:
-                "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                "Audio output format. Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({

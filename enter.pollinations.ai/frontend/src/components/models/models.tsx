@@ -356,11 +356,12 @@ export const Models: FC = () => {
                     title="Model slugs are changing"
                     className="mb-4"
                 >
-                    On September 1, 2026 at 14:00 UTC, canonical model slugs are
-                    moving to the <code>publisher/model[:variant]</code> format.
-                    Existing aliases keep working, and model behavior and
-                    pricing stay the same. New integrations should use the
-                    canonical slugs.{" "}
+                    Starting <strong>Sep 1, 2026 at 14:00 UTC</strong>, new
+                    integrations should use{" "}
+                    <code className="font-semibold">
+                        publisher/model[:variant]
+                    </code>
+                    . <strong>Existing aliases will keep working.</strong>{" "}
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
                         className="font-semibold underline hover:no-underline"

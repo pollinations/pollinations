@@ -96,6 +96,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nemotron-3.5-lightning",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "step-flash" });
 

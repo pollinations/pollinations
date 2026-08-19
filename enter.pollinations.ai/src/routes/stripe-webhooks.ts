@@ -1,3 +1,4 @@
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
@@ -236,7 +237,10 @@ async function creditCheckoutSessionOnce({
             ),
             env.DB.prepare(
                 `UPDATE user
-                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
                 WHERE id = ?`,
             ).bind(creditsToAdd, userId),
         ]);

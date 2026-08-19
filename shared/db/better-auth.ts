@@ -53,7 +53,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -429,11 +429,11 @@ export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
-  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "set null" }),
   // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
   // Quest title snapshotted when earned, so history renders it directly.

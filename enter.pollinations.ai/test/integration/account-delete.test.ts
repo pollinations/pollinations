@@ -66,7 +66,7 @@ describe("POST /api/auth/delete-user", () => {
             pollenAmount: 0.25,
             balanceBucket: "tier",
             earnedAt: new Date(),
-            claimedAt: null,
+            claimedAt: new Date(),
         });
         await db.insert(stripeCheckoutCreditsTable).values({
             sessionId: "test-checkout",
@@ -205,25 +205,12 @@ describe("POST /api/auth/delete-user", () => {
                 reward: unknown;
             }>;
         };
-        // The retained identity marker completes the card without exposing the
-        // old reward as claimable by the replacement account.
+        // The replacement account sees the quest as open — quest status is
+        // scoped to its own rewards. Re-earning it is still a no-op: the
+        // idempotency key carries the GitHub id, as asserted above.
         expect(
             questStatus.quests.find((quest) => quest.id === "first_api_key"),
-        ).toMatchObject({ status: "completed", reward: null });
-
-        const questRewardsResponse = await SELF.fetch(
-            "http://localhost:3000/api/quests/rewards",
-            {
-                headers: {
-                    Cookie: `better-auth.session_token=${replacementSessionToken}`,
-                },
-            },
-        );
-        expect(questRewardsResponse.status).toBe(200);
-        await expect(questRewardsResponse.json()).resolves.toMatchObject({
-            rewards: [],
-            previouslyEarnedQuestIds: ["first_api_key"],
-        });
+        ).toMatchObject({ status: "open", reward: null });
     });
 
     test("requires a session created within the last ten minutes", async ({

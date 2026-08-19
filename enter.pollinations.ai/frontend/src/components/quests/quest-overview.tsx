@@ -54,7 +54,6 @@ type QuestOverviewProps = Record<string, never>;
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
-    previouslyEarnedQuestIds: string[];
     progress: QuestProgress[];
     loading: boolean;
     checking: boolean;
@@ -69,7 +68,6 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
-    previouslyEarnedQuestIds: [],
     progress: [],
     loading: true,
     checking: false,
@@ -140,18 +138,15 @@ function githubNumberFromUrl(url: string | null | undefined): number | null {
 // Lifecycle stage for one quest row:
 //  - coming_soon always renders in the receded (claimed) style.
 //  - Logged-out preview (previewAll) forces every row open.
-//  - Logged in: a current-account reward is claimed once banked, claimable
-//    until then. A previous-account identity marker renders as claimed without
-//    exposing the old reward as claimable.
+//  - Logged in: a reward you earned is claimed once banked, claimable until
+//    then; no reward means the quest is still open.
 function deriveCardStatus(
     comingSoon: boolean,
     previewAll: boolean,
     reward: QuestReward | undefined,
-    previouslyEarned: boolean,
 ): QuestCardStatus {
     if (comingSoon) return "claimed";
     if (previewAll) return "open";
-    if (previouslyEarned) return "claimed";
     if (!reward) return "open";
     return reward.claimedAt ? "claimed" : "claimable";
 }
@@ -186,10 +181,7 @@ function rewardIconKind(
         : "tier";
 }
 
-type QuestData = Pick<
-    FetchState,
-    "catalog" | "rewards" | "previouslyEarnedQuestIds" | "anonymous"
->;
+type QuestData = Pick<FetchState, "catalog" | "rewards" | "anonymous">;
 
 async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
@@ -208,17 +200,14 @@ async function loadQuestData(): Promise<QuestData> {
     if (!rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
-    const rewardData = anonymous
-        ? { rewards: [], previouslyEarnedQuestIds: [] }
-        : ((await rewardsResponse.json()) as {
-              rewards: QuestReward[];
-              previouslyEarnedQuestIds: string[];
-          });
+    const rewards = anonymous
+        ? []
+        : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
+              .rewards;
 
     return {
         catalog: catalog.quests ?? [],
-        rewards: rewardData.rewards,
-        previouslyEarnedQuestIds: rewardData.previouslyEarnedQuestIds,
+        rewards: rewards ?? [],
         anonymous,
     };
 }
@@ -774,16 +763,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
     }
 
-    // Current rewards carry their catalog id. Identity markers add quests
-    // earned on a deleted account without adding those rewards to this
-    // account's claimable history or pollen totals.
-    const earnedCatalogIds = useMemo(() => {
-        const ids = new Set(state.previouslyEarnedQuestIds);
-        for (const reward of state.rewards) {
-            if (reward.questId) ids.add(reward.questId);
-        }
-        return ids;
-    }, [state.previouslyEarnedQuestIds, state.rewards]);
+    // A reward's questId IS the catalog id it earned (one reward == one quest),
+    // so the earned-set / reward lookup key directly off questId.
+    const rewardedCatalogIds = useMemo(
+        () =>
+            new Set(
+                state.rewards
+                    .map((reward) => reward.questId)
+                    .filter((id): id is string => id != null),
+            ),
+        [state.rewards],
+    );
     const rewardByKey = useMemo(() => {
         const map = new Map<string, QuestReward>();
         for (const reward of state.rewards) {
@@ -793,9 +783,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.rewards]);
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
-    // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Current
-    // rewards carry claim state; previous-account identity markers only close
-    // quests that cannot be earned again.
+    // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
+    // only tell us "did YOU earn it" + whether it has been claimed.
     const sections = useMemo(() => {
         const progressByQuestId = new Map(
             state.progress.map((progress) => [progress.questId, progress]),
@@ -811,8 +800,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
         for (const quest of state.catalog) {
             const reward = rewardByKey.get(quest.id);
-            const earned = earnedCatalogIds.has(quest.id);
-            const previouslyEarned = earned && !reward;
+            const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
             // Visibility rule:
             //  - "coming_soon" always shows (at the bottom of its lane, in the
@@ -837,15 +825,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 reward: quest.rewardAmount,
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
-                status: deriveCardStatus(
-                    comingSoon,
-                    previewAll,
-                    reward,
-                    previouslyEarned,
-                ),
+                status: deriveCardStatus(comingSoon, previewAll, reward),
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 progress:
-                    (reward || previouslyEarned) && quest.goal
+                    reward && quest.goal
                         ? {
                               questId: quest.id,
                               current: quest.goal.target,
@@ -871,7 +854,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [
         state.catalog,
         state.progress,
-        earnedCatalogIds,
+        rewardedCatalogIds,
         rewardByKey,
         previewAll,
     ]);

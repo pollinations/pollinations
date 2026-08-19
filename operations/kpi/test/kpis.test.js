@@ -104,3 +104,35 @@ describe("explorer view list", () => {
         expect(kpiViewById("nope:9").id).toBe(KPI_VIEWS[0].id);
     });
 });
+
+const margin = KPIS.find((row) => row.key === "grossMargin");
+const coverage = KPIS.find((row) => row.key === "cashCoverage");
+
+// A real week from prod (2026-08-10), trimmed to the fields these rows read.
+const marginWeek = {
+    week: "2026-08-10",
+    pollenRevenue: 3469,
+    costUsd: 3740,
+    revenue: 2278,
+};
+
+describe("gross margin row", () => {
+    it("measures Pollen revenue against cost, not Stripe cash", () => {
+        // Stripe cash that week was 2278 — using it would read −64%.
+        expect(kpiValue(margin, marginWeek)).toBeCloseTo(-7.81, 1);
+    });
+
+    it("blanks a week with no Pollen spent rather than reading zero", () => {
+        expect(kpiValue(margin, { pollenRevenue: 0, costUsd: 10 })).toBeNull();
+    });
+});
+
+describe("cash coverage row", () => {
+    it("compares Stripe cash against the week's compute cost", () => {
+        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
+    });
+
+    it("blanks a week with no cost rather than dividing by zero", () => {
+        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
+    });
+});

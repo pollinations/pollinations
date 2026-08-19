@@ -121,10 +121,17 @@ const KPIS = [
         format: "currency",
         views: [
             {
+                name: "GM/1K requests",
+                calc: (w) =>
+                    ((w.revenue - (w.costUsd || 0)) / w.totalRequests) * 1e3,
+                tooltip:
+                    "(Revenue − COGS) / total requests × 1,000. Dollars of gross margin every thousand requests produces. Requests are the denominator that matches the numerator: COGS covers image and video work too, which produces no tokens.",
+            },
+            {
                 name: "GM/1M tokens",
                 calc: (w) => ((w.revenue - (w.costUsd || 0)) / w.tokens) * 1e6,
                 tooltip:
-                    "(Revenue − COGS) / total tokens × 1,000,000. Dollars of gross margin every million tokens produces. Unlike gross margin %, revenue is not the denominator, so it does not swing with a good or bad revenue week.",
+                    "(Revenue − COGS) / total tokens × 1,000,000. Reads worse than it is: COGS covers every modality while tokens count text only, so a shift toward image traffic pushes this down without any change in unit economics. Prefer GM/1K requests.",
             },
             {
                 name: "Rev/1M tokens",

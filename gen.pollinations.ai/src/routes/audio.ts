@@ -6,6 +6,7 @@ import {
     CSM_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
+    XAI_TTS_VOICES,
 } from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
@@ -77,7 +78,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -1478,6 +1479,9 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
+const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
+const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
+
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
@@ -1884,6 +1888,168 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
+const OPENROUTER_FISH_TTS_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
+const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
+
+export async function generateOpenRouterFishSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, voice, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+
+    if (
+        !OPENROUTER_FISH_TTS_FORMATS.includes(
+            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for fish-audio-s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    const inputBytes = new TextEncoder().encode(text).byteLength;
+    log.info(
+        "Fish Audio request: voice={voice}, format={format}, utf8Bytes={utf8Bytes}",
+        { voice, format: responseFormat, utf8Bytes: inputBytes },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: OPENROUTER_FISH_TTS_MODEL,
+                input: text,
+                voice,
+                response_format: responseFormat,
+                provider: {
+                    only: ["Fish Audio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_FISH_TTS_ENDPOINT,
+    );
+
+    const generationId = response.headers.get("x-generation-id");
+    log.info("Fish Audio success: {utf8Bytes} UTF-8 bytes", {
+        utf8Bytes: inputBytes,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "fish-audio-s2.1-pro",
+                createAudioTokenUsage(inputBytes),
+            ),
+            "x-tts-voice": voice,
+            ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
+
+export async function generateXaiSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, responseFormat, apiKey, log } = opts;
+    const inputCharacters = [...text].length;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Grok TTS is not configured (missing API key)",
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? "eve" : opts.voice;
+    if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !XAI_TTS_FORMATS.includes(
+            responseFormat as (typeof XAI_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    log.info("xAI TTS request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: inputCharacters,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(XAI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                text,
+                voice_id: voice,
+                language: "auto",
+                output_format: {
+                    codec: responseFormat,
+                    sample_rate: 24000,
+                    ...(responseFormat === "mp3" ? { bit_rate: 128000 } : {}),
+                },
+            }),
+        }),
+        XAI_TTS_ENDPOINT,
+    );
+
+    log.info("xAI TTS success: voice={voice}, chars={chars}", {
+        voice,
+        chars: inputCharacters,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "wav"
+                    ? "audio/wav"
+                    : responseFormat === "pcm"
+                      ? "audio/pcm"
+                      : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "grok-tts",
+                createAudioTokenUsage(inputCharacters),
+            ),
+            "x-tts-voice": voice,
+        },
     });
 }
 
@@ -2303,6 +2469,8 @@ async function dispatchAudioGeneration(
         apiKey: string;
         dashScopeApiKey: string;
         deepInfraApiKey: string;
+        xaiApiKey: string;
+        openRouterApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
         log: Logger;
@@ -2328,6 +2496,8 @@ async function dispatchAudioGeneration(
         apiKey,
         dashScopeApiKey,
         deepInfraApiKey,
+        xaiApiKey,
+        openRouterApiKey,
         falKey,
         stabilityApiKey,
         log,
@@ -2452,6 +2622,28 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "grok-tts":
+            return withSafetyHeaders(
+                c,
+                await generateXaiSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: xaiApiKey,
+                    log,
+                }),
+            );
+        case "fish-audio-s2.1-pro":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterFishSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: openRouterApiKey,
+                    log,
+                }),
+            );
         case "csm-1b":
         case "kokoro":
             return withSafetyHeaders(
@@ -2551,6 +2743,8 @@ async function generateAudioFromSpeechRequest(
             apiKey: c.env.ELEVENLABS_API_KEY,
             dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
             deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            xaiApiKey: c.env.XAI_API_KEY,
+            openRouterApiKey: c.env.OPENROUTER_API_KEY,
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,

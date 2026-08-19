@@ -1,65 +1,91 @@
-export function RetentionTable({ data, title }) {
-    const getColorClass = (value) => {
-        if (value >= 50) return "bg-green-500/30 text-green-400";
-        if (value >= 30) return "bg-yellow-500/30 text-yellow-400";
-        if (value >= 10) return "bg-orange-500/30 text-orange-400";
-        return "bg-red-500/30 text-red-400";
-    };
+import {
+    Heading,
+    Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+    Text,
+} from "@pollinations/ui";
+import { weekLabel } from "../lib/format";
 
+const WEEK_KEYS = ["w1", "w2", "w3", "w4"];
+
+/**
+ * Retention is a magnitude, so the cells run one hue light→dark rather than a
+ * red/amber/green scale — the number is printed either way.
+ */
+function cellStyle(value) {
+    const mix = Math.min(Math.max(value, 0), 60) / 60;
+    return {
+        background: `color-mix(in oklab, var(--kpi-series-1) ${Math.round(mix * 70)}%, transparent)`,
+        color: mix > 0.55 ? "var(--polli-color-surface-opaque)" : undefined,
+    };
+}
+
+export function RetentionTable({ data }) {
     return (
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="text-gray-400 border-b border-gray-700">
-                            <th className="text-left py-2 px-3">Cohort</th>
-                            <th className="text-center py-2 px-3">Users</th>
-                            <th className="text-center py-2 px-3">W1</th>
-                            <th className="text-center py-2 px-3">W2</th>
-                            <th className="text-center py-2 px-3">W3</th>
-                            <th className="text-center py-2 px-3">W4</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <Surface className="flex flex-col gap-3">
+            <Heading as="h3" size="card">
+                Weekly cohort retention
+            </Heading>
+            <div className="min-w-0 overflow-x-auto">
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeaderCell>Cohort</TableHeaderCell>
+                            <TableHeaderCell align="right">
+                                Users
+                            </TableHeaderCell>
+                            {WEEK_KEYS.map((key) => (
+                                <TableHeaderCell key={key} align="right">
+                                    {key.toUpperCase()}
+                                </TableHeaderCell>
+                            ))}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
                         {data.map((row) => (
-                            <tr
-                                key={row.cohort}
-                                className="border-b border-gray-800"
-                            >
-                                <td className="py-2 px-3 text-white font-medium">
-                                    {row.cohort}
-                                </td>
-                                <td className="py-2 px-3 text-center text-gray-300">
-                                    {row.users}
-                                </td>
-                                {["w1", "w2", "w3", "w4"].map((weekKey) => {
-                                    const val = row[weekKey];
+                            <TableRow key={row.cohort}>
+                                <TableCell className="font-medium text-theme-text-strong">
+                                    {weekLabel(row.cohort)}
+                                </TableCell>
+                                <TableCell align="right" numeric muted>
+                                    {row.users?.toLocaleString() ?? "—"}
+                                </TableCell>
+                                {WEEK_KEYS.map((key) => {
+                                    const value = row[key];
                                     return (
-                                        <td
-                                            key={weekKey}
-                                            className="py-2 px-3 text-center"
+                                        <TableCell
+                                            key={key}
+                                            align="right"
+                                            numeric
                                         >
-                                            {val != null &&
-                                            !Number.isNaN(val) ? (
+                                            {Number.isFinite(value) ? (
                                                 <span
-                                                    className={`px-2 py-1 rounded ${getColorClass(val)}`}
+                                                    className="inline-block min-w-11 rounded-[4px] px-2 py-0.5 font-medium"
+                                                    style={cellStyle(value)}
                                                 >
-                                                    {val.toFixed(0)}%
+                                                    {value.toFixed(0)}%
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-600">
+                                                <span className="text-theme-text-muted">
                                                     —
                                                 </span>
                                             )}
-                                        </td>
+                                        </TableCell>
                                     );
                                 })}
-                            </tr>
+                            </TableRow>
                         ))}
-                    </tbody>
-                </table>
+                    </TableBody>
+                </Table>
             </div>
-        </div>
+            <Text as="p" size="micro" tone="muted">
+                Share of each signup cohort still making requests N weeks later.
+            </Text>
+        </Surface>
     );
 }

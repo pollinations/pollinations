@@ -169,6 +169,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "qwen/qwen3.8-27b": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-27b",
+            defaultOptions: {
+                provider: {
+                    only: ["Chutes"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -404,6 +414,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/muse-glimmer-30b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/muse-glimmer-30b",
+        }),
+    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------

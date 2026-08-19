@@ -180,8 +180,7 @@ function enforceCommunityEndpointAdvertised(
     modality: CommunityEndpointModality,
     advertised: CommunityEndpointAdvertised | undefined,
 ): void {
-    if (!advertised || modality === "text") return;
-    if (!hasAdvertisedClaim(advertised)) return;
+    if (modality === "text" || !hasAdvertisedClaim(advertised)) return;
     throw new HTTPException(400, {
         message: "advertised metadata is only supported for text models",
     });
@@ -462,8 +461,8 @@ const CreateEndpointSchema = z
                 path: "perUserRpm",
                 message: "Managed agent listings do not support per-user RPM",
             },
-            // An agent listing inherits capabilities, context length and
-            // reference-image count from its base model (applyAgentMetadata in
+            // An agent listing inherits capabilities and context length from
+            // its base model (applyAgentMetadata in
             // gen.pollinations.ai/src/agent-catalog.ts), so anything declared
             // here would be overwritten before it reached the catalog.
             {
@@ -669,10 +668,6 @@ function toResponse(
     const modality = normalizeCommunityEndpointModality(row.modality);
     // Agent listings have no target of their own; they resolve to the runtime.
     const baseUrl = row.baseUrl ?? agentRuntimeBaseUrl(env);
-    const inputModalities = normalizeCommunityEndpointInputModalities(
-        row.inputModalities,
-        modality,
-    );
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
@@ -685,7 +680,10 @@ function toResponse(
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        inputModalities,
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            row.inputModalities,
+            modality,
+        ),
         // Normalized, like inputModalities: a row that changed modality after
         // declaring these reports only what still applies.
         advertised: normalizeCommunityEndpointAdvertised(
@@ -1093,9 +1091,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     imagePricing,
                     inputModalities,
-                    // Agents are rejected above rather than defaulted, so
-                    // nothing here has to strip their declaration.
-                    advertised: input.advertised ?? {},
+                    // Undeclared stays NULL rather than an empty object, so a
+                    // row that declares nothing reads the same as every row
+                    // that predates the column. Agents are rejected above
+                    // rather than defaulted, so nothing strips them here.
+                    advertised: input.advertised,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),

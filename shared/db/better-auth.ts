@@ -241,13 +241,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  // Owner-declared catalog metadata (capabilities, context length, reference
-  // images), mirrored into the model catalog by communityModelDefinition and
-  // never read on the request path. Null means nothing was declared. One JSON
-  // blob rather than a column per field, so advertising a new kind of thing
-  // costs a key instead of a migration. Which keys a row may set depends on
-  // its modality (COMMUNITY_ADVERTISED_FIELDS); managed agents may set none,
-  // since agent listings inherit all of it from their base model.
+  // Owner-declared catalog metadata (capabilities, context length), mirrored
+  // into the model catalog by communityModelDefinition and never read on the
+  // request path. Null means nothing was declared. One JSON blob rather than a
+  // column per field, so advertising a new kind of thing costs a key instead of
+  // a migration. Text models only, and never a managed agent: agent listings
+  // inherit all of it from their base model.
   advertised: text("advertised", {
     mode: "json",
   }).$type<CommunityEndpointAdvertised>(),

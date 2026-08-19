@@ -433,13 +433,17 @@ function listingFieldsToPayload(
     }
     return {
         inputModalities: form.inputModalities,
-        // Switching to a non-text modality hides these but leaves what was
-        // typed in form state, so the payload is filtered to what the row can
-        // actually claim rather than 400-ing on an invisible field.
+        // One rule, applied where the payload is built: whatever the form
+        // holds, only what this modality can claim is sent.
         advertised: normalizeCommunityEndpointAdvertised(
             {
                 capabilities: form.capabilities,
-                contextLength: optionalCount(form.contextLength),
+                // Blank clears the claim; anything else is sent as typed and
+                // validated server-side, so a bad value gets a 400 rather than
+                // being silently dropped.
+                contextLength: form.contextLength.trim()
+                    ? Number(form.contextLength)
+                    : undefined,
             },
             modality,
         ),
@@ -449,12 +453,6 @@ function listingFieldsToPayload(
         visibility: form.visibility,
         perUserRpm: form.perUserRpm.trim() ? Number(form.perUserRpm) : null,
     };
-}
-
-/** Blank clears the declaration; anything else is sent as typed and validated
- * server-side, so a bad value gets a 400 rather than being silently dropped. */
-function optionalCount(value: string): number | undefined {
-    return value.trim() ? Number(value) : undefined;
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
@@ -518,12 +516,9 @@ export function nextFormState(
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbackModelIds: [],
-            // Same for the declarations the new modality cannot advertise.
-            capabilities:
-                normalizeCommunityEndpointAdvertised(
-                    { capabilities: current.capabilities },
-                    modality,
-                ).capabilities ?? [],
+            // Same for the declarations the new modality cannot advertise —
+            // every advertised key is text-only.
+            capabilities: modality === "text" ? current.capabilities : [],
             contextLength: modality === "text" ? current.contextLength : "",
         };
     }

@@ -1,9 +1,6 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
-import {
-    capabilityDefinitionFields,
-    type ModelDefinitionCapability,
-} from "./registry/model-info.ts";
+import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -99,15 +96,15 @@ export type CommunityEndpointAdvertised = {
 };
 
 /**
- * The capabilities an owner may declare: a subset of the registry vocabulary,
- * listed in catalog order. `web_search` and `code_execution` are left out until
- * an endpoint asks for them — no registry model sets `codeExecution` at all,
- * and a search claim is one no caller can act on through a raw passthrough.
+ * The capabilities an owner may declare, listed in catalog order. A subset of
+ * the catalog vocabulary: `web_search` and `code_execution` are left out until
+ * an endpoint asks for them, and `pollinations_models` never applies — the
+ * agent runtime injects that one from an agent's MCP config.
  */
 export const COMMUNITY_ENDPOINT_CAPABILITIES = [
     "tool_calling",
     "reasoning",
-] as const satisfies readonly ModelDefinitionCapability[];
+] as const satisfies readonly ModelCapability[];
 
 export type CommunityEndpointCapability =
     (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
@@ -389,6 +386,10 @@ export function normalizeCommunityEndpointInputModalities(
     return normalized.length ? [...normalized] : [permitted[0]];
 }
 
+// Access/visibility of a registered endpoint. Private is the default; choosing
+// public on create or update is allowlist-gated.
+//   private → owner-only callable, shown only to the owner, no owner-set price
+//   public  → anyone callable, listed in the model catalog, priced
 export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 
 export type CommunityEndpointVisibility =
@@ -816,7 +817,7 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
-    const { capabilities, ...advertised } =
+    const { capabilities = [], ...advertised } =
         normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
@@ -842,9 +843,11 @@ export function communityModelDefinition(
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
         // Owner-declared. Absent rather than false/0 so an undeclared community
         // model looks the same in /models as a registry model that never set
-        // the field. Everything but capabilities already carries its
-        // ModelDefinition name, so it spreads straight through.
-        ...capabilityDefinitionFields(capabilities ?? []),
+        // the field. Capabilities are named for the catalog, so each maps to
+        // its definition flag; every other key already carries its
+        // ModelDefinition name and spreads straight through.
+        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
+        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
         ...advertised,
     };
 }

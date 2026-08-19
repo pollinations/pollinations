@@ -1,5 +1,6 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { withByopMarkup } from "@shared/billing/markup.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -27,9 +28,9 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
-    const estimatedCost = getEstimatedPrice(
-        await getModelStats(env.KV, log),
-        model.resolved,
+    const estimatedCost = withByopMarkup(
+        getEstimatedPrice(await getModelStats(env.KV, log), model.resolved),
+        Boolean(auth.apiKey?.byopMarkupApplies),
     );
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

@@ -1,7 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { parseMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
     atomicCreditUserBalance,
@@ -9,7 +8,11 @@ import {
     atomicDeductUserBalance,
     type Bucket,
 } from "./deduction.ts";
-import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
+import {
+    byopClientAllowsMarkup,
+    computeDevCredit,
+    MARKUP_PCT,
+} from "./markup.ts";
 import { roundPollenLedgerAmount } from "./precision.ts";
 
 const log = getLogger(["track", "helpers"]);
@@ -62,7 +65,13 @@ export async function resolveDevMarkup(
     if (credit <= 0) return null;
 
     const [clientRow] = await db
-        .select({ userId: apikeyTable.userId, metadata: apikeyTable.metadata })
+        .select({
+            userId: apikeyTable.userId,
+            metadata: apikeyTable.metadata,
+            prefix: apikeyTable.prefix,
+            enabled: apikeyTable.enabled,
+            expiresAt: apikeyTable.expiresAt,
+        })
         .from(apikeyTable)
         .where(
             and(
@@ -77,9 +86,7 @@ export async function resolveDevMarkup(
         )
         .limit(1);
 
-    if (!clientRow?.userId) return null;
-    if (parseMetadata(clientRow.metadata).earningsEnabled !== true) return null;
-    if (clientRow.userId === payerUserId) return null;
+    if (!byopClientAllowsMarkup(clientRow, payerUserId)) return null;
 
     return {
         devUserId: clientRow.userId,

@@ -11,6 +11,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Deemos: "deemos",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
+    "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
     Hyper3D: "deemos",

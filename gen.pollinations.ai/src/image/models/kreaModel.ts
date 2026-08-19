@@ -1,6 +1,6 @@
+import { HttpError } from "@shared/http-error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";

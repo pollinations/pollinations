@@ -270,7 +270,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </p>
                         )}
                         <p className="mt-1 text-sm">
-                            Publishable keys (<code>pk_</code>) are deprecated
+                            Raw publishable keys (<code>pk_</code>) are legacy
                             for direct API requests. Use Pollinations Auth
                             (BYOP), where users sign in and spend their own
                             Pollen.{" "}

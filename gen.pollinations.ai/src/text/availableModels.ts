@@ -129,6 +129,11 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
+        name: "qwen/qwen3.8-27b",
+        config: portkeyConfig["qwen/qwen3.8-27b"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
@@ -368,6 +373,13 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "nvidia/nemotron-3.5-lightning",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+        ],
+        transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
         name: "xiaomi/mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,
@@ -401,6 +413,12 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.2",
         config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
         transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
+        name: "z-ai/glm-5.3",
+        config: portkeyConfig["z-ai/glm-5.3"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
     },
     {
         name: "minimax/minimax-m2.7",

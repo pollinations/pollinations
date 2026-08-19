@@ -23,11 +23,17 @@ const getTitle = (model: ModelPrice): string => model.displayName ?? model.name;
 const compareText = (a: string, b: string): number =>
     a.localeCompare(b, undefined, { sensitivity: "base" });
 
-const compareAuthors = (a: ModelPrice, b: ModelPrice): number => {
+const compareAuthors = (
+    a: ModelPrice,
+    b: ModelPrice,
+    direction: "asc" | "desc",
+): number => {
     if (!a.author) return b.author ? 1 : compareText(getTitle(a), getTitle(b));
     if (!b.author) return -1;
+    const authorOrder = compareText(a.author, b.author);
     return (
-        compareText(a.author, b.author) || compareText(getTitle(a), getTitle(b))
+        (direction === "asc" ? authorOrder : -authorOrder) ||
+        compareText(getTitle(a), getTitle(b))
     );
 };
 
@@ -39,6 +45,8 @@ export function sortModels(
         switch (sort) {
             case "newest":
                 return compareKnownValues(a.addedDate, b.addedDate, "desc");
+            case "oldest":
+                return compareKnownValues(a.addedDate, b.addedDate, "asc");
             case "price-low":
                 return compareKnownValues(
                     getAverageCost(a),
@@ -53,8 +61,12 @@ export function sortModels(
                 );
             case "title":
                 return compareText(getTitle(a), getTitle(b));
+            case "title-desc":
+                return compareText(getTitle(b), getTitle(a));
             case "author":
-                return compareAuthors(a, b);
+                return compareAuthors(a, b, "asc");
+            case "author-desc":
+                return compareAuthors(a, b, "desc");
         }
 
         return 0;

@@ -6,6 +6,7 @@ import {
     CSM_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
+    XAI_TTS_VOICES,
 } from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
@@ -13,6 +14,7 @@ import {
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
@@ -38,17 +40,21 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { readResponseBytes } from "../utils/response-bytes.ts";
 import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
+    assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
+    type NormalizedSegment,
+    type NormalizedWord,
+    UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
@@ -72,7 +78,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -860,15 +866,7 @@ export async function transcribeWithXai(opts: {
             message: "xAI transcription service is not configured",
         });
     }
-    if (
-        !["json", "text", "verbose_json", "diarized_json"].includes(
-            responseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for x-ai/speech-to-text: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(responseFormat, "x-ai/speech-to-text");
 
     const formData = new FormData();
     if (language) {
@@ -918,6 +916,9 @@ export async function transcribeWithXai(opts: {
                     start: word.start,
                     end: word.end,
                 })) ?? [],
+            // xAI reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupXaiWordsBySpeaker(transcript.words),
         },
         responseFormat,
@@ -983,17 +984,7 @@ export async function transcribeWithElevenLabs(opts: {
         });
     }
 
-    // Validate response format
-    if (
-        responseFormat &&
-        !["json", "text", "verbose_json", "diarized_json"].includes(
-            responseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(responseFormat, "scribe model");
 
     log.info("ElevenLabs transcription: format={format}, size={size}", {
         format: responseFormat,
@@ -1066,13 +1057,19 @@ export async function transcribeWithElevenLabs(opts: {
         normalized: {
             text: elevenLabsData.text,
             language: elevenLabsData.language_code,
-            duration: transcriptDuration,
+            // OpenAI's duration is the input audio, not the speech span: the
+            // last word ends at 3.4s in a 10s file, and a silent file has no
+            // words at all. That is also the seconds we bill.
+            duration: meteredInputSeconds,
             words:
                 elevenLabsData.words?.map((w) => ({
                     word: w.text,
                     start: w.start,
                     end: w.end,
                 })) ?? [],
+            // Scribe reports word timings but no segment boundaries;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: groupScribeUtterances(elevenLabsData.words),
         },
         responseFormat,
@@ -1484,6 +1481,9 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
+const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
+const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
+
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
@@ -1893,6 +1893,168 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
+const OPENROUTER_FISH_TTS_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
+const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
+
+export async function generateOpenRouterFishSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, voice, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+
+    if (
+        !OPENROUTER_FISH_TTS_FORMATS.includes(
+            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for fish-audio/s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    const inputBytes = new TextEncoder().encode(text).byteLength;
+    log.info(
+        "Fish Audio request: voice={voice}, format={format}, utf8Bytes={utf8Bytes}",
+        { voice, format: responseFormat, utf8Bytes: inputBytes },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: OPENROUTER_FISH_TTS_MODEL,
+                input: text,
+                voice,
+                response_format: responseFormat,
+                provider: {
+                    only: ["Fish Audio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_FISH_TTS_ENDPOINT,
+    );
+
+    const generationId = response.headers.get("x-generation-id");
+    log.info("Fish Audio success: {utf8Bytes} UTF-8 bytes", {
+        utf8Bytes: inputBytes,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "fish-audio/s2.1-pro",
+                createAudioTokenUsage(inputBytes),
+            ),
+            "x-tts-voice": voice,
+            ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
+
+export async function generateXaiSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, responseFormat, apiKey, log } = opts;
+    const inputCharacters = [...text].length;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Grok TTS is not configured (missing API key)",
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? "eve" : opts.voice;
+    if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for x-ai/grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !XAI_TTS_FORMATS.includes(
+            responseFormat as (typeof XAI_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for x-ai/grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    log.info("xAI TTS request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: inputCharacters,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(XAI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                text,
+                voice_id: voice,
+                language: "auto",
+                output_format: {
+                    codec: responseFormat,
+                    sample_rate: 24000,
+                    ...(responseFormat === "mp3" ? { bit_rate: 128000 } : {}),
+                },
+            }),
+        }),
+        XAI_TTS_ENDPOINT,
+    );
+
+    log.info("xAI TTS success: voice={voice}, chars={chars}", {
+        voice,
+        chars: inputCharacters,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "wav"
+                    ? "audio/wav"
+                    : responseFormat === "pcm"
+                      ? "audio/pcm"
+                      : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "x-ai/grok-tts",
+                createAudioTokenUsage(inputCharacters),
+            ),
+            "x-tts-voice": voice,
+        },
     });
 }
 
@@ -2314,6 +2476,8 @@ async function dispatchAudioGeneration(
         apiKey: string;
         dashScopeApiKey: string;
         deepInfraApiKey: string;
+        xaiApiKey: string;
+        openRouterApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
         log: Logger;
@@ -2339,6 +2503,8 @@ async function dispatchAudioGeneration(
         apiKey,
         dashScopeApiKey,
         deepInfraApiKey,
+        xaiApiKey,
+        openRouterApiKey,
         falKey,
         stabilityApiKey,
         log,
@@ -2463,6 +2629,28 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "x-ai/grok-tts":
+            return withSafetyHeaders(
+                c,
+                await generateXaiSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: xaiApiKey,
+                    log,
+                }),
+            );
+        case "fish-audio/s2.1-pro":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterFishSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: openRouterApiKey,
+                    log,
+                }),
+            );
         case "sesame/csm-1b":
         case "hexgrad/kokoro-82m":
             return withSafetyHeaders(
@@ -2562,6 +2750,8 @@ async function generateAudioFromSpeechRequest(
             apiKey: c.env.ELEVENLABS_API_KEY,
             dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
             deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            xaiApiKey: c.env.XAI_API_KEY,
+            openRouterApiKey: c.env.OPENROUTER_API_KEY,
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
@@ -2739,6 +2929,19 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     }
 
     const result = await withAudioFallback(c, async (candidate) => {
+        if (candidate.communityEndpoint) {
+            return callCommunityTranscriptionEndpoint(
+                candidate.communityEndpoint,
+                {
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                },
+                c.env.BETTER_AUTH_SECRET,
+            );
+        }
         if (candidate.id === "x-ai/speech-to-text") {
             return transcribeWithXai({
                 file,
@@ -2783,7 +2986,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        validateWhisperResponseFormat(responseFormat);
+        assertTranscriptionResponseFormat(
+            responseFormat,
+            "whisper model",
+            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+        );
 
         const whisperFormData = new FormData();
         const filename =
@@ -2813,11 +3020,29 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
+        const billedSeconds = extractWhisperUsage(whisper, log);
         const usageHeaders = buildUsageHeaders(
             candidate.id,
-            createAudioSecondsUsage(extractWhisperUsage(whisper, log)),
+            createAudioSecondsUsage(billedSeconds),
         );
-        return formatWhisperResponse(whisper, responseFormat, usageHeaders);
+        return buildTranscriptionResponse({
+            normalized: {
+                text: whisper.text,
+                language: whisper.language || undefined,
+                // OVH rounds usage.seconds up to a whole second, so this
+                // can exceed the audio length by under a second. Reporting
+                // the billed figure keeps duration, usage and the usage
+                // headers on one number.
+                duration: billedSeconds,
+                words: whisper.words ?? [],
+                segments: whisper.segments ?? [],
+                // OVH is not asked to diarize, so diarized_json is rejected
+                // by the undiarized format set rather than answered empty.
+                diarizedSegments: [],
+            },
+            responseFormat: responseFormat ?? "json",
+            usageHeaders,
+        });
     });
     c.var.track.overrideResponseTracking(result.clone());
     return result;
@@ -3282,7 +3507,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Use `diarized_json` for OpenAI-compatible speaker segments on diarization-capable models.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",
@@ -3365,39 +3590,12 @@ export function parsePositiveInt(
     return n;
 }
 
-interface WhisperSegment {
-    start: number;
-    end: number;
-    text: string;
-}
-
 interface WhisperVerboseJson {
     text: string;
+    language?: string;
     usage?: { seconds?: number };
-    segments?: WhisperSegment[];
-}
-
-const WHISPER_RESPONSE_FORMATS = [
-    "json",
-    "text",
-    "verbose_json",
-    "srt",
-    "vtt",
-] as const;
-
-type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
-
-function validateWhisperResponseFormat(responseFormat: string | null): void {
-    if (
-        responseFormat &&
-        !WHISPER_RESPONSE_FORMATS.includes(
-            responseFormat as WhisperResponseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
-        });
-    }
+    words?: NormalizedWord[];
+    segments?: NormalizedSegment[];
 }
 
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
@@ -3409,64 +3607,4 @@ function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     }
     log.debug("Whisper usage: {seconds}s", { seconds });
     return seconds;
-}
-
-/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
-function formatTimestamp(seconds: number, sep: "," | "."): string {
-    const ms = Math.round(seconds * 1000);
-    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
-    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
-    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
-    const msPart = String(ms % 1000).padStart(3, "0");
-    return `${h}:${m}:${s}${sep}${msPart}`;
-}
-
-function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
-    const sep = kind === "srt" ? "," : ".";
-    const cues = segments.map((seg, i) => {
-        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
-        const head = kind === "srt" ? `${i + 1}\n` : "";
-        return `${head}${time}\n${seg.text.trim()}`;
-    });
-    return kind === "vtt"
-        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
-        : `${cues.join("\n\n")}\n`;
-}
-
-/**
- * Reformat OVH's verbose_json into the caller's requested response_format.
- * Mirrors the ElevenLabs scribe path so behaviour is consistent across backends.
- */
-export function formatWhisperResponse(
-    json: WhisperVerboseJson,
-    responseFormat: string | null,
-    usageHeaders: Record<string, string>,
-): Response {
-    validateWhisperResponseFormat(responseFormat);
-
-    if (responseFormat === "text") {
-        return new Response(json.text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "srt" || responseFormat === "vtt") {
-        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        const { usage: _usage, ...rest } = json;
-        return Response.json(rest, { headers: usageHeaders });
-    }
-
-    // Default: json
-    return Response.json({ text: json.text }, { headers: usageHeaders });
 }

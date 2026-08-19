@@ -1,5 +1,6 @@
 import {
     getModelPricesFromCatalog,
+    mergeModelCatalogs,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
@@ -27,6 +28,37 @@ describe("parseModelCatalogResponse", () => {
         expect(() =>
             parseModelCatalogResponse([{ title: "Mystery" }, {}]),
         ).toThrow();
+    });
+});
+
+describe("mergeModelCatalogs", () => {
+    it("adds community models while preserving the first catalog entry", () => {
+        const localModel = { name: "local-model", title: "Local" };
+        const localCommunityModel = {
+            name: "owner/community-model",
+            title: "Local community model",
+            community: true,
+        };
+
+        expect(
+            mergeModelCatalogs([
+                [localModel, localCommunityModel],
+                [
+                    {
+                        ...localCommunityModel,
+                        title: "Production community model",
+                    },
+                    {
+                        name: "another/community-model",
+                        community: true,
+                    },
+                ],
+            ]),
+        ).toEqual([
+            localModel,
+            localCommunityModel,
+            { name: "another/community-model", community: true },
+        ]);
     });
 });
 

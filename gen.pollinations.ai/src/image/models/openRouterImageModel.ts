@@ -1,9 +1,9 @@
 import { UpstreamError } from "@shared/error.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import {
     closestAspectRatio,

@@ -141,6 +141,16 @@ describe("model categories", () => {
             q: undefined,
             sort: "author",
         });
+        expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
+            "title-desc",
+        );
+        expect(validateModelSearch({ sort: "oldest" }).sort).toBe("oldest");
+        expect(validateModelSearch({ sort: "author-desc" }).sort).toBe(
+            "author-desc",
+        );
+        expect(
+            validateModelSearch({ sort: "brand-desc" }).sort,
+        ).toBeUndefined();
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             scope: undefined,
             category: undefined,

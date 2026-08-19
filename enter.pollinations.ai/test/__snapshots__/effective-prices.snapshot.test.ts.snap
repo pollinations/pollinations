@@ -456,6 +456,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.002,
     },
   },
+  "fish-audio/s2.1-pro": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "google/gemini-2.5-flash-image": {
     "cost": {
       "completionImageTokens": 0.00003,
@@ -969,6 +977,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000022,
       "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.0000005,
+    },
+  },
+  "nvidia/nemotron-3.5-lightning": {
+    "cost": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.00000005,
     },
   },
   "openai/gpt-5-nano": {
@@ -1552,6 +1572,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "qwen/qwen3.8-27b": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 0.00000004,
+      "promptImageTokens": 0.0000004,
+      "promptTextTokens": 0.0000004,
+      "promptVideoTokens": 0.0000004,
+    },
+    "price": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 0.00000004,
+      "promptImageTokens": 0.0000004,
+      "promptTextTokens": 0.0000004,
+      "promptVideoTokens": 0.0000004,
+    },
+  },
   "qwen/qwen3.8-max": {
     "cost": {
       "completionTextTokens": 0.000006,
@@ -1783,6 +1819,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
+  "x-ai/grok-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "x-ai/speech-to-text": {
     "cost": {
       "promptAudioSeconds": 0.0000277777777777778,
@@ -1824,6 +1868,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.0000044,
       "promptCachedTokens": 0.00000014,
+      "promptTextTokens": 0.0000014,
+    },
+  },
+  "z-ai/glm-5.3": {
+    "cost": {
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
+    },
+    "price": {
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
       "promptTextTokens": 0.0000014,
     },
   },

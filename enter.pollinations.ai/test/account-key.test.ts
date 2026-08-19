@@ -79,7 +79,7 @@ test(
             valid: true,
             type: "secret",
             userId: parent?.user?.id,
-            byopClientKeyId: parent?.apiKey.byopClientKeyId ?? null,
+            byopApp: null,
         });
         // A run token never carries account scope, only generation access.
         expect(data.permissions.account).toBeNull();
@@ -167,6 +167,24 @@ test(
         expect(data.pollenBudget).toBeDefined();
         expect(typeof data.pollenBudget).toBe("number");
         expect(data.pollenBudget).toBe(100); // Initial budget from fixture
+    },
+);
+
+test(
+    "GET /api/account/key - returns byopApp null for non-BYOP key",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("tinybird");
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+        });
+        expect(response.status).toBe(200);
+
+        const data = await response.json();
+        expect(data.byopApp).toBeNull();
     },
 );
 

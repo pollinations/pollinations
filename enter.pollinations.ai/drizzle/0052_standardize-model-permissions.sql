@@ -1,4 +1,4 @@
--- Promote the 149 canonical model IDs renamed by this release in stored
+-- Promote the 154 canonical model IDs renamed by this release in stored
 -- API-key allowlists. The preceding 0046 migration canonicalized all known
 -- aliases at rest, and write paths now canonicalize recognized IDs, so this
 -- migration rewrites the canonical IDs from the current main registry.
@@ -4775,5 +4775,165 @@ WHERE CASE
         SELECT 1
         FROM json_each(permissions, '$.models') AS model
         WHERE model.type = 'text' AND model.value = 'zimage-fal'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'fish-audio-s2.1-pro'
+                            THEN 'fish-audio/s2.1-pro'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"fish-audio-s2.1-pro"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'fish-audio-s2.1-pro'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'glm-5.3'
+                            THEN 'z-ai/glm-5.3'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"glm-5.3"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'glm-5.3'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'grok-tts'
+                            THEN 'x-ai/grok-tts'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"grok-tts"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'grok-tts'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'nemotron-3.5-lightning'
+                            THEN 'nvidia/nemotron-3.5-lightning'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"nemotron-3.5-lightning"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'nemotron-3.5-lightning'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'qwen3.8-27b'
+                            THEN 'qwen/qwen3.8-27b'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"qwen3.8-27b"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'qwen3.8-27b'
     )
 END;

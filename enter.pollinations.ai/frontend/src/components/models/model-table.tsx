@@ -1,12 +1,5 @@
-import { ChevronIcon, Tooltip } from "@pollinations/ui";
-import {
-    type FC,
-    useEffect,
-    useId,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from "react";
+import { Tooltip } from "@pollinations/ui";
+import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -90,27 +83,20 @@ function useDesktopModelTable() {
         const container = containerRef.current;
         if (!container) return;
 
-        const pointerQuery = window.matchMedia("(pointer: fine)");
         const updateLayout = () => {
             const rootFontSize = Number.parseFloat(
                 window.getComputedStyle(document.documentElement).fontSize,
             );
             setIsDesktop(
-                pointerQuery.matches &&
-                    container.clientWidth >=
-                        DESKTOP_TABLE_MIN_REM * rootFontSize,
+                container.clientWidth >= DESKTOP_TABLE_MIN_REM * rootFontSize,
             );
         };
         const observer = new ResizeObserver(updateLayout);
 
         updateLayout();
         observer.observe(container);
-        pointerQuery.addEventListener("change", updateLayout);
 
-        return () => {
-            observer.disconnect();
-            pointerQuery.removeEventListener("change", updateLayout);
-        };
+        return () => observer.disconnect();
     }, []);
 
     return { containerRef, isDesktop };
@@ -178,8 +164,6 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
-    const [expanded, setExpanded] = useState(false);
-    const detailsId = useId();
     const displayName = getModelDisplayName(model);
     const titleTooltip = getModelTitleTooltipContent(model);
     const brandLogoPath = getModelBrandLogoPath(model);
@@ -200,7 +184,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
           ? "paid"
           : "quest";
     const pricing = useModelPricingSelection(model);
-    const toggleDetails = () => setExpanded((current) => !current);
 
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
@@ -254,10 +237,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
-                        <ModelStatusChips
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
                     </div>
                     <ModelId name={model.name} showCopyIcon />
                     {model.brandUrl && model.author && (
@@ -271,17 +250,16 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
-                        <MobileMetadataBadges
-                            inputModalities={inputModalities}
-                            capabilities={capabilities}
-                            modalityLabel={modalityLabel}
-                            capabilityLabel={capabilityLabel}
-                        />
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <PerPollenEstimate model={model} />
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
+                        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                            <MobileMetadataBadges
+                                inputModalities={inputModalities}
+                                capabilities={capabilities}
+                                modalityLabel={modalityLabel}
+                                capabilityLabel={capabilityLabel}
+                            />
+                            <ModelPricingControls
+                                model={model}
+                                pricing={pricing}
                             />
                         </div>
                         {model.perUserRpm != null && (
@@ -290,52 +268,44 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
-                </div>
-                <button
-                    type="button"
-                    aria-expanded={expanded}
-                    aria-controls={detailsId}
-                    aria-label={
-                        expanded
-                            ? "Collapse model details"
-                            : "Expand model details"
-                    }
-                    className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-theme-bg-active text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
-                    onClick={toggleDetails}
-                >
-                    <ChevronIcon
-                        expanded={expanded}
-                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
-                    />
-                </button>
-            </div>
-
-            {/* Expanded: full pricing */}
-            {expanded && (
-                <div id={detailsId} className="flex gap-2.5 px-4 pb-4 pt-0">
-                    {hasLeadingIcon && (
-                        <>
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-8 shrink-0 min-[480px]:block"
-                            />
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-px shrink-0 min-[480px]:block"
-                            />
-                        </>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <ModelPricingControls model={model} pricing={pricing} />
-                        <ModelPricingLedger
-                            pricing={pricing}
-                            className="w-full"
-                            align="left"
-                            hasTools={pollinationsTools}
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
                         />
                     </div>
                 </div>
-            )}
+            </div>
+
+            <div className="flex gap-2.5 px-4 pb-4 pt-0">
+                {hasLeadingIcon && (
+                    <>
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-8 shrink-0 min-[480px]:block"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-px shrink-0 min-[480px]:block"
+                        />
+                    </>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <ModelPricingLedger
+                        pricing={pricing}
+                        className="w-full"
+                        align="left"
+                        hasTools={pollinationsTools}
+                        requestEstimate={
+                            <PerPollenEstimate model={model} ledger />
+                        }
+                    />
+                </div>
+            </div>
         </div>
     );
 };
@@ -358,7 +328,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="mb-1 inline-flex items-center gap-1.5 text-theme-text-muted">
+        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
             {inputModalities.length > 0 && (
                 <Tooltip
                     triggerAs="span"

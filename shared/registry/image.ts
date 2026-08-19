@@ -1,4 +1,6 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
+import { IMAGE_FALLBACKS } from "./image-fallbacks";
+import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -6,7 +8,7 @@ export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
-export const IMAGE_SERVICES = {
+const IMAGE_BASE_SERVICES = {
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],
         provider: "fal",
@@ -372,9 +374,9 @@ export const IMAGE_SERVICES = {
             "Tongyi-MAI/Z-Image-Turbo",
         ],
         provider: "vast",
-        fallbacks: ["tongyi-mai/z-image-turbo:fallback"],
-        // Fal is capacity insurance only: do not move provider errors or bad
-        // requests away from the Pollinations-operated Vast pool.
+        // Routes live in image-fallbacks.ts. Narrower than the default
+        // status list: only a 503 (no capacity) overflows to Fal, so every
+        // other Vast failure surfaces instead of being served elsewhere.
         fallbackOnStatusCodes: [503],
         author: "Alibaba",
         category: "image",
@@ -382,45 +384,6 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.004, // per image
-        },
-        title: "Z-Image Turbo",
-        description:
-            "Instant, budget-friendly images with crisp upscaled output",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "tongyi-mai/z-image-turbo:fallback": {
-        aliases: ["zimage-fal"],
-        provider: "fal",
-        author: "Alibaba",
-        category: "image",
-        addedDate: new Date("2026-08-10").getTime(),
-        paidOnly: true,
-        hidden: true,
-        priceMultiplier: 1,
-        // Fal bills $0.005 per output megapixel. The token line stays at zero;
-        // the adjustment below records the exact provider cost while the
-        // caller keeps the public zimage flat price when this serves as fallback.
-        cost: {
-            completionImageTokens: 0,
-        },
-        billing: {
-            adjustments: [
-                {
-                    id: "fal.zimage.output_megapixels.v1",
-                    description: "Fal output image megapixels",
-                    kind: "image",
-                    unit: "megapixel",
-                    unitCost: 0.005,
-                    publicPricing: {
-                        label: "Output megapixels",
-                        quantity: 1,
-                        unit: "megapixel",
-                    },
-                    countUnits: (_output, input) =>
-                        Math.max(0, input?.megapixels ?? 0),
-                },
-            ],
         },
         title: "Z-Image Turbo",
         description:
@@ -1240,6 +1203,11 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const IMAGE_SERVICES = mergeFallbacks(
+    IMAGE_BASE_SERVICES,
+    IMAGE_FALLBACKS,
+);
 
 const isVideoService = (svc: {
     outputModalities?: readonly string[];

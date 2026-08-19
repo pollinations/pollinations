@@ -228,7 +228,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("rejects regular preflight when neither bucket is above the model estimate", async () => {
+    it("rejects regular preflight when both buckets are below the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
@@ -239,8 +239,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 1,
-                    packBalance: 1,
+                    tierBalance: 0.5,
+                    packBalance: 0.5,
                 }),
             },
             model: testModel(),
@@ -278,6 +278,30 @@ describe("BYOP markup", () => {
         });
     });
 
+    it("allows a zero-cost model when every balance is zero", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 0 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0,
+                    packBalance: 0,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await checkBalance(vars, fakeStatsEnv(0));
+
+        expect(vars.balance.balanceCheckResult?.balances).toEqual({
+            "v1:meter:tier": 0,
+            "v1:meter:pack": 0,
+        });
+    });
+
     it("requires paid-only preflight to have pack balance above the model estimate", async () => {
         const vars = {
             auth: {
@@ -301,11 +325,11 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("rejects finite API key budgets that are not above the model estimate", async () => {
+    it("rejects finite API key budgets below the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 1 },
+                apiKey: { id: "sk-test", pollenBalance: 0.5 },
             },
             balance: {
                 getBalance: async () => ({

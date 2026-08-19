@@ -363,7 +363,7 @@ export const Models: FC = () => {
                     className="mb-4"
                 >
                     New canonical format:{" "}
-                    <code className="font-semibold !text-intent-info-text">
+                    <code className="font-semibold !text-intent-free-text">
                         publisher/model[:variant]
                     </code>
                     . Existing aliases will keep working.

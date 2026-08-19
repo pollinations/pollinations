@@ -259,9 +259,8 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                             New canonical slug
                         </div>
                         <Chip
-                            intent="success"
                             size="lg"
-                            className="max-w-full font-mono"
+                            className="max-w-full font-mono !bg-intent-success-bg-bright !text-intent-success-text-on-bright"
                         >
                             black-forest-labs/flux.1-schnell
                         </Chip>

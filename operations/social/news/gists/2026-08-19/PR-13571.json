@@ -1,0 +1,35 @@
+{
+  "pr_number": 13571,
+  "title": "feat: add Fish Audio S2.1 Pro via OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13571",
+  "merged_at": "2026-08-19T14:30:35Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds `fish-audio-s2.1-pro` as a new paid-only service with no aliases or fallback.\n- Routes the existing speech endpoints to OpenRouter `fish-audio/s2.1-pro`, pinned to Fish Audio.\n- Exposes MP3 and PCM only and bills exact UTF-8 input bytes at $15/M with multiplier 1.\n- Adds the Fish Audio catalog logo and focused route tests.\n\n## Verification\n\n- Direct OpenRouter: MP3 and PCM succeeded; a 31-byte multilingual input reconciled to $0.000465.\n- Local E2E: `/models`, `/audio/models`, `/v1/models`, both speech endpoints, paid-only 402, invalid input/format/endpoint errors, wallet and Tinybird billing, and byte-identical cache reuse passed.\n- Five concurrent cache-miss requests passed 5/5 in 2.37s wall time.\n- Gen tests/typecheck and Enter pricing, permissions, OpenAPI, snapshot, build, and typecheck passed.\n\n## Before merge\n\n- Confirm the production OpenRouter account/funding mapping; then run one paid production billing reconciliation.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fish joins the choir",
+    "blurb": "Fish Audio S2.1 Pro has swum into the hive for paid speech generation. It speaks MP3 and PCM, counts the actual UTF-8 bytes, and leaves the cache delightfully undisturbed.",
+    "summary": "Added the paid-only `fish-audio-s2.1-pro` model, routing both speech endpoints to OpenRouter's Fish Audio S2.1 Pro with MP3 and PCM output, exact UTF-8 byte billing at $15/M, and no aliases or fallback.",
+    "impact": "Paid API users can now generate Fish Audio S2.1 Pro speech through the existing endpoints, with predictable per-byte pricing and byte-identical cached responses for repeated requests.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "Fish Audio",
+      "OpenRouter",
+      "billing",
+      "MP3",
+      "PCM"
+    ],
+    "visual_concept": "Depict Fish Audio as a friendly pixel fish singing into a tiny retro studio microphone beside a terminal showing MP3 and PCM audio waves. Polli, wearing little producer headphones, adjusts the mixing desk while code-plants and a Fish Audio logo plaque grow around the cozy workspace.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wearing tiny music-producer headphones as she adjusts a retro mixing desk beside a friendly pixel fish singing into a microphone; a CRT terminal displays simple MP3 and PCM waveforms, with code-plants and flowers growing nearby in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"FISH AUDIO\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13571.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wearing tiny music-producer headphones as she adjusts a retro mixing desk beside a friendly pixel fish singing into a microphone; a CRT terminal displays simple MP3 and PCM waveforms, with code-plants and flowers growing nearby in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"FISH AUDIO\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-19T14:31:42.772336+00:00"
+}

@@ -178,31 +178,18 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         variant="card"
         className="scroll-mt-4 overflow-hidden p-0"
     >
-        <div className="bg-intent-warning-bg-light p-4 text-intent-warning-text sm:p-5">
-            <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-opaque/70">
-                    <WarningIcon className="h-6 w-6 text-intent-danger-text" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
-                                Scheduled change
-                            </div>
-                            <h3 className="mt-0.5 text-lg font-semibold leading-tight">
-                                Canonical model slugs are changing
-                            </h3>
-                        </div>
-                        <Chip intent="neutral" size="md" className="self-start">
-                            Sep 1 · 14:00 UTC
-                        </Chip>
-                    </div>
-                    <p className="mt-3 max-w-3xl text-sm leading-relaxed">
-                        At that time, Pollinations will standardize model slugs
-                        across APIs, permissions, billing, docs, and dashboards.
-                    </p>
-                </div>
+        <div className="bg-intent-warning-bg-light p-4 sm:p-5">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+                Scheduled change · Sep 1, 2026 at 14:00 UTC
             </div>
+            <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+                <WarningIcon className="h-[1em] w-[1em] shrink-0 self-center text-intent-danger-text" />
+                <span>Canonical model slugs are changing</span>
+            </div>
+            <p className="mt-1 text-sm text-ink-700">
+                At that time, Pollinations will standardize model slugs across
+                APIs, permissions, billing, docs, and dashboards.
+            </p>
         </div>
 
         <div className="p-4 sm:p-5">
@@ -225,8 +212,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                         </dt>
                         <dd className="text-theme-text-muted">
                             The person or organization that trained and released
-                            the model. It is not necessarily the provider
-                            serving it through Pollinations.
+                            the model—not necessarily the provider serving it.
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">

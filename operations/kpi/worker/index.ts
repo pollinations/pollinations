@@ -20,6 +20,10 @@ type Env = {
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
 const TINYBIRD_CACHE_TTL = 21600; // 6 hours — weekly data barely changes
+// Part of the cache key, not the request. A pipe that gains a column keeps
+// serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
+// not touch caches.default — bump this in the same commit as the pipe change.
+const TINYBIRD_CACHE_VERSION = "2";
 
 async function fetchTinybird(
     env: Env,
@@ -39,7 +43,7 @@ async function fetchTinybird(
 
     // Check Cloudflare edge cache first
     const cache = caches.default;
-    const cacheKey = new Request(url);
+    const cacheKey = new Request(`${url}&__v=${TINYBIRD_CACHE_VERSION}`);
     const cached = await cache.match(cacheKey);
     if (cached) {
         const json = (await cached.json()) as { data: unknown[] };
@@ -335,7 +339,14 @@ app.get("/api/kpi/app-submissions", async (c) => {
             `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
             { headers },
         );
-        if (!res.ok) break;
+        if (!res.ok) {
+            // Was `break`, which returned an empty list — a dead token, a rate
+            // limit and a quiet week all looked identical on the dashboard.
+            const body = await res.text();
+            const detail = `status=${res.status} body=${body.slice(0, 300)}`;
+            console.error(`[GitHub] app-submissions failed: ${detail}`);
+            return c.json({ error: `GitHub ${res.status}`, data: [] }, 502);
+        }
         const data = (await res.json()) as Array<{
             created_at: string;
             pull_request?: unknown;

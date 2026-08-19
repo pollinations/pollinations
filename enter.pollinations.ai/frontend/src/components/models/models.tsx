@@ -361,7 +361,7 @@ export const Models: FC = () => {
                     <code className="font-semibold !text-intent-info-text">
                         publisher/model[:variant]
                     </code>
-                    . <strong>Existing aliases will keep working.</strong>
+                    . Existing aliases will keep working.
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
                         className="mt-1.5 block w-fit font-semibold underline hover:no-underline"

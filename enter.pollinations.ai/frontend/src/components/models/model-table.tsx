@@ -1,12 +1,5 @@
-import { ChevronIcon, Tooltip } from "@pollinations/ui";
-import {
-    type FC,
-    useEffect,
-    useId,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from "react";
+import { Tooltip } from "@pollinations/ui";
+import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -178,8 +171,6 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
-    const [expanded, setExpanded] = useState(false);
-    const detailsId = useId();
     const displayName = getModelDisplayName(model);
     const titleTooltip = getModelTitleTooltipContent(model);
     const brandLogoPath = getModelBrandLogoPath(model);
@@ -200,7 +191,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
           ? "paid"
           : "quest";
     const pricing = useModelPricingSelection(model);
-    const toggleDetails = () => setExpanded((current) => !current);
 
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
@@ -235,53 +225,62 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                        {titleTooltip ? (
-                            <Tooltip
-                                triggerAs="span"
-                                content={titleTooltip}
-                                ariaLabel={`${publicModelName}: model details`}
-                                className="min-w-0"
-                                tapEnabled
-                                displayContents
-                            >
-                                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                {publicModelName}
-                            </span>
-                        )}
-                        <ModelStatusChips
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                    </div>
-                    <ModelId name={model.name} showCopyIcon />
-                    {model.brandUrl && model.brand && (
-                        <a
-                            href={model.brandUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                        >
-                            {model.brand}
-                        </a>
-                    )}
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                        <MobileMetadataBadges
-                            inputModalities={inputModalities}
-                            capabilities={capabilities}
-                            modalityLabel={modalityLabel}
-                            capabilityLabel={capabilityLabel}
-                        />
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <PerPollenEstimate model={model} />
+                    <div className="flex min-w-0 items-start gap-2">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                                {titleTooltip ? (
+                                    <Tooltip
+                                        triggerAs="span"
+                                        content={titleTooltip}
+                                        ariaLabel={`${publicModelName}: model details`}
+                                        className="min-w-0"
+                                        tapEnabled
+                                        displayContents
+                                    >
+                                        <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
+                                            {publicModelName}
+                                        </span>
+                                    </Tooltip>
+                                ) : (
+                                    <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
+                                        {publicModelName}
+                                    </span>
+                                )}
+                            </div>
+                            <ModelId name={model.name} showCopyIcon />
+                            {model.brandUrl && model.brand && (
+                                <a
+                                    href={model.brandUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                                >
+                                    {model.brand}
+                                </a>
+                            )}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
                             <BalanceAccessChip
                                 access={balanceAccess}
                                 className="whitespace-nowrap"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                            <MobileMetadataBadges
+                                inputModalities={inputModalities}
+                                capabilities={capabilities}
+                                modalityLabel={modalityLabel}
+                                capabilityLabel={capabilityLabel}
+                            />
+                            <ModelPricingControls
+                                model={model}
+                                pricing={pricing}
                             />
                         </div>
                         {model.perUserRpm != null && (
@@ -291,51 +290,33 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         )}
                     </div>
                 </div>
-                <button
-                    type="button"
-                    aria-expanded={expanded}
-                    aria-controls={detailsId}
-                    aria-label={
-                        expanded
-                            ? "Collapse model details"
-                            : "Expand model details"
-                    }
-                    className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-theme-bg-active text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
-                    onClick={toggleDetails}
-                >
-                    <ChevronIcon
-                        expanded={expanded}
-                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
-                    />
-                </button>
             </div>
 
-            {/* Expanded: full pricing */}
-            {expanded && (
-                <div id={detailsId} className="flex gap-2.5 px-4 pb-4 pt-0">
-                    {hasLeadingIcon && (
-                        <>
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-8 shrink-0 min-[480px]:block"
-                            />
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-px shrink-0 min-[480px]:block"
-                            />
-                        </>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <ModelPricingControls model={model} pricing={pricing} />
-                        <ModelPricingLedger
-                            pricing={pricing}
-                            className="w-full"
-                            align="left"
-                            hasTools={pollinationsTools}
+            <div className="flex gap-2.5 px-4 pb-4 pt-0">
+                {hasLeadingIcon && (
+                    <>
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-8 shrink-0 min-[480px]:block"
                         />
-                    </div>
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-px shrink-0 min-[480px]:block"
+                        />
+                    </>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <ModelPricingLedger
+                        pricing={pricing}
+                        className="w-full"
+                        align="left"
+                        hasTools={pollinationsTools}
+                        requestEstimate={
+                            <PerPollenEstimate model={model} ledger />
+                        }
+                    />
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -358,7 +339,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="mb-1 inline-flex items-center gap-1.5 text-theme-text-muted">
+        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
             {inputModalities.length > 0 && (
                 <Tooltip
                     triggerAs="span"

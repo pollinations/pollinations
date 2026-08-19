@@ -519,9 +519,8 @@ export const Models: FC = () => {
                     <p className="flex items-start gap-1.5">
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>gen /pollen</strong> — how many generations
-                            you can make with 1 pollen, estimated from average
-                            usage over the last 7 days.
+                            <strong>requests /pollen</strong> — estimated from
+                            average usage over the last 7 days.
                         </span>
                     </p>
                 </div>

@@ -358,15 +358,15 @@ export const Models: FC = () => {
                 >
                     Starting <strong>Sep 1, 2026 at 14:00 UTC</strong>, new
                     integrations should use{" "}
-                    <code className="font-semibold">
+                    <code className="font-semibold !text-intent-info-text">
                         publisher/model[:variant]
                     </code>
-                    . <strong>Existing aliases will keep working.</strong>{" "}
+                    . <strong>Existing aliases will keep working.</strong>
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        className="font-semibold underline hover:no-underline"
+                        className="mt-1.5 block w-fit font-semibold underline hover:no-underline"
                     >
-                        Read the announcement →
+                        Read the full announcement →
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">

@@ -11,6 +11,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from floret.routing import RoutingPreferences
 from floret.tools import gen, media, shell
 
 logger = logging.getLogger(__name__)
@@ -251,18 +252,27 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 # --------------------------------------------------------------------------- #
 # Dispatch
 # --------------------------------------------------------------------------- #
-async def dispatch(name: str, args: dict[str, Any]) -> ToolResult:
+async def dispatch(
+    name: str,
+    args: dict[str, Any],
+    routing: RoutingPreferences | None = None,
+) -> ToolResult:
     """Run one tool call and package brain-text + artifacts."""
+    call_args = dict(args)
+    selected_model = routing.model_for_tool(name) if routing else None
+    if selected_model:
+        call_args["model"] = selected_model
+
     try:
         if name == "generate_image":
-            urls = await gen.generate_image(**args)
+            urls = await gen.generate_image(**call_args)
             arts = [{"type": "image", "url": u} for u in urls]
             return ToolResult(
                 brain="Generated images:\n" + "\n".join(urls), artifacts=arts
             )
 
         if name == "edit_image":
-            url = await gen.edit_image(**args)
+            url = await gen.edit_image(**call_args)
             if url.startswith("data:"):
                 # Hosting fallback: never echo megabytes of base64 into context.
                 brain = (
@@ -274,14 +284,25 @@ async def dispatch(name: str, args: dict[str, Any]) -> ToolResult:
             return ToolResult(brain=brain, artifacts=[{"type": "image", "url": url}])
 
         if name == "generate_video":
-            url = await gen.generate_video(**args)
+            if (
+                selected_model
+                and call_args.get("end_image")
+                and selected_model not in gen.END_FRAME_MODELS
+            ):
+                return ToolResult(
+                    brain=(
+                        f"ERROR: pinned video model {selected_model!r} "
+                        "does not support an end frame"
+                    )
+                )
+            url = await gen.generate_video(**call_args)
             return ToolResult(
                 brain=f"Generated video: {url}",
                 artifacts=[{"type": "video", "url": url}],
             )
 
         if name == "text_to_speech":
-            res = await gen.text_to_speech(**args)
+            res = await gen.text_to_speech(**call_args)
             art = {
                 "type": "audio",
                 "data_uri": res["data_uri"],
@@ -300,7 +321,7 @@ async def dispatch(name: str, args: dict[str, Any]) -> ToolResult:
             return ToolResult(brain=f"Transcript:\n{text}")
 
         if name == "web_search":
-            text = await gen.web_search(**args)
+            text = await gen.web_search(**call_args)
             return ToolResult(brain=text)
 
         if name == "upload_media":

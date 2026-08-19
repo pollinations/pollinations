@@ -94,7 +94,9 @@ User comes back with a short-lived code:
 https://myapp.com/callback?code=oauth_code&state=random-csrf-token
 ```
 
-Validate `state`, then exchange the code from your server:
+Validate `state`, then exchange the code at the token endpoint. Server-backed apps
+call it from their backend; static browser apps can call it directly, because PKCE
+replaces the client secret:
 
 ```bash
 curl -X POST https://enter.pollinations.ai/api/oauth/token \
@@ -111,6 +113,25 @@ The authorization code is single-use and expires after 10 minutes. Token respons
 
 Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
 
+**Browser-only apps.** The same request works from `fetch`:
+
+```javascript
+const res = await fetch('https://enter.pollinations.ai/api/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,                                        // From the callback URL
+    client_id: 'pk_yourkey',
+    redirect_uri: 'https://myapp.com/callback',  // Exact registered URI
+    code_verifier,                               // The verifier you saved
+  }),
+});
+const { access_token } = await res.json();
+```
+
+Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a URL, analytics, or logs.
+
 ### 3. Call Pollinations
 
 Use the returned `access_token` as the API key:
@@ -123,7 +144,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-See `apps/oauth-client-demo/` for a zero-dependency reference client.
+See `apps/oauth-client-demo/` for a zero-dependency server-backed reference
+client and `apps/oauth-test/` for a browser-only reference.
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

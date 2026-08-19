@@ -240,6 +240,43 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     return {"models": models, "by_modality": by_modality}
 
 
+def _adapt_rich_catalog(raw: object) -> dict[str, dict[str, Any]]:
+    if not isinstance(raw, list):
+        raise ValueError("Model catalog endpoint /models returned a non-array response")
+
+    models: dict[str, dict[str, Any]] = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        model_id = item.get("id") or item.get("name")
+        if isinstance(model_id, str) and model_id:
+            models[model_id] = dict(item)
+    return models
+
+
+async def _fetch_models(path: str) -> object:
+    key = await _resolve_api_key()
+    base = settings.openai_base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(f"{base}{path}", headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+
+async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
+    return _adapt_rich_catalog(await _fetch_models("/models"))
+
+
+async def refresh_registry() -> dict[str, Any]:
+    global _registry_cache
+    raw = await _fetch_models("/v1/models")
+    if not isinstance(raw, dict):
+        raise ValueError("Model endpoint /v1/models returned a non-object response")
+    _registry_cache = _normalize(raw)
+    return _registry_cache
+
+
 async def get_registry() -> dict[str, Any]:
     global _registry_cache
     if _registry_cache is not None:
@@ -247,19 +284,12 @@ async def get_registry() -> dict[str, Any]:
     async with _lock:
         if _registry_cache is not None:
             return _registry_cache
-        key = await _resolve_api_key()
-        base = settings.openai_base_url.rstrip("/")
-        headers = {"Authorization": f"Bearer {key}"} if key else {}
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                r = await client.get(f"{base}/v1/models", headers=headers)
-                r.raise_for_status()
-                raw = r.json()
+            return await refresh_registry()
         except Exception as exc:
             logger.warning("Failed to fetch /v1/models: %s", exc)
-            raw = {"data": []}
-        _registry_cache = _normalize(raw)
-        return _registry_cache
+            _registry_cache = _normalize({"data": []})
+            return _registry_cache
 
 
 def get_model_catalog() -> dict[str, dict[str, Any]]:

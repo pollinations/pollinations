@@ -9,6 +9,7 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     Heading,
+    IconButton,
     Surface,
     TabButton,
     Table,
@@ -19,8 +20,50 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
+
+const FAVORITES_KEY = "model-monitor-favorites";
+
+function loadFavorites() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveFavorites(list) {
+    try {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+    } catch {
+        // storage full or blocked — silently ignore
+    }
+}
+
+function modelKey(model) {
+    return `${model.type}-${model.name}`;
+}
+
+function StarIcon({ filled }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            role="img"
+            aria-label={filled ? "Favorited" : "Not favorited"}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+    );
+}
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
@@ -44,6 +87,31 @@ const MODEL_SCOPES = [
     { key: "official", title: "Official" },
     { key: "community", title: "Community" },
 ];
+
+const FILTER_KEY = "model-monitor-filter";
+
+function loadFilterState() {
+    try {
+        const raw = localStorage.getItem(FILTER_KEY);
+        if (!raw) return null;
+        const { scope, type } = JSON.parse(raw);
+        const validScope = MODEL_SCOPES.some((s) => s.key === scope)
+            ? scope
+            : null;
+        const validType = MODEL_TYPES.some((t) => t.key === type) ? type : null;
+        return { scope: validScope, type: validType };
+    } catch {
+        return null;
+    }
+}
+
+function saveFilterState(filter) {
+    try {
+        localStorage.setItem(FILTER_KEY, JSON.stringify(filter));
+    } catch {
+        // storage full or blocked — silently ignore
+    }
+}
 
 const LOW_SAMPLE_REQUESTS = 10;
 
@@ -107,7 +175,7 @@ function getLatencyColor(latencySec) {
 }
 
 function computeHealthStatus(stats) {
-    if (!stats || !stats.total_requests) return "on";
+    if (!stats?.total_requests) return "on";
     const success = stats.status_2xx || 0;
     const total5xx = stats.errors_5xx || 0;
     // 4xx are client errors and don't count. Judge purely on the 5xx share of
@@ -395,9 +463,32 @@ function App() {
         useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
-    const [scopeFilter, setScopeFilter] = useState("official");
-    const [typeFilter, setTypeFilter] = useState(null);
+    const [initialFilter] = useState(loadFilterState);
+    const [scopeFilter, setScopeFilter] = useState(
+        initialFilter?.scope ?? "official",
+    );
+    const [typeFilter, setTypeFilter] = useState(initialFilter?.type ?? null);
+    const [favorites, setFavorites] = useState(loadFavorites);
+    const [favoritesOnly, setFavoritesOnly] = useState(false);
     const catalogUnavailable = endpointStatus.catalog === false;
+
+    useEffect(() => {
+        saveFavorites(favorites);
+    }, [favorites]);
+
+    useEffect(() => {
+        saveFilterState({ scope: scopeFilter, type: typeFilter });
+    }, [scopeFilter, typeFilter]);
+
+    const toggleFavorite = useCallback((key) => {
+        setFavorites((prev) => {
+            const next = prev.includes(key)
+                ? prev.filter((k) => k !== key)
+                : [...prev, key];
+            if (next.length === 0) setFavoritesOnly(false);
+            return next;
+        });
+    }, []);
 
     const handleSort = (key) => {
         setSort((prev) => ({
@@ -412,6 +503,10 @@ function App() {
     );
 
     const sortedModels = [...observedModels].sort((a, b) => {
+        const aFav = favorites.includes(modelKey(a));
+        const bFav = favorites.includes(modelKey(b));
+        if (aFav !== bFav) return aFav ? -1 : 1;
+
         const dir = sort.asc ? 1 : -1;
         switch (sort.key) {
             case "type":
@@ -524,9 +619,11 @@ function App() {
     const scopedModels = sortedModels.filter(
         (model) => modelScope(model) === scopeFilter,
     );
-    const filteredModels = typeFilter
-        ? scopedModels.filter((model) => model.type === typeFilter)
-        : scopedModels;
+    const filteredModels = scopedModels
+        .filter((model) => (typeFilter ? model.type === typeFilter : true))
+        .filter((model) =>
+            favoritesOnly ? favorites.includes(modelKey(model)) : true,
+        );
 
     const handleScopeChange = (scope) => {
         setScopeFilter(scope);
@@ -604,10 +701,32 @@ function App() {
                     />
                 </div>
 
+                {favorites.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            intent={favoritesOnly ? "info" : undefined}
+                            aria-pressed={favoritesOnly}
+                            aria-label={`Show favorites only (${favorites.length})`}
+                            onClick={() => setFavoritesOnly((prev) => !prev)}
+                        >
+                            <span className="inline-flex items-center gap-1">
+                                <StarIcon filled={favoritesOnly} />
+                                Favorites
+                                <span className="ml-0.5 tabular-nums opacity-70">
+                                    {favorites.length}
+                                </span>
+                            </span>
+                        </Button>
+                    </div>
+                )}
+
                 <Surface variant="card" className="p-0">
                     <Table>
                         <TableHead>
                             <tr>
+                                <TableHeaderCell className="w-8" />
                                 <SortableTh
                                     label="Type"
                                     sortKey="type"
@@ -697,12 +816,14 @@ function App() {
                             {filteredModels.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={adminMode ? 11 : 10}
+                                        colSpan={adminMode ? 12 : 11}
                                         align="center"
                                         className="py-8 text-theme-text-muted"
                                     >
                                         {lastUpdated
-                                            ? "No traffic in this window"
+                                            ? favoritesOnly
+                                                ? "No favorited models match the current filter"
+                                                : "No traffic in this window"
                                             : "Loading models..."}
                                     </TableCell>
                                 </TableRow>
@@ -734,9 +855,31 @@ function App() {
 
                                     return (
                                         <TableRow
-                                            key={`${model.type}-${model.name}`}
+                                            key={modelKey(model)}
                                             intent={rowIntent(health)}
                                         >
+                                            <TableCell className="w-8">
+                                                <IconButton
+                                                    title={
+                                                        favorites.includes(
+                                                            modelKey(model),
+                                                        )
+                                                            ? "Remove from favorites"
+                                                            : "Add to favorites"
+                                                    }
+                                                    onClick={() =>
+                                                        toggleFavorite(
+                                                            modelKey(model),
+                                                        )
+                                                    }
+                                                >
+                                                    <StarIcon
+                                                        filled={favorites.includes(
+                                                            modelKey(model),
+                                                        )}
+                                                    />
+                                                </IconButton>
+                                            </TableCell>
                                             <TableCell>
                                                 <ModalityChip
                                                     modality={model.type}

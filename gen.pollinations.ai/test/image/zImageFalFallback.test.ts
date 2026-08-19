@@ -11,6 +11,7 @@ import {
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, expect } from "vitest";
 import worker from "../../src/index.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const imageBackendHost = "zimage-backend.test";
 const falHost = "fal.run";
@@ -81,7 +82,7 @@ async function fetchWorker(path: string, init: RequestInit) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        withInlineGenerationCoordinator(env),
         ctx,
     );
     return { response, wait: () => waitOnExecutionContext(ctx) };
@@ -118,6 +119,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("x-model-used")).toBe("zimage-fal");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
     expect(mocks.fal.state.falRequests).toEqual([
         {
             prompt: "a red apple",

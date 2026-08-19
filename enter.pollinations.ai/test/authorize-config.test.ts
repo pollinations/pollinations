@@ -2,6 +2,7 @@ import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
+    expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
@@ -96,6 +97,41 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: null,
         });
+    });
+});
+
+describe("expiryDaysToExpiresIn", () => {
+    it("converts the consent default to seconds", () => {
+        expect(expiryDaysToExpiresIn(DEFAULT_CONSENT_EXPIRY_DAYS)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS * 24 * 60 * 60,
+        );
+        expect(expiryDaysToExpiresIn(0.5)).toBe(43200);
+    });
+
+    it("means no expiry only when the field is empty", () => {
+        expect(expiryDaysToExpiresIn(null)).toBeUndefined();
+        expect(expiryDaysToExpiresIn(undefined)).toBeUndefined();
+    });
+
+    it("keeps every fractional day the field accepts", () => {
+        expect(expiryDaysToExpiresIn(0.25)).toBe(21600);
+        expect(expiryDaysToExpiresIn(0.1)).toBe(8640);
+        expect(expiryDaysToExpiresIn(1.5)).toBe(129600);
+        expect(expiryDaysToExpiresIn(30.5)).toBe(2635200);
+    });
+
+    // The bug: a fraction that doesn't land on a whole second failed the
+    // server's .int() check, so the request 400'd instead of creating a key.
+    it("rounds a mid-second fraction to whole seconds", () => {
+        expect(expiryDaysToExpiresIn(0.123456)).toBe(10667);
+        expect(expiryDaysToExpiresIn(0.0001)).toBe(9);
+    });
+
+    // Left invalid on purpose. The server already rejects these, and turning
+    // them into "no expiry" here would hand back a key that never expires.
+    it("leaves a non-positive expiry for the server to reject", () => {
+        expect(expiryDaysToExpiresIn(0)).toBe(0);
+        expect(expiryDaysToExpiresIn(-7)).toBe(-604800);
     });
 });
 

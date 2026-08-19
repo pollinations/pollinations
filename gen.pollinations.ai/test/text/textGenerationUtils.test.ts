@@ -60,6 +60,18 @@ describe("CreateChatCompletionRequestSchema seed handling", () => {
     });
 });
 
+describe("CreateChatCompletionRequestSchema reasoning handling", () => {
+    it("accepts GPT-5.6 max reasoning effort", () => {
+        const result = CreateChatCompletionRequestSchema.safeParse({
+            model: "gpt-5.6-sol",
+            messages: [{ role: "user", content: "hello" }],
+            reasoning_effort: "max",
+        });
+
+        expect(result.success).toBe(true);
+    });
+});
+
 describe("validateAndNormalizeMessages cache_control handling", () => {
     // Vertex explicit context caching (pollinations/gateway#8) relies on
     // content-block cache_control markers surviving ingress. Message content

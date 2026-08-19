@@ -53,7 +53,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -197,6 +197,23 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+export const agent = sqliteTable("agent", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  config: text("config").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_agent_owner_user_id").on(table.ownerUserId),
+]);
+
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -223,14 +240,20 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  baseUrl: text("base_url").notNull(),
+  // External models keep their target here. Managed agents resolve their
+  // target through agentId so the agent can outlive its community listing.
+  baseUrl: text("base_url"),
+  agentId: text("agent_id").references(() => agent.id, {
+    onDelete: "restrict",
+  }),
   upstreamModel: text("upstream_model").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext"),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
+  perUserRpm: real("per_user_rpm"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
@@ -269,6 +292,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     table.ownerUserId,
     table.name,
   ),
+  uniqueIndex("idx_community_endpoint_agent_id").on(table.agentId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -278,6 +302,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  agents: many(agent),
   communityEndpoints: many(communityEndpoint),
 }));
 
@@ -327,6 +352,18 @@ export const communityEndpointRelations = relations(communityEndpoint, ({ one })
     fields: [communityEndpoint.ownerUserId],
     references: [user.id],
   }),
+  agent: one(agent, {
+    fields: [communityEndpoint.agentId],
+    references: [agent.id],
+  }),
+}));
+
+export const agentRelations = relations(agent, ({ one }) => ({
+  owner: one(user, {
+    fields: [agent.ownerUserId],
+    references: [user.id],
+  }),
+  communityEndpoint: one(communityEndpoint),
 }));
 
 // Device Authorization Grant (RFC 8628) table
@@ -392,11 +429,11 @@ export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
-  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "set null" }),
   // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
   // Quest title snapshotted when earned, so history renders it directly.

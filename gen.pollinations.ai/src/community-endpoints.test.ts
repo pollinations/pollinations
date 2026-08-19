@@ -4083,11 +4083,14 @@ fixtureTest(
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00003,
             completionTextPrice: 0.00002,
         });
 
-        // Making the model private clears all owner-set prices.
+        // Making the model private clears all owner-set prices, and with them
+        // the paid-only choice: a free listing that still demanded paid balance
+        // would only gate the owner out of their own model.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -4105,6 +4108,7 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: false,
             promptTextPrice: 0,
             completionTextPrice: 0,
         });

@@ -293,6 +293,21 @@ export function isCommunityFallbackPricingAllowed(
     );
 }
 
+/**
+ * Whether `target` may back `primary` on the balance the caller spends.
+ *
+ * A paid-only target behind a primary that accepts Quest Pollen would serve its
+ * owner's pay-as-you-go upstream for free Pollen, which is the exact thing the
+ * flag exists to prevent — the payer bucket is chosen from the model the caller
+ * asked for, not the one that ends up serving.
+ */
+export function isCommunityFallbackBalanceAllowed(
+    primary: { paidOnly: boolean },
+    target: { paidOnly: boolean },
+): boolean {
+    return !target.paidOnly || primary.paidOnly;
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {

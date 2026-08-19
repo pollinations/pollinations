@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
@@ -232,6 +233,7 @@ function isUsableCommunityFallback(
         return false;
     }
     if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 

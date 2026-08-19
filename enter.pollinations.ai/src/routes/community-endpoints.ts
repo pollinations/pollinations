@@ -19,6 +19,7 @@ import {
     communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -165,6 +166,7 @@ type FallbackPrimary = {
     ownerUserId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    paidOnly: boolean;
     prices: CommunityEndpointPrices;
 };
 
@@ -221,6 +223,9 @@ function fallbackTargetRejection(
         targetImagePricing !== primary.imagePricing
     ) {
         return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    if (!isCommunityFallbackBalanceAllowed(primary, target)) {
+        return `Fallback target ${modelId} accepts only Paid Pollen, which this model does not require`;
     }
     const targetPrices = communityEndpointPrices(target);
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
@@ -911,6 +916,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 imagePricing: normalizeCommunityEndpointImagePricing(
                     endpoint.imagePricing,
                 ),
+                paidOnly: endpoint.paidOnly,
                 prices: communityEndpointPrices(endpoint),
             };
             const candidates = await db
@@ -1003,6 +1009,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           modality,
                           imagePricing,
                       );
+            // Same rule as the prices above: a free listing must not also
+            // demand paid balance, which would only gate the owner out of
+            // their own model.
+            const paidOnly =
+                agent || input.visibility !== "public"
+                    ? false
+                    : input.paidOnly;
             enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const fallbackModelIds = input.fallbackModelIds
                 ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
@@ -1013,6 +1026,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       ownerUserId: user.id,
                       modality,
                       imagePricing,
+                      paidOnly,
                       prices,
                   })
                 : [];
@@ -1043,7 +1057,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           ),
                     visibility: input.visibility,
-                    paidOnly: input.paidOnly,
+                    paidOnly,
                     perUserRpm: agent ? null : (input.perUserRpm ?? null),
                     fallbackModelIds,
                     ...prices,
@@ -1308,6 +1322,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           modality,
                           effectiveImagePricing,
                       );
+            // Same rule as the prices above: a free listing must not also
+            // demand paid balance, which would only gate the owner out of
+            // their own model. Publishing again is what restores the choice.
+            const effectivePaidOnly =
+                endpoint.agentId !== null || effectiveVisibility === "private"
+                    ? false
+                    : (update.paidOnly ?? endpoint.paidOnly);
+            update.paidOnly = effectivePaidOnly;
             enforceCommunityEndpointPriceLimits(
                 effectivePrices,
                 modality,
@@ -1329,6 +1351,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ownerUserId: user.id,
                         modality,
                         imagePricing: effectiveImagePricing,
+                        paidOnly: effectivePaidOnly,
                         prices: effectivePrices,
                     },
                 );

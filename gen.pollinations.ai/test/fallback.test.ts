@@ -48,6 +48,7 @@ function communityEntry(
     disabledAt: number | null = null,
     fallbackModelIds: string[] = [],
     rate = 10,
+    paidOnly = false,
 ): GenerationModelEntry {
     const entry = registryEntry(id, [], rate);
     entry.visible = visibility === "public" && disabledAt === null;
@@ -55,6 +56,7 @@ function communityEntry(
         ownerUserId,
         visibility,
         disabledAt,
+        paidOnly,
         imagePricing: "request",
         fallbackModelIds,
         ...communityEndpointPrices({
@@ -142,6 +144,47 @@ describe("registry fallback linking", () => {
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
+    });
+    it("keeps a paid-only target off a primary that takes Quest Pollen", () => {
+        // The payer bucket follows the model the caller asked for, so serving a
+        // paid-only target behind a Quest-accepting primary would spend free
+        // Pollen on its owner's pay-as-you-go upstream.
+        const anyPollen = communityEntry("owner/any", "owner", "public", null, [
+            "other/paid",
+            "other/free",
+        ]);
+        const paidPrimary = communityEntry(
+            "owner/paid",
+            "owner",
+            "public",
+            null,
+            ["other/paid", "other/free"],
+            10,
+            true,
+        );
+        const paidTarget = communityEntry(
+            "other/paid",
+            "other",
+            "public",
+            null,
+            [],
+            10,
+            true,
+        );
+        const freeTarget = communityEntry("other/free", "other");
+        const entries = [anyPollen, paidPrimary, paidTarget, freeTarget];
+
+        linkFallbackEntries(entries, new Map(entries.map((e) => [e.id, e])));
+
+        expect(anyPollen.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "other/free",
+        ]);
+        // A paid-only primary already forces the pack bucket, so either kind of
+        // target is safe behind it.
+        expect(paidPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "other/paid",
+            "other/free",
+        ]);
     });
 });
 

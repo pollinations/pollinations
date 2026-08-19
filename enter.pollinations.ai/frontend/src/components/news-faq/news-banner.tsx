@@ -2,7 +2,6 @@ import {
     ArrowRightIcon,
     CheckIcon,
     Chip,
-    CodeBlock,
     cn,
     InlineLink,
     Surface,
@@ -209,13 +208,50 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         <div className="p-4 sm:p-5">
             <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                    New slug format
+                    How to read a canonical slug
                 </div>
-                <CodeBlock
-                    code="publisher/model[:variant]"
-                    className="mt-1.5"
-                    codeClassName="text-sm"
-                />
+                <div className="mt-2 flex flex-wrap items-baseline font-mono text-base font-semibold">
+                    <span className="text-intent-news-text">publisher</span>
+                    <span className="text-theme-text-muted">/</span>
+                    <span className="text-intent-warning-text">model</span>
+                    <span className="text-theme-text-muted">[:</span>
+                    <span className="text-intent-success-text">variant</span>
+                    <span className="text-theme-text-muted">]</span>
+                </div>
+                <dl className="mt-3 space-y-2 text-sm">
+                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
+                        <dt className="font-semibold text-intent-news-text">
+                            Publisher
+                        </dt>
+                        <dd className="text-theme-text-muted">
+                            The person or organization that trained and released
+                            the model. It is not necessarily the provider
+                            serving it through Pollinations.
+                        </dd>
+                    </div>
+                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
+                        <dt className="font-semibold text-intent-warning-text">
+                            Model
+                        </dt>
+                        <dd className="text-theme-text-muted">
+                            The official model name from its publisher, written
+                            in slug form.
+                        </dd>
+                    </div>
+                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
+                        <dt className="font-semibold text-intent-success-text">
+                            Variant{" "}
+                            <span className="font-normal text-theme-text-muted">
+                                (optional)
+                            </span>
+                        </dt>
+                        <dd className="text-theme-text-muted">
+                            A preset with fixed behavior or parameters for that
+                            model, such as <code>:search</code> or{" "}
+                            <code>:dialogue</code>.
+                        </dd>
+                    </div>
+                </dl>
             </div>
 
             <div className="mt-5">

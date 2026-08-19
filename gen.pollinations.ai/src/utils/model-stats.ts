@@ -48,7 +48,8 @@ export function getEstimatedPrice(
     definition?: ModelDefinition,
 ): number {
     if (!model) return 0;
-    const tinybird = stats.data?.find((r) => r.model === model)?.avg_cost_usd || 0;
+    const tinybird =
+        stats.data?.find((r) => r.model === model)?.avg_cost_usd || 0;
     const defined = definition ? getDefinedRequestEstimate(definition) : null;
     if (
         defined != null &&

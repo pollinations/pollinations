@@ -437,9 +437,7 @@ describe("BYOP markup", () => {
         expect(
             getEstimatedPrice(
                 {
-                    data: [
-                        { model: "vendouple/zimage", avg_cost_usd: 0.012 },
-                    ],
+                    data: [{ model: "vendouple/zimage", avg_cost_usd: 0.012 }],
                 },
                 "vendouple/zimage",
                 definition,

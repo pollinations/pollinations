@@ -205,9 +205,12 @@ describe("POST /api/auth/delete-user", () => {
                 reward: unknown;
             }>;
         };
+        // The replacement account sees the quest as open — quest status is
+        // scoped to its own rewards. Re-earning it is still a no-op: the
+        // idempotency key carries the GitHub id, as asserted above.
         expect(
             questStatus.quests.find((quest) => quest.id === "first_api_key"),
-        ).toMatchObject({ status: "completed", reward: null });
+        ).toMatchObject({ status: "open", reward: null });
     });
 
     test("requires a session created within the last ten minutes", async ({

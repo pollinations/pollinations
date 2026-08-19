@@ -28,12 +28,14 @@ import {
     useRef,
     useState,
 } from "react";
+import { authClient } from "../../auth.ts";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
+import { ModelPriceNoticeBanner } from "./model-price-notice-banner.tsx";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -304,9 +306,12 @@ export const Models: FC = () => {
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Newest";
-
+    const { data: session } = authClient.useSession();
     return (
         <div className="flex flex-col gap-6">
+            {activeScope === "community" && session && (
+                <ModelPriceNoticeBanner />
+            )}
             <Section
                 title="Models"
                 framed

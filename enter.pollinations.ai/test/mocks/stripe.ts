@@ -55,7 +55,9 @@ type StripeCheckoutSession = {
     object: "checkout.session";
     mode: string;
     customer: string | null;
-    url: string;
+    url: string | null;
+    payment_intent?: string | null;
+    status?: "open" | "complete" | "expired";
 };
 
 type StripePortalSession = {
@@ -264,8 +266,40 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                payment_intent: null,
+                status: "open",
             };
             state.checkoutSessions.push(session);
+            return c.json(session);
+        })
+        .get("/v1/checkout/sessions", (c) => {
+            recordRequest(c, state);
+            const sessions = state.checkoutSessions.filter((session) => {
+                const customer = c.req.query("customer");
+                const paymentIntent = c.req.query("payment_intent");
+                const status = c.req.query("status");
+                return (
+                    (!customer || session.customer === customer) &&
+                    (!paymentIntent ||
+                        session.payment_intent === paymentIntent) &&
+                    (!status || session.status === status)
+                );
+            });
+            return c.json({
+                object: "list",
+                url: "/v1/checkout/sessions",
+                has_more: false,
+                data: sessions,
+            });
+        })
+        .post("/v1/checkout/sessions/:id/expire", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            session.status = "expired";
+            session.url = null;
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {

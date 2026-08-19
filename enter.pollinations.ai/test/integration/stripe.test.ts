@@ -370,12 +370,21 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     );
 });
 
-test("GET /api/stripe/checkout marks new-card gate locked after four distinct failed cards in 24h", async ({
+test("four distinct failed cards in 24h restrict payments and expire the open checkout", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_gate_open",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_test_card_gate",
+        payment_intent: "pi_fp_gate_4",
+        status: "open",
+        url: "https://checkout.stripe.test/gate-open",
+    });
 
     for (const fingerprint of [
         "fp_gate_1",
@@ -431,35 +440,129 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct fa
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
     });
-    expect(response.status).toBe(302);
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+        code: "PAYMENTS_RESTRICTED",
+        error: "Payments are unavailable for this account.",
+        supportEmail: "billing@pollinations.ai",
+    });
 
-    const body = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    )?.body;
-    expect(body).toBeTruthy();
+    const user = await env.DB.prepare(
+        `SELECT stripe_payment_restriction AS restriction,
+            auto_top_up_enabled AS autoTopUpEnabled
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{
+            restriction: string | null;
+            autoTopUpEnabled: number | boolean;
+        }>();
+    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
+        reason: "failed_card_velocity",
+        source: "automatic",
+    });
+    expect(user?.autoTopUpEnabled).toBe(0);
+    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
+        id: "cs_gate_open",
+        status: "expired",
+        url: null,
+    });
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) =>
+                request.method === "POST" &&
+                request.path === "/v1/checkout/sessions",
+        ),
+    ).toBe(false);
+});
 
-    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe(
-        "locked",
+test("admin can restrict and restore payment access", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_manual_restriction"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?, auto_top_up_enabled = 1
+        WHERE id = ?`,
+    )
+        .bind("cus_manual_restriction", userId)
+        .run();
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_manual_open",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_manual_restriction",
+        payment_intent: "pi_manual_open",
+        status: "open",
+        url: "https://checkout.stripe.test/manual-open",
+    });
+
+    const restrictResponse = await SELF.fetch(
+        "http://localhost:3000/api/admin/stripe-payment-restrictions",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId,
+                restricted: true,
+                reason: "manual_review",
+            }),
+        },
     );
-    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`]).toBe(
-        "4",
+    expect(restrictResponse.status).toBe(200);
+    await expect(restrictResponse.json()).resolves.toMatchObject({
+        userId,
+        restricted: true,
+        changed: true,
+        expiredCheckoutSessions: 1,
+    });
+
+    const billingResponse = await SELF.fetch(`${base}/billing`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(billingResponse.status).toBe(200);
+    await expect(billingResponse.json()).resolves.toMatchObject({
+        paymentAccess: {
+            restricted: true,
+            supportEmail: "billing@pollinations.ai",
+        },
+        autoTopUp: { enabled: false },
+    });
+
+    const autoTopUpResponse = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled: true, packAmountUsd: 10 }),
+    });
+    expect(autoTopUpResponse.status).toBe(403);
+
+    const clearResponse = await SELF.fetch(
+        "http://localhost:3000/api/admin/stripe-payment-restrictions",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId, restricted: false }),
+        },
     );
-    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
-        "4",
-    );
-    expect(
-        body?.[
-            `payment_intent_data[metadata][${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
-        ],
-    ).toBe("locked");
-    expect(
-        body?.[
-            `payment_intent_data[metadata][${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`
-        ],
-    ).toBe("4");
-    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
-    );
+    expect(clearResponse.status).toBe(200);
+    await expect(clearResponse.json()).resolves.toMatchObject({
+        userId,
+        restricted: false,
+        changed: true,
+    });
 });
 
 test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({

@@ -1,0 +1,35 @@
+{
+  "pr_number": 13569,
+  "title": "feat: add Grok TTS",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13569",
+  "merged_at": "2026-08-19T15:14:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `grok-tts` as a new paid-only audio model on `/audio/{text}` and `POST /v1/audio/speech`.\n- Routes directly to xAI `POST /v1/tts` with no aliases, fallback, or Pollinations GPU.\n- Exposes all 28 built-in xAI voices with MP3, WAV, and PCM output; the existing `alloy` default maps to Eve.\n- Bills deterministic Unicode input characters at xAI’s $15/M rate with `priceMultiplier: 1`.\n- Keeps custom voices, streaming TTS, and additional codecs out of scope.\n\nValidation:\n- Authenticated voice discovery returned 28 voices; all 28 × 3 formats passed direct (84/84, 399 ms average, 834 ms maximum).\n- Provider billing reconciliation used a 200-code-point input (300 UTF-16 units, 700 UTF-8 bytes). xAI Usage Explorer increased by exactly 200 input characters and one request (2,280→2,480; 138→139), confirming the implementation’s code-point metering.\n- Local Gen E2E passed both public routes with canonical model, voice, format, and usage headers.\n- After merging current `main`: 94 provider tests, 69 catalog/permission tests, 83 Enter billing tests, typecheck, and Biome passed.\n\nAddresses #11027",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive found a voice",
+    "blurb": "Grok TTS has joined the audio garden. Pick from 28 xAI voices and turn text into MP3, WAV, or PCM without teaching a bee to operate a microphone.",
+    "summary": "Added paid-only `grok-tts` to `/audio/{text}` and `POST /v1/audio/speech`, routing directly to xAI TTS with 28 built-in voices, MP3/WAV/PCM output, and Unicode code-point billing at xAI’s $15 per million characters.",
+    "impact": "Developers can now use `grok-tts` with the existing `alloy` default mapped to Eve, choose any of 28 xAI voices, and receive consistent usage metering across both public audio endpoints.",
+    "keywords": [
+      "grok-tts",
+      "xai",
+      "text-to-speech",
+      "audio",
+      "voices",
+      "api",
+      "billing"
+    ],
+    "visual_concept": "Polli is a cozy studio engineer wearing oversized headphones, tending a retro terminal that grows 28 tiny voice-flower buds from a lime-green soundwave garden. A friendly CRT monitor robot displays warm waveform bars and labeled MP3, WAV, and PCM cassette-like tiles, representing the new direct xAI TTS formats and voice catalog.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing oversized studio headphones and adjusting a tiny microphone beside a retro terminal; 28 small voice-flower buds bloom from a prominent lime green (#ecf874) soundwave garden while a cheerful CRT monitor robot shows MP3, WAV, and PCM tiles. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"GROK TTS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13569.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing oversized studio headphones and adjusting a tiny microphone beside a retro terminal; 28 small voice-flower buds bloom from a prominent lime green (#ecf874) soundwave garden while a cheerful CRT monitor robot shows MP3, WAV, and PCM tiles. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"GROK TTS\"."
+  },
+  "generated_at": "2026-08-19T15:16:19.068554+00:00"
+}

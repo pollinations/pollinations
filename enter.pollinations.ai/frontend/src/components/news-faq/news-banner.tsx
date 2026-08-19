@@ -3,7 +3,6 @@ import {
     CheckIcon,
     Chip,
     cn,
-    InlineLink,
     Surface,
     WarningIcon,
 } from "@pollinations/ui";
@@ -13,8 +12,6 @@ const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
-const MODEL_SLUGS_SHEET_URL =
-    "https://docs.google.com/spreadsheets/d/1_niUVsqtSA_b3Ii1Cxz_MGcYDUqgum4gnYae78RAhwQ/edit?usp=sharing";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -277,14 +274,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 </li>
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <span className="flex flex-col items-start gap-0.5">
-                        <InlineLink href={MODEL_SLUGS_SHEET_URL}>
-                            View the complete slug list
-                        </InlineLink>
-                        <span>
-                            Update your implementation before the transition.
-                        </span>
-                    </span>
+                    <span>Complete slug list coming soon.</span>
                 </li>
             </ul>
         </div>

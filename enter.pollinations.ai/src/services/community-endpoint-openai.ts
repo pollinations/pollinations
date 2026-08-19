@@ -1,11 +1,14 @@
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointImagePricing,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communityTranscriptionSeconds,
+    decodeCommunityBase64,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -16,6 +19,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -206,6 +210,79 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+    };
+}
+
+// Transcription endpoints are billed against prompt audio seconds, mirroring
+// the first-party whisper/scribe models. The probe uploads a real audio file
+// and validates the OpenAI transcription response shape.
+export async function testCommunityTranscriptionEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const sampleBytes = decodeCommunityBase64(SAMPLE_AUDIO_BASE64);
+    if (!sampleBytes) {
+        throw new Error("Failed to decode sample audio");
+    }
+    const formData = new FormData();
+    formData.append("model", model);
+    // Same format the request path pins, so what the probe proves is what
+    // callers actually get. See callCommunityTranscriptionEndpoint.
+    formData.append("response_format", "verbose_json");
+    formData.append(
+        "file",
+        new Blob([new Uint8Array(sampleBytes)], { type: "audio/wav" }),
+        "sample.wav",
+    );
+
+    let body: unknown;
+    try {
+        body = await fetchJson(communityAudioTranscriptionsUrl(baseUrl), {
+            method: "POST",
+            headers: authorizationHeaders(bearerToken),
+            body: formData,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // A plain-json-only endpoint rejects verbose_json outright. Name the
+        // requirement rather than leaving the owner staring at a bare 400.
+        throw new Error(
+            message.includes("responded 400")
+                ? `${message}. Pollinations requests response_format=verbose_json because that is where the audio duration transcription is billed on is reported; models that only support plain json cannot be registered yet.`
+                : message,
+        );
+    }
+
+    // The sample is real speech, so a working endpoint returns something. We
+    // never check what — the wording varies by model and language.
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("text" in body) ||
+        typeof body.text !== "string" ||
+        body.text.trim().length === 0
+    ) {
+        throw new Error("Endpoint did not return OpenAI transcription text");
+    }
+
+    // The duration is what the endpoint is billed on, so one that cannot report
+    // it must not register — otherwise every request through it would be
+    // unbillable and the owner would earn nothing.
+    const promptAudioSeconds = communityTranscriptionSeconds(body);
+    if (promptAudioSeconds === null) {
+        throw new Error(
+            "Endpoint did not report the audio duration (expected verbose_json's top-level duration, or usage.seconds), which is required to bill transcription",
+        );
+    }
+
+    return {
+        // The pricing UI marks the prompt-audio row against a usage key named
+        // in that field's rawUsagePaths, and the duration is the only thing
+        // billed here — so report it directly rather than echoing an upstream
+        // usage object that may not carry it.
+        usage: { duration: promptAudioSeconds },
+        billableUsage: { promptAudioSeconds },
     };
 }
 

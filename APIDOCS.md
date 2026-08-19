@@ -55,12 +55,13 @@ curl https://gen.pollinations.ai/v1/models \
 
 ## 🔐 Authentication
 
-Pollinations recognises two key types. Use the right one for the surface you're building.
+Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
 | Secret key | `sk_` | Server-only (env var, secrets manager) | Full account access. Can create child keys, list usage, run any model the account allows. **Never ship to a browser, mobile app, or repo.** |
-| Publishable key | `pk_` | Browsers, mobile apps, public clients | Calls models on behalf of the developer who created the key. Restricted to the permissions and budget set at creation. Safe to embed. |
+| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user `sk_`. Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
+| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
 
 Both forms accept the same transports:
 
@@ -233,7 +234,7 @@ Each upload gets its own unique id — re-uploading the same bytes yields a new 
 
 ## 💡 Tips
 
-- **Use `pk_` keys in browsers.** Anywhere a `sk_` key could be read off the wire, use a publishable key with a tight budget and an allow-list of models.
+- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
 - **One key per app.** Child keys scope budget and permissions independently — easier to audit, easier to revoke without touching production.
 - **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` from us means upstream provider — usually transient.
@@ -745,7 +746,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 | `model` | `string` | The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`. · default: `"whisper-large-v3"` |
 | `language` | `string` | Language of the audio in ISO-639-1 format (e.g. `en`, `fr`). Improves accuracy. |
 | `prompt` | `string` | Optional text to guide the model's style or continue a previous segment. |
-| `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Use `diarized_json` for OpenAI-compatible speaker segments on diarization-capable models. · default: `"json"` |
+| `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts. · default: `"json"` |
 | `temperature` | `number` | Sampling temperature between 0 and 1. Lower is more deterministic. |
 | `speakers_expected` | `integer` | Optional provider hint for the number of speakers. Only honored with `response_format=diarized_json`. · min: `1` |
 

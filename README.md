@@ -21,6 +21,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Kokoro Roto — Anime Art Generator](https://geneberna.github.io/kokoro-roto-anime) | A free, no-signup web app to generate anime-style art with AI. Type an idea, pick a mood (dramatic, sad, epic, portrait), choose a format, and instantly create anime characters and scenes. Powered by | [@geneberna](https://github.com/geneberna) |
+| [🖼️ AI Art & Image Generator](https://ai-image-generator-w-m5n8.bolt.host) | AI Art & Image Generator utilizes the powerful Pollinations.ai API to transform your text prompts into high-quality digital art instantly. It’s designed to provide a fast and creative collaborative ex | [@himasdiary1224-cyber](https://github.com/himasdiary1224-cyber) |
 | [📚 Intelligent Diagnostic Assessment](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) | # 📊 Intelligent Diagnostic Assessment A revolutionary AI-powered tool to transform diagnostic educational assessment [![Powered by Pollinations.ai](https://img.shields.io/badge/Powered%20by-Pollinati | [@Juanrivera126](https://github.com/Juanrivera126) |
 | [🖼️ DiddyDiffusion](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html) | DiddyDiffusion is a tiny browser-based image playground powered by Pollinations. Visitors connect their own Pollinations account through BYOP, authorize a small short-lived budget, and generate images | [@umm-dev](https://github.com/umm-dev) |
 | [💬 Meadows](https://meadowy.roboticrobot.xyz) | Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a | [@pegalink](https://github.com/pegalink) |
@@ -29,8 +31,6 @@
 | [💼 Indish Marketer's Voice Agent](https://voice.prototools.in) | An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads | [@indishmarketer](https://github.com/indishmarketer) |
 | [🛠️ FSChart](https://fastnow.github.io/fschart_pollinations) | FSChart converts natural language into 3D models and 2D function plots in the browser. Enter “a rotating red cube” or “plot y=sin(x)” to call Pollinations and render. | [@fastnow](https://github.com/fastnow) |
 | [💼 Jornal Bitcoin](https://jornalbitcoin.com.br) | A real-time Brazilian Portuguese cryptocurrency news aggregator that automatically curates, translates, and summarizes articles using Pollinations text models (Gemma & OpenAI) and generates custom cov | [@j0n777](https://github.com/j0n777) |
-| [🖼️ Article Illustrator](https://article.240801.xyz) | An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai/). https://github.com/pollinations/pollinations/issues/1 | [@zzerding](https://github.com/zzerding) |
-| [🖼️ HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) | Create comic strips quickly with HQ IA, an AI-powered comic book creator. | [@wljrodrigues](https://github.com/wljrodrigues) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-18** – **🎵 Community models can transcribe now** Register and call community speech-to-text models through the OpenAI-compatible `/v1/audio/transcriptions` endpoint, with audio usage returned per request. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-18** – **🎨 DiddyDiffusion** A lightweight browser image playground that connects to your Pollinations account and generates with a short-lived BYOP budget. [Try it](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html) <!-- app -->
+- **2026-08-18** – **💡 Intelligent Diagnostic Assessment** An AI-powered starting-point assessment for learners and educators: find the gaps before the lesson finds you. [Try it](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) <!-- app -->
+- **2026-08-18** – **🎨 Kokoro Roto — Anime Art Generator** Generate anime characters and scenes from a prompt, mood preset, and format choice—no signup ceremony required. [Try it](https://geneberna.github.io/kokoro-roto-anime) <!-- app -->
 - **2026-08-17** – **✨ The model garden got labels** The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)
 - **2026-08-17** – **🎨 Image models get a CLI key** Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support.
 - **2026-08-17** – **💡 Every hive gets a probe** Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now.
 - **2026-08-17** – **🎯 Quest bars grow leaves** Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age.
 - **2026-08-17** – **🌟 A meadow for every model** Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz) <!-- app -->
 - **2026-08-16** – **🎨 Image edits keep their shape** Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-16** – **🤖 Agents show their work** Managed-agent responses now expose tool names, parameters, outputs, and failures in streaming and non-streaming Open WebUI-compatible blocks. Debugging the robot is marginally less mystical.
-- **2026-08-16** – **🎯 Bonus Pollen rewards** Campaign rewards can now be claimed through Quests and appear under Bonus rewards, while contributor grants land through the same quest flow.
-- **2026-08-16** – **📱 NeuralCanvas on Android** A native Kotlin/Jetpack Compose app turns text prompts into images with the Pollinations image API. [Try it](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) <!-- app -->
-- **2026-08-14** – **🎯 Starred models stay starred** The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature.
 ---
 
 ## 🌱 Introduction

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13466,
+  "title": "docs(mcp): document hosted worker deploy pipeline",
+  "author": "karanray06",
+  "url": "https://github.com/pollinations/pollinations/pull/13466",
+  "merged_at": "2026-08-19T18:40:16Z",
+  "labels": [],
+  "pr_body_excerpt": "Record how the MCP Cloudflare Worker at mcp.pollinations.ai deploys:\r\n\r\n- deploy-applications.yml triggers on production branch pushes\r\n- discover.cjs matches apps/mcp via deploy.json watch globs\r\n- Path filters cover both apps/** and packages/mcp/\r\n- Production gating via guard-production-source.yml\r\n- No staging MCP deploy (thin proxy; staging at gateway level)\r\n\r\nFixes #13408",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The worker's flight plan",
+    "blurb": "The MCP worker deployment path is now written down, including the bits that decide when it gets to leave the hive.",
+    "summary": "Documented the mcp.pollinations.ai Cloudflare Worker production deploy pipeline: deploy-applications.yml detects apps/mcp through deploy.json watch globs, watches apps/** and packages/mcp/, and passes production-source gating.",
+    "impact": "Contributors can now trace exactly how MCP changes reach production and why the thin proxy has no separate staging deployment.",
+    "keywords": [
+      "mcp",
+      "documentation",
+      "cloudflare-worker",
+      "deployment",
+      "ci",
+      "production"
+    ],
+    "visual_concept": "Polli acts as a careful release engineer in a cozy garden workshop, following a glowing map from an MCP code-plant to a small Cloudflare-style worker tower. A CRT monitor robot holds a deploy checklist while paths marked apps/mcp and packages/mcp merge at a production gate; flowers and vines make the pipeline feel documented rather than mysterious.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny engineer cap, guiding a glowing lime green (#ecf874) deployment path from a code-plant labeled \"MCP\" through a small production gate to a cheerful worker tower; a chunky CRT monitor robot holds a checklist beside her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the terminal-filled garden shed."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13466.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny engineer cap, guiding a glowing lime green (#ecf874) deployment path from a code-plant labeled \"MCP\" through a small production gate to a cheerful worker tower; a chunky CRT monitor robot holds a checklist beside her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the terminal-filled garden shed."
+  },
+  "generated_at": "2026-08-19T18:42:03.366365+00:00"
+}

@@ -36,7 +36,9 @@ export const notification = sqliteTable(
         link: text("link"),
         readAt: integer("read_at", { mode: "timestamp" }),
         createdAt: integer("created_at", { mode: "timestamp" })
-            .default(sql`(cast((julianday('now') - 2440587.5)*86400000 as integer))`)
+            .default(
+                sql`(cast((julianday('now') - 2440587.5)*86400000 as integer))`,
+            )
             .notNull(),
     },
     (table) => [

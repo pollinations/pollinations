@@ -142,7 +142,8 @@ export const notificationsRoutes = new Hono<Env>()
                     payload: row.payload ?? null,
                     link: row.link,
                     readAt: toIso(row.readAt),
-                    createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
+                    createdAt:
+                        toIso(row.createdAt) ?? new Date(0).toISOString(),
                 })),
                 unreadCount: unreadRows.length,
                 nextCursor: hasMore && last ? toIso(last.createdAt) : null,
@@ -354,12 +355,19 @@ export const notificationsAdminRoutes = new Hono<Env>().post(
         const parsed = createNotificationBodySchema.safeParse(body);
         if (!parsed.success) {
             throw new HTTPException(400, {
-                message: parsed.error.issues[0]?.message ?? "Invalid request body",
+                message:
+                    parsed.error.issues[0]?.message ?? "Invalid request body",
             });
         }
 
-        const { userIds, type, title, body: notificationBody, payload, link } =
-            parsed.data;
+        const {
+            userIds,
+            type,
+            title,
+            body: notificationBody,
+            payload,
+            link,
+        } = parsed.data;
 
         const db = drizzle(c.env.DB);
         const result = await notifyUsers(

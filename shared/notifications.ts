@@ -48,7 +48,9 @@ function assertValidNotification(input: NotifyUserInput): void {
         throw new Error("notifyUser: userId is required");
     }
     if (!NOTIFICATION_TYPES.includes(input.type)) {
-        throw new Error(`notifyUser: unknown notification type "${input.type}"`);
+        throw new Error(
+            `notifyUser: unknown notification type "${input.type}"`,
+        );
     }
     if (!input.title || input.title.length > MAX_NOTIFICATION_TITLE_LENGTH) {
         throw new Error(

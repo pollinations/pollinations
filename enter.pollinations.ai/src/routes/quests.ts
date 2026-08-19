@@ -17,7 +17,6 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
-import { questCouponRoutes } from "./quest-coupons.ts";
 
 // Bumped to v26: established GitHub, app_paid_request, and app_users_10 are
 // available; Early Adopter and app_pollen_10 are visible as coming soon.
@@ -37,6 +36,12 @@ const questCatalogItemSchema = z.object({
     state: z.enum(["available", "completed", "coming_soon"]),
     rewardAmount: z.number(),
     balanceBucket: z.enum(["tier", "pack"]),
+    goal: z
+        .object({
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        })
+        .optional(),
     url: z.string().nullable(),
 });
 
@@ -63,6 +68,14 @@ const questCheckResponseSchema = z.object({
     success: z.boolean(),
     recorded: z.number(),
     rewardIds: z.array(z.string()),
+    progress: z.array(
+        z.object({
+            questId: z.string(),
+            current: z.number(),
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        }),
+    ),
 });
 
 const claimRewardResponseSchema = z.object({
@@ -285,8 +298,7 @@ export const questsRoutes = new Hono<Env>()
                 },
             });
         },
-    )
-    .route("/coupons", questCouponRoutes);
+    );
 
 async function readCached(
     kv: KVNamespace,

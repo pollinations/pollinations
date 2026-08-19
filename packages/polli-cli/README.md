@@ -94,7 +94,7 @@ polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli quests mine --completed # completed and earned quests
 polli agents list            # managed prompt agents
-polli my-models list         # invite-only community text models
+polli my-models list         # invite-only community text and image models
 ```
 
 Manage agents with API-shaped JSON config files:

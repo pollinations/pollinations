@@ -8,7 +8,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    Input,
     Markdown,
     RocketIcon,
     SearchIcon,
@@ -31,9 +30,13 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
-import type { QuestCatalogResponse } from "../../backend-types.ts";
+import type {
+    QuestCatalogResponse,
+    QuestCheckResult,
+} from "../../backend-types.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
+type QuestProgress = QuestCheckResult["progress"][number];
 
 type QuestReward = {
     id: string;
@@ -51,6 +54,7 @@ type QuestOverviewProps = Record<string, never>;
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
+    progress: QuestProgress[];
     loading: boolean;
     checking: boolean;
     error: string | null;
@@ -64,6 +68,7 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
+    progress: [],
     loading: true,
     checking: false,
     error: null,
@@ -223,6 +228,7 @@ export type QuestCard = {
     balanceBucket?: string | null;
     status: QuestCardStatus;
     earnedAmount?: number | null;
+    progress?: QuestProgress;
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
@@ -393,6 +399,39 @@ function QuestDescription({ children }: { children: string }) {
     );
 }
 
+function QuestProgressBar({ progress }: { progress: QuestProgress }) {
+    const percentage = Math.min(
+        100,
+        Math.max(0, (progress.current / progress.target) * 100),
+    );
+    const formatValue = (value: number) =>
+        progress.unit === "pollen"
+            ? formatPollen(value)
+            : value.toLocaleString();
+
+    return (
+        <div className="mt-1 flex max-w-sm items-center gap-2">
+            <div
+                role="progressbar"
+                aria-label={`${progress.questId} progress`}
+                aria-valuemin={0}
+                aria-valuemax={progress.target}
+                aria-valuenow={Math.min(progress.current, progress.target)}
+                className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
+            >
+                <div
+                    className="h-full rounded-full bg-theme-text-soft"
+                    style={{ width: `${percentage}%` }}
+                />
+            </div>
+            <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
+                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
+                {progress.unit}
+            </span>
+        </div>
+    );
+}
+
 // Leading marker for a quest row, by lifecycle stage:
 //   open      → ambient theme tile + section icon (vanilla amber — the row's
 //                bucket lives on the reward chip; the marker is just "do this")
@@ -451,6 +490,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    const progress =
+        !card.comingSoon && card.progress ? (
+            <QuestProgressBar progress={card.progress} />
+        ) : null;
     const rewardAmount = earned
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
@@ -552,6 +595,7 @@ export function QuestRow({
                             {issueLink}
                         </div>
                     )}
+                    {progress}
                 </div>
                 <div className="flex items-center gap-2.5">
                     {claimButton}
@@ -586,6 +630,7 @@ export function QuestRow({
                             {issueLink}
                         </div>
                     )}
+                    {progress}
                 </div>
                 {claimButton}
                 <div className="ml-auto flex shrink-0 items-center gap-2.5">
@@ -598,9 +643,6 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    const [couponCode, setCouponCode] = useState("");
-    const [couponMessage, setCouponMessage] = useState<string | null>(null);
-    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -621,6 +663,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 if (cancelled) return;
                 setState({
                     ...questData,
+                    progress: [],
                     loading: false,
                     // Flag the auto-check as in-flight so the indicator shows
                     // straight after the initial render, with no idle flash.
@@ -657,11 +700,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 const response = await apiClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
+                    const checkResult =
+                        (await response.json()) as QuestCheckResult;
                     const refreshed = await loadQuestData();
                     if (cancelled) return;
                     setState((current) => ({
                         ...current,
                         ...refreshed,
+                        progress: checkResult.progress,
                         checking: false,
                         loading: false,
                         error: null,
@@ -717,51 +763,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
     }
 
-    async function handleRedeemCoupon(): Promise<void> {
-        const code = couponCode.trim();
-        if (!code || redeemingCoupon) return;
-
-        setRedeemingCoupon(true);
-        setCouponMessage(null);
-        try {
-            const response = await apiClient.quests.coupons.redeem.$post({
-                json: { code },
-            });
-            if (!response.ok) {
-                const message =
-                    response.status === 404
-                        ? "Quest code not found."
-                        : response.status === 409
-                          ? "You already redeemed this quest code."
-                          : "Could not redeem this quest code.";
-                throw new Error(message);
-            }
-
-            const result = (await response.json()) as {
-                pollenAmount: number;
-            };
-            const questData = await loadQuestData();
-            setState((current) => ({
-                ...current,
-                ...questData,
-                checking: false,
-                loading: false,
-            }));
-            setCouponCode("");
-            setCouponMessage(
-                `${formatRewardAmount(result.pollenAmount)} Quest Pollen added to your wallet.`,
-            );
-        } catch (error) {
-            setCouponMessage(
-                error instanceof Error
-                    ? error.message
-                    : "Could not redeem this quest code.",
-            );
-        } finally {
-            setRedeemingCoupon(false);
-        }
-    }
-
     // A reward's questId IS the catalog id it earned (one reward == one quest),
     // so the earned-set / reward lookup key directly off questId.
     const rewardedCatalogIds = useMemo(
@@ -785,6 +786,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
     // only tell us "did YOU earn it" + whether it has been claimed.
     const sections = useMemo(() => {
+        const progressByQuestId = new Map(
+            state.progress.map((progress) => [progress.questId, progress]),
+        );
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
             grow: [],
@@ -823,6 +827,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
                 earnedAmount: reward?.pollenAmount ?? undefined,
+                progress:
+                    reward && quest.goal
+                        ? {
+                              questId: quest.id,
+                              current: quest.goal.target,
+                              ...quest.goal,
+                          }
+                        : progressByQuestId.get(quest.id),
                 comingSoon,
             });
         }
@@ -839,7 +851,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             });
         }
         return byCat;
-    }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
+    }, [
+        state.catalog,
+        state.progress,
+        rewardedCatalogIds,
+        rewardByKey,
+        previewAll,
+    ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
     // their own claim control. This is deliberately derived from the ledger —
@@ -1046,45 +1064,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 </span>
                             </div>
                         )}
-                        <div className="mt-4 border-t border-divider pt-4">
-                            <p className="mb-2 text-sm font-semibold text-theme-text-soft">
-                                Have a quest code?
-                            </p>
-                            <form
-                                className="flex max-w-md gap-2"
-                                onSubmit={(event) => {
-                                    event.preventDefault();
-                                    void handleRedeemCoupon();
-                                }}
-                            >
-                                <Input
-                                    aria-label="Quest code"
-                                    value={couponCode}
-                                    onChange={(event) => {
-                                        setCouponCode(event.target.value);
-                                        setCouponMessage(null);
-                                    }}
-                                    placeholder="Enter code"
-                                    autoCapitalize="characters"
-                                    className="flex-1"
-                                    disabled={redeemingCoupon}
-                                />
-                                <Button
-                                    type="submit"
-                                    disabled={
-                                        redeemingCoupon ||
-                                        couponCode.trim().length === 0
-                                    }
-                                >
-                                    {redeemingCoupon ? "Redeeming…" : "Redeem"}
-                                </Button>
-                            </form>
-                            {couponMessage && (
-                                <p className="mt-2 text-[13px] text-theme-text-muted">
-                                    {couponMessage}
-                                </p>
-                            )}
-                        </div>
                     </>
                 )}
                 {/* Logged-out summary: the same two-card pair, but the numbers are

@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Kokoro Roto — Anime Art Generator](https://geneberna.github.io/kokoro-roto-anime) | A free, no-signup web app to generate anime-style art with AI. Type an idea, pick a mood (dramatic, sad, epic, portrait), choose a format, and instantly create anime characters and scenes. Powered by | [@geneberna](https://github.com/geneberna) |
+| [🖼️ AI Art & Image Generator](https://ai-image-generator-w-m5n8.bolt.host) | AI Art & Image Generator utilizes the powerful Pollinations.ai API to transform your text prompts into high-quality digital art instantly. It’s designed to provide a fast and creative collaborative ex | [@himasdiary1224-cyber](https://github.com/himasdiary1224-cyber) |
+| [📚 Intelligent Diagnostic Assessment](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) | # 📊 Intelligent Diagnostic Assessment A revolutionary AI-powered tool to transform diagnostic educational assessment [![Powered by Pollinations.ai](https://img.shields.io/badge/Powered%20by-Pollinati | [@Juanrivera126](https://github.com/Juanrivera126) |
+| [🖼️ DiddyDiffusion](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html) | DiddyDiffusion is a tiny browser-based image playground powered by Pollinations. Visitors connect their own Pollinations account through BYOP, authorize a small short-lived budget, and generate images | [@umm-dev](https://github.com/umm-dev) |
+| [💬 Meadows](https://meadowy.roboticrobot.xyz) | Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a | [@pegalink](https://github.com/pegalink) |
 | [🖼️ NeuralCanvas](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) | NeuralCanvas is a native Android app (Kotlin + Jetpack Compose) that turns a text prompt into an AI-generated image, built entirely on the Pollinations image API. How it uses Pollinations: every gener | [@greysonmiller67-lang](https://github.com/greysonmiller67-lang) |
 | [💼 Vyrsa Academy](https://vyrsa.xyz) | [Vyrsa.xyz](https://vyrsa.xyz/) is a premium digital transformation academy designed to help you break free from imposter syndrome and build unshakable confidence. Through a proven "Grow, Reflect, Tra | [@ariaerendev](https://github.com/ariaerendev) |
 | [💼 Indish Marketer's Voice Agent](https://voice.prototools.in) | An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads | [@indishmarketer](https://github.com/indishmarketer) |
 | [🛠️ FSChart](https://fastnow.github.io/fschart_pollinations) | FSChart converts natural language into 3D models and 2D function plots in the browser. Enter “a rotating red cube” or “plot y=sin(x)” to call Pollinations and render. | [@fastnow](https://github.com/fastnow) |
 | [💼 Jornal Bitcoin](https://jornalbitcoin.com.br) | A real-time Brazilian Portuguese cryptocurrency news aggregator that automatically curates, translates, and summarizes articles using Pollinations text models (Gemma & OpenAI) and generates custom cov | [@j0n777](https://github.com/j0n777) |
-| [🖼️ Article Illustrator](https://article.240801.xyz) | An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai/). https://github.com/pollinations/pollinations/issues/1 | [@zzerding](https://github.com/zzerding) |
-| [🖼️ HQ IA](https://editoraitacaiunas.com.br/app/quadrinhos-ia) | Create comic strips quickly with HQ IA, an AI-powered comic book creator. | [@wljrodrigues](https://github.com/wljrodrigues) |
-| [🖼️ IMADreamer](https://fastnow.github.io/imadreamer) | IMADreamer is a free AI image generation tool built on the Pollinations API. | [@fastnow](https://github.com/fastnow) |
-| [📚 FlashcardGeneratorAI](https://flashcardgeneratorai-pollinationsai-classic.pages.dev) | With FlashcardGeneratorAI you can use Pollinations AI to generate digital interactive flashcards to enhance memorization and learning (and use card matching games to reinforce concepts by repetition) | [@rpbmultiongh](https://github.com/rpbmultiongh) |
-| [🖼️ INKRUSH](https://inkrush-comic-studio.onrender.com) | Free browser-based AI comic book maker powered by Pollinations.AI. Create multi-panel comic stories with custom speech bubbles, character lock, retro comic styles, and export as PDF books.📖 | [@takiff507](https://github.com/takiff507) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-08-14** – **🎯 Starred models stay starred** The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature.
-- **2026-08-14** – **🎵 Scribe joins the live hive** Plug ElevenLabs Scribe live transcription into OpenAI Realtime-compatible clients via `/realtime` or `/v1/realtime`, with partial transcripts, VAD, and language controls.
-- **2026-08-14** – **🎨 Grok gets a new canvas** `x-ai/grok-imagine-image-2.0` can generate and edit 1K or 2K images with up to three reference images through the usual image routes.
-- **2026-08-14** – **🎬 Two new seeds, faster films** Generate video with `seedance-2.0-mini` for 4–10 second 480p/720p clips, `seedance-2.0-fast` for quick shots, or `minimax-h3` for five-second videos with synchronized audio.
-- **2026-08-14** – **🤖 A glimmer and a very large Qwen arrive** `muse-glimmer` brings vision, tools, reasoning, and 131K context; `qwen3.8-2.4t-a95b` adds a 262K-context option for long, tool-using work.
-- **2026-08-14** – **🔗 Speech takes the short route** Every speech model, including multi-voice `eleven-dialogue`, now works through the compact `/audio/{text}` endpoint as well as `/v1/audio/speech`.
-- **2026-08-14** – **✨ Words become wireframes** FSChart turns plain-language prompts into browser-based 3D models and function plots. [Try it](https://fastnow.github.io/fschart_pollinations) <!-- app -->
-- **2026-08-13** – **🎨 Qwen Image 3** Generate 1K/2K images or edit with up to three reference images using paid `qwen-image-3`. More eyes, fewer tabs. [Image API](https://gen.pollinations.ai/image/{prompt})
-- **2026-08-13** – **🚀 Seedance 2.5 video** Generate four-second 480p or 720p clips with optional audio and first/last-frame guidance through `seedance-2.5`. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-13** – **🎵 Live transcription** `scribe-realtime` streams partial and final transcripts over WebSockets, with VAD, timestamps, language controls, and seven audio formats. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-18** – **🎵 Community models can transcribe now** Register and call community speech-to-text models through the OpenAI-compatible `/v1/audio/transcriptions` endpoint, with audio usage returned per request. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-18** – **🎨 DiddyDiffusion** A lightweight browser image playground that connects to your Pollinations account and generates with a short-lived BYOP budget. [Try it](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html) <!-- app -->
+- **2026-08-18** – **💡 Intelligent Diagnostic Assessment** An AI-powered starting-point assessment for learners and educators: find the gaps before the lesson finds you. [Try it](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) <!-- app -->
+- **2026-08-18** – **🎨 Kokoro Roto — Anime Art Generator** Generate anime characters and scenes from a prompt, mood preset, and format choice—no signup ceremony required. [Try it](https://geneberna.github.io/kokoro-roto-anime) <!-- app -->
+- **2026-08-17** – **✨ The model garden got labels** The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)
+- **2026-08-17** – **🎨 Image models get a CLI key** Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support.
+- **2026-08-17** – **💡 Every hive gets a probe** Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now.
+- **2026-08-17** – **🎯 Quest bars grow leaves** Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age.
+- **2026-08-17** – **🌟 A meadow for every model** Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz) <!-- app -->
+- **2026-08-16** – **🎨 Image edits keep their shape** Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

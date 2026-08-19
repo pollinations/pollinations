@@ -30,6 +30,11 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
  */
 export type QuestScope = "perUser" | "once";
 
+export type QuestGoal = {
+    target: number;
+    unit: "pollen" | "users" | "days";
+};
+
 /**
  * Quest board state. A BOARD flag, not a per-user status:
  *   - "available"   = open to everyone.
@@ -48,6 +53,8 @@ export type QuestDefinition = {
     scope: QuestScope;
     rewardAmount: number;
     balanceBucket: Bucket;
+    /** Optional measurable target for quests with meaningful partial progress. */
+    goal?: QuestGoal;
     /**
      * Optional static link for the quest (e.g. the GitHub quest board, the app
      * directory). Snapshotted onto each reward by toReward and shown on the

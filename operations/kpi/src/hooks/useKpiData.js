@@ -18,7 +18,6 @@ const SOURCES = [
         key: "health",
         load: () => api.weekly("health", WEEKS),
     },
-    { label: "Churn", key: "churn", load: () => api.weekly("churn", WEEKS) },
     { label: "WAU", key: "wau", load: () => api.weekly("wau", WEEKS) },
     {
         label: "Usage stats",
@@ -71,6 +70,7 @@ export function useKpiData() {
         active: SOURCES[0].label,
         missing: [],
         weeklyData: [],
+        allWeeks: [],
         retentionData: [],
         github: { stars: 0, forks: 0 },
     });
@@ -129,11 +129,6 @@ export function useKpiData() {
                 byopUserPct: row.byop_user_pct,
                 byopPollenPct: row.byop_pollen_pct,
             }));
-            mergeInto(weekMap, raw.churn, (row) => ({
-                churnedUsers: row.churned_users,
-                churnRate: row.churn_rate,
-                users4wAgo: row.users_4w_ago,
-            }));
             mergeInto(weekMap, raw.appSubmissions, (row) => ({
                 appSubmissions: row.submitted,
             }));
@@ -143,12 +138,14 @@ export function useKpiData() {
                 if (existing) existing.activations = row.activations;
             }
 
-            // Pipes disagree on how far back they reach — registrations run to
-            // Oct 2025, the weekly pipes only WEEKS back. Trim to the window
-            // every source can fill, plus the current partial week.
-            const weeklyData = [...weekMap.values()]
-                .sort((a, b) => a.week.localeCompare(b.week))
-                .slice(-(WEEKS + 1));
+            // Pipes disagree on how far back they reach — registrations and
+            // activations run to Oct 2025, the Tinybird pipes only cover the
+            // last WEEKS. The table needs the window every source can fill;
+            // the acquisition chart keeps the whole history.
+            const allWeeks = [...weekMap.values()].sort((a, b) =>
+                a.week.localeCompare(b.week),
+            );
+            const weeklyData = allWeeks.slice(-(WEEKS + 1));
 
             if (cancelled) return;
             setState((prev) => ({
@@ -156,6 +153,7 @@ export function useKpiData() {
                 loading: false,
                 missing,
                 weeklyData,
+                allWeeks,
                 retentionData: (raw.retention ?? []).map((row) => ({
                     cohort: row.cohort,
                     users: row.cohort_size,
@@ -182,6 +180,9 @@ export function useKpiData() {
     return {
         ...state,
         fullWeeks,
+        historyWeeks: state.allWeeks.filter(
+            (week) => week.week !== partialWeekStart,
+        ),
         currentWeek: fullWeeks[fullWeeks.length - 1] || null,
         previousWeek: fullWeeks[fullWeeks.length - 2] || null,
     };

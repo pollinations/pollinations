@@ -144,20 +144,6 @@ const KPIS = [
             "Share of Pollen consumed by apps that bring their own Pollen.",
     },
     {
-        key: "churnRate",
-        name: "Churn rate",
-        category: "Retention",
-        format: "percent",
-        tooltip:
-            "Share of users active 4 weeks ago with no API use in the last 2 weeks. Lower is better.",
-    },
-    {
-        key: "churnedUsers",
-        name: "Churned users",
-        category: "Retention",
-        tooltip: "Users active 4 weeks ago but inactive in the last 2 weeks.",
-    },
-    {
         key: "appSubmissions",
         name: "App submissions",
         category: "Community",

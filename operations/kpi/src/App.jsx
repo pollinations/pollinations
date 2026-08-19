@@ -98,6 +98,7 @@ export default function App() {
         missing,
         weeklyData,
         fullWeeks,
+        historyWeeks,
         retentionData,
         github,
         currentWeek,
@@ -244,7 +245,7 @@ export default function App() {
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart
                         title="Acquisition & activation"
-                        data={fullWeeks}
+                        data={historyWeeks}
                         series={[
                             { key: "registrations", label: "Signups" },
                             { key: "activations", label: "Activated (D7)" },

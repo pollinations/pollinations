@@ -11,7 +11,7 @@ Worker; no token reaches the browser.
 
 | Source   | Metrics                                            |
 | -------- | -------------------------------------------------- |
-| Tinybird | WAU, usage, retention, churn, segments, health      |
+| Tinybird | WAU, usage, retention, segments, health      |
 | D1       | Registrations and D7 activations (via Tinybird)     |
 | Stripe   | Pack purchases and revenue (via Tinybird)           |
 | GitHub   | Stars, app submissions                              |

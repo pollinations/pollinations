@@ -300,52 +300,6 @@ app.get("/api/kpi/revenue", async (c) => {
     return c.json({ data: result });
 });
 
-// Churn metrics derived from retention data
-// Churn = 100 - w4_retention (% of users from 4 weeks ago who didn't return)
-app.get("/api/kpi/churn", async (c) => {
-    const weeksBack = 8; // retention data has limited weeks
-    const result = await fetchTinybird(c.env, "weekly_retention", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) {
-        if (result.status === 408) {
-            console.warn(
-                `[Tinybird] Soft-failing churn timeout: ${result.error}`,
-            );
-            return c.json({ data: [], warning: result.error });
-        }
-        return c.json({ error: result.error, data: [] }, 500);
-    }
-    const data = { data: result.data } as {
-        data: Array<{
-            cohort: string;
-            cohort_size: number;
-            w4_retained: number;
-            w4_retention: number;
-        }>;
-    };
-
-    // Transform retention data to churn data
-    // Each cohort's w4_retention tells us what % returned after 4 weeks
-    // Churn = 100 - w4_retention
-    // Filter out cohorts that haven't had 4 weeks to mature (w4_retained = 0)
-    const churnData = data.data
-        .filter(
-            (row) =>
-                row.w4_retention !== null &&
-                row.w4_retention !== undefined &&
-                row.w4_retained > 0, // Only include cohorts with actual w4 data
-        )
-        .map((row) => ({
-            week: row.cohort,
-            users_4w_ago: row.cohort_size,
-            churned_users: row.cohort_size - row.w4_retained,
-            churn_rate: Math.round((100 - row.w4_retention) * 10) / 10,
-        }));
-
-    return c.json({ data: churnData });
-});
-
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/user-segments", async (c) => {
     const result = await fetchTinybirdByWeek(

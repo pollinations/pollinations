@@ -1,0 +1,34 @@
+{
+  "pr_number": 13418,
+  "title": "docs: replace dead external demo and skill links with repo paths",
+  "author": "yzxcj797",
+  "url": "https://github.com/pollinations/pollinations/pull/13418",
+  "merged_at": "2026-08-19T18:50:43Z",
+  "labels": [],
+  "pr_body_excerpt": "Two links point to removed external resources:\n\n1. `apps/ai-dungeon-master/README.md` — the live demo at `codevector-2003.github.io/pollinations/` returns 404 (GitHub Pages deployment removed). Updated to link to the app's source directory in this repo.\n\n2. `apps/openclaw/README.md` — the Pollinations skill documentation at `openclaw/skills/.../isaacgounton/pollinations/SKILL.md` returns 404 (the skill directory no longer exists in that repo). Updated to link to the openclaw app in this repo. The `/skill install` command below is left unchanged — the skill may still be installable from a different source.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Paths Lead Home",
+    "blurb": "Two README trails were pointing into the fog. They now lead straight back to the apps living here in the garden.",
+    "summary": "Replaced dead external links in the AI Dungeon Master and OpenClaw app READMEs with direct paths to each app's source directory in this repository.",
+    "impact": "Readers can now reach the maintained AI Dungeon Master and OpenClaw app sources directly instead of landing on removed GitHub Pages or skill-documentation URLs.",
+    "keywords": [
+      "documentation",
+      "apps",
+      "ai-dungeon-master",
+      "openclaw",
+      "links",
+      "repository"
+    ],
+    "visual_concept": "A cozy garden path represents repaired documentation links: Polli uses a tiny map and signposts to guide visitors toward two nearby app cottages, one with a fantasy dungeon map and one inhabited by a friendly little crab-like OpenClaw mascot. Small code-plants and flowering repo folders make the source paths feel like a welcoming destination.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheeks and light blue wings, wearing a tiny explorer hat and holding a map beside two clear garden signposts labeled in simple pixel text 'AI Dungeon Master' and 'OpenClaw'; one path leads to a cottage with a dungeon map, while a friendly small crab mascot waves from the other beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13418.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheeks and light blue wings, wearing a tiny explorer hat and holding a map beside two clear garden signposts labeled in simple pixel text 'AI Dungeon Master' and 'OpenClaw'; one path leads to a cottage with a dungeon map, while a friendly small crab mascot waves from the other beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T18:52:34.265404+00:00"
+}

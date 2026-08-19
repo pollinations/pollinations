@@ -33,16 +33,29 @@ export function getDefinedRequestEstimate(
         : null;
 }
 
+/**
+ * Tinybird is the preflight source of truth when it looks like a real charge.
+ * If it is missing or wildly above the defined per-request price, it is almost
+ * certainly poisoned (mean of rows that billed output_tokens × a per-image
+ * rate — e.g. 0.01 × ~3334 ≈ 33.34). Token-priced models have no per-request
+ * definition, so they keep Tinybird as-is.
+ */
+const TINYBIRD_OUTLIER_RATIO = 10;
+
 export function getEstimatedPrice(
     stats: TinybirdModelStats,
     model: string | undefined,
     definition?: ModelDefinition,
 ): number {
-    if (definition) {
-        const defined = getDefinedRequestEstimate(definition);
-        if (defined != null) return defined;
-    }
     if (!model) return 0;
-    const row = stats.data?.find((r) => r.model === model);
-    return row?.avg_cost_usd || 0;
+    const tinybird = stats.data?.find((r) => r.model === model)?.avg_cost_usd || 0;
+    const defined = definition ? getDefinedRequestEstimate(definition) : null;
+    if (
+        defined != null &&
+        defined > 0 &&
+        (tinybird <= 0 || tinybird > defined * TINYBIRD_OUTLIER_RATIO)
+    ) {
+        return defined;
+    }
+    return tinybird;
 }

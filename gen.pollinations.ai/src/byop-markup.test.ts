@@ -413,7 +413,7 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("prefers a flat-rate community image price over Tinybird averages", async () => {
+    it("discards a Tinybird average that is wildly above the defined per-request price", async () => {
         const definition = communityModelDefinition({
             modelId: "vendouple/zimage",
             description: null,
@@ -433,6 +433,18 @@ describe("BYOP markup", () => {
                 definition,
             ),
         ).toBe(0.01);
+        // Plausible Tinybird (within 10× of the defined rate) is trusted.
+        expect(
+            getEstimatedPrice(
+                {
+                    data: [
+                        { model: "vendouple/zimage", avg_cost_usd: 0.012 },
+                    ],
+                },
+                "vendouple/zimage",
+                definition,
+            ),
+        ).toBe(0.012);
 
         const vars = {
             auth: {

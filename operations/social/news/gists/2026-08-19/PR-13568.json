@@ -1,0 +1,34 @@
+{
+  "pr_number": 13568,
+  "title": "feat: graph any KPI from the trend table",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13568",
+  "merged_at": "2026-08-19T11:34:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a \"Graph any KPI\" chart — a selector for every table row, plus a chart button on each row that jumps to it\n- The chart follows whichever unit a cycling row is currently showing, and trims the x-axis to the span that metric covers\n- Folds `Activated (D7)` ⇄ `D7 activation rate` into one cycling row (same measure, count vs rate)\n- Folds `Service availability` ⇄ `5xx errors` (r = -0.99) — 90% availability reads mild, 381,464 failed requests does not\n- Moves the KPI catalogue to `src/lib/kpis.js` now that the table and the chart both read it\n\nTable is 11 rows, down from 18.\n\nChecked but deliberately left separate: `BYOP user %` and `BYOP Pollen %` correlate at only **-0.50** — they move in opposite directions (fewer BYOP users, each consuming more), so they are not the same measure in two units.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Every KPI Gets a Window",
+    "blurb": "The hive's metric table learned to draw. Pick any KPI, jump straight from its row to a chart, and let each measure keep its own sensible timeline.",
+    "summary": "The internal KPI dashboard now includes a \"Graph any KPI\" explorer with per-row chart links, metric-specific x-axis ranges, and a shared KPI catalogue; related count/rate and availability/error pairs are folded into cycling rows, reducing the trend table from 18 rows to 11.",
+    "impact": "Operators can inspect any tracked metric in context while keeping the trend table compact, with Activated D7/D7 activation rate and Service availability/5xx errors available as alternate views of the same underlying signal.",
+    "keywords": [
+      "kpi",
+      "analytics",
+      "charts",
+      "dashboard",
+      "operations",
+      "metrics"
+    ],
+    "visual_concept": "Polli acts as a tiny data gardener in a cozy monitoring room, selecting a KPI seed from a compact table and watching it grow into a clean line chart. A CRT monitor robot can excitedly point at two toggleable chart labels—availability and 5xx errors—to represent one measure appearing in different units, with code-plants and flowers reinforcing the tidier KPI catalogue.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a lime green (#ecf874) KPI garden beside a retro CRT chart monitor; a friendly monitor robot points at a compact table that blooms into a line graph with small pixel text: \"GRAPH ANY KPI\". Code-plants, flowers, and neatly folded metric cards fill the warm cream and lavender room, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13568.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a lime green (#ecf874) KPI garden beside a retro CRT chart monitor; a friendly monitor robot points at a compact table that blooms into a line graph with small pixel text: \"GRAPH ANY KPI\". Code-plants, flowers, and neatly folded metric cards fill the warm cream and lavender room, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T11:36:07.831712+00:00"
+}

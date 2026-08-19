@@ -111,10 +111,42 @@ export const KOKORO_VOICES = [
     "zm_yunyang",
 ] as const;
 
+export const XAI_TTS_VOICES = [
+    "altair",
+    "ara",
+    "atlas",
+    "aurora",
+    "carina",
+    "castor",
+    "celeste",
+    "cosmo",
+    "eve",
+    "helios",
+    "helix",
+    "iris",
+    "kepler",
+    "leo",
+    "liora",
+    "lumen",
+    "luna",
+    "lux",
+    "naksh",
+    "orion",
+    "perseus",
+    "rex",
+    "rigel",
+    "sal",
+    "sirius",
+    "ursa",
+    "zagan",
+    "zenith",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
+    ...XAI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
@@ -366,6 +398,26 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "grok-tts": {
+        aliases: [],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST text-to-speech: $15 per 1M input characters.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Grok TTS",
+        description:
+            "Expressive multilingual speech across 28 built-in voices with inline style controls",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...XAI_TTS_VOICES],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],

@@ -1,5 +1,62 @@
 # Pollinations Model Changelog
 
+## 2026-08-19
+
+### Added
+- `muse-glimmer` (Meta, text) — text and image input; tool calling and reasoning.
+- `muse-spark-1.2` (Meta, text) — text and image input; tool calling and reasoning; paid-only.
+- `qwen3.8-2.4t-a95b` (Qwen, text) — tool calling and reasoning.
+- `grok-4.6` (xAI, text) — text and image input; tool calling and reasoning; paid-only.
+- Community alpha text models: `gggff123/Gemini-3.7-Flash`, `gggff123/Glm-5.3`, `JustScriptzz/gpt-oss-120b`, `JustScriptzz/moondream-3.1`, `JustScriptzz/kimi-k3`, `JustScriptzz/kimi-k2.7`, `JustScriptzz/agnes-2.5-flash`, `JustScriptzz/grok-4.6`, `JustScriptzz/mercury-2`, `Lorodn4x/deepseek-v4-pro-0813`, `Catniti/openai-fast`, `chigwell/gemini-3.7-flash`, `Spit-fires/glm-5.2`, `MarcosFRG/nemotron-3.5-lightning-30b`, `MarcosFRG/gemma-4-26b-a4b`, `vendouple/gemini-3.6`, `vendouple/gemini-3.7`, `vendouple/glm-5.3`, `Lorodn4x/intern-s2-preview-397b`, `JustScriptzz/helix-agent`, `solarnode-developement/A-Hy3`, `Takax62/minimax-m3-429b-vml`, `sharktide/inferenceport-ai-lightning-text-v2-expanded-knowledge`, `MarcosFRG/qwen3.8-27b`, `MarcosFRG/metraxai`, `novastardev/olmo-3.1-32b`, `chigwell/llm7-fast`, `chigwell/llm7-pro`, `chigwell/claude-haiku-4-5`, `chigwell/gemini-3.5-flash-low`, `chigwell/claude-opus-5`, `chigwell/claude-fable-5`, `chigwell/kimi-k2.7-code`, `chigwell/gemini-3-flash`, `chigwell/DeepSeek-V4-Flash-0731`, `chigwell/grok-4.6`, `vendouple/grok-4.6`, `chigwell/gpt-5.5`, `chigwell/grok-4.5`, `vendouple/gpt-5.6-terra`, `chigwell/gpt-5.6-terra`, `chigwell/gpt-5.4`, `chigwell/claude-sonnet-5`, `chigwell/gpt-5.4-mini`, `chigwell/gemini-3.1-flash-lite`, `chigwell/minimax-m2.7`, `solarnode-developement/Qwen3.8-max`, `chirag-gamer/gpt-oss-120b`, `CloudCompile/agnes-2.5-flash`, `vendouple/kimi-k2.6`, `vendouple/muse-glimmer-30b:free`.
+- `grok-imagine-image-2.0` (xAI, image) — text and image input; 1K/2K output; paid-only.
+- `qwen-image-3` (Qwen, image) — text and image input; 1K/2K output; paid-only.
+- Community alpha image models: `tomdacatto/chatgpt-image-2`, `tomdacatto/flux-2-max`, `vendouple/flux-2-pro`, `chigwell/gpt-image-2`, `chigwell/firefly-image-5`, `chigwell/firefly-gpt-image-2`.
+- `minimax-h3` (MiniMax, video) — text-to-video with audio output at 480p, 768p, or 2K; paid-only.
+- `seedance-2.0-fast` (ByteDance, video) — text/image-to-video with start/end-frame control and audio output; paid-only.
+- `seedance-2.0-mini` (ByteDance, video) — text/image-to-video with start/end-frame control and audio output; paid-only.
+- `seedance-2.5` (ByteDance, video) — text/image-to-video with start/end-frame control and audio output; paid-only.
+- `vendouple/whisper-large-v3:free` (OrchidLLM Proxy, audio) — audio-to-text transcription.
+
+### Changed
+- `gemini` — price cut ~75%; title updated to Gemini 3.7 Flash.
+- `deepseek-pro` — completion price +15%; prompt token prices decreased.
+- `MarcosFRG/deepseek-v4-pro` — completion price +895%.
+- `MarcosFRG/deepseek-v4-flash` — price cut ~90%.
+- `vendouple/gpt-5.6-sol` — price cut ~30%.
+- `vendouple/kimi-k3` — completion price +15%.
+- `sharktide/inferenceport.ai-gpt-oss-20b` — completion price +330%.
+- `sharktide/inferenceport-ai-kimi-k2.7-code` — completion price +100%.
+- `MarcosFRG/glm-5.2` — price cut ~60%.
+- `vendouple/deepseek-v4` — price cut ~50%.
+- `MarcosFRG/gemini-3.1-flash-lite` — price cut ~15%.
+- `MarcosFRG/minimax-m3` — price cut ~50%.
+- `MarcosFRG/gemini-3-flash-preview` — price cut ~15%.
+- `MarcosFRG/gemma-4-31b` — price cut ~25%.
+- `CloudCompile/agnes-image-2.0-flash` — price cut ~80%.
+- `vendouple/laguna-s-2.1:free` — added image input.
+- `sharktide/inferenceport-ai-mimo-v2.5` — added image, audio, and video input.
+
+### Removed
+- `grok-4.5` (was: text)
+- `muse-spark-1.1` (was: text)
+- `guus6457/gemma-4-12b` (was: text)
+- `YoannDev90/ling-3.0-flash:free` (was: text)
+- `solarnode-developement/k3` (was: text)
+- `morriszdweck/osaii-api-fast` (was: text)
+- `tomdacatto/ling-3.0-flash` (was: text)
+- `Lorodn4x/minimax-m3` (was: text)
+- `Lorodn4x/gpt-5.6-terra` (was: text)
+- `MarcosFRG/gemini-3.1-pro-preview` (was: text)
+- `gggff123/glm-5.2` (was: text)
+- `Catniti/deepseek-v4-flash` (was: text)
+- `CloudCompile/agnes-2.0-flash` (was: text)
+- `CloudCompile/afforda-claude-haiku-4.5` (was: text)
+- `tomdacatto/gemma-4-31b-fast` (was: text)
+- `MarcosFRG/gemma-3-27b` (was: text)
+- `vendouple/gpt-image-2` (was: image)
+- `vendouple/flux-2-dev` (was: image)
+- `vendouple/seedream-5-lite` (was: image)
+
 ## 2026-08-12
 
 ### Added

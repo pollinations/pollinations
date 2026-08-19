@@ -277,11 +277,13 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 </li>
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <span>
+                    <span className="flex flex-col items-start gap-0.5">
                         <InlineLink href={MODEL_SLUGS_SHEET_URL}>
                             View the complete slug list
-                        </InlineLink>{" "}
-                        to update your implementation before the transition.
+                        </InlineLink>
+                        <span>
+                            Update your implementation before the transition.
+                        </span>
                     </span>
                 </li>
             </ul>

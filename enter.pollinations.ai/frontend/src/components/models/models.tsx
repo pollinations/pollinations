@@ -17,6 +17,7 @@ import {
     TokensIcon,
     TrendUpIcon,
     UsageIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -353,11 +354,15 @@ export const Models: FC = () => {
             >
                 <Alert
                     intent="warning"
-                    title="Model slugs are changing"
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            <WarningIcon className="h-3.5 w-3.5 text-intent-danger-text" />
+                            <span>Model slugs change Sep 1 · 14:00 UTC</span>
+                        </span>
+                    }
                     className="mb-4"
                 >
-                    Starting <strong>Sep 1, 2026 at 14:00 UTC</strong>, new
-                    integrations should use{" "}
+                    New canonical format:{" "}
                     <code className="font-semibold !text-intent-info-text">
                         publisher/model[:variant]
                     </code>

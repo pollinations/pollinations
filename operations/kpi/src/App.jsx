@@ -9,8 +9,10 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { useState } from "react";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
+import { KpiExplorer } from "./components/KpiExplorer";
 import { LineChart } from "./components/LineChart";
 import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
@@ -90,7 +92,24 @@ function LoadingScreen({ done, active }) {
     );
 }
 
+const EXPLORER_ID = "kpi-explorer";
+
 export default function App() {
+    // Which unit each cycling row is showing, and which row the explorer plots.
+    // Both live here so the chart follows the table.
+    const [viewIndex, setViewIndex] = useState({});
+    const [explored, setExplored] = useState("registrations");
+
+    const cycleView = (key) =>
+        setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+
+    const graphKpi = (key) => {
+        setExplored(key);
+        document
+            .getElementById(EXPLORER_ID)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+
     const {
         loading,
         done,
@@ -240,7 +259,12 @@ export default function App() {
                     />
                 </div>
 
-                <KPITrendTable weeklyData={weeklyData} />
+                <KPITrendTable
+                    weeklyData={weeklyData}
+                    viewIndex={viewIndex}
+                    onCycle={cycleView}
+                    onGraph={graphKpi}
+                />
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart
@@ -268,6 +292,13 @@ export default function App() {
                             },
                         ]}
                         dualAxis
+                    />
+                    <KpiExplorer
+                        id={EXPLORER_ID}
+                        weeks={historyWeeks}
+                        selected={explored}
+                        viewIndex={viewIndex}
+                        onSelect={setExplored}
                     />
                     <FunnelBars
                         title={`Conversion funnel · ${weekLabel(currentWeek?.week)}`}

@@ -84,6 +84,7 @@ export function LineChart({
     series,
     format = "number",
     dualAxis = false,
+    action,
 }) {
     const [ref, width] = useElementWidth();
     const [hover, setHover] = useState(null);
@@ -167,9 +168,12 @@ export function LineChart({
 
     return (
         <Surface className="flex flex-col gap-3">
-            <Heading as="h3" size="card">
-                {title}
-            </Heading>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <Heading as="h3" size="card">
+                    {title}
+                </Heading>
+                {action}
+            </div>
 
             {series.length > 1 && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">

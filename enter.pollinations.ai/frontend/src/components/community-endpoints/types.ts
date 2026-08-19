@@ -1,5 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointAdvertised,
+    type CommunityEndpointCapability,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
@@ -11,6 +13,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -50,6 +53,9 @@ export type CommunityEndpoint = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[];
+    // Owner-declared catalog metadata. Advertising only: none of it changes
+    // how the gateway forwards a request.
+    advertised: CommunityEndpointAdvertised;
     baseUrl: string;
     upstreamModel: string;
     agentId: string | null;
@@ -59,9 +65,6 @@ export type CommunityEndpoint = {
     perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
-    // Text models only. Owner-declared: the upstream accepts an OpenAI-style
-    // `tools` parameter. Advertising metadata; gateway passthrough is unchanged.
-    toolCalling: boolean;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -107,6 +110,10 @@ export function publicCommunityFallbackOptions(
 
 export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
+    // Flat while editing, nested into `advertised` on submit: contextLength is
+    // held as a string so a half-typed value survives a render, like perUserRpm.
+    capabilities: CommunityEndpointCapability[];
+    contextLength: string;
     name: string;
     title: string;
     description: string;
@@ -115,8 +122,6 @@ export type ModelListingFormState = {
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     perUserRpm: string;
-    // Text (non-agent) endpoints only; see CommunityEndpoint.toolCalling.
-    toolCalling: boolean;
 };
 
 export type EndpointFormState = ModelListingFormState & {
@@ -132,6 +137,7 @@ export type EndpointFormState = ModelListingFormState & {
 
 type ModelListingPayload = {
     inputModalities: ModelInputModality[];
+    advertised: CommunityEndpointAdvertised;
     name: string;
     title: string;
     description: string;
@@ -145,10 +151,12 @@ export type EndpointPayload = ModelListingPayload & {
     baseUrl: string;
     upstreamModel: string;
     fallbackModelIds: string[];
-    toolCalling: boolean;
 } & CommunityEndpointPrices;
 
-export type AgentListingPayload = ModelListingPayload & {
+// Agent listings inherit catalog metadata from their base model, and the API
+// rejects a listing that declares any, so the payload cannot carry the fields
+// at all — sending an explicit null would still be a declaration.
+export type AgentListingPayload = Omit<ModelListingPayload, "advertised"> & {
     agentId: string;
     modality: "text";
 };
@@ -179,12 +187,13 @@ const emptyPriceForm = Object.fromEntries(
 
 const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
+    capabilities: [],
+    contextLength: "",
     name: "",
     title: "",
     description: "",
     visibility: "private",
     perUserRpm: "",
-    toolCalling: false,
 };
 
 export const emptyForm: EndpointFormState = {
@@ -282,6 +291,8 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         inputModalities: endpoint.inputModalities,
+        capabilities: endpoint.advertised.capabilities ?? [],
+        contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -291,7 +302,6 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         fallbackModelIds: endpoint.fallbackModelIds ?? [],
-        toolCalling: endpoint.toolCalling,
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -315,12 +325,15 @@ export function agentListingToForm(
     return endpoint
         ? {
               inputModalities: ["text"],
+              // Agent listings inherit these from their base model, so the
+              // form has nothing to show and the payload sends nothing.
+              capabilities: [],
+              contextLength: "",
               name: endpoint.name,
               title: endpoint.title,
               description: endpoint.description ?? "",
               visibility: endpoint.visibility,
               perUserRpm: "",
-              toolCalling: false,
           }
         : { ...emptyListingForm };
 }
@@ -411,12 +424,29 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     };
 }
 
-function listingFieldsToPayload(form: ModelListingFormState) {
+function listingFieldsToPayload(
+    form: ModelListingFormState,
+    modality: CommunityEndpointModality,
+) {
     if (!isValidPerUserRpm(form.perUserRpm)) {
         throw new Error("Per-user RPM must be a positive number");
     }
     return {
         inputModalities: form.inputModalities,
+        // One rule, applied where the payload is built: whatever the form
+        // holds, only what this modality can claim is sent.
+        advertised: normalizeCommunityEndpointAdvertised(
+            {
+                capabilities: form.capabilities,
+                // Blank clears the claim; anything else is sent as typed and
+                // validated server-side, so a bad value gets a 400 rather than
+                // being silently dropped.
+                contextLength: form.contextLength.trim()
+                    ? Number(form.contextLength)
+                    : undefined,
+            },
+            modality,
+        ),
         name: form.name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
@@ -429,7 +459,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modality = form.modality;
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     return {
-        ...listingFieldsToPayload(form),
+        ...listingFieldsToPayload(form, modality),
         modality,
         imagePricing,
         baseUrl: form.baseUrl.trim(),
@@ -438,7 +468,6 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         // validated against a quoted price.
         fallbackModelIds:
             form.visibility === "public" ? form.fallbackModelIds : [],
-        toolCalling: modality === "text" ? form.toolCalling : false,
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }
@@ -487,7 +516,10 @@ export function nextFormState(
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbackModelIds: [],
-            toolCalling: modality === "text" ? current.toolCalling : false,
+            // Same for the declarations the new modality cannot advertise —
+            // every advertised key is text-only.
+            capabilities: modality === "text" ? current.capabilities : [],
+            contextLength: modality === "text" ? current.contextLength : "",
         };
     }
     const next = { ...current, [key]: value };

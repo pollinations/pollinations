@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
@@ -8,6 +9,7 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+    type CommunityEndpointAdvertised,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
@@ -20,6 +22,7 @@ import {
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
+    MAX_COMMUNITY_CONTEXT_LENGTH,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
@@ -27,6 +30,7 @@ import {
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
@@ -74,10 +78,27 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
-const ToolCallingSchema = z
-    .boolean()
+// Owner-declared catalog metadata. One nested object rather than a field per
+// claim, matching the single column it is stored in: advertising a new kind of
+// thing adds a key here, not a migration.
+const AdvertisedSchema = z
+    .object({
+        capabilities: z
+            .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
+            .optional()
+            .describe(
+                "Capabilities the model advertises in the catalog. Text models only.",
+            ),
+        contextLength: z
+            .number()
+            .int()
+            .positive()
+            .max(MAX_COMMUNITY_CONTEXT_LENGTH)
+            .optional()
+            .describe("Text models only. Context window in tokens."),
+    })
     .describe(
-        "Text models only. Whether the upstream accepts an OpenAI-style `tools` parameter and returns tool calls. Advertising metadata: the gateway already passes `tools` through untouched regardless of this flag.",
+        "What the model claims about itself in the catalog. Text models only. Advertising metadata: the gateway forwards `tools` and every other request field untouched either way, so a claim here is a promise to callers rather than a switch. Sent whole — a key left out is a claim cleared.",
     );
 const PriceSchema = z
     .number()
@@ -151,14 +172,27 @@ function enforceCommunityEndpointInputModalities(
     });
 }
 
-function enforceCommunityEndpointToolCalling(
+// Every advertised key is text-only, so one rule covers the object. Rejected on
+// write rather than silently dropped; normalizeCommunityEndpointAdvertised
+// applies the same rule again on read, which is what covers a row whose
+// modality changed after declaring.
+function enforceCommunityEndpointAdvertised(
     modality: CommunityEndpointModality,
-    toolCalling: boolean,
+    advertised: CommunityEndpointAdvertised | undefined,
 ): void {
-    if (!toolCalling || modality === "text") return;
+    if (modality === "text" || !hasAdvertisedClaim(advertised)) return;
     throw new HTTPException(400, {
-        message: "toolCalling is only supported for text models",
+        message: "advertised metadata is only supported for text models",
     });
+}
+
+/** An empty object and an object of empty values both declare nothing. */
+function hasAdvertisedClaim(
+    advertised: CommunityEndpointAdvertised | undefined,
+): boolean {
+    return Object.values(advertised ?? {}).some((value) =>
+        Array.isArray(value) ? value.length > 0 : value != null,
+    );
 }
 
 // Community fallback targets are restricted to public community models or
@@ -374,10 +408,10 @@ const CreateEndpointSchema = z
         // No blanket default: what an omitted set means depends on the
         // modality, so it is resolved in the handler once modality is known.
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         visibility: VisibilitySchema.optional().default("private"),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
-        toolCalling: ToolCallingSchema.optional().default(false),
         ...UpdatePriceFieldsSchema,
     })
     // A registration is one of two shapes: a managed agent, which resolves its
@@ -427,11 +461,15 @@ const CreateEndpointSchema = z
                 path: "perUserRpm",
                 message: "Managed agent listings do not support per-user RPM",
             },
+            // An agent listing inherits capabilities and context length from
+            // its base model (applyAgentMetadata in
+            // gen.pollinations.ai/src/agent-catalog.ts), so anything declared
+            // here would be overwritten before it reached the catalog.
             {
-                invalid: input.toolCalling === true,
-                path: "toolCalling",
+                invalid: hasAdvertisedClaim(input.advertised),
+                path: "advertised",
                 message:
-                    "Managed agent listings do not support declaring tool calling",
+                    "Managed agent listings inherit catalog metadata from their base model",
             },
         ];
         for (const rejection of agentRejections) {
@@ -454,8 +492,10 @@ const UpdateEndpointSchema = z.object({
     perUserRpm: PerUserRpmSchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
+    // Sent whole: the object replaces what was stored, so omitting a key
+    // clears that claim and omitting `advertised` leaves every claim alone.
+    advertised: AdvertisedSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
-    toolCalling: ToolCallingSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -484,6 +524,7 @@ const CommunityEndpointResponseSchema = z.object({
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
     inputModalities: z.array(InputModalitySchema),
+    advertised: AdvertisedSchema,
     baseUrl: z.string(),
     agentId: z.string().nullable(),
     // Derived, not the stored column: true for every agent as well. Clients get
@@ -493,7 +534,6 @@ const CommunityEndpointResponseSchema = z.object({
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
-    toolCalling: z.boolean(),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -644,6 +684,12 @@ function toResponse(
             row.inputModalities,
             modality,
         ),
+        // Normalized, like inputModalities: a row that changed modality after
+        // declaring these reports only what still applies.
+        advertised: normalizeCommunityEndpointAdvertised(
+            row.advertised,
+            modality,
+        ),
         baseUrl,
         agentId: row.agentId,
         delegatesGeneration: rowDelegatesGeneration(row),
@@ -651,7 +697,6 @@ function toResponse(
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
-        toolCalling: row.toolCalling,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -1011,7 +1056,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities ??
                 normalizeCommunityEndpointInputModalities(undefined, modality);
             enforceCommunityEndpointInputModalities(modality, inputModalities);
-            enforceCommunityEndpointToolCalling(modality, input.toolCalling);
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             const prices =
                 agent || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -1046,7 +1091,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     imagePricing,
                     inputModalities,
-                    toolCalling: agent ? false : input.toolCalling,
+                    // Undeclared stays NULL rather than an empty object, so a
+                    // row that declares nothing reads the same as every row
+                    // that predates the column. Agents are rejected above
+                    // rather than defaulted, so nothing strips them here.
+                    advertised: input.advertised,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -1240,10 +1289,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         "Managed agent listings do not support per-user RPM",
                 });
             }
-            if (endpoint.agentId !== null && input.toolCalling !== undefined) {
+            if (
+                endpoint.agentId !== null &&
+                hasAdvertisedClaim(input.advertised)
+            ) {
                 throw new HTTPException(400, {
                     message:
-                        "Managed agent listings do not support declaring tool calling",
+                        "Managed agent listings inherit catalog metadata from their base model",
                 });
             }
             if (input.inputModalities !== undefined) {
@@ -1252,12 +1304,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     input.inputModalities,
                 );
             }
-            if (input.toolCalling !== undefined) {
-                enforceCommunityEndpointToolCalling(
-                    modality,
-                    input.toolCalling,
-                );
-            }
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -1295,8 +1342,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;
             }
-            if (input.toolCalling !== undefined) {
-                update.toolCalling = input.toolCalling;
+            if (input.advertised !== undefined) {
+                update.advertised = input.advertised;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();

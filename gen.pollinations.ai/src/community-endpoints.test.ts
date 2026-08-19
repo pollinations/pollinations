@@ -6,8 +6,10 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointCapability,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
@@ -47,6 +49,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
@@ -88,6 +91,16 @@ import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 const db = drizzle(env.DB);
 const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
+// user.github_id is unique, so every test owner needs its own id. Rotate
+// through the allowlist to keep each one both distinct and allowed.
+let allowedGithubIdCursor = 0;
+function nextAllowedGithubId(): number {
+    const ids = COMMUNITY_MODEL_ALLOWED_GITHUB_IDS;
+    const id = ids[allowedGithubIdCursor % ids.length];
+    allowedGithubIdCursor += 1;
+    if (id === undefined) throw new Error("empty community model allowlist");
+    return id;
+}
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -280,11 +293,11 @@ async function createCommunityFallbackPair({
     const primaryOwner = `${prefix}-primary-${suffix}`;
     const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
     const fallbackUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: fallbackOwner,
     });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
@@ -710,11 +723,14 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["text"]);
     });
 
-    it("advertises tool calling when the owner declares it", () => {
+    it("advertises the capabilities and limits the owner declared", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
-            toolCalling: true,
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -722,9 +738,16 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.tools).toBe(true);
+        expect(definition.reasoning).toBe(true);
+        expect(definition.contextLength).toBe(128000);
+        expect(
+            modelInfoFromDefinition("voodoohop/openai", definition, {
+                community: true,
+            }).capabilities,
+        ).toEqual(["tool_calling", "reasoning"]);
     });
 
-    it("omits tools when tool calling is not declared", () => {
+    it("omits undeclared capabilities rather than setting them false", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
@@ -735,6 +758,54 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.search).toBeUndefined();
+        expect(definition.codeExecution).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+    });
+
+    it("ignores a capability an owner may no longer declare", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            advertised: {
+                // Stored while web_search was declarable. Narrowing the list
+                // has to retire the claim, not leave it in the catalog.
+                capabilities: [
+                    "tool_calling",
+                    "web_search",
+                ] as CommunityEndpointCapability[],
+            },
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.tools).toBe(true);
+        expect(definition.search).toBeUndefined();
+    });
+
+    it("drops declarations the modality cannot advertise", () => {
+        // A row keeps what its owner declared when it was a text model. The
+        // catalog must not repeat those claims once the modality changed.
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
+            ...communityEndpointPrices({
+                promptTextPrice: 0.2,
+                completionImagePrice: 0.03,
+            }),
+        });
+
+        expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
     });
 
     it("builds community transcription models billed per audio second", () => {
@@ -856,7 +927,6 @@ describe("community endpoint helpers", () => {
                 title: "GPT Image",
                 description: null,
                 delegatesGeneration: false,
-                toolCalling: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
@@ -1052,7 +1122,6 @@ describe("community endpoint helpers", () => {
                 title: "Whisper",
                 description: null,
                 delegatesGeneration: false,
-                toolCalling: false,
                 modality: "transcription",
                 imagePricing: "request",
                 inputModalities: ["audio"],
@@ -1416,7 +1485,6 @@ describe("community endpoint helpers", () => {
             visibility: "public",
             perUserRpm: null,
             delegatesGeneration: false,
-            toolCalling: false,
             fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
@@ -1481,7 +1549,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 perUserRpm: null,
                 delegatesGeneration: true,
-                toolCalling: false,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],
@@ -1580,7 +1647,7 @@ fixtureTest(
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1714,7 +1781,7 @@ fixtureTest(
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
             // Owner-only private models have no Pollinations charge and remain
             // callable without a Pollinations balance.
@@ -1862,7 +1929,7 @@ fixtureTest(
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1961,7 +2028,7 @@ fixtureTest(
         const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2060,7 +2127,7 @@ fixtureTest(
         const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2160,7 +2227,7 @@ fixtureTest(
     async ({ restrictedApiKey }) => {
         const ownerGithubUsername = `order-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const newestDate = new Date("2100-01-02T00:00:00Z");
@@ -2314,7 +2381,7 @@ fixtureTest(
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2377,11 +2444,11 @@ fixtureTest(
         const imageModelId = communityModelId(imageOwner, imageName);
 
         const textUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: textOwner,
         });
         const imageUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
         });
 
@@ -2556,7 +2623,7 @@ fixtureTest(
             modelName,
         );
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2880,7 +2947,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3086,7 +3153,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `image-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3575,7 +3642,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `stt-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3804,13 +3871,13 @@ fixtureTest(
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: ownerGithubUsername,
             },
         });
         const denied = await createTestApiKey({
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
             },
         });
@@ -3941,7 +4008,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            toolCalling: false,
             disabled: false,
             disabledReason: null,
             disabledAt: null,
@@ -4050,44 +4116,6 @@ fixtureTest(
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
             promptTextPrice: 1e-12,
-        });
-
-        const toolCallingOnResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ toolCalling: true }),
-                },
-            ),
-        );
-        expect(toolCallingOnResponse.status).toBe(200);
-        await expect(toolCallingOnResponse.json()).resolves.toMatchObject({
-            toolCalling: true,
-        });
-
-        const toolCallingOffResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ toolCalling: false }),
-                },
-            ),
-        );
-        expect(toolCallingOffResponse.status).toBe(200);
-        await expect(toolCallingOffResponse.json()).resolves.toMatchObject({
-            toolCalling: false,
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -4230,93 +4258,11 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects declaring tool calling on an image model or a managed agent",
-    async () => {
-        const ownerGithubUsername = `tools-${crypto.randomUUID().slice(0, 8)}`;
-        const { key, userId } = await createTestApiKey({
-            type: "publishable",
-            accountPermissions: ["keys"],
-            user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-                githubUsername: ownerGithubUsername,
-            },
-        });
-        const enterApi = await createEnterFrontendApi();
-
-        const imageResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: "image-tools-test",
-                    title: "Image Tools Test",
-                    modality: "image",
-                    baseUrl: "https://api.example.com/v1",
-                    upstreamModel: "gpt-image-1",
-                    bearerToken: "sk_saved_token",
-                    toolCalling: true,
-                }),
-            }),
-        );
-        expect(imageResponse.status).toBe(400);
-        const imageBody = (await imageResponse.json()) as {
-            error?: { message?: string };
-        };
-        expect(imageBody.error?.message).toContain(
-            "only supported for text models",
-        );
-
-        const agentId = crypto.randomUUID();
-        await db.insert(agentTable).values({
-            id: agentId,
-            ownerUserId: userId,
-            config: JSON.stringify({
-                version: 1,
-                kind: "prompt",
-                systemPrompt: "You are helpful.",
-                baseModel: DEFAULT_TEXT_MODEL,
-                mcpServers: [],
-            }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        const agentResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: "agent-tools-test",
-                    title: "Agent Tools Test",
-                    agentId,
-                    toolCalling: true,
-                }),
-            }),
-        );
-        expect(agentResponse.status).toBe(400);
-        const agentBody = (await agentResponse.json()) as {
-            error?: { details?: { fieldErrors?: Record<string, string[]> } };
-        };
-        expect(agentBody.error?.details?.fieldErrors?.toolCalling).toEqual([
-            "Managed agent listings do not support declaring tool calling",
-        ]);
-    },
-);
-
-fixtureTest(
     "accepts free and minimum public community prices while rejecting smaller positive prices",
     async () => {
         const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4417,7 +4363,7 @@ fixtureTest(
         // Use an approved publisher so the request reaches the outbound probe;
         // non-allowlisted accounts are rejected before any fetch occurs.
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4474,7 +4420,7 @@ fixtureTest(
 fixtureTest("rejects unsafe community model names", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4522,7 +4468,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4567,12 +4513,108 @@ fixtureTest(
 );
 
 fixtureTest(
+    "declares, edits, and validates advertised catalog metadata",
+    async () => {
+        const ownerGithubUsername = `caps-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `caps-${crypto.randomUUID().slice(0, 8)}`,
+                        title: "Capability Test",
+                        baseUrl: "https://api.example.com/v1",
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const created = await register({
+            advertised: {
+                capabilities: ["reasoning", "tool_calling"],
+                contextLength: 128000,
+            },
+        });
+        expect(created.status).toBe(200);
+        const createdBody = (await created.json()) as {
+            id: string;
+            advertised: Record<string, unknown>;
+        };
+        // Returned in catalog order, not the order they were sent in.
+        expect(createdBody.advertised).toEqual({
+            capabilities: ["tool_calling", "reasoning"],
+            contextLength: 128000,
+        });
+
+        const update = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${createdBody.id}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: cookie,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        // The object is sent whole, so an omitted key clears that claim and
+        // the keys still present survive.
+        const cleared = await update({
+            advertised: { contextLength: 64000 },
+        });
+        expect(cleared.status).toBe(200);
+        await expect(cleared.json()).resolves.toMatchObject({
+            advertised: { contextLength: 64000 },
+        });
+
+        const onImageModel = await register({
+            modality: "image",
+            advertised: { capabilities: ["tool_calling"] },
+        });
+        expect(onImageModel.status).toBe(400);
+        await expect(onImageModel.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "advertised metadata is only supported for text models",
+            },
+        });
+    },
+);
+
+fixtureTest(
     "creates, edits, registers, and deletes managed agents",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4947,12 +4989,12 @@ fixtureTest(
 fixtureTest("validates community fallback targets on write", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
     const otherOwnerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -5260,7 +5302,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const bearerTokenCiphertext = await encryptSecret(
@@ -5465,7 +5507,7 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const fallbackModelId = communityModelId(
@@ -5857,7 +5899,7 @@ fixtureTest(
         for (const owner of owners) {
             userIds.push(
                 await createTestUser({
-                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubId: nextAllowedGithubId(),
                     githubUsername: owner,
                 }),
             );

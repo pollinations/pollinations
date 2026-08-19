@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { CommunityEndpointAdvertised } from "../community-endpoints.ts";
 import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -53,7 +54,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -240,12 +241,15 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  // Owner-declared: whether the upstream accepts an OpenAI-style `tools`
-  // parameter. Advertising metadata only, text models only; the gateway
-  // already passes `tools` through untouched regardless of this flag.
-  toolCalling: integer("tool_calling", { mode: "boolean" })
-    .default(false)
-    .notNull(),
+  // Owner-declared catalog metadata (capabilities, context length), mirrored
+  // into the model catalog by communityModelDefinition and never read on the
+  // request path. Null means nothing was declared. One JSON blob rather than a
+  // column per field, so advertising a new kind of thing costs a key instead of
+  // a migration. Text models only, and never a managed agent: agent listings
+  // inherit all of it from their base model.
+  advertised: text("advertised", {
+    mode: "json",
+  }).$type<CommunityEndpointAdvertised>(),
   // External models keep their target here. Managed agents resolve their
   // target through agentId so the agent can outlive its community listing.
   baseUrl: text("base_url"),
@@ -435,11 +439,11 @@ export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
-  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "set null" }),
   // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
   // Quest title snapshotted when earned, so history renders it directly.

@@ -1,6 +1,5 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { isFreeCommunityEndpoint } from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -32,18 +31,9 @@ export async function checkBalance(
         await getModelStats(env.KV, log),
         model.resolved,
     );
-    const communityEndpoint = model.communityEndpoint;
-    const isFreeCommunityModel =
-        communityEndpoint !== undefined &&
-        isFreeCommunityEndpoint(communityEndpoint);
-
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
-    if (
-        !isFreeCommunityModel &&
-        typeof apiKeyBudget === "number" &&
-        apiKeyBudget <= requiredBudget
-    ) {
+    if (typeof apiKeyBudget === "number" && apiKeyBudget < requiredBudget) {
         throw new HTTPException(402, {
             message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
@@ -51,10 +41,7 @@ export async function checkBalance(
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (
-        !isFreeCommunityModel &&
-        !canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)
-    ) {
+    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
@@ -73,7 +60,7 @@ export async function requireGenerationAccess(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
-    await vars.auth.requireAuthorization();
+    vars.auth.requireUser();
     vars.auth.requireModelAccess();
     await checkBalance(vars, env);
 }

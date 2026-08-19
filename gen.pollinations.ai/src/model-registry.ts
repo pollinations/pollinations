@@ -17,9 +17,15 @@ import {
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
+    type AgentCatalogConfig,
+    applyAgentMetadata,
+} from "./agent-catalog.ts";
+import {
+    type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
+    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -61,6 +67,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.
@@ -129,10 +136,13 @@ function communityEntryToGenerationEntry(
                 ? communityImageSupportedEndpoints(
                       entry.definition.inputModalities,
                   )
-                : communityTextSupportedEndpoints(),
+                : eventType === "generate.audio"
+                  ? communityTranscriptionSupportedEndpoints()
+                  : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
+        agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
@@ -195,6 +205,7 @@ function buildRegistry(
             }
         }
     }
+    applyAgentMetadata(entries, byIdOrAlias);
     linkFallbackEntries(entries, byIdOrAlias);
     entries.sort(compareModelEntries);
 
@@ -222,16 +233,16 @@ function buildRegistry(
 }
 
 async function loadGenerationModelRegistry(
-    dbBinding: CloudflareBindings["DB"] | undefined,
+    env: CommunityModelEnv,
 ): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
-    ).map(communityEntryToGenerationEntry);
+    const communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+        communityEntryToGenerationEntry,
+    );
     return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
 }
 
 export async function getGenerationModelRegistry(
-    env: Pick<CloudflareBindings, "DB">,
+    env: CommunityModelEnv,
 ): Promise<GenerationModelRegistry> {
     if (
         cachedRegistry &&
@@ -246,7 +257,7 @@ export async function getGenerationModelRegistry(
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const registry = await loadGenerationModelRegistry(dbBinding);
+    const registry = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
         expiresAt: Date.now() + REGISTRY_TTL_MS,

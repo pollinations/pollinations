@@ -1,28 +1,30 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
-    arrayBufferToBase64,
     buildUrl,
-    createAudioContent,
     createMCPResponse,
     createTextContent,
-    fetchBinaryWithAuth,
+    fetchAndUploadMedia,
 } from "../utils/coreUtils.js";
 
 async function generateAudio(params, context) {
     requireApiKey(context);
 
     const { text, ...options } = params;
-    const { buffer, contentType } = await fetchBinaryWithAuth(
+    const { contentType, mediaUrl } = await fetchAndUploadMedia(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
         {},
         context,
     );
-
     return createMCPResponse([
-        createAudioContent(arrayBufferToBase64(buffer), contentType),
+        {
+            type: "resource_link",
+            uri: mediaUrl,
+            name: "Generated audio",
+            mimeType: contentType,
+        },
         createTextContent(
-            { text, ...options, encoding: "base64", mimeType: contentType },
+            { url: mediaUrl, text, ...options, mimeType: contentType },
             true,
         ),
     ]);
@@ -31,7 +33,7 @@ async function generateAudio(params, context) {
 export const audioTools = [
     [
         "generateAudio",
-        "Generate speech, music, or sound through GET /audio/{text} and return MCP audio data.",
+        "Generate speech, music, or sound and return an unlisted media.pollinations.ai resource link.",
         {
             text: z
                 .string()

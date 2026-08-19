@@ -1,3 +1,17 @@
+// Pollen revenue against compute cost: same traffic, same week, so the ratio is
+// a unit economic. Stripe cash is a different question — see coverage().
+const margin = (week) =>
+    week.pollenRevenue > 0
+        ? ((week.pollenRevenue - week.costUsd) / week.pollenRevenue) * 100
+        : null;
+
+// Cash in against cost incurred. The two are not matched — packs are bought in
+// one week and burned over later ones — so this is a coverage ratio, not margin.
+const coverage = (week) =>
+    week.costUsd > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.costUsd) * 100
+        : null;
+
 // The KPI catalogue. Rows with `views` are the same measure in another
 // unit and cycle in place; the rest have a single definition.
 export const KPIS = [
@@ -92,12 +106,18 @@ export const KPIS = [
         name: "Gross margin",
         category: "Efficiency",
         format: "percent",
-        calc: (w) =>
-            w.revenue > 0
-                ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
-                : null,
+        calc: margin,
         tooltip:
-            "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
+            "(Pollen revenue − compute cost) / Pollen revenue × 100. Pollen revenue is the USD value of Pollen actually spent this week — Quest and Paid buckets alike — so it covers the same traffic the cost does. Cost is modelled from the registry rate cards, not from invoices, and vendor credits are ignored: a provider we are billed for in grant dollars still counts at list price. Self-hosted GPU is charged per request, so idle fleet capacity is not in it.",
+    },
+    {
+        key: "cashCoverage",
+        name: "Cash coverage",
+        category: "Efficiency",
+        format: "percent",
+        calc: coverage,
+        tooltip:
+            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
     },
     {
         key: "availability",

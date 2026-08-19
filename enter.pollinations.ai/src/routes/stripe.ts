@@ -25,6 +25,11 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import {
+    getStripePaymentRestriction,
+    restrictStripePayments,
+    stripePaymentRestrictedResponse,
+} from "../utils/stripe-payment-restriction.ts";
 
 /**
  * Stripe pack configuration
@@ -66,6 +71,23 @@ export const stripeRoutes = new Hono<Env>()
 
         const userId = session.user.id;
 
+        const paymentRestriction = await getStripePaymentRestriction(
+            c.env.DB,
+            userId,
+        );
+        if (paymentRestriction) {
+            return c.json(stripePaymentRestrictedResponse(), 403);
+        }
+
+        const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
+        if (newCardGate.gate === "locked") {
+            await restrictStripePayments(c.env.DB, userId, {
+                reason: "failed_card_velocity",
+                source: "automatic",
+            });
+            return c.json(stripePaymentRestrictedResponse(), 403);
+        }
+
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
@@ -93,10 +115,6 @@ export const stripeRoutes = new Hono<Env>()
         try {
             const stripeCustomerId = await getOrCreateStripeCustomerId(
                 c.env,
-                userId,
-            );
-            const newCardGate = await getStripeNewCardGateStatus(
-                c.env.DB,
                 userId,
             );
 

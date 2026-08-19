@@ -17,6 +17,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
 import { createStripeClient } from "./stripe.ts";
+import { STRIPE_PAYMENT_SUPPORT_EMAIL } from "./stripe-payment-restriction.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
 const METADATA_USER_ID = "pollinations_user_id";
@@ -47,6 +48,7 @@ type UserStripeBillingRow = {
     email: string;
     packBalance: number | null;
     stripeCustomerId: string | null;
+    stripePaymentRestriction: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
 };
@@ -84,6 +86,10 @@ export type AutoTopUpIssue =
       };
 
 export type BillingOverview = {
+    paymentAccess: {
+        restricted: boolean;
+        supportEmail: string;
+    };
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;
@@ -161,14 +167,22 @@ export async function getBillingOverview(
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
+    const paymentRestricted = user.stripePaymentRestriction !== null;
     const autoTopUpEnabled =
-        user.autoTopUpEnabled && !!paymentMethod && billingDetailsComplete;
+        !paymentRestricted &&
+        user.autoTopUpEnabled &&
+        !!paymentMethod &&
+        billingDetailsComplete;
 
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
+        paymentAccess: {
+            restricted: paymentRestricted,
+            supportEmail: STRIPE_PAYMENT_SUPPORT_EMAIL,
+        },
         autoTopUp: {
             enabled: autoTopUpEnabled,
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
@@ -322,7 +336,7 @@ export async function updateAutoTopUpSettings(
     input: AutoTopUpInput,
 ): Promise<
     | { ok: true; overview: BillingOverview }
-    | { ok: false; status: 400; error: string }
+    | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
         await env.DB.prepare(
@@ -334,6 +348,15 @@ export async function updateAutoTopUpSettings(
             .run();
 
         return { ok: true, overview: await getBillingOverview(env, userId) };
+    }
+
+    const user = await getUserStripeBillingRow(env.DB, userId);
+    if (user.stripePaymentRestriction) {
+        return {
+            ok: false,
+            status: 403,
+            error: "Payments are unavailable for this account.",
+        };
     }
 
     const pack =
@@ -399,6 +422,10 @@ export async function processAutoTopUpForUser(
     userId: string,
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
+
+    if (user.stripePaymentRestriction) {
+        return { status: "skipped", reason: "payments restricted" };
+    }
 
     if (!user.autoTopUpEnabled) {
         return { status: "skipped", reason: "auto top-up disabled" };
@@ -754,6 +781,7 @@ async function getUserStripeBillingRow(
             email: userTable.email,
             packBalance: userTable.packBalance,
             stripeCustomerId: userTable.stripeCustomerId,
+            stripePaymentRestriction: userTable.stripePaymentRestriction,
             autoTopUpEnabled: userTable.autoTopUpEnabled,
             autoTopUpAmountUsd: userTable.autoTopUpAmountUsd,
         })
@@ -971,6 +999,7 @@ async function claimAutoTopUpAttempt(
                 FROM user
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
+                    AND stripe_payment_restriction IS NULL
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
             )

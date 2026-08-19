@@ -24,6 +24,42 @@ export const ModelCapabilitySchema = z.enum([
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
+const CAPABILITY_DEFINITION_FIELD = {
+    tool_calling: "tools",
+    reasoning: "reasoning",
+    web_search: "search",
+    code_execution: "codeExecution",
+} as const satisfies Partial<Record<ModelCapability, keyof ModelDefinition>>;
+
+/**
+ * Capabilities backed by a `ModelDefinition` boolean, in catalog display order.
+ * These are the ones a model can declare about itself, so they are also the set
+ * a community model owner may declare (see COMMUNITY_ENDPOINT_CAPABILITIES).
+ * `pollinations_models` is deliberately absent: the agent runtime injects it
+ * from an agent's MCP config, and no definition field carries it.
+ */
+export const MODEL_DEFINITION_CAPABILITIES = Object.keys(
+    CAPABILITY_DEFINITION_FIELD,
+) as ModelDefinitionCapability[];
+
+export type ModelDefinitionCapability =
+    keyof typeof CAPABILITY_DEFINITION_FIELD;
+
+/** Inverse of getCapabilities: capability names back to definition booleans. */
+export function capabilityDefinitionFields(
+    capabilities: readonly ModelDefinitionCapability[],
+): Pick<
+    ModelDefinition,
+    (typeof CAPABILITY_DEFINITION_FIELD)[ModelDefinitionCapability]
+> {
+    return Object.fromEntries(
+        capabilities.map((capability) => [
+            CAPABILITY_DEFINITION_FIELD[capability],
+            true,
+        ]),
+    );
+}
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
@@ -117,12 +153,9 @@ function toFixedPoint(n: number): string {
 }
 
 function getCapabilities(service: ModelDefinition): ModelCapability[] {
-    const capabilities: ModelCapability[] = [];
-    if (service.tools) capabilities.push("tool_calling");
-    if (service.reasoning) capabilities.push("reasoning");
-    if (service.search) capabilities.push("web_search");
-    if (service.codeExecution) capabilities.push("code_execution");
-    return capabilities;
+    return MODEL_DEFINITION_CAPABILITIES.filter(
+        (capability) => service[CAPABILITY_DEFINITION_FIELD[capability]],
+    );
 }
 
 type ModelInfoOptions = {

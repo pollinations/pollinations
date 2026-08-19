@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import type { CommunityEndpointAdvertised } from "../community-endpoints.ts";
 import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -240,12 +241,16 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   inputModalities: text("input_modalities", { mode: "json" }).$type<
     ModelInputModality[]
   >(),
-  // Owner-declared: whether the upstream accepts an OpenAI-style `tools`
-  // parameter. Advertising metadata only, text models only; the gateway
-  // already passes `tools` through untouched regardless of this flag.
-  toolCalling: integer("tool_calling", { mode: "boolean" })
-    .default(false)
-    .notNull(),
+  // Owner-declared catalog metadata (capabilities, context length, reference
+  // images), mirrored into the model catalog by communityModelDefinition and
+  // never read on the request path. Null means nothing was declared. One JSON
+  // blob rather than a column per field, so advertising a new kind of thing
+  // costs a key instead of a migration. Which keys a row may set depends on
+  // its modality (COMMUNITY_ADVERTISED_FIELDS); managed agents may set none,
+  // since agent listings inherit all of it from their base model.
+  advertised: text("advertised", {
+    mode: "json",
+  }).$type<CommunityEndpointAdvertised>(),
   // External models keep their target here. Managed agents resolve their
   // target through agentId so the agent can outlive its community listing.
   baseUrl: text("base_url"),

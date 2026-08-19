@@ -48,6 +48,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
@@ -721,11 +722,16 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["text"]);
     });
 
-    it("advertises tool calling when the owner declares it", () => {
+    it("advertises the capabilities and limits the owner declared", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
-            toolCalling: true,
+            inputModalities: ["text", "image"],
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+                maxReferenceImages: 4,
+            },
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -733,9 +739,17 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.tools).toBe(true);
+        expect(definition.reasoning).toBe(true);
+        expect(definition.contextLength).toBe(128000);
+        expect(definition.maxReferenceImages).toBe(4);
+        expect(
+            modelInfoFromDefinition("voodoohop/openai", definition, {
+                community: true,
+            }).capabilities,
+        ).toEqual(["tool_calling", "reasoning"]);
     });
 
-    it("omits tools when tool calling is not declared", () => {
+    it("omits undeclared capabilities rather than setting them false", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
@@ -746,6 +760,36 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.search).toBeUndefined();
+        expect(definition.codeExecution).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+        expect(definition.maxReferenceImages).toBeUndefined();
+    });
+
+    it("drops declarations the modality cannot advertise", () => {
+        // A row keeps what its owner declared when it was a text model. The
+        // catalog must not repeat those claims once the modality changed.
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+                maxReferenceImages: 4,
+            },
+            ...communityEndpointPrices({
+                promptTextPrice: 0.2,
+                completionImagePrice: 0.03,
+            }),
+        });
+
+        expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+        // Image endpoints accept text only until image input is declared.
+        expect(definition.maxReferenceImages).toBeUndefined();
     });
 
     it("builds community transcription models billed per audio second", () => {
@@ -867,7 +911,6 @@ describe("community endpoint helpers", () => {
                 title: "GPT Image",
                 description: null,
                 delegatesGeneration: false,
-                toolCalling: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
@@ -1063,7 +1106,6 @@ describe("community endpoint helpers", () => {
                 title: "Whisper",
                 description: null,
                 delegatesGeneration: false,
-                toolCalling: false,
                 modality: "transcription",
                 imagePricing: "request",
                 inputModalities: ["audio"],
@@ -1427,7 +1469,6 @@ describe("community endpoint helpers", () => {
             visibility: "public",
             perUserRpm: null,
             delegatesGeneration: false,
-            toolCalling: false,
             fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
@@ -1492,7 +1533,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 perUserRpm: null,
                 delegatesGeneration: true,
-                toolCalling: false,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],
@@ -3952,7 +3992,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            toolCalling: false,
             disabled: false,
             disabledReason: null,
             disabledAt: null,
@@ -4061,44 +4100,6 @@ fixtureTest(
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
             promptTextPrice: 1e-12,
-        });
-
-        const toolCallingOnResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ toolCalling: true }),
-                },
-            ),
-        );
-        expect(toolCallingOnResponse.status).toBe(200);
-        await expect(toolCallingOnResponse.json()).resolves.toMatchObject({
-            toolCalling: true,
-        });
-
-        const toolCallingOffResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ toolCalling: false }),
-                },
-            ),
-        );
-        expect(toolCallingOffResponse.status).toBe(200);
-        await expect(toolCallingOffResponse.json()).resolves.toMatchObject({
-            toolCalling: false,
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -4237,88 +4238,6 @@ fixtureTest(
         await expect(clearLimitResponse.json()).resolves.toMatchObject({
             perUserRpm: null,
         });
-    },
-);
-
-fixtureTest(
-    "rejects declaring tool calling on an image model or a managed agent",
-    async () => {
-        const ownerGithubUsername = `tools-${crypto.randomUUID().slice(0, 8)}`;
-        const { key, userId } = await createTestApiKey({
-            type: "publishable",
-            accountPermissions: ["keys"],
-            user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-                githubUsername: ownerGithubUsername,
-            },
-        });
-        const enterApi = await createEnterFrontendApi();
-
-        const imageResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: "image-tools-test",
-                    title: "Image Tools Test",
-                    modality: "image",
-                    baseUrl: "https://api.example.com/v1",
-                    upstreamModel: "gpt-image-1",
-                    bearerToken: "sk_saved_token",
-                    toolCalling: true,
-                }),
-            }),
-        );
-        expect(imageResponse.status).toBe(400);
-        const imageBody = (await imageResponse.json()) as {
-            error?: { message?: string };
-        };
-        expect(imageBody.error?.message).toContain(
-            "only supported for text models",
-        );
-
-        const agentId = crypto.randomUUID();
-        await db.insert(agentTable).values({
-            id: agentId,
-            ownerUserId: userId,
-            config: JSON.stringify({
-                version: 1,
-                kind: "prompt",
-                systemPrompt: "You are helpful.",
-                baseModel: DEFAULT_TEXT_MODEL,
-                mcpServers: [],
-            }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        const agentResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: "agent-tools-test",
-                    title: "Agent Tools Test",
-                    agentId,
-                    toolCalling: true,
-                }),
-            }),
-        );
-        expect(agentResponse.status).toBe(400);
-        const agentBody = (await agentResponse.json()) as {
-            error?: { details?: { fieldErrors?: Record<string, string[]> } };
-        };
-        expect(agentBody.error?.details?.fieldErrors?.toolCalling).toEqual([
-            "Managed agent listings do not support declaring tool calling",
-        ]);
     },
 );
 
@@ -4574,6 +4493,135 @@ fixtureTest(
 
         const neither = await register({});
         expect(neither.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "declares, edits, and validates advertised catalog metadata",
+    async () => {
+        const ownerGithubUsername = `caps-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `caps-${crypto.randomUUID().slice(0, 8)}`,
+                        title: "Capability Test",
+                        baseUrl: "https://api.example.com/v1",
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const created = await register({
+            inputModalities: ["text", "image"],
+            advertised: {
+                capabilities: ["reasoning", "tool_calling"],
+                contextLength: 128000,
+                maxReferenceImages: 4,
+            },
+        });
+        expect(created.status).toBe(200);
+        const createdBody = (await created.json()) as {
+            id: string;
+            advertised: Record<string, unknown>;
+        };
+        // Returned in catalog order, not the order they were sent in.
+        expect(createdBody.advertised).toEqual({
+            capabilities: ["tool_calling", "reasoning"],
+            contextLength: 128000,
+            maxReferenceImages: 4,
+        });
+
+        const update = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${createdBody.id}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: cookie,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        // The object is sent whole, so an omitted key clears that claim and
+        // the keys still present survive.
+        const cleared = await update({
+            advertised: { maxReferenceImages: 4 },
+        });
+        expect(cleared.status).toBe(200);
+        await expect(cleared.json()).resolves.toMatchObject({
+            advertised: { maxReferenceImages: 4 },
+        });
+
+        // Dropping image input takes the reference-image count with it.
+        const textOnly = await update({ inputModalities: ["text"] });
+        expect(textOnly.status).toBe(200);
+        await expect(textOnly.json()).resolves.toMatchObject({
+            advertised: {},
+        });
+
+        const unsupportedCapability = await register({
+            modality: "image",
+            advertised: { capabilities: ["tool_calling"] },
+        });
+        expect(unsupportedCapability.status).toBe(400);
+        await expect(unsupportedCapability.json()).resolves.toMatchObject({
+            error: {
+                message: "capabilities is only supported for text models",
+            },
+        });
+
+        const contextOnImage = await register({
+            modality: "image",
+            advertised: { contextLength: 128000 },
+        });
+        expect(contextOnImage.status).toBe(400);
+        await expect(contextOnImage.json()).resolves.toMatchObject({
+            error: {
+                message: "contextLength is only supported for text models",
+            },
+        });
+
+        const referencesWithoutImageInput = await register({
+            advertised: { maxReferenceImages: 4 },
+        });
+        expect(referencesWithoutImageInput.status).toBe(400);
+        await expect(referencesWithoutImageInput.json()).resolves.toMatchObject(
+            {
+                error: {
+                    message:
+                        "maxReferenceImages is only supported for models that accept image input",
+                },
+            },
+        );
     },
 );
 

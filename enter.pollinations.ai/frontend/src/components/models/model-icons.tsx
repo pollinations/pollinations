@@ -12,7 +12,6 @@ import {
     SearchIcon,
     SpeakerIcon,
     VideoIcon,
-    WrenchIcon,
 } from "@pollinations/ui";
 import type { FC } from "react";
 import type { DisplayCapability, InputModality } from "./model-info.ts";
@@ -39,10 +38,9 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
     audio: MicIcon,
 };
 
-/** Capability glyphs (tool calling/reasoning/web search/code execution). */
+/** Capability glyphs (reasoning/web search/code execution). */
 export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     agent: BotIcon,
-    tool_calling: WrenchIcon,
     reasoning: ReasoningIcon,
     web_search: SearchIcon,
     code_execution: CodeIcon,

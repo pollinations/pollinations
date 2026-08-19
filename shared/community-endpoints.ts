@@ -1,6 +1,11 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
 import {
+    capabilityDefinitionFields,
+    MODEL_DEFINITION_CAPABILITIES,
+    type ModelDefinitionCapability,
+} from "./registry/model-info.ts";
+import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
@@ -71,6 +76,121 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     CommunityEndpointModality,
     readonly ModelInputModality[]
 >;
+
+// Which catalog capabilities an owner may declare, by endpoint modality. The
+// registry's capability vocabulary is text-only in practice: every model that
+// sets one of these is a text (or realtime) model, and no image, audio, or 3d
+// model in shared/registry declares any. Image and transcription endpoints
+// therefore advertise none, and say so with an empty list rather than by being
+// absent from this table.
+export const COMMUNITY_ENDPOINT_CAPABILITIES = {
+    text: MODEL_DEFINITION_CAPABILITIES,
+    image: [],
+    transcription: [],
+} as const satisfies Record<
+    CommunityEndpointModality,
+    readonly ModelDefinitionCapability[]
+>;
+
+// Ceilings on the owner-declared numbers. Neither changes how a request is
+// routed or billed, so these only need to keep a typo out of the catalog: the
+// largest first-party context window is 2M tokens, and the most reference
+// images any registry model accepts is 14.
+export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
+export const MAX_COMMUNITY_REFERENCE_IMAGES = 64;
+
+/**
+ * Owner-declared catalog metadata: what the model claims about itself, mirrored
+ * into the model catalog and never read on the request path. Stored as one JSON
+ * column so a new advertisable field is a key here plus a schema entry, with no
+ * migration and no new column to thread through every read path.
+ */
+export type CommunityEndpointAdvertised = {
+    capabilities?: ModelDefinitionCapability[];
+    contextLength?: number;
+    maxReferenceImages?: number;
+};
+
+export type CommunityAdvertisedField = keyof CommunityEndpointAdvertised;
+
+/**
+ * When each advertised field means anything, and how to say so in a rejection.
+ * One entry per field is the whole per-modality rule set: the write path
+ * rejects against it and the read path filters against it, so the two cannot
+ * disagree about what a given row is allowed to claim.
+ */
+export const COMMUNITY_ADVERTISED_FIELDS = {
+    capabilities: {
+        supported: (modality: CommunityEndpointModality) =>
+            COMMUNITY_ENDPOINT_CAPABILITIES[modality].length > 0,
+        requirement: "text models",
+    },
+    contextLength: {
+        supported: (modality: CommunityEndpointModality) => modality === "text",
+        requirement: "text models",
+    },
+    maxReferenceImages: {
+        supported: (
+            _modality: CommunityEndpointModality,
+            inputModalities: readonly ModelInputModality[],
+        ) => inputModalities.includes("image"),
+        requirement: "models that accept image input",
+    },
+} as const satisfies Record<
+    CommunityAdvertisedField,
+    {
+        supported: (
+            modality: CommunityEndpointModality,
+            inputModalities: readonly ModelInputModality[],
+        ) => boolean;
+        requirement: string;
+    }
+>;
+
+/**
+ * Declared metadata reduced to what this row can still advertise. Filtering on
+ * read is what covers a row whose modality or inputs changed after the fact:
+ * the stored claim stays, but the catalog stops repeating the part that no
+ * longer applies. Absent keys mean "nothing declared", so an undeclared model
+ * is indistinguishable from a registry model that never set the field.
+ */
+export function normalizeCommunityEndpointAdvertised(
+    value: CommunityEndpointAdvertised | null | undefined,
+    modality: CommunityEndpointModality,
+    inputModalities: readonly ModelInputModality[],
+): CommunityEndpointAdvertised {
+    if (!value) return {};
+    const advertised: CommunityEndpointAdvertised = {};
+    if (
+        COMMUNITY_ADVERTISED_FIELDS.capabilities.supported(modality) &&
+        value.capabilities?.length
+    ) {
+        const declared = new Set<string>(value.capabilities);
+        const permitted: readonly ModelDefinitionCapability[] =
+            COMMUNITY_ENDPOINT_CAPABILITIES[modality];
+        // Emitted in catalog order rather than the order they were declared.
+        const capabilities = permitted.filter((capability) =>
+            declared.has(capability),
+        );
+        if (capabilities.length) advertised.capabilities = capabilities;
+    }
+    if (
+        COMMUNITY_ADVERTISED_FIELDS.contextLength.supported(modality) &&
+        value.contextLength
+    ) {
+        advertised.contextLength = value.contextLength;
+    }
+    if (
+        COMMUNITY_ADVERTISED_FIELDS.maxReferenceImages.supported(
+            modality,
+            inputModalities,
+        ) &&
+        value.maxReferenceImages
+    ) {
+        advertised.maxReferenceImages = value.maxReferenceImages;
+    }
+    return advertised;
+}
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -322,10 +442,6 @@ export function normalizeCommunityEndpointInputModalities(
     return normalized.length ? [...normalized] : [permitted[0]];
 }
 
-// Access/visibility of a registered endpoint. Private is the default; choosing
-// public on create or update is allowlist-gated.
-//   private → owner-only callable, shown only to the owner, no owner-set price
-//   public  → anyone callable, listed in the model catalog, priced
 export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 
 export type CommunityEndpointVisibility =
@@ -345,6 +461,13 @@ type CommunityEndpointRuntimeBase = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
+    // Owner-declared catalog metadata. Null means nothing was declared, which
+    // is also what every row predating the column means. Carried on the base
+    // rather than per kind so communityModelDefinition picks it up without
+    // branching — a managed agent's declaration is rejected on write and
+    // overwritten on read anyway, since applyAgentMetadata inherits all of it
+    // from the agent's base model.
+    advertised?: CommunityEndpointAdvertised | null;
     // Where the gateway sends the request, and the model name it asks for.
     // Both variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
@@ -367,12 +490,6 @@ export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     bearerTokenCiphertext: string;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
-    /**
-     * Owner-declared: whether the upstream accepts an OpenAI-style `tools`
-     * parameter. Agent-backed listings have no equivalent field — their
-     * capabilities are always inherited from their base model instead.
-     */
-    toolCalling: boolean;
 };
 
 /** A managed prompt agent, run by Enter's own agent runtime. */
@@ -409,7 +526,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
-    toolCalling?: boolean;
+    advertised?: CommunityEndpointAdvertised | null;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -752,6 +869,12 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
+    const { capabilities, ...advertised } =
+        normalizeCommunityEndpointAdvertised(
+            endpoint.advertised,
+            modality,
+            inputModalities,
+        );
     return {
         aliases,
         provider: "community",
@@ -774,7 +897,12 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
-        ...(endpoint.toolCalling ? { tools: true } : {}),
+        // Owner-declared. Absent rather than false/0 so an undeclared community
+        // model looks the same in /models as a registry model that never set
+        // the field. Everything but capabilities already carries its
+        // ModelDefinition name, so it spreads straight through.
+        ...capabilityDefinitionFields(capabilities ?? []),
+        ...advertised,
     };
 }
 

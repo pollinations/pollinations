@@ -427,10 +427,10 @@ export function CommunityEndpointDialog({
                                 inputModalities,
                             }))
                         }
-                        onToolCallingChange={(toolCalling) =>
+                        onCapabilitiesChange={(capabilities) =>
                             setForm((current) => ({
                                 ...current,
-                                toolCalling,
+                                capabilities,
                             }))
                         }
                     />

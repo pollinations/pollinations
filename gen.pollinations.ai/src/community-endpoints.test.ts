@@ -6,6 +6,7 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
@@ -88,6 +89,16 @@ import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 const db = drizzle(env.DB);
 const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
+// user.github_id is unique, so every test owner needs its own id. Rotate
+// through the allowlist to keep each one both distinct and allowed.
+let allowedGithubIdCursor = 0;
+function nextAllowedGithubId(): number {
+    const ids = COMMUNITY_MODEL_ALLOWED_GITHUB_IDS;
+    const id = ids[allowedGithubIdCursor % ids.length];
+    allowedGithubIdCursor += 1;
+    if (id === undefined) throw new Error("empty community model allowlist");
+    return id;
+}
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -280,11 +291,11 @@ async function createCommunityFallbackPair({
     const primaryOwner = `${prefix}-primary-${suffix}`;
     const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
     const fallbackUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: fallbackOwner,
     });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
@@ -1549,7 +1560,7 @@ fixtureTest(
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1683,7 +1694,7 @@ fixtureTest(
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
             // Owner-only private models have no Pollinations charge and remain
             // callable without a Pollinations balance.
@@ -1831,7 +1842,7 @@ fixtureTest(
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1930,7 +1941,7 @@ fixtureTest(
         const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2029,7 +2040,7 @@ fixtureTest(
         const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2129,7 +2140,7 @@ fixtureTest(
     async ({ restrictedApiKey }) => {
         const ownerGithubUsername = `order-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const newestDate = new Date("2100-01-02T00:00:00Z");
@@ -2283,7 +2294,7 @@ fixtureTest(
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2346,11 +2357,11 @@ fixtureTest(
         const imageModelId = communityModelId(imageOwner, imageName);
 
         const textUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: textOwner,
         });
         const imageUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
         });
 
@@ -2525,7 +2536,7 @@ fixtureTest(
             modelName,
         );
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2849,7 +2860,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3055,7 +3066,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `image-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3544,7 +3555,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `stt-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3773,13 +3784,13 @@ fixtureTest(
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: ownerGithubUsername,
             },
         });
         const denied = await createTestApiKey({
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
             },
         });
@@ -4164,7 +4175,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4265,7 +4276,7 @@ fixtureTest(
         // Use an approved publisher so the request reaches the outbound probe;
         // non-allowlisted accounts are rejected before any fetch occurs.
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4322,7 +4333,7 @@ fixtureTest(
 fixtureTest("rejects unsafe community model names", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4370,7 +4381,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4420,7 +4431,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4795,12 +4806,12 @@ fixtureTest(
 fixtureTest("validates community fallback targets on write", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
     const otherOwnerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -5108,7 +5119,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const bearerTokenCiphertext = await encryptSecret(
@@ -5313,7 +5324,7 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const fallbackModelId = communityModelId(
@@ -5705,7 +5716,7 @@ fixtureTest(
         for (const owner of owners) {
             userIds.push(
                 await createTestUser({
-                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubId: nextAllowedGithubId(),
                     githubUsername: owner,
                 }),
             );

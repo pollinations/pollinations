@@ -1,4 +1,4 @@
-import type { RecordRewardInput } from "@shared/billing/rewards.ts";
+import { type RecordRewardInput, rewardKey } from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
@@ -33,7 +33,6 @@ export type QuestGroup = {
 export type RewardProposal = {
     quest: QuestDefinition;
     userId: string;
-    idempotencySubject?: string;
 };
 
 export type QuestProgress = QuestGoal & {
@@ -53,23 +52,16 @@ export function toQuestProgress(
     return { questId: quest.id, current, ...quest.goal };
 }
 
-export function toReward(proposal: RewardProposal): RecordRewardInput {
+export function toReward(
+    proposal: RewardProposal,
+    githubId: number | null,
+): RecordRewardInput {
     const { quest, userId } = proposal;
-    let idempotencyKey: string;
-    if (quest.scope === "once") {
-        idempotencyKey = `quest:${quest.id}`;
-    } else if (quest.scope === "perSubject") {
-        if (!proposal.idempotencySubject) {
-            throw new Error(
-                `Quest ${quest.id} requires an idempotency subject`,
-            );
-        }
-        idempotencyKey = `quest:${quest.id}:${proposal.idempotencySubject}`;
-    } else {
-        idempotencyKey = `quest:${quest.id}:user:${userId}`;
-    }
     return {
-        idempotencyKey,
+        idempotencyKey:
+            quest.scope === "once"
+                ? `quest:${quest.id}`
+                : rewardKey(quest.id, githubId),
         userId,
         questId: quest.id,
         title: quest.title,

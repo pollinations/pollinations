@@ -1064,7 +1064,13 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isEmbedding ? "embedding" : isTranscription ? "audio" : "text",
+        category: isImage
+            ? "image"
+            : isEmbedding
+              ? "embedding"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,

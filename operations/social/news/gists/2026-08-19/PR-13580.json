@@ -1,0 +1,34 @@
+{
+  "pr_number": 13580,
+  "title": "feat: let the KPI graph select any variant, not just the cycled one",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13580",
+  "merged_at": "2026-08-19T13:26:37Z",
+  "labels": [],
+  "pr_body_excerpt": "The explorer listed one entry per row and showed whichever unit the table was cycled to, so graphing **Community models · availability** meant cycling the table row twice first.\n\nThe table cycles in place because it is short of width. The dropdown is not, so it now lists every view of every row — 19 entries, grouped by category.\n\n- `KPI_VIEWS` / `kpiViewId` / `kpiViewById` added to the catalogue\n- Explorer selects by view id; no longer reads the table's `viewIndex`\n- The table's graph button passes the view the row is currently showing, so that jump still lands on the right variant\n\n10 tests pass, including that every view has a unique id resolving back to itself and that a cycled row jumps to its own variant.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Every KPI Gets a Seat",
+    "blurb": "The KPI explorer stopped making people spin a tiny table carousel before finding the graph they wanted. All 19 metric views now wait politely in a category-grouped dropdown.",
+    "summary": "The internal KPI explorer now indexes 19 category-grouped KPI variants by unique kpiViewId, so any view can be graphed directly while table graph buttons retain the row's currently cycled variant.",
+    "impact": "Dashboard users can select Community models availability and every other KPI variant directly from the explorer without cycling the narrow table first.",
+    "keywords": [
+      "kpi",
+      "explorer",
+      "dashboard",
+      "metrics",
+      "variants",
+      "ui"
+    ],
+    "visual_concept": "Polli, wearing tiny analyst glasses, uses a category-labeled dropdown beside a cozy KPI garden; each metric variant is a distinct flowering chart, while a small CRT robot points at the exact chart selected from a compact table row.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny analyst glasses, warmly selecting one of many category-grouped chart flowers from a dropdown beside a compact KPI table; a cheerful CRT monitor robot points to the matching graph, with code-plants and blooming metric icons around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: “ANY VIEW”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13580.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny analyst glasses, warmly selecting one of many category-grouped chart flowers from a dropdown beside a compact KPI table; a cheerful CRT monitor robot points to the matching graph, with code-plants and blooming metric icons around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: “ANY VIEW”."
+  },
+  "generated_at": "2026-08-19T13:27:58.093451+00:00"
+}

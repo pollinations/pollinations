@@ -134,6 +134,31 @@ export const KPIS = [
             "Share of Pollen consumed by apps that bring their own Pollen.",
     },
     {
+        key: "communityModels",
+        category: "Ecosystem",
+        format: "percent",
+        views: [
+            {
+                key: "communityUserPct",
+                name: "Community models · users",
+                tooltip:
+                    "Unique users making at least one final community-model request / weekly active users × 100. Status is ignored on the numerator, so a user whose only community call returned 4xx or 5xx still counts. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
+            },
+            {
+                key: "communityRequestPct",
+                name: "Community models · requests",
+                tooltip:
+                    "Successful (2xx) final community-model requests / all successful (2xx) final requests × 100. 4xx and 5xx are excluded from both sides. Final rows only, so a fallback-rescued request counts once, as one success. Includes top-level managed-agent runs until agent attribution exists.",
+            },
+            {
+                key: "communityAvailability",
+                name: "Community models · availability",
+                tooltip:
+                    "Community-model 2xx / (2xx + 5xx) × 100. 4xx is excluded from the denominator — auth, balance, rate-limit and bad-input errors are the caller's, not an endpoint being down. Includes top-level managed-agent runs until agent attribution exists.",
+            },
+        ],
+    },
+    {
         key: "appSubmissions",
         name: "App submissions",
         category: "Community",

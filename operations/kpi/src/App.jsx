@@ -27,6 +27,9 @@ const EXPORT_COLUMNS = [
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
     ["packPurchases", "Pack purchases"],
+    ["communityUserPct", "Community models user %"],
+    ["communityRequestPct", "Community models request %"],
+    ["communityAvailability", "Community models availability %"],
 ];
 
 function exportCsv(weeklyData) {

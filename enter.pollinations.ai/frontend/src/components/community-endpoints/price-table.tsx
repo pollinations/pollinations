@@ -17,6 +17,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_REQUEST,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -188,13 +189,17 @@ function PriceInputCell({
             ? "/image"
             : field.priceUnit === "request"
               ? "/request"
-              : "/1M";
+              : field.priceUnit === "second"
+                ? "/sec"
+                : "/1M";
     const maximum =
         field.priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
             : field.priceUnit === "request"
               ? MAX_COMMUNITY_PRICE_PER_REQUEST
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+              : field.priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -225,7 +230,8 @@ function PriceInputCell({
                 </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        {field.priceUnit === "image"
+                        {field.priceUnit === "image" ||
+                        field.priceUnit === "second"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
@@ -323,6 +329,12 @@ export function savedEndpointPriceKeys(
 export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "promptTextPrice",
     "completionTextPrice",
+];
+
+// Transcription models bill per audio second, so their single price field is
+// revealed alongside the text fields once the model is public.
+export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
+    "promptAudioPrice",
 ];
 
 export function returnedPriceFields(

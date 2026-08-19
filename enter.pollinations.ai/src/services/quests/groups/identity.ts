@@ -1,10 +1,10 @@
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 // elixpo (Ayushman Bhattacharya) joined the team as an intern — a one-off
@@ -34,10 +34,14 @@ export async function listQuestCards(
     return [questToCard(elixpoInternQuest)];
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     _ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
-    if (user.githubId !== TARGET_GITHUB_ID) return [];
-    return [{ quest: elixpoInternQuest, userId: user.id }];
+): Promise<QuestEvaluation> {
+    return {
+        proposals:
+            user.githubId === TARGET_GITHUB_ID
+                ? [{ quest: elixpoInternQuest, userId: user.id }]
+                : [],
+    };
 }

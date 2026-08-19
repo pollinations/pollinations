@@ -9,6 +9,7 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
+    type ExternalCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
@@ -64,7 +65,6 @@ function createTestApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
@@ -116,8 +116,8 @@ function createTestApp(
 
 function createCommunityEndpoint(
     ownerUserId: string,
-    overrides: Partial<CommunityEndpointRuntime> = {},
-): CommunityEndpointRuntime {
+    overrides: Partial<ExternalCommunityEndpointRuntime> = {},
+): ExternalCommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
         ownerUserId,
@@ -125,6 +125,7 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
+        kind: "external",
         delegatesGeneration: false,
         modality: "text",
         imagePricing: "request",
@@ -178,7 +179,6 @@ function createWrongContentTypeApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: trackingUser,
-            requireAuthorization: async () => {},
             requireUser: () => trackingUser,
             requireModelAccess: () => {},
         });
@@ -218,7 +218,6 @@ function createSseStreamApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => user,
             requireModelAccess: () => {},
         });
@@ -292,7 +291,6 @@ function createHeaderApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: user ?? undefined,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");

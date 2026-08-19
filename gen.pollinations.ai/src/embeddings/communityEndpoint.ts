@@ -31,6 +31,12 @@ export async function generateCommunityEmbeddings(
         return embeddingResponse(responseModel, [], 0, {});
     }
 
+    if (endpoint.kind !== "external") {
+        throw new Error(
+            `Community embedding endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,

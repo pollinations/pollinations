@@ -213,11 +213,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/bring-your-own-pollen",
-                                    )}
-                                >
+                                <InlineLink href={genDocsUrl("#tag/byop")}>
                                     Read the guide
                                 </InlineLink>
                             </li>
@@ -270,20 +266,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     {!simplified && !createdKey && (
                         <p className="text-xs text-theme-text-muted">
-                            Publishable keys (<code>pk_</code>) deprecated –
-                            create via{" "}
-                            <InlineLink
-                                href={genDocsUrl(
-                                    "#tag/-account/POST/account/keys",
-                                )}
-                            >
-                                API
-                            </InlineLink>{" "}
-                            or{" "}
-                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
-                                polli CLI
+                            Raw publishable keys (<code>pk_</code>) are legacy.
+                            For browsers, create an App Key on this dashboard
+                            and use{" "}
+                            <InlineLink href={genDocsUrl("#tag/byop")}>
+                                BYOP
                             </InlineLink>
-                            .
+                            — do not mint a raw <code>pk_</code> via the CLI.
                         </p>
                     )}
 

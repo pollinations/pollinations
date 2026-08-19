@@ -1,12 +1,16 @@
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointImagePricing,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
-    normalizeCommunityAssetUrl,
+    communityTranscriptionSeconds,
+    decodeCommunityBase64,
+    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -17,6 +21,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -35,9 +40,6 @@ export type CommunityEndpointTestResult = {
     /** Image tests only: input types detected by the generation/edit probes. */
     inputModalities?: ModelInputModality[];
 };
-
-const REQUEST_TIMEOUT_MS = 90_000;
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
@@ -58,7 +60,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         response = await fetch(url, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
@@ -179,7 +181,7 @@ export async function testCommunityImageEndpoint({
         }),
     });
 
-    const imageBytes = await firstImageBytes(body, baseUrl);
+    const imageBytes = await firstCommunityImageBytes(body, baseUrl);
     const imageMimeType = imageBytes && detectImageMimeType(imageBytes);
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
@@ -274,6 +276,79 @@ export async function testCommunityEmbeddingEndpoint({
     };
 }
 
+// Transcription endpoints are billed against prompt audio seconds, mirroring
+// the first-party whisper/scribe models. The probe uploads a real audio file
+// and validates the OpenAI transcription response shape.
+export async function testCommunityTranscriptionEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const sampleBytes = decodeCommunityBase64(SAMPLE_AUDIO_BASE64);
+    if (!sampleBytes) {
+        throw new Error("Failed to decode sample audio");
+    }
+    const formData = new FormData();
+    formData.append("model", model);
+    // Same format the request path pins, so what the probe proves is what
+    // callers actually get. See callCommunityTranscriptionEndpoint.
+    formData.append("response_format", "verbose_json");
+    formData.append(
+        "file",
+        new Blob([new Uint8Array(sampleBytes)], { type: "audio/wav" }),
+        "sample.wav",
+    );
+
+    let body: unknown;
+    try {
+        body = await fetchJson(communityAudioTranscriptionsUrl(baseUrl), {
+            method: "POST",
+            headers: authorizationHeaders(bearerToken),
+            body: formData,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // A plain-json-only endpoint rejects verbose_json outright. Name the
+        // requirement rather than leaving the owner staring at a bare 400.
+        throw new Error(
+            message.includes("responded 400")
+                ? `${message}. Pollinations requests response_format=verbose_json because that is where the audio duration transcription is billed on is reported; models that only support plain json cannot be registered yet.`
+                : message,
+        );
+    }
+
+    // The sample is real speech, so a working endpoint returns something. We
+    // never check what — the wording varies by model and language.
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("text" in body) ||
+        typeof body.text !== "string" ||
+        body.text.trim().length === 0
+    ) {
+        throw new Error("Endpoint did not return OpenAI transcription text");
+    }
+
+    // The duration is what the endpoint is billed on, so one that cannot report
+    // it must not register — otherwise every request through it would be
+    // unbillable and the owner would earn nothing.
+    const promptAudioSeconds = communityTranscriptionSeconds(body);
+    if (promptAudioSeconds === null) {
+        throw new Error(
+            "Endpoint did not report the audio duration (expected verbose_json's top-level duration, or usage.seconds), which is required to bill transcription",
+        );
+    }
+
+    return {
+        // The pricing UI marks the prompt-audio row against a usage key named
+        // in that field's rawUsagePaths, and the duration is the only thing
+        // billed here — so report it directly rather than echoing an upstream
+        // usage object that may not carry it.
+        usage: { duration: promptAudioSeconds },
+        billableUsage: { promptAudioSeconds },
+    };
+}
+
 async function testCommunityImageEdits(
     { baseUrl, bearerToken, model }: EndpointTestInput,
     imageBytes: Uint8Array,
@@ -297,88 +372,9 @@ async function testCommunityImageEdits(
             headers: authorizationHeaders(bearerToken),
             body: formData,
         });
-        const editedImage = await firstImageBytes(body, baseUrl);
+        const editedImage = await firstCommunityImageBytes(body, baseUrl);
         return Boolean(editedImage && detectImageMimeType(editedImage));
     } catch {
         return false;
-    }
-}
-
-async function firstImageBytes(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Uint8Array | null> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        return null;
-    }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
-        if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
-        ) {
-            return decodeBase64(image.b64_json);
-        }
-        if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
-        ) {
-            return fetchImageBytes(image.url, endpointBaseUrl);
-        }
-    }
-    return null;
-}
-
-async function fetchImageBytes(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Uint8Array> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new Error("Endpoint returned an unsafe image URL");
-    }
-    let response: Response;
-    try {
-        response = await fetch(url, {
-            redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        });
-    } catch {
-        throw new Error("Endpoint image URL timed out or could not connect");
-    }
-    if (!response.ok) {
-        throw new Error(`Endpoint image URL responded ${response.status}`);
-    }
-    const contentLength = Number(response.headers.get("content-length"));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
-        throw new Error("Endpoint image is larger than 20 MB");
-    }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > MAX_IMAGE_BYTES) {
-        throw new Error("Endpoint image is larger than 20 MB");
-    }
-    return bytes;
-}
-
-function decodeBase64(value: string): Uint8Array | null {
-    try {
-        const encoded = value
-            .replace(/^data:[^,]+,/, "")
-            .replace(/\s/g, "")
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
-        const decoded = atob(encoded);
-        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-    } catch {
-        return null;
     }
 }

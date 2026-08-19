@@ -15,7 +15,8 @@ export type ModelCategoryLabel =
     | "Realtime"
     | "Embedding"
     | "Community Text"
-    | "Community Image";
+    | "Community Image"
+    | "Community Agents";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
@@ -41,6 +42,7 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "embedding",
     "community-text",
     "community-image",
+    "community-agent",
 ];
 
 const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
@@ -53,6 +55,7 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     embedding: "Embedding",
     "community-text": "Community Text",
     "community-image": "Community Image",
+    "community-agent": "Community Agents",
 };
 
 const CATEGORY_MODALITIES: Record<
@@ -68,6 +71,7 @@ const CATEGORY_MODALITIES: Record<
     embedding: "embeddings",
     "community-text": "text",
     "community-image": "images",
+    "community-agent": "text",
 };
 
 const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
@@ -83,7 +87,9 @@ const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
 export function getModelDisplayCategory(
     category: ModelCategory,
     community = false,
+    agent = false,
 ): ModelDisplayCategory {
+    if (community && agent) return "community-agent";
     if (community && (category === "text" || category === "image")) {
         return `community-${category}`;
     }
@@ -101,6 +107,7 @@ export function getModelCategoriesFromCatalog(
                     getModelDisplayCategory(
                         getCatalogCategory(model),
                         model.community,
+                        model.agent,
                     ) === category,
             )
             .map((model) => {

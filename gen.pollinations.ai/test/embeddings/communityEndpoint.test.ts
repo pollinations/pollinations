@@ -22,6 +22,7 @@ function buildRuntime(
         name: "bge",
         title: null,
         description: "Community embedding model",
+        kind: "external" as const,
         modality: "embedding" as CommunityEndpointModality,
         imagePricing: "request",
         inputModalities: ["text"] as ModelInputModality[],

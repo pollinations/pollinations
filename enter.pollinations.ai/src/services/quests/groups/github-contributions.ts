@@ -6,10 +6,10 @@ import { graphql } from "@shared/github/client.ts";
 import type { QuestDefinition, QuestState } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 /**
@@ -260,11 +260,11 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
     return data.search.nodes.some((pr) => pr.mergedAt !== null);
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
-    if (user.githubId === null) return [];
+): Promise<QuestEvaluation> {
+    if (user.githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
     const [issues, mergedPr] = await Promise.all([
@@ -287,8 +287,12 @@ export async function findRewardProposalsForUser(
             userId: user.id,
         }));
 
-    return [
-        ...issueProposals,
-        ...(mergedPr ? [{ quest: firstMergedPrQuest, userId: user.id }] : []),
-    ];
+    return {
+        proposals: [
+            ...issueProposals,
+            ...(mergedPr
+                ? [{ quest: firstMergedPrQuest, userId: user.id }]
+                : []),
+        ],
+    };
 }

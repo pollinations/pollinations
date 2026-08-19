@@ -1,0 +1,34 @@
+{
+  "pr_number": 13570,
+  "title": "feat: add a community-models row to the KPI table",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13570",
+  "merged_at": "2026-08-19T11:37:58Z",
+  "labels": [],
+  "pr_body_excerpt": "Community-models half of the ecosystem KPI request. No agent metrics and no `is_agent` schema change — that lands separately.\n\n- Extends `weekly_usage_stats.pipe` with `community_user_pct`, `community_request_pct`, `community_availability` as single-pass conditional aggregates on the existing `model_provider_used = 'community'` column. No datasource change.\n- Availability is `2xx / (2xx + 5xx)`, same formula as `weekly_health_stats` — 4xx is the caller's error, not downtime.\n- Every division guarded with `nullIf(..., 0)`, so a week with no community traffic is blank rather than 0%.\n- One cycleable **Community models** row (users ⇄ requests ⇄ availability) in the trend table, reusing the existing dotted-underline ⇄ behaviour. Three CSV columns added.\n- Adds `vitest` to `operations/kpi` (already resolvable from the repo root, no new install) with tests for cycling, per-view field, percent formatting, and blank-not-zero before the pipe ships.\n\nKnown limitation, stated in all three tooltips: managed agents are community endpoints, so their top-level runs are inside these numbers until `is_agent` exists.\n\n**Not deployed.** The pipe change needs Tinybird staging validation and deploy before the column shows numbers; until then the row renders `—`.\n\nStacked on #13568 — merge that first.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Community gets a dashboard row",
+    "blurb": "The KPI garden now has a dedicated bed for community models. It cycles through users, requests, and availability, while quietly refusing to call an empty week 0%.",
+    "summary": "Added a cycleable Community models row to the KPI trend table, backed by single-pass weekly aggregates for community users, requests, and 2xx/(2xx+5xx) availability, plus CSV fields and Vitest coverage for formatting and empty-week behavior.",
+    "impact": "Once the Tinybird pipe is validated and deployed, maintainers can inspect community-model usage and availability from one KPI row, with no-traffic weeks shown as blank and managed-agent traffic clearly noted in the tooltips.",
+    "keywords": [
+      "community-models",
+      "kpi",
+      "observability",
+      "tinybird",
+      "availability",
+      "analytics"
+    ],
+    "visual_concept": "Polli tends a small community-model garden beside a cozy KPI terminal: three flowering gauges represent users, requests, and availability, with a dotted-arrow sign showing the row cycling between views. The monitor robot eagerly reads the metrics while empty pots display a gentle dash rather than a zero, and a tooltip-like garden placard notes that managed agents currently grow in the same bed.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny gardener visor, tending a lime green (#ecf874) community-model garden beside a retro KPI monitor showing three cycling flower gauges labeled USERS, REQUESTS, and AVAILABILITY. A cute CRT-monitor robot holds a dotted-arrow sign, code-plants and blank flower pots show gentle dashes, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13570.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny gardener visor, tending a lime green (#ecf874) community-model garden beside a retro KPI monitor showing three cycling flower gauges labeled USERS, REQUESTS, and AVAILABILITY. A cute CRT-monitor robot holds a dotted-arrow sign, code-plants and blank flower pots show gentle dashes, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-19T11:39:04.523944+00:00"
+}

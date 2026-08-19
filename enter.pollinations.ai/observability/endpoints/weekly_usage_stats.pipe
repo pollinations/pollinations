@@ -20,11 +20,6 @@ SQL >
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS revenue_usd,
         sum(total_cost) AS cost_usd,
-        -- Modelled compute cost split by provider. Some providers are on
-        -- credits rather than cash, and which ones changes faster than a
-        -- Tinybird deploy, so the credit list lives in the dashboard and the
-        -- pipe just reports the breakdown.
-        sumMap(map(model_provider_used, total_cost)) AS cost_by_provider,
         uniq(user_id) AS active_users,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user,

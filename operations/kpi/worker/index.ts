@@ -23,7 +23,7 @@ const TINYBIRD_CACHE_TTL = 21600; // 6 hours — weekly data barely changes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not touch caches.default — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "3";
+const TINYBIRD_CACHE_VERSION = "2";
 
 async function fetchTinybird(
     env: Env,

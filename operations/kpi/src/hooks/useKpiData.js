@@ -113,7 +113,6 @@ export function useKpiData() {
                 textRequests: row.text_requests,
                 imageRequests: row.image_requests,
                 costUsd: row.cost_usd,
-                costByProvider: row.cost_by_provider,
                 // Pollen actually spent, in USD. Unlike Stripe cash this is
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.

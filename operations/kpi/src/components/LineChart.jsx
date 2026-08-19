@@ -28,47 +28,95 @@ function useElementWidth() {
     return [ref, width];
 }
 
-/** Snap a step to 1/2/5 × 10^n so ticks land on read-off values. */
+const LADDER = [1, 2, 2.5, 5, 10];
+
+/** Snap a step to 1/2/2.5/5/10 × 10^n so ticks land on read-off values. */
 function niceStep(span) {
     if (!(span > 0)) return 1;
     const magnitude = 10 ** Math.floor(Math.log10(span));
     const normalized = span / magnitude;
-    const step =
-        normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-    return step * magnitude;
+    return LADDER.find((rung) => normalized <= rung) * magnitude;
 }
 
-/** The next step up the 1/2/5 ladder. */
+/**
+ * The ladder rung nearest a target step, rather than the next one up. Rounding
+ * up always would cost gridlines: a span wanting 240K would jump to 500K and
+ * leave the plot with two lines on it.
+ */
+const LADDER_EDGES = [1.5, 2.25, 3.55, 7.1];
+function nearestStep(span) {
+    if (!(span > 0)) return 1;
+    const magnitude = 10 ** Math.floor(Math.log10(span));
+    const normalized = span / magnitude;
+    const rung = LADDER_EDGES.findIndex((edge) => normalized < edge);
+    return LADDER[rung === -1 ? LADDER.length - 1 : rung] * magnitude;
+}
+
+/** The next step up the ladder. */
 function widerStep(step) {
     const magnitude = 10 ** Math.floor(Math.log10(step));
     const normalized = step / magnitude;
-    return (normalized < 1.5 ? 2 : normalized < 3.5 ? 5 : 10) * magnitude;
+    const next = LADDER.find((rung) => rung > normalized * 1.001) ?? 10;
+    return next * magnitude;
+}
+
+/** The window the data occupies, with a little air above and below. */
+function dataWindow(values) {
+    const rawMin = Math.min(...values);
+    const rawMax = Math.max(...values);
+    const span = rawMax - rawMin || Math.abs(rawMax) || 1;
+    const min = rawMin - span * 0.08;
+    return {
+        // Air below, but a series that never goes negative keeps a floor of
+        // zero rather than dipping into it. Gross margin does go negative.
+        min: rawMin >= 0 ? Math.max(0, min) : min,
+        max: rawMax + span * 0.08,
+    };
 }
 
 /**
  * Fit the axis to the data rather than to zero — twelve weeks of WAU sitting
- * between 6k and 7k is a flat line on a zero baseline. The floor is clamped at
- * zero so a series that genuinely reaches it still reads as reaching it.
+ * between 6k and 7k is a flat line on a zero baseline.
  *
- * Always returns exactly TICKS intervals, so two axes on the same plot put
- * their labels on the same gridlines.
+ * The bounds are the data window itself, and the ticks are the round numbers
+ * that fall inside it. Snapping the bounds outward to round numbers instead is
+ * what strands half the plot: a series topping out at 1.24M gets rounded up to
+ * a 2.5M ceiling and then draws in the bottom half of the card.
  */
 function niceScale(values) {
     if (values.length === 0) return { lo: 0, hi: 1, ticks: [0, 1] };
-    const rawMin = Math.min(...values);
-    const rawMax = Math.max(...values);
-    const span = rawMax - rawMin || Math.abs(rawMax) || 1;
-    const min = Math.max(0, rawMin - span * 0.08);
-    const max = rawMax + span * 0.08;
+    const { min, max } = dataWindow(values);
+    const step = nearestStep((max - min) / TICKS);
+    const ticks = [];
+    for (
+        let tick = Math.ceil(min / step) * step;
+        tick <= max + step * 1e-9;
+        tick += step
+    )
+        ticks.push(tick);
+    return { lo: min, hi: max, step, ticks };
+}
 
+/**
+ * Same idea, but every axis gets exactly TICKS intervals starting on a round
+ * number, so two scales on one plot put their labels on shared gridlines.
+ * Only the dual-axis chart needs this; it trades some fit for that alignment.
+ */
+function alignedScale(values) {
+    if (values.length === 0) return { lo: 0, hi: 1, ticks: [0, 1] };
+    const { min, max } = dataWindow(values);
     let step = niceStep((max - min) / TICKS);
-    let lo = Math.max(0, Math.floor(min / step) * step);
+    const floorAt = (size) => {
+        const value = Math.floor(min / size) * size;
+        return min >= 0 ? Math.max(0, value) : value;
+    };
+    let lo = floorAt(step);
     while (lo + step * TICKS < max) {
         step = widerStep(step);
-        lo = Math.max(0, Math.floor(min / step) * step);
+        lo = floorAt(step);
     }
     const ticks = Array.from({ length: TICKS + 1 }, (_, i) => lo + step * i);
-    return { lo, hi: lo + step * TICKS, ticks };
+    return { lo, hi: lo + step * TICKS, step, ticks };
 }
 
 /**
@@ -102,7 +150,7 @@ export function LineChart({
     // One scale per axis. Both end up with TICKS intervals, so the right-hand
     // labels land on the same gridlines as the left-hand ones.
     const scales = dual
-        ? series.map((item) => niceScale(valuesOf(item)))
+        ? series.map((item) => alignedScale(valuesOf(item)))
         : [niceScale(series.flatMap(valuesOf))];
     const scaleOf = (index) => scales[dual ? index : 0];
 
@@ -155,9 +203,16 @@ export function LineChart({
         if (previous && label.y - previous.y < 13) label.y = previous.y + 13;
     });
 
-    // Axis ticks wear the format of the series they belong to.
+    // Axis ticks wear the format of the series they belong to. Percentages get
+    // as many decimals as the step needs — availability sits between 99% and
+    // 100%, and whole-number ticks there would all read the same.
     const axisLabel = (tick, seriesIndex) => {
+        const scale = scaleOf(seriesIndex);
         const tickFormat = dual ? formatOf(series[seriesIndex]) : format;
+        if (tickFormat === "percent") {
+            const decimals = scale.step >= 1 ? 0 : scale.step >= 0.1 ? 1 : 2;
+            return `${tick.toFixed(decimals)}%`;
+        }
         return formatValue(
             tick,
             tickFormat === "currency" ? "currency" : "compact",
@@ -375,8 +430,7 @@ export function LineChart({
             ) : (
                 scales[0].lo > 0 && (
                     <Text as="p" size="micro" tone="muted">
-                        Axis starts at {formatValue(scales[0].lo, format)}, not
-                        zero.
+                        Axis starts at {axisLabel(scales[0].lo, 0)}, not zero.
                     </Text>
                 )
             )}

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
+import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export type Bucket = BalanceBucket;
 
@@ -44,12 +45,12 @@ export async function atomicDeductUserBalance(
         SET
             tier_balance = CASE
                 WHEN (SELECT bucket FROM decision) = 'tier'
-                    THEN COALESCE(tier_balance, 0) - ${amount}
+                    THEN ROUND(COALESCE(tier_balance, 0) - ${amount}, ${POLLEN_BILLING_PRECISION})
                 ELSE tier_balance
             END,
             pack_balance = CASE
                 WHEN (SELECT bucket FROM decision) = 'pack'
-                    THEN COALESCE(pack_balance, 0) - ${amount}
+                    THEN ROUND(COALESCE(pack_balance, 0) - ${amount}, ${POLLEN_BILLING_PRECISION})
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
@@ -86,7 +87,7 @@ export async function atomicDeductApiKeyBalance(
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
-			SET pollen_balance = pollen_balance - ${amount}
+			SET pollen_balance = ROUND(pollen_balance - ${amount}, ${POLLEN_BILLING_PRECISION})
 			WHERE id = ${apiKeyId}
 			AND pollen_balance IS NOT NULL
 		`);
@@ -110,7 +111,9 @@ export async function atomicCreditUserBalance(
     const column = BUCKET_COLUMNS[bucket];
     const rows = await db
         .update(userTable)
-        .set({ [`${bucket}Balance`]: sql`COALESCE(${column}, 0) + ${amount}` })
+        .set({
+            [`${bucket}Balance`]: sql`ROUND(COALESCE(${column}, 0) + ${amount}, ${POLLEN_BILLING_PRECISION})`,
+        })
         .where(sql`${userTable.id} = ${userId}`)
         .returning({ newBalance: column });
 

@@ -400,7 +400,6 @@ export function CommunityEndpointDialog({
                         alignLabelRow
                     >
                         <ButtonGroup aria-label="Modality">
-                        <ButtonGroup aria-label="Modality">
                             {COMMUNITY_ENDPOINT_MODALITIES.map((modality) => (
                                 <TabButton
                                     key={modality}

@@ -1,11 +1,4 @@
-import {
-    Alert,
-    Chip,
-    CodeBlock,
-    cn,
-    Surface,
-    WarningIcon,
-} from "@pollinations/ui";
+import { Chip, CodeBlock, cn, Surface, WarningIcon } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -170,70 +163,113 @@ export const Announcements: FC = () => {
 };
 
 const CanonicalModelSlugAnnouncement: FC = () => (
-    <Alert
+    <Surface
         id="canonical-model-slugs"
-        intent="warning"
-        className="scroll-mt-4 p-4 sm:p-5"
+        variant="card"
+        className="scroll-mt-4 overflow-hidden p-0"
     >
-        <div className="flex items-start gap-3">
-            <WarningIcon className="mt-0.5 h-6 w-6 shrink-0" />
-            <div className="min-w-0 flex-1">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
-                            Scheduled change
-                        </div>
-                        <h3 className="mt-0.5 text-lg font-semibold leading-tight">
-                            Canonical model slugs are changing
-                        </h3>
-                    </div>
-                    <Chip intent="neutral" size="md" className="self-start">
-                        Sep 1 · 14:00 UTC
-                    </Chip>
+        <div className="bg-intent-warning-bg-light p-4 text-intent-warning-text sm:p-5">
+            <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-opaque/70">
+                    <WarningIcon className="h-6 w-6" />
                 </div>
-
-                <p className="mt-3 text-sm leading-relaxed">
-                    At that time, Pollinations will standardize model slugs
-                    across APIs, permissions, billing, docs, and dashboards.
-                </p>
-
-                <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                    <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
-                            New slug format
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+                                Scheduled change
+                            </div>
+                            <h3 className="mt-0.5 text-lg font-semibold leading-tight">
+                                Canonical model slugs are changing
+                            </h3>
                         </div>
-                        <CodeBlock
-                            code="publisher/model[:variant]"
-                            className="mt-1.5 bg-surface-opaque"
-                            codeClassName="text-sm"
-                        />
+                        <Chip intent="neutral" size="md" className="self-start">
+                            Sep 1 · 14:00 UTC
+                        </Chip>
                     </div>
-                    <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
-                            Example
-                        </div>
-                        <CodeBlock
-                            code={"flux\n→ black-forest-labs/flux.1-schnell"}
-                            className="mt-1.5 bg-surface-opaque"
-                            codeClassName="text-sm"
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 border-t border-divider pt-3 text-sm sm:grid-cols-2">
-                    <p>
-                        <strong className="block">Compatibility</strong>
-                        Existing aliases keep current integrations working
-                        during the transition.
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed">
+                        At that time, Pollinations will standardize model slugs
+                        across APIs, permissions, billing, docs, and dashboards.
                     </p>
-                    <p>
-                        <strong className="block">What stays the same</strong>
+                </div>
+            </div>
+        </div>
+
+        <div className="p-4 sm:p-5">
+            <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+                    New slug format
+                </div>
+                <CodeBlock
+                    code="publisher/model[:variant]"
+                    className="mt-1.5"
+                    codeClassName="text-sm"
+                />
+            </div>
+
+            <div className="mt-5">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+                    Migration example
+                </div>
+                <div className="mt-1.5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                    <div>
+                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                            Current alias
+                        </div>
+                        <CodeBlock
+                            code="flux"
+                            className="min-w-40"
+                            codeClassName="text-sm"
+                        />
+                    </div>
+                    <div
+                        aria-hidden="true"
+                        className="self-center text-2xl font-semibold text-intent-warning-text rotate-90 sm:rotate-0"
+                    >
+                        →
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                            Canonical slug
+                        </div>
+                        <CodeBlock
+                            code="black-forest-labs/flux.1-schnell"
+                            codeClassName="text-sm"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 border-t border-divider pt-4 text-sm sm:grid-cols-2">
+                <div className="rounded-lg bg-theme-bg-pale p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Chip intent="free" size="sm">
+                            Compatible
+                        </Chip>
+                        <strong className="text-theme-text-strong">
+                            Existing aliases continue to work
+                        </strong>
+                    </div>
+                    <p className="mt-1.5 text-theme-text-muted">
+                        Current integrations keep working during the transition.
+                    </p>
+                </div>
+                <div className="rounded-lg bg-theme-bg-pale p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Chip intent="neutral" size="sm">
+                            Unchanged
+                        </Chip>
+                        <strong className="text-theme-text-strong">
+                            Models work the same
+                        </strong>
+                    </div>
+                    <p className="mt-1.5 text-theme-text-muted">
                         Behavior, routing, pricing, capabilities, and defaults.
                     </p>
                 </div>
             </div>
         </div>
-    </Alert>
+    </Surface>
 );
 
 export const NewsBanner: FC = () => {

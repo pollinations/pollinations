@@ -726,11 +726,9 @@ describe("community endpoint helpers", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
-            inputModalities: ["text", "image"],
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
-                maxReferenceImages: 4,
             },
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -741,7 +739,6 @@ describe("community endpoint helpers", () => {
         expect(definition.tools).toBe(true);
         expect(definition.reasoning).toBe(true);
         expect(definition.contextLength).toBe(128000);
-        expect(definition.maxReferenceImages).toBe(4);
         expect(
             modelInfoFromDefinition("voodoohop/openai", definition, {
                 community: true,
@@ -764,7 +761,6 @@ describe("community endpoint helpers", () => {
         expect(definition.search).toBeUndefined();
         expect(definition.codeExecution).toBeUndefined();
         expect(definition.contextLength).toBeUndefined();
-        expect(definition.maxReferenceImages).toBeUndefined();
     });
 
     it("drops declarations the modality cannot advertise", () => {
@@ -777,7 +773,6 @@ describe("community endpoint helpers", () => {
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
-                maxReferenceImages: 4,
             },
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -788,8 +783,6 @@ describe("community endpoint helpers", () => {
         expect(definition.tools).toBeUndefined();
         expect(definition.reasoning).toBeUndefined();
         expect(definition.contextLength).toBeUndefined();
-        // Image endpoints accept text only until image input is declared.
-        expect(definition.maxReferenceImages).toBeUndefined();
     });
 
     it("builds community transcription models billed per audio second", () => {
@@ -4536,11 +4529,9 @@ fixtureTest(
             );
 
         const created = await register({
-            inputModalities: ["text", "image"],
             advertised: {
                 capabilities: ["reasoning", "tool_calling"],
                 contextLength: 128000,
-                maxReferenceImages: 4,
             },
         });
         expect(created.status).toBe(200);
@@ -4552,7 +4543,6 @@ fixtureTest(
         expect(createdBody.advertised).toEqual({
             capabilities: ["tool_calling", "reasoning"],
             contextLength: 128000,
-            maxReferenceImages: 4,
         });
 
         const update = (body: Record<string, unknown>) =>
@@ -4574,54 +4564,24 @@ fixtureTest(
         // The object is sent whole, so an omitted key clears that claim and
         // the keys still present survive.
         const cleared = await update({
-            advertised: { maxReferenceImages: 4 },
+            advertised: { contextLength: 64000 },
         });
         expect(cleared.status).toBe(200);
         await expect(cleared.json()).resolves.toMatchObject({
-            advertised: { maxReferenceImages: 4 },
+            advertised: { contextLength: 64000 },
         });
 
-        // Dropping image input takes the reference-image count with it.
-        const textOnly = await update({ inputModalities: ["text"] });
-        expect(textOnly.status).toBe(200);
-        await expect(textOnly.json()).resolves.toMatchObject({
-            advertised: {},
-        });
-
-        const unsupportedCapability = await register({
+        const onImageModel = await register({
             modality: "image",
             advertised: { capabilities: ["tool_calling"] },
         });
-        expect(unsupportedCapability.status).toBe(400);
-        await expect(unsupportedCapability.json()).resolves.toMatchObject({
+        expect(onImageModel.status).toBe(400);
+        await expect(onImageModel.json()).resolves.toMatchObject({
             error: {
-                message: "capabilities is only supported for text models",
+                message:
+                    "advertised metadata is only supported for text models",
             },
         });
-
-        const contextOnImage = await register({
-            modality: "image",
-            advertised: { contextLength: 128000 },
-        });
-        expect(contextOnImage.status).toBe(400);
-        await expect(contextOnImage.json()).resolves.toMatchObject({
-            error: {
-                message: "contextLength is only supported for text models",
-            },
-        });
-
-        const referencesWithoutImageInput = await register({
-            advertised: { maxReferenceImages: 4 },
-        });
-        expect(referencesWithoutImageInput.status).toBe(400);
-        await expect(referencesWithoutImageInput.json()).resolves.toMatchObject(
-            {
-                error: {
-                    message:
-                        "maxReferenceImages is only supported for models that accept image input",
-                },
-            },
-        );
     },
 );
 

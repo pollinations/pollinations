@@ -77,118 +77,50 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     readonly ModelInputModality[]
 >;
 
-// Which catalog capabilities an owner may declare, by endpoint modality. The
-// registry's capability vocabulary is text-only in practice: every model that
-// sets one of these is a text (or realtime) model, and no image, audio, or 3d
-// model in shared/registry declares any. Image and transcription endpoints
-// therefore advertise none, and say so with an empty list rather than by being
-// absent from this table.
-export const COMMUNITY_ENDPOINT_CAPABILITIES = {
-    text: MODEL_DEFINITION_CAPABILITIES,
-    image: [],
-    transcription: [],
-} as const satisfies Record<
-    CommunityEndpointModality,
-    readonly ModelDefinitionCapability[]
->;
-
-// Ceilings on the owner-declared numbers. Neither changes how a request is
-// routed or billed, so these only need to keep a typo out of the catalog: the
-// largest first-party context window is 2M tokens, and the most reference
-// images any registry model accepts is 14.
+// Ceiling on the owner-declared context window. It changes nothing about how a
+// request is routed or billed, so it only needs to keep a typo out of the
+// catalog: the largest first-party context window is 2M tokens.
 export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
-export const MAX_COMMUNITY_REFERENCE_IMAGES = 64;
 
 /**
  * Owner-declared catalog metadata: what the model claims about itself, mirrored
  * into the model catalog and never read on the request path. Stored as one JSON
  * column so a new advertisable field is a key here plus a schema entry, with no
  * migration and no new column to thread through every read path.
+ *
+ * Text models only, as a whole. The registry's capability vocabulary is
+ * text-only in practice — no image, audio or 3d model in shared/registry
+ * declares one — and a context window means nothing to an image or
+ * transcription endpoint. A field that applies somewhere else will need a
+ * per-field rule; there is nothing to disambiguate while every key shares one.
  */
 export type CommunityEndpointAdvertised = {
     capabilities?: ModelDefinitionCapability[];
     contextLength?: number;
-    maxReferenceImages?: number;
 };
-
-export type CommunityAdvertisedField = keyof CommunityEndpointAdvertised;
-
-/**
- * When each advertised field means anything, and how to say so in a rejection.
- * One entry per field is the whole per-modality rule set: the write path
- * rejects against it and the read path filters against it, so the two cannot
- * disagree about what a given row is allowed to claim.
- */
-export const COMMUNITY_ADVERTISED_FIELDS = {
-    capabilities: {
-        supported: (modality: CommunityEndpointModality) =>
-            COMMUNITY_ENDPOINT_CAPABILITIES[modality].length > 0,
-        requirement: "text models",
-    },
-    contextLength: {
-        supported: (modality: CommunityEndpointModality) => modality === "text",
-        requirement: "text models",
-    },
-    maxReferenceImages: {
-        supported: (
-            _modality: CommunityEndpointModality,
-            inputModalities: readonly ModelInputModality[],
-        ) => inputModalities.includes("image"),
-        requirement: "models that accept image input",
-    },
-} as const satisfies Record<
-    CommunityAdvertisedField,
-    {
-        supported: (
-            modality: CommunityEndpointModality,
-            inputModalities: readonly ModelInputModality[],
-        ) => boolean;
-        requirement: string;
-    }
->;
 
 /**
  * Declared metadata reduced to what this row can still advertise. Filtering on
- * read is what covers a row whose modality or inputs changed after the fact:
- * the stored claim stays, but the catalog stops repeating the part that no
- * longer applies. Absent keys mean "nothing declared", so an undeclared model
- * is indistinguishable from a registry model that never set the field.
+ * read is what covers a row whose modality changed after declaring: the stored
+ * claim stays, but the catalog stops repeating it. Absent keys mean "nothing
+ * declared", so an undeclared model is indistinguishable from a registry model
+ * that never set the field.
  */
 export function normalizeCommunityEndpointAdvertised(
     value: CommunityEndpointAdvertised | null | undefined,
     modality: CommunityEndpointModality,
-    inputModalities: readonly ModelInputModality[],
 ): CommunityEndpointAdvertised {
-    if (!value) return {};
+    if (!value || modality !== "text") return {};
     const advertised: CommunityEndpointAdvertised = {};
-    if (
-        COMMUNITY_ADVERTISED_FIELDS.capabilities.supported(modality) &&
-        value.capabilities?.length
-    ) {
+    if (value.capabilities?.length) {
         const declared = new Set<string>(value.capabilities);
-        const permitted: readonly ModelDefinitionCapability[] =
-            COMMUNITY_ENDPOINT_CAPABILITIES[modality];
         // Emitted in catalog order rather than the order they were declared.
-        const capabilities = permitted.filter((capability) =>
-            declared.has(capability),
+        const capabilities = MODEL_DEFINITION_CAPABILITIES.filter(
+            (capability) => declared.has(capability),
         );
         if (capabilities.length) advertised.capabilities = capabilities;
     }
-    if (
-        COMMUNITY_ADVERTISED_FIELDS.contextLength.supported(modality) &&
-        value.contextLength
-    ) {
-        advertised.contextLength = value.contextLength;
-    }
-    if (
-        COMMUNITY_ADVERTISED_FIELDS.maxReferenceImages.supported(
-            modality,
-            inputModalities,
-        ) &&
-        value.maxReferenceImages
-    ) {
-        advertised.maxReferenceImages = value.maxReferenceImages;
-    }
+    if (value.contextLength) advertised.contextLength = value.contextLength;
     return advertised;
 }
 
@@ -870,11 +802,7 @@ export function communityModelDefinition(
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
     const { capabilities, ...advertised } =
-        normalizeCommunityEndpointAdvertised(
-            endpoint.advertised,
-            modality,
-            inputModalities,
-        );
+        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",

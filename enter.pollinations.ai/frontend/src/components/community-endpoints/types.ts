@@ -110,11 +110,10 @@ export function publicCommunityFallbackOptions(
 
 export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
-    // Flat while editing, nested into `advertised` on submit: the numbers are
-    // held as strings so a half-typed value survives a render, like perUserRpm.
+    // Flat while editing, nested into `advertised` on submit: contextLength is
+    // held as a string so a half-typed value survives a render, like perUserRpm.
     capabilities: ModelDefinitionCapability[];
     contextLength: string;
-    maxReferenceImages: string;
     name: string;
     title: string;
     description: string;
@@ -190,7 +189,6 @@ const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
     capabilities: [],
     contextLength: "",
-    maxReferenceImages: "",
     name: "",
     title: "",
     description: "",
@@ -295,8 +293,6 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         inputModalities: endpoint.inputModalities,
         capabilities: endpoint.advertised.capabilities ?? [],
         contextLength: endpoint.advertised.contextLength?.toString() ?? "",
-        maxReferenceImages:
-            endpoint.advertised.maxReferenceImages?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -333,7 +329,6 @@ export function agentListingToForm(
               // form has nothing to show and the payload sends nothing.
               capabilities: [],
               contextLength: "",
-              maxReferenceImages: "",
               name: endpoint.name,
               title: endpoint.title,
               description: endpoint.description ?? "",
@@ -438,17 +433,15 @@ function listingFieldsToPayload(
     }
     return {
         inputModalities: form.inputModalities,
-        // Deselecting image input hides the reference-images field but leaves
-        // what was typed in form state, so the payload is filtered to what the
-        // row can actually claim rather than 400-ing on an invisible field.
+        // Switching to a non-text modality hides these but leaves what was
+        // typed in form state, so the payload is filtered to what the row can
+        // actually claim rather than 400-ing on an invisible field.
         advertised: normalizeCommunityEndpointAdvertised(
             {
                 capabilities: form.capabilities,
                 contextLength: optionalCount(form.contextLength),
-                maxReferenceImages: optionalCount(form.maxReferenceImages),
             },
             modality,
-            form.inputModalities,
         ),
         name: form.name.trim(),
         title: form.title.trim(),
@@ -530,7 +523,6 @@ export function nextFormState(
                 normalizeCommunityEndpointAdvertised(
                     { capabilities: current.capabilities },
                     modality,
-                    current.inputModalities,
                 ).capabilities ?? [],
             contextLength: modality === "text" ? current.contextLength : "",
         };

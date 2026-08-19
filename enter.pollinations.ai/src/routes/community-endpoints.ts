@@ -1,5 +1,4 @@
 import {
-    COMMUNITY_ADVERTISED_FIELDS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
@@ -9,7 +8,6 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
-    type CommunityAdvertisedField,
     type CommunityEndpointAdvertised,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -28,7 +26,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
-    MAX_COMMUNITY_REFERENCE_IMAGES,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -44,10 +41,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { MODEL_DEFINITION_CAPABILITIES } from "@shared/registry/model-info.ts";
-import {
-    MODEL_INPUT_MODALITIES,
-    type ModelInputModality,
-} from "@shared/registry/registry.ts";
+import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -102,18 +96,9 @@ const AdvertisedSchema = z
             .max(MAX_COMMUNITY_CONTEXT_LENGTH)
             .optional()
             .describe("Text models only. Context window in tokens."),
-        maxReferenceImages: z
-            .number()
-            .int()
-            .positive()
-            .max(MAX_COMMUNITY_REFERENCE_IMAGES)
-            .optional()
-            .describe(
-                "Models accepting image input: reference images the upstream takes per request.",
-            ),
     })
     .describe(
-        "What the model claims about itself in the catalog. Advertising metadata: the gateway forwards `tools` and every other request field untouched either way, so a claim here is a promise to callers rather than a switch. Omit a key to leave it undeclared; send the object with a key absent to clear it.",
+        "What the model claims about itself in the catalog. Text models only. Advertising metadata: the gateway forwards `tools` and every other request field untouched either way, so a claim here is a promise to callers rather than a switch. Sent whole — a key left out is a claim cleared.",
     );
 const PriceSchema = z
     .number()
@@ -187,26 +172,28 @@ function enforceCommunityEndpointInputModalities(
     });
 }
 
-// What a row may claim depends on its modality and inputs, so a declaration
-// that cannot mean anything is rejected rather than silently dropped on write.
-// normalizeCommunityEndpointAdvertised applies the same table again on read,
-// which is what covers rows whose modality changed after the fact.
+// Every advertised key is text-only, so one rule covers the object. Rejected on
+// write rather than silently dropped; normalizeCommunityEndpointAdvertised
+// applies the same rule again on read, which is what covers a row whose
+// modality changed after declaring.
 function enforceCommunityEndpointAdvertised(
     modality: CommunityEndpointModality,
-    inputModalities: readonly ModelInputModality[],
     advertised: CommunityEndpointAdvertised | undefined,
 ): void {
-    if (!advertised) return;
-    for (const [field, rule] of Object.entries(COMMUNITY_ADVERTISED_FIELDS)) {
-        const declared = advertised[field as CommunityAdvertisedField];
-        const isDeclared = Array.isArray(declared)
-            ? declared.length > 0
-            : declared !== undefined;
-        if (!isDeclared || rule.supported(modality, inputModalities)) continue;
-        throw new HTTPException(400, {
-            message: `${field} is only supported for ${rule.requirement}`,
-        });
-    }
+    if (!advertised || modality === "text") return;
+    if (!hasAdvertisedClaim(advertised)) return;
+    throw new HTTPException(400, {
+        message: "advertised metadata is only supported for text models",
+    });
+}
+
+/** An empty object and an object of empty values both declare nothing. */
+function hasAdvertisedClaim(
+    advertised: CommunityEndpointAdvertised | undefined,
+): boolean {
+    return Object.values(advertised ?? {}).some((value) =>
+        Array.isArray(value) ? value.length > 0 : value != null,
+    );
 }
 
 // Community fallback targets are restricted to public community models or
@@ -480,9 +467,7 @@ const CreateEndpointSchema = z
             // gen.pollinations.ai/src/agent-catalog.ts), so anything declared
             // here would be overwritten before it reached the catalog.
             {
-                invalid: Object.values(input.advertised ?? {}).some((value) =>
-                    Array.isArray(value) ? value.length > 0 : value != null,
-                ),
+                invalid: hasAdvertisedClaim(input.advertised),
                 path: "advertised",
                 message:
                     "Managed agent listings inherit catalog metadata from their base model",
@@ -706,7 +691,6 @@ function toResponse(
         advertised: normalizeCommunityEndpointAdvertised(
             row.advertised,
             modality,
-            inputModalities,
         ),
         baseUrl,
         agentId: row.agentId,
@@ -1074,11 +1058,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities ??
                 normalizeCommunityEndpointInputModalities(undefined, modality);
             enforceCommunityEndpointInputModalities(modality, inputModalities);
-            enforceCommunityEndpointAdvertised(
-                modality,
-                inputModalities,
-                input.advertised,
-            );
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             const prices =
                 agent || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -1311,9 +1291,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (
                 endpoint.agentId !== null &&
-                Object.values(input.advertised ?? {}).some((value) =>
-                    Array.isArray(value) ? value.length > 0 : value != null,
-                )
+                hasAdvertisedClaim(input.advertised)
             ) {
                 throw new HTTPException(400, {
                     message:
@@ -1326,18 +1304,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     input.inputModalities,
                 );
             }
-            // Judged against the inputs the row will have after this update,
-            // not the ones it had before, so declaring image input and a
-            // reference count in one call is accepted.
-            enforceCommunityEndpointAdvertised(
-                modality,
-                input.inputModalities ??
-                    normalizeCommunityEndpointInputModalities(
-                        endpoint.inputModalities,
-                        modality,
-                    ),
-                input.advertised,
-            );
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             await ensureModelNameAvailable(
                 db,
                 user.id,

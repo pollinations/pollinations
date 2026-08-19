@@ -6,14 +6,15 @@ import {
     TabButton,
 } from "@pollinations/ui";
 import {
-    COMMUNITY_ADVERTISED_FIELDS,
-    COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
-import type { ModelDefinitionCapability } from "@shared/registry/model-info.ts";
+import {
+    MODEL_DEFINITION_CAPABILITIES,
+    type ModelDefinitionCapability,
+} from "@shared/registry/model-info.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { ModelListingFormState } from "./types.ts";
 
@@ -23,8 +24,7 @@ type ListingTextField =
     | "description"
     | "visibility"
     | "perUserRpm"
-    | "contextLength"
-    | "maxReferenceImages";
+    | "contextLength";
 
 const CAPABILITY_LABEL: Record<ModelDefinitionCapability, string> = {
     tool_calling: "Tool calling",
@@ -70,22 +70,14 @@ export function ModelListingFields({
         if (next.has(capability)) next.delete(capability);
         else next.add(capability);
         onCapabilitiesChange?.(
-            declarableCapabilities.filter((value) => next.has(value)),
+            MODEL_DEFINITION_CAPABILITIES.filter((value) => next.has(value)),
         );
     }
 
     const isPublic = form.visibility === "public";
-    // Empty for image and transcription endpoints, which advertise none.
-    const declarableCapabilities: readonly ModelDefinitionCapability[] =
-        COMMUNITY_ENDPOINT_CAPABILITIES[modality];
-    // Shown only where a declaration would mean something, using the same
-    // table the API rejects against, so the form never offers a field whose
-    // value the server would refuse.
-    const canDeclare = (field: keyof typeof COMMUNITY_ADVERTISED_FIELDS) =>
-        COMMUNITY_ADVERTISED_FIELDS[field].supported(
-            modality,
-            form.inputModalities,
-        );
+    // Advertised metadata is text-only, matching what the API accepts, so the
+    // form never offers a field whose value the server would refuse.
+    const canAdvertise = modality === "text";
 
     return (
         <>
@@ -221,14 +213,14 @@ export function ModelListingFields({
                 </ButtonGroup>
             </FieldStack>
 
-            {!isAgent && canDeclare("capabilities") && (
+            {!isAgent && canAdvertise && (
                 <FieldStack
                     label="Capabilities"
                     helper="Optional. What the catalog advertises about this model. These describe the upstream — requests are forwarded unchanged either way, so only claim what it really does."
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Advertised capabilities">
-                        {declarableCapabilities.map((capability) => {
+                        {MODEL_DEFINITION_CAPABILITIES.map((capability) => {
                             const selected =
                                 form.capabilities.includes(capability);
                             return (
@@ -250,56 +242,25 @@ export function ModelListingFields({
                 </FieldStack>
             )}
 
-            {!isAgent &&
-                (canDeclare("contextLength") ||
-                    canDeclare("maxReferenceImages")) && (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {canDeclare("contextLength") && (
-                            <FieldStack
-                                label="Context length"
-                                helper="Optional. Context window in tokens."
-                                alignLabelRow
-                            >
-                                <Input
-                                    name="community-model-context-length"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={form.contextLength}
-                                    placeholder="Not advertised"
-                                    onChange={(event) =>
-                                        onChange(
-                                            "contextLength",
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                            </FieldStack>
-                        )}
-                        {canDeclare("maxReferenceImages") && (
-                            <FieldStack
-                                label="Reference images"
-                                helper="Optional. How many images the upstream accepts per request."
-                                alignLabelRow
-                            >
-                                <Input
-                                    name="community-model-max-reference-images"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={form.maxReferenceImages}
-                                    placeholder="Not advertised"
-                                    onChange={(event) =>
-                                        onChange(
-                                            "maxReferenceImages",
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                            </FieldStack>
-                        )}
-                    </div>
-                )}
+            {!isAgent && canAdvertise && (
+                <FieldStack
+                    label="Context length"
+                    helper="Optional. Context window in tokens."
+                    alignLabelRow
+                >
+                    <Input
+                        name="community-model-context-length"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={form.contextLength}
+                        placeholder="Not advertised"
+                        onChange={(event) =>
+                            onChange("contextLength", event.target.value)
+                        }
+                    />
+                </FieldStack>
+            )}
 
             {!isAgent && (
                 <FieldStack

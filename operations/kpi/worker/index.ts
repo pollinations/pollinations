@@ -1,9 +1,5 @@
-import manifestJSON from "__STATIC_CONTENT_MANIFEST";
-import { getAssetFromKV } from "@cloudflare/kv-asset-handler";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-const assetManifest = JSON.parse(manifestJSON);
 
 // Data start date - Oct 1, 2025
 const DATA_START_DATE = "2025-10-01";
@@ -18,12 +14,16 @@ type Env = {
     GITHUB_TOKEN?: string;
     GITHUB_REPO: string;
     DASHBOARD_PASSWORD?: string;
-    __STATIC_CONTENT: KVNamespace;
+    ASSETS: Fetcher;
 };
 
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
 const TINYBIRD_CACHE_TTL = 21600; // 6 hours — weekly data barely changes
+// Part of the cache key, not the request. A pipe that gains a column keeps
+// serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
+// not touch caches.default — bump this in the same commit as the pipe change.
+const TINYBIRD_CACHE_VERSION = "2";
 
 async function fetchTinybird(
     env: Env,
@@ -43,7 +43,7 @@ async function fetchTinybird(
 
     // Check Cloudflare edge cache first
     const cache = caches.default;
-    const cacheKey = new Request(url);
+    const cacheKey = new Request(`${url}&__v=${TINYBIRD_CACHE_VERSION}`);
     const cached = await cache.match(cacheKey);
     if (cached) {
         const json = (await cached.json()) as { data: unknown[] };
@@ -179,9 +179,6 @@ app.use("*", async (c, next) => {
     });
 });
 
-// Health check
-app.get("/api/health", (c) => c.json({ status: "ok" }));
-
 // Tinybird: Weekly registrations (from Oct 1, 2025)
 app.get("/api/kpi/registrations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_registrations", {
@@ -189,16 +186,6 @@ app.get("/api/kpi/registrations", async (c) => {
     });
     if (result.error) return c.json({ error: result.error, data: [] }, 500);
     return c.json({ data: result.data });
-});
-
-// Tinybird: Total users (from Oct 1, 2025)
-app.get("/api/kpi/total-users", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_total_users", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, total: 0 }, 500);
-    const row = result.data[0] as { total: number } | undefined;
-    return c.json({ total: row?.total || 0 });
 });
 
 // D7 Activations: users who made their first API request within 7 days of registration
@@ -274,16 +261,6 @@ function getWeekStart(date: Date): string {
     return monday.toISOString().split("T")[0];
 }
 
-// Tinybird: Daily Stripe revenue (aggregated from checkout events)
-app.get("/api/kpi/stripe-revenue", async (c) => {
-    const daysBack = 90; // ~12 weeks
-    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
-        days_back: daysBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
-});
-
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
     env: Env,
@@ -327,52 +304,6 @@ app.get("/api/kpi/revenue", async (c) => {
     return c.json({ data: result });
 });
 
-// Churn metrics derived from retention data
-// Churn = 100 - w4_retention (% of users from 4 weeks ago who didn't return)
-app.get("/api/kpi/churn", async (c) => {
-    const weeksBack = 8; // retention data has limited weeks
-    const result = await fetchTinybird(c.env, "weekly_retention", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) {
-        if (result.status === 408) {
-            console.warn(
-                `[Tinybird] Soft-failing churn timeout: ${result.error}`,
-            );
-            return c.json({ data: [], warning: result.error });
-        }
-        return c.json({ error: result.error, data: [] }, 500);
-    }
-    const data = { data: result.data } as {
-        data: Array<{
-            cohort: string;
-            cohort_size: number;
-            w4_retained: number;
-            w4_retention: number;
-        }>;
-    };
-
-    // Transform retention data to churn data
-    // Each cohort's w4_retention tells us what % returned after 4 weeks
-    // Churn = 100 - w4_retention
-    // Filter out cohorts that haven't had 4 weeks to mature (w4_retained = 0)
-    const churnData = data.data
-        .filter(
-            (row) =>
-                row.w4_retention !== null &&
-                row.w4_retention !== undefined &&
-                row.w4_retained > 0, // Only include cohorts with actual w4 data
-        )
-        .map((row) => ({
-            week: row.cohort,
-            users_4w_ago: row.cohort_size,
-            churned_users: row.cohort_size - row.w4_retained,
-            churn_rate: Math.round((100 - row.w4_retention) * 10) / 10,
-        }));
-
-    return c.json({ data: churnData });
-});
-
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/user-segments", async (c) => {
     const result = await fetchTinybirdByWeek(
@@ -408,7 +339,14 @@ app.get("/api/kpi/app-submissions", async (c) => {
             `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
             { headers },
         );
-        if (!res.ok) break;
+        if (!res.ok) {
+            // Was `break`, which returned an empty list — a dead token, a rate
+            // limit and a quiet week all looked identical on the dashboard.
+            const body = await res.text();
+            const detail = `status=${res.status} body=${body.slice(0, 300)}`;
+            console.error(`[GitHub] app-submissions failed: ${detail}`);
+            return c.json({ error: `GitHub ${res.status}`, data: [] }, 502);
+        }
         const data = (await res.json()) as Array<{
             created_at: string;
             pull_request?: unknown;
@@ -454,57 +392,8 @@ app.get("/api/kpi/github", async (c) => {
     });
 });
 
-// Combined: All KPIs in one call
-app.get("/api/kpi/all", async (c) => {
-    const [registrations, wau, usage, revenue, github] = await Promise.all([
-        fetch(new URL("/api/kpi/registrations?weeks_back=12", c.req.url)).then(
-            (r) => r.json(),
-        ),
-        fetch(new URL("/api/kpi/wau?weeks_back=12", c.req.url)).then((r) =>
-            r.json(),
-        ),
-        fetch(new URL("/api/kpi/usage?weeks_back=12", c.req.url)).then((r) =>
-            r.json(),
-        ),
-        fetch(new URL("/api/kpi/revenue", c.req.url)).then((r) => r.json()),
-        fetch(new URL("/api/kpi/github", c.req.url)).then((r) => r.json()),
-    ]);
-
-    return c.json({ registrations, wau, usage, revenue, github });
-});
-
-// Serve static files for everything else
-app.get("*", async (c) => {
-    try {
-        return await getAssetFromKV(
-            {
-                request: c.req.raw,
-                waitUntil: (p) => c.executionCtx.waitUntil(p),
-            },
-            {
-                ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-                ASSET_MANIFEST: assetManifest,
-            },
-        );
-    } catch {
-        // Try index.html for SPA routing
-        try {
-            const url = new URL(c.req.url);
-            url.pathname = "/index.html";
-            return await getAssetFromKV(
-                {
-                    request: new Request(url.toString(), c.req.raw),
-                    waitUntil: (p) => c.executionCtx.waitUntil(p),
-                },
-                {
-                    ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-                    ASSET_MANIFEST: assetManifest,
-                },
-            );
-        } catch {
-            return c.text("Not found", 404);
-        }
-    }
-});
+// Everything else is the SPA shell, served from the assets binding once the
+// Basic-auth middleware above has let the request through.
+app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;

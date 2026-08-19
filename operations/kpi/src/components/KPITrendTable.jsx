@@ -1,376 +1,193 @@
-import { Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import {
+    Heading,
+    InfoTip,
+    Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+    Text,
+} from "@pollinations/ui";
+import {
+    calcChange,
+    currentWeekStart,
+    formatValue,
+    weekLabel,
+} from "../lib/format";
+import { KPIS, kpiValue, kpiView } from "../lib/kpis";
 
-function Tooltip({ text, children }) {
-    const [show, setShow] = useState(false);
-    const [pos, setPos] = useState({ top: 0, left: 0 });
-    const btnRef = useRef(null);
-
-    const handleMouseEnter = () => {
-        if (btnRef.current) {
-            const rect = btnRef.current.getBoundingClientRect();
-            setPos({
-                top: rect.top - 10,
-                left: rect.right + 8,
-            });
-        }
-        setShow(true);
-    };
-
+/** Three rising bars — marks the row you can send to the explorer chart. */
+function ChartIcon() {
     return (
-        <span className="inline-flex items-center gap-1">
-            {children}
-            <button
-                ref={btnRef}
-                type="button"
-                className="text-gray-500 hover:text-gray-300 cursor-help"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={() => setShow(false)}
-            >
-                <Info className="w-3 h-3" />
-            </button>
-            {show &&
-                createPortal(
-                    <span
-                        className="fixed z-[9999] w-72 p-3 bg-gray-800 border border-gray-700 rounded-lg shadow-xl text-xs text-gray-300 whitespace-normal font-normal"
-                        style={{ top: pos.top, left: pos.left }}
-                    >
-                        <span className="font-semibold text-white block mb-1">
-                            How it's calculated:
-                        </span>
-                        {text}
-                    </span>,
-                    document.body,
-                )}
-        </span>
+        <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
+            <title>Graph</title>
+            <rect x="1" y="7" width="2.5" height="4" fill="currentColor" />
+            <rect x="4.75" y="4" width="2.5" height="7" fill="currentColor" />
+            <rect x="8.5" y="1" width="2.5" height="10" fill="currentColor" />
+        </svg>
     );
 }
 
-export function KPITrendTable({ weeklyData, title }) {
-    const formatValue = (value, format) => {
-        if (value === null || value === undefined || Number.isNaN(value))
-            return "—";
-        if (format === "currency") {
-            if (Math.abs(value) < 1) return `$${value.toFixed(2)}`;
-            return `$${Math.round(value).toLocaleString()}`;
-        }
-        if (format === "percent") return `${Math.round(value)}%`;
-        if (format === "compact") {
-            if (value >= 1000000000)
-                return `${Math.round(value / 1000000000)}B`;
-            if (value >= 1000000) return `${Math.round(value / 1000000)}M`;
-            if (value >= 1000) return `${Math.round(value / 1000)}K`;
-        }
-        return Math.round(value).toLocaleString();
-    };
-
-    const calcChange = (current, previous) => {
-        if (!previous || previous === 0) return 0;
-        return ((current - previous) / previous) * 100;
-    };
-
-    const getTrendIcon = (change) => {
-        if (change > 5)
-            return <TrendingUp className="w-3 h-3 text-green-400" />;
-        if (change < -5)
-            return <TrendingDown className="w-3 h-3 text-red-400" />;
-        return <Minus className="w-3 h-3 text-gray-500" />;
-    };
-
-    // Define KPIs to track with tooltips explaining calculations
-    const kpis = [
-        {
-            key: "registrations",
-            name: "New Registrations",
-            category: "Acquisition",
-            format: "number",
-            tooltip:
-                "Count of new user accounts created during the week. Source: D1 database (user.created_at)",
-        },
-        {
-            key: "activations",
-            name: "Activated (D7)",
-            category: "Acquisition",
-            format: "number",
-            tooltip:
-                "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
-        },
-        {
-            key: "activationRate",
-            name: "D7 Activation Rate",
-            category: "Acquisition",
-            format: "percent",
-            calc: (w) => (w.activations / w.registrations) * 100,
-            tooltip:
-                "Formula: (Activated Users / New Registrations) × 100. Measures what % of signups become real users within 7 days.",
-        },
-        {
-            key: "wau",
-            name: "WAU",
-            category: "Usage",
-            format: "number",
-            tooltip:
-                "Weekly Active Users: Unique users with at least one API request this week. Source: Tinybird (uniqExact(user_id) from generation_event_v2)",
-        },
-        {
-            key: "tokens",
-            name: "Total Tokens",
-            category: "Usage",
-            format: "compact",
-            tooltip:
-                "Sum of all tokens consumed (prompt + completion). Source: Tinybird (sum(token_count_prompt_text + token_count_completion_text))",
-        },
-        {
-            key: "tokensPerUser",
-            name: "Tokens/User",
-            category: "Usage",
-            format: "compact",
-            calc: (w) => w.tokens / w.wau,
-            tooltip:
-                "Formula: Total Tokens / WAU. Measures usage depth — how much each active user consumes on average.",
-        },
-        {
-            key: "revenue",
-            name: "Revenue",
-            category: "Revenue",
-            format: "currency",
-            tooltip:
-                "Gross revenue in USD from pollen pack purchases. Source: Stripe checkout events in Tinybird.",
-        },
-        {
-            key: "packPurchases",
-            name: "Pack Purchases",
-            category: "Revenue",
-            format: "number",
-            tooltip:
-                "Count of completed pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
-        },
-        {
-            key: "arpa",
-            name: "ARPA",
-            category: "Revenue",
-            format: "currency",
-            calc: (w) => w.revenue / w.wau,
-            tooltip:
-                "Average Revenue Per Active user. Formula: Weekly Revenue / WAU. Measures monetization efficiency.",
-        },
-        {
-            key: "grossMargin",
-            name: "Gross Margin",
-            category: "Efficiency",
-            format: "percent",
-            calc: (w) =>
-                w.revenue > 0
-                    ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
-                    : null,
-            tooltip:
-                "Formula: (Revenue - COGS) / Revenue × 100. Higher is better. COGS = compute costs from generation_event_v2.total_cost (GPU, tokens, providers).",
-        },
-        {
-            key: "revenuePerMTokens",
-            name: "Rev/1M Tokens",
-            category: "Efficiency",
-            format: "currency",
-            calc: (w) => (w.revenue / w.tokens) * 1000000,
-            tooltip:
-                "Formula: (Revenue / Total Tokens) × 1,000,000. Unit economics — how much revenue per million tokens consumed.",
-        },
-        {
-            key: "purchaseRate",
-            name: "Purchase Rate",
-            category: "Efficiency",
-            format: "percent",
-            calc: (w) => (w.packPurchases / w.wau) * 100,
-            tooltip:
-                "Formula: (Pack Purchases / WAU) × 100. What % of active users bought a pollen pack this week.",
-        },
-        {
-            key: "availability",
-            name: "Service Availability",
-            category: "Health",
-            format: "percent",
-            tooltip:
-                "% of requests without server errors (5xx). User errors (4xx) don't count as downtime. Formula: (total - 5xx) / total × 100",
-        },
-        {
-            key: "byopUserPct",
-            name: "BYOP User %",
-            category: "Segments",
-            format: "percent",
-            tooltip:
-                "% of active users from BYOP apps (detected via app key attribution or hostname heuristic).",
-        },
-        {
-            key: "byopPollenPct",
-            name: "BYOP Pollen %",
-            category: "Segments",
-            format: "percent",
-            tooltip:
-                "% of pollen consumed by BYOP apps. Shows how much usage comes from apps that bring their own pollen.",
-        },
-        {
-            key: "churnRate",
-            name: "Churn Rate",
-            category: "Retention",
-            format: "percent",
-            tooltip:
-                "% of users from 4 weeks ago who haven't used the API in the last 2 weeks. Lower is better.",
-        },
-        {
-            key: "churnedUsers",
-            name: "Churned Users",
-            category: "Retention",
-            format: "number",
-            tooltip:
-                "Count of users active 4 weeks ago but inactive in the last 2 weeks.",
-        },
-        {
-            key: "appSubmissions",
-            name: "App Submissions",
-            category: "Community",
-            format: "number",
-            tooltip:
-                "New app submissions via GitHub issues (APP-SUBMISSION label). Counts issues created this week.",
-        },
-    ];
-
-    // Get value for a KPI from weekly data
-    const getValue = (kpi, week) => {
-        if (kpi.calc) return kpi.calc(week);
-        return week[kpi.key];
-    };
-
-    // Separate current (partial) week from full weeks
-    // Current week is partial if it's the same week as today
-    const today = new Date();
-    const currentWeekStart = new Date(
-        Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate() - ((today.getUTCDay() + 6) % 7),
-        ),
-    )
-        .toISOString()
-        .split("T")[0];
-
-    const currentWeek =
-        weeklyData.find((w) => w.week === currentWeekStart) ||
-        weeklyData[weeklyData.length - 1];
-    const fullWeeks = weeklyData.filter((w) => w.week !== currentWeekStart);
-
-    // WoW: compare last two FULL weeks
-    const lastFullWeek = fullWeeks[fullWeeks.length - 1];
-    const prevFullWeek = fullWeeks[fullWeeks.length - 2];
-
-    // Reverse full weeks for display (most recent on left)
+export function KPITrendTable({ weeklyData, viewIndex, onCycle, onGraph }) {
+    const partialWeekStart = currentWeekStart();
+    const partialWeek = weeklyData.find((w) => w.week === partialWeekStart);
+    const fullWeeks = weeklyData.filter((w) => w.week !== partialWeekStart);
+    const lastFull = fullWeeks[fullWeeks.length - 1];
+    const previousFull = fullWeeks[fullWeeks.length - 2];
     const displayWeeks = [...fullWeeks].reverse();
 
     return (
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5 overflow-hidden">
-            <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-            <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                    <thead>
-                        <tr className="text-gray-400 border-b border-gray-700">
-                            <th className="text-left py-2 px-2 sticky left-0 bg-gray-900/95 min-w-32">
+        <Surface className="flex flex-col gap-3">
+            <Heading as="h3" size="card">
+                KPI trend
+            </Heading>
+            <div className="-mx-4 min-w-0 overflow-x-auto px-4">
+                <Table className="text-xs">
+                    <TableHead>
+                        <TableRow>
+                            <TableHeaderCell className="sticky left-0 z-10 min-w-40 bg-surface-opaque">
                                 KPI
-                            </th>
-                            <th className="text-right py-2 px-2 min-w-16 bg-blue-900/20 border-x border-blue-800/30">
-                                <span className="text-blue-400">Now</span>
-                                <span className="block text-[10px] text-blue-400/70">
-                                    {currentWeek?.week?.slice(5)}
-                                </span>
-                            </th>
-                            <th className="text-right py-2 px-2 min-w-16">
-                                WoW
-                            </th>
-                            {displayWeeks.map((week) => (
-                                <th
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className="bg-theme-bg-subtle"
+                            >
+                                Now
+                                <Text
+                                    as="span"
+                                    size="micro"
+                                    tone="muted"
+                                    className="block font-normal"
+                                >
+                                    {weekLabel(partialWeek?.week)}
+                                </Text>
+                            </TableHeaderCell>
+                            {displayWeeks.map((week, weekIndex) => (
+                                <TableHeaderCell
                                     key={week.week}
-                                    className="text-right py-2 px-2 min-w-16 font-normal"
+                                    align="right"
+                                    className={
+                                        weekIndex === 0 ? "min-w-24" : undefined
+                                    }
                                 >
-                                    {week.week.slice(5)}
-                                </th>
+                                    {weekLabel(week.week)}
+                                </TableHeaderCell>
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {kpis.map((kpi) => {
-                            // Current partial week value
-                            const nowVal = currentWeek
-                                ? getValue(kpi, currentWeek)
-                                : null;
-                            // WoW: compare last two FULL weeks
-                            const lastVal = lastFullWeek
-                                ? getValue(kpi, lastFullWeek)
-                                : 0;
-                            const prevVal = prevFullWeek
-                                ? getValue(kpi, prevFullWeek)
-                                : 0;
-                            const change = calcChange(lastVal, prevVal);
-
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {KPIS.map((row) => {
+                            const views = row.views;
+                            const index = viewIndex[row.key] ?? 0;
+                            const kpi = kpiView(row, index);
+                            const change = calcChange(
+                                lastFull ? kpiValue(kpi, lastFull) : null,
+                                previousFull
+                                    ? kpiValue(kpi, previousFull)
+                                    : null,
+                            );
+                            const tone =
+                                change == null || Math.abs(change) <= 5
+                                    ? "text-theme-text-muted"
+                                    : change > 0
+                                      ? "text-intent-success-text"
+                                      : "text-intent-danger-text";
                             return (
-                                <tr
-                                    key={kpi.key}
-                                    className="border-b border-gray-800/50 hover:bg-gray-800/30"
-                                >
-                                    <td className="py-2 px-2 sticky left-0 bg-gray-900/95">
-                                        <Tooltip text={kpi.tooltip}>
-                                            <span className="font-medium text-white">
-                                                {kpi.name}
-                                            </span>
-                                        </Tooltip>
-                                        <span className="text-gray-500 text-[10px] block">
-                                            {kpi.category}
+                                <TableRow key={row.key}>
+                                    <TableCell className="sticky left-0 z-10 bg-surface-opaque">
+                                        <span className="flex items-center font-medium text-theme-text-strong">
+                                            {views ? (
+                                                <button
+                                                    type="button"
+                                                    title={`Show ${views[(index + 1) % views.length].name}`}
+                                                    onClick={() =>
+                                                        onCycle(row.key)
+                                                    }
+                                                    className="flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:text-theme-text-link"
+                                                >
+                                                    {kpi.name}
+                                                    <span aria-hidden="true">
+                                                        ⇄
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                kpi.name
+                                            )}
+                                            <InfoTip text={kpi.tooltip} />
+                                            <button
+                                                type="button"
+                                                aria-label={`Graph ${kpi.name}`}
+                                                title={`Graph ${kpi.name}`}
+                                                onClick={() => onGraph(row.key)}
+                                                className="ml-1 text-theme-text-muted hover:text-theme-text-link"
+                                            >
+                                                <ChartIcon />
+                                            </button>
                                         </span>
-                                    </td>
-                                    <td className="py-2 px-2 text-right text-blue-300 font-mono bg-blue-900/20 border-x border-blue-800/30">
-                                        {formatValue(nowVal, kpi.format)}
-                                    </td>
-                                    <td
-                                        className={`py-2 px-2 text-right font-mono ${
-                                            change > 0
-                                                ? "text-green-400"
-                                                : change < 0
-                                                  ? "text-red-400"
-                                                  : "text-gray-400"
-                                        }`}
+                                        <Text
+                                            as="span"
+                                            size="micro"
+                                            tone="muted"
+                                        >
+                                            {kpi.category}
+                                        </Text>
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        numeric
+                                        className="bg-theme-bg-subtle font-semibold text-theme-text-strong"
                                     >
-                                        <div className="flex items-center justify-end gap-1">
-                                            {getTrendIcon(change)}
-                                            <span>
-                                                {change > 0 ? "+" : ""}
-                                                {change != null &&
-                                                !Number.isNaN(change)
-                                                    ? change.toFixed(0)
-                                                    : 0}
-                                                %
-                                            </span>
-                                        </div>
-                                    </td>
-                                    {displayWeeks.map((week) => (
-                                        <td
+                                        {formatValue(
+                                            partialWeek
+                                                ? kpiValue(kpi, partialWeek)
+                                                : null,
+                                            kpi.format,
+                                        )}
+                                    </TableCell>
+                                    {displayWeeks.map((week, weekIndex) => (
+                                        <TableCell
                                             key={week.week}
-                                            className="py-2 px-2 text-right text-gray-300 font-mono"
+                                            align="right"
+                                            numeric
+                                            muted
                                         >
                                             {formatValue(
-                                                getValue(kpi, week),
+                                                kpiValue(kpi, week),
                                                 kpi.format,
                                             )}
-                                        </td>
+                                            {weekIndex === 0 &&
+                                                change != null && (
+                                                    <span
+                                                        className={`ml-1.5 text-[10px] ${tone}`}
+                                                        title={`vs ${weekLabel(previousFull?.week)}`}
+                                                    >
+                                                        {change > 0
+                                                            ? "▲"
+                                                            : change < 0
+                                                              ? "▼"
+                                                              : "→"}
+                                                        {Math.round(
+                                                            Math.abs(change),
+                                                        )}
+                                                        %
+                                                    </span>
+                                                )}
+                                        </TableCell>
                                     ))}
-                                </tr>
+                                </TableRow>
                             );
                         })}
-                    </tbody>
-                </table>
+                    </TableBody>
+                </Table>
             </div>
-            <div className="mt-3 text-xs text-gray-500">
-                <span className="text-blue-400">Now</span> = current partial
-                week • <span className="text-green-400">WoW</span> = comparing
-                last 2 full weeks • {displayWeeks.length} full weeks shown
-            </div>
-        </div>
+            <Text as="p" size="micro" tone="muted">
+                Now = current partial week · the % on{" "}
+                {weekLabel(lastFull?.week)} is its change from{" "}
+                {weekLabel(previousFull?.week)} · {displayWeeks.length} full
+                weeks shown
+            </Text>
+        </Surface>
     );
 }

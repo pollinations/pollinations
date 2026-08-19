@@ -887,7 +887,6 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
-    metadataModel = safeParams.model,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
@@ -908,10 +907,7 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(prompt, originalPrompt, {
-            ...safeParams,
-            model: metadataModel,
-        });
+        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
         const processedBuffer =

@@ -1,7 +1,7 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { AuthResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { logGptImageError, logGptImagePrompt } from "./gptImageLogger.ts";
 

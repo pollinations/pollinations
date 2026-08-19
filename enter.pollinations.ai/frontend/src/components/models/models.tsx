@@ -28,6 +28,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { authClient } from "../../auth.ts";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -305,10 +306,12 @@ export const Models: FC = () => {
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Newest";
-
+    const { data: session } = authClient.useSession();
     return (
         <div className="flex flex-col gap-6">
-            {showCommunityEndpoints && <ModelPriceNoticeBanner />}
+            {activeScope === "community" && session && (
+                <ModelPriceNoticeBanner />
+            )}
             <Section
                 title="Models"
                 framed

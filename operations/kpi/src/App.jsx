@@ -1,672 +1,319 @@
-import { format } from "date-fns";
 import {
-    Activity,
-    AlertTriangle,
-    DollarSign,
-    Download,
-    Star,
-    TrendingUp,
-    Users,
-    Zap,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { getWeeklyRegistrations } from "./api/enter";
-import { getGitHubStats } from "./api/github";
-import { getWeeklyRevenue } from "./api/revenue";
-import {
-    getWeeklyActivations,
-    getWeeklyActiveUsers,
-    getWeeklyAppSubmissions,
-    getWeeklyChurn,
-    getWeeklyHealthStats,
-    getWeeklyRetention,
-    getWeeklyUsageStats,
-    getWeeklyUserSegments,
-} from "./api/tinybird";
-import { FunnelChart } from "./components/FunnelChart";
+    Alert,
+    AppHeader,
+    Button,
+    ColorModeToggle,
+    DownloadIcon,
+    Heading,
+    StatCard,
+    Surface,
+    Text,
+} from "@pollinations/ui";
+import { useState } from "react";
+import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
+import { KpiExplorer } from "./components/KpiExplorer";
+import { LineChart } from "./components/LineChart";
 import { RetentionTable } from "./components/RetentionTable";
-import { StatCard } from "./components/StatCard";
-import { WeeklyChart } from "./components/WeeklyChart";
+import { Trend } from "./components/Trend";
+import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
+import { calcChange, formatValue, weekLabel } from "./lib/format";
+
+const EXPORT_COLUMNS = [
+    ["week", "Week"],
+    ["registrations", "Registrations"],
+    ["activations", "Activations"],
+    ["wau", "WAU"],
+    ["tokens", "Tokens"],
+    ["revenue", "Revenue"],
+    ["packPurchases", "Pack purchases"],
+    ["communityUserPct", "Community models user %"],
+    ["communityRequestPct", "Community models request %"],
+    ["communityAvailability", "Community models availability %"],
+];
+
+function exportCsv(weeklyData) {
+    const csv = [
+        EXPORT_COLUMNS.map(([, header]) => header).join(","),
+        ...weeklyData.map((row) =>
+            EXPORT_COLUMNS.map(([key]) => row[key] ?? "").join(","),
+        ),
+    ].join("\n");
+
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `kpi-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+function Tile({ label, value, format, current, previous }) {
+    return (
+        <Surface>
+            <StatCard
+                label={label}
+                value={formatValue(value, format)}
+                detail={<Trend change={calcChange(current, previous)} />}
+            />
+        </Surface>
+    );
+}
+
+function LoadingScreen({ done, active }) {
+    return (
+        <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
+            <Text as="p" tone="soft">
+                Loading KPIs from all data sources…
+            </Text>
+            <div className="flex flex-col gap-1.5">
+                {SOURCE_LABELS.map((label) => {
+                    const complete = done.includes(label);
+                    const running = !complete && active === label;
+                    return (
+                        <Text
+                            key={label}
+                            as="div"
+                            size="sm"
+                            tone={
+                                running ? "strong" : complete ? "base" : "muted"
+                            }
+                            className="flex items-center gap-2"
+                        >
+                            <span
+                                aria-hidden="true"
+                                className="w-4 text-center"
+                            >
+                                {complete ? "✓" : running ? "◍" : "·"}
+                            </span>
+                            {label}
+                        </Text>
+                    );
+                })}
+            </div>
+        </main>
+    );
+}
+
+const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
-    const [loading, setLoading] = useState(true);
-    const [completedSteps, setCompletedSteps] = useState([]);
-    const [activeStep, setActiveStep] = useState("");
-    const [error, setError] = useState(null);
-    const [data, setData] = useState({
-        weeklyData: [],
-        retentionData: [],
-        github: { stars: 0, forks: 0 },
-        currentWeek: null,
-        previousWeek: null,
-    });
+    // Which unit each cycling row is showing, and which row the explorer plots.
+    // Both live here so the chart follows the table.
+    const [viewIndex, setViewIndex] = useState({});
+    const [explored, setExplored] = useState("registrations:0");
 
-    const LOAD_STEPS = [
-        "GitHub stars",
-        "Registrations",
-        "Revenue",
-        "Health stats",
-        "Churn",
-        "WAU",
-        "Usage stats",
-        "Retention",
-        "User segments",
-        "Activations",
-        "App submissions",
-    ];
+    const cycleView = (key) =>
+        setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
 
-    useEffect(() => {
-        async function fetchAllData() {
-            setLoading(true);
-            setError(null);
-            setCompletedSteps([]);
-
-            // Helper: fetch with step tracking
-            async function step(label, fn) {
-                setActiveStep(label);
-                const result = await fn();
-                setCompletedSteps((prev) => [...prev, label]);
-                return result;
-            }
-
-            try {
-                // Fetch non-TinyBird data in parallel
-                setActiveStep("GitHub stars");
-                const [github, d1Registrations, revenue] = await Promise.all([
-                    step("GitHub stars", () => getGitHubStats()),
-                    step("Registrations", () => getWeeklyRegistrations(12)),
-                    step("Revenue", () => getWeeklyRevenue(12)),
-                ]);
-
-                // Serialize TinyBird calls to avoid rate limits (429)
-                const tinybirdHealth = await step("Health stats", () =>
-                    getWeeklyHealthStats(12),
-                );
-                const tinybirdChurn = await step("Churn", () =>
-                    getWeeklyChurn(12),
-                );
-                const tinybirdWAU = await step("WAU", () =>
-                    getWeeklyActiveUsers(12),
-                );
-                const tinybirdUsage = await step("Usage stats", () =>
-                    getWeeklyUsageStats(12),
-                );
-                const tinybirdRetention = await step("Retention", () =>
-                    getWeeklyRetention(8),
-                );
-                const tinybirdSegments = await step("User segments", () =>
-                    getWeeklyUserSegments(12),
-                );
-                const tinybirdActivations = await step("Activations", () =>
-                    getWeeklyActivations(12),
-                );
-                const appSubmissions = await step("App submissions", () =>
-                    getWeeklyAppSubmissions(),
-                );
-
-                // Check for missing data
-                const missing = [];
-                if (!d1Registrations) missing.push("D1 (registrations)");
-                if (!tinybirdWAU) missing.push("Tinybird (WAU)");
-                if (!tinybirdUsage) missing.push("Tinybird (usage)");
-                if (!revenue || revenue.length === 0)
-                    missing.push("Revenue (Stripe)");
-
-                if (missing.length > 0) {
-                    setError(
-                        `Missing data sources: ${missing.join(
-                            ", ",
-                        )}. Check secrets/env.json`,
-                    );
-                }
-
-                // Merge all data sources by week
-                const weekMap = new Map();
-
-                // D1: registrations
-                if (d1Registrations) {
-                    for (const row of d1Registrations) {
-                        weekMap.set(row.week_start, {
-                            week: row.week_start,
-                            registrations: row.registrations,
-                        });
-                    }
-                }
-
-                // Tinybird: WAU, paying users
-                if (tinybirdWAU) {
-                    for (const row of tinybirdWAU) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            wau: row.active_users,
-                            payingUsers: row.paying_users,
-                            totalRequests: row.total_requests,
-                        });
-                    }
-                }
-
-                // Tinybird: tokens, usage per user
-                if (tinybirdUsage) {
-                    for (const row of tinybirdUsage) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            tokens: row.total_tokens,
-                            tokensPerUser: row.tokens_per_user,
-                            textRequests: row.text_requests,
-                            imageRequests: row.image_requests,
-                            costUsd: row.cost_usd,
-                        });
-                    }
-                }
-
-                // Stripe: revenue, purchases
-                if (revenue) {
-                    for (const row of revenue) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            revenue: row.revenue,
-                            packPurchases: row.purchases,
-                        });
-                    }
-                }
-
-                // Tinybird: health stats (service availability)
-                if (tinybirdHealth) {
-                    for (const row of tinybirdHealth) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            availability: row.availability,
-                            serverErrors5xx: row.server_errors_5xx,
-                            latencyP50: row.latency_p50_ms,
-                            latencyP95: row.latency_p95_ms,
-                        });
-                    }
-                }
-
-                // Tinybird: user segments (B2B vs B2C)
-                // Normalize week key — this pipe returns datetime, others return date-only
-                if (tinybirdSegments) {
-                    for (const row of tinybirdSegments) {
-                        const week = row.week?.split(" ")[0] || row.week;
-                        const existing = weekMap.get(week) || {
-                            week,
-                        };
-                        weekMap.set(week, {
-                            ...existing,
-                            byopUsers: row.byop_users,
-                            byopPollen: row.byop_pollen,
-                            otherUsers: row.other_users,
-                            otherPollen: row.other_pollen,
-                            byopUserPct: row.byop_user_pct,
-                            byopPollenPct: row.byop_pollen_pct,
-                        });
-                    }
-                }
-
-                // Tinybird: churn metrics
-                if (tinybirdChurn) {
-                    for (const row of tinybirdChurn) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            churnedUsers: row.churned_users,
-                            churnRate: row.churn_rate,
-                            users4wAgo: row.users_4w_ago,
-                        });
-                    }
-                }
-
-                // Merge real D7 activation data from worker (D1 + Tinybird join)
-                if (tinybirdActivations) {
-                    for (const row of tinybirdActivations) {
-                        const existing = weekMap.get(row.week);
-                        if (existing) {
-                            existing.activations = row.activations;
-                        }
-                    }
-                }
-
-                // GitHub: App submissions and approvals
-                if (appSubmissions) {
-                    for (const row of appSubmissions) {
-                        const existing = weekMap.get(row.week) || {
-                            week: row.week,
-                        };
-                        weekMap.set(row.week, {
-                            ...existing,
-                            appSubmissions: row.submitted,
-                        });
-                    }
-                }
-
-                // Convert map to sorted array
-                const weeklyData = Array.from(weekMap.values())
-                    .filter((w) => w.week)
-                    .sort((a, b) => a.week.localeCompare(b.week));
-
-                // Retention data from Tinybird - map field names
-                const retentionData = (tinybirdRetention || []).map((row) => ({
-                    cohort: row.cohort,
-                    users: row.cohort_size,
-                    w1: row.w1_retention,
-                    w2: row.w2_retention,
-                    w3: row.w3_retention,
-                    w4: row.w4_retention,
-                }));
-
-                // Separate current partial week from full weeks
-                const today = new Date();
-                const currentWeekStart = new Date(
-                    Date.UTC(
-                        today.getUTCFullYear(),
-                        today.getUTCMonth(),
-                        today.getUTCDate() - ((today.getUTCDay() + 6) % 7),
-                    ),
-                )
-                    .toISOString()
-                    .split("T")[0];
-
-                const partialWeek =
-                    weeklyData.find((w) => w.week === currentWeekStart) || null;
-                const fullWeeks = weeklyData.filter(
-                    (w) => w.week !== currentWeekStart,
-                );
-
-                // Use last two FULL weeks for stats
-                const lastFullWeek = fullWeeks[fullWeeks.length - 1] || null;
-                const prevFullWeek = fullWeeks[fullWeeks.length - 2] || null;
-
-                setData({
-                    weeklyData,
-                    retentionData,
-                    github,
-                    currentWeek: lastFullWeek, // Stats show last FULL week
-                    previousWeek: prevFullWeek,
-                    partialWeek, // Current partial week (for reference)
-                });
-            } catch (err) {
-                console.error("Failed to fetch data:", err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchAllData();
-    }, []);
-
-    const calcChange = (current, previous) => {
-        if (!previous || previous === 0) return 0;
-        return ((current - previous) / previous) * 100;
+    const graphKpi = (key) => {
+        setExplored(key);
+        document
+            .getElementById(EXPLORER_ID)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
     const {
+        loading,
+        done,
+        active,
+        missing,
+        weeklyData,
+        fullWeeks,
+        historyWeeks,
+        retentionData,
+        github,
         currentWeek,
         previousWeek,
-        github,
-        weeklyData,
-        retentionData,
-        partialWeek,
-    } = data;
+    } = useKpiData();
 
-    // Filter out partial week for charts
-    const fullWeeksData =
-        weeklyData?.filter((w) => w.week !== partialWeek?.week) || [];
+    if (loading) return <LoadingScreen done={done} active={active} />;
 
-    // North Star: WAPC (Weekly Active Paying Customers)
     const wapc = currentWeek?.packPurchases || 0;
-    const wapcPrev = previousWeek?.packPurchases || 0;
-    const wapcChange = calcChange(wapc, wapcPrev);
-
-    // Funnel data
-    const funnelData = currentWeek
+    const funnelStages = currentWeek
         ? [
-              {
-                  stage: "Signups",
-                  count: currentWeek.registrations || 0,
-                  rate: 100,
-              },
+              { stage: "Signups", count: currentWeek.registrations || 0 },
               {
                   stage: "Activated",
                   count: currentWeek.activations || 0,
-                  rate: currentWeek.registrations
-                      ? (
-                            (currentWeek.activations /
-                                currentWeek.registrations) *
-                            100
-                        ).toFixed(0)
-                      : 0,
+                  of: "Signups",
               },
-              { stage: "Active (WAU)", count: currentWeek.wau || 0, rate: 100 },
+              // WAU is not a subset of this week's signups, so it carries no
+              // step rate — only Paying is measured against it.
+              { stage: "Active (WAU)", count: currentWeek.wau || 0 },
               {
                   stage: "Paying",
                   count: currentWeek.packPurchases || 0,
-                  rate: currentWeek.wau
-                      ? (
-                            (currentWeek.packPurchases / currentWeek.wau) *
-                            100
-                        ).toFixed(1)
-                      : 0,
+                  of: "Active (WAU)",
               },
           ]
         : [];
 
-    const handleExport = () => {
-        const csv = [
-            [
-                "Week",
-                "Registrations",
-                "Activations",
-                "WAU",
-                "Tokens",
-                "Revenue",
-                "Pack Purchases",
-            ].join(","),
-            ...weeklyData.map((row) =>
-                [
-                    row.week,
-                    row.registrations,
-                    row.activations,
-                    row.wau,
-                    row.tokens,
-                    row.revenue,
-                    row.packPurchases,
-                ].join(","),
-            ),
-        ].join("\n");
-
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `kpi-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
-        a.click();
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-950">
-                <div className="w-72">
-                    <div className="flex items-center gap-3 mb-6">
-                        <img
-                            src="/logo.svg"
-                            alt="pollinations.ai"
-                            className="h-8 w-8"
-                        />
-                        <span className="text-gray-400 text-sm">
-                            Loading KPIs from all data sources...
-                        </span>
-                    </div>
-                    <div className="space-y-1.5">
-                        {LOAD_STEPS.map((s) => {
-                            const done = completedSteps.includes(s);
-                            const active = !done && activeStep === s;
-                            return (
-                                <div
-                                    key={s}
-                                    className="flex items-center gap-2 text-sm"
-                                >
-                                    {done ? (
-                                        <span className="text-emerald-500 w-4 text-center">
-                                            &#10003;
-                                        </span>
-                                    ) : active ? (
-                                        <div className="w-4 flex justify-center">
-                                            <div className="animate-spin w-3 h-3 border border-gray-600 border-t-white rounded-full" />
-                                        </div>
-                                    ) : (
-                                        <span className="text-gray-700 w-4 text-center">
-                                            &#8226;
-                                        </span>
-                                    )}
-                                    <span
-                                        className={
-                                            done
-                                                ? "text-gray-500"
-                                                : active
-                                                  ? "text-white"
-                                                  : "text-gray-700"
-                                        }
-                                    >
-                                        {s}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-950">
-                <div className="bg-red-900/30 border border-red-700 rounded-xl p-6 max-w-lg">
-                    <div className="flex items-center gap-3 text-red-400 mb-2">
-                        <AlertTriangle className="w-5 h-5" />
-                        <span className="font-semibold">Data Source Error</span>
-                    </div>
-                    <p className="text-gray-300">{error}</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gray-950 text-white p-6">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <img
-                                src="/logo.svg"
-                                alt="pollinations.ai"
-                                className="h-8 w-8"
-                            />
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                pollinations.ai{" "}
-                                <span className="text-gray-500 font-normal">
-                                    by Myceli.AI
-                                </span>
-                            </h1>
-                        </div>
-                        <p className="text-gray-500 text-sm">
-                            Weekly KPI Dashboard
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg transition-colors"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export
-                    </button>
+        <div className="min-h-screen bg-app-bg">
+            <AppHeader
+                navLabel="KPI dashboard links"
+                autoHide
+                innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-between"
+            >
+                <Button
+                    size="sm"
+                    className="h-9 px-3 py-0"
+                    onClick={() => exportCsv(weeklyData)}
+                >
+                    <span className="inline-flex items-center gap-1.5">
+                        <DownloadIcon className="h-4 w-4" />
+                        Export CSV
+                    </span>
+                </Button>
+                <ColorModeToggle />
+            </AppHeader>
+
+            <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">
+                <div className="flex flex-col gap-1">
+                    <Heading as="h1" size="title">
+                        KPI Dashboard
+                    </Heading>
+                    <Text as="p" tone="base">
+                        Weekly KPIs for pollinations.ai. Figures are the last
+                        full week ({weekLabel(currentWeek?.week)}) against the
+                        one before it.
+                    </Text>
                 </div>
 
-                {/* North Star - WAPC */}
-                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
-                                North Star{" "}
-                                <span className="text-gray-600">
-                                    · Last full week (
-                                    {currentWeek?.week?.slice(5)})
-                                </span>
-                            </p>
-                            <p className="text-xl font-medium">
-                                Weekly Active Paying Customers
-                            </p>
-                            <p className="text-gray-500 text-sm mt-1">
-                                Users who made a purchase
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-4xl font-semibold">
-                                {wapc}
-                            </span>
-                            <span
-                                className={`block text-sm mt-1 ${
-                                    wapcChange >= 0
-                                        ? "text-emerald-500"
-                                        : "text-red-500"
-                                }`}
-                            >
-                                {wapcChange >= 0 ? "↑" : "↓"}{" "}
-                                {wapcChange != null
-                                    ? Math.abs(wapcChange).toFixed(1)
-                                    : 0}
-                                % WoW
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                {missing.length > 0 && (
+                    <Alert intent="warning" title="Incomplete data">
+                        No rows returned for: {missing.join(", ")}. Everything
+                        else on this page is still live.
+                    </Alert>
+                )}
 
-                {/* Key Stats Row */}
-                <p className="text-gray-500 text-xs mb-2">
-                    Last full week ({currentWeek?.week?.slice(5)}) vs previous
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-                    <StatCard
-                        title="New Signups"
-                        value={currentWeek?.registrations || 0}
-                        change={calcChange(
-                            currentWeek?.registrations,
-                            previousWeek?.registrations,
-                        )}
-                        icon={Users}
-                        tooltip="New user registrations this week"
+                <Surface
+                    variant="panel"
+                    className="flex flex-wrap items-end justify-between gap-4"
+                >
+                    <div className="flex flex-col gap-1">
+                        <Text
+                            as="div"
+                            size="micro"
+                            tone="soft"
+                            weight="bold"
+                            className="uppercase tracking-wide"
+                        >
+                            North star · {weekLabel(currentWeek?.week)}
+                        </Text>
+                        <Heading as="h2" size="subsection">
+                            Weekly active paying customers
+                        </Heading>
+                        <Text as="p" size="sm" tone="muted">
+                            Users who bought a Pollen pack that week.
+                        </Text>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                        <span className="font-bold text-4xl text-theme-text-strong tabular-nums">
+                            {formatValue(wapc)}
+                        </span>
+                        <Trend
+                            change={calcChange(
+                                wapc,
+                                previousWeek?.packPurchases,
+                            )}
+                        />
+                    </div>
+                </Surface>
+
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3">
+                    <Tile
+                        label="New signups"
+                        value={currentWeek?.registrations}
+                        current={currentWeek?.registrations}
+                        previous={previousWeek?.registrations}
                     />
-                    <StatCard
-                        title="Activated (D7)"
-                        value={currentWeek?.activations || 0}
-                        change={calcChange(
-                            currentWeek?.activations,
-                            previousWeek?.activations,
-                        )}
-                        icon={Zap}
-                        tooltip="Users who made API requests within 7 days of signup"
+                    <Tile
+                        label="Activated (D7)"
+                        value={currentWeek?.activations}
+                        current={currentWeek?.activations}
+                        previous={previousWeek?.activations}
                     />
-                    <StatCard
-                        title="WAU"
-                        value={currentWeek?.wau || 0}
-                        change={calcChange(currentWeek?.wau, previousWeek?.wau)}
-                        icon={Activity}
-                        tooltip="Weekly Active Users - unique users with API activity"
+                    <Tile
+                        label="WAU"
+                        value={currentWeek?.wau}
+                        current={currentWeek?.wau}
+                        previous={previousWeek?.wau}
                     />
-                    <StatCard
-                        title="Tokens Used"
-                        value={currentWeek?.tokens || 0}
-                        change={calcChange(
-                            currentWeek?.tokens,
-                            previousWeek?.tokens,
-                        )}
-                        icon={TrendingUp}
+                    <Tile
+                        label="Tokens used"
+                        value={currentWeek?.tokens}
                         format="compact"
-                        tooltip="Total tokens consumed across all API requests"
+                        current={currentWeek?.tokens}
+                        previous={previousWeek?.tokens}
                     />
-                    <StatCard
-                        title="Revenue"
-                        value={currentWeek?.revenue || 0}
-                        change={calcChange(
-                            currentWeek?.revenue,
-                            previousWeek?.revenue,
-                        )}
-                        icon={DollarSign}
+                    <Tile
+                        label="Revenue"
+                        value={currentWeek?.revenue}
                         format="currency"
-                        tooltip="Pollen pack purchases through Stripe"
+                        current={currentWeek?.revenue}
+                        previous={previousWeek?.revenue}
                     />
-                    <StatCard
-                        title="GitHub Stars"
+                    <Tile
+                        label="GitHub stars"
                         value={github.stars}
-                        icon={Star}
                         format="compact"
-                        tooltip="Stars on pollinations/pollinations repo"
                     />
                 </div>
 
-                {/* 12-Week KPI Trend Table */}
-                <div className="mb-8">
-                    <KPITrendTable
-                        weeklyData={weeklyData}
-                        title="KPI Trend (Last 12 Weeks)"
-                    />
-                </div>
+                <KPITrendTable
+                    weeklyData={weeklyData}
+                    viewIndex={viewIndex}
+                    onCycle={cycleView}
+                    onGraph={graphKpi}
+                />
 
-                {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <WeeklyChart
-                        data={fullWeeksData}
-                        title="Acquisition & Activation"
-                        lines={[
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <LineChart
+                        title="Acquisition & activation"
+                        data={historyWeeks}
+                        series={[
                             { key: "registrations", label: "Signups" },
-                            { key: "activations", label: "Activated" },
+                            { key: "activations", label: "Activated (D7)" },
                             { key: "wau", label: "WAU" },
                         ]}
                     />
-                    <WeeklyChart
-                        data={fullWeeksData}
-                        title="Usage & Revenue"
-                        lines={[
-                            { key: "tokens", label: "Tokens" },
-                            { key: "revenue", label: "Revenue ($)" },
+                    <LineChart
+                        title="Usage & revenue"
+                        data={fullWeeks}
+                        series={[
+                            {
+                                key: "tokens",
+                                label: "Tokens",
+                                format: "compact",
+                            },
+                            {
+                                key: "revenue",
+                                label: "Revenue",
+                                format: "currency",
+                            },
                         ]}
-                        dualAxis={true}
+                        dualAxis
+                    />
+                    <KpiExplorer
+                        id={EXPLORER_ID}
+                        weeks={historyWeeks}
+                        selected={explored}
+                        onSelect={setExplored}
+                    />
+                    <FunnelBars
+                        title={`Conversion funnel · ${weekLabel(currentWeek?.week)}`}
+                        stages={funnelStages}
                     />
                 </div>
 
-                {/* Funnel & Retention */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <FunnelChart
-                        data={funnelData}
-                        title={`Conversion Funnel (${
-                            currentWeek?.week?.slice(5) || "Last Week"
-                        })`}
-                    />
-                    <RetentionTable
-                        data={retentionData}
-                        title="Weekly Cohort Retention"
-                    />
-                </div>
+                <RetentionTable data={retentionData} />
 
-                {/* Footer */}
-                <div className="mt-12 pt-8 border-t border-gray-800">
-                    <div className="flex items-center justify-between text-gray-500 text-xs">
-                        <div className="flex items-center gap-2">
-                            <img
-                                src="/myceli-logo.svg"
-                                alt=""
-                                className="h-4 w-4"
-                            />
-                            <span>Myceli.AI</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <span>
-                                Sources: D1 · Tinybird · Stripe · GitHub
-                            </span>
-                            <span>Updated {format(new Date(), "PP")}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <Text as="p" size="micro" tone="muted" className="pt-2">
+                    Myceli.AI · sources: D1, Tinybird, Stripe, GitHub
+                </Text>
+            </main>
         </div>
     );
 }

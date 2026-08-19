@@ -1,0 +1,34 @@
+{
+  "pr_number": 13522,
+  "title": "fix(stats): median Tinybird cost so flat-rate preflight isn't 402'd",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13522",
+  "merged_at": "2026-08-19T19:23:23Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12747\n\n## Why the estimate was ~33.34 (not 0.01)\n\n`checkBalance()` reads Tinybird `public_model_stats.avg_cost_usd`, which was a **7-day mean** of `total_price`.\n\nRequest-priced community images used to bill:\n\n`completionImagePrice * OpenAI output_tokens`\n\nFor `vendouple/zimage` that is **0.01 × ~3334 ≈ 33.34** — the number in the 402. Billing already logs `{ completionImageTokens: 1 }` for `imagePricing !== \"tokens\"`, so **new** events are ~0.01. The **mean** stays poisoned until old rows age out, and token-priced models have the same outlier problem with no flat rate to fall back on.\n\n## Change\n\n1. **Tinybird** `public_model_stats.pipe`: `avgIf` → `medianIf` (column name stays `avg_cost_usd`). Typical charge, not a few misbilled rows.\n2. **Preflight** still uses Tinybird. It only uses the defined per-request price when Tinybird is missing or **>10×** that price (clearly garbage). Token-priced models keep Tinybird.\n\nNeeds a Tinybird `deployment create` on staging then prod for the pipe to go live.\n\n## Tests\n\n- community flat-rate 0.01 + Tinybird 33.34 + budget 5 → allowed (Tinybird treated as outlier)\n- same model + Tinybird 0.012 → trusts Tinybird\n- same model + budget 0.005 → 402 quoting `~0.0100`\n- `openai` still uses Tinybird\n\n`npx vitest run src/byop-markup.test.ts` — 22 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Outliers leave the hive",
+    "blurb": "A few ancient, wildly overpriced image records were spooking the balance checker. The hive now uses the typical charge and knows when a flat-rate flower is just a flat-rate flower.",
+    "summary": "Replaced Tinybird's 7-day mean cost with a median and made flat-rate image preflight fall back to the defined per-request price when Tinybird reports an estimate more than 10× higher, while token-priced models continue using Tinybird.",
+    "impact": "Community image requests such as vendouple/zimage at $0.01 are no longer incorrectly blocked by a stale ~$33.34 estimate, while genuinely low budgets still receive an accurate 402 quoting about $0.0100.",
+    "keywords": [
+      "billing",
+      "preflight",
+      "Tinybird",
+      "image-pricing",
+      "community-models",
+      "cost-estimates"
+    ],
+    "visual_concept": "Depict Polli tending a cozy cost-estimate garden where a sensible $0.01 flower is protected from one huge, dusty $33.34 weed. A friendly CRT monitor robot compares a median stack of small price pebbles against the obvious outlier, representing robust Tinybird statistics and fair preflight access.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, translucent light-blue wings, and a tiny gardener visor, pruning an oversized dusty price weed labeled '$33.34' beside a healthy lime green (#ecf874) flower pot labeled '$0.01'; a cute chunky CRT monitor robot holds a clipboard reading 'MEDIAN'. Code-vines and tiny flowers grow around a warm retro terminal, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) pixel outlines and a gentle cream-to-lavender background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13522.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, translucent light-blue wings, and a tiny gardener visor, pruning an oversized dusty price weed labeled '$33.34' beside a healthy lime green (#ecf874) flower pot labeled '$0.01'; a cute chunky CRT monitor robot holds a clipboard reading 'MEDIAN'. Code-vines and tiny flowers grow around a warm retro terminal, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) pixel outlines and a gentle cream-to-lavender background."
+  },
+  "generated_at": "2026-08-19T19:24:22.031838+00:00"
+}

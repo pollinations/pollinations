@@ -171,7 +171,7 @@ export const Announcements: FC = () => {
 
 const CanonicalModelSlugAnnouncement: FC = () => (
     <Alert
-        id="canonical-model-ids"
+        id="canonical-model-slugs"
         intent="warning"
         className="scroll-mt-4 p-4 sm:p-5"
     >

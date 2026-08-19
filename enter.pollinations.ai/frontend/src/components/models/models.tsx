@@ -63,7 +63,7 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
-const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-ids";
+const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",

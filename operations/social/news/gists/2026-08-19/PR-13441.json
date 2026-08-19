@@ -1,0 +1,32 @@
+{
+  "pr_number": 13441,
+  "title": "Add rekty to the allowlist",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13441",
+  "merged_at": "2026-08-19T08:48:29Z",
+  "labels": [],
+  "pr_body_excerpt": "Add rekty and rodrigookk to the allowlist\r\nCloses #13440\r\nCloses #13444",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two More Bees Enter",
+    "blurb": "rekty and rodrigookk have been added to the GitHub allowlist. The garden gate recognizes two more familiar faces.",
+    "summary": "Added the GitHub accounts rekty and rodrigookk to the shared authentication allowlist.",
+    "impact": "rekty and rodrigookk can now access the allowlist-gated Pollinations workflows without manual intervention.",
+    "keywords": [
+      "authentication",
+      "github",
+      "allowlist",
+      "access"
+    ],
+    "visual_concept": "A cozy garden gate represents the shared GitHub authentication allowlist, with Polli acting as a friendly gatekeeper and two small labeled visitor badges being welcomed in. Code-plants and a softly glowing terminal make the internal access configuration legible without making it feel like a security warning.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny gatekeeper cap, welcoming two small visitor badges labeled “rekty” and “rodrigookk” through a garden gate beside a lime green (#ecf874) glowing terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “ALLOWLIST”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13441.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny gatekeeper cap, welcoming two small visitor badges labeled “rekty” and “rodrigookk” through a garden gate beside a lime green (#ecf874) glowing terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “ALLOWLIST”."
+  },
+  "generated_at": "2026-08-19T08:49:32.988042+00:00"
+}

@@ -225,51 +225,37 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex min-w-0 items-start gap-2">
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <div className="flex min-w-0 items-center gap-1.5">
-                                {titleTooltip ? (
-                                    <Tooltip
-                                        triggerAs="span"
-                                        content={titleTooltip}
-                                        ariaLabel={`${publicModelName}: model details`}
-                                        className="min-w-0"
-                                        tapEnabled
-                                        displayContents
-                                    >
-                                        <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                            {publicModelName}
-                                        </span>
-                                    </Tooltip>
-                                ) : (
-                                    <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                        {publicModelName}
-                                    </span>
-                                )}
-                            </div>
-                            <ModelId name={model.name} showCopyIcon />
-                            {model.brandUrl && model.brand && (
-                                <a
-                                    href={model.brandUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                                >
-                                    {model.brand}
-                                </a>
-                            )}
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                            <ModelStatusChips
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                            />
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
-                            />
-                        </div>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                        {titleTooltip ? (
+                            <Tooltip
+                                triggerAs="span"
+                                content={titleTooltip}
+                                ariaLabel={`${publicModelName}: model details`}
+                                className="min-w-0"
+                                tapEnabled
+                                displayContents
+                            >
+                                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
+                                    {publicModelName}
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
+                                {publicModelName}
+                            </span>
+                        )}
                     </div>
+                    <ModelId name={model.name} showCopyIcon />
+                    {model.brandUrl && model.brand && (
+                        <a
+                            href={model.brandUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                        >
+                            {model.brand}
+                        </a>
+                    )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
                             <MobileMetadataBadges
@@ -288,6 +274,16 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 <PerUserRateLimit value={model.perUserRpm} />
                             </div>
                         )}
+                    </div>
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                     </div>
                 </div>
             </div>

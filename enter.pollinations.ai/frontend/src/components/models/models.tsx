@@ -76,13 +76,13 @@ const SORT_OPTIONS: Array<{
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
     {
         value: "price-low",
-        label: "Price ↑",
-        accessibleLabel: "Price: Low to high",
+        label: "Price: Low",
+        accessibleLabel: "Lowest price first",
     },
     {
         value: "price-high",
-        label: "Price ↓",
-        accessibleLabel: "Price: High to low",
+        label: "Price: High",
+        accessibleLabel: "Highest price first",
     },
     { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
     { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
@@ -413,8 +413,9 @@ export const Models: FC = () => {
                             trigger={(open) => (
                                 <Button
                                     type="button"
+                                    size="md"
                                     aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                    className="shrink-0 justify-end gap-2"
                                 >
                                     <span className="text-right">
                                         {activeSortLabel}

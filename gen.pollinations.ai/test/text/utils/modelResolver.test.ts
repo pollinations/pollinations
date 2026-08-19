@@ -203,6 +203,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 to Z.AI FP8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "glm-5.3" });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://openrouter.ai/api/v1",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, { model: "deepseek" });
 

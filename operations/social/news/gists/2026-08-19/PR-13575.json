@@ -1,0 +1,34 @@
+{
+  "pr_number": 13575,
+  "title": "fix: version the KPI Tinybird cache key, and stop hiding GitHub failures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13575",
+  "merged_at": "2026-08-19T12:08:30Z",
+  "labels": [],
+  "pr_body_excerpt": "Two follow-ups from the community-models row landing on prod.\n\n- **Stale cache.** `caches.default` survives a Worker redeploy, so `weekly_usage_stats` kept serving its pre-community-column shape for the full 6-hour TTL. The cache key now carries `TINYBIRD_CACHE_VERSION`, bumped to `2` here — deploying this drops every cached entry immediately. Bump it whenever a pipe's output changes.\n- **Silent GitHub failures.** `app-submissions` did `if (!res.ok) break`, returning `{data: []}`. An expired token, a rate limit and a genuinely quiet week all rendered identically as \"No rows returned for: GitHub (app submissions)\". It now logs status + body and returns 502 with the reason.\n\nVerified locally with a deliberately bad token: `{\"error\":\"GitHub 401\",\"data\":[]}`, http 502, and `[GitHub] app-submissions failed: status=401` in the worker log.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh stats, honest errors",
+    "blurb": "The KPI hive now knows when its Tinybird cache has changed shape, and GitHub hiccups no longer dress up as an empty week. Less stale pollen, more useful clues.",
+    "summary": "Versioned the KPI worker's Tinybird cache with TINYBIRD_CACHE_VERSION=2 so changed pipe output invalidates cached weekly_usage_stats immediately, and made GitHub app-submission failures log their response and return a descriptive 502.",
+    "impact": "KPI deploys can refresh changed Tinybird result shapes without waiting for the six-hour cache TTL, while expired GitHub tokens and rate limits are now clearly distinguishable from genuinely empty submissions.",
+    "keywords": [
+      "kpi",
+      "tinybird",
+      "cache",
+      "github",
+      "worker",
+      "error-handling"
+    ],
+    "visual_concept": "Polli is tending a small metrics garden where an old cache jar is replaced with a clearly labeled version-2 jar, while a retro terminal openly displays a GitHub 401 notice instead of an empty chart. Use code-plants and a tiny status beacon to represent fresh data and visible failures.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny mechanic tool belt as she swaps a dusty cache jar for a glowing jar labeled 'v2' beside a code-plant metrics garden; a friendly retro terminal shows simple pixel text 'GitHub 401' with a helpful status light. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13575.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny mechanic tool belt as she swaps a dusty cache jar for a glowing jar labeled 'v2' beside a code-plant metrics garden; a friendly retro terminal shows simple pixel text 'GitHub 401' with a helpful status light. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-19T12:09:35.171936+00:00"
+}

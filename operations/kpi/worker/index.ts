@@ -1,9 +1,5 @@
-import manifestJSON from "__STATIC_CONTENT_MANIFEST";
-import { getAssetFromKV } from "@cloudflare/kv-asset-handler";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-const assetManifest = JSON.parse(manifestJSON);
 
 // Data start date - Oct 1, 2025
 const DATA_START_DATE = "2025-10-01";
@@ -18,7 +14,7 @@ type Env = {
     GITHUB_TOKEN?: string;
     GITHUB_REPO: string;
     DASHBOARD_PASSWORD?: string;
-    __STATIC_CONTENT: KVNamespace;
+    ASSETS: Fetcher;
 };
 
 // Helper to fetch from Tinybird with caching, retry, and error logging
@@ -179,9 +175,6 @@ app.use("*", async (c, next) => {
     });
 });
 
-// Health check
-app.get("/api/health", (c) => c.json({ status: "ok" }));
-
 // Tinybird: Weekly registrations (from Oct 1, 2025)
 app.get("/api/kpi/registrations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_registrations", {
@@ -189,16 +182,6 @@ app.get("/api/kpi/registrations", async (c) => {
     });
     if (result.error) return c.json({ error: result.error, data: [] }, 500);
     return c.json({ data: result.data });
-});
-
-// Tinybird: Total users (from Oct 1, 2025)
-app.get("/api/kpi/total-users", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_total_users", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, total: 0 }, 500);
-    const row = result.data[0] as { total: number } | undefined;
-    return c.json({ total: row?.total || 0 });
 });
 
 // D7 Activations: users who made their first API request within 7 days of registration
@@ -273,16 +256,6 @@ function getWeekStart(date: Date): string {
     );
     return monday.toISOString().split("T")[0];
 }
-
-// Tinybird: Daily Stripe revenue (aggregated from checkout events)
-app.get("/api/kpi/stripe-revenue", async (c) => {
-    const daysBack = 90; // ~12 weeks
-    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
-        days_back: daysBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
-});
 
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
@@ -454,57 +427,8 @@ app.get("/api/kpi/github", async (c) => {
     });
 });
 
-// Combined: All KPIs in one call
-app.get("/api/kpi/all", async (c) => {
-    const [registrations, wau, usage, revenue, github] = await Promise.all([
-        fetch(new URL("/api/kpi/registrations?weeks_back=12", c.req.url)).then(
-            (r) => r.json(),
-        ),
-        fetch(new URL("/api/kpi/wau?weeks_back=12", c.req.url)).then((r) =>
-            r.json(),
-        ),
-        fetch(new URL("/api/kpi/usage?weeks_back=12", c.req.url)).then((r) =>
-            r.json(),
-        ),
-        fetch(new URL("/api/kpi/revenue", c.req.url)).then((r) => r.json()),
-        fetch(new URL("/api/kpi/github", c.req.url)).then((r) => r.json()),
-    ]);
-
-    return c.json({ registrations, wau, usage, revenue, github });
-});
-
-// Serve static files for everything else
-app.get("*", async (c) => {
-    try {
-        return await getAssetFromKV(
-            {
-                request: c.req.raw,
-                waitUntil: (p) => c.executionCtx.waitUntil(p),
-            },
-            {
-                ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-                ASSET_MANIFEST: assetManifest,
-            },
-        );
-    } catch {
-        // Try index.html for SPA routing
-        try {
-            const url = new URL(c.req.url);
-            url.pathname = "/index.html";
-            return await getAssetFromKV(
-                {
-                    request: new Request(url.toString(), c.req.raw),
-                    waitUntil: (p) => c.executionCtx.waitUntil(p),
-                },
-                {
-                    ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-                    ASSET_MANIFEST: assetManifest,
-                },
-            );
-        } catch {
-            return c.text("Not found", 404);
-        }
-    }
-});
+// Everything else is the SPA shell, served from the assets binding once the
+// Basic-auth middleware above has let the request through.
+app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;

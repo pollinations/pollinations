@@ -1,96 +1,38 @@
-# pollinations.ai KPI Dashboard
+# KPI Dashboard
 
-Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
+Weekly KPIs for pollinations.ai — `kpi.pollinations.ai` (origin
+`kpi.myceli.ai`), Worker `myceli-kpi` on the Myceli Cloudflare account.
 
-## KPIs Tracked
+Everything sits behind Basic auth: the Worker runs before any asset is served,
+so the SPA shell is gated too. All Tinybird and GitHub reads go through the
+Worker; no token reaches the browser.
 
-### 1. Acquisition
+## Data
 
-- New customer registrations
-- Activated customers (D7)
-- GitHub stars
+| Source   | Metrics                                            |
+| -------- | -------------------------------------------------- |
+| Tinybird | WAU, usage, retention, churn, segments, health      |
+| D1       | Registrations and D7 activations (via Tinybird)     |
+| Stripe   | Pack purchases and revenue (via Tinybird)           |
+| GitHub   | Stars, app submissions                              |
 
-### 2. Activation & Usage
+North star: weekly active paying customers.
 
-- Weekly Active Users (WAU)
-- Token usage
-- Usage per active customer
-
-### 3. Revenue
-
-- Pack purchases
-- Gross revenue (USD)
-- ARPA (weekly)
-
-### 4. Retention
-
-- D7 retention
-- W4 retention (cohort-based)
-
-### 5. North Star
-
-- **Weekly Active Paying Customers (WAPC)**
-
-## Data Sources
-
-| Source          | Data                            |
-| --------------- | ------------------------------- |
-| Tinybird        | Usage, Stripe revenue, tokens, WAU |
-| D1 (Cloudflare) | User registrations, activations |
-| GitHub API      | Stars, forks                    |
-
-## Setup
+## Run
 
 ```bash
-cd operations/kpi
-npm install
-
-# Load secrets (requires SOPS + age key)
-./scripts/load-secrets.sh
-
-# Run locally
-npm run dev
+npm ci --prefix ../.. && npm ci
+npm run decrypt-vars          # TINYBIRD_READ_TOKEN → .dev.vars (needs the age key)
+echo 'DASHBOARD_PASSWORD=dev' >> .dev.vars
+npm run dev                   # http://127.0.0.1:3456
 ```
 
-## Deployment
+`DASHBOARD_PASSWORD` is not in `secrets/env.json` — set it locally as above and
+log in with any username.
 
-**Cloudflare account:** Myceli (`b6ec751c0862027ba269faf7029b2501` / Elliot@myceli.ai)
+## Deploy
 
-This is NOT on the Pollinations account. You must be logged into the myceli Cloudflare account.
-
-```bash
-cd operations/kpi
-
-# 1. Login to the myceli account (opens browser)
-npx wrangler login
-# Verify: npx wrangler whoami → should show "Elliot@myceli.ai's Account"
-
-# 2. Build frontend
-npm run build
-
-# 3. Deploy
-CLOUDFLARE_ACCOUNT_ID=b6ec751c0862027ba269faf7029b2501 npx wrangler deploy
-```
-
-**Public URL:** https://kpi.pollinations.ai
-
-**Myceli origin:** https://kpi.myceli.ai
-
-**Worker name:** `myceli-kpi`
-
-## Secrets Management
-
-Secrets are SOPS-encrypted in `secrets/env.json`. To update:
-
-```bash
-sops secrets/env.json  # Edit encrypted file
-./scripts/load-secrets.sh  # Decrypt to .dev.vars for local dev
-```
-
-## TODO
-
-- [x] Create Tinybird pipes for weekly aggregations
-- [x] Add D1 API endpoints for registration/activation metrics
-- [x] Track Stripe revenue through Tinybird
-- [ ] Track GitHub star history over time
-- [ ] Real activation tracking (D1 + Tinybird cross-reference)
+Through GitHub Actions only: `Deploy / Applications` runs on pushes to
+`production` that touch `operations/**`, discovers this folder via `deploy.json`
+and runs `npm run deploy` plus a `wrangler secret bulk` from `secrets/env.json`.
+Use `workflow_dispatch` with `operations/kpi` to force a deploy.

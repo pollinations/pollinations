@@ -64,6 +64,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks?: boolean;
 }>;
 
 type BrandLink = {
@@ -146,6 +147,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    showFooterLinks = true,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -298,6 +300,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
     );
@@ -389,6 +392,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks: boolean;
     onNavigate: () => void;
 };
 
@@ -399,6 +403,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    showFooterLinks,
     onNavigate,
 }) => (
     <aside
@@ -448,7 +453,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
+            <DashboardFooter
+                links={showFooterLinks ? footerLinks : []}
+                note="© 2026 Myceli.AI"
+            />
         </div>
     </aside>
 );
@@ -571,19 +579,21 @@ const DashboardFooter: FC<{
     note?: ReactNode;
 }> = ({ links, note }) => (
     <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
-            {links.map((link) => (
-                <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-theme-text-strong"
-                >
-                    {link.label}
-                </a>
-            ))}
-        </div>
+        {links.length > 0 && (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
+                {links.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-theme-text-strong"
+                    >
+                        {link.label}
+                    </a>
+                ))}
+            </div>
+        )}
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
             {/* accent on the toggle's active icon, over the neutral rail */}

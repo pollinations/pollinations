@@ -226,6 +226,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0025,
     },
   },
+  "fish-audio-s2.1-pro": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "flux": {
     "cost": {
       "completionImageTokens": 0.002,

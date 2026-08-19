@@ -101,7 +101,7 @@ export default function App() {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
-    const [explored, setExplored] = useState("registrations");
+    const [explored, setExplored] = useState("registrations:0");
 
     const cycleView = (key) =>
         setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
@@ -300,7 +300,6 @@ export default function App() {
                         id={EXPLORER_ID}
                         weeks={historyWeeks}
                         selected={explored}
-                        viewIndex={viewIndex}
                         onSelect={setExplored}
                     />
                     <FunnelBars

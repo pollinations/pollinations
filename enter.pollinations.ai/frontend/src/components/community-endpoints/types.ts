@@ -270,7 +270,11 @@ export function isValidPriceInput(
         Number.isFinite(parsed) &&
         parsed >= 0 &&
         parsed <= maximum &&
-        (priceUnit === "image" || priceUnit === "request" || priceUnit === "second" || parsed === 0 || parsed >= minimum);
+        (priceUnit === "image" ||
+            priceUnit === "request" ||
+            priceUnit === "second" ||
+            parsed === 0 ||
+            parsed >= minimum)
     );
 }
 

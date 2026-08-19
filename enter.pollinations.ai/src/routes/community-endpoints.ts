@@ -1186,9 +1186,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 : "Generation endpoint responded; editing is not supported"
                             : input.modality === "embedding"
                               ? "Endpoint responded with embedding data"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

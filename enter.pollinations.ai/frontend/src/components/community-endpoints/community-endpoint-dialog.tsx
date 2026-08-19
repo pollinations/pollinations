@@ -15,11 +15,8 @@ import {
     TabButton,
 } from "@pollinations/ui";
 import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_MODALITIES,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    type CommunityEndpointVisibility,
     MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
@@ -440,8 +437,7 @@ export function CommunityEndpointDialog({
                                                 "inputModalities",
                                                 selected
                                                     ? form.inputModalities.filter(
-                                                          (m) =>
-                                                              m !== modality,
+                                                          (m) => m !== modality,
                                                       )
                                                     : [
                                                           ...form.inputModalities,

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13297,
+  "title": "fix: keep tracking alive after malformed SSE chunks",
+  "author": "AbarnaaSree",
+  "url": "https://github.com/pollinations/pollinations/pull/13297",
+  "merged_at": "2026-08-19T19:09:35Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\nFixes #13223  \nReferences #13147\n\n- Skips malformed JSON SSE events during post-response tracking.\n- Continues processing later valid usage events so billing and tracking complete normally.\n- Keeps malformed response content out of Worker logs.\n- Adds one middleware-level regression proving a final Tinybird row is emitted with later valid usage.\n\n## Validation\n\n- Focused malformed-SSE Worker regression\n- Full tracking observability test file: 34/34 passed\n- Gen typecheck\n- Biome on both changed files",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The tracker keeps buzzing",
+    "blurb": "A few scrambled SSE crumbs no longer stop the hive ledger. Polli brushes them aside and keeps following the useful signals all the way to the final row.",
+    "summary": "Updated gen.pollinations.ai post-response tracking to skip malformed JSON SSE events and continue processing later valid usage events, ensuring the final Tinybird usage row is still emitted.",
+    "impact": "Streaming users and developers get reliable billing and usage tracking even when a response contains an occasional malformed SSE chunk, without that malformed content entering Worker logs.",
+    "keywords": [
+      "sse",
+      "tracking",
+      "usage",
+      "billing",
+      "tinybird",
+      "streaming"
+    ],
+    "visual_concept": "Depict a cozy streaming-data garden where a few broken pixel data fragments are gently swept aside while healthy usage-event fireflies continue along a glowing path into a Tinybird-style ledger terminal. Polli, wearing a tiny tracker visor, observes the flow as code-plants and flowers grow around the terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing a tiny tracker visor as she guides glowing valid data fireflies past a few harmless broken pixel fragments into a retro ledger terminal; lime green (#ecf874) code-plants and flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font terminal text: 'TRACKING OK'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13297.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing a tiny tracker visor as she guides glowing valid data fireflies past a few harmless broken pixel fragments into a retro ledger terminal; lime green (#ecf874) code-plants and flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font terminal text: 'TRACKING OK'."
+  },
+  "generated_at": "2026-08-19T19:11:22.147021+00:00"
+}

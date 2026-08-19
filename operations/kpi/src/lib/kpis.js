@@ -175,3 +175,22 @@ export function kpiValue(kpi, week) {
 export function kpiView(row, index = 0) {
     return row.views ? { ...row, ...row.views[index % row.views.length] } : row;
 }
+
+/** The id the explorer uses to name one specific view of one row. */
+export function kpiViewId(row, index = 0) {
+    return `${row.key}:${row.views ? index % row.views.length : 0}`;
+}
+
+// Every view of every row as its own entry. The table cycles units in place to
+// stay compact; the graph has room to list them all, so a variant is reachable
+// there without cycling the table to it first.
+export const KPI_VIEWS = KPIS.flatMap((row) =>
+    (row.views ?? [null]).map((_, index) => ({
+        id: kpiViewId(row, index),
+        ...kpiView(row, index),
+    })),
+);
+
+export function kpiViewById(id) {
+    return KPI_VIEWS.find((view) => view.id === id) ?? KPI_VIEWS[0];
+}

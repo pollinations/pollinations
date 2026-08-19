@@ -1626,11 +1626,29 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Stable id of the user that owns this key — server-attested.",
                                         ),
-                                    byopClientKeyId: z
-                                        .string()
+                                    byopApp: z
+                                        .object({
+                                            clientKeyId: z
+                                                .string()
+                                                .describe(
+                                                    "Publishable app key (client id) that minted this key via the BYOP authorize flow.",
+                                                ),
+                                            name: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "Display name of the BYOP app.",
+                                                ),
+                                            appUser: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "User id of the app account that owns the BYOP app key.",
+                                                ),
+                                        })
                                         .nullable()
                                         .describe(
-                                            "Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
+                                            "BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys.",
                                         ),
                                 }),
                             ),
@@ -1710,6 +1728,14 @@ export const accountRoutes = new Hono<Env>()
                 account: effectivePermissions?.account ?? null,
             };
 
+            const byopApp = apiKey.byopClientKeyId
+                ? {
+                      clientKeyId: apiKey.byopClientKeyId,
+                      name: apiKey.byopClientName ?? null,
+                      appUser: apiKey.byopClientUserId ?? null,
+                  }
+                : null;
+
             return c.json({
                 valid: true, // If we got here, the key is valid
                 type: keyType,
@@ -1724,7 +1750,7 @@ export const accountRoutes = new Hono<Env>()
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.
                 userId: c.var.auth.user?.id ?? null,
-                byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopApp,
             });
         },
     )

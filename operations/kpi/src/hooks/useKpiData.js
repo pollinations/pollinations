@@ -49,6 +49,9 @@ const REQUIRED = {
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
     revenue: "Revenue (Stripe)",
+    // A failed GitHub call returns an empty list, which is indistinguishable
+    // from a week with no submissions unless we name it here.
+    appSubmissions: "GitHub (app submissions)",
 };
 
 function mergeInto(weekMap, rows, project) {

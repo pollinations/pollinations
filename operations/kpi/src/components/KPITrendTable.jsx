@@ -10,6 +10,7 @@ import {
     TableRow,
     Text,
 } from "@pollinations/ui";
+import { useState } from "react";
 import {
     calcChange,
     currentWeekStart,
@@ -50,44 +51,57 @@ const KPIS = [
     },
     {
         key: "tokens",
-        name: "Total tokens",
         category: "Usage",
         format: "compact",
-        tooltip:
-            "Sum of prompt + completion tokens consumed. Source: Tinybird (weekly_usage_stats)",
-    },
-    {
-        key: "tokensPerUser",
-        name: "Tokens/user",
-        category: "Usage",
-        format: "compact",
-        calc: (w) => w.tokens / w.wau,
-        tooltip:
-            "Total tokens / WAU. Usage depth — how much each active user consumes on average.",
+        views: [
+            {
+                name: "Total tokens",
+                tooltip:
+                    "Sum of prompt + completion tokens consumed. Source: Tinybird (weekly_usage_stats)",
+            },
+            {
+                name: "Tokens/user",
+                calc: (w) => w.tokens / w.wau,
+                tooltip:
+                    "Total tokens / WAU. Usage depth — how much each active user consumes on average.",
+            },
+        ],
     },
     {
         key: "revenue",
-        name: "Revenue",
         category: "Revenue",
         format: "currency",
-        tooltip:
-            "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
+        views: [
+            {
+                name: "Revenue",
+                tooltip:
+                    "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
+            },
+            {
+                name: "ARPA",
+                calc: (w) => w.revenue / w.wau,
+                tooltip:
+                    "Weekly revenue / WAU. Average revenue per active user — monetization efficiency.",
+            },
+        ],
     },
     {
         key: "packPurchases",
-        name: "Pack purchases",
         category: "Revenue",
-        tooltip:
-            "Completed Pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
-    },
-    {
-        key: "arpa",
-        name: "ARPA",
-        category: "Revenue",
-        format: "currency",
-        calc: (w) => w.revenue / w.wau,
-        tooltip:
-            "Weekly revenue / WAU. Average revenue per active user — monetization efficiency.",
+        views: [
+            {
+                name: "Pack purchases",
+                tooltip:
+                    "Completed Pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
+            },
+            {
+                name: "Purchase rate",
+                format: "percent",
+                calc: (w) => (w.packPurchases / w.wau) * 100,
+                tooltip:
+                    "Pack purchases / WAU × 100. Share of active users who bought a pack this week.",
+            },
+        ],
     },
     {
         key: "grossMargin",
@@ -102,22 +116,29 @@ const KPIS = [
             "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
     },
     {
-        key: "revenuePerMTokens",
-        name: "Rev/1M tokens",
+        key: "perMTokens",
         category: "Efficiency",
         format: "currency",
-        calc: (w) => (w.revenue / w.tokens) * 1e6,
-        tooltip:
-            "Revenue / total tokens × 1,000,000. Unit economics — revenue per million tokens consumed.",
-    },
-    {
-        key: "purchaseRate",
-        name: "Purchase rate",
-        category: "Efficiency",
-        format: "percent",
-        calc: (w) => (w.packPurchases / w.wau) * 100,
-        tooltip:
-            "Pack purchases / WAU × 100. Share of active users who bought a pack this week.",
+        views: [
+            {
+                name: "GM/1M tokens",
+                calc: (w) => ((w.revenue - (w.costUsd || 0)) / w.tokens) * 1e6,
+                tooltip:
+                    "(Revenue − COGS) / total tokens × 1,000,000. Dollars of gross margin every million tokens produces. Unlike gross margin %, revenue is not the denominator, so it does not swing with a good or bad revenue week.",
+            },
+            {
+                name: "Rev/1M tokens",
+                calc: (w) => (w.revenue / w.tokens) * 1e6,
+                tooltip:
+                    "Revenue / total tokens × 1,000,000. Rises when token volume falls, so read it against cost/1M tokens rather than on its own.",
+            },
+            {
+                name: "Cost/1M tokens",
+                calc: (w) => ((w.costUsd || 0) / w.tokens) * 1e6,
+                tooltip:
+                    "COGS / total tokens × 1,000,000. Compute cost per million tokens — rises when volume falls, because the GPU base is fixed.",
+            },
+        ],
     },
     {
         key: "availability",
@@ -157,6 +178,10 @@ function kpiValue(kpi, week) {
 }
 
 export function KPITrendTable({ weeklyData }) {
+    // Some rows are the same measure in another unit — tokens/user tracks total
+    // tokens at r = +0.996 while WAU stays flat — so they share one row and
+    // cycle on click instead of each taking a line of their own.
+    const [viewIndex, setViewIndex] = useState({});
     const partialWeekStart = currentWeekStart();
     const partialWeek = weeklyData.find((w) => w.week === partialWeekStart);
     const fullWeeks = weeklyData.filter((w) => w.week !== partialWeekStart);
@@ -199,7 +224,12 @@ export function KPITrendTable({ weeklyData }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {KPIS.map((kpi) => {
+                        {KPIS.map((row) => {
+                            const views = row.views;
+                            const index = viewIndex[row.key] ?? 0;
+                            const kpi = views
+                                ? { ...row, ...views[index % views.length] }
+                                : row;
                             const change = calcChange(
                                 lastFull ? kpiValue(kpi, lastFull) : null,
                                 previousFull
@@ -213,10 +243,32 @@ export function KPITrendTable({ weeklyData }) {
                                       ? "text-intent-success-text"
                                       : "text-intent-danger-text";
                             return (
-                                <TableRow key={kpi.key}>
+                                <TableRow key={row.key}>
                                     <TableCell className="sticky left-0 z-10 bg-surface-opaque">
                                         <span className="flex items-center font-medium text-theme-text-strong">
-                                            {kpi.name}
+                                            {views ? (
+                                                <button
+                                                    type="button"
+                                                    title={`Show ${views[(index + 1) % views.length].name}`}
+                                                    onClick={() =>
+                                                        setViewIndex(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                [row.key]:
+                                                                    index + 1,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:text-theme-text-link"
+                                                >
+                                                    {kpi.name}
+                                                    <span aria-hidden="true">
+                                                        ⇄
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                kpi.name
+                                            )}
                                             <InfoTip text={kpi.tooltip} />
                                         </span>
                                         <Text

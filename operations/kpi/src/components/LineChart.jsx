@@ -10,6 +10,7 @@ const SERIES_COLORS = [
 
 const HEIGHT = 320;
 const PAD = { top: 16, right: 62, bottom: 28, left: 52 };
+const DUAL_PAD = { top: 16, right: 56, bottom: 28, left: 52 };
 const TICKS = 5;
 
 function useElementWidth() {
@@ -37,119 +38,130 @@ function niceStep(span) {
     return step * magnitude;
 }
 
+/** The next step up the 1/2/5 ladder. */
+function widerStep(step) {
+    const magnitude = 10 ** Math.floor(Math.log10(step));
+    const normalized = step / magnitude;
+    return (normalized < 1.5 ? 2 : normalized < 3.5 ? 5 : 10) * magnitude;
+}
+
 /**
  * Fit the axis to the data rather than to zero — twelve weeks of WAU sitting
  * between 6k and 7k is a flat line on a zero baseline. The floor is clamped at
- * zero so a series that genuinely reaches it still reads as reaching it, and
- * the bottom tick is always labelled.
+ * zero so a series that genuinely reaches it still reads as reaching it.
+ *
+ * Always returns exactly TICKS intervals, so two axes on the same plot put
+ * their labels on the same gridlines.
  */
 function niceScale(values) {
     if (values.length === 0) return { lo: 0, hi: 1, ticks: [0, 1] };
     const rawMin = Math.min(...values);
     const rawMax = Math.max(...values);
     const span = rawMax - rawMin || Math.abs(rawMax) || 1;
-    const step = niceStep((span * 1.16) / TICKS);
-    const lo = Math.max(0, Math.floor((rawMin - span * 0.08) / step) * step);
-    const hi = Math.ceil((rawMax + span * 0.08) / step) * step;
-    const ticks = [];
-    for (let tick = lo; tick <= hi + step / 2; tick += step) ticks.push(tick);
-    return { lo, hi, ticks };
+    const min = Math.max(0, rawMin - span * 0.08);
+    const max = rawMax + span * 0.08;
+
+    let step = niceStep((max - min) / TICKS);
+    let lo = Math.max(0, Math.floor(min / step) * step);
+    while (lo + step * TICKS < max) {
+        step = widerStep(step);
+        lo = Math.max(0, Math.floor(min / step) * step);
+    }
+    const ticks = Array.from({ length: TICKS + 1 }, (_, i) => lo + step * i);
+    return { lo, hi: lo + step * TICKS, ticks };
 }
 
 /**
  * Weekly line chart.
  *
- * Measures of different magnitude go on one axis by being indexed to 100 at the
- * first week (`indexed`), never by growing a second y-scale: with two scales the
- * lines cross wherever the axes are rescaled, so the crossing means nothing.
- * Indexed, the shapes are genuinely comparable and the tooltip and end labels
- * still carry the real numbers.
+ * `dualAxis` gives the two series their own y-scale — first series on the left
+ * axis, second on the right. Read each line against its own axis: the two
+ * scales are independent, so where the lines cross carries no meaning.
  */
 export function LineChart({
     title,
     data,
     series,
     format = "number",
-    indexed = false,
+    dualAxis = false,
 }) {
     const [ref, width] = useElementWidth();
     const [hover, setHover] = useState(null);
 
+    const dual = dualAxis && series.length === 2;
+    const pad = dual ? DUAL_PAD : PAD;
     const points = data.filter((row) => row.week);
-    const plotWidth = Math.max(width - PAD.left - PAD.right, 10);
-    const plotHeight = HEIGHT - PAD.top - PAD.bottom;
+    const plotWidth = Math.max(width - pad.left - pad.right, 10);
+    const plotHeight = HEIGHT - pad.top - pad.bottom;
 
     const formatOf = (item) => item.format ?? format;
+    const valuesOf = (item) =>
+        points.map((row) => row[item.key]).filter(Number.isFinite);
 
-    // One shared base week for every series — indexing each to its own first
-    // reading would compare growth measured from different starting points.
-    const baseIndex = points.findIndex((row) =>
-        series.every((item) => Number.isFinite(row[item.key])),
-    );
-    const baseRow = baseIndex === -1 ? null : points[baseIndex];
-
-    // What actually gets drawn: the raw value, or its percentage of the base
-    // week when the chart is indexed.
-    const plotted = (item, row) => {
-        const value = row[item.key];
-        if (!Number.isFinite(value)) return null;
-        if (!indexed) return value;
-        const base = baseRow?.[item.key];
-        return base ? (value / base) * 100 : null;
-    };
-
-    const { lo, hi, ticks } = niceScale(
-        points.flatMap((row) =>
-            series.map((item) => plotted(item, row)).filter(Number.isFinite),
-        ),
-    );
+    // One scale per axis. Both end up with TICKS intervals, so the right-hand
+    // labels land on the same gridlines as the left-hand ones.
+    const scales = dual
+        ? series.map((item) => niceScale(valuesOf(item)))
+        : [niceScale(series.flatMap(valuesOf))];
+    const scaleOf = (index) => scales[dual ? index : 0];
 
     const xAt = (index) =>
-        PAD.left +
+        pad.left +
         (points.length > 1
             ? (plotWidth * index) / (points.length - 1)
             : plotWidth / 2);
-    const yAt = (value) =>
-        PAD.top + plotHeight - ((value - lo) / (hi - lo)) * plotHeight;
+    const yAt = (value, seriesIndex = 0) => {
+        const { lo, hi } = scaleOf(seriesIndex);
+        return pad.top + plotHeight - ((value - lo) / (hi - lo)) * plotHeight;
+    };
 
-    const pathFor = (item) => {
+    const pathFor = (item, seriesIndex) => {
         let path = "";
         let pendingMove = true;
         points.forEach((row, index) => {
-            const value = plotted(item, row);
+            const value = row[item.key];
             if (!Number.isFinite(value)) {
                 pendingMove = true;
                 return;
             }
-            path += `${pendingMove ? "M" : "L"}${xAt(index)},${yAt(value)}`;
+            path += `${pendingMove ? "M" : "L"}${xAt(index)},${yAt(value, seriesIndex)}`;
             pendingMove = false;
         });
         return path;
     };
 
     // Last known value per series, nudged apart so the end labels never stack.
-    const endLabels = series
-        .map((item) => {
-            for (let index = points.length - 1; index >= 0; index--) {
-                const value = plotted(item, points[index]);
-                if (Number.isFinite(value))
-                    return {
-                        key: item.key,
-                        label: formatValue(
-                            points[index][item.key],
-                            formatOf(item),
-                        ),
-                        y: yAt(value),
-                    };
-            }
-            return null;
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.y - b.y);
+    // With two axes the right edge belongs to the second axis, so they go.
+    const endLabels = dual
+        ? []
+        : series
+              .map((item) => {
+                  for (let index = points.length - 1; index >= 0; index--) {
+                      const value = points[index][item.key];
+                      if (Number.isFinite(value))
+                          return {
+                              key: item.key,
+                              label: formatValue(value, formatOf(item)),
+                              y: yAt(value),
+                          };
+                  }
+                  return null;
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.y - b.y);
     endLabels.forEach((label, index) => {
         const previous = endLabels[index - 1];
         if (previous && label.y - previous.y < 13) label.y = previous.y + 13;
     });
+
+    // Axis ticks wear the format of the series they belong to.
+    const axisLabel = (tick, seriesIndex) => {
+        const tickFormat = dual ? formatOf(series[seriesIndex]) : format;
+        return formatValue(
+            tick,
+            tickFormat === "currency" ? "currency" : "compact",
+        );
+    };
 
     const xLabelStep = Math.ceil(points.length / 6);
 
@@ -173,6 +185,7 @@ export function LineChart({
                             />
                             <Text as="span" size="xs" tone="muted">
                                 {item.label}
+                                {dual && (index === 0 ? " (left)" : " (right)")}
                             </Text>
                         </span>
                     ))}
@@ -192,7 +205,7 @@ export function LineChart({
                                 event.currentTarget.getBoundingClientRect();
                             const x = event.clientX - bounds.left;
                             const ratio =
-                                (x - PAD.left) / Math.max(plotWidth, 1);
+                                (x - pad.left) / Math.max(plotWidth, 1);
                             const index = Math.round(
                                 ratio * Math.max(points.length - 1, 1),
                             );
@@ -202,31 +215,36 @@ export function LineChart({
                         }}
                     >
                         <title>{title}</title>
-                        {ticks.map((tick) => (
+                        {scales[0].ticks.map((tick, tickIndex) => (
                             <g key={tick}>
                                 <line
-                                    x1={PAD.left}
-                                    x2={PAD.left + plotWidth}
+                                    x1={pad.left}
+                                    x2={pad.left + plotWidth}
                                     y1={yAt(tick)}
                                     y2={yAt(tick)}
                                     className="stroke-divider"
                                     strokeWidth={1}
                                 />
                                 <text
-                                    x={PAD.left - 8}
+                                    x={pad.left - 8}
                                     y={yAt(tick) + 3}
                                     textAnchor="end"
                                     className="fill-theme-text-muted text-[10px] tabular-nums"
                                 >
-                                    {indexed
-                                        ? Math.round(tick)
-                                        : formatValue(
-                                              tick,
-                                              format === "currency"
-                                                  ? "currency"
-                                                  : "compact",
-                                          )}
+                                    {axisLabel(tick, 0)}
                                 </text>
+                                {dual && (
+                                    <text
+                                        x={pad.left + plotWidth + 8}
+                                        y={yAt(tick) + 3}
+                                        className="fill-theme-text-muted text-[10px] tabular-nums"
+                                    >
+                                        {axisLabel(
+                                            scales[1].ticks[tickIndex],
+                                            1,
+                                        )}
+                                    </text>
+                                )}
                             </g>
                         ))}
 
@@ -248,8 +266,8 @@ export function LineChart({
                             <line
                                 x1={xAt(hover)}
                                 x2={xAt(hover)}
-                                y1={PAD.top}
-                                y2={PAD.top + plotHeight}
+                                y1={pad.top}
+                                y2={pad.top + plotHeight}
                                 className="stroke-theme-text-muted"
                                 strokeWidth={1}
                                 strokeDasharray="3 3"
@@ -259,7 +277,7 @@ export function LineChart({
                         {series.map((item, index) => (
                             <path
                                 key={item.key}
-                                d={pathFor(item)}
+                                d={pathFor(item, index)}
                                 fill="none"
                                 stroke={SERIES_COLORS[index]}
                                 strokeWidth={2}
@@ -270,12 +288,12 @@ export function LineChart({
 
                         {series.map((item, index) =>
                             points.map((row, pointIndex) => {
-                                const value = plotted(item, row);
+                                const value = row[item.key];
                                 return Number.isFinite(value) ? (
                                     <circle
                                         key={`${item.key}-${row.week}`}
                                         cx={xAt(pointIndex)}
-                                        cy={yAt(value)}
+                                        cy={yAt(value, index)}
                                         r={hover === pointIndex ? 4 : 2.5}
                                         fill={SERIES_COLORS[index]}
                                         className="stroke-surface-opaque"
@@ -290,7 +308,7 @@ export function LineChart({
                         {endLabels.map((label) => (
                             <text
                                 key={label.key}
-                                x={PAD.left + plotWidth + 8}
+                                x={pad.left + plotWidth + 8}
                                 y={label.y + 3}
                                 className="fill-theme-text-base text-[10px] font-semibold tabular-nums"
                             >
@@ -344,15 +362,17 @@ export function LineChart({
                 )}
             </div>
 
-            {indexed ? (
+            {dual ? (
                 <Text as="p" size="micro" tone="muted">
-                    Each series indexed to 100 at {weekLabel(baseRow?.week)}.
-                    Hover for actual values.
+                    Two scales: {series[0].label} on the left axis,{" "}
+                    {series[1].label} on the right. Read each line against its
+                    own axis — where they cross means nothing.
                 </Text>
             ) : (
-                lo > 0 && (
+                scales[0].lo > 0 && (
                     <Text as="p" size="micro" tone="muted">
-                        Axis starts at {formatValue(lo, format)}, not zero.
+                        Axis starts at {formatValue(scales[0].lo, format)}, not
+                        zero.
                     </Text>
                 )
             )}

@@ -2,9 +2,10 @@ export function formatValue(value, format = "number") {
     if (value == null || Number.isNaN(value) || !Number.isFinite(value))
         return "—";
     if (format === "currency") {
-        if (Math.abs(value) > 0 && Math.abs(value) < 1)
-            return `$${value.toFixed(2)}`;
-        return `$${Math.round(value).toLocaleString()}`;
+        const sign = value < 0 ? "-" : "";
+        const size = Math.abs(value);
+        if (size > 0 && size < 10) return `${sign}$${size.toFixed(2)}`;
+        return `${sign}$${Math.round(size).toLocaleString()}`;
     }
     if (format === "percent") return `${Math.round(value)}%`;
     if (format === "compact") {
@@ -17,7 +18,10 @@ export function formatValue(value, format = "number") {
 
 export function calcChange(current, previous) {
     if (!previous || !current) return null;
-    return ((current - previous) / previous) * 100;
+    // Divide by the magnitude, not the signed value: a margin going from
+    // -$0.63 to -$0.89 got worse, and dividing by a negative base would
+    // report it as a rise.
+    return ((current - previous) / Math.abs(previous)) * 100;
 }
 
 /** Week keys are ISO Monday dates; the year is noise in a 12-week window. */

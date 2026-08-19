@@ -267,7 +267,7 @@ export default function App() {
                                 format: "currency",
                             },
                         ]}
-                        indexed
+                        dualAxis
                     />
                     <FunnelBars
                         title={`Conversion funnel · ${weekLabel(currentWeek?.week)}`}

@@ -211,16 +211,16 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                     How to read a canonical slug
                 </div>
                 <div className="mt-2 flex flex-wrap items-baseline font-mono text-base font-semibold">
-                    <span className="text-intent-news-text">publisher</span>
+                    <span className="text-theme-text-strong">publisher</span>
                     <span className="text-theme-text-muted">/</span>
-                    <span className="text-intent-warning-text">model</span>
+                    <span className="text-theme-text-strong">model</span>
                     <span className="text-theme-text-muted">[:</span>
-                    <span className="text-intent-success-text">variant</span>
+                    <span className="text-theme-text-strong">variant</span>
                     <span className="text-theme-text-muted">]</span>
                 </div>
                 <dl className="mt-3 space-y-2 text-sm">
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-intent-news-text">
+                        <dt className="font-semibold text-theme-text-strong">
                             Publisher
                         </dt>
                         <dd className="text-theme-text-muted">
@@ -230,7 +230,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-intent-warning-text">
+                        <dt className="font-semibold text-theme-text-strong">
                             Model
                         </dt>
                         <dd className="text-theme-text-muted">
@@ -239,7 +239,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-intent-success-text">
+                        <dt className="font-semibold text-theme-text-strong">
                             Variant{" "}
                             <span className="font-normal text-theme-text-muted">
                                 (optional)

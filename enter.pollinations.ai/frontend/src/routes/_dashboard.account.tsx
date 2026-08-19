@@ -1,6 +1,7 @@
 import {
     Alert,
     Button,
+    Chip,
     CopyButton,
     Dialog,
     FieldStack,
@@ -103,6 +104,23 @@ function AccountPage() {
                             </>
                         )}
                     </CopyButton>
+                </Surface>
+            </Section>
+
+            <Section title="Connected accounts" framed>
+                <Surface variant="card" className="flex items-center gap-3">
+                    <GitHubIcon className="h-6 w-6 shrink-0 text-theme-text-strong" />
+                    <div className="min-w-0 flex-1">
+                        <Text tone="strong" weight="semibold">
+                            GitHub
+                        </Text>
+                        <Text size="sm" tone="muted" className="truncate">
+                            {githubUsername ? `@${githubUsername}` : user.email}
+                        </Text>
+                    </div>
+                    <Chip intent="neutral" size="sm">
+                        Connected
+                    </Chip>
                 </Surface>
             </Section>
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13588,
+  "title": "fix: stop counting out-of-Pollen rejections as active users",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13588",
+  "merged_at": "2026-08-19T18:54:10Z",
+  "labels": [],
+  "pr_body_excerpt": "A `402` means the caller had no Pollen left: the request is rejected at the balance check, before any provider runs. It is billed nothing and generates nothing — but it carries a `user_id`, so it counted as an active user and as a request. Last week that was 3.1M requests from 3,507 users.\n\n**The effect was not cosmetic.** Reported WAU has been flat for ten weeks — 6,798 → 6,859 — while users who actually got a response fell 5,716 → 3,352. The dashboard showed a stable user base through a 41% decline.\n\n| Metric (wk of 08-10) | Was | Now | |\n|---|---|---|---|\n| WAU | 6,859 | 3,352 | −51% |\n| Total requests | 7,089,351 | 4,000,906 | −44% |\n| Text requests | 0 *(bug)* | 3,291,498 | — |\n| Image requests | 0 *(bug)* | 3,592,400 | — |\n| Tokens/user | 239,530 | 490,135 | +105% |\n| Community · users | 15.8% | 24.9% | +58% |\n| BYOP user % | 15.0% | 11.1% | −26% |\n\nUnchanged: tokens, paying users, Pollen revenue, cost, gross margin, cash coverage, availability, community request %/availability, registrations, activations.\n\n- WAU and BYOP user % **cycle** to the raw figure, so nothing is lost.\n- New **Turned away** row — users whose every request hit the Pollen wall.\n- Per-user metrics (Tokens/user, ARPA, Purchase rate) divide by served WAU.\n- Fixes `text_requests`/`image_requests`, which matched `event_type = 'text'` where the values are `generate.text` — both had always returned 0.\n\nPipe changes are additive. Only consumer is this dashboard (verified: no other `.pipe` references them, no other code reads them).\n\n**Deploy order matters:** Tinybird must be promoted before this merges, or WAU renders blank. Deployments are built and ready — prod **167**, staging **96** — not promoted.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The dashboard counts bees properly",
+    "blurb": "The KPI garden now separates visitors who received a response from those stopped at the Pollen gate. It also found the text and image request counters hiding behind the wrong event names.",
+    "summary": "Weekly KPI pipelines now exclude 402 out-of-Pollen rejections from served WAU and request totals, add a Turned away user row, and correctly count generate.text and image events.",
+    "impact": "The internal dashboard now reports 3,352 served weekly active users instead of 6,859 for the week of 08-10, while preserving raw WAU and making per-user usage metrics reflect users who received responses.",
+    "keywords": [
+      "kpi",
+      "analytics",
+      "observability",
+      "pollen",
+      "usage",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy KPI garden where Polli, wearing tiny accountant glasses, sorts successful glowing request-seeds into a healthy chart while gently directing empty Pollen jars to a clearly separate Turned Away sign; a CRT robot notices previously hidden text and image counters blooming as code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny accountant glasses as she sorts glowing request-seeds into a lime green (#ecf874) KPI garden chart; beside her, a cute CRT monitor robot points excitedly at blooming text and image code-plants, while empty jars rest at a small pixel sign reading 'TURNED AWAY'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently amused."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13588.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny accountant glasses as she sorts glowing request-seeds into a lime green (#ecf874) KPI garden chart; beside her, a cute CRT monitor robot points excitedly at blooming text and image code-plants, while empty jars rest at a small pixel sign reading 'TURNED AWAY'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently amused."
+  },
+  "generated_at": "2026-08-19T18:57:55.065591+00:00"
+}

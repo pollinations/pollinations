@@ -292,10 +292,11 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <output className="mb-4 rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text">
                     <p className="font-bold">Payments restricted</p>
                     <p className="mt-1">
-                        We detected an unusually high number of different
-                        payment cards failing on this account. Purchases and
-                        automatic top-ups have been disabled for fraud
-                        prevention. If you believe this is a mistake, email{" "}
+                        We detected an unusually high number of failed payment
+                        attempts or different payment cards on this account.
+                        Purchases and automatic top-ups have been disabled for
+                        fraud prevention. If you believe this is a mistake,
+                        email{" "}
                         <CopyButton
                             value={paymentSupportEmail}
                             className="font-semibold underline underline-offset-2"

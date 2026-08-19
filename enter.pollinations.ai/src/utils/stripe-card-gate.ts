@@ -1,16 +1,21 @@
 export const STRIPE_NEW_CARD_LIMIT = 8;
+export const STRIPE_FAILED_CARD_ATTEMPT_LIMIT = 50;
 export const STRIPE_NEW_CARD_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const STRIPE_NEW_CARD_GATE_METADATA = {
     gate: "app_new_card_gate",
     count24h: "app_new_card_count_24h",
     limit24h: "app_new_card_limit_24h",
+    attemptCount24h: "app_failed_card_attempt_count_24h",
+    attemptLimit24h: "app_failed_card_attempt_limit_24h",
 } as const;
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
     distinctFailedCardCount24h: number;
+    failedCardAttemptCount24h: number;
     limit: number;
+    attemptLimit: number;
 };
 
 export type StripeCardFingerprintAttemptInput = {
@@ -29,30 +34,41 @@ export async function getStripeNewCardGateStatus(
         return {
             gate: "ok",
             distinctFailedCardCount24h: 0,
+            failedCardAttemptCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
+            attemptLimit: STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         };
     }
 
     const windowStart = now - STRIPE_NEW_CARD_WINDOW_MS;
     const row = await db
         .prepare(
-            `SELECT COUNT(DISTINCT card_fingerprint) AS count
+            `SELECT
+                COUNT(DISTINCT card_fingerprint) AS distinct_count,
+                COUNT(*) AS attempt_count
             FROM stripe_card_fingerprint_attempt
             WHERE user_id = ?
                 AND created_at >= ?`,
         )
         .bind(userId, windowStart)
-        .first<{ count: number | null }>();
+        .first<{
+            distinct_count: number | null;
+            attempt_count: number | null;
+        }>();
 
-    const distinctFailedCardCount24h = Number(row?.count ?? 0);
+    const distinctFailedCardCount24h = Number(row?.distinct_count ?? 0);
+    const failedCardAttemptCount24h = Number(row?.attempt_count ?? 0);
 
     return {
         gate:
-            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
+            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT ||
+            failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT
                 ? "locked"
                 : "ok",
         distinctFailedCardCount24h,
+        failedCardAttemptCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,
+        attemptLimit: STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
     };
 }
 
@@ -65,6 +81,12 @@ export function stripeNewCardGateMetadata(
             status.distinctFailedCardCount24h,
         ),
         [STRIPE_NEW_CARD_GATE_METADATA.limit24h]: String(status.limit),
+        [STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h]: String(
+            status.failedCardAttemptCount24h,
+        ),
+        [STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h]: String(
+            status.attemptLimit,
+        ),
     };
 }
 

@@ -354,6 +354,12 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
         "8",
     );
+    expect(
+        body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`],
+    ).toBe("0");
+    expect(
+        body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h}]`],
+    ).toBe("50");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
@@ -467,6 +473,16 @@ test("eight distinct failed cards in 24h restrict payments", async ({
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`
         ],
     ).toBe("8");
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`
+        ],
+    ).toBe("7");
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h}]`
+        ],
+    ).toBe("50");
 
     await recordFailedCard("fp_gate_8");
 
@@ -515,6 +531,108 @@ test("eight distinct failed cards in 24h restrict payments", async ({
                 request.path === "/v1/checkout/sessions",
         ),
     ).toHaveLength(createdCheckoutCount);
+});
+
+test("fifty failed attempts on one card restrict payments", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const now = Date.now();
+
+    for (let index = 1; index < 50; index++) {
+        await env.DB.prepare(
+            `INSERT INTO stripe_card_fingerprint_attempt (
+                event_id,
+                user_id,
+                card_fingerprint,
+                created_at
+            ) VALUES (?, ?, ?, ?)`,
+        )
+            .bind(`evt_retry_seed_${index}`, userId, "fp_retry", now - index)
+            .run();
+    }
+
+    const preLimitResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(preLimitResponse.status).toBe(302);
+    const preLimitCheckoutBody = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`
+        ],
+    ).toBe("49");
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
+        ],
+    ).toBe("ok");
+
+    mocks.stripe.state.paymentIntents.push({
+        id: "pi_retry_50",
+        object: "payment_intent",
+        status: "requires_payment_method",
+        amount: 1000,
+        currency: "usd",
+        metadata: { userId },
+        payment_method_types: ["card"],
+        receipt_email: "buyer@example.com",
+        latest_charge: {
+            id: "ch_retry_50",
+            object: "charge",
+            amount: 1000,
+            currency: "usd",
+            status: "failed",
+            customer: "cus_test_retry_gate",
+            payment_intent: "pi_retry_50",
+            metadata: { userId },
+            billing_details: { email: "buyer@example.com" },
+            payment_method_details: {
+                type: "card",
+                card: {
+                    fingerprint: "fp_retry",
+                    brand: "visa",
+                    country: "US",
+                    network: "visa",
+                },
+            },
+            outcome: { risk_level: "elevated", risk_score: 61 },
+        },
+    });
+
+    const webhookResponse = await postSignedStripeWebhook(
+        createCardPaymentFailedEvent({
+            eventId: "evt_retry_50",
+            paymentIntentId: "pi_retry_50",
+            userId,
+        }),
+    );
+    expect(webhookResponse.status).toBe(200);
+
+    const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(checkoutResponse.status).toBe(403);
+
+    const user = await env.DB.prepare(
+        `SELECT stripe_payment_restriction AS restriction
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{ restriction: string | null }>();
+    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
+        reason: "failed_card_velocity",
+        source: "automatic",
+    });
 });
 
 test("admin can restrict and restore payment access", async ({

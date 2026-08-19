@@ -63,8 +63,7 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
-const MODEL_SLUG_ANNOUNCEMENT_URL =
-    "https://pollinations-model-slugs.ef-fy.chatgpt.site/";
+const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-ids";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
@@ -363,11 +362,9 @@ export const Models: FC = () => {
                     the same. New integrations should use the canonical slugs.{" "}
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="font-semibold underline hover:no-underline"
                     >
-                        Read the naming guide and browse the full mapping →
+                        Read the announcement →
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">

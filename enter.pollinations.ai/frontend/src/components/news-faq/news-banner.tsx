@@ -9,6 +9,7 @@ export const HIGHLIGHTS_GITHUB_URL =
 const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
+    anchor?: string;
     date?: string;
     /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
     dateLabel?: string;
@@ -24,6 +25,21 @@ interface Highlight {
  * Edit this array to add/remove pinned announcements.
  */
 const PINNED_NEWS: Highlight[] = [
+    {
+        anchor: "canonical-model-ids",
+        date: "2026-08-19",
+        dateLabel: "Announcement",
+        emoji: "🌸",
+        title: "Canonical model IDs are coming",
+        description:
+            "We will standardize model IDs to the publisher/model[:variant] format across APIs, permissions, billing, docs, and dashboards.",
+        details: [
+            "For example, flux will become black-forest-labs/flux.1-schnell.",
+            "Existing aliases will keep current integrations working during the transition.",
+            "Only names are changing. Model behavior, routing, pricing, capabilities, and defaults stay the same.",
+            "The [Models tab](/models) will show the canonical ID for every model as the rollout lands.",
+        ],
+    },
     {
         date: "2026-08-15",
         dateLabel: "New quests",
@@ -186,7 +202,11 @@ export const NewsBanner: FC = () => {
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="min-w-0 leading-relaxed">
+    <Surface
+        id={item.anchor}
+        variant="card"
+        className="min-w-0 scroll-mt-4 leading-relaxed"
+    >
         {(item.dateLabel || item.date) && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 {item.dateLabel ??

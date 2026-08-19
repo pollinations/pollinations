@@ -14,6 +14,9 @@
 
 </div>
 
+> [!IMPORTANT]
+> **Model IDs are getting a clearer canonical format.** New integrations should use `publisher/model[:variant]`. Existing aliases will keep working during the transition; model behavior and pricing stay the same. [Read the naming guide and browse the full model mapping →](https://pollinations-model-slugs.ef-fy.chatgpt.site/)
+
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 <!-- recent-apps:start -->

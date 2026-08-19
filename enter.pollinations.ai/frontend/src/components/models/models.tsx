@@ -63,6 +63,9 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
+const MODEL_SLUG_ANNOUNCEMENT_URL =
+    "https://pollinations-model-slugs.ef-fy.chatgpt.site/";
+
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
     community: "Community",
@@ -349,6 +352,24 @@ export const Models: FC = () => {
                     </div>
                 }
             >
+                <Alert
+                    intent="warning"
+                    title="Model IDs are getting clearer"
+                    className="mb-4"
+                >
+                    Canonical model IDs are moving to the{" "}
+                    <code>publisher/model[:variant]</code> format. Existing
+                    aliases keep working, and model behavior and pricing stay
+                    the same. New integrations should use the canonical slugs.{" "}
+                    <a
+                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold underline hover:no-underline"
+                    >
+                        Read the naming guide and browse the full mapping →
+                    </a>
+                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">

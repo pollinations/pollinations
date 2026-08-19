@@ -34,13 +34,13 @@ export async function callAzureFluxKontext(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("AZURE_MYCELI_PROD_SWEDEN_API_KEY");
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     const baseUrl =
-        "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/FLUX.1-Kontext-pro";
+        "https://myceli-prod-eastus.services.ai.azure.com/openai/deployments/FLUX.1-Kontext-pro";
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+            "AZURE_MYCELI_PROD_API_KEY not found in environment variables",
         );
     }
 
@@ -68,7 +68,7 @@ export async function callAzureFluxKontext(
         prompt: sanitizeString(prompt),
         size: size,
         n: 1,
-        model: "flux.1-kontext-pro",
+        model: "FLUX.1-Kontext-pro",
     };
 
     logCloudflare("Calling Azure Flux Kontext API with params:", requestBody);
@@ -81,7 +81,7 @@ export async function callAzureFluxKontext(
 
         // Add the prompt
         formData.append("prompt", sanitizeString(prompt));
-        formData.append("model", "flux.1-kontext-pro");
+        formData.append("model", "FLUX.1-Kontext-pro");
 
         // Handle images based on their type
         try {

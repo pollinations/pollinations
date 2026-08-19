@@ -1,0 +1,35 @@
+{
+  "pr_number": 13531,
+  "title": "fix(billing): round pollen balance mutations to ledger precision",
+  "author": "aikhusus2025-ctrl",
+  "url": "https://github.com/pollinations/pollinations/pull/13531",
+  "merged_at": "2026-08-19T16:51:07Z",
+  "labels": [],
+  "pr_body_excerpt": "## Problem\r\n\r\n`shared/billing/precision.ts` documents the ledger policy: *\"Ledger debits, credits, and analytics totals round to this precision so they agree exactly\"* (1e-8). But the balance mutations never round:\r\n\r\n- `claimReward` — `shared/billing/rewards.ts`\r\n- `atomicDeductUserBalance` / `atomicCreditUserBalance` / `atomicDeductApiKeyBalance` — `shared/billing/deduction.ts`\r\n\r\nEach does raw float64 `COALESCE(balance, 0) +/− amount` in SQL, so a balance accumulates binary floating-point artifacts. **Live example:** `GET /api/account/balance` currently returns `1.7200000000000013` instead of `1.72`.\r\n\r\n## Repro (real SQLite)\r\n\r\nClaim the quest lineup `[0.25, 0.25, 0.25, 7, 10]` (= 17.75), then charge 16.03:\r\n\r\n| | balance |\r\n|---|---|\r\n| current code | `1.7199999999999989` |\r\n| with this PR | `1.72` |\r\n\r\nEvery input amount is already 8-decimal-clean (they pass through `roundPollenLedgerAmount` / `assertRewardAmount`); the drift is purely the balance arithmetic itself.\r\n\r\n## Fix\r\n\r\nWrap every balance mutation in `ROUND(..., POLLEN_BILLING_PRECISION)` so the stored value stays at ledger precision and comparisons (`>= amount`, bucket decisions) read clean balances:\r\n\r\n- `shared/billing/deduction.ts` — tier/pack deduction ladder, API-key budget deduction, credit\r\n- `shared/billing/rewards.ts` — quest reward claim credit\r\n\r\n## Test\r\n\r\nNew `enter.pollinations.ai/test/integration/ledger-precision.test.ts`: seeds a user, claims the real quest lineup, deducts a realistic 16.03 charge, and asserts `tierBalance === 1.72` exactly.\r\n\r\n- Fails on `main` (`1.7199999999999989`)\r\n- Passes with this PR\r\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Balances, pruned to eight decimals",
+    "blurb": "The billing garden was growing a few microscopic float weeds. Every Pollen credit and deduction now gets trimmed to the ledger’s eight-decimal precision, so 1.72 remains pleasantly, unambiguously 1.72.",
+    "summary": "Rounded all Pollen balance mutations for reward claims, user deductions and credits, API-key deductions, and Stripe billing flows to the ledger’s 1e-8 precision.",
+    "impact": "Account balances and billing comparisons now retain clean exact-looking values after sequences such as claiming 17.75 Pollen and charging 16.03, yielding 1.72 instead of float residue like 1.7199999999999989.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "ledger",
+      "precision",
+      "balance",
+      "rewards",
+      "stripe"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper pruning tiny stray decimal sprouts from a glowing Pollen ledger, while a retro terminal cleanly displays “1.72”. The visual metaphor is precise accounting as tending a healthy garden: rounded coins or pollen grains settle neatly into labeled jars, with code-plants and flowers nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener visor, carefully pruning microscopic decimal weeds from a glowing lime green (#ecf874) Pollen ledger beside a retro terminal reading “1.72” in dark purple pixel text; tidy Pollen jars, code-plants, and small flowers surround her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13531.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener visor, carefully pruning microscopic decimal weeds from a glowing lime green (#ecf874) Pollen ledger beside a retro terminal reading “1.72” in dark purple pixel text; tidy Pollen jars, code-plants, and small flowers surround her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-19T16:52:07.122256+00:00"
+}

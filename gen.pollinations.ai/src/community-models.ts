@@ -4,8 +4,8 @@ import {
     communityModelDefinition,
     communityModelId,
     isDelegatingEndpoint,
-    normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointModality,
+    normalizeListingType,
+    parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -76,30 +76,11 @@ export async function getCommunityModelRegistryEntries(
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
-            modality: schema.communityEndpoint.modality,
-            imagePricing: schema.communityEndpoint.imagePricing,
-            inputModalities: schema.communityEndpoint.inputModalities,
+            type: schema.communityEndpoint.type,
+            payload: schema.communityEndpoint.payload,
             agentId: schema.communityEndpoint.agentId,
             agentConfig: schema.agent.config,
-            endpointBaseUrl: schema.communityEndpoint.baseUrl,
-            upstreamModel: schema.communityEndpoint.upstreamModel,
-            endpointBearerTokenCiphertext:
-                schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
-            perUserRpm: schema.communityEndpoint.perUserRpm,
-            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
-            promptTextPrice: schema.communityEndpoint.promptTextPrice,
-            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
-            promptCacheWritePrice:
-                schema.communityEndpoint.promptCacheWritePrice,
-            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
-            promptImagePrice: schema.communityEndpoint.promptImagePrice,
-            completionTextPrice: schema.communityEndpoint.completionTextPrice,
-            completionReasoningPrice:
-                schema.communityEndpoint.completionReasoningPrice,
-            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-            completionImagePrice: schema.communityEndpoint.completionImagePrice,
-            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
             createdAt: schema.communityEndpoint.createdAt,
@@ -118,7 +99,8 @@ export async function getCommunityModelRegistryEntries(
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        const shared = {
+        const type = normalizeListingType(row.type);
+        const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
             modelId,
@@ -127,44 +109,72 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
-            modality: normalizeCommunityEndpointModality(row.modality),
-            imagePricing: normalizeCommunityEndpointImagePricing(
-                row.imagePricing,
-            ),
-            inputModalities: row.inputModalities,
             visibility: row.visibility,
-            perUserRpm: row.perUserRpm,
-            fallbackModelIds: row.fallbackModelIds ?? [],
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
-            ...communityEndpointPrices(row),
         };
-        // A row is one kind or the other: an agent resolves its target from the
-        // agent runtime, an external endpoint from its own stored target and
-        // credential. Anything missing the fields its kind requires is not
-        // routable, so it is dropped from the catalog rather than carried as a
-        // half-populated entry.
+        // An agent charges nothing of its own and fans out to nothing: the
+        // caller pays for whatever it consumes downstream. Only a proxy has
+        // the fields that describe a purchase, so the agent kinds supply the
+        // empty values once, here, instead of storing nine zeroes each.
+        const agentDefaults = {
+            modality: "text" as const,
+            imagePricing: "request" as const,
+            inputModalities: null,
+            perUserRpm: null,
+            fallbackModelIds: [],
+            ...communityEndpointPrices({}),
+        };
+        // Each arm parses its own payload, so the shape is narrowed to the one
+        // its type declares. A payload that cannot be read leaves the listing
+        // out of the catalog rather than in it half-populated: an entry
+        // missing its target would fail at call time, not registration time.
         let communityEndpoint: CommunityEndpointRuntime;
-        if (row.agentId !== null) {
-            communityEndpoint = {
-                ...shared,
-                kind: "agent",
-                baseUrl: agentRuntimeBaseUrl(env),
-                upstreamModel: row.agentId,
-                agentId: row.agentId,
-            };
-        } else {
-            if (!row.endpointBaseUrl || !row.endpointBearerTokenCiphertext) {
-                return [];
+        switch (type) {
+            case "prompt_agent": {
+                if (!row.agentId) return [];
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    kind: "prompt_agent",
+                    baseUrl: agentRuntimeBaseUrl(env),
+                    upstreamModel: row.agentId,
+                    agentId: row.agentId,
+                };
+                break;
             }
-            communityEndpoint = {
-                ...shared,
-                kind: "external",
-                baseUrl: row.endpointBaseUrl,
-                upstreamModel: row.upstreamModel,
-                bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
-                delegatesGeneration: row.delegatesGeneration,
-            };
+            case "hosted_agent": {
+                const payload = parseListingPayload(
+                    "hosted_agent",
+                    row.payload,
+                );
+                if (!payload) return [];
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    kind: "hosted_agent",
+                    baseUrl: payload.baseUrl,
+                    upstreamModel: row.name,
+                };
+                break;
+            }
+            default: {
+                const payload = parseListingPayload("proxy", row.payload);
+                if (!payload) return [];
+                communityEndpoint = {
+                    ...identity,
+                    kind: "proxy",
+                    baseUrl: payload.baseUrl,
+                    upstreamModel: payload.upstreamModel,
+                    bearerTokenCiphertext: payload.bearerTokenCiphertext,
+                    modality: payload.modality,
+                    imagePricing: payload.imagePricing,
+                    inputModalities: payload.inputModalities,
+                    perUserRpm: payload.perUserRpm,
+                    fallbackModelIds: payload.fallbackModelIds,
+                    ...payload.prices,
+                };
+            }
         }
         const definition = communityModelDefinition({
             ...communityEndpoint,
@@ -181,8 +191,10 @@ export async function getCommunityModelRegistryEntries(
                 }),
                 definition,
                 communityEndpoint,
+                // Only a prompt agent wraps a base model, so only it has a
+                // catalog config to inherit metadata from.
                 agentConfig:
-                    communityEndpoint.kind === "agent"
+                    communityEndpoint.kind === "prompt_agent"
                         ? (parseAgentCatalogConfig(row.agentConfig) ??
                           undefined)
                         : undefined,

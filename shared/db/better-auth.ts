@@ -5,6 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import { LISTING_TYPES } from "../community-endpoints.ts";
 import type { ModelInputModality } from "../registry/registry.ts";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -224,6 +225,17 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // Required on create, so only the pre-existing backlog is null.
   title: text("title"),
   description: text("description"),
+  // What this listing IS to callers, and the only thing deciding whether a
+  // call is sent a run token that spends the caller's balance.
+  //   proxy         → the owner's server, called with the owner's credential
+  //   prompt_agent  → an agent Enter runs, named by agentId
+  //   hosted_agent  → an agent on the owner's own server
+  type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
+  // Everything that belongs to one kind of listing rather than all of them.
+  // Shape is selected by `type`; read it with parseListingPayload. Fields a
+  // kind does not have simply have nowhere to live, which is what replaced the
+  // per-field rejections the write path used to carry.
+  payload: text("payload").notNull().default("{}"),
   modality: text("modality").default("text").notNull(),
   // Image endpoints only: "request" bills the fixed per-image price once per
   // generation; "tokens" bills provider-returned image token usage. Detected

@@ -7,6 +7,7 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    type ListingType,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
@@ -52,6 +53,9 @@ export type CommunityEndpoint = {
     inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
+    // What the listing is. Agent listings have no endpoint, upstream model,
+    // rate limit, or price of their own; agentId is only how one is routed.
+    type: ListingType;
     agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -142,9 +146,15 @@ export type EndpointPayload = ModelListingPayload & {
     fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
-export type AgentListingPayload = ModelListingPayload & {
+// An agent listing is identity and nothing else: everything a caller sees is
+// inherited from the agent's base model, so there is nothing else to send.
+export type AgentListingPayload = {
+    type: "prompt_agent";
+    name: string;
+    title: string;
+    description: string;
+    visibility: CommunityEndpointVisibility;
     agentId: string;
-    modality: "text";
 };
 
 export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
@@ -435,16 +445,13 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
 
 export function toAgentListingPayload(
     form: ModelListingFormState,
-    inputModalities: ModelInputModality[],
 ): AgentListingDetailsPayload {
     return {
-        inputModalities,
+        type: "prompt_agent",
         name: form.name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
-        perUserRpm: null,
-        modality: "text",
     };
 }
 

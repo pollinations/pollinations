@@ -8,6 +8,7 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
+    buildListingPayload,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
@@ -22,7 +23,7 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
-    type ExternalCommunityEndpointRuntime,
+    type HostedAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
@@ -87,6 +88,38 @@ import {
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
+
+type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
+
+/**
+ * Insert rows the way Enter writes them: the columns a fixture spells out plus
+ * the `type`/`payload` envelope Enter derives from them. A fixture still
+ * describes its row once, and the reader still gets a real payload.
+ */
+function insertCommunityEndpoints(
+    values: CommunityEndpointInsert | CommunityEndpointInsert[],
+) {
+    const rows = (Array.isArray(values) ? values : [values]).map((row) => {
+        const type = row.type ?? (row.agentId ? "prompt_agent" : "proxy");
+        return {
+            ...row,
+            type,
+            payload: JSON.stringify(
+                buildListingPayload(type, {
+                    ...row,
+                    baseUrl: row.baseUrl ?? null,
+                    bearerTokenCiphertext: row.bearerTokenCiphertext ?? null,
+                    modality: row.modality ?? null,
+                    imagePricing: row.imagePricing ?? null,
+                    inputModalities: row.inputModalities ?? null,
+                    perUserRpm: row.perUserRpm ?? null,
+                    fallbackModelIds: row.fallbackModelIds ?? null,
+                }),
+            ),
+        };
+    });
+    return db.insert(communityEndpointTable).values(rows);
+}
 const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
 // user.github_id is unique, so every test owner needs its own id. Rotate
@@ -319,7 +352,7 @@ async function createCommunityFallbackPair({
             ? [0.02, 0.01]
             : [0.2 / 1_000_000, 0.1 / 1_000_000];
 
-    await db.insert(communityEndpointTable).values([
+    await insertCommunityEndpoints([
         {
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: primaryUserId,
@@ -832,14 +865,13 @@ describe("community endpoint helpers", () => {
             imagePricing: CommunityEndpointRuntime["imagePricing"],
         ): Promise<CommunityEndpointRuntime> {
             return {
-                kind: "external",
+                kind: "proxy",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
                 title: "GPT Image",
                 description: null,
-                delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
@@ -1027,14 +1059,13 @@ describe("community endpoint helpers", () => {
 
         async function transcriptionEndpoint(): Promise<CommunityEndpointRuntime> {
             return {
-                kind: "external",
+                kind: "proxy",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/whisper",
                 name: "whisper",
                 title: "Whisper",
                 description: null,
-                delegatesGeneration: false,
                 modality: "transcription",
                 imagePricing: "request",
                 inputModalities: ["audio"],
@@ -1383,7 +1414,7 @@ describe("community endpoint helpers", () => {
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
-            kind: "external",
+            kind: "proxy",
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
@@ -1397,7 +1428,6 @@ describe("community endpoint helpers", () => {
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             perUserRpm: null,
-            delegatesGeneration: false,
             fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
@@ -1440,14 +1470,14 @@ describe("community endpoint helpers", () => {
         expect(context).not.toHaveProperty("messages");
     });
 
-    describe("delegated agent endpoints", () => {
+    describe("hosted agent endpoints", () => {
         const secret = "test-secret";
 
-        async function agentEndpoint(
-            overrides: Partial<ExternalCommunityEndpointRuntime> = {},
-        ): Promise<ExternalCommunityEndpointRuntime> {
+        function hostedAgentEndpoint(
+            overrides: Partial<HostedAgentCommunityEndpointRuntime> = {},
+        ): HostedAgentCommunityEndpointRuntime {
             return {
-                kind: "external",
+                kind: "hosted_agent",
                 id: "agent-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/agent",
@@ -1461,14 +1491,9 @@ describe("community endpoint helpers", () => {
                 upstreamModel: "agent",
                 visibility: "public",
                 perUserRpm: null,
-                delegatesGeneration: true,
                 disabledAt: null,
                 disabledReason: null,
                 fallbackModelIds: [],
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    secret,
-                ),
                 ...communityEndpointPrices({}),
                 ...overrides,
             };
@@ -1489,40 +1514,39 @@ describe("community endpoint helpers", () => {
             );
         }
 
-        it("authenticates as a run token, not the caller's or owner's key", async () => {
-            const endpoint = await agentEndpoint();
+        it("authenticates as a run token, not the caller's key", async () => {
+            const endpoint = hostedAgentEndpoint();
             const context = await contextFor(endpoint, "parent-key-id");
 
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
             expect(token).not.toContain("sk_user_key");
-            // The owner's saved bearer is replaced, never sent alongside — the
-            // endpoint must not receive a credential it could spend as its own.
-            expect(token).not.toContain("sk_saved_token");
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
-        it("sends the saved bearer when the endpoint is not flagged", async () => {
-            const endpoint = await agentEndpoint({
-                delegatesGeneration: false,
-            });
+        // The complement of the test above, and the reason an agent listing
+        // has nowhere to store a credential: only a proxy sends one.
+        it("sends a proxy listing's saved bearer, never a run token", async () => {
+            const { kind: _kind, ...base } = hostedAgentEndpoint();
+            const endpoint: CommunityEndpointRuntime = {
+                ...base,
+                kind: "proxy",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+            };
             const context = await contextFor(endpoint, "parent-key-id");
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
         it("always scopes managed agents to their agent id", async () => {
-            const external = await agentEndpoint();
-            const {
-                bearerTokenCiphertext: _token,
-                delegatesGeneration: _delegates,
-                kind: _kind,
-                ...base
-            } = external;
+            const { kind: _kind, ...base } = hostedAgentEndpoint();
             const endpoint: CommunityEndpointRuntime = {
                 ...base,
-                kind: "agent",
+                kind: "prompt_agent",
                 agentId: "managed-agent-id",
                 upstreamModel: "managed-agent-id",
             };
@@ -1536,14 +1560,14 @@ describe("community endpoint helpers", () => {
         });
 
         it("refuses to delegate when there is no key to bill", async () => {
-            const endpoint = await agentEndpoint();
+            const endpoint = hostedAgentEndpoint();
             await expect(contextFor(endpoint, undefined)).rejects.toThrow(
                 "no API key to bill",
             );
         });
 
         it("refuses to delegate from an endpoint that charges a price", async () => {
-            const endpoint = await agentEndpoint({
+            const endpoint = hostedAgentEndpoint({
                 ...communityEndpointPrices({ promptTextPrice: 0.1 }),
             });
             await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
@@ -1563,7 +1587,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1705,7 +1729,7 @@ fixtureTest(
             name: "owner-key",
             userId: ownerUserId,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: endpointId,
             ownerUserId,
             visibility: "private",
@@ -1845,7 +1869,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1944,7 +1968,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -2043,7 +2067,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -2150,7 +2174,7 @@ fixtureTest(
             ["a-tie", tiedDate],
             ["b-tie", tiedDate],
         ] as const) {
-            await db.insert(communityEndpointTable).values({
+            await insertCommunityEndpoints({
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId,
                 visibility: "public",
@@ -2297,7 +2321,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -2365,7 +2389,7 @@ fixtureTest(
             githubUsername: imageOwner,
         });
 
-        await db.insert(communityEndpointTable).values([
+        await insertCommunityEndpoints([
             {
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId: textUserId,
@@ -2539,7 +2563,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -2764,7 +2788,7 @@ fixtureTest(
         );
         expect(publishResponse.status).toBe(403);
 
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -4575,8 +4599,11 @@ fixtureTest(
             enterEnv,
         );
         expect(fallbackRegisterResponse.status).toBe(400);
+        // Not a rule the write path spells out: an agent listing's shape has
+        // no fallbackModelIds, so the field is unrecognized rather than
+        // refused.
         expect(await fallbackRegisterResponse.text()).toContain(
-            "do not support fallback models",
+            'Unrecognized key: \\"fallbackModelIds\\"',
         );
         const freeRegisterResponse = await fetchEnterApi(
             enterApi,
@@ -4658,7 +4685,7 @@ fixtureTest(
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === registration.modelId);
         expect(registryEntry?.communityEndpoint).toMatchObject({
-            kind: "agent",
+            kind: "prompt_agent",
             baseUrl: env.AGENT_RUNTIME_BASE_URL,
             agentId: agent.id,
             upstreamModel: agent.id,
@@ -4911,10 +4938,10 @@ fixtureTest("validates community fallback targets on write", async () => {
             ownerUserId,
             visibility: "public",
             name: targetNames.delegating,
+            type: "hosted_agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "delegating-upstream",
             bearerTokenCiphertext,
-            delegatesGeneration: true,
             promptTextPrice: 0,
             completionTextPrice: 0,
             createdAt: new Date(),
@@ -4949,7 +4976,7 @@ fixtureTest("validates community fallback targets on write", async () => {
             updatedAt: new Date(),
         },
     ] satisfies (typeof communityEndpointTable.$inferInsert)[]) {
-        await db.insert(communityEndpointTable).values(target);
+        await insertCommunityEndpoints(target);
     }
 
     const enterApi = await createEnterCommunityApi();
@@ -5214,7 +5241,7 @@ fixtureTest(
                 fallbackModelIds: [id("delegating-target")],
             }),
             endpoint("delegating-target", {
-                delegatesGeneration: true,
+                type: "hosted_agent",
                 promptTextPrice: 0,
                 completionTextPrice: 0,
             }),
@@ -5294,7 +5321,7 @@ fixtureTest(
                 completionImagePrice: 0.00005,
             }),
         ]) {
-            await db.insert(communityEndpointTable).values(row);
+            await insertCommunityEndpoints(row);
         }
 
         resetGenerationModelRegistryCache();
@@ -5352,7 +5379,7 @@ fixtureTest(
             `plain-${suffix}`,
         );
 
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -5752,7 +5779,7 @@ fixtureTest(
         );
 
         for (const [index, owner] of owners.entries()) {
-            await db.insert(communityEndpointTable).values({
+            await insertCommunityEndpoints({
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId: userIds[index],
                 visibility: "public" as const,

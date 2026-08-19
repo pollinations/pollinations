@@ -331,6 +331,201 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
+/* -------------------------------------------------------------------------
+ * Listing storage
+ *
+ * A row carries what every listing has — who owns it, what it is called,
+ * whether it is published — plus one `payload` whose shape `type` selects.
+ * A field that belongs to one kind of listing exists only in that kind's
+ * payload, so a listing cannot store a price it never charges or a credential
+ * it never sends. The invariants that used to be checked field by field on
+ * write are now the absence of somewhere to put the value.
+ * ---------------------------------------------------------------------- */
+
+export const LISTING_TYPES = ["proxy", "prompt_agent", "hosted_agent"] as const;
+
+export type ListingType = (typeof LISTING_TYPES)[number];
+
+/**
+ * The owner's own OpenAI-compatible server, reached with the owner's
+ * credential. The only kind that names a price, because it is the only kind
+ * whose caller is buying something from the owner.
+ */
+export type ProxyListingPayload = {
+    baseUrl: string;
+    upstreamModel: string;
+    bearerTokenCiphertext: string;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    inputModalities: ModelInputModality[];
+    perUserRpm: number | null;
+    fallbackModelIds: string[];
+    prices: CommunityEndpointPrices;
+};
+
+/**
+ * An agent Enter runs itself, named by the row's `agentId`.
+ *
+ * Empty by construction: the target is the agent runtime, and every catalog
+ * field is inherited from the agent's base model, so anything stored here
+ * would be overwritten before a caller could see it.
+ */
+export type PromptAgentListingPayload = Record<string, never>;
+
+/**
+ * An agent on the owner's own server. It is sent a run token rather than a
+ * credential, so it stores a target and nothing else.
+ */
+export type HostedAgentListingPayload = {
+    baseUrl: string;
+};
+
+export type ListingPayloadByType = {
+    proxy: ProxyListingPayload;
+    prompt_agent: PromptAgentListingPayload;
+    hosted_agent: HostedAgentListingPayload;
+};
+
+export type ListingPayload = ListingPayloadByType[ListingType];
+
+/** A type and its payload as one value, so `switch (listing.type)` narrows. */
+export type TypedListing = {
+    [K in ListingType]: { type: K; payload: ListingPayloadByType[K] };
+}[ListingType];
+
+/**
+ * Whether calls to this kind of listing spend the caller's balance downstream,
+ * which is the one fact that decides whether it is sent a run token instead of
+ * a stored credential. Both agent kinds do; a proxy never does.
+ */
+export function isAgentListingType(type: ListingType): boolean {
+    return type === "prompt_agent" || type === "hosted_agent";
+}
+
+export function normalizeListingType(
+    value: string | null | undefined,
+): ListingType {
+    return LISTING_TYPES.includes(value as ListingType)
+        ? (value as ListingType)
+        : "proxy";
+}
+
+/**
+ * Read a stored payload back into its typed shape.
+ *
+ * Storage is the only place a payload arrives untyped, so it is normalized
+ * once here and every reader downstream gets a complete value. A payload
+ * missing what its type requires returns null, which leaves the listing out of
+ * the catalog rather than in it half-populated.
+ */
+export function parseListingPayload<K extends ListingType>(
+    type: K,
+    raw: string | null,
+): ListingPayloadByType[K] | null {
+    let parsed: unknown;
+    try {
+        parsed = raw === null ? null : JSON.parse(raw);
+    } catch {
+        return null;
+    }
+    if (parsed === null || typeof parsed !== "object") return null;
+    const source = parsed as Record<string, unknown>;
+
+    if (type === "prompt_agent") return {} as ListingPayloadByType[K];
+
+    const baseUrl = typeof source.baseUrl === "string" ? source.baseUrl : "";
+    if (!baseUrl) return null;
+    if (type === "hosted_agent") {
+        return { baseUrl } as ListingPayloadByType[K];
+    }
+
+    const bearerTokenCiphertext =
+        typeof source.bearerTokenCiphertext === "string"
+            ? source.bearerTokenCiphertext
+            : "";
+    if (!bearerTokenCiphertext) return null;
+    const modality = normalizeCommunityEndpointModality(
+        typeof source.modality === "string" ? source.modality : null,
+    );
+    return {
+        baseUrl,
+        upstreamModel:
+            typeof source.upstreamModel === "string"
+                ? source.upstreamModel
+                : "",
+        bearerTokenCiphertext,
+        modality,
+        imagePricing: normalizeCommunityEndpointImagePricing(
+            typeof source.imagePricing === "string"
+                ? source.imagePricing
+                : null,
+        ),
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            Array.isArray(source.inputModalities)
+                ? (source.inputModalities as ModelInputModality[])
+                : undefined,
+            modality,
+        ),
+        perUserRpm:
+            typeof source.perUserRpm === "number" ? source.perUserRpm : null,
+        fallbackModelIds: Array.isArray(source.fallbackModelIds)
+            ? source.fallbackModelIds.filter(
+                  (id): id is string => typeof id === "string",
+              )
+            : [],
+        prices: communityEndpointPrices(
+            (typeof source.prices === "object" && source.prices !== null
+                ? source.prices
+                : {}) as Partial<CommunityEndpointPrices>,
+        ),
+    } as ListingPayloadByType[K];
+}
+
+/**
+ * Build a payload from the flat column set the write path already computes.
+ *
+ * Enter still writes the legacy columns while gen catches up, so this is the
+ * one place that decides which of them belong to which type — insert and
+ * update cannot drift apart, and dropping the columns later deletes exactly
+ * this function's input.
+ */
+export function buildListingPayload<K extends ListingType>(
+    type: K,
+    columns: {
+        baseUrl: string | null;
+        upstreamModel: string | null;
+        bearerTokenCiphertext: string | null;
+        modality: string | null;
+        imagePricing: string | null;
+        inputModalities: ModelInputModality[] | null;
+        perUserRpm: number | null;
+        fallbackModelIds: string[] | null;
+    } & Partial<CommunityEndpointPrices>,
+): ListingPayloadByType[K] {
+    if (type === "prompt_agent") return {} as ListingPayloadByType[K];
+    const baseUrl = columns.baseUrl ?? "";
+    if (type === "hosted_agent") {
+        return { baseUrl } as ListingPayloadByType[K];
+    }
+    const modality = normalizeCommunityEndpointModality(columns.modality);
+    return {
+        baseUrl,
+        upstreamModel: columns.upstreamModel ?? "",
+        bearerTokenCiphertext: columns.bearerTokenCiphertext ?? "",
+        modality,
+        imagePricing: normalizeCommunityEndpointImagePricing(
+            columns.imagePricing,
+        ),
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            columns.inputModalities ?? undefined,
+            modality,
+        ),
+        perUserRpm: columns.perUserRpm,
+        fallbackModelIds: columns.fallbackModelIds ?? [],
+        prices: communityEndpointPrices(columns),
+    } as ListingPayloadByType[K];
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -361,36 +556,42 @@ type CommunityEndpointRuntimeBase = {
     disabledReason: string | null;
 } & CommunityEndpointPrices;
 
-/** A third-party OpenAI-compatible server the owner registered. */
-export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    kind: "external";
+/** The owner's own OpenAI-compatible server, reached with their credential. */
+export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "proxy";
     bearerTokenCiphertext: string;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
 };
 
-/** A managed prompt agent, run by Enter's own agent runtime. */
-export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    kind: "agent";
-    agentId: string;
-};
+/** An agent Enter runs on its own runtime, named by its agent id. */
+export type PromptAgentCommunityEndpointRuntime =
+    CommunityEndpointRuntimeBase & {
+        kind: "prompt_agent";
+        agentId: string;
+    };
+
+/** An agent on the owner's own server, sent a run token instead of a key. */
+export type HostedAgentCommunityEndpointRuntime =
+    CommunityEndpointRuntimeBase & {
+        kind: "hosted_agent";
+    };
 
 export type CommunityEndpointRuntime =
-    | ExternalCommunityEndpointRuntime
-    | AgentCommunityEndpointRuntime;
+    | ProxyCommunityEndpointRuntime
+    | PromptAgentCommunityEndpointRuntime
+    | HostedAgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Managed agents always do: they call their base model and tools on the
- * caller's behalf. External endpoints only do so when an admin granted it.
- * Both are barred from the same places — fallback targets, and being called
- * by another run token — so the two cases share one name.
+ * Both agent kinds do — one runs here, one on the owner's server, and either
+ * way the work is charged to whoever called. A proxy never does: its owner
+ * pays their own upstream and charges the caller a declared price. This is the
+ * fact that decides which credential goes on the wire, so it has one name.
  */
 export function isDelegatingEndpoint(
     endpoint: CommunityEndpointRuntime,
 ): boolean {
-    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+    return endpoint.kind !== "proxy";
 }
 
 export type CommunityModelDefinitionInput = {

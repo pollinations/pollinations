@@ -24,12 +24,13 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * Managed agents always delegate. External endpoints do so only when their
- * admin flag is set. The other two conditions are invariants, so they throw:
- * endpoint must be free, since charging a wrapper price on top of the
- * generation it bills the caller for is double billing, and the request must
- * carry a key to bill, since falling back to the saved bearer would quietly
- * move the cost of the agent's work onto the endpoint owner.
+ * Both agent kinds delegate and a proxy never does — the listing's type says
+ * so, and no flag can make a proxy delegate. The other two conditions are
+ * invariants, so they throw: the endpoint must be free, since charging a
+ * wrapper price on top of the generation it bills the caller for is double
+ * billing, and the request must carry a key to bill, since falling back to the
+ * saved bearer would quietly move the cost of the agent's work onto the
+ * endpoint owner.
  */
 async function mintDelegatedToken(
     endpoint: CommunityEndpointRuntime,
@@ -51,8 +52,10 @@ async function mintDelegatedToken(
         secret,
         parentApiKeyId,
         runId: crypto.randomUUID(),
+        // Only an agent Enter runs names one. An agent on the owner's own
+        // server gets a token that authorizes spending and nothing else.
         managedAgentId:
-            endpoint.kind === "agent" ? endpoint.agentId : undefined,
+            endpoint.kind === "prompt_agent" ? endpoint.agentId : undefined,
     });
 }
 
@@ -67,19 +70,18 @@ export async function communityEndpointGatewayContext(
 ): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
-    // A delegating endpoint is sent the run token instead of its saved bearer,
-    // so it never receives a credential it could spend on the owner's account.
-    // An agent has no saved bearer at all: mintDelegatedToken always returns a
-    // token for it, so a missing one means the caller had no key to bill.
+    // Only a proxy stores a credential, and only a proxy is sent one. Either
+    // agent kind is sent the run token instead, so neither can ever receive a
+    // key it could spend on the owner's account. mintDelegatedToken always
+    // returns a token for an agent, so a missing one means the caller had no
+    // key to bill.
     const authKey =
-        endpoint.kind === "agent"
-            ? runToken
-            : (runToken ??
-              normalizeCommunityEndpointBearerToken(
+        endpoint.kind === "proxy"
+            ? normalizeCommunityEndpointBearerToken(
                   await decryptSecret(endpoint.bearerTokenCiphertext, secret),
-              ));
-    if (!authKey)
-        throw new Error("Managed agent request has no agent run token");
+              )
+            : runToken;
+    if (!authKey) throw new Error("Agent request has no agent run token");
 
     return {
         ...requestDataWithoutMessages,

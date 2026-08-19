@@ -42,6 +42,9 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
+    // Agent listings have no endpoint, upstream model, or rate limit of their
+    // own to show — the fields do not exist rather than being hidden.
+    const isAgent = endpoint.type !== "proxy";
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -64,7 +67,7 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.agentId && (
+                        {isAgent && (
                             <Chip intent="news" size="sm">
                                 Agent
                             </Chip>
@@ -92,8 +95,8 @@ export function CommunityEndpointCard({
                     </Button>
                     <IconButton
                         intent="info"
-                        title={endpoint.agentId ? "Edit agent" : "Edit model"}
-                        tooltip={endpoint.agentId ? "Edit agent" : "Edit model"}
+                        title={isAgent ? "Edit agent" : "Edit model"}
+                        tooltip={isAgent ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -130,7 +133,7 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {!endpoint.agentId && (
+                {!isAgent && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -143,14 +146,14 @@ export function CommunityEndpointCard({
                     label="Modality"
                     value={endpoint.modality}
                 />
-                {!endpoint.agentId && (
+                {!isAgent && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Upstream model"
                         value={endpoint.upstreamModel}
                     />
                 )}
-                {!endpoint.agentId && endpoint.perUserRpm !== null && (
+                {!isAgent && endpoint.perUserRpm !== null && (
                     <CommunityDetailRow
                         icon={<TerminalIcon className="h-3.5 w-3.5" />}
                         label="Per-user limit"

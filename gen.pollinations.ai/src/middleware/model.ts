@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    isDelegatingEndpoint,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -126,9 +129,16 @@ export async function resolveModelDefinition(
         }),
         // An agent run executes tools and spends the caller's balance, so its
         // answer belongs to that caller and must never be replayed to another.
-        ...(entry.communityEndpoint?.kind === "agent" && {
-            cacheScope: `agent:${entry.communityEndpoint.agentId}`,
-        }),
+        // An agent on its owner's server has no agent id, so the listing names
+        // the scope instead.
+        ...(entry.communityEndpoint &&
+            isDelegatingEndpoint(entry.communityEndpoint) && {
+                cacheScope: `agent:${
+                    entry.communityEndpoint.kind === "prompt_agent"
+                        ? entry.communityEndpoint.agentId
+                        : entry.id
+                }`,
+            }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,
         }),

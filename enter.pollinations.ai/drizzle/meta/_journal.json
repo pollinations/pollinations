@@ -365,6 +365,13 @@
       "when": 1787093808467,
       "tag": "0051_drop_rewards_github_id",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1787180352332,
+      "tag": "0052_shiny_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

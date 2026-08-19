@@ -40,7 +40,7 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                                     ? ("image" as const)
                                     : ("text" as const),
                             community: true,
-                            agent: model.delegatesGeneration,
+                            agent: model.type !== "proxy",
                         })),
                 );
             } catch {

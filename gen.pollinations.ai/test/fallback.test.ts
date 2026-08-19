@@ -53,6 +53,7 @@ function communityEntry(
     const entry = registryEntry(id, [], rate);
     entry.visible = visibility === "public" && disabledAt === null;
     entry.communityEndpoint = {
+        kind: "proxy",
         ownerUserId,
         visibility,
         disabledAt,

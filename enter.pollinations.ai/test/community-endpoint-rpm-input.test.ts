@@ -53,25 +53,22 @@ describe("community endpoint per-user RPM input", () => {
         ).toEqual([{ modelId: "owner/model", modality: "text" }]);
     });
 
-    it("serializes agent listings without prices or fallbacks", () => {
-        const payload = toAgentListingPayload(
-            {
-                ...agentListingToForm(),
-                name: "researcher",
-                title: "Researcher",
-                visibility: "public",
-                perUserRpm: "12",
-            },
-            ["text", "image"],
-        );
-        expect(payload).toMatchObject({
-            modality: "text",
-            inputModalities: ["text", "image"],
-            perUserRpm: null,
+    // Exhaustive on purpose: an agent listing is identity and nothing else, so
+    // anything the form still carries — a typed RPM here — has nowhere to go.
+    it("serializes agent listings as identity only", () => {
+        const payload = toAgentListingPayload({
+            ...agentListingToForm(),
+            name: "researcher",
+            title: "Researcher",
+            visibility: "public",
+            perUserRpm: "12",
         });
-        expect(payload).not.toHaveProperty("agentId");
-        expect(payload).not.toHaveProperty("baseUrl");
-        expect(payload).not.toHaveProperty("fallbackModelIds");
-        expect(payload).not.toHaveProperty("promptTextPrice");
+        expect(payload).toEqual({
+            type: "prompt_agent",
+            name: "researcher",
+            title: "Researcher",
+            description: "",
+            visibility: "public",
+        });
     });
 });

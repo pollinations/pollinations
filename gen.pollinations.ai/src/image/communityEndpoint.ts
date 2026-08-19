@@ -32,7 +32,7 @@ export async function callCommunityImageEndpoint(
     secret: string,
 ): Promise<ImageGenerationResult> {
     // Managed agents are text-only, so an image endpoint is always external.
-    if (endpoint.kind !== "external") {
+    if (endpoint.kind !== "proxy") {
         throw new Error(
             `Community image endpoint '${endpoint.modelId}' is a managed agent`,
         );

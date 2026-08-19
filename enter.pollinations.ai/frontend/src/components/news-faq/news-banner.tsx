@@ -1,4 +1,11 @@
-import { cn, Surface } from "@pollinations/ui";
+import {
+    Alert,
+    Chip,
+    CodeBlock,
+    cn,
+    Surface,
+    WarningIcon,
+} from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -9,7 +16,6 @@ export const HIGHLIGHTS_GITHUB_URL =
 const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
-    anchor?: string;
     date?: string;
     /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
     dateLabel?: string;
@@ -25,21 +31,6 @@ interface Highlight {
  * Edit this array to add/remove pinned announcements.
  */
 const PINNED_NEWS: Highlight[] = [
-    {
-        anchor: "canonical-model-ids",
-        date: "2026-08-19",
-        dateLabel: "Merging Sep 1 · 14:00 UTC",
-        emoji: "🌸",
-        title: "Canonical model IDs are coming",
-        description:
-            "On September 1, 2026 at 14:00 UTC, we will standardize model IDs to the publisher/model[:variant] format across APIs, permissions, billing, docs, and dashboards.",
-        details: [
-            "For example, flux will become black-forest-labs/flux.1-schnell.",
-            "Existing aliases will keep current integrations working during the transition.",
-            "Only names are changing. Model behavior, routing, pricing, capabilities, and defaults stay the same.",
-            "The [Models tab](/models) will show the canonical ID for every model as the rollout lands.",
-        ],
-    },
     {
         date: "2026-08-15",
         dateLabel: "New quests",
@@ -168,15 +159,82 @@ function formatNewsDate(date: string): string {
 
 /** Hand-curated, pinned announcements — stacked white cards. */
 export const Announcements: FC = () => {
-    if (PINNED_NEWS.length === 0) return null;
     return (
         <div className="flex flex-col gap-3">
+            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
+
+const CanonicalModelSlugAnnouncement: FC = () => (
+    <Alert
+        id="canonical-model-ids"
+        intent="warning"
+        className="scroll-mt-4 p-4 sm:p-5"
+    >
+        <div className="flex items-start gap-3">
+            <WarningIcon className="mt-0.5 h-6 w-6 shrink-0" />
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+                            Scheduled change
+                        </div>
+                        <h3 className="mt-0.5 text-lg font-semibold leading-tight">
+                            Canonical model slugs are changing
+                        </h3>
+                    </div>
+                    <Chip intent="neutral" size="md" className="self-start">
+                        Sep 1 · 14:00 UTC
+                    </Chip>
+                </div>
+
+                <p className="mt-3 text-sm leading-relaxed">
+                    At that time, Pollinations will standardize model slugs
+                    across APIs, permissions, billing, docs, and dashboards.
+                </p>
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+                            New slug format
+                        </div>
+                        <CodeBlock
+                            code="publisher/model[:variant]"
+                            className="mt-1.5 bg-surface-opaque"
+                            codeClassName="text-sm"
+                        />
+                    </div>
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+                            Example
+                        </div>
+                        <CodeBlock
+                            code={"flux\n→ black-forest-labs/flux.1-schnell"}
+                            className="mt-1.5 bg-surface-opaque"
+                            codeClassName="text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 border-t border-divider pt-3 text-sm sm:grid-cols-2">
+                    <p>
+                        <strong className="block">Compatibility</strong>
+                        Existing aliases keep current integrations working
+                        during the transition.
+                    </p>
+                    <p>
+                        <strong className="block">What stays the same</strong>
+                        Behavior, routing, pricing, capabilities, and defaults.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </Alert>
+);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -202,11 +260,7 @@ export const NewsBanner: FC = () => {
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface
-        id={item.anchor}
-        variant="card"
-        className="min-w-0 scroll-mt-4 leading-relaxed"
-    >
+    <Surface variant="card" className="min-w-0 leading-relaxed">
         {(item.dateLabel || item.date) && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 {item.dateLabel ??

@@ -301,6 +301,15 @@ export function UsageIcon(props: IconProps) {
     );
 }
 
+export function WarningIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10.3 3.1 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.1a2 2 0 0 0-3.4 0Z" />
+            <path d="M12 9v4M12 17h.01" />
+        </svg>
+    );
+}
+
 export function TrendUpIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

@@ -25,6 +25,7 @@ import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-mo
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
+import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -105,6 +106,11 @@ const DashboardActivityRoute = DashboardActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAccountRoute = DashboardAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/account'
     | '/activity'
     | '/keys'
     | '/models'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/account'
     | '/activity'
     | '/keys'
     | '/models'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/keys'
     | '/_dashboard/models'
@@ -340,10 +352,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardActivityRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/account': {
+      id: '/_dashboard/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof DashboardAccountRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
@@ -354,6 +374,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,

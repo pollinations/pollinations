@@ -111,7 +111,36 @@ export const KOKORO_VOICES = [
     "zm_yunyang",
 ] as const;
 
-export const XAI_TTS_VOICES = ["ara", "eve", "leo", "rex", "sal"] as const;
+export const XAI_TTS_VOICES = [
+    "altair",
+    "ara",
+    "atlas",
+    "aurora",
+    "carina",
+    "castor",
+    "celeste",
+    "cosmo",
+    "eve",
+    "helios",
+    "helix",
+    "iris",
+    "kepler",
+    "leo",
+    "liora",
+    "lumen",
+    "luna",
+    "lux",
+    "naksh",
+    "orion",
+    "perseus",
+    "rex",
+    "rigel",
+    "sal",
+    "sirius",
+    "ursa",
+    "zagan",
+    "zenith",
+] as const;
 
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
@@ -384,11 +413,11 @@ export const AUDIO_SERVICES = {
         },
         title: "Grok TTS",
         description:
-            "Expressive multilingual speech with five voices and inline style controls",
+            "Expressive multilingual speech across 28 built-in voices with inline style controls",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
-        supportedEndpoints: ["/v1/audio/speech"],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],

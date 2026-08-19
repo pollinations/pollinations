@@ -1903,7 +1903,7 @@ export async function generateXaiSpeech(opts: {
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Grok TTS is not configured (missing XAI_API_KEY)",
+            message: "Grok TTS is not configured (missing API key)",
         });
     }
 

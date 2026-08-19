@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { XAI_TTS_VOICES } from "../../shared/registry/audio.ts";
 import { generateXaiSpeech } from "../src/routes/audio.ts";
 
 const log = {
@@ -13,7 +14,7 @@ const contentTypes = {
     pcm: "audio/pcm",
 } as const;
 
-const voiceFormatCases = ["ara", "eve", "leo", "rex", "sal"].flatMap((voice) =>
+const voiceFormatCases = XAI_TTS_VOICES.flatMap((voice) =>
     (["mp3", "wav", "pcm"] as const).map((format) => ({ voice, format })),
 );
 
@@ -37,7 +38,7 @@ describe("generateXaiSpeech", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const response = await generateXaiSpeech({
-            text: "Hi 🌻",
+            text: "Hi 🌻你好",
             voice,
             responseFormat: format,
             apiKey: "test-key",
@@ -51,7 +52,7 @@ describe("generateXaiSpeech", () => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                text: "Hi 🌻",
+                text: "Hi 🌻你好",
                 voice_id: voice,
                 language: "auto",
                 output_format: {
@@ -65,7 +66,7 @@ describe("generateXaiSpeech", () => {
         expect(response.headers.get("x-model-used")).toBe("grok-tts");
         expect(response.headers.get("x-tts-voice")).toBe(voice);
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "4",
+            "6",
         );
     });
 
@@ -113,6 +114,9 @@ describe("generateXaiSpeech", () => {
                 apiKey: "",
                 log,
             }),
-        ).rejects.toMatchObject({ status: 500 });
+        ).rejects.toMatchObject({
+            status: 500,
+            message: "Grok TTS is not configured (missing API key)",
+        });
     });
 });

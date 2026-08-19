@@ -1,0 +1,35 @@
+{
+  "pr_number": 13540,
+  "title": "feat: add Qwen3.8 27B via OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13540",
+  "merged_at": "2026-08-19T14:25:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `qwen3.8-27b` as a new paid-only OpenRouter model.\n- Pins exact route `qwen/qwen3.8-27b` to Chutes FP8 with OpenRouter and Pollinations fallback disabled.\n- Prices input/cache/output at `$0.40/$0.04/$3.00` per million tokens with multiplier `1`.\n- Exposes text, image, and video input; reasoning; tools; structured output; and no aliases or Pollinations GPU.\n\nVerification:\n- Direct no-retry text, image, video, JSON, tools, streaming, reasoning, prompt-cache pricing, and 10/10 burst passed without 429/5xx.\n- Full local E2E passed permissions, billing/Tinybird, cache, catalogs, errors, modalities, capabilities, and 10/10 burst.\n- Gen and Enter typechecks, 71 focused Gen tests, 381 pricing/registry tests, Biome, and fresh CI pass.\n\nAfter merge, run one paid production wallet/Tinybird/OpenRouter reconciliation.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A New 27B Flower Blooms",
+    "blurb": "Qwen3.8 27B has joined the paid model garden via OpenRouter, with Chutes FP8 handling the heavy pollen. It reads text, sees images and video, reasons, uses tools, and returns tidy structured output.",
+    "summary": "Added the paid-only canonical `qwen3.8-27b` model through OpenRouter, pinned to `qwen/qwen3.8-27b` on Chutes FP8 with text, image, video, reasoning, tools, structured output, streaming, and prompt-cache pricing support.",
+    "impact": "Developers can now call `qwen3.8-27b` for multimodal and tool-using workloads at $0.40 input, $0.04 cached input, and $3.00 output per million tokens, using its dedicated OpenRouter route without fallback routing.",
+    "keywords": [
+      "qwen3.8-27b",
+      "openrouter",
+      "chutes",
+      "text-api",
+      "multimodal",
+      "reasoning",
+      "tools"
+    ],
+    "visual_concept": "Depict Qwen3.8 27B as a newly blooming, labeled code-flower in a cozy model garden, with separate little text scroll, image frame, video reel, tool wrench, and reasoning sparkle petals showing its capabilities. Polli should tend the flower while a CRT monitor robot happily routes a glowing OpenRouter signal into it, making the dedicated Chutes FP8 path feel like a reliable garden pipe.",
+    "image_prompt": "A cozy pixel-art model garden where Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, rounded translucent light-blue wings, and a tiny gardener scarf, carefully waters a glowing lime green (#ecf874) code-flower labeled \"QWEN3.8 27B\"; its petals are a text scroll, image frame, video reel, wrench, and reasoning stars, while a friendly CRT monitor robot connects a warm OpenRouter cable to the bloom amid vines and small flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13540.jpg",
+    "prompt": "A cozy pixel-art model garden where Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, rounded translucent light-blue wings, and a tiny gardener scarf, carefully waters a glowing lime green (#ecf874) code-flower labeled \"QWEN3.8 27B\"; its petals are a text scroll, image frame, video reel, wrench, and reasoning stars, while a friendly CRT monitor robot connects a warm OpenRouter cable to the bloom amid vines and small flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-19T14:27:02.833073+00:00"
+}

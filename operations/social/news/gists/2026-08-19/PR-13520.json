@@ -1,0 +1,33 @@
+{
+  "pr_number": 13520,
+  "title": "feat(enter): expose BYOP app details from GET /account/key",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/13520",
+  "merged_at": "2026-08-19T09:11:00Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #10733\n\n## Changes\n\n- **`enter.pollinations.ai/src/routes/account.ts`**: Replaces the flat `byopClientKeyId` field on `GET /account/key` with a `byopApp` object (`clientKeyId`, `name`, `appUser`) for BYOP-minted keys; `byopApp: null` for non-BYOP keys. Updates the OpenAPI schema accordingly. No new DB query — all three fields (`byopClientKeyId`, `byopClientName`, `byopClientUserId`) are already loaded by the auth middleware via a left-join on the BYOP client key.\n- **`enter.pollinations.ai/test/account-key.test.ts`**: Updates the agent-run-token test to assert `byopApp: null` (non-BYOP parent key). Adds a dedicated test verifying `byopApp: null` for regular secret keys.\n\n## Acceptance criteria\n\n- Adds `byopApp` object to `GET /account/key` for BYOP-minted keys\n- Includes `clientKeyId` (public app key/client id), `name` (app name), and `appUser` (app user identity)\n- Field naming avoids `owner`; uses `appUser`\n- Non-BYOP keys return `byopApp: null`\n- Reuses fields already loaded by auth middleware — no new route query",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys Know Their Garden",
+    "blurb": "BYOP-minted keys can now introduce the app that grew them. The account endpoint brings along the app name, client key, and app user—no extra database expedition required.",
+    "summary": "GET /account/key now returns a byopApp object for BYOP-minted keys with clientKeyId, name, and appUser, while regular and non-BYOP keys return byopApp: null.",
+    "impact": "BYOP developers can identify the originating app and app-user identity for a key from one account lookup, with a consistent null value for keys outside BYOP.",
+    "keywords": [
+      "BYOP",
+      "account API",
+      "API keys",
+      "app identity",
+      "OpenAPI"
+    ],
+    "visual_concept": "Polli is tending a small garden of labeled API keys, with one key blooming into a tiny app placard showing its client ID, app name, and user badge. A friendly CRT monitor robot reads the key's new app-details card while ordinary keys rest beside clear \"null\" signposts, making the distinction feel organized rather than ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, tending a lime green (#ecf874) garden where a BYOP API key grows beside a small app-details placard labeled \"APP\", \"ID\", and \"USER\"; a cheerful CRT monitor robot holds the card while regular keys sit neatly in nearby pots marked \"null\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-plant vines and tiny flowers, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-19/PR-13520.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, tending a lime green (#ecf874) garden where a BYOP API key grows beside a small app-details placard labeled \"APP\", \"ID\", and \"USER\"; a cheerful CRT monitor robot holds the card while regular keys sit neatly in nearby pots marked \"null\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-plant vines and tiny flowers, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-19T09:12:02.902522+00:00"
+}

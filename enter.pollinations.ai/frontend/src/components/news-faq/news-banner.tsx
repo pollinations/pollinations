@@ -1,5 +1,4 @@
 import {
-    ArrowRightIcon,
     CheckIcon,
     Chip,
     CodeBlock,
@@ -219,27 +218,21 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                     Migration example
                 </div>
-                <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+                <div className="mt-2 flex flex-col items-start gap-4 rounded-lg bg-brand-dark p-3 sm:flex-row sm:items-end sm:p-4">
                     <div className="flex flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                        <div className="mb-1 text-xs font-medium text-intent-warning-bg-light/70">
                             Current alias
                         </div>
-                        <Chip intent="neutral" size="lg" className="font-mono">
+                        <Chip intent="danger" size="lg" className="font-mono">
                             flux
                         </Chip>
                     </div>
-                    <div
-                        aria-hidden="true"
-                        className="flex h-8 w-8 self-center shrink-0 items-center justify-center rounded-full bg-intent-warning-bg-light text-intent-warning-text sm:self-auto"
-                    >
-                        <ArrowRightIcon className="h-4 w-4 rotate-90 sm:rotate-0" />
-                    </div>
                     <div className="flex min-w-0 flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                        <div className="mb-1 text-xs font-medium text-intent-warning-bg-light/70">
                             Canonical slug
                         </div>
                         <Chip
-                            intent="warning"
+                            intent="success"
                             size="lg"
                             className="max-w-full font-mono"
                         >

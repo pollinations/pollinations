@@ -1,0 +1,59 @@
+{
+  "date": "2026-08-18",
+  "period_start": "2026-08-18",
+  "period_end": "2026-08-18",
+  "title": "Browser apps got a clearer, safer path to BYOP",
+  "summary": "A community-heavy day: safer browser auth, open transcription support, sturdier image endpoints, and four new apps to explore.\n\nThe auth docs now point browser developers toward App Keys and a complete static-client PKCE flow: OIDC discovery, exact redirect URIs, state and verifier checks, and direct code exchange without leaving tokens in URLs, logs, or localStorage. Redirect URI errors during API-key metadata updates now also come from the same shared validation path, so they stay precise and consistent.\n\nMy Models can now expose OpenAI-compatible transcription endpoints through /v1/audio/transcriptions, with audio-second usage headers and model reporting included. Transcription responses were also consolidated across Whisper, Scribe, Grok, AssemblyAI, and community providers, replacing mysteriously empty subtitle files with clear format support errors where subtitles are unavailable.\n\nCommunity image endpoints now use one shared streamed download path, with consistent URL/base64 handling, a 20 MB cap, and registration probes that can wait through a 300-second cold start. The app directory also picked up DiddyDiffusion for account-connected browser generation, an AI Art & Image Generator, and Kokoro Roto for prompt-driven anime art.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 12906,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13416,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13501,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13502,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13518,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13530,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13532,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13535,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13543,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13550,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13553,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13557,
+      "date": "2026-08-18"
+    }
+  ],
+  "generated_at": "2026-08-19T06:15:06.065065+00:00"
+}

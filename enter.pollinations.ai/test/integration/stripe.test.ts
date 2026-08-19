@@ -352,7 +352,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
         "0",
     );
     expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
-        "4",
+        "8",
     );
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
@@ -370,7 +370,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     );
 });
 
-test("four distinct failed cards in 24h restrict payments and expire the open checkout", async ({
+test("eight distinct failed cards in 24h restrict payments", async ({
     sessionToken,
     mocks,
 }) => {
@@ -381,17 +381,12 @@ test("four distinct failed cards in 24h restrict payments and expire the open ch
         object: "checkout.session",
         mode: "payment",
         customer: "cus_test_card_gate",
-        payment_intent: "pi_fp_gate_4",
+        payment_intent: "pi_fp_gate_8",
         status: "open",
         url: "https://checkout.stripe.test/gate-open",
     });
 
-    for (const fingerprint of [
-        "fp_gate_1",
-        "fp_gate_2",
-        "fp_gate_3",
-        "fp_gate_4",
-    ]) {
+    const recordFailedCard = async (fingerprint: string) => {
         const paymentIntentId = `pi_${fingerprint}`;
         mocks.stripe.state.paymentIntents.push({
             id: paymentIntentId,
@@ -433,8 +428,53 @@ test("four distinct failed cards in 24h restrict payments and expire the open ch
             }),
         );
         expect(response.status).toBe(200);
+    };
+
+    for (const fingerprint of [
+        "fp_gate_1",
+        "fp_gate_2",
+        "fp_gate_3",
+        "fp_gate_4",
+        "fp_gate_5",
+        "fp_gate_6",
+        "fp_gate_7",
+    ]) {
+        await recordFailedCard(fingerprint);
     }
 
+    const preLimitResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(preLimitResponse.status).toBe(302);
+
+    const preLimitCheckoutBody = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
+        ],
+    ).toBe("ok");
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`
+        ],
+    ).toBe("7");
+    expect(
+        preLimitCheckoutBody?.[
+            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`
+        ],
+    ).toBe("8");
+
+    await recordFailedCard("fp_gate_8");
+
+    const createdCheckoutCount = mocks.stripe.state.requests.filter(
+        (request) =>
+            request.method === "POST" &&
+            request.path === "/v1/checkout/sessions",
+    ).length;
     const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
@@ -469,12 +509,12 @@ test("four distinct failed cards in 24h restrict payments and expire the open ch
         url: null,
     });
     expect(
-        mocks.stripe.state.requests.some(
+        mocks.stripe.state.requests.filter(
             (request) =>
                 request.method === "POST" &&
                 request.path === "/v1/checkout/sessions",
         ),
-    ).toBe(false);
+    ).toHaveLength(createdCheckoutCount);
 });
 
 test("admin can restrict and restore payment access", async ({

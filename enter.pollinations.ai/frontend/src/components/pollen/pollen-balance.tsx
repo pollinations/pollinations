@@ -290,10 +290,12 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         <>
             {paymentRestricted && (
                 <output className="mb-4 rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text">
-                    <p className="font-bold">Payments unavailable</p>
+                    <p className="font-bold">Payments restricted</p>
                     <p className="mt-1">
-                        This account was flagged for unusual payment activity.
-                        To request a review, email{" "}
+                        We detected an unusually high number of different
+                        payment cards failing on this account. Purchases and
+                        automatic top-ups have been disabled for fraud
+                        prevention. If you believe this is a mistake, email{" "}
                         <CopyButton
                             value={paymentSupportEmail}
                             className="font-semibold underline underline-offset-2"
@@ -301,8 +303,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             {(copied) =>
                                 copied ? "Copied!" : paymentSupportEmail
                             }
-                        </CopyButton>
-                        .
+                        </CopyButton>{" "}
+                        from the email address associated with your account.
                     </p>
                 </output>
             )}

@@ -1,4 +1,4 @@
-export const STRIPE_NEW_CARD_LIMIT = 4;
+export const STRIPE_NEW_CARD_LIMIT = 8;
 export const STRIPE_NEW_CARD_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const STRIPE_NEW_CARD_GATE_METADATA = {

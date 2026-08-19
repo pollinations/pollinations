@@ -791,6 +791,36 @@ describe("providerEconomics", () => {
         expect(summary.trueCostPaidUsd).toBe(0);
         expect(summary.marginPct).toBeNull();
     });
+
+    it("does not treat community sale-price cost as a provider bill", () => {
+        const data = emptyData({
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "community",
+                    model: "vendouple/zimage",
+                    cost_paid: 1,
+                    price_paid: 1,
+                    model_paid: 0.75,
+                }),
+            ],
+        });
+
+        const [row] = providerEconomics(data, "2026-06");
+        expect(row.vendor).toBe("community");
+        expect(row.soldPaidUsd).toBe(1);
+        expect(row.ecoPaidUsd).toBe(0.75);
+        expect(row.retainedPaidUsd).toBeCloseTo(0.25, 5);
+        expect(row.pollenPriced).toBe(true);
+        expect(row.trueCostPaidUsd).toBe(0);
+        expect(row.questBurnUsd).toBe(0);
+        expect(row.marginUsd).toBeCloseTo(0.25, 5);
+        expect(row.trueMultiplier).toBeNull();
+
+        const summary = econSummary([row]);
+        expect(summary.underwaterCount).toBe(0);
+        expect(summary.marginUsd).toBeCloseTo(0.25, 5);
+    });
 });
 
 describe("modelEconomics", () => {

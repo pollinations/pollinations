@@ -83,27 +83,20 @@ function useDesktopModelTable() {
         const container = containerRef.current;
         if (!container) return;
 
-        const pointerQuery = window.matchMedia("(pointer: fine)");
         const updateLayout = () => {
             const rootFontSize = Number.parseFloat(
                 window.getComputedStyle(document.documentElement).fontSize,
             );
             setIsDesktop(
-                pointerQuery.matches &&
-                    container.clientWidth >=
-                        DESKTOP_TABLE_MIN_REM * rootFontSize,
+                container.clientWidth >= DESKTOP_TABLE_MIN_REM * rootFontSize,
             );
         };
         const observer = new ResizeObserver(updateLayout);
 
         updateLayout();
         observer.observe(container);
-        pointerQuery.addEventListener("change", updateLayout);
 
-        return () => {
-            observer.disconnect();
-            pointerQuery.removeEventListener("change", updateLayout);
-        };
+        return () => observer.disconnect();
     }, []);
 
     return { containerRef, isDesktop };

@@ -433,17 +433,17 @@ export function CommunityEndpointDialog({
                                         key={modality}
                                         active={selected}
                                         onClick={() =>
-                                            updateForm(
-                                                "inputModalities",
-                                                selected
-                                                    ? form.inputModalities.filter(
+                                            setForm((current) => ({
+                                                ...current,
+                                                inputModalities: selected
+                                                    ? current.inputModalities.filter(
                                                           (m) => m !== modality,
                                                       )
                                                     : [
-                                                          ...form.inputModalities,
+                                                          ...current.inputModalities,
                                                           modality,
                                                       ],
-                                            )
+                                            }))
                                         }
                                         size="sm"
                                         className="min-w-20 gap-1.5 capitalize"

@@ -254,7 +254,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         : "flex-1 min-w-0 self-stretch py-3 pl-[25px]"
                 }
             >
-                <div className="flex h-full min-w-0 flex-col gap-1.5">
+                <div className="flex h-full min-w-0 flex-col justify-center gap-1.5">
                     <div className="flex min-w-0 items-center gap-2">
                         {titleTooltip ? (
                             <Tooltip

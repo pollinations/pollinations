@@ -37,7 +37,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -166,7 +169,24 @@ type FallbackPrimary = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
+    inputModalities?: readonly ModelInputModality[] | null;
 };
+
+function fallbackTargetMissingMessage(modelId: string): string {
+    return `Fallback target ${modelId} does not exist`;
+}
+
+/**
+ * Private or deactivated rows owned by someone else must look identical to a
+ * missing row. Distinct 400s were an existence oracle.
+ */
+function shouldConcealFallbackTarget(
+    primary: FallbackPrimary,
+    target: CommunityEndpointRow,
+): boolean {
+    if (target.ownerUserId === primary.ownerUserId) return false;
+    return target.visibility === "private" || target.disabledAt !== null;
+}
 
 /**
  * Whether a stored row generates through something else — always for an agent,
@@ -195,6 +215,9 @@ function fallbackTargetRejection(
     // public rows scanned. The write path checks this earlier, before any
     // lookup, because a model being created has no row to find.
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
+    if (shouldConcealFallbackTarget(primary, target)) {
+        return fallbackTargetMissingMessage(modelId);
+    }
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
@@ -221,6 +244,21 @@ function fallbackTargetRejection(
         targetImagePricing !== primary.imagePricing
     ) {
         return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    const primaryInputs = normalizeCommunityEndpointInputModalities(
+        primary.inputModalities,
+        primary.modality,
+    );
+    const targetInputs = normalizeCommunityEndpointInputModalities(
+        target.inputModalities,
+        targetModality,
+    );
+    if (
+        primary.modality === "image" &&
+        primaryInputs.includes("image") &&
+        !targetInputs.includes("image")
+    ) {
+        return `Fallback target ${modelId} does not support image edits`;
     }
     const targetPrices = communityEndpointPrices(target);
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
@@ -269,9 +307,9 @@ async function resolveFallbackModelId(
               ),
           })
         : undefined;
-    if (!target) {
+    if (!target || shouldConcealFallbackTarget(primary, target)) {
         throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} does not exist`,
+            message: fallbackTargetMissingMessage(fallbackModelId),
         });
     }
     const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
@@ -903,6 +941,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     endpoint.imagePricing,
                 ),
                 prices: communityEndpointPrices(endpoint),
+                inputModalities: endpoint.inputModalities,
             };
             const candidates = await db
                 .select({
@@ -1005,6 +1044,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       modality,
                       imagePricing,
                       prices,
+                      inputModalities: input.inputModalities,
                   })
                 : [];
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -1317,6 +1357,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         modality,
                         imagePricing: effectiveImagePricing,
                         prices: effectivePrices,
+                        inputModalities:
+                            input.inputModalities ?? endpoint.inputModalities,
                     },
                 );
             }

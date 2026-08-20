@@ -1,0 +1,34 @@
+{
+  "pr_number": 13514,
+  "title": "feat: let community model owners require Paid Pollen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13514",
+  "merged_at": "2026-08-20T19:43:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a `paid_only` column to `community_endpoint` (migration `0050`, one `ALTER TABLE`) and reads it in `communityModelDefinition()`, replacing the hardcoded `paidOnly: false`. Enforcement, the public `paid_only` field, and the catalog badge all already key off `paidOnly`, so nothing else needed changing.\n- Exposes `paidOnly` on my-models create/update/response. Open to any owner who can publish — no separate allowlist.\n- Adds a Balance toggle (Any Pollen / Paid only) to the model dialog, next to pricing and shown for public models.\n- Adds `--paid-only` / `--no-paid-only` to `polli my-models create|update`, so the CLI can express the same choice as the dashboard. The list table folds it into the existing `visibility` cell rather than adding a column.\n- Reward rate is untouched: `COMMUNITY_MODEL_REWARD_RATE` stays 0.75 regardless of which bucket the caller spends.\n\nWhy: Pollen spends Quest → Paid, so for a pay-as-you-go upstream a caller could cover the whole price with free Quest Pollen while the owner paid the inference cost with no paid revenue behind it.\n\nAgents are unaffected. A delegating endpoint must already be free (`mintDelegatedToken` throws otherwise, to avoid charging a wrapper price on top of the generation it bills the caller for), so the flag is inert there and needs no exclusion logic.\n\nTests: `communityModelDefinition` carries the owner's choice through (defaulting false), the my-models integration test round-trips `paidOnly` create → update → response, and `modelBody` only sends the field when the flag is given. 77 passed in the gen community/byop suites, 3 in polli-cli.\n\nPrerequisite #13512 (zero-cost/zero-balance preflight) is merged and already in this branch.\n\nFixes #13353",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A gate for paid pollen",
+    "blurb": "Community model owners can now mark a model as Paid only. A small toggle gives pay-as-you-go model gardens a sturdier little fence, while keeping the choice in the dashboard and CLI.",
+    "summary": "Community model owners can now set `paidOnly` when creating or updating published models through the dashboard or `polli my-models create|update --paid-only`, with the setting stored in `community_endpoint`, returned publicly, and shown as a catalog badge.",
+    "impact": "Callers can immediately see which public community models require Paid Pollen, while owners can configure that requirement from the model dialog or CLI without changing the existing 0.75 community reward rate.",
+    "keywords": [
+      "community-models",
+      "paid-pollen",
+      "my-models",
+      "cli",
+      "model-catalog",
+      "billing"
+    ],
+    "visual_concept": "Depict a cozy community-model garden with two labeled pollen gates: an open \"Any Pollen\" gate and a warmly glowing \"Paid only\" gate beside a premium code-plant. Polli, wearing a tiny gardener tool belt, is carefully setting the Paid only toggle on a retro terminal while a model-owner flower pot displays a small paid badge; the scene makes the owner-controlled access choice clear without feeling exclusionary.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, adjusting a retro terminal toggle from “ANY POLLEN” to “PAID ONLY” beside a blooming code-plant with a small paid badge; nearby are two friendly garden gates and soft flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13514.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, adjusting a retro terminal toggle from “ANY POLLEN” to “PAID ONLY” beside a blooming code-plant with a small paid badge; nearby are two friendly garden gates and soft flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-20T19:44:49.291947+00:00"
+}
